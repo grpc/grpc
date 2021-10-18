@@ -1406,10 +1406,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
                               messageCallback:nil
                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                   XCTAssertNotNil(error);
-                                  XCTAssertEqual(
-                                      error.code, GRPC_STATUS_UNAVAILABLE,
-                                      @"Received status %ld instead of UNAVAILABLE (14).",
-                                      error.code);
+                                  XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE,
+                                                 @"Received status %@ instead of UNAVAILABLE (14).",
+                                                 @(error.code));
                                   [expectation fulfill];
                                 }]
                             callOptions:options];

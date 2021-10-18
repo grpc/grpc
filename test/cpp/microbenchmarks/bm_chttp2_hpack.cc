@@ -30,9 +30,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "test/core/util/test_config.h"
@@ -69,7 +69,8 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
-  grpc_metadata_batch b;
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
   grpc_core::HPackCompressor c;
@@ -112,7 +113,8 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
 
   std::vector<grpc_mdelem> elems = Fixture::GetElems();
   std::vector<grpc_linked_mdelem> storage(elems.size());
-  grpc_metadata_batch b;
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
   for (size_t i = 0; i < elems.size(); i++) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
@@ -434,59 +436,6 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static void free_timeout(void* p) { gpr_free(p); }
-
-// Benchmark the current on_initial_header implementation
-static grpc_error_handle OnInitialHeader(void* user_data, grpc_mdelem md) {
-  // Setup for benchmark. This will bloat the absolute values of this benchmark
-  grpc_chttp2_incoming_metadata_buffer buffer(
-      static_cast<grpc_core::Arena*>(user_data));
-  bool seen_error = false;
-
-  // Below here is the code we actually care about benchmarking
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
-    seen_error = true;
-  }
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    grpc_millis* cached_timeout =
-        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
-    grpc_millis timeout;
-    if (cached_timeout != nullptr) {
-      timeout = *cached_timeout;
-    } else {
-      if (GPR_UNLIKELY(
-              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
-        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-        gpr_free(val);
-        timeout = GRPC_MILLIS_INF_FUTURE;
-      }
-      if (GRPC_MDELEM_IS_INTERNED(md)) {
-        /* not already parsed: parse it now, and store the
-         * result away */
-        cached_timeout =
-            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
-        *cached_timeout = timeout;
-        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-      }
-    }
-    benchmark::DoNotOptimize(timeout);
-    GRPC_MDELEM_UNREF(md);
-  } else {
-    const size_t new_size = buffer.size + GRPC_MDELEM_LENGTH(md);
-    if (!seen_error) {
-      buffer.size = new_size;
-    }
-    grpc_error_handle error =
-        grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
-    if (error != GRPC_ERROR_NONE) {
-      GPR_ASSERT(0);
-    }
-  }
-  return GRPC_ERROR_NONE;
-}
-
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
@@ -496,30 +445,40 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
   auto* arena = grpc_core::Arena::Create(kArenaSize);
-  p.BeginFrame([arena](grpc_mdelem e) { return OnInitialHeader(arena, e); },
+  grpc_core::ManualConstructor<grpc_metadata_batch> b;
+  b.Init(arena);
+  p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
-               grpc_core::HPackParser::Priority::None);
+               grpc_core::HPackParser::Priority::None,
+               grpc_core::HPackParser::LogInfo{
+                   1, grpc_core::HPackParser::LogInfo::kHeaders, false});
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
   }
   while (state.KeepRunning()) {
+    b->Clear();
     for (auto slice : benchmark_slices) {
       GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
     }
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
+      b.Destroy();
       arena->Destroy();
       arena = grpc_core::Arena::Create(kArenaSize);
-      p.BeginFrame([arena](grpc_mdelem e) { return OnInitialHeader(arena, e); },
+      b.Init(arena);
+      p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
-                   grpc_core::HPackParser::Priority::None);
+                   grpc_core::HPackParser::Priority::None,
+                   grpc_core::HPackParser::LogInfo{
+                       1, grpc_core::HPackParser::LogInfo::kHeaders, false});
     }
   }
   // Clean up
-  arena->Destroy();
+  b.Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
+  arena->Destroy();
 
   track_counters.Finish(state);
 }

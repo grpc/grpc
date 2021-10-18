@@ -48,6 +48,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "counted_service",
+    testonly = True,
+    hdrs = ["counted_service.h"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
     name = "interceptors_util",
     testonly = True,
     srcs = ["interceptors_util.cc"],
@@ -461,7 +470,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//src/proto/grpc/testing/xds:orca_load_report_for_test_proto",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
@@ -496,6 +505,7 @@ grpc_cc_test(
     flaky = True,  # TODO(b/150567713)
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
+        ":counted_service",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -505,62 +515,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_config",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "xds_end2end_test",
-    size = "large",
-    srcs = ["xds_end2end_test.cc"],
-    data = [
-        "//src/core/tsi/test_creds:badclient.key",
-        "//src/core/tsi/test_creds:badclient.pem",
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:client.key",
-        "//src/core/tsi/test_creds:client.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    flaky = True,  # TODO(b/144705388)
-    shard_count = 50,
-    tags = [
-        "no_test_ios",
-        "no_windows",
-    ],  # TODO(jtattermusch): fix test on windows
-    deps = [
-        ":test_service_impl",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//:grpc_resolver_fake",
-        "//:grpcpp_csds",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
-        "//src/proto/grpc/testing/xds:ads_for_test_proto",
-        "//src/proto/grpc/testing/xds:cds_for_test_proto",
-        "//src/proto/grpc/testing/xds:eds_for_test_proto",
-        "//src/proto/grpc/testing/xds:lds_rds_for_test_proto",
-        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
-        "//src/proto/grpc/testing/xds/v3:ads_proto",
-        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:cluster_proto",
-        "//src/proto/grpc/testing/xds/v3:discovery_proto",
-        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//src/proto/grpc/testing/xds/v3:fault_common_proto",
-        "//src/proto/grpc/testing/xds/v3:fault_proto",
-        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
-        "//src/proto/grpc/testing/xds/v3:listener_proto",
-        "//src/proto/grpc/testing/xds/v3:lrs_proto",
-        "//src/proto/grpc/testing/xds/v3:route_proto",
-        "//src/proto/grpc/testing/xds/v3:router_proto",
-        "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -846,25 +800,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    deps = [
-        ":test_service_impl",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "xds_credentials_end2end_test",
-    srcs = ["xds_credentials_end2end_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",

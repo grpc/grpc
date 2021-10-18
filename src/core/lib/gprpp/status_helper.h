@@ -153,7 +153,7 @@ namespace internal {
 
 /// Builds a upb message, google_rpc_Status from a status
 /// This is for internal implementation & test only
-google_rpc_Status* StatusToProto(absl::Status status,
+google_rpc_Status* StatusToProto(const absl::Status& status,
                                  upb_arena* arena) GRPC_MUST_USE_RESULT;
 
 /// Builds a status from a upb message, google_rpc_Status
@@ -175,6 +175,17 @@ void StatusFreePtr(uintptr_t ptr);
 /// Get the status from ptr.
 /// This shouldn't be used except migration purpose.
 absl::Status StatusGetFromPtr(uintptr_t ptr);
+
+/// Returns ptr that is allocated in the heap memory and the given status is
+/// copied into. This ptr can be used to get Status later and should be
+/// freed by StatusFreeHeapPtr. This can be 0 in case of OkStatus.
+uintptr_t StatusAllocHeapPtr(absl::Status s);
+
+/// Frees the allocated status at heap ptr.
+void StatusFreeHeapPtr(uintptr_t ptr);
+
+/// Get the status from a heap ptr.
+absl::Status StatusGetFromHeapPtr(uintptr_t ptr);
 
 }  // namespace internal
 

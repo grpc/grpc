@@ -222,28 +222,28 @@ struct inproc_stream {
 #undef STREAM_UNREF
 
   inproc_transport* t;
-  grpc_metadata_batch to_read_initial_md;
+  grpc_stream_refcount* refs;
+  grpc_core::Arena* arena;
+
+  grpc_metadata_batch to_read_initial_md{arena};
   uint32_t to_read_initial_md_flags = 0;
   bool to_read_initial_md_filled = false;
-  grpc_metadata_batch to_read_trailing_md;
+  grpc_metadata_batch to_read_trailing_md{arena};
   bool to_read_trailing_md_filled = false;
   bool ops_needed = false;
   // Write buffer used only during gap at init time when client-side
   // stream is set up but server side stream is not yet set up
-  grpc_metadata_batch write_buffer_initial_md;
+  grpc_metadata_batch write_buffer_initial_md{arena};
   bool write_buffer_initial_md_filled = false;
   uint32_t write_buffer_initial_md_flags = 0;
   grpc_millis write_buffer_deadline = GRPC_MILLIS_INF_FUTURE;
-  grpc_metadata_batch write_buffer_trailing_md;
+  grpc_metadata_batch write_buffer_trailing_md{arena};
   bool write_buffer_trailing_md_filled = false;
   grpc_error_handle write_buffer_cancel_error = GRPC_ERROR_NONE;
 
   struct inproc_stream* other_side;
   bool other_side_closed = false;               // won't talk anymore
   bool write_buffer_other_side_closed = false;  // on hold
-  grpc_stream_refcount* refs;
-
-  grpc_core::Arena* arena;
 
   grpc_transport_stream_op_batch* send_message_op = nullptr;
   grpc_transport_stream_op_batch* send_trailing_md_op = nullptr;
@@ -405,7 +405,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     // Send trailing md to the other side indicating cancellation
     s->trailing_md_sent = true;
 
-    grpc_metadata_batch fake_md;
+    grpc_metadata_batch fake_md(s->arena);
     inproc_stream* other = s->other_side;
     grpc_metadata_batch* dest = (other == nullptr)
                                     ? &s->write_buffer_trailing_md
@@ -428,7 +428,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     if (!s->t->is_client) {
       // If this is a server, provide initial metadata with a path and authority
       // since it expects that as well as no error yet
-      grpc_metadata_batch fake_md;
+      grpc_metadata_batch fake_md(s->arena);
       grpc_linked_mdelem* path_md =
           static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*path_md)));
       path_md->md = grpc_mdelem_from_slices(g_fake_path_key, g_fake_path_value);
@@ -899,7 +899,7 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
     // already have
     s->trailing_md_sent = true;
 
-    grpc_metadata_batch cancel_md;
+    grpc_metadata_batch cancel_md(s->arena);
 
     grpc_metadata_batch* dest = (other == nullptr)
                                     ? &s->write_buffer_trailing_md
