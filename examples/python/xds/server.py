@@ -28,7 +28,7 @@ import helloworld_pb2_grpc
 
 _DESCRIPTION = "A general purpose phony server."
 
-_LISTEN_HOST = "[::]"
+_LISTEN_HOST = "0.0.0.0"
 
 _THREAD_POOL_SIZE = 256
 
