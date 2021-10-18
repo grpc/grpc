@@ -25,11 +25,18 @@
 #include <grpc/grpc.h>
 #include <grpc/test/core/util/test_config.h>
 
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
+
 @interface EventEngineTimerTests : XCTestCase
 
 @end
 
-@implementation EventEngineTimerTests
+@implementation EventEngineTimerTests {
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_;
+  bool signaled_ ABSL_GUARDED_BY(mu_);
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine> _engine;
+}
 
 + (void)setUp {
   grpc_init();
@@ -40,12 +47,87 @@
 }
 
 - (void)setUp {
+  signaled_ = false;
+  _engine = absl::make_unique<grpc_event_engine::experimental::LibuvEventEngine>();
 }
 
 - (void)tearDown {
+  _engine = nullptr;
 }
 
-- (void)testDummy {
+- (void)testImmediateCallbackIsExecutedQuickly {
+  grpc_core::MutexLock lock(&mu_);
+  _engine->RunAt(absl::Now(), [self]() {
+    grpc_core::MutexLock lock(&mu_);
+    signaled_ = true;
+    cv_.Signal();
+  });
+  cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
+  XCTAssertTrue(signaled_);
+}
+
+- (void)testSupportsCancellation {
+  auto handle = _engine->RunAt(absl::InfiniteFuture(), []() {});
+  XCTAssertTrue(_engine->Cancel(handle));
+}
+
+- (void)testCancelledCallbackIsNotExecuted {
+  {
+    auto handle = _engine->RunAt(absl::InfiniteFuture(), [self]() {
+      grpc_core::MutexLock lock(&mu_);
+      signaled_ = true;
+    });
+    XCTAssertTrue(_engine->Cancel(handle));
+    _engine = nullptr;
+  }
+  // The engine is deleted, and all closures should have been flushed
+  grpc_core::MutexLock lock(&mu_);
+  XCTAssertFalse(signaled_);
+}
+
+- (void)testTimersRespectScheduleOrdering {
+  NSMutableArray<NSNumber *> *ordered = [NSMutableArray array];
+  uint8_t count = 0;
+  grpc_core::MutexLock lock(&mu_);
+  {
+    _engine->RunAt(absl::Now() + absl::Seconds(1), [&]() {
+      grpc_core::MutexLock lock(&mu_);
+      [ordered addObject:@(2)];
+      ++count;
+      cv_.Signal();
+    });
+    _engine->RunAt(absl::Now(), [&]() {
+      grpc_core::MutexLock lock(&mu_);
+      [ordered addObject:@(1)];
+      ++count;
+      cv_.Signal();
+    });
+    // Ensure both callbacks have run. Simpler than a mutex.
+    while (count != 2) {
+      cv_.WaitWithTimeout(&mu_, absl::Microseconds(100));
+    }
+    _engine = nullptr;
+  }
+  // The engine is deleted, and all closures should have been flushed beforehand
+  NSArray *expected = @[ @(1), @(2) ];
+  XCTAssertEqualObjects(ordered, expected);
+}
+
+- (void)testCancellingExecutedCallbackIsNoopAndReturnsFalse {
+  grpc_core::MutexLock lock(&mu_);
+  auto handle = _engine->RunAt(absl::Now(), [self]() {
+    grpc_core::MutexLock lock(&mu_);
+    signaled_ = true;
+    cv_.Signal();
+  });
+  cv_.WaitWithTimeout(&mu_, absl::Seconds(10));
+  XCTAssertTrue(signaled_);
+  // The callback has run, and now we'll try to cancel it.
+  XCTAssertFalse(_engine->Cancel(handle));
+}
+
+- (void)testStressTestTimersNotCalledBeforeScheduled {
+  // TODO import absl::random through cocoapod
 }
 
 @end
