@@ -1236,6 +1236,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/uri/uri_parser.cc )
   s.files += %w( src/core/lib/uri/uri_parser.h )
   s.files += %w( src/core/plugin_registry/grpc_plugin_registry.cc )
+  s.files += %w( src/core/plugin_registry/grpc_plugin_registry_extra.cc )
   s.files += %w( src/core/tsi/alts/crypt/aes_gcm.cc )
   s.files += %w( src/core/tsi/alts/crypt/gsec.cc )
   s.files += %w( src/core/tsi/alts/crypt/gsec.h )

@@ -348,25 +348,10 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/surface/init.cc",
         "src/core/plugin_registry/grpc_plugin_registry.cc",
+        "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
     ],
-    defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
-        "//conditions:default": [],
-    }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc_lb_policy_cds",
-            "grpc_lb_policy_xds_cluster_impl",
-            "grpc_lb_policy_xds_cluster_manager",
-            "grpc_lb_policy_xds_cluster_resolver",
-            "grpc_resolver_xds",
-            "grpc_resolver_c2p",
-            "grpc_xds_server_config_fetcher",
-        ],
-    },
     standalone = True,
     tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
@@ -388,6 +373,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/surface/init.cc",
         "src/core/plugin_registry/grpc_plugin_registry.cc",
+        "src/core/plugin_registry/grpc_plugin_registry_extra.cc",
     ],
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
