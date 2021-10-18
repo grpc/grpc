@@ -677,7 +677,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Matching route has inappropriate action"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      ;
       return call_config;
     }
     absl::string_view cluster_name;
@@ -928,7 +927,8 @@ void XdsResolver::GenerateResult() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
   if (error != GRPC_ERROR_NONE) {
-    OnError(error);
+    OnError(grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE));
     return;
   }
   Result result;

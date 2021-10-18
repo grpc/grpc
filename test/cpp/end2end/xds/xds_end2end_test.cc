@@ -146,8 +146,8 @@ constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
 constexpr char kServerName[] = "server.example.com";
 constexpr char kDefaultRouteConfigurationName[] = "route_config_name";
-constexpr char kSimpleServerRouteConfigurationName[] =
-    "simple_server_route_config_name";
+constexpr char kDefaultServerRouteConfigurationName[] =
+    "default_server_route_config_name";
 constexpr char kDefaultClusterName[] = "cluster_name";
 constexpr char kDefaultEdsServiceName[] = "eds_service_name";
 constexpr int kDefaultLocalityWeight = 3;
@@ -717,16 +717,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().enable_load_reporting()) {
       default_cluster_.mutable_lrs_server()->mutable_self();
     }
-    // Construct a simple server-side RDS resource for tests to use.
-    simple_server_route_config_.set_name(kSimpleServerRouteConfigurationName);
-    virtual_host = simple_server_route_config_.add_virtual_hosts();
+    // Construct a default server-side RDS resource for tests to use.
+    default_server_route_config_.set_name(kDefaultServerRouteConfigurationName);
+    virtual_host = default_server_route_config_.add_virtual_hosts();
     virtual_host->add_domains("*");
     route = virtual_host->add_routes();
     route->mutable_match()->set_prefix("");
     route->mutable_non_forwarding_action();
     // Construct a simple HttpConnectionManager for tests to use.
     *simple_server_http_connection_manager_.mutable_route_config() =
-        simple_server_route_config_;
+        default_server_route_config_;
     auto* filter = simple_server_http_connection_manager_.add_http_filters();
     filter->set_name("router");
     filter->mutable_typed_config()->PackFrom(
@@ -795,6 +795,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           new BackendServerThread(this, use_xds_enabled_server_));
       backends_.back()->Start();
     }
+    // Construct a default server-side Listener resource for backends_[0]
+    default_server_listener_.set_name(absl::StrCat(
+        "grpc/server?xds.resource.listening_address=",
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+    default_server_listener_.mutable_address()
+        ->mutable_socket_address()
+        ->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+    default_server_listener_.mutable_address()
+        ->mutable_socket_address()
+        ->set_port_value(backends_[0]->port());
+    default_server_listener_.mutable_default_filter_chain()
+        ->add_filters()
+        ->mutable_typed_config()
+        ->PackFrom(simple_server_http_connection_manager_);
+    balancers_[0]->ads_service()->SetLdsResource(default_server_listener_);
     // Create channel and stub.
     ResetStub();
   }
@@ -1867,8 +1882,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   Listener default_listener_;
   RouteConfiguration default_route_config_;
+  Listener default_server_listener_;
   HttpConnectionManager simple_server_http_connection_manager_;
-  RouteConfiguration simple_server_route_config_;
+  RouteConfiguration default_server_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
   bool bootstrap_contents_from_env_var_;
@@ -8176,28 +8192,11 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
   }
 };
 
-TEST_P(XdsEnabledServerTest, Basic) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  WaitForBackend(0);
-}
+TEST_P(XdsEnabledServerTest, Basic) { WaitForBackend(0); }
 
 TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  listener.clear_address();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -8209,17 +8208,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
 }
 
 TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
   listener.mutable_api_listener();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
@@ -8232,15 +8221,9 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
+  Listener listener = default_server_listener_;
+  listener.mutable_default_filter_chain()->clear_filters();
+  listener.mutable_default_filter_chain()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -8251,16 +8234,14 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
 }
 
 TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
+  Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager;
-  *http_connection_manager.mutable_route_config() = simple_server_route_config_;
+  listener.mutable_default_filter_chain()
+      ->mutable_filters()
+      ->at(0)
+      .mutable_typed_config()
+      ->UnpackTo(&http_connection_manager);
+  http_connection_manager.clear_http_filters();
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
@@ -8269,30 +8250,31 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr("Expected atleast one HTTP filter"));
+              ::testing::HasSubstr("Expected at least one HTTP filter"));
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
+  Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager;
-  *http_connection_manager.mutable_route_config() = simple_server_route_config_;
+  listener.mutable_default_filter_chain()
+      ->mutable_filters()
+      ->at(0)
+      .mutable_typed_config()
+      ->UnpackTo(&http_connection_manager);
+  http_connection_manager.clear_http_filters();
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.unsupported_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "grpc.testing.unsupported_http_filter");
-  http_filter = simple_server_http_connection_manager_.add_http_filters();
+  http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      http_connection_manager);
+  listener.mutable_default_filter_chain()
+      ->mutable_filters()
+      ->at(0)
+      .mutable_typed_config()
+      ->PackFrom(http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -8304,16 +8286,14 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
 }
 
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
+  Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager;
-  *http_connection_manager.mutable_route_config() = simple_server_route_config_;
+  listener.mutable_default_filter_chain()
+      ->mutable_filters()
+      ->at(0)
+      .mutable_typed_config()
+      ->UnpackTo(&http_connection_manager);
+  http_connection_manager.clear_http_filters();
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
@@ -8322,8 +8302,11 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      http_connection_manager);
+  listener.mutable_default_filter_chain()
+      ->mutable_filters()
+      ->at(0)
+      .mutable_typed_config()
+      ->PackFrom(http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -8337,27 +8320,28 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
 
 TEST_P(XdsEnabledServerTest,
        HttpFilterNotSupportedOnServerIgnoredWhenOptional) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
+  Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager;
-  *http_connection_manager.mutable_route_config() = simple_server_route_config_;
+  listener.mutable_default_filter_chain()
+      ->mutable_filters()
+      ->at(0)
+      .mutable_typed_config()
+      ->UnpackTo(&http_connection_manager);
+  http_connection_manager.clear_http_filters();
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "grpc.testing.client_only_http_filter");
   http_filter->set_is_optional(true);
-  http_filter = simple_server_http_connection_manager_.add_http_filters();
+  http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      http_connection_manager);
+  listener.mutable_default_filter_chain()
+      ->mutable_filters()
+      ->at(0)
+      .mutable_typed_config()
+      ->PackFrom(http_connection_manager);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   WaitForBackend(0);
   const auto response_state =
@@ -8368,17 +8352,10 @@ TEST_P(XdsEnabledServerTest,
 // Verify that a mismatch of listening address results in "not serving"
 // status.
 TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  Listener listener = default_server_listener_;
   // Set a different listening address in the LDS update
   listener.mutable_address()->mutable_socket_address()->set_address(
       "192.168.1.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -8386,16 +8363,7 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 }
 
 TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "::1" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
   listener.mutable_use_original_dst()->set_value(true);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
@@ -8447,18 +8415,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                     absl::string_view identity_instance_name,
                     absl::string_view identity_certificate_name,
                     bool require_client_certificates) {
-    Listener listener;
-    listener.set_name(absl::StrCat(
-        ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
-                   : "grpc/server?xds.resource.listening_address=127.0.0.1:",
-        backends_[0]->port()));
-    listener.mutable_address()->mutable_socket_address()->set_address(
-        ipv6_only_ ? "[::1]" : "127.0.0.1");
-    listener.mutable_address()->mutable_socket_address()->set_port_value(
-        backends_[0]->port());
-    auto* filter_chain = listener.add_filter_chains();
-    filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-        simple_server_http_connection_manager_);
+    Listener listener = default_server_listener_;
+    auto* filter_chain = listener.mutable_default_filter_chain();
     if (!identity_instance_name.empty()) {
       auto* transport_socket = filter_chain->mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
@@ -8632,16 +8590,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
 };
 
 TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("unknown_transport_socket");
   balancers_[0]->ads_service()->SetLdsResource(listener);
@@ -8656,16 +8606,8 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
 }
 
 TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -8685,16 +8627,8 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
 }
 
 TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -8719,16 +8653,8 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
 TEST_P(
     XdsServerSecurityTest,
     NacksRequiringClientCertificateWithoutValidationCertificateProviderInstance) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -8751,16 +8677,8 @@ TEST_P(
 
 TEST_P(XdsServerSecurityTest,
        NacksTlsConfigurationWithoutIdentityProviderInstance) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -8777,16 +8695,8 @@ TEST_P(XdsServerSecurityTest,
 }
 
 TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -9107,13 +9017,8 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
   void SetValidLdsUpdate() { SetLdsUpdate("", "", "", "", false); }
 
   void SetInvalidLdsUpdate() {
-    Listener listener;
-    listener.set_name(absl::StrCat(
-        "grpc/server?xds.resource.listening_address=",
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-    auto* socket_address = listener.mutable_address()->mutable_socket_address();
-    socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-    socket_address->set_port_value(backends_[0]->port());
+    Listener listener = default_server_listener_;
+    listener.clear_address();
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
 
@@ -9269,30 +9174,12 @@ using XdsServerFilterChainMatchTest = XdsServerSecurityTest;
 
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenNoFilterChainMentioned) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
-  listener.mutable_default_filter_chain()
-      ->add_filters()
-      ->mutable_typed_config()
-      ->PackFrom(simple_server_http_connection_manager_);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenOtherFilterChainsDontMatch) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add a filter chain that will never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9300,24 +9187,13 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
-  // Add default filter chain that should get used
-  listener.mutable_default_filter_chain()
-      ->add_filters()
-      ->mutable_typed_config()
-      ->PackFrom(simple_server_http_connection_manager_);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithDestinationPortDontMatch) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with destination port that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9325,6 +9201,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
@@ -9333,18 +9210,13 @@ TEST_P(XdsServerFilterChainMatchTest,
 }
 
 TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with server name that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
@@ -9354,18 +9226,13 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithTransportProtocolsOtherThanRawBufferDontMatch) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with transport protocol "tls" that should never match
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->set_transport_protocol("tls");
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
@@ -9375,18 +9242,13 @@ TEST_P(XdsServerFilterChainMatchTest,
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithApplicationProtocolsDontMatch) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with application protocol that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
@@ -9396,13 +9258,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithTransportProtocolRawBufferIsPreferred) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with "raw_buffer" transport protocol
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9415,6 +9271,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that filter chains that mention "raw_buffer" as
   // the transport protocol are chosen as the best match in the round.
@@ -9423,13 +9280,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithMoreSpecificDestinationPrefixRangesArePreferred) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with prefix range (length 4 and 16) but with server name
   // mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
@@ -9472,6 +9323,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
@@ -9480,13 +9332,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsThatMentionSourceTypeArePreferred) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with the local source type (best match)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9509,6 +9355,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
@@ -9517,13 +9364,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithMoreSpecificSourcePrefixRangesArePreferred) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with source prefix range (length 16) but with a bad
   // source port mentioned. (Prefix range is matched first.) Note that
   // backends_[0]->port() will never be a match for the source port because it
@@ -9572,6 +9413,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that the filter chain with the longest matching
   // source prefix range was the best match.
@@ -9580,13 +9422,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 
 TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithMoreSpecificSourcePortArePreferred) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
@@ -9607,6 +9443,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       ->mutable_tls_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that the filter chain with matching source port
   // was chosen.
@@ -9614,13 +9451,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9629,6 +9460,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
@@ -9639,13 +9471,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with prefix range
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9711,6 +9537,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
@@ -9721,13 +9548,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with the local source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9740,6 +9561,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
@@ -9751,13 +9573,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
 
 TEST_P(XdsServerFilterChainMatchTest,
        DuplicateMatchOnExternalSourceTypeNacked) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with the external source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9770,6 +9586,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
@@ -9781,13 +9598,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 
 TEST_P(XdsServerFilterChainMatchTest,
        DuplicateMatchOnSourcePrefixRangesNacked) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with source prefix range
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9812,6 +9623,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
@@ -9834,13 +9646,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with the external source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9851,6 +9657,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       simple_server_http_connection_manager_);
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
+  listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";

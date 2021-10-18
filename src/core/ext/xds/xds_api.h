@@ -108,10 +108,8 @@ class XdsApi {
 
     Matchers matchers;
 
-    struct InappropriateAction {
-      bool operator==(const InappropriateAction& /* other */) const {
-        return true;
-      }
+    struct UnknownAction {
+      bool operator==(const UnknownAction& /* other */) const { return true; }
     };
 
     struct RouteAction {
@@ -180,7 +178,7 @@ class XdsApi {
       }
     };
 
-    absl::variant<InappropriateAction, RouteAction, NonForwardingAction> action;
+    absl::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {
