@@ -80,7 +80,6 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
                              channel_args, "endpoint:server");
   p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
                              channel_args, "endpoint:client");
-  grpc_resource_quota_unref_internal(resource_quota);
   return p;
 }
 
