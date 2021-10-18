@@ -114,7 +114,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
         &on_complete_, watcher_timer_init_state->closure());
   }
 
-  ~StateWatcher() {
+  ~StateWatcher() override {
     GRPC_CHANNEL_INTERNAL_UNREF(channel_, "watch_channel_connectivity");
   }
 
