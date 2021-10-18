@@ -184,6 +184,26 @@ TEST_F(AuthorizationMatchersTest, HybridAuthorizationMatcherFailedMatch) {
   EXPECT_FALSE(matcher->Matches(args));
 }
 
+TEST_F(AuthorizationMatchersTest,
+       ReqServerNameAuthorizationMatcherSuccessfulMatch) {
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  ReqServerNameAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"")
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest,
+       ReqServerNameAuthorizationMatcherFailedMatch) {
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  ReqServerNameAuthorizationMatcher matcher(
+      StringMatcher::Create(StringMatcher::Type::kExact,
+                            /*matcher=*/"server1")
+          .value());
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
 TEST_F(AuthorizationMatchersTest, PathAuthorizationMatcherSuccessfulMatch) {
   args_.AddPairToMetadata(":path", "expected/path");
   EvaluateArgs args = args_.MakeEvaluateArgs();
@@ -259,8 +279,7 @@ TEST_F(AuthorizationMatchersTest,
   EXPECT_FALSE(matcher.Matches(args));
 }
 
-TEST_F(AuthorizationMatchersTest,
-       IpAuthorizationMatcherLocalIpSuccessfulMatch) {
+TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherDestIpSuccessfulMatch) {
   args_.SetLocalEndpoint("ipv4:1.2.3.4:123");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   IpAuthorizationMatcher matcher(
@@ -269,7 +288,7 @@ TEST_F(AuthorizationMatchersTest,
   EXPECT_TRUE(matcher.Matches(args));
 }
 
-TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherLocalIpFailedMatch) {
+TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherDestIpFailedMatch) {
   args_.SetLocalEndpoint("ipv4:1.2.3.4:123");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   IpAuthorizationMatcher matcher(
@@ -278,28 +297,61 @@ TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherLocalIpFailedMatch) {
   EXPECT_FALSE(matcher.Matches(args));
 }
 
-TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherPeerIpSuccessfulMatch) {
+TEST_F(AuthorizationMatchersTest,
+       IpAuthorizationMatcherSourceIpSuccessfulMatch) {
   args_.SetPeerEndpoint("ipv6:[1:2:3::]:456");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   IpAuthorizationMatcher matcher(
       IpAuthorizationMatcher::Type::kSourceIp,
+      Rbac::CidrRange(/*address_prefix=*/"1:3:4::", /*prefix_len=*/16));
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherSourceIpFailedMatch) {
+  args_.SetPeerEndpoint("ipv6:[1:2::3::]:456");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  IpAuthorizationMatcher matcher(
+      IpAuthorizationMatcher::Type::kSourceIp,
+      Rbac::CidrRange(/*address_prefix=*/"1:3::", /*prefix_len=*/48));
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest,
+       IpAuthorizationMatcherRemoteIpSuccessfulMatch) {
+  args_.SetPeerEndpoint("ipv6:[1:2:3::]:456");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  IpAuthorizationMatcher matcher(
+      IpAuthorizationMatcher::Type::kRemoteIp,
       Rbac::CidrRange(/*address_prefix=*/"1:2:4::", /*prefix_len=*/32));
   EXPECT_TRUE(matcher.Matches(args));
 }
 
-TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherPeerIpFailedMatch) {
+TEST_F(AuthorizationMatchersTest, IpAuthorizationMatcherRemoteIpFailedMatch) {
   args_.SetPeerEndpoint("ipv6:[1:2::]:456");
   EvaluateArgs args = args_.MakeEvaluateArgs();
   IpAuthorizationMatcher matcher(
-      IpAuthorizationMatcher::Type::kSourceIp,
+      IpAuthorizationMatcher::Type::kRemoteIp,
       Rbac::CidrRange(/*address_prefix=*/"1:3::", /*prefix_len=*/32));
   EXPECT_FALSE(matcher.Matches(args));
 }
 
 TEST_F(AuthorizationMatchersTest,
-       IpAuthorizationMatcherUnsupportedIpFailedMatch) {
+       IpAuthorizationMatcherDirectRemoteIpSuccessfulMatch) {
+  args_.SetPeerEndpoint("ipv4:1.2.3.4:123");
   EvaluateArgs args = args_.MakeEvaluateArgs();
-  IpAuthorizationMatcher matcher(IpAuthorizationMatcher::Type::kRemoteIp, {});
+  IpAuthorizationMatcher matcher(
+      IpAuthorizationMatcher::Type::kDirectRemoteIp,
+      Rbac::CidrRange(/*address_prefix=*/"1.7.8.9", /*prefix_len=*/8));
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest,
+       IpAuthorizationMatcherDirectRemoteIpFailedMatch) {
+  args_.SetPeerEndpoint("ipv4:1.2.3.4:123");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  IpAuthorizationMatcher matcher(
+      IpAuthorizationMatcher::Type::kDirectRemoteIp,
+      Rbac::CidrRange(/*address_prefix=*/"1.7.8.9", /*prefix_len=*/16));
   EXPECT_FALSE(matcher.Matches(args));
 }
 

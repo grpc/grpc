@@ -157,14 +157,13 @@ bool IpAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
       break;
     }
     case Type::kSourceIp:
-    case Type::kDirectRemoteIp: {
+    case Type::kDirectRemoteIp:
+    case Type::kRemoteIp: {
       address = args.GetPeerAddress();
       break;
     }
-    default: {
-      // Currently we do not support matching rules containing "remote_ip".
+    default:
       return false;
-    }
   }
   return grpc_sockaddr_match_subnet(&address, &subnet_address_, prefix_len_);
 }
@@ -205,9 +204,8 @@ bool AuthenticatedAuthorizationMatcher::Matches(
 }
 
 bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {
-  // Currently we do not support matching rules containing
-  // "requested_server_name".
-  return false;
+  // Currently we only support matching against an empty string.
+  return matcher_.Match("");
 }
 
 bool PathAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
