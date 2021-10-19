@@ -528,6 +528,10 @@ XdsClient::ChannelState::~ChannelState() {
   xds_client_.reset(DEBUG_LOCATION, "ChannelState");
 }
 
+// This method should only ever be called when holding the lock, but we can't
+// use a ABSL_EXCLUSIVE_LOCKS_REQUIRED annotation, because Orphan() will be
+// called from DualRefCounted::Unref, which cannot have a lock annotation for a
+// lock in this subclass.
 void XdsClient::ChannelState::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   shutting_down_ = true;
   CancelConnectivityWatchLocked();
@@ -2043,6 +2047,11 @@ void XdsClient::Orphan() {
         a.second.endpoint_map.clear();
       }
     }
+    // We clear these invalid resource  watchers as cancel never came.
+    invalid_listener_watchers_.clear();
+    invalid_route_config_watchers_.clear();
+    invalid_cluster_watchers_.clear();
+    invalid_endpoint_watchers_.clear();
   }
 }
 
@@ -2067,7 +2076,7 @@ void XdsClient::WatchListenerData(
   ListenerWatcherInterface* w = watcher.get();
   auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
   if (!resource.ok()) {
-    invalid_resource_watchers_.listener_watchers[w] = std::move(watcher);
+    invalid_listener_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
         "Unable to parse resource name for listener %s", listener_name));
     w->OnError(GRPC_ERROR_REF(error));
@@ -2115,6 +2124,11 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
         authority_state.channel_state.reset();
       }
     }
+  } else {
+    auto invalid_resource_watcher_it = invalid_listener_watchers_.find(watcher);
+    if (invalid_resource_watcher_it != invalid_listener_watchers_.end()) {
+      invalid_listener_watchers_.erase(invalid_resource_watcher_it);
+    }
   }
 }
 
@@ -2127,7 +2141,7 @@ void XdsClient::WatchRouteConfigData(
   auto resource =
       XdsApi::ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
   if (!resource.ok()) {
-    invalid_resource_watchers_.route_config_watchers[w] = std::move(watcher);
+    invalid_route_config_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Unable to parse resource name for route config %s",
                         route_config_name));
@@ -2180,6 +2194,12 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
         authority_state.channel_state.reset();
       }
     }
+  } else {
+    auto invalid_resource_watcher_it =
+        invalid_route_config_watchers_.find(watcher);
+    if (invalid_resource_watcher_it != invalid_route_config_watchers_.end()) {
+      invalid_route_config_watchers_.erase(invalid_resource_watcher_it);
+    }
   }
 }
 
@@ -2191,7 +2211,7 @@ void XdsClient::WatchClusterData(
   ClusterWatcherInterface* w = watcher.get();
   auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
   if (!resource.ok()) {
-    invalid_resource_watchers_.cluster_watchers[w] = std::move(watcher);
+    invalid_cluster_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
         "Unable to parse resource name for cluster %s", cluster_name));
     w->OnError(GRPC_ERROR_REF(error));
@@ -2238,6 +2258,11 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
         authority_state.channel_state.reset();
       }
     }
+  } else {
+    auto invalid_resource_watcher_it = invalid_cluster_watchers_.find(watcher);
+    if (invalid_resource_watcher_it != invalid_cluster_watchers_.end()) {
+      invalid_cluster_watchers_.erase(invalid_resource_watcher_it);
+    }
   }
 }
 
@@ -2250,7 +2275,7 @@ void XdsClient::WatchEndpointData(
   auto resource =
       XdsApi::ParseResourceName(eds_service_name, XdsApi::kEdsTypeUrl);
   if (!resource.ok()) {
-    invalid_resource_watchers_.endpoint_watchers[w] = std::move(watcher);
+    invalid_endpoint_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Unable to parse resource name for endpoint service %s",
                         eds_service_name));
@@ -2299,6 +2324,11 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
       if (!authority_state.HasSubscribedResources()) {
         authority_state.channel_state.reset();
       }
+    }
+  } else {
+    auto invalid_resource_watcher_it = invalid_endpoint_watchers_.find(watcher);
+    if (invalid_resource_watcher_it != invalid_endpoint_watchers_.end()) {
+      invalid_endpoint_watchers_.erase(invalid_resource_watcher_it);
     }
   }
 }
