@@ -717,20 +717,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().enable_load_reporting()) {
       default_cluster_.mutable_lrs_server()->mutable_self();
     }
-    // Construct a default server-side RDS resource for tests to use.
-    default_server_route_config_.set_name(kDefaultServerRouteConfigurationName);
-    virtual_host = default_server_route_config_.add_virtual_hosts();
-    virtual_host->add_domains("*");
-    route = virtual_host->add_routes();
-    route->mutable_match()->set_prefix("");
-    route->mutable_non_forwarding_action();
-    // Construct a simple HttpConnectionManager for tests to use.
-    *simple_server_http_connection_manager_.mutable_route_config() =
-        default_server_route_config_;
-    auto* filter = simple_server_http_connection_manager_.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
     // Start the load balancers.
     for (size_t i = 0; i < num_balancers_; ++i) {
       balancers_.emplace_back(new BalancerServerThread(
@@ -795,21 +781,38 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           new BackendServerThread(this, use_xds_enabled_server_));
       backends_.back()->Start();
     }
-    // Construct a default server-side Listener resource for backends_[0]
-    default_server_listener_.set_name(absl::StrCat(
-        "grpc/server?xds.resource.listening_address=",
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-    default_server_listener_.mutable_address()
-        ->mutable_socket_address()
-        ->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-    default_server_listener_.mutable_address()
-        ->mutable_socket_address()
-        ->set_port_value(backends_[0]->port());
-    default_server_listener_.mutable_default_filter_chain()
-        ->add_filters()
-        ->mutable_typed_config()
-        ->PackFrom(simple_server_http_connection_manager_);
-    balancers_[0]->ads_service()->SetLdsResource(default_server_listener_);
+    if (use_xds_enabled_server_) {
+      // Construct a default server-side RDS resource for tests to use.
+      default_server_route_config_.set_name(
+          kDefaultServerRouteConfigurationName);
+      virtual_host = default_server_route_config_.add_virtual_hosts();
+      virtual_host->add_domains("*");
+      route = virtual_host->add_routes();
+      route->mutable_match()->set_prefix("");
+      route->mutable_non_forwarding_action();
+      // Construct a simple HttpConnectionManager for tests to use.
+      *simple_server_http_connection_manager_.mutable_route_config() =
+          default_server_route_config_;
+      auto* filter = simple_server_http_connection_manager_.add_http_filters();
+      filter->set_name("router");
+      filter->mutable_typed_config()->PackFrom(
+          envoy::extensions::filters::http::router::v3::Router());
+      // Construct a default server-side Listener resource for backends_[0]
+      default_server_listener_.set_name(absl::StrCat(
+          "grpc/server?xds.resource.listening_address=",
+          ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+      default_server_listener_.mutable_address()
+          ->mutable_socket_address()
+          ->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+      default_server_listener_.mutable_address()
+          ->mutable_socket_address()
+          ->set_port_value(backends_[0]->port());
+      default_server_listener_.mutable_default_filter_chain()
+          ->add_filters()
+          ->mutable_typed_config()
+          ->PackFrom(simple_server_http_connection_manager_);
+      balancers_[0]->ads_service()->SetLdsResource(default_server_listener_);
+    }
     // Create channel and stub.
     ResetStub();
   }
