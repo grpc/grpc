@@ -498,6 +498,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/transport/binder/client/channel_create.cc",
         "src/core/ext/transport/binder/client/channel_create_impl.cc",
+        "src/core/ext/transport/binder/client/endpoint_binder_pool.cc",
         "src/core/ext/transport/binder/client/jni_utils.cc",
         "src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc",
         "src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc",
@@ -514,6 +515,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/binder/client/channel_create.h",
         "src/core/ext/transport/binder/client/channel_create_impl.h",
+        "src/core/ext/transport/binder/client/endpoint_binder_pool.h",
         "src/core/ext/transport/binder/client/jni_utils.h",
         "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h",
         "src/core/ext/transport/binder/security_policy/security_policy.h",
