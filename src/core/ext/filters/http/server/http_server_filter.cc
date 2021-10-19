@@ -193,17 +193,20 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                      GRPC_ERROR_STR_KEY, ":method"));
   }
 
-  auto te = b->Take(grpc_core::TeMetadata());
-  if (te == grpc_core::TeMetadata::kTrailers) {
-    // Do nothing, ok.
-  } else if (!te.has_value()) {
+  if (b->legacy_index()->named.te != nullptr) {
+    if (!grpc_mdelem_static_value_eq(b->legacy_index()->named.te->md,
+                                     GRPC_MDELEM_TE_TRAILERS)) {
+      hs_add_error(error_name, &error,
+                   grpc_attach_md_to_error(
+                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
+                       b->legacy_index()->named.te->md));
+    }
+    b->Remove(GRPC_BATCH_TE);
+  } else {
     hs_add_error(error_name, &error,
                  grpc_error_set_str(
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
                      GRPC_ERROR_STR_KEY, "te"));
-  } else {
-    hs_add_error(error_name, &error,
-                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad te header"));
   }
 
   if (b->legacy_index()->named.scheme != nullptr) {
