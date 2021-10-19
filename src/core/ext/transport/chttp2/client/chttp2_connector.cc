@@ -449,7 +449,8 @@ grpc_channel* grpc_channel_create_from_fd(grpc_channel_credentials* creds,
   GRPC_API_TRACE("grpc_channel_create_from_fd(target=%p, fd=%d, args=%p)", 3,
                  (target, fd, args));
   // For now, we only support insecure channel credentials.
-  if (creds == nullptr || creds->type() != GRPC_CREDENTIALS_TYPE_INSECURE) {
+  if (creds == nullptr ||
+      strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
     return grpc_lame_client_channel_create(
         target, GRPC_STATUS_INTERNAL,
         "Failed to create client channel due to invalid creds");

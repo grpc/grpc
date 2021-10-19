@@ -1024,7 +1024,9 @@ done:
 void grpc_server_add_channel_from_fd(grpc_server* server, void* reserved,
                                      int fd, grpc_server_credentials* creds) {
   GPR_ASSERT(reserved == nullptr);
-  if (creds == nullptr || creds->type() != GRPC_CREDENTIALS_TYPE_INSECURE) {
+  // For now, we only support insecure server credentials
+  if (creds == nullptr ||
+      strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
     gpr_log(GPR_ERROR, "Failed to create channel due to invalid creds");
     return;
   }
