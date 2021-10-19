@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		74EC3A952708149C005DF382 /* EventEngineTimerTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 74EC3A942708149C005DF382 /* EventEngineTimerTests.mm */; };
 		AE7618A265DF8B92E93BDFFC /* libPods-CoreTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CC79A999099057E7806F7A4E /* libPods-CoreTests.a */; };
+		D43C0FA9271BDDC20053EA61 /* timer_test.cc in Sources */ = {isa = PBXBuildFile; fileRef = D43C0FA8271BDDC20053EA61 /* timer_test.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,6 +18,7 @@
 		BC32E593C6B40EAC11EDD29E /* Pods-CoreTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CoreTests.release.xcconfig"; path = "Target Support Files/Pods-CoreTests/Pods-CoreTests.release.xcconfig"; sourceTree = "<group>"; };
 		CC2F5D65EA0FAB6B5347995A /* Pods-CoreTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CoreTests.debug.xcconfig"; path = "Target Support Files/Pods-CoreTests/Pods-CoreTests.debug.xcconfig"; sourceTree = "<group>"; };
 		CC79A999099057E7806F7A4E /* libPods-CoreTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-CoreTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D43C0FA8271BDDC20053EA61 /* timer_test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = timer_test.cc; path = ../../../../test/core/event_engine/test_suite/timer_test.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,6 +53,7 @@
 		74EC3A512708112C005DF382 = {
 			isa = PBXGroup;
 			children = (
+				D43C0FA8271BDDC20053EA61 /* timer_test.cc */,
 				74EC3A942708149C005DF382 /* EventEngineTimerTests.mm */,
 				74EC3A5B2708112C005DF382 /* Products */,
 				653269393ADB5A6623AFDD4C /* Pods */,
@@ -160,6 +163,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74EC3A952708149C005DF382 /* EventEngineTimerTests.mm in Sources */,
+				D43C0FA9271BDDC20053EA61 /* timer_test.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -289,11 +293,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/BoringSSL-GRPC\"",
-					"\"${PODS_ROOT}/Headers/Public/Libuv-gRPC\"",
-					"\"${PODS_ROOT}/Headers/Public/abseil\"",
-					"\"${PODS_ROOT}/Headers/Public/gRPC-Core\"",
+					"\"${PODS_ROOT}/Headers/Public/gRPC-Core/grpc/third_party/googletest/googletest/include\"",
+					"\"${PODS_ROOT}/Headers/Public/gRPC-Core/grpc/third_party/googletest/googlemock/include\"",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -319,11 +320,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"${PODS_ROOT}/Headers/Public\"",
-					"\"${PODS_ROOT}/Headers/Public/BoringSSL-GRPC\"",
-					"\"${PODS_ROOT}/Headers/Public/Libuv-gRPC\"",
-					"\"${PODS_ROOT}/Headers/Public/abseil\"",
-					"\"${PODS_ROOT}/Headers/Public/gRPC-Core\"",
+					"\"${PODS_ROOT}/Headers/Public/gRPC-Core/grpc/third_party/googletest/googletest/include\"",
+					"\"${PODS_ROOT}/Headers/Public/gRPC-Core/grpc/third_party/googletest/googlemock/include\"",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (

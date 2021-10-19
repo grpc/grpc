@@ -2249,6 +2249,17 @@ libs:
   - grpc_test_util_unsecure
   - grpc++_test_config
   defaults: benchmark
+- name: event_engine_test_suite
+  build: private
+  language: c++
+  public_headers: []
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  src:
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/timer_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc++
   build: all
   language: c++

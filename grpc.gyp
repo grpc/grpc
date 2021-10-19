@@ -1455,6 +1455,17 @@
       ],
     },
     {
+      'target_name': 'event_engine_test_suite',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc_test_util',
+      ],
+      'sources': [
+        'test/core/event_engine/test_suite/event_engine_test.cc',
+        'test/core/event_engine/test_suite/timer_test.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++',
       'type': 'static_library',
       'dependencies': [

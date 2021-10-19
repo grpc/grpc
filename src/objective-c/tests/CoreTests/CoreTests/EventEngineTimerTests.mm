@@ -25,6 +25,9 @@
 #include <grpc/grpc.h>
 #include <grpc/test/core/util/test_config.h>
 
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
+#include "test/core/event_engine/test_suite/event_engine_test.h"
+
 @interface EventEngineTimerTests : XCTestCase
 
 @end
@@ -33,6 +36,12 @@
 
 + (void)setUp {
   grpc_init();
+  testing::InitGoogleTest();
+
+  SetEventEngineFactory([]() {
+    return absl::make_unique<
+        grpc_event_engine::experimental::LibuvEventEngine>();
+  });
 }
 
 + (void)tearDown {
@@ -45,7 +54,9 @@
 - (void)tearDown {
 }
 
-- (void)testDummy {
+- (void)testAll {
+ auto gtest_result = RUN_ALL_TESTS();
+ XCTAssertEqual(gtest_result, 0);
 }
 
 @end

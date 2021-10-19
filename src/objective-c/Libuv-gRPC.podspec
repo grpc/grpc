@@ -66,7 +66,7 @@ Pod::Spec.new do |spec|
   name = 'uv'
   spec.module_name = name
   spec.header_mappings_dir = 'include'
-  spec.header_dir = name
+  spec.header_dir = ''
 
   spec.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include'

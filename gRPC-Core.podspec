@@ -76,7 +76,9 @@ Pod::Spec.new do |s|
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'\
         ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'\
-        ' "$(PODS_TARGET_SRCROOT)/third_party/**"',
+        ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'\
+        ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
     # If we don't set these two settings, `include/grpc/support/time.h` and
     # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
     # build.
@@ -2092,11 +2094,38 @@ Pod::Spec.new do |s|
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h'
   end
 
+  s.subspec 'GoogleTest' do |ss|
+    ss.header_mappings_dir = '.'
+    ss.xcconfig = {
+      'HEADER_SEARCH_PATHS' => '"$(inherited)"'\
+          ' "$(PODS_TARGET_SRCROOT)/third_party/googletest/googlemock/include"'\
+          ' "$(PODS_TARGET_SRCROOT)/third_party/googletest/googletest/include"',
+      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)/third_party/googletest/googletest"'
+    }
+    ss.source_files = 'third_party/googletest/googlemock/include/**/*.{h}',
+                      'third_party/googletest/googletest/include/**/*.{h}',
+                      'third_party/googletest/googlemock/src/gmock-cardinalities.cc',
+                      'third_party/googletest/googlemock/src/gmock-internal-utils.cc',
+                      'third_party/googletest/googlemock/src/gmock-matchers.cc',
+                      'third_party/googletest/googlemock/src/gmock-spec-builders.cc',
+                      'third_party/googletest/googlemock/src/gmock.cc',
+                      'third_party/googletest/googletest/src/gtest.cc',
+                      'third_party/googletest/googletest/src/gtest-death-test.cc',
+                      'third_party/googletest/googletest/src/gtest-filepath.cc',
+                      'third_party/googletest/googletest/src/gtest-matchers.cc',
+                      'third_party/googletest/googletest/src/src/gtest-internal-inl.h',
+                      'third_party/googletest/googletest/src/gtest-port.cc',
+                      'third_party/googletest/googletest/src/gtest-printers.cc',
+                      'third_party/googletest/googletest/src/gtest-test-part.cc',
+                      'third_party/googletest/googletest/src/gtest-typed-test.cc'
+  end
+
   s.subspec 'Tests' do |ss|
     ss.header_mappings_dir = '.'
 
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency "#{s.name}/GoogleTest", version
     ss.dependency 'abseil/debugging/failure_signal_handler', abseil_version
     ss.dependency 'abseil/debugging/stacktrace', abseil_version
     ss.dependency 'abseil/debugging/symbolize', abseil_version
@@ -2218,6 +2247,9 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/trailing_metadata.cc',
                       'test/core/end2end/tests/write_buffering.cc',
                       'test/core/end2end/tests/write_buffering_at_end.cc',
+                      'test/core/event_engine/test_suite/event_engine_test.cc',
+                      'test/core/event_engine/test_suite/event_engine_test.h',
+                      'test/core/event_engine/test_suite/timer_test.cc',
                       'test/core/util/cmdline.cc',
                       'test/core/util/cmdline.h',
                       'test/core/util/evaluate_args_test_util.h',

@@ -796,6 +796,13 @@ _BUILD_EXTRA_METADATA = {
         '_RENAME': 'end2end_nosec_tests'
     },
 
+    # event engine tests
+    'test/core/event_engine:event_engine_test_suite': {
+        'language': 'c++',
+        'build': 'private',
+        '_RENAME': 'event_engine_test_suite'
+    },
+
     # benchmark support libraries
     'test/cpp/microbenchmarks:helpers': {
         'language': 'c++',
