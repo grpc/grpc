@@ -254,7 +254,7 @@ END2END_TESTS = {
     "idempotent_request": _test_options(),
     "invoke_large_request": _test_options(exclude_1byte = True),
     "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
-    "large_metadata": _test_options(),
+    "large_metadata": _test_options(exclude_1byte = True),
     "max_concurrent_streams": _test_options(
         proxyable = False,
         exclude_inproc = True,
@@ -356,7 +356,7 @@ END2END_TESTS = {
         exclude_inproc = True,
         exclude_1byte = True,
     ),
-    "stream_compression_payload": _test_options(exclude_inproc = True),
+    "stream_compression_payload": _test_options(exclude_inproc = True, exclude_1byte = True),
     "stream_compression_ping_pong_streaming": _test_options(exclude_inproc = True),
     "trailing_metadata": _test_options(),
     "authority_not_supported": _test_options(),
