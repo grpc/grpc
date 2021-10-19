@@ -2311,7 +2311,7 @@ grpc_error_handle HttpConnectionManagerParse(
         XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
-  if (http_connection_manager->http_filters.size() == 0) {
+  if (http_connection_manager->http_filters.empty()) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Expected at least one HTTP filter");
   }
