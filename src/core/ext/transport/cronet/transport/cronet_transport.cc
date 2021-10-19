@@ -695,8 +695,10 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
 namespace {
 class CronetMetadataEncoder {
  public:
-  explicit CronetMetadataEncoder(bidirectional_stream_header** pp_headers, size_t* p_count, const char* host, size_t capacity,
-                                 const char** method, std::string* url)
+  explicit CronetMetadataEncoder(bidirectional_stream_header** pp_headers,
+                                 size_t* p_count, const char* host,
+                                 size_t capacity, const char** method,
+                                 std::string* url)
       : host_(host),
         capacity_(capacity),
         count_(*p_count),
@@ -705,7 +707,7 @@ class CronetMetadataEncoder {
         url_(url) {
     count_ = 0;
     headers_ = static_cast<bidirectional_stream_header*>(
-            gpr_malloc(sizeof(bidirectional_stream_header) * capacity_));
+        gpr_malloc(sizeof(bidirectional_stream_header) * capacity_));
   }
 
   ~CronetMetadataEncoder() { gpr_free(headers_); }
@@ -782,7 +784,8 @@ static void convert_metadata_to_cronet_headers(
     grpc_metadata_batch* metadata, const char* host, std::string* pp_url,
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
-  CronetMetadataEncoder encoder(pp_headers, p_num_headers, host, metadata->count(), method, pp_url);
+  CronetMetadataEncoder encoder(pp_headers, p_num_headers, host,
+                                metadata->count(), method, pp_url);
   metadata->Encode(&encoder);
 }
 
