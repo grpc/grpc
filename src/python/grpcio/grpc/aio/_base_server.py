@@ -19,8 +19,8 @@ from typing import Generic, Iterable, Mapping, Optional, Sequence
 import grpc
 
 from ._metadata import Metadata
-from ._typing import RequestType
 from ._typing import DoneCallbackType
+from ._typing import RequestType
 from ._typing import ResponseType
 
 
@@ -133,7 +133,7 @@ class Server(abc.ABC):
         """
 
 
-class ServicerContext(Generic[RequestType, ResponseType], RpcContext, abc.ABC):
+class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     """A context object passed to method implementations."""
 
     @abc.abstractmethod
@@ -345,4 +345,26 @@ class ServicerContext(Generic[RequestType, ResponseType], RpcContext, abc.ABC):
         Args:
           callback: A callable object will be called with the servicer context
             object as its only argument.
+        """
+
+    def cancelled(self) -> bool:
+        """Return True if the RPC is cancelled.
+
+        The RPC is cancelled when the cancellation was requested with cancel().
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          A bool indicates whether the RPC is cancelled or not.
+        """
+
+    def done(self) -> bool:
+        """Return True if the RPC is done.
+
+        An RPC is done if the RPC is completed, cancelled or aborted.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          A bool indicates if the RPC is done.
         """
