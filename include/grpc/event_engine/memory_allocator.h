@@ -16,6 +16,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <stdlib.h>  // for abort()
+
 #include <algorithm>
 #include <memory>
 #include <type_traits>
