@@ -313,7 +313,7 @@ void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
 void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
-  gpr_free(pending_request_);
+  delete pending_request_;
   pending_request_ = nullptr;
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
@@ -445,13 +445,7 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& uri) const override {
-    if (absl::StripPrefix(uri.path(), "/").empty()) {
-      gpr_log(GPR_ERROR, "no server name supplied in dns URI");
-      return false;
-    }
-    return true;
-  }
+  bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));

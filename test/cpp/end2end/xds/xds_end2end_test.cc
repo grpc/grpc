@@ -1324,18 +1324,47 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     });
   }
 
-  static Listener BuildListener(const RouteConfiguration& route_config) {
+  AdsServiceImpl::ResponseState RouteConfigurationResponseState(int idx) const {
+    AdsServiceImpl* ads_service = balancers_[idx]->ads_service();
+    if (GetParam().enable_rds_testing()) {
+      return ads_service->rds_response_state();
+    }
+    return ads_service->lds_response_state();
+  }
+
+  void SetListenerAndRouteConfiguration(
+      int idx, Listener listener, const RouteConfiguration& route_config) {
+    auto* api_listener =
+        listener.mutable_api_listener()->mutable_api_listener();
     HttpConnectionManager http_connection_manager;
-    *(http_connection_manager.mutable_route_config()) = route_config;
-    auto* filter = http_connection_manager.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
-    Listener listener;
-    listener.set_name(kServerName);
-    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-        http_connection_manager);
-    return listener;
+    api_listener->UnpackTo(&http_connection_manager);
+    if (GetParam().enable_rds_testing()) {
+      auto* rds = http_connection_manager.mutable_rds();
+      rds->set_route_config_name(kDefaultRouteConfigurationName);
+      rds->mutable_config_source()->mutable_ads();
+      balancers_[idx]->ads_service()->SetRdsResource(route_config);
+    } else {
+      *http_connection_manager.mutable_route_config() = route_config;
+    }
+    api_listener->PackFrom(http_connection_manager);
+    balancers_[idx]->ads_service()->SetLdsResource(listener);
+  }
+
+  void SetRouteConfiguration(int idx, const RouteConfiguration& route_config,
+                             const Listener* listener_to_copy = nullptr) {
+    if (GetParam().enable_rds_testing()) {
+      balancers_[idx]->ads_service()->SetRdsResource(route_config);
+    } else {
+      Listener listener(listener_to_copy == nullptr ? default_listener_
+                                                    : *listener_to_copy);
+      HttpConnectionManager http_connection_manager;
+      listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+          &http_connection_manager);
+      *(http_connection_manager.mutable_route_config()) = route_config;
+      listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+          http_connection_manager);
+      balancers_[idx]->ads_service()->SetLdsResource(listener);
+    }
   }
 
   struct EdsResourceArgs {
@@ -1441,41 +1470,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       }
     }
     return assignment;
-  }
-
-  void SetListenerAndRouteConfiguration(
-      int idx, Listener listener, const RouteConfiguration& route_config) {
-    auto* api_listener =
-        listener.mutable_api_listener()->mutable_api_listener();
-    HttpConnectionManager http_connection_manager;
-    api_listener->UnpackTo(&http_connection_manager);
-    if (GetParam().enable_rds_testing()) {
-      auto* rds = http_connection_manager.mutable_rds();
-      rds->set_route_config_name(kDefaultRouteConfigurationName);
-      rds->mutable_config_source()->mutable_ads();
-      balancers_[idx]->ads_service()->SetRdsResource(route_config);
-    } else {
-      *http_connection_manager.mutable_route_config() = route_config;
-    }
-    api_listener->PackFrom(http_connection_manager);
-    balancers_[idx]->ads_service()->SetLdsResource(listener);
-  }
-
-  void SetRouteConfiguration(int idx, const RouteConfiguration& route_config) {
-    if (GetParam().enable_rds_testing()) {
-      balancers_[idx]->ads_service()->SetRdsResource(route_config);
-    } else {
-      balancers_[idx]->ads_service()->SetLdsResource(
-          BuildListener(route_config));
-    }
-  }
-
-  AdsServiceImpl::ResponseState RouteConfigurationResponseState(int idx) const {
-    AdsServiceImpl* ads_service = balancers_[idx]->ads_service();
-    if (GetParam().enable_rds_testing()) {
-      return ads_service->rds_response_state();
-    }
-    return ads_service->lds_response_state();
   }
 
  public:

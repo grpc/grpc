@@ -34,7 +34,8 @@ namespace experimental {
 
 // This need be called before calling CreateBinderChannel, and the thread need
 // to be free before invoking CreateBinderChannel.
-// TODO(mingcl): Add more explanation on this after we determine the interfaces.
+// TODO(mingcl): This method will be removed after we start creating client
+// channel instead of direct channel
 void BindToOnDeviceServerService(void* jni_env_void, jobject application,
                                  absl::string_view /*package_name*/,
                                  absl::string_view /*class_name*/);
