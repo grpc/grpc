@@ -1,0 +1,27 @@
+FROM gradle:jdk11
+
+WORKDIR /workdir
+RUN mkdir /artifacts
+
+COPY . .
+RUN ./gradlew --no-daemon grpc-interop-testing:installDist -x test -PskipCodegen=true -PskipAndroid=true --console=plain
+RUN cp -r ./interop-testing/build/install/grpc-interop-testing/. /artifacts
+
+FROM openjdk:11.0.9.1-jdk
+WORKDIR /workdir
+COPY --from=0 /artifacts ./
+
+RUN echo $ \
+'handlers=java.util.logging.ConsoleHandler \
+java.util.logging.ConsoleHandler.level=FINEST \
+java.util.logging.ConsoleHandler.formatter=io.github.devatherock.json.formatter.JSONFormatter \
+io.github.devatherock.json.formatter.JSONFormatter.key_timestamp=time \
+io.github.devatherock.json.formatter.JSONFormatter.key_log_level=severity \
+io.github.devatherock.json.formatter.JSONFormatter.use_slf4j_level_names=true \
+io.grpc.ChannelLogger.level=FINEST \
+io.grpc.xds.level=FINEST \
+' \
+> logging-json.properties
+ENV JAVA_OPTS="-Djava.util.logging.config.file=logging-json.properties"
+
+ENTRYPOINT ["bin/xds-test-server"]

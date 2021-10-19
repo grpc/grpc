@@ -1,0 +1,20 @@
+# TODO(lidiz) make the SHA dynamic
+FROM grpctesting/ruby_buster_x64:4ac6657810b86d633d43df262f8cda816ea497ec
+
+SHELL ["/bin/bash", "-l", "-c"]
+WORKDIR /workdir
+
+COPY . .
+
+RUN (cd src/ruby && bundle && rake compile)
+
+# NOTE(lidiz) Every Docker command uses a new shell, but Ruby needs to load an
+# rvm script to run properly. This is better than putting /bin/bash with a bunch
+# of arguments as ENTRYPOINT.
+RUN echo -e 'source /etc/profile\nruby src/ruby/pb/test/xds_client.rb $@' > ruby_entrypoint.sh
+RUN chmod +x ruby_entrypoint.sh
+
+ENV GRPC_VERBOSITY="DEBUG"
+ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb"
+
+ENTRYPOINT [ "./ruby_entrypoint.sh" ]

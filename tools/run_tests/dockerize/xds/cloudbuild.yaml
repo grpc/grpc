@@ -1,0 +1,13 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '--tag=${_IMAGE_NAME}:${_BUILD_COMMIT}'
+    - '--tag=${_IMAGE_NAME}:${_VERSION}'
+    - '--file=Dockerfile.${_APPLICATION}'
+    - '.'
+options:
+  machineType: 'E2_HIGHCPU_8'
+images:
+  - '${_IMAGE_NAME}:${_BUILD_COMMIT}'
+  - '${_IMAGE_NAME}:${_VERSION}'

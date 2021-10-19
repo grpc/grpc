@@ -1,0 +1,19 @@
+# TODO(lidiz) make the SHA dynamic
+FROM grpctesting/php73_zts_stretch_x64:626e1799536ef55813b926aed74e1ca405786c72
+
+WORKDIR /workdir
+
+COPY . .
+
+RUN pear package
+RUN find . -name grpc-*.tgz | MAKEFLAGS="-j 8" xargs -I{} pecl install {}
+
+# Prepare generated PHP code.
+RUN CC=/usr/bin/gcc ./tools/bazel build @com_google_protobuf//:protoc
+RUN CC=/usr/bin/gcc ./tools/bazel build src/compiler:grpc_php_plugin
+RUN (cd src/php && composer install && ./bin/generate_proto_php.sh)
+
+ENV GRPC_VERBOSITY="DEBUG"
+ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb"
+
+ENTRYPOINT [ "php", "-d", "extension=grpc.so", "-d", "extension=pthreads.so", "src/php/tests/interop/xds_client.php" ]

@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+package(default_visibility = ["//visibility:public"])
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_update_xds_docker_images.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+exports_files([
+    "Dockerfile.xds_client",
+    "Dockerfile.xds_server",
+])
