@@ -337,8 +337,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
       bool send_all_clusters, const std::set<std::string>& clusters)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  RefCountedPtr<ChannelState> GetOrCreateChannelState(
-      const XdsBootstrap::XdsServer& server);
+  RefCountedPtr<ChannelState> GetOrCreateChannelStateLocked(
+      const XdsBootstrap::XdsServer& server) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
@@ -366,7 +366,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::map<std::string /*type*/, std::string /*version*/> resource_version_map_
       ABSL_GUARDED_BY(mu_);
 
-  InvalidResourceWatchers invalid_resource_watchers_;
+  InvalidResourceWatchers invalid_resource_watchers_ ABSL_GUARDED_BY(mu_);
 
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 };

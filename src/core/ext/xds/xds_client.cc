@@ -2024,7 +2024,7 @@ void XdsClient::Orphan() {
   }
   {
     // debug this
-    //  MutexLock lock(g_mu);
+    // MutexLock lock(g_mu);
     if (g_xds_client == this) g_xds_client = nullptr;
   }
   {
@@ -2046,8 +2046,8 @@ void XdsClient::Orphan() {
   }
 }
 
-RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelState(
-    const XdsBootstrap::XdsServer& server) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
+    const XdsBootstrap::XdsServer& server) {
   auto it = xds_server_channel_map_.find(server);
   if (it != xds_server_channel_map_.end()) {
     return it->second->Ref(DEBUG_LOCATION, "Authority");
@@ -2088,7 +2088,7 @@ void XdsClient::WatchListenerData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server());
+        GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
                                                  listener_name_str);
@@ -2151,7 +2151,7 @@ void XdsClient::WatchRouteConfigData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server());
+        GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
                                                  route_config_name_str);
@@ -2212,7 +2212,7 @@ void XdsClient::WatchClusterData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server());
+        GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
                                                  cluster_name_str);
@@ -2272,7 +2272,7 @@ void XdsClient::WatchEndpointData(
   // If the authority doesn't yet have a channel, set it, creating it if needed.
   if (authority_state.channel_state == nullptr) {
     authority_state.channel_state =
-        GetOrCreateChannelState(bootstrap_->server());
+        GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
                                                  eds_service_name_str);
