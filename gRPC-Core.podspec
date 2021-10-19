@@ -2129,6 +2129,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/debugging/failure_signal_handler', abseil_version
     ss.dependency 'abseil/debugging/stacktrace', abseil_version
     ss.dependency 'abseil/debugging/symbolize', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
 
     ss.source_files = 'src/core/lib/security/authorization/grpc_authorization_engine.cc',
                       'src/core/lib/security/authorization/grpc_authorization_engine.h',

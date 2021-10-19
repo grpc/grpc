@@ -1458,6 +1458,7 @@
       'target_name': 'event_engine_test_suite',
       'type': 'static_library',
       'dependencies': [
+        'absl/random:random',
         'grpc_test_util',
       ],
       'sources': [

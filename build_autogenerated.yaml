@@ -2259,6 +2259,7 @@ libs:
   - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
+  - absl/random:random
   - grpc_test_util
 - name: grpc++
   build: all
@@ -6609,15 +6610,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
+  headers: []
   src:
-  - test/core/event_engine/test_suite/event_engine_test.cc
   - test/core/event_engine/test_suite/libuv_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
   deps:
-  - absl/random:random
-  - grpc_test_util
+  - event_engine_test_suite
   uses_polling: false
 - name: linux_system_roots_test
   gtest: true

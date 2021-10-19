@@ -2808,6 +2808,7 @@ target_include_directories(event_engine_test_suite
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_LIBUV_INCLUDE_DIR}
     ${_gRPC_RE2_INCLUDE_DIR}
     ${_gRPC_SSL_INCLUDE_DIR}
     ${_gRPC_UPB_GENERATED_DIR}
@@ -2824,6 +2825,7 @@ target_include_directories(event_engine_test_suite
 target_link_libraries(event_engine_test_suite
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::random_random
   grpc_test_util
 )
 
@@ -12880,9 +12882,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(libuv_event_engine_test
-  test/core/event_engine/test_suite/event_engine_test.cc
   test/core/event_engine/test_suite/libuv_event_engine_test.cc
-  test/core/event_engine/test_suite/timer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -12911,8 +12911,7 @@ target_link_libraries(libuv_event_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_LIBUV_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::random_random
-  grpc_test_util
+  event_engine_test_suite
 )
 
 
