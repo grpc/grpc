@@ -88,6 +88,8 @@ buildConfigs() {
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
         -a ci_jobName="${KOKORO_JOB_NAME}" \
         -a ci_gitCommit="${GRPC_GITREF}" \
+        -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
+        -a ci_gitCommit_go="${GRPC_GO_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
