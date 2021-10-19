@@ -25,7 +25,6 @@
 #ifdef GPR_ANDROID
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
