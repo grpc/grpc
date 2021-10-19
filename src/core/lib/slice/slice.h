@@ -146,4 +146,4 @@ using ExternalSlice =
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_SLICE_SLICE_H
