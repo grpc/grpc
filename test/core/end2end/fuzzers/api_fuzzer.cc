@@ -900,6 +900,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       case api_fuzzer::Action::kCreateCall: {
         bool ok = true;
         if (g_channel == nullptr) ok = false;
+        // If the active call is a server call, then use it as the parent call
+        // to exercise the propagation logic.
         Call* parent_call = ActiveCall();
         if (parent_call != nullptr && parent_call->type() != CallType::SERVER) {
           parent_call = nullptr;
