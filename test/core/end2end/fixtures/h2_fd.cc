@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
