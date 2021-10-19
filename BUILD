@@ -19,6 +19,7 @@ load(
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
+    "grpc_upb_proto_reflection_library",
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
@@ -810,6 +811,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
+        "protobuf_any_upb",
         "useful",
     ],
 )
@@ -2310,6 +2312,8 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_transport_chttp2_client_insecure",
         "orphanable",
+        "protobuf_duration_upb",
+        "protobuf_timestamp_upb",
         "ref_counted_ptr",
         "slice",
     ],
@@ -2352,6 +2356,8 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "orphanable",
+        "protobuf_duration_upb",
+        "protobuf_timestamp_upb",
         "ref_counted_ptr",
         "slice",
     ],
@@ -2421,6 +2427,11 @@ grpc_cc_library(
         "json",
         "json_util",
         "orphanable",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_struct_upb",
+        "protobuf_timestamp_upb",
+        "protobuf_wrappers_upb",
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
@@ -4195,6 +4206,11 @@ grpc_cc_library(
         "envoy_type_upb",
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_struct_upb",
+        "protobuf_timestamp_upb",
+        "protobuf_wrappers_upb",
         "udpa_annotations_upb",
         "xds_core_upb",
     ],
@@ -4398,6 +4414,11 @@ grpc_cc_library(
         "envoy_type_upb",
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_empty_upb",
+        "protobuf_struct_upb",
+        "protobuf_wrappers_upb",
         "udpa_annotations_upb",
         "xds_annotations_upb",
         "xds_core_upb",
@@ -4498,6 +4519,7 @@ grpc_cc_library(
         "envoy_annotations_upb",
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_wrappers_upb",
         "udpa_annotations_upb",
     ],
 )
@@ -4567,6 +4589,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "google_api_upb",
+        "protobuf_duration_upb",
+        "protobuf_timestamp_upb",
     ],
 )
 
@@ -4739,6 +4763,7 @@ grpc_cc_library(
     deps = [
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_any_upb",
         "udpa_annotations_upb",
         "xds_annotations_upb",
     ],
@@ -4796,6 +4821,7 @@ grpc_cc_library(
     deps = [
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_struct_upb",
     ],
 )
 
@@ -4821,27 +4847,29 @@ grpc_cc_library(
     ],
 )
 
-# Once upb code-gen issue is resolved, replace grpc_health_upb with this.
-# grpc_upb_proto_library(
-#     name = "grpc_health_upb",
-#     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
-# )
-
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "grpc_health_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
+
+WELL_KNOWN_PROTO_TARGETS = [
+    "any",
+    "duration",
+    "empty",
+    "struct",
+    "timestamp",
+    "wrappers",
+]
+
+[grpc_upb_proto_library(
+    name = "protobuf_" + target + "_upb",
+    deps = ["@com_google_protobuf//:" + target + "_proto"],
+) for target in WELL_KNOWN_PROTO_TARGETS]
+
+[grpc_upb_proto_reflection_library(
+    name = "protobuf_" + target + "_upbdefs",
+    deps = ["@com_google_protobuf//:" + target + "_proto"],
+) for target in WELL_KNOWN_PROTO_TARGETS]
 
 # Once upb code-gen issue is resolved, remove this.
 grpc_cc_library(
@@ -4851,12 +4879,6 @@ grpc_cc_library(
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c",
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c",
         "src/core/ext/upb-generated/google/api/http.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
         "src/core/ext/upb-generated/google/rpc/status.upb.c",
     ],
     hdrs = [
@@ -4864,12 +4886,6 @@ grpc_cc_library(
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h",
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h",
         "src/core/ext/upb-generated/google/api/http.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
         "src/core/ext/upb-generated/google/rpc/status.upb.h",
     ],
     external_deps = [
@@ -4878,6 +4894,14 @@ grpc_cc_library(
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
     language = "c++",
+    deps = [
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_empty_upb",
+        "protobuf_struct_upb",
+        "protobuf_timestamp_upb",
+        "protobuf_wrappers_upb",
+    ],
 )
 
 grpc_cc_library(
@@ -4885,23 +4909,11 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c",
     ],
     hdrs = [
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h",
     ],
     external_deps = [
@@ -4913,33 +4925,18 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
+        "protobuf_any_upbdefs",
+        "protobuf_duration_upbdefs",
+        "protobuf_empty_upbdefs",
+        "protobuf_struct_upbdefs",
+        "protobuf_timestamp_upbdefs",
+        "protobuf_wrappers_upbdefs",
     ],
 )
 
-# Once upb code-gen issue is resolved, replace grpc_lb_upb with this.
-# grpc_upb_proto_library(
-#     name = "grpc_lb_upb",
-#     deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
-# )
-
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "google_api_upb",
-    ],
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
 )
 
 # Once upb code-gen issue is resolved, replace meshca_upb with this.
@@ -4962,33 +4959,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "google_api_upb",
+        "protobuf_duration_upb",
     ],
 )
 
-# Once upb code-gen issue is resolved, replace alts_upb with this.
-# grpc_upb_proto_library(
-#     name = "alts_upb",
-#     deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
-# )
-
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "alts_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
+    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
 )
 
 grpc_cc_library(
