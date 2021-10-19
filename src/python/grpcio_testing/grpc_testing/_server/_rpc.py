@@ -76,6 +76,9 @@ class Rpc(object):
 
     def _abort(self, code, details):
         self._terminate(_common.FUSSED_EMPTY_METADATA, code, details)
+    
+    def _abort_with_status(self, status):
+        self._terminate(status.trailing_metadata, status.code, status.details)
 
     def add_rpc_error(self, rpc_error):
         with self._condition:

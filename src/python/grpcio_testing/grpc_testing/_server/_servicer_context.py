@@ -79,7 +79,9 @@ class ServicerContext(grpc.ServicerContext):
         raise Exception()
 
     def abort_with_status(self, status):
-        raise NotImplementedError()
+        with self._rpc._condition:
+            self._rpc._abort_with_status(status)
+        raise Exception()
 
     def set_code(self, code):
         self._rpc.set_code(code)
