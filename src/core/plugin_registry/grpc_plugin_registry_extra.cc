@@ -23,6 +23,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/builtins.h"
 
+#ifndef GRPC_NO_XDS
 namespace grpc_core {
 void XdsClientGlobalInit();
 void XdsClientGlobalShutdown();
@@ -47,8 +48,10 @@ namespace grpc_core {
 void GoogleCloud2ProdResolverInit();
 void GoogleCloud2ProdResolverShutdown();
 }  // namespace grpc_core
+#endif
 
 void grpc_register_extra_plugins() {
+#ifndef GRPC_NO_XDS
   grpc_register_plugin(grpc_core::XdsClientGlobalInit,
                        grpc_core::XdsClientGlobalShutdown);
   grpc_register_plugin(grpc_certificate_provider_registry_init,
@@ -65,4 +68,5 @@ void grpc_register_extra_plugins() {
   grpc_register_plugin(grpc_resolver_xds_init, grpc_resolver_xds_shutdown);
   grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
                        grpc_core::GoogleCloud2ProdResolverShutdown);
+#endif
 }
