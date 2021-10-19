@@ -17462,6 +17462,7 @@ install(FILES
 install(FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findc-ares.cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findre2.cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Finduv.cmake
   DESTINATION ${gRPC_INSTALL_CMAKEDIR}/modules
 )
 

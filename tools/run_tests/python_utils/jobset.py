@@ -262,6 +262,7 @@ class Job(object):
         self._quiet_success = quiet_success
         if not self._quiet_success:
             message('START', spec.shortname, do_newline=self._travis)
+        message('FLAKE', repr(spec.cmdline), do_newline=False) # DO NOT SUBMIT
         self.result = JobResult()
         self.start()
 

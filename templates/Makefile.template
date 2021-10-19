@@ -57,7 +57,7 @@
     # Currently it is necessary because some dependencies are marked as "build: private" in build.yaml
     # (which itself is correct, as they are not "public" libraries from our perspective and cmake
     # needs to have them marked as such)
-    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['ares', 'boringssl', 'libuv', 're2', 'upb', 'z']]
+    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['ares', 'boringssl', 're2', 'upb', 'uv', 'z']]
     filtered_targets = [tgt for tgt in targets if tgt.build in ['all'] and lib.language != 'c++']
   %>
 
@@ -285,12 +285,12 @@
   endif
 
   ifeq ($(SYSTEM),Linux)
-  LIBS = dl rt m pthread iphlpapi userenv
+  LIBS = dl rt m pthread
   LDFLAGS += -pthread
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m pthread ws2_32 dbghelp psapi
+  LIBS = m pthread ws2_32 dbghelp psapi iphlpapi userenv
   LDFLAGS += -pthread
   endif
 
@@ -470,6 +470,7 @@
   LIBUV_DEP = $(LIBDIR)/$(CONFIG)/libuv.a
   LIBUV_MERGE_OBJS = $(LIBUV_OBJS)
   LIBUV_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libuv.a
+  CPPFLAGS := -Ithird_party/libuv/src -Ithird_party/libuv/include $(CPPFLAGS)
 
   # Setup boringssl dependency
 
@@ -942,7 +943,7 @@
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
-   $(LIBUV_OBJS) \
+   $(LIBUV_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
   % if 'libssl' in lib.get('deps', []):
@@ -960,7 +961,7 @@
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
-   $(LIBUV_OBJS) \
+   $(LIBUV_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
   % if 'libssl' in lib.get('deps', []):
