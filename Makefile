@@ -419,7 +419,7 @@ endif
 endif
 
 ifeq ($(SYSTEM),Linux)
-LIBS = dl rt m pthread
+LIBS = dl rt m pthread iphlpapi userenv
 LDFLAGS += -pthread
 endif
 
