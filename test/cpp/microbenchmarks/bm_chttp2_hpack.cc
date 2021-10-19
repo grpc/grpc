@@ -111,9 +111,14 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
+  std::vector<grpc_mdelem> elems = Fixture::GetElems();
+  std::vector<grpc_linked_mdelem> storage(elems.size());
   auto arena = grpc_core::MakeScopedArena(1024);
   grpc_metadata_batch b(arena.get());
-  Fixture::Prepare(&b);
+  for (size_t i = 0; i < elems.size(); i++) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
+  }
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
@@ -160,28 +165,24 @@ namespace hpack_encoder_fixtures {
 class EmptyBatch {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch*) {}
+  static std::vector<grpc_mdelem> GetElems() { return {}; }
 };
 
 class SingleStaticElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE)));
+  static std::vector<grpc_mdelem> GetElems() {
+    return {GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE};
   }
 };
 
 class SingleInternedElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            grpc_slice_intern(grpc_slice_from_static_string("abc")),
-            grpc_slice_intern(grpc_slice_from_static_string("def"))))));
+  static std::vector<grpc_mdelem> GetElems() {
+    return {grpc_mdelem_from_slices(
+        grpc_slice_intern(grpc_slice_from_static_string("abc")),
+        grpc_slice_intern(grpc_slice_from_static_string("def")))};
   }
 };
 
@@ -189,14 +190,13 @@ template <int kLength, bool kTrueBinary>
 class SingleInternedBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = kTrueBinary;
-  static void Prepare(grpc_metadata_batch* b) {
+  static std::vector<grpc_mdelem> GetElems() {
     grpc_slice bytes = MakeBytes();
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            grpc_slice_intern(grpc_slice_from_static_string("abc-bin")),
-            grpc_slice_intern(bytes)))));
+    std::vector<grpc_mdelem> out = {grpc_mdelem_from_slices(
+        grpc_slice_intern(grpc_slice_from_static_string("abc-bin")),
+        grpc_slice_intern(bytes))};
     grpc_slice_unref(bytes);
+    return out;
   }
 
  private:
@@ -213,22 +213,19 @@ class SingleInternedBinaryElem {
 class SingleInternedKeyElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     grpc_slice_intern(grpc_slice_from_static_string("abc")),
-                     grpc_slice_from_static_string("def")))));
+  static std::vector<grpc_mdelem> GetElems() {
+    return {grpc_mdelem_from_slices(
+        grpc_slice_intern(grpc_slice_from_static_string("abc")),
+        grpc_slice_from_static_string("def"))};
   }
 };
 
 class SingleNonInternedElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("addmd", b->Append(grpc_mdelem_from_slices(
-                                       grpc_slice_from_static_string("abc"),
-                                       grpc_slice_from_static_string("def")))));
+  static std::vector<grpc_mdelem> GetElems() {
+    return {grpc_mdelem_from_slices(grpc_slice_from_static_string("abc"),
+                                    grpc_slice_from_static_string("def"))};
   }
 };
 
@@ -236,10 +233,9 @@ template <int kLength, bool kTrueBinary>
 class SingleNonInternedBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = kTrueBinary;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     grpc_slice_from_static_string("abc-bin"), MakeBytes()))));
+  static std::vector<grpc_mdelem> GetElems() {
+    return {grpc_mdelem_from_slices(grpc_slice_from_static_string("abc-bin"),
+                                    MakeBytes())};
   }
 
  private:
@@ -256,31 +252,23 @@ class SingleNonInternedBinaryElem {
 class RepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
+  static std::vector<grpc_mdelem> GetElems() {
+    return {
+        GRPC_MDELEM_SCHEME_HTTP,
+        GRPC_MDELEM_METHOD_POST,
+        grpc_mdelem_from_slices(
             GRPC_MDSTR_PATH,
-            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
-    b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))),
+        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
+                                grpc_slice_intern(grpc_slice_from_static_string(
+                                    "foo.test.google.fr:1234"))),
+        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
+        GRPC_MDELEM_TE_TRAILERS,
+        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
+        grpc_mdelem_from_slices(
+            GRPC_MDSTR_USER_AGENT,
+            grpc_slice_intern(grpc_slice_from_static_string(
+                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
   }
 };
 
@@ -290,22 +278,17 @@ class RepresentativeClientInitialMetadata {
 class MoreRepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH, grpc_slice_intern(grpc_slice_from_static_string(
-                                 "/grpc.test.FooService/BarMethod"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
+  static std::vector<grpc_mdelem> GetElems() {
+    return {
+        GRPC_MDELEM_SCHEME_HTTP,
+        GRPC_MDELEM_METHOD_POST,
+        grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
+                                grpc_slice_intern(grpc_slice_from_static_string(
+                                    "/grpc.test.FooService/BarMethod"))),
+        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
+                                grpc_slice_intern(grpc_slice_from_static_string(
+                                    "foo.test.google.fr:1234"))),
+        grpc_mdelem_from_slices(
             GRPC_MDSTR_GRPC_TRACE_BIN,
             grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
                                           "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
@@ -313,49 +296,37 @@ class MoreRepresentativeClientInitialMetadata {
                                           "\x19\x1a\x1b\x1c\x1d\x1e\x1f"
                                           "\x20\x21\x22\x23\x24\x25\x26\x27\x28"
                                           "\x29\x2a\x2b\x2c\x2d\x2e\x2f"
-                                          "\x30")))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
+                                          "\x30")),
+        grpc_mdelem_from_slices(
             GRPC_MDSTR_GRPC_TAGS_BIN,
             grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
                                           "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                                          "\x10\x11\x12\x13")))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
-    b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+                                          "\x10\x11\x12\x13")),
+        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
+        GRPC_MDELEM_TE_TRAILERS,
+        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
+        grpc_mdelem_from_slices(
+            GRPC_MDSTR_USER_AGENT,
+            grpc_slice_intern(grpc_slice_from_static_string(
+                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
   }
 };
 
 class RepresentativeServerInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_STATUS_200)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+  static std::vector<grpc_mdelem> GetElems() {
+    return {GRPC_MDELEM_STATUS_200,
+            GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
+            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP};
   }
 };
 
 class RepresentativeServerTrailingMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_GRPC_STATUS_0)));
+  static std::vector<grpc_mdelem> GetElems() {
+    return {GRPC_MDELEM_GRPC_STATUS_0};
   }
 };
 
