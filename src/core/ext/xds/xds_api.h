@@ -42,17 +42,6 @@
 
 namespace grpc_core {
 
-struct ResourceNameFields {
-  std::string authority;
-  std::string id;
-};
-
-// A helper method to parse the resource name and return back an <authority,
-// id> pair.  Optionally the parser can check the resource type portion of the
-// resource name.
-absl::StatusOr<ResourceNameFields> ParseResourceName(
-    absl::string_view name, absl::string_view expected_resource_type = "");
-
 class XdsClient;
 
 class XdsApi {
@@ -648,8 +637,19 @@ class XdsApi {
     std::set<std::string> resource_names_failed;
   };
 
+  struct ResourceName {
+    std::string authority;
+    std::string id;
+  };
+
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          const CertificateProviderStore::PluginDefinitionMap* map);
+
+  // A helper method to parse the resource name and return back an <authority,
+  // id> pair.  Optionally the parser can check the resource type portion of the
+  // resource name.
+  static absl::StatusOr<ResourceName> ParseResourceName(
+      absl::string_view name, absl::string_view expected_resource_type = "");
 
   // Creates an ADS request.
   // Takes ownership of \a error.
