@@ -13,8 +13,8 @@
 # limitations under the License.
 """Secure client-server interoperability as a unit test."""
 
-import unittest
 import sys
+import unittest
 
 import grpc
 

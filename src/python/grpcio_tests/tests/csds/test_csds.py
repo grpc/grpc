@@ -16,9 +16,9 @@
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
+import sys
 import time
 import unittest
-import sys
 
 from google.protobuf import json_format
 import grpc

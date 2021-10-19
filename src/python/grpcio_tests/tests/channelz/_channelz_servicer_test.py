@@ -14,8 +14,8 @@
 """Tests of grpc_channelz.v1.channelz."""
 
 from concurrent import futures
-import unittest
 import sys
+import unittest
 
 import grpc
 from grpc_channelz.v1 import channelz

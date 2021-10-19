@@ -13,8 +13,8 @@
 # limitations under the License.
 """Tests of grpc_reflection.v1alpha.reflection."""
 
-import unittest
 import sys
+import unittest
 
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool

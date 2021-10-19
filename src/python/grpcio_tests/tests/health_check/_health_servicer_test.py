@@ -14,10 +14,10 @@
 """Tests of grpc_health.v1.health."""
 
 import logging
+import sys
 import threading
 import time
 import unittest
-import sys
 
 import grpc
 from grpc_health.v1 import health
