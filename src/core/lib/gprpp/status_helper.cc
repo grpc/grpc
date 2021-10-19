@@ -331,7 +331,7 @@ std::string StatusToString(const absl::Status& status) {
 
 namespace internal {
 
-google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) {
+google_rpc_Status* StatusToProto(const absl::Status& status, upb_arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
   google_rpc_Status_set_message(

@@ -178,8 +178,7 @@ static void handle_response_done(alts_grpc_handshaker_client* client,
                                  const unsigned char* bytes_to_send,
                                  size_t bytes_to_send_size,
                                  tsi_handshaker_result* result) {
-  recv_message_result* p =
-      static_cast<recv_message_result*>(gpr_zalloc(sizeof(*p)));
+  recv_message_result* p = grpc_core::Zalloc<recv_message_result>();
   p->status = status;
   p->bytes_to_send = bytes_to_send;
   p->bytes_to_send_size = bytes_to_send_size;

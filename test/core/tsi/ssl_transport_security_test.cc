@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security.h"
@@ -451,14 +452,12 @@ static char* load_file(const char* dir_path, const char* file_name) {
 }
 
 static tsi_test_fixture* ssl_tsi_test_fixture_create() {
-  ssl_tsi_test_fixture* ssl_fixture =
-      static_cast<ssl_tsi_test_fixture*>(gpr_zalloc(sizeof(*ssl_fixture)));
+  ssl_tsi_test_fixture* ssl_fixture = grpc_core::Zalloc<ssl_tsi_test_fixture>();
   tsi_test_fixture_init(&ssl_fixture->base);
   ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
   /* Create ssl_key_cert_lib. */
-  ssl_key_cert_lib* key_cert_lib =
-      static_cast<ssl_key_cert_lib*>(gpr_zalloc(sizeof(*key_cert_lib)));
+  ssl_key_cert_lib* key_cert_lib = grpc_core::Zalloc<ssl_key_cert_lib>();
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
   key_cert_lib->use_root_store = false;
@@ -500,8 +499,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   GPR_ASSERT(key_cert_lib->root_store != nullptr);
   ssl_fixture->key_cert_lib = key_cert_lib;
   /* Create ssl_alpn_lib. */
-  ssl_alpn_lib* alpn_lib =
-      static_cast<ssl_alpn_lib*>(gpr_zalloc(sizeof(*alpn_lib)));
+  ssl_alpn_lib* alpn_lib = grpc_core::Zalloc<ssl_alpn_lib>();
   alpn_lib->server_alpn_protocols = static_cast<const char**>(
       gpr_zalloc(sizeof(char*) * SSL_TSI_TEST_ALPN_NUM));
   alpn_lib->client_alpn_protocols = static_cast<const char**>(
