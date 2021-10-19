@@ -695,14 +695,18 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
 namespace {
 class CronetMetadataEncoder {
  public:
-  explicit CronetMetadataEncoder(const char* host, size_t capacity,
+  explicit CronetMetadataEncoder(bidirectional_stream_header** pp_headers, size_t* p_count, const char* host, size_t capacity,
                                  const char** method, std::string* url)
       : host_(host),
         capacity_(capacity),
-        headers_(static_cast<bidirectional_stream_header*>(
-            gpr_malloc(sizeof(bidirectional_stream_header) * capacity_))),
+        count_(*p_count),
+        headers_(*pp_headers),
         method_(method),
-        url_(url) {}
+        url_(url) {
+    count_ = 0;
+    headers_ = static_cast<bidirectional_stream_header*>(
+            gpr_malloc(sizeof(bidirectional_stream_header) * capacity_));
+  }
 
   ~CronetMetadataEncoder() { gpr_free(headers_); }
 
@@ -758,22 +762,14 @@ class CronetMetadataEncoder {
     GPR_ASSERT(count_ < capacity_);
     headers_[count_].key = key;
     headers_[count_].value = value;
-    count_++;
-  }
-
-  void Take(bidirectional_stream_header** headers, size_t* count) {
-    *headers = headers_;
-    *count = count_;
-    headers_ = nullptr;
-    capacity_ = 0;
-    count_ = 0;
+    ++count_;
   }
 
  private:
   const char* host_;
   size_t capacity_;
-  size_t count_ = 0;
-  bidirectional_stream_header* headers_;
+  size_t& count_;
+  bidirectional_stream_header*& headers_;
   const char** method_;
   std::string* url_;
 };
@@ -786,9 +782,8 @@ static void convert_metadata_to_cronet_headers(
     grpc_metadata_batch* metadata, const char* host, std::string* pp_url,
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
-  CronetMetadataEncoder encoder(host, metadata->count(), method, pp_url);
+  CronetMetadataEncoder encoder(pp_headers, p_num_headers, host, metadata->count(), method, pp_url);
   metadata->Encode(&encoder);
-  encoder.Take(pp_headers, p_num_headers);
 }
 
 static void parse_grpc_header(const uint8_t* data, int* length,

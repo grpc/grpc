@@ -59,7 +59,7 @@ class CopySink {
     }
     // Error unused in non-debug builds.
     grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
-    // The only way that grpc_metadata_batch_add_tail() can fail is if
+    // The only way that Append() can fail is if
     // there's a duplicate entry for a callout.  However, that can't be
     // the case here, because we would not have been allowed to create
     // a source batch that had that kind of conflict.

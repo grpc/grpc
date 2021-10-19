@@ -419,6 +419,7 @@ class RetryFilter::CallData {
 
     // BatchData.batch.payload points to this.
     grpc_transport_stream_op_batch_payload batch_payload_;
+    // For send_initial_metadata.
     grpc_linked_mdelem retry_attempts_metadata_;
     grpc_metadata_batch send_initial_metadata_{calld_->arena_};
     // For send_message.
