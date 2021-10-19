@@ -184,7 +184,10 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       },
       // debug_string
       [](intptr_t value) {
-        return absl::StrCat(Which::key(), ": ", Which::DisplayValue(value));
+        return absl::StrCat(
+            Which::key(), ": ",
+            Which::DisplayValue(
+                static_cast<typename Which::MementoType>(value)));
       }};
   return &vtable;
 }
