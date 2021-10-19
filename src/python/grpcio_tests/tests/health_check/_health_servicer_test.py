@@ -17,6 +17,7 @@ import logging
 import threading
 import time
 import unittest
+import sys
 
 import grpc
 from grpc_health.v1 import health
@@ -41,6 +42,8 @@ def _consume_responses(response_iterator, response_queue):
 
 class BaseWatchTests(object):
 
+    @unittest.skipIf(sys.version_info[0] < 3,
+                     'ProtoBuf descriptor has moved on from Python2')
     class WatchTests(unittest.TestCase):
 
         def start_server(self, non_blocking=False, thread_pool=None):
@@ -228,6 +231,8 @@ class BaseWatchTests(object):
             self.assertTrue(response_queue.empty())
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class HealthServicerTest(BaseWatchTests.WatchTests):
 
     def setUp(self):
@@ -268,6 +273,8 @@ class HealthServicerTest(BaseWatchTests.WatchTests):
         self.assertEqual(health.SERVICE_NAME, 'grpc.health.v1.Health')
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class HealthServicerBackwardsCompatibleWatchTest(BaseWatchTests.WatchTests):
 
     def setUp(self):

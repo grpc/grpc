@@ -15,6 +15,7 @@
 
 from concurrent import futures
 import unittest
+import sys
 
 import grpc
 from grpc_channelz.v1 import channelz
@@ -90,6 +91,8 @@ def _close_channel_server_pairs(pairs):
         pair.channel.close()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class ChannelzServicerTest(unittest.TestCase):
 
     def _send_successful_unary_unary(self, idx):

@@ -18,6 +18,7 @@ import logging
 import os
 import time
 import unittest
+import sys
 
 from google.protobuf import json_format
 import grpc
@@ -61,6 +62,8 @@ _DUMMY_BOOTSTRAP_FILE = """
 """
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class TestCsds(unittest.TestCase):
 
     def setUp(self):
@@ -120,6 +123,8 @@ class TestCsds(unittest.TestCase):
         dummy_channel.close()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class TestCsdsStream(TestCsds):
 
     def get_xds_config_dump(self):
