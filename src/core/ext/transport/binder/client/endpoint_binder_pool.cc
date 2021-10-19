@@ -28,7 +28,7 @@ extern "C" {
 // Adds endpoint binder to binder pool when Java notify us that the endpoint
 // binder is ready. This is called from GrpcBinderConnection.java
 JNIEXPORT void JNICALL
-Java_io_grpc_binder_cpp_GrpcBinderConnection_NotifyConnected__Ljava_lang_String_2Landroid_os_IBinder_2(
+Java_io_grpc_binder_cpp_GrpcBinderConnection_notifyConnected__Ljava_lang_String_2Landroid_os_IBinder_2(
     JNIEnv* jni_env, jobject, jstring conn_id_jstring, jobject ibinder) {
   jboolean isCopy;
   const char* conn_id = jni_env->GetStringUTFChars(conn_id_jstring, &isCopy);

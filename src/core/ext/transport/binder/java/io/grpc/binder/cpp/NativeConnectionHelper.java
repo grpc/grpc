@@ -25,12 +25,12 @@ import java.util.Map;
  */
 final class NativeConnectionHelper {
   // Maps connection id to GrpcBinderConnection instances
-  static Map<String, GrpcBinderConnection> s = new HashMap<String, GrpcBinderConnection>();
+  static Map<String, GrpcBinderConnection> s = new HashMap<>();
 
-  static void tryEstablishConnection(Context context, String pkg, String cls, String conn_id) {
-    // TODO(mingcl): Assert that conn_id is unique
-    s.put(conn_id, new GrpcBinderConnection(context, conn_id));
-    s.get(conn_id).tryConnect(pkg, cls);
+  static void tryEstablishConnection(Context context, String pkg, String cls, String connId) {
+    // TODO(mingcl): Assert that connId is unique
+    s.put(connId, new GrpcBinderConnection(context, connId));
+    s.get(connId).tryConnect(pkg, cls);
   }
 
   static Parcel getEmptyParcel() {

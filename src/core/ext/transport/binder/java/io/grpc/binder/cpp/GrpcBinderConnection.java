@@ -23,17 +23,17 @@ import android.util.Log;
 
 /* Handles the binder connection state with OnDeviceServer server */
 public class GrpcBinderConnection implements ServiceConnection {
-  private final String logTag = "GrpcBinderConnection";
+  private static final String logTag = "GrpcBinderConnection";
 
   private Context mContext;
   private IBinder mService;
 
   // A string that identifies this service connection
-  private String mConnId;
+  private final String mConnId;
 
-  public GrpcBinderConnection(Context context, String conn_id) {
+  public GrpcBinderConnection(Context context, String connId) {
     mContext = context;
-    mConnId = conn_id;
+    mConnId = connId;
   }
 
   @Override
@@ -52,7 +52,7 @@ public class GrpcBinderConnection implements ServiceConnection {
     synchronized (this) {
       mService = service;
     }
-    NotifyConnected(mConnId, mService);
+    notifyConnected(mConnId, mService);
   }
 
   @Override
@@ -81,5 +81,5 @@ public class GrpcBinderConnection implements ServiceConnection {
   }
 
   // Calls a function defined in endpoint_binder_pool.cc
-  private static native void NotifyConnected(String conn_id, IBinder service);
+  private static native void notifyConnected(String connId, IBinder service);
 }
