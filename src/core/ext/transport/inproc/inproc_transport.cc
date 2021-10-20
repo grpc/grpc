@@ -57,9 +57,10 @@ void maybe_process_ops_locked(inproc_stream* s, grpc_error_handle error);
 void op_state_machine_locked(inproc_stream* s, grpc_error_handle error);
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial);
-void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
-                      uint32_t flags, grpc_metadata_batch* out_md,
-                      uint32_t* outflags, bool* markfilled);
+grpc_error_handle fill_in_metadata(inproc_stream* s,
+                                   const grpc_metadata_batch* metadata,
+                                   uint32_t flags, grpc_metadata_batch* out_md,
+                                   uint32_t* outflags, bool* markfilled);
 
 struct shared_mu {
   shared_mu() {
@@ -289,9 +290,10 @@ void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
   });
 }
 
-void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
-                      uint32_t flags, grpc_metadata_batch* out_md,
-                      uint32_t* outflags, bool* markfilled) {
+grpc_error_handle fill_in_metadata(inproc_stream* s,
+                                   const grpc_metadata_batch* metadata,
+                                   uint32_t flags, grpc_metadata_batch* out_md,
+                                   uint32_t* outflags, bool* markfilled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_inproc_trace)) {
     log_metadata(metadata, s->t->is_client, outflags != nullptr);
   }
@@ -302,7 +304,17 @@ void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
   if (markfilled != nullptr) {
     *markfilled = true;
   }
-  grpc_metadata_batch_copy(metadata, out_md);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  metadata->ForEach([&](grpc_mdelem md) {
+    if (error != GRPC_ERROR_NONE) return;
+    grpc_linked_mdelem* nelem =
+        static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*nelem)));
+    nelem->md = grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(md)),
+                                        grpc_slice_intern(GRPC_MDVALUE(md)));
+
+    error = out_md->LinkTail(nelem);
+  });
+  return error;
 }
 
 int init_stream(grpc_transport* gt, grpc_stream* gs,
@@ -678,7 +690,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
 
     if (s->to_read_initial_md_filled) {
       s->initial_md_recvd = true;
-      fill_in_metadata(
+      new_err = fill_in_metadata(
           s, &s->to_read_initial_md, s->to_read_initial_md_flags,
           s->recv_initial_md_op->payload->recv_initial_metadata
               .recv_initial_metadata,
@@ -697,15 +709,26 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       }
       s->to_read_initial_md.Clear();
       s->to_read_initial_md_filled = false;
+      INPROC_LOG(GPR_INFO,
+                 "op_state_machine %p scheduling initial-metadata-ready %s", s,
+                 grpc_error_std_string(new_err).c_str());
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           s->recv_initial_md_op->payload->recv_initial_metadata
               .recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+          GRPC_ERROR_REF(new_err));
       complete_if_batch_end_locked(
-          s, GRPC_ERROR_NONE, s->recv_initial_md_op,
+          s, new_err, s->recv_initial_md_op,
           "op_state_machine scheduling recv-initial-metadata-on-complete");
       s->recv_initial_md_op = nullptr;
+
+      if (new_err != GRPC_ERROR_NONE) {
+        INPROC_LOG(GPR_INFO,
+                   "op_state_machine %p scheduling on_complete errors2 %s", s,
+                   grpc_error_std_string(new_err).c_str());
+        fail_helper_locked(s, GRPC_ERROR_REF(new_err));
+        goto done;
+      }
     }
   }
   if (s->recv_message_op) {
@@ -763,10 +786,11 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if (s->recv_trailing_md_op != nullptr) {
       // We wanted trailing metadata and we got it
       s->trailing_md_recvd = true;
-      fill_in_metadata(s, &s->to_read_trailing_md, 0,
-                       s->recv_trailing_md_op->payload->recv_trailing_metadata
-                           .recv_trailing_metadata,
-                       nullptr, nullptr);
+      new_err =
+          fill_in_metadata(s, &s->to_read_trailing_md, 0,
+                           s->recv_trailing_md_op->payload
+                               ->recv_trailing_metadata.recv_trailing_metadata,
+                           nullptr, nullptr);
       s->to_read_trailing_md.Clear();
       s->to_read_trailing_md_filled = false;
 
@@ -776,16 +800,24 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       //    (If the server hasn't already sent its trailing md, it doesn't have
       //     a final status, so don't mark this op complete)
       if (s->t->is_client || s->trailing_md_sent) {
+        INPROC_LOG(GPR_INFO,
+                   "op_state_machine %p scheduling trailing-md-on-complete %s",
+                   s, grpc_error_std_string(new_err).c_str());
         grpc_core::ExecCtx::Run(
             DEBUG_LOCATION,
             s->recv_trailing_md_op->payload->recv_trailing_metadata
                 .recv_trailing_metadata_ready,
-            GRPC_ERROR_NONE);
+            GRPC_ERROR_REF(new_err));
         grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                 s->recv_trailing_md_op->on_complete,
-                                GRPC_ERROR_NONE);
+                                GRPC_ERROR_REF(new_err));
         s->recv_trailing_md_op = nullptr;
         needs_close = s->trailing_md_sent;
+      } else {
+        INPROC_LOG(GPR_INFO,
+                   "op_state_machine %p server needs to delay handling "
+                   "trailing-md-on-complete %s",
+                   s, grpc_error_std_string(new_err).c_str());
       }
     } else if (!s->trailing_md_recvd) {
       INPROC_LOG(
