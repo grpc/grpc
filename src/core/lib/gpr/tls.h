@@ -119,7 +119,8 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   }
 
   T operator->() const {
-    static_assert(std::is_pointer<T>::value, "operator-> only usable on pointers");
+    static_assert(std::is_pointer<T>::value,
+                  "operator-> only usable on pointers");
     return this->operator T();
   }
 
