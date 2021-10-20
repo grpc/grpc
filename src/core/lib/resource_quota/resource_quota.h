@@ -22,6 +22,9 @@
 
 namespace grpc_core {
 
+class ResourceQuota;
+using ResourceQuotaPtr = RefCountedPtr<ResourceQuota>;
+
 class ResourceQuota : public RefCounted<ResourceQuota> {
  public:
   explicit ResourceQuota(std::string name);
@@ -42,7 +45,6 @@ class ResourceQuota : public RefCounted<ResourceQuota> {
   RefCountedPtr<ThreadQuota> thread_quota_;
 };
 
-using ResourceQuotaPtr = RefCountedPtr<ResourceQuota>;
 inline ResourceQuotaPtr MakeResourceQuota(std::string name) {
   return MakeRefCounted<ResourceQuota>(std::move(name));
 }
