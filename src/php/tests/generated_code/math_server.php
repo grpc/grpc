@@ -36,6 +36,21 @@ class MathService extends Math\MathStub
             );
             return null;
         }
+        // for GeneratedCodeTest::testRetry
+        $metadata = $context->clientMetadata();
+        if (array_key_exists('response-unavailable', $metadata)) {
+            $trailingMetadata = array_key_exists('grpc-previous-rpc-attempts', $metadata)
+            ? ['unavailable-retry-attempts' => $metadata['grpc-previous-rpc-attempts']]
+            : null;
+            $context->setStatus(
+                \Grpc\Status::status(
+                    \Grpc\STATUS_UNAVAILABLE,
+                    "unavailable",
+                    $trailingMetadata
+                )
+            );
+            return null;
+        }
         usleep(1000); // for GeneratedCodeTest::testTimeout
         $quotient = intdiv($dividend, $divisor);
         $remainder = $dividend % $divisor;

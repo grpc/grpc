@@ -29,7 +29,6 @@
 #include "absl/types/variant.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -264,6 +263,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object implemented by the client channel and used by the
   /// LB policy to communicate with the channel.
+  // TODO(roth): Once insecure builds go away, add methods for accessing
+  // channel creds.  By default, that should strip off the call creds
+  // attached to the channel creds, but there should also be a "use at
+  // your own risk" option to get the channel creds without stripping
+  // off the attached call creds.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;

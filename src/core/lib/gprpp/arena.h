@@ -30,6 +30,7 @@
 #include <stddef.h>
 
 #include <atomic>
+#include <memory>
 #include <new>
 #include <utility>
 
@@ -115,6 +116,15 @@ class Arena {
   // last zone; the zone list is reverse-walked during arena destruction only.
   Zone* last_zone_ = nullptr;
 };
+
+// Smart pointer for arenas when the final size is not required.
+struct ScopedArenaDeleter {
+  void operator()(Arena* arena) { arena->Destroy(); }
+};
+using ScopedArenaPtr = std::unique_ptr<Arena, ScopedArenaDeleter>;
+inline ScopedArenaPtr MakeScopedArena(size_t initial_size) {
+  return ScopedArenaPtr(Arena::Create(initial_size));
+}
 
 }  // namespace grpc_core
 

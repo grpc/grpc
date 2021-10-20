@@ -32,6 +32,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -315,7 +316,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
   alts_tsi_handshaker_result* sresult =
-      static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*sresult)));
+      grpc_core::Zalloc<alts_tsi_handshaker_result>();
   sresult->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
   memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);

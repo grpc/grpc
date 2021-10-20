@@ -17,7 +17,7 @@
 import os
 import sys
 
-script_dir = os.path.dirname(sys.argv[0])
+script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(script_dir)
 
 import scenario_generator_helper as gen

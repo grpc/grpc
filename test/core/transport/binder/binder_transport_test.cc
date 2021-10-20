@@ -193,7 +193,8 @@ struct MakeSendInitialMetadata {
 
   std::vector<grpc_linked_mdelem> storage;
   grpc_linked_mdelem method_ref_storage;
-  grpc_metadata_batch grpc_initial_metadata{};
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_initial_metadata{arena.get()};
 };
 
 struct MakeSendMessage {
@@ -224,7 +225,8 @@ struct MakeSendTrailingMetadata {
         &grpc_trailing_metadata;
   }
 
-  grpc_metadata_batch grpc_trailing_metadata{};
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_trailing_metadata{arena.get()};
 };
 
 struct MakeRecvInitialMetadata {
@@ -246,7 +248,8 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_metadata_batch grpc_initial_metadata;
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_initial_metadata{arena.get()};
   absl::Notification notification;
 };
 
@@ -288,7 +291,8 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_metadata_batch grpc_trailing_metadata;
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_trailing_metadata{arena.get()};
   absl::Notification notification;
 };
 
@@ -518,7 +522,7 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -582,7 +586,7 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
                       recv_trailing_metadata.grpc_trailing_metadata);
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -659,7 +663,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kRecvMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));

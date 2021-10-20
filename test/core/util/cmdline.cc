@@ -33,6 +33,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 
@@ -63,7 +64,7 @@ struct gpr_cmdline {
 static int normal_state(gpr_cmdline* cl, char* str);
 
 gpr_cmdline* gpr_cmdline_create(const char* description) {
-  gpr_cmdline* cl = static_cast<gpr_cmdline*>(gpr_zalloc(sizeof(gpr_cmdline)));
+  gpr_cmdline* cl = grpc_core::Zalloc<gpr_cmdline>();
 
   cl->description = description;
   cl->state = normal_state;

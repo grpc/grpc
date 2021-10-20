@@ -1392,7 +1392,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     calld->recv_initial_metadata_->Remove(GRPC_BATCH_PATH);
     calld->recv_initial_metadata_->Remove(GRPC_BATCH_AUTHORITY);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {
@@ -1469,9 +1469,11 @@ void Server::CallData::StartTransportStreamOpBatch(
 
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
   grpc_server* c_server = new grpc_server;
   c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
+  grpc_channel_args_destroy(args);
   return c_server;
 }
 

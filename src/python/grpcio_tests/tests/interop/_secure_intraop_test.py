@@ -13,6 +13,7 @@
 # limitations under the License.
 """Secure client-server interoperability as a unit test."""
 
+import sys
 import unittest
 
 import grpc
@@ -26,6 +27,8 @@ from tests.unit import test_common
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
 
     def setUp(self):

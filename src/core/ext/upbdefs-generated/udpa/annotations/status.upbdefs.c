@@ -16,7 +16,7 @@ static const upb_msglayout *layouts[1] = {
   &udpa_annotations_StatusAnnotation_msginit,
 };
 
-static const char descriptor[445] = {'\n', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', 
+static const char descriptor[483] = {'\n', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', 
 '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '\032', 
 ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 't', 
 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', '\"', '\232', '\001', '\n', '\020', 'S', 't', 'a', 't', 'u', 's', 'A', 'n', 'n', 'o', 't', 'a', 
@@ -33,7 +33,9 @@ static const char descriptor[445] = {'\n', '\035', 'u', 'd', 'p', 'a', '/', 'a',
 '\022', '\034', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'F', 'i', 'l', 'e', 'O', 'p', 
 't', 'i', 'o', 'n', 's', '\030', '\207', '\200', '\231', 'j', ' ', '\001', '(', '\013', '2', '\"', '.', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 
 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '.', 'S', 't', 'a', 't', 'u', 's', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 
-'R', '\n', 'f', 'i', 'l', 'e', 'S', 't', 'a', 't', 'u', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'R', '\n', 'f', 'i', 'l', 'e', 'S', 't', 'a', 't', 'u', 's', 'B', '$', 'Z', '\"', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 
+'m', '/', 'c', 'n', 'c', 'f', '/', 'x', 'd', 's', '/', 'g', 'o', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 
+'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[2] = {
@@ -45,5 +47,5 @@ upb_def_init udpa_annotations_status_proto_upbdefinit = {
   deps,
   layouts,
   "udpa/annotations/status.proto",
-  UPB_STRVIEW_INIT(descriptor, 445)
+  UPB_STRVIEW_INIT(descriptor, 483)
 };
