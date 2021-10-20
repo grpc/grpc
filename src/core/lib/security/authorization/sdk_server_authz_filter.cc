@@ -149,7 +149,7 @@ void SdkServerAuthzFilter::CallData::RecvInitialMetadataReady(
                                  GRPC_STATUS_PERMISSION_DENIED);
     }
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   Closure::Run(DEBUG_LOCATION, calld->original_recv_initial_metadata_ready_,
                error);

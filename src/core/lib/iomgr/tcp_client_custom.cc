@@ -124,7 +124,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   grpc_custom_socket* socket =
       static_cast<grpc_custom_socket*>(gpr_malloc(sizeof(grpc_custom_socket)));
   socket->refs = 2;
-  grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
+  (void)grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
   grpc_custom_tcp_connect* connect = new grpc_custom_tcp_connect();
   connect->closure = closure;
   connect->endpoint = ep;
