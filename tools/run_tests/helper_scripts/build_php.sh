@@ -30,12 +30,7 @@ cd src/php
 cd ext/grpc
 phpize
 if [ "$CONFIG" != "gcov" ]; then
-  nm /var/local/git/grpc/libs/dbg/libgrpc.so
-  # DO NOT SUBMIT(hork): debugging libuv cmake issue for php test
-  ./configure --enable-grpc="$root" --enable-tests || (
-    cat config.log
-    exit -1
-  )
+  ./configure --enable-grpc="$root" --enable-tests
 else
   ./configure --enable-grpc="$root" --enable-coverage --enable-tests
 fi
