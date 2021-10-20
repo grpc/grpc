@@ -44,7 +44,7 @@ grpc_channel_args* EnsureResourceQuotaInChannelArgs(
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not
   // sharing subchannels due to their channel args not specifying a quota.
-  auto new_arg = MakeArg(DefaultResourceQuota().get());
+  auto new_arg = MakeArg(ResourceQuota::Default().get());
   return grpc_channel_args_copy_and_add(args, &new_arg, 1);
 }
 

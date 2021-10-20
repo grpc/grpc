@@ -188,8 +188,8 @@ static int is_metadata_server_reachable() {
   request.http.path = const_cast<char*>("/");
   grpc_httpcli_context_init(&context);
   grpc_httpcli_get(
-      &context, &detector.pollent, grpc_core::DefaultResourceQuota(), &request,
-      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
+      &context, &detector.pollent, grpc_core::ResourceQuota::Default(),
+      &request, grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);

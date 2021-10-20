@@ -79,7 +79,7 @@ static void test_get(int port) {
   grpc_http_response response;
   response = {};
   grpc_httpcli_get(
-      &g_context, &g_pops, grpc_core::DefaultResourceQuota(), &req,
+      &g_context, &g_pops, grpc_core::ResourceQuota::Default(), &req,
       n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
@@ -117,8 +117,8 @@ static void test_post(int port) {
   grpc_http_response response;
   response = {};
   grpc_httpcli_post(
-      &g_context, &g_pops, grpc_core::DefaultResourceQuota(), &req, "hello", 5,
-      n_seconds_time(15),
+      &g_context, &g_pops, grpc_core::ResourceQuota::Default(), &req, "hello",
+      5, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
   gpr_mu_lock(g_mu);
