@@ -58,16 +58,14 @@ class TlsCustomVerificationCheckRequest {
       grpc_tls_custom_verification_check_request* request);
   ~TlsCustomVerificationCheckRequest() {}
 
-  // TODO(ZhenLian): change the return type to absl::string_view if we wind up
-  // being able to use absl in the C++ API before de-experimentalizing this API.
   grpc::string_ref target_name() const;
   grpc::string_ref peer_cert() const;
   grpc::string_ref peer_cert_full_chain() const;
   grpc::string_ref common_name() const;
-  std::vector<std::string> uri_names() const;
-  std::vector<std::string> dns_names() const;
-  std::vector<std::string> email_names() const;
-  std::vector<std::string> ip_names() const;
+  std::vector<grpc::string_ref> uri_names() const;
+  std::vector<grpc::string_ref> dns_names() const;
+  std::vector<grpc::string_ref> email_names() const;
+  std::vector<grpc::string_ref> ip_names() const;
 
   grpc_tls_custom_verification_check_request* c_request() { return c_request_; }
 
