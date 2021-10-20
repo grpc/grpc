@@ -74,14 +74,8 @@ class BinderResolverFactory : public ResolverFactory {
 
  private:
   static grpc_error_handle BinderAddrPopulate(
-      std::string path, grpc_resolved_address* resolved_addr) {
-    // strip off leading '/' characters
-    size_t p = path.find_first_not_of('/');
-    if (p == std::string::npos) {
-      path = "";
-    } else {
-      path = path.substr(p);
-    }
+      absl::string_view path, grpc_resolved_address* resolved_addr) {
+    path = absl::StripPrefix(path, "/");
     if (path.empty()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING("path is empty");
     }
@@ -95,10 +89,10 @@ class BinderResolverFactory : public ResolverFactory {
     static_assert(sizeof(un->sun_path) >= 101,
                   "unix socket path size is unexpectedly short");
     if (path.size() + 1 > sizeof(un->sun_path)) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(path +
-                                               " is too long to be handled");
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat(path, " is too long to be handled"));
     }
-    strcpy(un->sun_path, path.c_str());
+    strcpy(un->sun_path, std::string(path).c_str());
     resolved_addr->len =
         static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1);
     return GRPC_ERROR_NONE;
@@ -107,11 +101,6 @@ class BinderResolverFactory : public ResolverFactory {
   static bool ParseUri(const URI& uri, ServerAddressList* addresses) {
     grpc_resolved_address addr;
     {
-      if (uri.scheme() != "binder") {
-        gpr_log(GPR_ERROR, "Expected 'binder' scheme, got '%s'",
-                uri.scheme().c_str());
-        return false;
-      }
       if (!uri.authority().empty()) {
         gpr_log(GPR_ERROR, "authority is not supported in binder scheme");
         return false;

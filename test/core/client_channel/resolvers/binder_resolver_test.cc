@@ -59,7 +59,7 @@ class BinderResolverTest : public ::testing::Test {
 
   class ResultHandler : public grpc_core::Resolver::ResultHandler {
    public:
-    ResultHandler() : expect_result_(false) {}
+    ResultHandler() = default;
 
     explicit ResultHandler(const std::string& expected_binder_id)
         : expect_result_(true), expected_binder_id_(expected_binder_id) {}
@@ -82,7 +82,7 @@ class BinderResolverTest : public ::testing::Test {
 
    private:
     // Whether we expect ReturnResult function to be invoked
-    bool expect_result_;
+    bool expect_result_ = false;
 
     std::string expected_binder_id_;
   };
@@ -124,11 +124,6 @@ class BinderResolverTest : public ::testing::Test {
 
 }  // namespace
 
-TEST_F(BinderResolverTest, WrongScheme) {
-  TestFails("bonder:10.2.1.1");
-  TestFails("http:google.com");
-}
-
 // Authority is not allowed
 TEST_F(BinderResolverTest, AuthorityPresents) {
   TestFails("binder://example");
@@ -144,10 +139,8 @@ TEST_F(BinderResolverTest, EmptyPath) {
 }
 
 TEST_F(BinderResolverTest, PathLength) {
-  // Assert the path length size is at least 101 so it can store a 100 character
-  // long path with a null terminator. (Typically the limit 108 on Linux and
-  // 104 on MacOS)
-  ASSERT_GE(sizeof(sockaddr_un::sun_path), 101);
+  // Note that we have a static assert in binder_resolver.cc that checks
+  // sizeof(sockaddr_un::sun_path) is greater than 100
 
   // 100 character path should be fine
   TestSucceeds(("binder:l" + std::string(98, 'o') + "g").c_str(),
@@ -158,14 +151,8 @@ TEST_F(BinderResolverTest, PathLength) {
 }
 
 TEST_F(BinderResolverTest, SlashPrefixes) {
-  TestFails("binder:////");
   TestSucceeds("binder:///test", "test");
-  TestSucceeds("binder:////////test", "test");
-}
-
-TEST_F(BinderResolverTest, WhiteSpaces) {
-  TestSucceeds("binder:te st", "te st");
-  TestSucceeds("binder:  ", "  ");
+  TestSucceeds("binder:////test", "/test");
 }
 
 TEST_F(BinderResolverTest, ValidCases) {
