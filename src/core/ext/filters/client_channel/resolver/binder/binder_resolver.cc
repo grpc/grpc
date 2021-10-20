@@ -92,7 +92,8 @@ class BinderResolverFactory : public ResolverFactory {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat(path, " is too long to be handled"));
     }
-    strcpy(un->sun_path, std::string(path).c_str());
+    // `un` has already be set to zero, no need to append null after the string
+    memcpy(un->sun_path, path.data(), path.size());
     resolved_addr->len =
         static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1);
     return GRPC_ERROR_NONE;
