@@ -189,6 +189,7 @@ DARWIN_LIBUV_SOURCES = [
     "src/unix/fsevents.c",
     "src/unix/kqueue.c",
     "src/unix/darwin-proctitle.c",
+    "src/unix/proctitle.c",
     "src/unix/random-getentropy.c",  # darwin. TODO(hork): ALSO NEEDED FOR OpenBSD
 ]
 
