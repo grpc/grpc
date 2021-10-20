@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/service_config_call_data.h"
+#include "src/core/ext/service_config/service_config_call_data.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
@@ -59,26 +59,43 @@ class ServiceConfigChannelArgChannelData {
 
 class ServiceConfigChannelArgCallData {
  public:
-  ServiceConfigChannelArgCallData(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
-    ServiceConfigChannelArgChannelData* chand =
-        static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
-    RefCountedPtr<ServiceConfig> service_config = chand->service_config();
-    if (service_config != nullptr) {
-      GPR_DEBUG_ASSERT(args->context != nullptr);
-      const auto* method_params_vector =
-          service_config->GetMethodParsedConfigVector(args->path);
-      args->arena->New<ServiceConfigCallData>(
-          std::move(service_config), method_params_vector, args->context);
-    }
+  ServiceConfigChannelArgCallData(
+      RefCountedPtr<ServiceConfig> service_config,
+      const ServiceConfigParser::ParsedConfigVector* method_config,
+      const grpc_call_element_args* args)
+      : call_context_(args->context),
+        service_config_call_data_(std::move(service_config), method_config,
+                                  /*call_attributes=*/{}) {
+    GPR_DEBUG_ASSERT(args->context != nullptr);
+    // No need to set the destroy function, since it will be cleaned up
+    // when this filter is destroyed in the filter stack.
+    args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value =
+        &service_config_call_data_;
   }
+
+  ~ServiceConfigChannelArgCallData() {
+    // Remove the entry from call context, just in case anyone above us
+    // tries to look at it during call stack destruction.
+    call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = nullptr;
+  }
+
+ private:
+  grpc_call_context_element* call_context_;
+  ServiceConfigCallData service_config_call_data_;
 };
 
 grpc_error_handle ServiceConfigChannelArgInitCallElem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
-  ServiceConfigChannelArgCallData* calld =
-      static_cast<ServiceConfigChannelArgCallData*>(elem->call_data);
-  new (calld) ServiceConfigChannelArgCallData(elem, args);
+  auto* chand =
+      static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
+  auto* calld = static_cast<ServiceConfigChannelArgCallData*>(elem->call_data);
+  RefCountedPtr<ServiceConfig> service_config = chand->service_config();
+  const ServiceConfigParser::ParsedConfigVector* method_config = nullptr;
+  if (service_config != nullptr) {
+    method_config = service_config->GetMethodParsedConfigVector(args->path);
+  }
+  new (calld) ServiceConfigChannelArgCallData(std::move(service_config),
+                                              method_config, args);
   return GRPC_ERROR_NONE;
 }
 

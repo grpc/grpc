@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/client/channel_create.h"
 
@@ -44,6 +44,7 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
+#include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
@@ -55,9 +56,11 @@
 namespace grpc {
 namespace experimental {
 
-// This should be called before calling CreateBinderChannel
-// TODO(mingcl): Invoke a callback and pass binder object to caller after a
-// successful bind
+// TODO(mingcl): To support multiple binder transport connection at the same
+// time, we will need to generate unique connection id for each connection.
+// For now we use a fixed connection id. This will be fixed in the next PR
+std::string kConnectionId = "connection_id_placeholder";
+
 void BindToOnDeviceServerService(void* jni_env_void, jobject application,
                                  absl::string_view package_name,
                                  absl::string_view class_name) {
@@ -71,48 +74,49 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
   grpc_binder::CallStaticJavaMethod(jni_env,
                        "io/grpc/binder/cpp/NativeConnectionHelper",
                        "tryEstablishConnection",
-                       "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V",
-                       application, std::string(package_name), std::string(class_name));
+                       "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
+                       application, std::string(package_name), std::string(class_name), kConnectionId);
   // clang-format on
 }
 
 // BindToOndeviceServerService need to be called before this, in a different
 // task (due to Android API design). (Reference:
 // https://stackoverflow.com/a/3055749)
-// TODO(mingcl): Support multiple endpoint binder objects
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     void* jni_env_void, jobject application, absl::string_view package_name,
-    absl::string_view class_name) {
+    absl::string_view class_name,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   return CreateCustomBinderChannel(jni_env_void, application, package_name,
-                                   class_name, ChannelArguments());
+                                   class_name, security_policy,
+                                   ChannelArguments());
 }
 
 // BindToOndeviceServerService need to be called before this, in a different
 // task (due to Android API design). (Reference:
 // https://stackoverflow.com/a/3055749)
-// TODO(mingcl): Support multiple endpoint binder objects
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void* jni_env_void, jobject /*application*/,
-    absl::string_view /*package_name*/, absl::string_view /*class_name*/,
+    void*, jobject /*application*/, absl::string_view /*package_name*/,
+    absl::string_view /*class_name*/,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const ChannelArguments& args) {
-  JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
+  GPR_ASSERT(security_policy != nullptr);
 
-  // clang-format off
-  jobject object = grpc_binder::CallStaticJavaMethodForObject(
-      jni_env,
-      "io/grpc/binder/cpp/NativeConnectionHelper",
-      "getServiceBinder",
-      "()Landroid/os/IBinder;");
-  // clang-format on
+  std::unique_ptr<grpc_binder::Binder> endpoint_binder;
+  grpc_binder::GetEndpointBinderPool()->GetEndpointBinder(
+      kConnectionId, [&](std::unique_ptr<grpc_binder::Binder> e) {
+        endpoint_binder = std::move(e);
+      });
+  // This assumes the above callback will be called immediately before
+  // `GetEndpointBinder` returns
+  GPR_ASSERT(endpoint_binder != nullptr);
 
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
   return CreateChannelInternal(
       "",
       ::grpc::internal::CreateChannelFromBinderImpl(
-          absl::make_unique<grpc_binder::BinderAndroid>(
-              grpc_binder::FromJavaBinder(jni_env, object)),
-          &channel_args),
+          std::move(endpoint_binder), security_policy, &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 }
@@ -130,15 +134,16 @@ void BindToOnDeviceServerService(void*, jobject, absl::string_view,
   GPR_ASSERT(0);
 }
 
-std::shared_ptr<grpc::Channel> CreateBinderChannel(void*, jobject,
-                                                   absl::string_view,
-                                                   absl::string_view) {
+std::shared_ptr<grpc::Channel> CreateBinderChannel(
+    void*, jobject, absl::string_view, absl::string_view,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>) {
   GPR_ASSERT(0);
   return {};
 }
 
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>,
     const ChannelArguments&) {
   GPR_ASSERT(0);
   return {};

@@ -103,14 +103,12 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
     grpc_error_handle error = GRPC_ERROR_NONE;
-    if (reason != GRPC_HTTP2_NO_ERROR ||
-        s->trailing_metadata_buffer.size == 0) {
+    if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
           grpc_error_set_str(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
               GRPC_ERROR_STR_GRPC_MESSAGE,
-              grpc_slice_from_cpp_string(absl::StrCat(
-                  "Received RST_STREAM with error code ", reason))),
+              absl::StrCat("Received RST_STREAM with error code ", reason)),
           GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(reason));
     }
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);

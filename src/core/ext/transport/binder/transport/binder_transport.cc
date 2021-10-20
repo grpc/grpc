@@ -118,21 +118,11 @@ static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
   gpr_log(GPR_INFO, __func__);
 }
 
-static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
+static void AssignMetadata(grpc_metadata_batch* mb,
                            const grpc_binder::Metadata& md) {
   mb->Clear();
   for (auto& p : md) {
-    grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
-        arena->Alloc(sizeof(grpc_linked_mdelem)));
-    memset(glm, 0, sizeof(grpc_linked_mdelem));
-    grpc_slice key = grpc_slice_from_cpp_string(p.first);
-    grpc_slice value = grpc_slice_from_cpp_string(p.second);
-    glm->md = grpc_mdelem_from_slices(grpc_slice_intern(key),
-                                      grpc_slice_intern(value));
-    // Unref here to prevent memory leak
-    grpc_slice_unref_internal(key);
-    grpc_slice_unref_internal(value);
-    GPR_ASSERT(mb->LinkTail(glm) == GRPC_ERROR_NONE);
+    mb->Append(p.first, grpc_slice_from_cpp_string(p.second));
   }
 }
 
@@ -210,8 +200,7 @@ static void recv_initial_metadata_locked(void* arg,
               "Missing :authority or :path in initial metadata");
         }
       }
-      AssignMetadata(gbs->recv_initial_metadata, gbs->arena,
-                     *args->initial_metadata);
+      AssignMetadata(gbs->recv_initial_metadata, *args->initial_metadata);
       return GRPC_ERROR_NONE;
     }();
 
@@ -293,8 +282,7 @@ static void recv_trailing_metadata_locked(void* arg,
           return GRPC_ERROR_CANCELLED;
         }
       } else {
-        AssignMetadata(gbs->recv_trailing_metadata, gbs->arena,
-                       *args->trailing_metadata);
+        AssignMetadata(gbs->recv_trailing_metadata, *args->trailing_metadata);
         // Append status to metadata
         // TODO(b/192208695): See if we can avoid to manually put status
         // code into the header
@@ -705,7 +693,8 @@ static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
 }
 
 grpc_binder_transport::grpc_binder_transport(
-    std::unique_ptr<grpc_binder::Binder> binder, bool is_client)
+    std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
     : is_client(is_client),
       combiner(grpc_combiner_create()),
       state_tracker(is_client ? "binder_transport_client"
@@ -724,8 +713,9 @@ grpc_binder_transport::grpc_binder_transport(
   // WireReader holds a ref to grpc_binder_transport.
   GRPC_BINDER_REF_TRANSPORT(this, "wire reader");
   wire_reader = grpc_core::MakeOrphanable<grpc_binder::WireReaderImpl>(
-      transport_stream_receiver, is_client,
-      /*on_destruct_callback=*/[this] {
+      transport_stream_receiver, is_client, security_policy,
+      /*on_destruct_callback=*/
+      [this] {
         // Unref transport when destructed.
         GRPC_BINDER_UNREF_TRANSPORT(this, "wire reader");
       });
@@ -737,21 +727,31 @@ grpc_binder_transport::~grpc_binder_transport() {
 }
 
 grpc_transport* grpc_create_binder_transport_client(
-    std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
+    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
-      new grpc_binder_transport(std::move(endpoint_binder), /*is_client=*/true);
+  GPR_ASSERT(endpoint_binder != nullptr);
+  GPR_ASSERT(security_policy != nullptr);
+
+  grpc_binder_transport* t = new grpc_binder_transport(
+      std::move(endpoint_binder), /*is_client=*/true, security_policy);
 
   return &t->base;
 }
 
 grpc_transport* grpc_create_binder_transport_server(
-    std::unique_ptr<grpc_binder::Binder> client_binder) {
+    std::unique_ptr<grpc_binder::Binder> client_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
-      new grpc_binder_transport(std::move(client_binder), /*is_client=*/false);
+  GPR_ASSERT(client_binder != nullptr);
+  GPR_ASSERT(security_policy != nullptr);
+
+  grpc_binder_transport* t = new grpc_binder_transport(
+      std::move(client_binder), /*is_client=*/false, security_policy);
 
   return &t->base;
 }

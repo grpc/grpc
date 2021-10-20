@@ -35,6 +35,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_utils.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
@@ -89,11 +90,17 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
+  return s;
 }
 #endif
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
+  if (src == GRPC_ERROR_NONE) {
+    src = absl::UnknownError("");
+    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
+                 GRPC_STATUS_OK);
+  }
   grpc_core::StatusSetInt(
       &src, static_cast<grpc_core::StatusIntProperty>(which), value);
   return src;
@@ -129,36 +136,78 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
 
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
-                                     const grpc_slice& str) {
-  grpc_core::StatusSetStr(
-      &src, static_cast<grpc_core::StatusStrProperty>(which),
-      std::string(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(str)),
-                  GRPC_SLICE_LENGTH(str)));
+                                     absl::string_view str) {
+  if (src == GRPC_ERROR_NONE) {
+    src = absl::UnknownError("");
+    StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
+                 GRPC_STATUS_OK);
+  }
+  if (which == GRPC_ERROR_STR_DESCRIPTION) {
+    // To change the message of absl::Status, a new instance should be created
+    // with a code and payload because it doesn't have a setter for it.
+    absl::Status s = absl::Status(src.code(), str);
+    src.ForEachPayload(
+        [&](absl::string_view type_url, const absl::Cord& payload) {
+          s.SetPayload(type_url, payload);
+        });
+    return s;
+  } else {
+    grpc_core::StatusSetStr(
+        &src, static_cast<grpc_core::StatusStrProperty>(which), str);
+  }
   return src;
 }
 
 bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
-                        grpc_slice* s) {
-  absl::optional<std::string> value = grpc_core::StatusGetStr(
-      error, static_cast<grpc_core::StatusStrProperty>(which));
-  if (value.has_value()) {
-    *s = grpc_slice_from_copied_buffer(value->c_str(), value->size());
-    return true;
-  } else {
-    // TODO(veblush): Remove this once absl::Status migration is done
-    if (which == GRPC_ERROR_STR_DESCRIPTION && !error.message().empty()) {
-      *s = grpc_slice_from_copied_buffer(error.message().data(),
-                                         error.message().size());
+                        std::string* s) {
+  if (which == GRPC_ERROR_STR_DESCRIPTION) {
+    // absl::Status uses the message field for GRPC_ERROR_STR_DESCRIPTION
+    // instead of using payload.
+    absl::string_view msg = error.message();
+    if (msg.empty()) {
+      return false;
+    } else {
+      *s = std::string(msg);
       return true;
     }
-    return false;
+  } else {
+    absl::optional<std::string> value = grpc_core::StatusGetStr(
+        error, static_cast<grpc_core::StatusStrProperty>(which));
+    if (value.has_value()) {
+      *s = std::move(*value);
+      return true;
+    } else {
+      // TODO(veblush): Remove this once absl::Status migration is done
+      if (which == GRPC_ERROR_STR_GRPC_MESSAGE) {
+        switch (error.code()) {
+          case absl::StatusCode::kOk:
+            *s = "";
+            return true;
+          case absl::StatusCode::kResourceExhausted:
+            *s = "RESOURCE_EXHAUSTED";
+            return true;
+          case absl::StatusCode::kCancelled:
+            *s = "CANCELLED";
+            return true;
+          default:
+            break;
+        }
+      }
+      return false;
+    }
   }
 }
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
-  grpc_core::StatusAddChild(&src, child);
-  return src;
+  if (src.ok()) {
+    return child;
+  } else {
+    if (!child.ok()) {
+      grpc_core::StatusAddChild(&src, child);
+    }
+    return src;
+  }
 }
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
@@ -503,7 +552,7 @@ static void ref_errs(grpc_error_handle err) {
   while (slot != UINT8_MAX) {
     grpc_linked_error* lerr =
         reinterpret_cast<grpc_linked_error*>(err->arena + slot);
-    GRPC_ERROR_REF(lerr->err);
+    (void)GRPC_ERROR_REF(lerr->err);
     slot = lerr->next;
   }
 }
@@ -597,27 +646,26 @@ bool grpc_error_get_int(grpc_error_handle err, grpc_error_ints which,
 
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
-                                     const grpc_slice& str) {
+                                     absl::string_view str) {
   grpc_error_handle new_err = copy_error_and_unref(src);
-  internal_set_str(&new_err, which, str);
+  internal_set_str(&new_err, which,
+                   grpc_slice_from_copied_buffer(str.data(), str.length()));
   return new_err;
 }
 
 bool grpc_error_get_str(grpc_error_handle err, grpc_error_strs which,
-                        grpc_slice* str) {
+                        std::string* s) {
   if (grpc_error_is_special(err)) {
     if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
     const special_error_status_map& msg =
         error_status_map[reinterpret_cast<size_t>(err)];
-    str->refcount = &grpc_core::kNoopRefcount;
-    str->data.refcounted.bytes =
-        reinterpret_cast<uint8_t*>(const_cast<char*>(msg.msg));
-    str->data.refcounted.length = msg.len;
+    *s = std::string(msg.msg, msg.len);
     return true;
   }
   uint8_t slot = err->strs[which];
   if (slot != UINT8_MAX) {
-    *str = *reinterpret_cast<grpc_slice*>(err->arena + slot);
+    grpc_slice* slice = reinterpret_cast<grpc_slice*>(err->arena + slot);
+    *s = std::string(grpc_core::StringViewFromSlice(*slice));
     return true;
   } else {
     return false;
@@ -903,9 +951,8 @@ grpc_error_handle grpc_os_error(const char* file, int line, int err,
                                 grpc_slice_from_static_string(strerror(err)),
                                 nullptr, 0),
               GRPC_ERROR_INT_ERRNO, err),
-          GRPC_ERROR_STR_OS_ERROR,
-          grpc_slice_from_static_string(strerror(err))),
-      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_copied_string(call_name));
+          GRPC_ERROR_STR_OS_ERROR, strerror(err)),
+      GRPC_ERROR_STR_SYSCALL, call_name);
 }
 
 #ifdef GPR_WINDOWS
@@ -919,8 +966,8 @@ grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
                                 grpc_slice_from_static_string("OS Error"), NULL,
                                 0),
               GRPC_ERROR_INT_WSA_ERROR, err),
-          GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_copied_string(utf8_message)),
-      GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string(call_name));
+          GRPC_ERROR_STR_OS_ERROR, utf8_message),
+      GRPC_ERROR_STR_SYSCALL, call_name);
   gpr_free(utf8_message);
   return error;
 }

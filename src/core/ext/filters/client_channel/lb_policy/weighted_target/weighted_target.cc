@@ -150,6 +150,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -564,7 +565,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(
     void* arg, grpc_error_handle error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->weighted_target_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
       DEBUG_LOCATION);
@@ -605,6 +606,11 @@ void WeightedTargetLb::WeightedChild::Helper::RequestReresolution() {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return;
   weighted_child_->weighted_target_policy_->channel_control_helper()
       ->RequestReresolution();
+}
+
+absl::string_view WeightedTargetLb::WeightedChild::Helper::GetAuthority() {
+  return weighted_child_->weighted_target_policy_->channel_control_helper()
+      ->GetAuthority();
 }
 
 void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(

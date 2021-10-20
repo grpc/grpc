@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
@@ -39,6 +39,25 @@ void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
   env->CallStaticVoidMethod(cl, mid, application,
                             env->NewStringUTF(pkg.c_str()),
                             env->NewStringUTF(cls.c_str()));
+}
+
+void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
+                          const std::string& method, const std::string& type,
+                          jobject application, const std::string& pkg,
+                          const std::string& cls, const std::string& conn_id) {
+  jclass cl = env->FindClass(clazz.c_str());
+  if (cl == nullptr) {
+    gpr_log(GPR_ERROR, "No class %s", clazz.c_str());
+  }
+
+  jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
+  if (mid == nullptr) {
+    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+  }
+
+  env->CallStaticVoidMethod(
+      cl, mid, application, env->NewStringUTF(pkg.c_str()),
+      env->NewStringUTF(cls.c_str()), env->NewStringUTF(conn_id.c_str()));
 }
 
 jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,

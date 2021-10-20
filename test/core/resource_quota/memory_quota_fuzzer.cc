@@ -18,13 +18,14 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/resource_quota/call_checker.h"
 #include "test/core/resource_quota/memory_quota_fuzzer.pb.h"
 
 bool squelch = true;
 bool leak_check = true;
 
 namespace grpc_core {
-
+namespace testing {
 namespace {
 ReclamationPass MapReclamationPass(memory_quota_fuzzer::Reclaimer::Pass pass) {
   switch (pass) {
@@ -44,9 +45,13 @@ class Fuzzer {
   void Run(const memory_quota_fuzzer::Msg& msg) {
     grpc_core::ExecCtx exec_ctx;
     RunMsg(msg);
-    memory_quotas_.clear();
-    memory_allocators_.clear();
-    allocations_.clear();
+    do {
+      memory_quotas_.clear();
+      memory_allocators_.clear();
+      allocations_.clear();
+      exec_ctx.Flush();
+    } while (!memory_quotas_.empty() || !memory_allocators_.empty() ||
+             !allocations_.empty());
   }
 
  private:
@@ -58,43 +63,41 @@ class Fuzzer {
           ExecCtx::Get()->Flush();
           break;
         case memory_quota_fuzzer::Action::kCreateQuota:
-          memory_quotas_.emplace(action.quota(),
-                                 RefCountedPtr<MemoryQuota>(new MemoryQuota()));
+          memory_quotas_.emplace(action.quota(), MemoryQuota());
           break;
         case memory_quota_fuzzer::Action::kDeleteQuota:
           memory_quotas_.erase(action.quota());
           break;
         case memory_quota_fuzzer::Action::kCreateAllocator:
-          WithQuota(action.quota(),
-                    [this, action](RefCountedPtr<MemoryQuota> q) {
-                      memory_allocators_.emplace(action.allocator(),
-                                                 q->MakeMemoryAllocator());
-                    });
+          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
+            memory_allocators_.emplace(action.allocator(),
+                                       q->CreateMemoryOwner());
+          });
           break;
         case memory_quota_fuzzer::Action::kDeleteAllocator:
           memory_allocators_.erase(action.allocator());
           break;
         case memory_quota_fuzzer::Action::kSetQuotaSize:
-          WithQuota(action.quota(), [action](RefCountedPtr<MemoryQuota> q) {
+          WithQuota(action.quota(), [action](MemoryQuota* q) {
             q->SetSize(Clamp(action.set_quota_size(), uint64_t{0},
                              uint64_t{std::numeric_limits<ssize_t>::max()}));
           });
           break;
         case memory_quota_fuzzer::Action::kRebindQuota:
-          WithQuota(action.quota(),
-                    [this, action](RefCountedPtr<MemoryQuota> q) {
-                      WithAllocator(action.allocator(),
-                                    [q](MemoryAllocator* a) { a->Rebind(q); });
-                    });
+          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
+            WithAllocator(action.allocator(),
+                          [q](MemoryOwner* a) { a->Rebind(q); });
+          });
           break;
         case memory_quota_fuzzer::Action::kCreateAllocation: {
           auto min = action.create_allocation().min();
           auto max = action.create_allocation().max();
           if (min > max) break;
+          if (max > MemoryRequest::max_allowed_size()) break;
           MemoryRequest req(min, max);
           WithAllocator(
-              action.allocator(), [this, action, req](MemoryAllocator* a) {
-                auto alloc = a->MakeReservation(req);
+              action.allocator(), [this, action, req](MemoryOwner* a) {
+                auto alloc = a->allocator()->MakeReservation(req);
                 allocations_.emplace(action.allocation(), std::move(alloc));
               });
         } break;
@@ -102,20 +105,22 @@ class Fuzzer {
           allocations_.erase(action.allocation());
           break;
         case memory_quota_fuzzer::Action::kPostReclaimer: {
-          std::function<void(ReclamationSweep)> reclaimer;
+          std::function<void(absl::optional<ReclamationSweep>)> reclaimer;
           auto cfg = action.post_reclaimer();
           if (cfg.synchronous()) {
-            reclaimer = [this, cfg](ReclamationSweep) { RunMsg(cfg.msg()); };
+            reclaimer = [this, cfg](absl::optional<ReclamationSweep>) {
+              RunMsg(cfg.msg());
+            };
           } else {
-            reclaimer = [cfg, this](ReclamationSweep sweep) {
+            reclaimer = [cfg, this](absl::optional<ReclamationSweep> sweep) {
               struct Args {
-                ReclamationSweep sweep;
+                absl::optional<ReclamationSweep> sweep;
                 memory_quota_fuzzer::Msg msg;
                 Fuzzer* fuzzer;
               };
               auto* args = new Args{std::move(sweep), cfg.msg(), this};
               auto* closure = GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error*) {
+                  [](void* arg, grpc_error_handle) {
                     auto* args = static_cast<Args*>(arg);
                     args->fuzzer->RunMsg(args->msg);
                     delete args;
@@ -124,10 +129,17 @@ class Fuzzer {
               ExecCtx::Get()->Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
             };
             auto pass = MapReclamationPass(cfg.pass());
-            WithAllocator(action.allocator(),
-                          [pass, reclaimer](MemoryAllocator* a) {
-                            a->PostReclaimer(pass, reclaimer);
-                          });
+            WithAllocator(
+                action.allocator(), [pass, reclaimer](MemoryOwner* a) {
+                  // ensure called exactly once
+                  auto call_checker = CallChecker::Make();
+                  a->PostReclaimer(pass,
+                                   [reclaimer, call_checker](
+                                       absl::optional<ReclamationSweep> sweep) {
+                                     call_checker->Called();
+                                     reclaimer(std::move(sweep));
+                                   });
+                });
           }
         } break;
         case memory_quota_fuzzer::Action::ACTION_TYPE_NOT_SET:
@@ -140,23 +152,23 @@ class Fuzzer {
   void WithQuota(int quota, F f) {
     auto it = memory_quotas_.find(quota);
     if (it == memory_quotas_.end()) return;
-    f(it->second);
+    f(&it->second);
   }
 
   template <typename F>
   void WithAllocator(int allocator, F f) {
     auto it = memory_allocators_.find(allocator);
     if (it == memory_allocators_.end()) return;
-    f(it->second.get());
+    f(&it->second);
   }
 
-  std::map<int, RefCountedPtr<MemoryQuota>> memory_quotas_;
-  std::map<int, OrphanablePtr<MemoryAllocator>> memory_allocators_;
+  std::map<int, MemoryQuota> memory_quotas_;
+  std::map<int, MemoryOwner> memory_allocators_;
   std::map<int, MemoryAllocator::Reservation> allocations_;
 };
 
 }  // namespace
-
+}  // namespace testing
 }  // namespace grpc_core
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
@@ -165,5 +177,5 @@ DEFINE_PROTO_FUZZER(const memory_quota_fuzzer::Msg& msg) {
   if (squelch) gpr_set_log_function(dont_log);
   gpr_log_verbosity_init();
   grpc_tracer_init();
-  grpc_core::Fuzzer().Run(msg);
+  grpc_core::testing::Fuzzer().Run(msg);
 }

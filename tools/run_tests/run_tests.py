@@ -590,7 +590,7 @@ class Php7Language(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_jessie_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_debian9_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -1405,6 +1405,7 @@ argp.add_argument(
         'python3.6',
         'python3.7',
         'python3.8',
+        'python3.9',
         'pypy',
         'pypy3',
         'python_alpine',

@@ -30,16 +30,12 @@ class ResourceQuota : public RefCounted<ResourceQuota> {
   ResourceQuota(const ResourceQuota&) = delete;
   ResourceQuota& operator=(const ResourceQuota&) = delete;
 
-  const RefCountedPtr<MemoryQuota>& memory_quota() const {
-    return memory_quota_;
-  }
+  std::shared_ptr<MemoryQuota> memory_quota() { return memory_quota_; }
 
-  const RefCountedPtr<ThreadQuota>& thread_quota() const {
-    return thread_quota_;
-  }
+  const RefCountedPtr<ThreadQuota>& thread_quota() { return thread_quota_; }
 
  private:
-  RefCountedPtr<MemoryQuota> memory_quota_;
+  std::shared_ptr<MemoryQuota> memory_quota_;
   RefCountedPtr<ThreadQuota> thread_quota_;
 };
 

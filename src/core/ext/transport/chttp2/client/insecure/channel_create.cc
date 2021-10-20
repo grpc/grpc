@@ -24,7 +24,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/transport/chttp2/client/authority.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -37,12 +36,7 @@ class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
   RefCountedPtr<Subchannel> CreateSubchannel(
       const grpc_resolved_address& address,
       const grpc_channel_args* args) override {
-    grpc_channel_args* new_args =
-        grpc_default_authority_add_if_not_present(args);
-    RefCountedPtr<Subchannel> s = Subchannel::Create(
-        MakeOrphanable<Chttp2Connector>(), address, new_args);
-    grpc_channel_args_destroy(new_args);
-    return s;
+    return Subchannel::Create(MakeOrphanable<Chttp2Connector>(), address, args);
   }
 };
 
@@ -94,6 +88,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
                                            const grpc_channel_args* args,
                                            void* reserved) {
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
@@ -109,6 +104,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   grpc_channel* channel = grpc_core::CreateChannel(target, new_args, &error);
   // Clean up.
   grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(args);
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

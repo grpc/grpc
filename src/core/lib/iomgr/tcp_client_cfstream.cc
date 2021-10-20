@@ -81,7 +81,8 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
 static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%p", connect, error);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
+            grpc_error_std_string(error).c_str());
   }
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
@@ -102,7 +103,8 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
 static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%p", connect, error);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
+            grpc_error_std_string(error).c_str());
   }
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
@@ -135,7 +137,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
         connect->slice_allocator = nullptr;
       }
     } else {
-      GRPC_ERROR_REF(error);
+      (void)GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);

@@ -221,10 +221,10 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   grpc_resolved_address resolved_address_;
   Chttp2ServerArgsModifier const args_modifier_;
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
-  Mutex channel_args_mu_;
-  grpc_channel_args* args_ ABSL_GUARDED_BY(channel_args_mu_);
+  grpc_channel_args* args_;
+  Mutex connection_manager_mu_;
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager_ ABSL_GUARDED_BY(channel_args_mu_);
+      connection_manager_ ABSL_GUARDED_BY(connection_manager_mu_);
   Mutex mu_;
   // Signals whether grpc_tcp_server_start() has been called.
   bool started_ ABSL_GUARDED_BY(mu_) = false;
@@ -252,7 +252,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_to_destroy;
   {
-    MutexLock lock(&listener_->channel_args_mu_);
+    MutexLock lock(&listener_->connection_manager_mu_);
     connection_manager_to_destroy = listener_->connection_manager_;
     listener_->connection_manager_ = std::move(connection_manager);
   }
@@ -596,6 +596,7 @@ grpc_error_handle Chttp2ServerListener::Create(
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   grpc_error_handle error = [&]() {
+    grpc_error_handle error = GRPC_ERROR_NONE;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(
         server, args, args_modifier,
@@ -692,16 +693,10 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 void Chttp2ServerListener::Start(
     Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
   if (server_->config_fetcher() != nullptr) {
-    grpc_channel_args* args = nullptr;
     auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
-    {
-      MutexLock lock(&channel_args_mu_);
-      args = grpc_channel_args_copy(args_);
-    }
     server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(&resolved_address_, false), args,
-        std::move(watcher));
+        grpc_sockaddr_to_string(&resolved_address_, false), std::move(watcher));
   } else {
     {
       MutexLock lock(&mu_);
@@ -725,12 +720,12 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
-  grpc_channel_args* args = nullptr;
+  grpc_channel_args* args = self->args_;
+  grpc_channel_args* args_to_destroy = nullptr;
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager;
   {
-    MutexLock lock(&self->channel_args_mu_);
-    args = grpc_channel_args_copy(self->args_);
+    MutexLock lock(&self->connection_manager_mu_);
     connection_manager = self->connection_manager_;
   }
   auto endpoint_cleanup = [&](grpc_error_handle error) {
@@ -743,11 +738,12 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No ConnectionManager configured. Closing connection.");
       endpoint_cleanup(error);
-      grpc_channel_args_destroy(args);
       return;
     }
     // TODO(yashykt): Maybe combine the following two arg modifiers into a
     // single one.
+    // Make a copy of the args so as to avoid destroying the original.
+    args = grpc_channel_args_copy(args);
     absl::StatusOr<grpc_channel_args*> args_result =
         connection_manager->UpdateChannelArgsForConnection(args, tcp);
     if (!args_result.ok()) {
@@ -766,6 +762,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       grpc_channel_args_destroy(args);
       return;
     }
+    args_to_destroy = args;
   }
   grpc_resource_user* channel_resource_user = grpc_resource_user_create(
       self->resource_quota_,
@@ -803,7 +800,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   } else {
     connection_ref->Start(std::move(listener_ref), tcp, args);
   }
-  grpc_channel_args_destroy(args);
+  grpc_channel_args_destroy(args_to_destroy);
 }
 
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
@@ -861,6 +858,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   std::vector<grpc_error_handle> error_list;
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
+    grpc_error_handle error = GRPC_ERROR_NONE;
     if (absl::StartsWith(addr, kUnixUriPrefix)) {
       error = grpc_resolve_unix_domain_address(
           addr + sizeof(kUnixUriPrefix) - 1, &resolved);

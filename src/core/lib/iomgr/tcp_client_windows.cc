@@ -86,7 +86,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
   GPR_ASSERT(*ep == NULL);
   grpc_closure* on_done = ac->on_done;
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
@@ -225,8 +225,7 @@ failure:
   grpc_error_handle final_error =
       grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to connect", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_cpp_string(std::move(target_uri)));
+                         GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
   GRPC_ERROR_UNREF(error);
   grpc_slice_allocator_destroy(slice_allocator);
   if (socket != NULL) {

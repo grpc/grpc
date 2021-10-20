@@ -36,7 +36,7 @@ static grpc_error_handle recursively_find_error_with_field(
   }
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
-  for (auto child : children) {
+  for (const absl::Status& child : children) {
     grpc_error_handle result = recursively_find_error_with_field(child, which);
     if (result != GRPC_ERROR_NONE) return result;
   }
@@ -57,22 +57,22 @@ static grpc_error_handle recursively_find_error_with_field(
 }
 
 void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
-                           grpc_status_code* code, grpc_slice* slice,
+                           grpc_status_code* code, std::string* message,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
   // Fast path: We expect no error.
   if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
     if (code != nullptr) *code = GRPC_STATUS_OK;
-    if (slice != nullptr) {
+    if (message != nullptr) {
       // Normally, we call grpc_error_get_str(
-      //   error, GRPC_ERROR_STR_GRPC_MESSAGE, slice).
+      //   error, GRPC_ERROR_STR_GRPC_MESSAGE, message).
       // We can fastpath since we know that:
       // 1) Error is null
       // 2) which == GRPC_ERROR_STR_GRPC_MESSAGE
-      // 3) The resulting slice is statically known.
-      // 4) Said resulting slice is of length 0 ("").
+      // 3) The resulting message is statically known.
+      // 4) Said resulting message is "".
       // This means 3 movs, instead of 10s of instructions and a strlen.
-      *slice = grpc_core::ExternallyManagedSlice("");
+      *message = "";
     }
     if (http_error != nullptr) {
       *http_error = GRPC_HTTP2_NO_ERROR;
@@ -103,6 +103,10 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
                                 &integer)) {
     status = grpc_http2_error_to_grpc_status(
         static_cast<grpc_http2_error_code>(integer), deadline);
+  } else {
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    status = static_cast<grpc_status_code>(found_error.code());
+#endif
   }
   if (code != nullptr) *code = status;
 
@@ -125,14 +129,15 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
 
   // If the error has a status message, use it.  Otherwise, fall back to
   // the error description.
-  if (slice != nullptr) {
-    if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE, slice)) {
-      if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION, slice)) {
+  if (message != nullptr) {
+    if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                            message)) {
+      if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION,
+                              message)) {
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
-        *slice =
-            grpc_slice_from_copied_string(grpc_error_std_string(error).c_str());
+        *message = grpc_error_std_string(error);
 #else
-        *slice = grpc_slice_from_static_string("unknown error");
+        *message = "unknown error";
 #endif
       }
     }
@@ -143,13 +148,10 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
   grpc_status_code status;
   // TODO(yashykt): This should be updated once we decide on how to use the
   // absl::Status payload to capture all the contents of grpc_error.
-  grpc_slice message;
+  std::string message;
   grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status, &message,
                         nullptr /* http_error */, nullptr /* error_string */);
-  return absl::Status(static_cast<absl::StatusCode>(status),
-                      absl::string_view(reinterpret_cast<const char*>(
-                                            GRPC_SLICE_START_PTR(message)),
-                                        GRPC_SLICE_LENGTH(message)));
+  return absl::Status(static_cast<absl::StatusCode>(status), message);
 }
 
 grpc_error_handle absl_status_to_grpc_error(absl::Status status) {
@@ -169,7 +171,7 @@ bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
   }
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
-  for (auto child : children) {
+  for (const absl::Status& child : children) {
     if (grpc_error_has_clear_grpc_status(child)) {
       return true;
     }

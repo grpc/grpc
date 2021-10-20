@@ -377,15 +377,31 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       sd = subchannel_list()->subchannel(next_index);
       // If we're tried all subchannels, set state to TRANSIENT_FAILURE.
       if (sd->Index() == 0) {
-        // Re-resolve if this is the most recent subchannel list.
-        if (subchannel_list() == (p->latest_pending_subchannel_list_ != nullptr
-                                      ? p->latest_pending_subchannel_list_.get()
-                                      : p->subchannel_list_.get())) {
-          p->channel_control_helper()->RequestReresolution();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+          gpr_log(GPR_INFO,
+                  "Pick First %p subchannel list %p failed to connect to "
+                  "all subchannels",
+                  p, subchannel_list());
         }
         subchannel_list()->set_in_transient_failure(true);
-        // Only report new state in case 1.
+        // In case 2, swap to the new subchannel list.  This means reporting
+        // TRANSIENT_FAILURE and dropping the existing (working) connection,
+        // but we can't ignore what the control plane has told us.
+        if (subchannel_list() == p->latest_pending_subchannel_list_.get()) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+            gpr_log(GPR_INFO,
+                    "Pick First %p promoting pending subchannel list %p to "
+                    "replace %p",
+                    p, p->latest_pending_subchannel_list_.get(),
+                    p->subchannel_list_.get());
+          }
+          p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
+        }
+        // If this is the current subchannel list (either because we were
+        // in case 1 or because we were in case 2 and just promoted it to
+        // be the current list), re-resolve and report new state.
         if (subchannel_list() == p->subchannel_list_.get()) {
+          p->channel_control_helper()->RequestReresolution();
           absl::Status status =
               absl::UnavailableError("failed to connect to all addresses");
           p->channel_control_helper()->UpdateState(
