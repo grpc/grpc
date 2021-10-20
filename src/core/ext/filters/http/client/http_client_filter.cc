@@ -78,6 +78,7 @@ struct call_data {
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
+  grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
   // State for handling recv_initial_metadata ops.
@@ -442,6 +443,9 @@ static void http_client_start_transport_stream_op_batch(
         GRPC_BATCH_SCHEME);
     remove_if_present(
         batch->payload->send_initial_metadata.send_initial_metadata,
+        GRPC_BATCH_TE);
+    remove_if_present(
+        batch->payload->send_initial_metadata.send_initial_metadata,
         GRPC_BATCH_CONTENT_TYPE);
     remove_if_present(
         batch->payload->send_initial_metadata.send_initial_metadata,
@@ -457,8 +461,10 @@ static void http_client_start_transport_stream_op_batch(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->scheme, channeld->static_scheme, GRPC_BATCH_SCHEME);
     if (error != GRPC_ERROR_NONE) goto done;
-    batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
+    error = grpc_metadata_batch_add_tail(
+        batch->payload->send_initial_metadata.send_initial_metadata,
+        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS, GRPC_BATCH_TE);
+    if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
