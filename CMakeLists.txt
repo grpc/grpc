@@ -395,6 +395,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/lb/v1/load_balancer.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/lookup/v1/rls.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 protobuf_generate_grpc_cpp(
@@ -889,6 +892,8 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx remove_stream_from_stalled_lists_test)
   endif()
   add_dependencies(buildtests_cxx retry_throttle_test)
+  add_dependencies(buildtests_cxx rls_end2end_test)
+  add_dependencies(buildtests_cxx rls_lb_config_parser_test)
   add_dependencies(buildtests_cxx sdk_authz_end2end_test)
   add_dependencies(buildtests_cxx secure_auth_context_test)
   add_dependencies(buildtests_cxx seq_test)
@@ -1513,6 +1518,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
+  src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
@@ -1673,6 +1679,7 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/security.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -2094,6 +2101,7 @@ target_link_libraries(grpc
   absl::flat_hash_map
   absl::inlined_vector
   absl::bind_front
+  absl::hash
   absl::statusor
   absl::variant
   absl::utility
@@ -14276,6 +14284,99 @@ target_link_libraries(retry_throttle_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(rls_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  test/core/util/test_lb_policies.cc
+  test/cpp/end2end/rls_end2end_test.cc
+  test/cpp/end2end/test_service_impl.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(rls_end2end_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(rls_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_config
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(rls_lb_config_parser_test
+  test/core/client_channel/rls_lb_config_parser_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(rls_lb_config_parser_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(rls_lb_config_parser_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(sdk_authz_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -17196,7 +17297,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "gpr openssl absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -17216,7 +17317,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "grpc absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
   "-lgrpc++"
   ""
   "grpc++.pc")
