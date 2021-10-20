@@ -289,6 +289,38 @@ void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
   });
 }
 
+namespace {
+
+class CopySink {
+ public:
+  explicit CopySink(grpc_metadata_batch* dst) : dst_(dst) {}
+
+  void Encode(grpc_mdelem md) {
+    // Differently to grpc_metadata_batch_copy, we always copy slices here so
+    // that we don't need to deal with the plethora of edge cases in that world.
+    // TODO(ctiller): revisit this when deleting mdelem.
+    md = grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(md)),
+                                 grpc_slice_copy(GRPC_MDVALUE(md)));
+    // Error unused in non-debug builds.
+    grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
+    // The only way that Append() can fail is if
+    // there's a duplicate entry for a callout.  However, that can't be
+    // the case here, because we would not have been allowed to create
+    // a source batch that had that kind of conflict.
+    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+  }
+
+  template <class T, class V>
+  void Encode(T trait, V value) {
+    dst_->Set(trait, value);
+  }
+
+ private:
+  grpc_metadata_batch* dst_;
+};
+
+}  // namespace
+
 void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
                       uint32_t flags, grpc_metadata_batch* out_md,
                       uint32_t* outflags, bool* markfilled) {
@@ -302,7 +334,13 @@ void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
   if (markfilled != nullptr) {
     *markfilled = true;
   }
-  grpc_metadata_batch_copy(metadata, out_md);
+
+  // TODO(ctiller): copy the metadata batch, don't rely on a bespoke copy
+  // function. Can only do this once mdelems are out of the way though, too many
+  // edge cases otherwise.
+  out_md->Clear();
+  CopySink sink(out_md);
+  metadata->Encode(&sink);
 }
 
 int init_stream(grpc_transport* gt, grpc_stream* gs,
