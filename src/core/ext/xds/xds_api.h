@@ -651,6 +651,11 @@ class XdsApi {
   static absl::StatusOr<ResourceName> ParseResourceName(
       absl::string_view name, absl::string_view expected_resource_type = "");
 
+  // A helper method to construct the resource name from parts.
+  static std::string ConstructFullResourceName(absl::string_view authority,
+                                               absl::string_view resource_type,
+                                               absl::string_view name);
+
   // Creates an ADS request.
   // Takes ownership of \a error.
   grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
