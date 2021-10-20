@@ -1755,7 +1755,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         if (op->data.send_status_from_server.status_details != nullptr) {
           call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
               GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_slice_ref_internal(
+              grpc_slice_copy(
                   *op->data.send_status_from_server.status_details));
           call->send_extra_metadata_count++;
           if (status_error != GRPC_ERROR_NONE) {

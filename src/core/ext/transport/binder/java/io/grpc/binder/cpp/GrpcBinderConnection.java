@@ -21,29 +21,43 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
 
-/* Connects to a service synchronously */
-public class SyncServiceConnection implements ServiceConnection {
-  private final String logTag = "SyncServiceConnection";
+/* Handles the binder connection state with OnDeviceServer server */
+public class GrpcBinderConnection implements ServiceConnection {
+  private static final String logTag = "GrpcBinderConnection";
 
   private Context mContext;
   private IBinder mService;
 
-  public SyncServiceConnection(Context context) {
+  // A string that identifies this service connection
+  private final String mConnId;
+
+  public GrpcBinderConnection(Context context, String connId) {
     mContext = context;
+    mConnId = connId;
+  }
+
+  @Override
+  public void onNullBinding(ComponentName className) {
+    // TODO(mingcl): Notify C++ that the connection is never going to happen
+    Log.e(logTag, "Service returned null IBinder. mConnId = " + mConnId);
   }
 
   @Override
   public void onServiceConnected(ComponentName className, IBinder service) {
-    Log.e(logTag, "Service has connected: ");
-    // TODO(mingcl): Check if service is null here
+    Log.e(logTag, "Service has connected. mConnId = " + mConnId);
+    if (service == null) {
+      // This should not happen since onNullBinding should be invoked instead
+      throw new IllegalArgumentException("service was null");
+    }
     synchronized (this) {
       mService = service;
     }
+    notifyConnected(mConnId, mService);
   }
 
   @Override
   public void onServiceDisconnected(ComponentName className) {
-    Log.e(logTag, "Service has disconnected: ");
+    Log.e(logTag, "Service has disconnected. mConnId = " + mConnId);
   }
 
   public void tryConnect(String pkg, String cls) {
@@ -56,14 +70,16 @@ public class SyncServiceConnection implements ServiceConnection {
       // doesn't have permission to bind to it
       boolean result = mContext.bindService(intent, this, Context.BIND_AUTO_CREATE);
       if (result) {
-        Log.e(logTag, "bindService ok");
+        Log.e(logTag, "bindService returns ok");
       } else {
-        Log.e(logTag, "bindService not ok");
+        Log.e(
+            logTag,
+            "bindService failed. Maybe the system couldn't find the service or the"
+                + " client doesn't have permission to bind to it.");
       }
     }
   }
 
-  public IBinder getIBinder() {
-    return mService;
-  }
+  // Calls a function defined in endpoint_binder_pool.cc
+  private static native void notifyConnected(String connId, IBinder service);
 }
