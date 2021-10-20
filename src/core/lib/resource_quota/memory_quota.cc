@@ -342,7 +342,7 @@ void BasicMemoryQuota::Start() {
       [self](std::tuple<const char*, ReclamationFunction> arg) {
         auto reclaimer = std::move(std::get<1>(arg));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_DEBUG, "RQ: %s perform %s reclamation",
+          gpr_log(GPR_INFO, "RQ: %s perform %s reclamation",
                   self->name_.c_str(), std::get<0>(arg));
         }
         // One of the reclaimer queues gave us a way to get back memory.
@@ -401,7 +401,7 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token) {
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_DEBUG, "RQ: %s reclamation complete", name_.c_str());
+      gpr_log(GPR_INFO, "RQ: %s reclamation complete", name_.c_str());
     }
     if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
   }

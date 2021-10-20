@@ -30,12 +30,9 @@ ResourceQuotaPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args) {
 
 namespace {
 grpc_arg MakeArg(ResourceQuota* quota) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
-  arg.value.pointer.p = quota;
-  arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
-  return arg;
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), quota,
+      grpc_resource_quota_arg_vtable());
 }
 }  // namespace
 
@@ -47,13 +44,13 @@ grpc_channel_args* EnsureResourceQuotaInChannelArgs(
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not
   // sharing subchannels due to their channel args not specifying a quota.
-  auto new_arg = MakeArg(DefaultResourceQuota().release());
+  auto new_arg = MakeArg(DefaultResourceQuota().get());
   return grpc_channel_args_copy_and_add(args, &new_arg, 1);
 }
 
 grpc_channel_args* ChannelArgsWrappingResourceQuota(
     ResourceQuotaPtr resource_quota) {
-  auto new_arg = MakeArg(resource_quota.release());
+  auto new_arg = MakeArg(resource_quota.get());
   return grpc_channel_args_copy_and_add(nullptr, &new_arg, 1);
 }
 

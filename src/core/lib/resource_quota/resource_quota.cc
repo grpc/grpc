@@ -24,10 +24,10 @@ ResourceQuota::ResourceQuota(std::string name)
 
 ResourceQuota::~ResourceQuota() = default;
 
-ResourceQuotaPtr DefaultResourceQuota() {
+ResourceQuotaPtr ResourceQuota::Default() {
   static auto default_resource_quota =
-      MakeResourceQuota("default_resource_quota");
-  return default_resource_quota;
+      MakeResourceQuota("default_resource_quota").release();
+  return default_resource_quota->Ref();
 }
 
 }  // namespace grpc_core

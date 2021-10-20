@@ -34,6 +34,9 @@ class ResourceQuota : public RefCounted<ResourceQuota> {
 
   const RefCountedPtr<ThreadQuota>& thread_quota() { return thread_quota_; }
 
+  // The default global resource quota
+  static ResourceQuotaPtr Default();
+
  private:
   MemoryQuotaPtr memory_quota_;
   RefCountedPtr<ThreadQuota> thread_quota_;
@@ -43,9 +46,6 @@ using ResourceQuotaPtr = RefCountedPtr<ResourceQuota>;
 inline ResourceQuotaPtr MakeResourceQuota(std::string name) {
   return MakeRefCounted<ResourceQuota>(std::move(name));
 }
-
-// The default global resource quota
-ResourceQuotaPtr DefaultResourceQuota();
 
 }  // namespace grpc_core
 
