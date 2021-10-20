@@ -4702,6 +4702,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
+  - src/cpp/common/secure_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -4743,6 +4744,12 @@ targets:
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
+  - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -5509,6 +5516,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
+  - src/cpp/common/secure_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -5550,6 +5558,12 @@ targets:
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
+  - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -5727,6 +5741,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
+  - src/cpp/common/secure_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -5768,6 +5783,12 @@ targets:
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
+  - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -8123,6 +8144,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
+  - src/cpp/common/secure_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -8163,6 +8185,12 @@ targets:
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
+  - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -8301,6 +8329,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
+  - src/cpp/common/secure_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -8342,6 +8371,12 @@ targets:
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
+  - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -8395,6 +8430,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
+  - src/cpp/common/secure_auth_context.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -8436,6 +8472,12 @@ targets:
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
+  - src/cpp/common/tls_credentials_options.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc

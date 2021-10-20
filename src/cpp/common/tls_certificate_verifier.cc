@@ -56,25 +56,27 @@ grpc::string_ref TlsCustomVerificationCheckRequest::common_name() const {
              : "";
 }
 
-std::vector<std::string> TlsCustomVerificationCheckRequest::uri_names() const {
-  std::vector<std::string> uri_names;
+std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::uri_names()
+    const {
+  std::vector<grpc::string_ref> uri_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.uri_names_size; ++i) {
     uri_names.emplace_back(c_request_->peer_info.san_names.uri_names[i]);
   }
   return uri_names;
 }
 
-std::vector<std::string> TlsCustomVerificationCheckRequest::dns_names() const {
-  std::vector<std::string> dns_names;
+std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::dns_names()
+    const {
+  std::vector<grpc::string_ref> dns_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.dns_names_size; ++i) {
     dns_names.emplace_back(c_request_->peer_info.san_names.dns_names[i]);
   }
   return dns_names;
 }
 
-std::vector<std::string> TlsCustomVerificationCheckRequest::email_names()
+std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::email_names()
     const {
-  std::vector<std::string> email_names;
+  std::vector<grpc::string_ref> email_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.email_names_size;
        ++i) {
     email_names.emplace_back(c_request_->peer_info.san_names.email_names[i]);
@@ -82,8 +84,9 @@ std::vector<std::string> TlsCustomVerificationCheckRequest::email_names()
   return email_names;
 }
 
-std::vector<std::string> TlsCustomVerificationCheckRequest::ip_names() const {
-  std::vector<std::string> ip_names;
+std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::ip_names()
+    const {
+  std::vector<grpc::string_ref> ip_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.ip_names_size; ++i) {
     ip_names.emplace_back(c_request_->peer_info.san_names.ip_names[i]);
   }
