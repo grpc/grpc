@@ -167,17 +167,18 @@ struct inproc_stream {
       // Now transfer from the other side's write_buffer if any to the to_read
       // buffer
       if (cs->write_buffer_initial_md_filled) {
-        fill_in_metadata(this, &cs->write_buffer_initial_md,
-                         cs->write_buffer_initial_md_flags, &to_read_initial_md,
-                         &to_read_initial_md_flags, &to_read_initial_md_filled);
+        (void)fill_in_metadata(this, &cs->write_buffer_initial_md,
+                               cs->write_buffer_initial_md_flags,
+                               &to_read_initial_md, &to_read_initial_md_flags,
+                               &to_read_initial_md_filled);
         deadline = std::min(deadline, cs->write_buffer_deadline);
         cs->write_buffer_initial_md.Clear();
         cs->write_buffer_initial_md_filled = false;
       }
       if (cs->write_buffer_trailing_md_filled) {
-        fill_in_metadata(this, &cs->write_buffer_trailing_md, 0,
-                         &to_read_trailing_md, nullptr,
-                         &to_read_trailing_md_filled);
+        (void)fill_in_metadata(this, &cs->write_buffer_trailing_md, 0,
+                               &to_read_trailing_md, nullptr,
+                               &to_read_trailing_md_filled);
         cs->write_buffer_trailing_md.Clear();
         cs->write_buffer_trailing_md_filled = false;
       }
@@ -413,7 +414,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
                                     : &other->to_read_trailing_md;
     bool* destfilled = (other == nullptr) ? &s->write_buffer_trailing_md_filled
                                           : &other->to_read_trailing_md_filled;
-    fill_in_metadata(s, &fake_md, 0, dest, nullptr, destfilled);
+    (void)fill_in_metadata(s, &fake_md, 0, dest, nullptr, destfilled);
 
     if (other != nullptr) {
       if (other->cancel_other_error == GRPC_ERROR_NONE) {
@@ -439,7 +440,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
       auth_md->md = grpc_mdelem_from_slices(g_fake_auth_key, g_fake_auth_value);
       GPR_ASSERT(fake_md.LinkTail(auth_md) == GRPC_ERROR_NONE);
 
-      fill_in_metadata(
+      (void)fill_in_metadata(
           s, &fake_md, 0,
           s->recv_initial_md_op->payload->recv_initial_metadata
               .recv_initial_metadata,
@@ -642,10 +643,11 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       goto done;
     } else {
       if (!other || !other->closed) {
-        fill_in_metadata(s,
-                         s->send_trailing_md_op->payload->send_trailing_metadata
-                             .send_trailing_metadata,
-                         0, dest, nullptr, destfilled);
+        (void)fill_in_metadata(
+            s,
+            s->send_trailing_md_op->payload->send_trailing_metadata
+                .send_trailing_metadata,
+            0, dest, nullptr, destfilled);
       }
       s->trailing_md_sent = true;
       if (s->send_trailing_md_op->payload->send_trailing_metadata.sent) {
@@ -907,7 +909,7 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
                                     : &other->to_read_trailing_md;
     bool* destfilled = (other == nullptr) ? &s->write_buffer_trailing_md_filled
                                           : &other->to_read_trailing_md_filled;
-    fill_in_metadata(s, &cancel_md, 0, dest, nullptr, destfilled);
+    (void)fill_in_metadata(s, &cancel_md, 0, dest, nullptr, destfilled);
 
     if (other != nullptr) {
       if (other->cancel_other_error == GRPC_ERROR_NONE) {
@@ -1012,7 +1014,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
       } else {
         if (!s->other_side_closed) {
-          fill_in_metadata(
+          (void)fill_in_metadata(
               s, op->payload->send_initial_metadata.send_initial_metadata,
               op->payload->send_initial_metadata.send_initial_metadata_flags,
               dest, destflags, destfilled);

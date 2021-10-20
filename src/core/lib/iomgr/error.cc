@@ -552,7 +552,7 @@ static void ref_errs(grpc_error_handle err) {
   while (slot != UINT8_MAX) {
     grpc_linked_error* lerr =
         reinterpret_cast<grpc_linked_error*>(err->arena + slot);
-    GRPC_ERROR_REF(lerr->err);
+    (void)GRPC_ERROR_REF(lerr->err);
     slot = lerr->next;
   }
 }

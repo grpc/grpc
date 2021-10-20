@@ -131,7 +131,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
             connect->addr_name.c_str(), connect->stream_handle);
       }
     } else {
-      GRPC_ERROR_REF(error);
+      (void)GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);

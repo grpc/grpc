@@ -288,7 +288,8 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
           GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-      b->Substitute(b->legacy_index()->named.path, mdelem_path_without_query);
+      (void)b->Substitute(b->legacy_index()->named.path,
+                          mdelem_path_without_query);
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
@@ -364,7 +365,7 @@ static void hs_recv_initial_metadata_ready(void* user_data,
           "resuming recv_message_ready from recv_initial_metadata_ready");
     }
   } else {
-    GRPC_ERROR_REF(err);
+    (void)GRPC_ERROR_REF(err);
   }
   if (calld->seen_recv_trailing_metadata_ready) {
     GRPC_CALL_COMBINER_START(calld->call_combiner,

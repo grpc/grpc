@@ -424,7 +424,7 @@ class GrpcPolledFdWindows {
   static void OnTcpConnect(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
-    GRPC_ERROR_REF(error);  // ref owned by lambda
+    (void)GRPC_ERROR_REF(error);  // ref owned by lambda
     grpc_polled_fd->work_serializer_->Run(
         [grpc_polled_fd, error]() {
           grpc_polled_fd->OnTcpConnectLocked(error);
@@ -579,7 +579,7 @@ class GrpcPolledFdWindows {
 
   static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    GRPC_ERROR_REF(error);  // ref owned by lambda
+    (void)GRPC_ERROR_REF(error);  // ref owned by lambda
     polled_fd->work_serializer_->Run(
         [polled_fd, error]() { polled_fd->OnIocpReadableLocked(error); },
         DEBUG_LOCATION);
@@ -624,7 +624,7 @@ class GrpcPolledFdWindows {
 
   static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    GRPC_ERROR_REF(error);  // error owned by lambda
+    (void)GRPC_ERROR_REF(error);  // error owned by lambda
     polled_fd->work_serializer_->Run(
         [polled_fd, error]() { polled_fd->OnIocpWriteableLocked(error); },
         DEBUG_LOCATION);
