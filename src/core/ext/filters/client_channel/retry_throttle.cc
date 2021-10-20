@@ -155,7 +155,7 @@ RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
     throttle_data = it->second.get();
   }
   gpr_mu_unlock(&g_mu);
-  return throttle_data;
+  return throttle_data->Ref();
 }
 
 }  // namespace internal
