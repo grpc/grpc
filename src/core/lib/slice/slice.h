@@ -86,6 +86,17 @@ class BasicSlice : public UnderlyingSlice<kStorage == Storage::kOwned> {
     GPR_ASSERT(CompatibleStorage(slice.refcount, kStorage));
     return Slice(slice);
   }
+  static absl::enable_if_t<
+      kStorage == Storage::kStatic || kStorage == Storage::kUnknown, BasicSlice>
+  FromStaticString(const char* str) {
+    return FromC(grpc_slice_from_static_string(str));
+  }
+
+  // Create a new slice with uninitialized contents of some length.
+  BasicSlice<Storage::kUniquelyOwned> MakeUninitialized(size_t length) {
+    return BasicSlice<Storage::kUniquelyOwned>::FromC(
+        grpc_slice_malloc(length));
+  }
 
   // Iterator access to the underlying bytes
   absl::enable_if_t<Mutable<kStorage>, uint8_t*> begin() {
