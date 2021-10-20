@@ -42,6 +42,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\local_subchannel_pool.cc " +
     "src\\core\\ext\\filters\\client_channel\\proxy_mapper_registry.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\binder\\binder_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\dns_resolver_ares.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_event_engine.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_posix.cc " +
@@ -1070,6 +1071,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\weighted_target");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\binder");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\dns");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\dns\\native");
