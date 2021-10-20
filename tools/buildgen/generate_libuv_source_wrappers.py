@@ -48,9 +48,14 @@ def select(*args, **kwargs):
     return []
 
 
+def get_output_filename(src_filename: str) -> str:
+  name, ext = src_filename.rsplit('.', 1)
+  return os.path.join(PROJECT_ROOT, 'src', 'libuv', ''.join([name, '-wrapper.', ext]))
+
+
 def render_template(template: Template, src_filename: str) -> None:
     print('processing:', src_filename)
-    out_filename = os.path.join(PROJECT_ROOT, 'src', 'libuv', src_filename)
+    out_filename = get_output_filename(src_filename)
     if not os.path.isdir(os.path.dirname(out_filename)):
         os.makedirs(os.path.dirname(out_filename))
     with open(out_filename, 'w') as outfile:
