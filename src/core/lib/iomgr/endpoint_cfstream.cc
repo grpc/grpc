@@ -236,17 +236,6 @@ static void WriteAction(void* arg, grpc_error_handle error) {
   grpc_slice_unref_internal(slice);
 }
 
-static void CFStreamReadAllocationDone(void* arg, grpc_error_handle error) {
-  CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    ep->stream_sync->NotifyOnRead(&ep->read_action);
-  } else {
-    grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
-    CallReadCb(ep, error);
-    EP_UNREF(ep, "read");
-  }
-}
-
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
                          grpc_closure* cb, bool urgent) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
