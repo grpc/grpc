@@ -113,7 +113,6 @@ Pod::Spec.new do |spec|
     "src/unix/fsevents.c",
     "src/unix/kqueue.c",
     "src/unix/darwin-proctitle.c",
-    "src/unix/proctitle.c",
     "src/heap-inl.h",
     "src/idna.h",
     "src/queue.h",

@@ -452,13 +452,13 @@ USE_BUILT_PROTOC = false
 endif
 
 # V=1 can be used to print commands run by make
-ifeq ($(V),1)
+#ifeq ($(V),1)
 E = @:
 Q =
-else
-E = @echo
-Q = @
-endif
+#else
+#E = @echo
+#Q = @
+#endif
 
 CORE_VERSION = 19.1.0
 CPP_VERSION = 1.42.0-dev
