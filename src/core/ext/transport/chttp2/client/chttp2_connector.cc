@@ -399,16 +399,12 @@ void FactoryInit() {
 //   Asynchronously: - resolve target
 //                   - connect to it (trying alternatives as presented)
 //                   - perform handshakes
-grpc_channel* grpc_channel_create(grpc_channel_credentials* creds,
-                                  const char* target,
-                                  const grpc_channel_args* args,
-                                  void* reserved) {
+grpc_channel* grpc_channel_create(const char* target,
+                                  grpc_channel_credentials* creds,
+                                  const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE(
-      "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
-      "reserved=%p)",
-      4, ((void*)creds, target, (void*)args, (void*)reserved));
-  GPR_ASSERT(reserved == nullptr);
+  GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
+                 (target, (void*)creds, (void*)args));
   grpc_channel* channel = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
@@ -442,12 +438,13 @@ grpc_channel* grpc_channel_create(grpc_channel_credentials* creds,
 }
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-grpc_channel* grpc_channel_create_from_fd(grpc_channel_credentials* creds,
-                                          const char* target, int fd,
+grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
+                                          grpc_channel_credentials* creds,
                                           const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_channel_create_from_fd(target=%p, fd=%d, args=%p)", 3,
-                 (target, fd, args));
+  GRPC_API_TRACE(
+      "grpc_channel_create_from_fd(target=%p, fd=%d, creds=%p, args=%p)", 4,
+      (target, fd, creds, args));
   // For now, we only support insecure channel credentials.
   if (creds == nullptr ||
       strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
@@ -499,9 +496,9 @@ grpc_channel* grpc_channel_create_from_fd(grpc_channel_credentials* creds,
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
 
-grpc_channel* grpc_channel_create_from_fd(grpc_channel_credentials* /* creds*/,
-                                          const char* /* target */,
+grpc_channel* grpc_channel_create_from_fd(const char* /* target */,
                                           int /* fd */,
+                                          grpc_channel_credentials* /* creds*/,
                                           const grpc_channel_args* /* args */) {
   GPR_ASSERT(0);
   return nullptr;

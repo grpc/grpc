@@ -310,8 +310,8 @@ static alts_handshaker_client_test_config* create_config() {
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  config->channel = grpc_channel_create(
-      creds, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, nullptr, nullptr);
+  config->channel = grpc_channel_create(ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
+                                        creds, nullptr);
   grpc_channel_credentials_release(creds);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_alts_credentials_options* client_options =

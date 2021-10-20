@@ -160,8 +160,7 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client =
-      grpc_channel_create(creds, ffd->localaddr.c_str(), client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }

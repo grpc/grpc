@@ -106,7 +106,7 @@ class ChannelFixture {
         max_tracer_event_memory);
     grpc_channel_args client_args = {1, &client_a};
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    channel_ = grpc_channel_create(creds, "fake_target", &client_args, nullptr);
+    channel_ = grpc_channel_create("fake_target", creds, &client_args);
     grpc_channel_credentials_release(creds);
   }
 

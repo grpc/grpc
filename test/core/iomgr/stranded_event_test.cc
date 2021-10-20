@@ -366,8 +366,8 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
       grpc_channel_args* channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
       grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-      grpc_channel* channel = grpc_channel_create(
-          creds, "fake:///test.server.com", channel_args, nullptr);
+      grpc_channel* channel =
+          grpc_channel_create("fake:///test.server.com", creds, channel_args);
       grpc_channel_credentials_release(creds);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =

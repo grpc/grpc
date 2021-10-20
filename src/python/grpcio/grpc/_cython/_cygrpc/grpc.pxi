@@ -555,8 +555,8 @@ cdef extern from "grpc/grpc_security.h":
   void grpc_call_credentials_release(grpc_call_credentials *creds) nogil
 
   grpc_channel *grpc_channel_create(
-      grpc_channel_credentials *creds, const char *target,
-      const grpc_channel_args *args, void *reserved) nogil
+      const char *target, grpc_channel_credentials *creds,
+      const grpc_channel_args *args) nogil
 
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)

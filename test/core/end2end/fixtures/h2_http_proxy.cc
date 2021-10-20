@@ -83,8 +83,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   }
   gpr_setenv("http_proxy", proxy_uri.c_str());
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_channel_create(creds, ffd->server_addr.c_str(), client_args,
-                                  nullptr);
+  f->client = grpc_channel_create(ffd->server_addr.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }

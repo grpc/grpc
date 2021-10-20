@@ -37,7 +37,7 @@ std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string& target,
   init_lib.init();
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   auto channel = CreateChannelInternal(
-      "", grpc_channel_create_from_fd(creds, target.c_str(), fd, nullptr),
+      "", grpc_channel_create_from_fd(target.c_str(), fd, creds, nullptr),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
   grpc_channel_credentials_release(creds);
@@ -52,7 +52,7 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
   args.SetChannelArgs(&channel_args);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   auto channel = CreateChannelInternal(
-      "", grpc_channel_create_from_fd(creds, target.c_str(), fd, &channel_args),
+      "", grpc_channel_create_from_fd(target.c_str(), fd, creds, &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
   grpc_channel_credentials_release(creds);
@@ -72,7 +72,7 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
   args.SetChannelArgs(&channel_args);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   auto channel = CreateChannelInternal(
-      "", grpc_channel_create_from_fd(creds, target.c_str(), fd, &channel_args),
+      "", grpc_channel_create_from_fd(target.c_str(), fd, creds, &channel_args),
       std::move(interceptor_creators));
   grpc_channel_credentials_release(creds);
   return channel;

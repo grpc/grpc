@@ -34,7 +34,7 @@ void test_unknown_scheme_target(void) {
   grpc_core::ResolverRegistry::Builder::InitRegistry();
 
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  chan = grpc_channel_create(creds, "blah://blah", nullptr, nullptr);
+  chan = grpc_channel_create("blah://blah", creds, nullptr);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(chan != nullptr);
 

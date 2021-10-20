@@ -47,8 +47,7 @@ void run_test(bool wait_for_ready) {
 
   /* create a call, channel to a non existant server */
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* chan =
-      grpc_channel_create(creds, "fake:nonexistant", &args, nullptr);
+  grpc_channel* chan = grpc_channel_create("fake:nonexistant", creds, &args);
   grpc_channel_credentials_release(creds);
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
   grpc_call* call = grpc_channel_create_call(

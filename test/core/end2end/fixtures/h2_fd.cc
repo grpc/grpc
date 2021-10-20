@@ -73,8 +73,8 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
 
   GPR_ASSERT(!f->client);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_channel_create_from_fd(creds, "fixture_client",
-                                          sfd->fd_pair[0], client_args);
+  f->client = grpc_channel_create_from_fd("fixture_client", sfd->fd_pair[0],
+                                          creds, client_args);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }

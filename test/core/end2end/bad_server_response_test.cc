@@ -191,8 +191,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  state.channel =
-      grpc_channel_create(creds, state.target.c_str(), nullptr, nullptr);
+  state.channel = grpc_channel_create(state.target.c_str(), creds, nullptr);
   grpc_channel_credentials_release(creds);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   // The default connect deadline is 20 seconds, so reduce the RPC deadline to 1

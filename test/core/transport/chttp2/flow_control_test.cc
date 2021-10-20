@@ -312,8 +312,8 @@ class FlowControlTest : public ::testing::Test {
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    channel_ = grpc_channel_create(creds, server_address.c_str(),
-                                   &client_channel_args, nullptr);
+    channel_ = grpc_channel_create(server_address.c_str(), creds,
+                                   &client_channel_args);
     grpc_channel_credentials_release(creds);
     VerifyChannelReady(channel_, cq_);
     g_target_initial_window_size_mocker->Reset();

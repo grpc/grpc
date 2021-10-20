@@ -184,10 +184,10 @@ extern grpc_channel_credentials_release_type grpc_channel_credentials_release_im
 typedef void(*grpc_server_credentials_release_type)(grpc_server_credentials* creds);
 extern grpc_server_credentials_release_type grpc_server_credentials_release_import;
 #define grpc_server_credentials_release grpc_server_credentials_release_import
-typedef grpc_channel*(*grpc_channel_create_type)(grpc_channel_credentials* creds, const char* target, const grpc_channel_args* args, void* reserved);
+typedef grpc_channel*(*grpc_channel_create_type)(const char* target, grpc_channel_credentials* creds, const grpc_channel_args* args);
 extern grpc_channel_create_type grpc_channel_create_import;
 #define grpc_channel_create grpc_channel_create_import
-typedef grpc_channel*(*grpc_channel_create_from_fd_type)(grpc_channel_credentials* creds, const char* target, int fd, const grpc_channel_args* args);
+typedef grpc_channel*(*grpc_channel_create_from_fd_type)(const char* target, int fd, grpc_channel_credentials* creds, const grpc_channel_args* args);
 extern grpc_channel_create_from_fd_type grpc_channel_create_from_fd_import;
 #define grpc_channel_create_from_fd grpc_channel_create_from_fd_import
 typedef grpc_channel*(*grpc_lame_client_channel_create_type)(const char* target, grpc_status_code error_code, const char* error_message);

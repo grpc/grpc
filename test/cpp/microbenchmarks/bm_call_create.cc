@@ -91,8 +91,7 @@ class BaseChannelFixture {
 
 static grpc_channel* CreateChannel() {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel =
-      grpc_channel_create(creds, "localhost:1234", nullptr, nullptr);
+  grpc_channel* channel = grpc_channel_create("localhost:1234", creds, nullptr);
   grpc_channel_credentials_release(creds);
   return channel;
 }

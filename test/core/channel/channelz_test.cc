@@ -150,7 +150,7 @@ class ChannelFixture {
             const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    channel_ = grpc_channel_create(creds, "fake_target", &client_args, nullptr);
+    channel_ = grpc_channel_create("fake_target", creds, &client_args);
     grpc_channel_credentials_release(creds);
   }
 
@@ -276,8 +276,7 @@ TEST(ChannelzChannelTest, ChannelzDisabled) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel =
-      grpc_channel_create(creds, "fake_target", &args, nullptr);
+  grpc_channel* channel = grpc_channel_create("fake_target", creds, &args);
   grpc_channel_credentials_release(creds);
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
   ASSERT_EQ(channelz_channel, nullptr);
@@ -514,7 +513,7 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* internal_channel =
-      grpc_channel_create(creds, "fake_target", &client_args, nullptr);
+      grpc_channel_create("fake_target", creds, &client_args);
   grpc_channel_credentials_release(creds);
   // The internal channel should not be returned from the request
   ValidateGetTopChannels(10);

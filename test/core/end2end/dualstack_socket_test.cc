@@ -142,8 +142,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     client_hostport = grpc_core::JoinHostPort(client_host, port);
   }
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  client =
-      grpc_channel_create(creds, client_hostport.c_str(), nullptr, nullptr);
+  client = grpc_channel_create(client_hostport.c_str(), creds, nullptr);
   grpc_channel_credentials_release(creds);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",

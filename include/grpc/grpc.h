@@ -327,17 +327,16 @@ GRPCAPI void grpc_server_credentials_release(grpc_server_credentials* creds);
     However, if any args of the 'pointer' type are passed, then the referenced
     vtable must be maintained by the caller until grpc_channel_destroy
     terminates. See grpc_channel_args definition for more on this. */
-GRPCAPI grpc_channel* grpc_channel_create(grpc_channel_credentials* creds,
-                                          const char* target,
-                                          const grpc_channel_args* args,
-                                          void* reserved);
+GRPCAPI grpc_channel* grpc_channel_create(const char* target,
+                                          grpc_channel_credentials* creds,
+                                          const grpc_channel_args* args);
 
 /** Create a secure channel to 'target' using file descriptor 'fd' and passed-in
     credentials. The 'target' argument will be used to indicate the name for
     this channel. Note that this API currently only supports insecure channel
-    credentials. Using other types of credentials will retsult in a failure. */
+    credentials. Using other types of credentials will result in a failure. */
 GRPCAPI grpc_channel* grpc_channel_create_from_fd(
-    grpc_channel_credentials* creds, const char* target, int fd,
+    const char* target, int fd, grpc_channel_credentials* creds,
     const grpc_channel_args* args);
 
 /** Create a lame client: this client fails every operation attempted on it. */

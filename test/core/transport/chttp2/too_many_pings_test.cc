@@ -182,8 +182,8 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_server_start(server);
   // create the channel (bdp pings are enabled by default)
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel = grpc_channel_create(
-      creds, server_address.c_str(), nullptr /* channel args */, nullptr);
+  grpc_channel* channel = grpc_channel_create(server_address.c_str(), creds,
+                                              nullptr /* channel args */);
   grpc_channel_credentials_release(creds);
   std::map<grpc_status_code, int> statuses_and_counts;
   const int kNumTotalRpcs = 1e5;
@@ -373,12 +373,12 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel = grpc_channel_create(creds, server_address.c_str(),
-                                              &client_channel_args, nullptr);
+  grpc_channel* channel =
+      grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
   grpc_channel_credentials_release(creds);
   grpc_channel_credentials* another_creds = grpc_insecure_credentials_create();
   grpc_channel* channel_dup = grpc_channel_create(
-      another_creds, server_address.c_str(), &client_channel_args, nullptr);
+      server_address.c_str(), another_creds, &client_channel_args);
   grpc_channel_credentials_release(another_creds);
   int expected_keepalive_time_sec = 1;
   // We need 3 GOAWAY frames to throttle the keepalive time from 1 second to 8
@@ -461,7 +461,7 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
                                            client_args};
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_channel_create(creds, "fake:///", &client_channel_args, nullptr);
+      grpc_channel_create("fake:///", creds, &client_channel_args);
   grpc_channel_credentials_release(creds);
   // For a single subchannel 3 GOAWAYs would be sufficient to increase the
   // keepalive time from 1 second to beyond 5 seconds. Even though we are
@@ -532,7 +532,7 @@ TEST_F(KeepaliveThrottlingTest,
                                            client_args};
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_channel_create(creds, "fake:///", &client_channel_args, nullptr);
+      grpc_channel_create("fake:///", creds, &client_channel_args);
   grpc_channel_credentials_release(creds);
   response_generator->SetResponse(
       BuildResolverResult({absl::StrCat("ipv4:", server_address1),
@@ -740,8 +740,8 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel = grpc_channel_create(creds, server_address.c_str(),
-                                              &client_channel_args, nullptr);
+  grpc_channel* channel =
+      grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
   grpc_channel_credentials_release(creds);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
@@ -815,8 +815,8 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel = grpc_channel_create(creds, server_address.c_str(),
-                                              &client_channel_args, nullptr);
+  grpc_channel* channel =
+      grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
   grpc_channel_credentials_release(creds);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);

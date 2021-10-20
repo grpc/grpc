@@ -1315,7 +1315,18 @@ target_link_libraries(end2end_tests
 )
 
 foreach(_hdr
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/fork.h
+  include/grpc/grpc.h
   include/grpc/grpc_security.h
+  include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
+  include/grpc/status.h
+  include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -2562,10 +2573,8 @@ add_library(grpc_unsecure
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/credentials_metadata.cc
-  src/core/lib/security/credentials/insecure/insecure_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/tls/tls_utils.cc
-  src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/security_connector.cc
@@ -2621,7 +2630,6 @@ add_library(grpc_unsecure
   src/core/lib/uri/uri_parser.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_noextra.cc
-  src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )
@@ -2947,7 +2955,6 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
-  include/grpc/grpc_security.h
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
@@ -3440,6 +3447,9 @@ target_link_libraries(grpc++_test_util
 endif()
 
 add_library(grpc++_unsecure
+  src/core/lib/security/credentials/insecure/insecure_credentials.cc
+  src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
+  src/core/tsi/local_transport_security.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -3597,7 +3607,6 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
-  include/grpc/grpc_security.h
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h

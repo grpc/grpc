@@ -500,7 +500,7 @@ static void alts_tsi_handshaker_create_channel(
   GPR_ASSERT(handshaker->channel == nullptr);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   handshaker->channel = grpc_channel_create(
-      creds, next_args->handshaker->handshaker_service_url, nullptr, nullptr);
+      next_args->handshaker->handshaker_service_url, creds, nullptr);
   grpc_channel_credentials_release(creds);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(

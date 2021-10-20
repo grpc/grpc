@@ -160,7 +160,7 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   grpc_args.num_args = 1;
   grpc_args.args = &ssl_name_override;
   grpc_channel* channel =
-      grpc_channel_create(ssl_creds, target.c_str(), &grpc_args, nullptr);
+      grpc_channel_create(target.c_str(), ssl_creds, &grpc_args);
   GPR_ASSERT(channel);
 
   // Initially the channel will be idle, the

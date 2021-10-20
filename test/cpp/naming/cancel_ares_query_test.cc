@@ -325,7 +325,7 @@ void TestCancelDuringActiveQuery(
   }
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* client =
-      grpc_channel_create(creds, client_target.c_str(), client_args, nullptr);
+      grpc_channel_create(client_target.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);

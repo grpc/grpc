@@ -196,7 +196,7 @@ int main(int argc, char** argv) {
   }
 
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  channel = grpc_channel_create(creds, target, nullptr, nullptr);
+  channel = grpc_channel_create(target, creds, nullptr);
   grpc_channel_credentials_release(creds);
   cq = grpc_completion_queue_create_for_next(nullptr);
   the_buffer =

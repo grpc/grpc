@@ -64,8 +64,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client =
-      grpc_channel_create(creds, ffd->localaddr.c_str(), client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }

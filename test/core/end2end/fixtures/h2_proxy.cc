@@ -51,8 +51,7 @@ static grpc_server* create_proxy_server(const char* port,
 static grpc_channel* create_proxy_client(const char* target,
                                          grpc_channel_args* client_args) {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel =
-      grpc_channel_create(creds, target, client_args, nullptr);
+  grpc_channel* channel = grpc_channel_create(target, creds, client_args);
   grpc_channel_credentials_release(creds);
   return channel;
 }
@@ -82,8 +81,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   f->client = grpc_channel_create(
-      creds, grpc_end2end_proxy_get_client_target(ffd->proxy), client_args,
-      nullptr);
+      grpc_end2end_proxy_get_client_target(ffd->proxy), creds, client_args);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }

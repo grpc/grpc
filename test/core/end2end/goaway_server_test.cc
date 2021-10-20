@@ -209,8 +209,7 @@ int main(int argc, char** argv) {
 
   /* create a channel that picks first amongst the servers */
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* chan =
-      grpc_channel_create(creds, "test", &client_args, nullptr);
+  grpc_channel* chan = grpc_channel_create("test", creds, &client_args);
   grpc_channel_credentials_release(creds);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");

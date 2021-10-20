@@ -46,7 +46,7 @@ class InsecureChannelFixture : public ChannelDestroyerFixture {
   InsecureChannelFixture() {}
   void Init() override {
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    channel_ = grpc_channel_create(creds, "localhost:1234", nullptr, nullptr);
+    channel_ = grpc_channel_create("localhost:1234", creds, nullptr);
     grpc_channel_credentials_release(creds);
   }
 };

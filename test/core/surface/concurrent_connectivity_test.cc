@@ -68,7 +68,7 @@ void create_loop_destroy(void* addr) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     grpc_channel* chan =
-        grpc_channel_create(creds, static_cast<char*>(addr), nullptr, nullptr);
+        grpc_channel_create(static_cast<char*>(addr), creds, nullptr);
     grpc_channel_credentials_release(creds);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
@@ -266,7 +266,7 @@ void watches_with_short_timeouts(void* addr) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     grpc_channel* chan =
-        grpc_channel_create(creds, static_cast<char*>(addr), nullptr, nullptr);
+        grpc_channel_create(static_cast<char*>(addr), creds, nullptr);
     grpc_channel_credentials_release(creds);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {

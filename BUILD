@@ -148,6 +148,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/compression.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
+    "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
@@ -162,10 +163,6 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/memory_allocator.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
-]
-
-GRPC_SECURE_PUBLIC_HDRS = [
-    "include/grpc/grpc_security.h",
 ]
 
 GRPCXX_SRCS = [
@@ -360,7 +357,6 @@ grpc_cc_library(
         "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
-        "grpc_lb_policy_grpclb",
         "grpc_security_base",
         "grpc_trace",
         "slice",
@@ -379,7 +375,7 @@ grpc_cc_library(
         "//conditions:default": [],
     }),
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    public_hdrs = GRPC_PUBLIC_HDRS,
     select_deps = {
         "grpc_no_xds": [],
         "//conditions:default": [
@@ -474,7 +470,7 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "error",
         "gpr_base",
@@ -606,7 +602,6 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
@@ -2301,7 +2296,6 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "config",
         "error",
@@ -2310,7 +2304,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
-        "grpc_insecure_credentials",
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_security_base",
@@ -2984,7 +2977,6 @@ grpc_cc_library(
         "absl/time",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "config",
         "gpr_base",
@@ -3175,7 +3167,6 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "alts_util",
         "config",
@@ -3229,7 +3220,6 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_base",
@@ -3294,7 +3284,6 @@ grpc_cc_library(
         "libssl",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_base",
@@ -3616,7 +3605,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
+    public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_base",
@@ -3637,7 +3626,7 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc++_codegen_base",
@@ -3919,7 +3908,6 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     visibility = ["@grpc:tsi"],
     deps = [
         "alts_upb",
@@ -3992,7 +3980,7 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [

@@ -69,8 +69,7 @@ static void prepare_test(int is_client) {
   if (is_client) {
     /* create a call, channel to a non existant server */
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    g_state.chan =
-        grpc_channel_create(creds, "nonexistant:54321", nullptr, nullptr);
+    g_state.chan = grpc_channel_create("nonexistant:54321", creds, nullptr);
     grpc_channel_credentials_release(creds);
     grpc_slice host = grpc_slice_from_static_string("nonexistant");
     g_state.call = grpc_channel_create_call(
@@ -89,8 +88,7 @@ static void prepare_test(int is_client) {
     grpc_server_start(g_state.server);
     server_hostport = grpc_core::JoinHostPort("localhost", port);
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    g_state.chan =
-        grpc_channel_create(creds, server_hostport.c_str(), nullptr, nullptr);
+    g_state.chan = grpc_channel_create(server_hostport.c_str(), creds, nullptr);
     grpc_channel_credentials_release(creds);
     grpc_slice host = grpc_slice_from_static_string("bar");
     g_state.call = grpc_channel_create_call(

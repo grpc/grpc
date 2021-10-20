@@ -75,11 +75,11 @@ static grpc_channel* create_test_channel(const char* addr,
   }
   grpc_channel_args channel_args = {args.size(), args.data()};
   if (creds != nullptr) {
-    channel = grpc_channel_create(creds, addr, &channel_args, nullptr);
+    channel = grpc_channel_create(addr, creds, &channel_args);
   } else {
     grpc_channel_credentials* insecure_creds =
         grpc_insecure_credentials_create();
-    channel = grpc_channel_create(insecure_creds, addr, &channel_args, nullptr);
+    channel = grpc_channel_create(addr, insecure_creds, &channel_args);
     grpc_channel_credentials_release(insecure_creds);
   }
   return channel;
