@@ -357,6 +357,7 @@ grpc_cc_library(
         "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
+        "grpc_lb_policy_rls",
         "grpc_security_base",
         "grpc_trace",
         "slice",
