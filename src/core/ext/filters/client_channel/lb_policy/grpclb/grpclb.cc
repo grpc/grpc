@@ -123,53 +123,6 @@ namespace {
 
 constexpr char kGrpclb[] = "grpclb";
 
-grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
-  absl::InlinedVector<const char*, 1> args_to_remove;
-  absl::InlinedVector<grpc_arg, 1> args_to_add;
-  // Substitute the channel credentials with a version without call
-  // credentials: the load balancer is not necessarily trusted to handle
-  // bearer token credentials.
-  grpc_channel_credentials* channel_credentials =
-      grpc_channel_credentials_find_in_args(args);
-  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
-  if (channel_credentials != nullptr) {
-    creds_sans_call_creds =
-        channel_credentials->duplicate_without_call_credentials();
-    GPR_ASSERT(creds_sans_call_creds != nullptr);
-    args_to_remove.emplace_back(GRPC_ARG_CHANNEL_CREDENTIALS);
-    args_to_add.emplace_back(
-        grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
-  }
-  grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
-      args_to_add.size());
-  // Clean up.
-  grpc_channel_args_destroy(args);
-  return result;
-}
-
-grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
-                                          const grpc_channel_args& args) {
-  grpc_channel_credentials* creds =
-      grpc_channel_credentials_find_in_args(&args);
-  if (creds == nullptr) {
-    grpc_channel_credentials* insecure_creds =
-        grpc_insecure_credentials_create();
-    // Build with security but parent channel is insecure.
-    grpc_channel* channel =
-        grpc_channel_create(insecure_creds, target_uri, &args, nullptr);
-    grpc_channel_credentials_release(insecure_creds);
-    return channel;
-  }
-  const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
-  grpc_channel* channel =
-      grpc_channel_create(creds, target_uri, new_args, nullptr);
-  grpc_channel_args_destroy(new_args);
-  return channel;
-}
-
 class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
   GrpcLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
@@ -1384,7 +1337,27 @@ grpc_channel_args* BuildBalancerChannelArgs(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
   // Make any necessary modifications for security.
-  return ModifyGrpclbBalancerChannelArgs(new_args);
+  absl::InlinedVector<const char*, 1> creds_args_to_remove;
+  absl::InlinedVector<grpc_arg, 1> creds_args_to_add;
+  // Substitute the channel credentials with a version without call
+  // credentials: the load balancer is not necessarily trusted to handle
+  // bearer token credentials.
+  grpc_channel_credentials* channel_credentials =
+      grpc_channel_credentials_find_in_args(new_args);
+  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
+  GPR_ASSERT(channel_credentials != nullptr);
+  creds_sans_call_creds =
+      channel_credentials->duplicate_without_call_credentials();
+  GPR_ASSERT(creds_sans_call_creds != nullptr);
+  creds_args_to_remove.emplace_back(GRPC_ARG_CHANNEL_CREDENTIALS);
+  creds_args_to_add.emplace_back(
+      grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
+  grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
+      new_args, creds_args_to_remove.data(), creds_args_to_remove.size(),
+      creds_args_to_add.data(), creds_args_to_add.size());
+  // Clean up.
+  grpc_channel_args_destroy(new_args);
+  return result;
 }
 
 //
@@ -1550,9 +1523,15 @@ void GrpcLb::ProcessAddressesAndChannelArgsLocked(
   // Create balancer channel if needed.
   if (lb_channel_ == nullptr) {
     std::string uri_str = absl::StrCat("fake:///", server_name_);
-    lb_channel_ =
-        CreateGrpclbBalancerChannel(uri_str.c_str(), *lb_channel_args);
+    grpc_channel_credentials* creds =
+        grpc_channel_credentials_find_in_args(lb_channel_args);
+    GPR_ASSERT(creds != nullptr);
+    const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_remove(lb_channel_args, &arg_to_remove, 1);
+    lb_channel_ = grpc_channel_create(uri_str.c_str(), creds, new_args);
     GPR_ASSERT(lb_channel_ != nullptr);
+    grpc_channel_args_destroy(new_args);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node =
         grpc_channel_get_channelz_node(lb_channel_);

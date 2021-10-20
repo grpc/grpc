@@ -967,10 +967,8 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
   grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
   grpc_channel_args* args = nullptr;
-  GRPC_API_TRACE(
-      "grpc_server_add_http2_port("
-      "server=%p, addr=%s, creds=%p)",
-      3, (server, addr, creds));
+  GRPC_API_TRACE("grpc_server_add_http2_port(server=%p, addr=%s, creds=%p)", 3,
+                 (server, addr, creds));
   // Create security context.
   if (creds == nullptr) {
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(

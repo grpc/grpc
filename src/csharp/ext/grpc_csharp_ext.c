@@ -424,7 +424,7 @@ GPR_EXPORT grpc_channel* GPR_CALLTYPE
 grpcsharp_insecure_channel_create(const char* target,
                                   const grpc_channel_args* args) {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* channel = grpc_channel_create(creds, target, args, NULL);
+  grpc_channel* channel = grpc_channel_create(target, creds, args);
   grpc_channel_credentials_release(creds);
   return channel;
 }
@@ -1079,7 +1079,7 @@ grpcsharp_call_credentials_release(grpc_call_credentials* creds) {
 GPR_EXPORT grpc_channel* GPR_CALLTYPE grpcsharp_secure_channel_create(
     grpc_channel_credentials* creds, const char* target,
     const grpc_channel_args* args) {
-  return grpc_channel_create(creds, target, args, NULL);
+  return grpc_channel_create(target, creds, args);
 }
 
 GPR_EXPORT grpc_server_credentials* GPR_CALLTYPE

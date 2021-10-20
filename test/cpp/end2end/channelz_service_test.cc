@@ -681,7 +681,7 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
               get_socket_resp.socket().data().messages_received());
     switch (GetParam()) {
       case CredentialsType::kInsecure:
-        EXPECT_TRUE(get_socket_resp.socket().has_security());
+        EXPECT_FALSE(get_socket_resp.socket().has_security());
         break;
       case CredentialsType::kTls:
       case CredentialsType::kMtls:
@@ -746,7 +746,7 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
             kNumMessages);
   switch (GetParam()) {
     case CredentialsType::kInsecure:
-      EXPECT_TRUE(get_socket_response.socket().has_security());
+      EXPECT_FALSE(get_socket_response.socket().has_security());
       break;
     case CredentialsType::kTls:
     case CredentialsType::kMtls:
@@ -797,7 +797,7 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
   EXPECT_TRUE(ValidateAddress(get_socket_response.socket().local()));
   switch (GetParam()) {
     case CredentialsType::kInsecure:
-      EXPECT_TRUE(get_socket_response.socket().has_security());
+      EXPECT_FALSE(get_socket_response.socket().has_security());
       break;
     case CredentialsType::kTls:
     case CredentialsType::kMtls:
