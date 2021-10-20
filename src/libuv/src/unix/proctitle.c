@@ -14,6 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_APPLE
+#if defined(GPR_LINUX) || defined(GPR_ANDROID)
 #include "third_party/libuv/src/unix/proctitle.c"
 #endif
