@@ -171,7 +171,6 @@ LINUX_LIBUV_SOURCES = [
     "src/unix/linux-inotify.c",
     "src/unix/linux-syscalls.c",
     "src/unix/procfs-exepath.c",
-    "src/unix/proctitle.c",
     "src/unix/random-getrandom.c",  # freebsd, android, linux
     "src/unix/random-sysctl-linux.c",
     # "src/unix/sysinfo-loadavg.c",  # TODO(hork): only needed on Cygwin and MSYS now
@@ -189,7 +188,6 @@ DARWIN_LIBUV_SOURCES = [
     "src/unix/fsevents.c",
     "src/unix/kqueue.c",
     "src/unix/darwin-proctitle.c",
-    "src/unix/proctitle.c",
     "src/unix/random-getentropy.c",  # darwin. TODO(hork): ALSO NEEDED FOR OpenBSD
 ]
 
@@ -220,6 +218,13 @@ WINDOWS_LIBUV_SOURCES = [
     "src/win/winsock.c",
 ]
 
+# Used in both Darwin and Unix builds.
+#
+# This BUILD file is source of truth for platform configurations. This file
+# needs to be handled separately for our build. See
+# tools/buildgen/generate_libuv_source_wrappers.py
+UNIX_PROCTITLE = ["src/unix/proctitle.c"]
+
 GCC_COPTS = [
     "-D_LARGEFILE_SOURCE",
     "-D_FILE_OFFSET_BITS=64",
@@ -244,13 +249,13 @@ DARWIN_COPTS = [
 cc_library(
     name = "libuv",
     srcs = COMMON_LIBUV_SOURCES + select({
-        ":android": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES,
-        ":darwin": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
-        ":darwin_x86_64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
-        ":darwin_arm64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
-        ":darwin_arm64e": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
+        ":android": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES + UNIX_PROCTITLE,
+        ":darwin": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
+        ":darwin_x86_64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
+        ":darwin_arm64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
+        ":darwin_arm64e": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
         ":windows": WINDOWS_LIBUV_SOURCES,
-        "//conditions:default": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES,
+        "//conditions:default": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + UNIX_PROCTITLE,
     }),
     hdrs = COMMON_LIBUV_HEADERS + select({
         ":android": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,

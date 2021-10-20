@@ -83,3 +83,7 @@ for src_filename in DARWIN_LIBUV_SOURCES:
     render_template(TEMPLATES['darwin.cc.template'], src_filename)
 for src_filename in DARWIN_LIBUV_HEADERS:
     render_template(TEMPLATES['darwin.h.template'], src_filename)
+
+# Files that require special handling
+for src_filename in UNIX_PROCTITLE:
+    render_template(TEMPLATES['unix.cc.template'], src_filename)
