@@ -24,7 +24,6 @@
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 
 namespace grpc_core {
 

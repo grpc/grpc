@@ -67,6 +67,14 @@ class MemoryAllocator final {
   MemoryAllocator(MemoryAllocator&&) = default;
   MemoryAllocator& operator=(MemoryAllocator&&) = default;
 
+  /// Drop the underlying allocator and make this an empty object.
+  /// The object will not be usable after this call unless it's a valid
+  /// allocator is moved into it.
+  void Reset() {
+    if (allocator_ != nullptr) allocator_->Shutdown();
+    allocator_.reset();
+  }
+
   /// Reserve bytes from the quota.
   /// If we enter overcommit, reclamation will begin concurrently.
   /// Returns the number of bytes reserved.

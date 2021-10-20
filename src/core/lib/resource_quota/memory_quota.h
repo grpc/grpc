@@ -342,6 +342,12 @@ class MemoryOwner final {
 
   MemoryAllocator* allocator() { return &allocator_; }
 
+  /// Drop the underlying allocator and make this an empty object.
+  /// The object will not be usable after this call unless it's a valid
+  /// allocator is moved into it.
+  /// Also resets the MemoryAllocator instance.
+  void Reset() { allocator_.Reset(); }
+
   // Post a reclaimer for some reclamation pass.
   void PostReclaimer(ReclamationPass pass, ReclamationFunction fn) {
     static_cast<GrpcMemoryAllocatorImpl*>(allocator_.get_internal_impl_ptr())

@@ -543,7 +543,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
       t, grpc_error_set_int(
              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed"),
              GRPC_ERROR_INT_OCCURRED_DURING_WRITE, t->write_state));
-  { auto dropped = std::move(t->memory_owner); }
+  t->memory_owner.Reset();
   // Must be the last line.
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "destroy");
 }
