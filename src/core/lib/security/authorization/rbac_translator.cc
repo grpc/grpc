@@ -268,6 +268,9 @@ absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
 
 absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
     const Json& json, absl::string_view name) {
+  if (json.array_value().size() == 0) {
+    return absl::InvalidArgumentError("rules is empty.");
+  }
   std::map<std::string, Rbac::Policy> policies;
   for (size_t i = 0; i < json.array_value().size(); ++i) {
     const Json& child = json.array_value().at(i);

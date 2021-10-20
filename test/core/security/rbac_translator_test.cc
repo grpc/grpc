@@ -136,6 +136,17 @@ TEST(GenerateRbacPoliciesTest, IncorrectRuleType) {
             "allow_rules 0: is not an object.");
 }
 
+TEST(GenerateRbacPoliciesTest, EmptyRuleArrayField) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": []"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(rbac_policies.status().message(), "allow_rules is empty.");
+}
+
 TEST(GenerateRbacPoliciesTest, MissingRuleNameField) {
   const char* authz_policy =
       "{"
