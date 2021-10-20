@@ -377,55 +377,56 @@ cdef grpc_custom_timer_vtable gevent_timer_vtable
 cdef grpc_custom_poller_vtable gevent_pollset_vtable
 
 def init_grpc_gevent():
+  pass
   # Lazily import gevent
-  global gevent_socket
-  global gevent_g
-  global gevent_hub
-  global gevent_event
-  global g_event
-  global g_pool
-  import gevent
-  gevent_g = gevent
-  import gevent.socket
-  gevent_socket = gevent.socket
-  import gevent.hub
-  gevent_hub = gevent.hub
-  import gevent.event
-  gevent_event = gevent.event
-  import gevent.pool
+  # global gevent_socket
+  # global gevent_g
+  # global gevent_hub
+  # global gevent_event
+  # global g_event
+  # global g_pool
+  # import gevent
+  # gevent_g = gevent
+  # import gevent.socket
+  # gevent_socket = gevent.socket
+  # import gevent.hub
+  # gevent_hub = gevent.hub
+  # import gevent.event
+  # gevent_event = gevent.event
+  # import gevent.pool
 
-  g_event = gevent.event.Event()
-  g_pool = gevent.pool.Group()
+  # g_event = gevent.event.Event()
+  # g_pool = gevent.pool.Group()
 
-  def cb_func(cb, args):
-    _spawn_greenlet(cb, *args)
-  set_async_callback_func(cb_func)
+  # def cb_func(cb, args):
+  #   _spawn_greenlet(cb, *args)
+  # set_async_callback_func(cb_func)
 
-  gevent_resolver_vtable.resolve = socket_resolve
-  gevent_resolver_vtable.resolve_async = socket_resolve_async
+  # gevent_resolver_vtable.resolve = socket_resolve
+  # gevent_resolver_vtable.resolve_async = socket_resolve_async
 
-  gevent_socket_vtable.init = socket_init
-  gevent_socket_vtable.connect = socket_connect
-  gevent_socket_vtable.destroy = socket_destroy
-  gevent_socket_vtable.shutdown = socket_shutdown
-  gevent_socket_vtable.close = socket_close
-  gevent_socket_vtable.write = socket_write
-  gevent_socket_vtable.read = socket_read
-  gevent_socket_vtable.getpeername = socket_getpeername
-  gevent_socket_vtable.getsockname = socket_getsockname
-  gevent_socket_vtable.bind = socket_bind
-  gevent_socket_vtable.listen = socket_listen
-  gevent_socket_vtable.accept = socket_accept
+  # gevent_socket_vtable.init = socket_init
+  # gevent_socket_vtable.connect = socket_connect
+  # gevent_socket_vtable.destroy = socket_destroy
+  # gevent_socket_vtable.shutdown = socket_shutdown
+  # gevent_socket_vtable.close = socket_close
+  # gevent_socket_vtable.write = socket_write
+  # gevent_socket_vtable.read = socket_read
+  # gevent_socket_vtable.getpeername = socket_getpeername
+  # gevent_socket_vtable.getsockname = socket_getsockname
+  # gevent_socket_vtable.bind = socket_bind
+  # gevent_socket_vtable.listen = socket_listen
+  # gevent_socket_vtable.accept = socket_accept
 
-  gevent_timer_vtable.start = timer_start
-  gevent_timer_vtable.stop = timer_stop
+  # gevent_timer_vtable.start = timer_start
+  # gevent_timer_vtable.stop = timer_stop
 
-  gevent_pollset_vtable.init = init_loop
-  gevent_pollset_vtable.poll = run_loop
-  gevent_pollset_vtable.kick = kick_loop
-  gevent_pollset_vtable.shutdown = destroy_loop
+  # gevent_pollset_vtable.init = init_loop
+  # gevent_pollset_vtable.poll = run_loop
+  # gevent_pollset_vtable.kick = kick_loop
+  # gevent_pollset_vtable.shutdown = destroy_loop
 
-  grpc_custom_iomgr_init(&gevent_socket_vtable,
-                         &gevent_resolver_vtable,
-                         &gevent_timer_vtable,
-                         &gevent_pollset_vtable)
+  # grpc_custom_iomgr_init(&gevent_socket_vtable,
+  #                        &gevent_resolver_vtable,
+  #                        &gevent_timer_vtable,
+  #                        &gevent_pollset_vtable)

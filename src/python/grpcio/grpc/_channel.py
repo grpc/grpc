@@ -1254,12 +1254,14 @@ def _run_channel_spin_thread(state):
 
     def channel_spin():
         while True:
+            import gevent; gevent.sleep(0)
             cygrpc.block_if_fork_in_progress(state)
             event = state.channel.next_call_event()
             if event.completion_type == cygrpc.CompletionType.queue_timeout:
                 continue
             call_completed = event.tag(event)
             if call_completed:
+                import gevent; gevent.sleep(0)
                 with state.lock:
                     state.managed_calls -= 1
                     if state.managed_calls == 0:
@@ -1297,6 +1299,7 @@ def _channel_managed_call_management(state):
             operations,
             event_handler,
         ) for operations in operationses)
+        import gevent; gevent.sleep(0)
         with state.lock:
             call = state.channel.integrated_call(flags, method, host, deadline,
                                                  metadata, credentials,
@@ -1344,6 +1347,8 @@ def _deliver(state, initial_connectivity, initial_callbacks):
     connectivity = initial_connectivity
     callbacks = initial_callbacks
     while True:
+        # TODO: Make this more general.
+        import gevent; gevent.sleep(0)
         for callback in callbacks:
             cygrpc.block_if_fork_in_progress(state)
             try:
@@ -1388,6 +1393,8 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
         if callbacks:
             _spawn_delivery(state, callbacks)
     while True:
+        # TODO: Need to yield whenever we acquire a lock.
+        import gevent; gevent.sleep(0)
         event = channel.watch_connectivity_state(connectivity,
                                                  time.time() + 0.2)
         cygrpc.block_if_fork_in_progress(state)
@@ -1411,6 +1418,7 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
 
 
 def _subscribe(state, callback, try_to_connect):
+    import gevent; gevent.sleep(0)
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
             polling_thread = cygrpc.ForkManagedThread(
@@ -1431,6 +1439,7 @@ def _subscribe(state, callback, try_to_connect):
 
 
 def _unsubscribe(state, callback):
+    import gevent; gevent.sleep(0)
     with state.lock:
         for index, (subscribed_callback, unused_connectivity) in enumerate(
                 state.callbacks_and_connectivities):
@@ -1540,6 +1549,7 @@ class Channel(grpc.Channel):
     def _unsubscribe_all(self):
         state = self._connectivity_state
         if state:
+            import gevent; gevent.sleep(0)
             with state.lock:
                 del state.callbacks_and_connectivities[:]
 

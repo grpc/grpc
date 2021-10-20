@@ -37,8 +37,6 @@ from tests.unit._rpc_test_helpers import unary_unary_multi_callable
 from tests.unit.framework.common import test_constants
 
 
-@unittest.skipIf(test_common.running_under_gevent(),
-                 "This test is nondeterministic under gevent.")
 class RPCPart1Test(BaseRPCTest, unittest.TestCase):
 
     def testExpiredStreamRequestBlockingUnaryResponse(self):
@@ -238,4 +236,4 @@ class RPCPart1Test(BaseRPCTest, unittest.TestCase):
 
 if __name__ == '__main__':
     logging.basicConfig()
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)

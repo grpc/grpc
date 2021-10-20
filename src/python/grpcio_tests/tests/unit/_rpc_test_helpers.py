@@ -36,7 +36,7 @@ _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
 _STREAM_STREAM_NON_BLOCKING = '/test/StreamStreamNonBlocking'
 
-TIMEOUT_SHORT = datetime.timedelta(seconds=1).total_seconds()
+TIMEOUT_SHORT = datetime.timedelta(seconds=4).total_seconds()
 
 
 class Callback(object):
