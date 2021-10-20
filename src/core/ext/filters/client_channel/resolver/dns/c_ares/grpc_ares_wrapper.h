@@ -42,7 +42,27 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
     }                                                               \
   } while (0)
 
-typedef struct grpc_ares_request grpc_ares_request;
+typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
+
+struct grpc_ares_request {
+  /** indicates the DNS server to use, if specified */
+  struct ares_addr_port_node dns_server_addr;
+  /** following members are set in grpc_resolve_address_ares_impl */
+  /** closure to call when the request completes */
+  grpc_closure* on_done = nullptr;
+  /** the pointer to receive the resolved addresses */
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
+  /** the pointer to receive the resolved balancer addresses */
+  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
+  /** the pointer to receive the service config in JSON */
+  char** service_config_json_out = nullptr;
+  /** the evernt driver used by this request */
+  grpc_ares_ev_driver* ev_driver = nullptr;
+  /** number of ongoing queries */
+  size_t pending_queries = 0;
+  /** the errors explaining query failures, appended to in query callbacks */
+  grpc_error_handle error = GRPC_ERROR_NONE;
+};
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
    designated in \a name, otherwise use the port in \a name. grpc_ares_init()

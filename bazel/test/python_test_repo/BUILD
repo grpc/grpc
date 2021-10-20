@@ -17,7 +17,6 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "@com_github_grpc_grpc//bazel:python_rules.bzl",
-    "py2and3_test",
     "py_grpc_library",
     "py_proto_library",
 )
@@ -54,10 +53,11 @@ py_proto_library(
     deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
-py2and3_test(
+py_test(
     name = "import_test",
     srcs = ["helloworld.py"],
     main = "helloworld.py",
+    python_version = "PY3",
     deps = [
         ":duration_py_pb2",
         ":helloworld_py_pb2",
@@ -95,10 +95,11 @@ py_grpc_library(
     deps = [":helloworld_moved_py_pb2"],
 )
 
-py2and3_test(
+py_test(
     name = "import_moved_test",
     srcs = ["helloworld_moved.py"],
     main = "helloworld_moved.py",
+    python_version = "PY3",
     deps = [
         ":duration_py_pb2",
         ":helloworld_moved_py_pb2",
@@ -110,6 +111,7 @@ py2and3_test(
 py_binary(
     name = "dummy_plugin",
     srcs = [":dummy_plugin.py"],
+    python_version = "PY3",
     deps = [
         "@com_google_protobuf//:protobuf_python",
     ],
