@@ -66,9 +66,6 @@ output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
 ENV['BUILDDIR'] = output_dir
 
-# DO NOT SUBMIT
-ENV['V'] = '1'
-
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4

@@ -33,8 +33,10 @@ tmpl_path = os.path.join(PROJECT_ROOT, 'src', 'libuv', 'templates')
 for tmpl_fn in os.listdir(tmpl_path):
     TEMPLATES[tmpl_fn] = Template(filename=os.path.join(tmpl_path, tmpl_fn))
 
-
 # reuse configuration from the bazel build
+
+
+################################################################################
 # Dummy functions for the bazel import
 def config_setting(*args, **kwargs):
     pass
@@ -46,6 +48,20 @@ def cc_library(*args, **kwargs):
 
 def select(*args, **kwargs):
     return []
+
+
+def load(*args, **kwargs):
+    pass
+
+
+class Selects(object):
+
+    def config_setting_group(*args, **kwargs):
+        pass
+
+
+selects = Selects()
+################################################################################
 
 
 def get_output_filename(src_filename: str) -> str:

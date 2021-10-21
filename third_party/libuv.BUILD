@@ -1,3 +1,19 @@
+# Copyright 2021 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
 config_setting(
     name = "darwin",
     values = {"cpu": "darwin"},
@@ -63,7 +79,7 @@ config_setting(
 
 config_setting(
     name = "tvos_arm64",
-    values = {"cpu": "tvos_arm64"}
+    values = {"cpu": "tvos_arm64"},
 )
 
 config_setting(
@@ -73,7 +89,7 @@ config_setting(
 
 config_setting(
     name = "watchos_x86_64",
-    values = {"cpu": "watchos_x86_64"}
+    values = {"cpu": "watchos_x86_64"},
 )
 
 config_setting(
@@ -83,7 +99,27 @@ config_setting(
 
 config_setting(
     name = "watchos_arm64_32",
-    values = {"cpu": "watchos_arm64_32"}
+    values = {"cpu": "watchos_arm64_32"},
+)
+
+selects.config_setting_group(
+    name = "apple",
+    match_any = [
+        ":darwin",
+        ":darwin_x86_64",
+        ":darwin_arm64",
+        ":darwin_arm64e",
+        "ios_x86_64",
+        "ios_armv7",
+        "ios_armv7s",
+        "ios_arm64",
+        "tvos_x86_64",
+        "tvos_arm64",
+        "watchos_i386",
+        "watchos_x86_64",
+        "watchos_armv7k",
+        "watchos_arm64_32",
+    ],
 )
 
 COMMON_LIBUV_HEADERS = [
@@ -250,28 +286,19 @@ cc_library(
     name = "libuv",
     srcs = COMMON_LIBUV_SOURCES + select({
         ":android": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES + UNIX_PROCTITLE,
-        ":darwin": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
-        ":darwin_x86_64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
-        ":darwin_arm64": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
-        ":darwin_arm64e": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
+        ":apple": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
         ":windows": WINDOWS_LIBUV_SOURCES,
         "//conditions:default": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + UNIX_PROCTITLE,
     }),
     hdrs = COMMON_LIBUV_HEADERS + select({
         ":android": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,
-        ":darwin": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
-        ":darwin_x86_64": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
-        ":darwin_arm64": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
-        ":darwin_arm64e": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":apple": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
         ":windows": WINDOWS_LIBUV_HEADERS,
         "//conditions:default": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS,
     }),
     copts = [
     ] + select({
-        ":darwin": DARWIN_COPTS + GCC_COPTS,
-        ":darwin_x86_64": DARWIN_COPTS + GCC_COPTS,
-        ":darwin_arm64": DARWIN_COPTS + GCC_COPTS,
-        ":darwin_arm64e": DARWIN_COPTS + GCC_COPTS,
+        ":apple": DARWIN_COPTS + GCC_COPTS,
         ":windows": [
             "-DWIN32_LEAN_AND_MEAN",
             "-D_WIN32_WINNT=0x0600",
@@ -283,10 +310,7 @@ cc_library(
         "src",
     ],
     linkopts = select({
-        ":darwin": [],
-        ":darwin_x86_64": [],
-        ":darwin_arm64": [],
-        ":darwin_arm64e": [],
+        ":apple": [],
         ":windows": [
             # "-Xcrosstool-compilation-mode=$(COMPILATION_MODE)",
             "-DEFAULTLIB:Iphlpapi.lib",
@@ -295,7 +319,7 @@ cc_library(
             "-DEFAULTLIB:Userenv.lib",
         ],
         "//conditions:default": [
-          "-ldl",
+            "-ldl",
         ],
     }),
     visibility = [
