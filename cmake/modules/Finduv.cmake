@@ -14,8 +14,8 @@
 
 # Cloned from Findre2.cmake.
 
-find_package(uv QUIET CONFIG)
-if(uv_FOUND)
+find_package(libuv CONFIG)
+if(libuv_FOUND)
   message(STATUS "Found libuv via CMake.")
   return()
 endif()
@@ -23,7 +23,7 @@ endif()
 # As per https://github.com/grpc/grpc/issues/25434, idempotence is necessary
 # because CMake fails when another target with the same name already exists.
 message(STATUS "Target is ${TARGET}")
-if(TARGET uv::uv)
+if(TARGET libuv::uv)
   message(STATUS "Found libuv via pkg-config already?")
   return()
 endif()
@@ -31,14 +31,14 @@ endif()
 find_package(PkgConfig REQUIRED)
 # TODO(junyer): Use the IMPORTED_TARGET option whenever CMake 3.6 (or newer)
 # becomes the minimum required: that will take care of the add_library() and
-# set_property() calls; then we can simply alias PkgConfig::uv as uv::uv.
+# set_property() calls; then we can simply alias PkgConfig::uv as libuv::uv.
 # For now, we can only set INTERFACE_* properties that existed in CMake 3.5.
-pkg_check_modules(UV uv)
+pkg_check_modules(UV REQUIRED libuv)
 if(UV_FOUND)
-  set(uv_FOUND "${UV_FOUND}")
-  add_library(uv::uv INTERFACE IMPORTED)
+  set(libuv_FOUND "${UV_FOUND}")
+  add_library(libuv::uv INTERFACE IMPORTED)
   if(UV_INCLUDE_DIRS)
-    set_property(TARGET uv::uv PROPERTY
+    set_property(TARGET libuv::uv PROPERTY
                  INTERFACE_INCLUDE_DIRECTORIES "${UV_INCLUDE_DIRS}")
   endif()
   if(UV_CFLAGS_OTHER)
@@ -50,19 +50,19 @@ if(UV_FOUND)
         list(REMOVE_ITEM UV_CFLAGS_OTHER "${flag}")
       endif()
     endforeach()
-    set_property(TARGET uv::uv PROPERTY
+    set_property(TARGET libuv::uv PROPERTY
                  INTERFACE_COMPILE_OPTIONS "${UV_CFLAGS_OTHER}")
   endif()
   if(UV_LDFLAGS)
-    set_property(TARGET uv::uv PROPERTY
+    set_property(TARGET libuv::uv PROPERTY
                  INTERFACE_LINK_LIBRARIES "${UV_LDFLAGS}")
   endif()
   message(STATUS "Found libuv via pkg-config.")
   return()
 endif()
 
-if(uv_FIND_REQUIRED)
+if(libuv_FIND_REQUIRED)
   message(FATAL_ERROR "Failed to find libuv.")
-elseif(NOT uv_FIND_QUIETLY)
+elseif(NOT libuv_FIND_QUIETLY)
   message(WARNING "Failed to find libuv.")
 endif()
