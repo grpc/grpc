@@ -961,8 +961,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
           lds_update.http_connection_manager.route_config_name);
     }
     // Ignore identical update.
-    auto resource =
-        XdsApi::ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
+    auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
     GPR_ASSERT(resource.ok());
     ListenerState& listener_state =
         xds_client()
@@ -991,8 +990,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // cache, pretend that they are present in the update, so that we
   // don't incorrectly consider them deleted below.
   for (const std::string& listener_name : resource_names_failed) {
-    auto resource =
-        XdsApi::ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
+    auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
     GPR_ASSERT(resource.ok());
     auto& listener_map =
         xds_client()->authority_state_map_[resource->authority].listener_map;
@@ -1012,8 +1010,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   for (const auto& p : lds_state.subscribed_resources) {
     const std::string& listener_name = p.first;
     if (lds_update_map.find(listener_name) == lds_update_map.end()) {
-      auto resource =
-          XdsApi::ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
+      auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
       GPR_ASSERT(resource.ok());
       ListenerState& listener_state =
           xds_client()
@@ -1041,7 +1038,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     if (rds_resource_names_seen.find(rds_resource_name) ==
         rds_resource_names_seen.end()) {
       auto resource =
-          XdsApi::ParseResourceName(rds_resource_name, XdsApi::kRdsTypeUrl);
+          XdsApi::ParseResourceName(rds_resource_name, XdsApi::IsRds);
       GPR_ASSERT(resource.ok());
       RouteConfigState& route_config_state =
           xds_client()
@@ -1074,8 +1071,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
       gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
               rds_update.ToString().c_str());
     }
-    auto resource =
-        XdsApi::ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
+    auto resource = XdsApi::ParseResourceName(route_config_name, XdsApi::IsRds);
     GPR_ASSERT(resource.ok());
     RouteConfigState& route_config_state =
         xds_client()
@@ -1128,8 +1124,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
                                        ? cluster_name
                                        : cds_update.eds_service_name);
     // Ignore identical update.
-    auto resource =
-        XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+    auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
     GPR_ASSERT(resource.ok());
     ClusterState& cluster_state =
         xds_client()
@@ -1157,8 +1152,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // cache, pretend that they are present in the update, so that we
   // don't incorrectly consider them deleted below.
   for (const std::string& cluster_name : resource_names_failed) {
-    auto resource =
-        XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+    auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
     GPR_ASSERT(resource.ok());
     auto& cluster_map =
         xds_client()->authority_state_map_[resource->authority].cluster_map;
@@ -1177,8 +1171,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   for (const auto& p : cds_state.subscribed_resources) {
     const std::string& cluster_name = p.first;
     if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
-      auto resource =
-          XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+      auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
       GPR_ASSERT(resource.ok());
       ClusterState& cluster_state =
           xds_client()
@@ -1206,7 +1199,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     if (eds_resource_names_seen.find(eds_resource_name) ==
         eds_resource_names_seen.end()) {
       auto resource =
-          XdsApi::ParseResourceName(eds_resource_name, XdsApi::kEdsTypeUrl);
+          XdsApi::ParseResourceName(eds_resource_name, XdsApi::IsEds);
       GPR_ASSERT(resource.ok());
       EndpointState& endpoint_state =
           xds_client()
@@ -1239,8 +1232,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
       gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
               eds_resource_name.c_str(), eds_update.ToString().c_str());
     }
-    auto resource =
-        XdsApi::ParseResourceName(eds_resource_name, XdsApi::kEdsTypeUrl);
+    auto resource = XdsApi::ParseResourceName(eds_resource_name, XdsApi::IsEds);
     GPR_ASSERT(resource.ok());
     EndpointState& endpoint_state =
         xds_client()
@@ -2063,7 +2055,7 @@ void XdsClient::WatchListenerData(
   std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
   ListenerWatcherInterface* w = watcher.get();
-  auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
   if (!resource.ok()) {
     invalid_listener_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
@@ -2097,7 +2089,7 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::kLdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   ListenerState& listener_state = authority_state.listener_map[resource->id];
@@ -2121,8 +2113,7 @@ void XdsClient::WatchRouteConfigData(
   std::string route_config_name_str = std::string(route_config_name);
   MutexLock lock(&mu_);
   RouteConfigWatcherInterface* w = watcher.get();
-  auto resource =
-      XdsApi::ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(route_config_name, XdsApi::IsRds);
   if (!resource.ok()) {
     invalid_route_config_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -2159,8 +2150,7 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
                                            bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource =
-      XdsApi::ParseResourceName(route_config_name, XdsApi::kRdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(route_config_name, XdsApi::IsRds);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   RouteConfigState& route_config_state =
@@ -2186,7 +2176,7 @@ void XdsClient::WatchClusterData(
   std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
   ClusterWatcherInterface* w = watcher.get();
-  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
   if (!resource.ok()) {
     invalid_cluster_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
@@ -2220,7 +2210,7 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
                                        bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   ClusterState& cluster_state = authority_state.cluster_map[resource->id];
@@ -2244,8 +2234,7 @@ void XdsClient::WatchEndpointData(
   std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
   EndpointWatcherInterface* w = watcher.get();
-  auto resource =
-      XdsApi::ParseResourceName(eds_service_name, XdsApi::kEdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(eds_service_name, XdsApi::IsEds);
   if (!resource.ok()) {
     invalid_endpoint_watchers_[w] = std::move(watcher);
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -2280,8 +2269,7 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
                                         bool delay_unsubscription) {
   MutexLock lock(&mu_);
   if (shutting_down_) return;
-  auto resource =
-      XdsApi::ParseResourceName(eds_service_name, XdsApi::kEdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(eds_service_name, XdsApi::IsEds);
   if (!resource.ok()) return;
   auto& authority_state = authority_state_map_[resource->authority];
   EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
@@ -2329,7 +2317,7 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
         it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
-  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
   GPR_ASSERT(resource.ok());
   auto a = authority_state_map_.find(resource->authority);
   if (a != authority_state_map_.end()) {
@@ -2391,7 +2379,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
         std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
-  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::kCdsTypeUrl);
+  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
   GPR_ASSERT(resource.ok());
   auto a = authority_state_map_.find(resource->authority);
   if (a != authority_state_map_.end()) {

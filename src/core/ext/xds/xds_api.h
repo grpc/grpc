@@ -645,11 +645,17 @@ class XdsApi {
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          const CertificateProviderStore::PluginDefinitionMap* map);
 
+  static bool IsLds(absl::string_view type_url, bool* is_v2 = nullptr);
+  static bool IsRds(absl::string_view type_url, bool* /*is_v2*/ = nullptr);
+  static bool IsCds(absl::string_view type_url, bool* /*is_v2*/ = nullptr);
+  static bool IsEds(absl::string_view type_url, bool* /*is_v2*/ = nullptr);
+
   // A helper method to parse the resource name and return back an <authority,
   // id> pair.  Optionally the parser can check the resource type portion of the
   // resource name.
   static absl::StatusOr<ResourceName> ParseResourceName(
-      absl::string_view name, absl::string_view expected_resource_type = "");
+      absl::string_view name,
+      bool (*is_expected_type)(absl::string_view, bool*) = nullptr);
 
   // A helper method to construct the resource name from parts.
   static std::string ConstructFullResourceName(absl::string_view authority,
