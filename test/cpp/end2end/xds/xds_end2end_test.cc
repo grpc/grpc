@@ -573,10 +573,11 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
 class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
  public:
   NoOpHttpFilter(std::string name, bool supported_on_clients,
-                 bool supported_on_servers)
+                 bool supported_on_servers, bool is_terminal_filter)
       : name_(std::move(name)),
         supported_on_clients_(supported_on_clients),
-        supported_on_servers_(supported_on_servers) {}
+        supported_on_servers_(supported_on_servers),
+        is_terminal_filter_(is_terminal_filter) {}
 
   void PopulateSymtab(upb_symtab* /* symtab */) const override {}
 
@@ -605,10 +606,13 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 
   bool IsSupportedOnServers() const override { return supported_on_servers_; }
 
+  bool IsTerminalFilter() const override { return is_terminal_filter_; }
+
  private:
   const std::string name_;
   const bool supported_on_clients_;
   const bool supported_on_servers_;
+  const bool is_terminal_filter_;
 };
 
 // There is slight difference between time fetched by GPR and by C++ system
@@ -2860,8 +2864,10 @@ TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("grpc.testing.client_only_http_filter");
+  filter->mutable_typed_config()->set_type_url(
+      "grpc.testing.client_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
@@ -12685,12 +12691,22 @@ int main(int argc, char** argv) {
   grpc_init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.client_only_http_filter", true, false),
+          "grpc.testing.client_only_http_filter",
+          /* supported_on_clients = */ true, /* supported_on_servers = */ false,
+          /* is_terminal_filter */ false),
       {"grpc.testing.client_only_http_filter"});
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.server_only_http_filter", false, true),
+          "grpc.testing.server_only_http_filter",
+          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
+          /* is_terminal_filter */ false),
       {"grpc.testing.server_only_http_filter"});
+  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
+      absl::make_unique<grpc::testing::NoOpHttpFilter>(
+          "grpc.testing.terminal_http_filter",
+          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
+          /* is_terminal_filter */ true),
+      {"grpc.testing.terminal_http_filter"});
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
