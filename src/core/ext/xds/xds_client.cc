@@ -2102,23 +2102,17 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   auto& authority_state = authority_state_map_[resource->authority];
   ListenerState& listener_state = authority_state.listener_map[resource->id];
   auto it = listener_state.watchers.find(watcher);
-  if (it != listener_state.watchers.end()) {
-    listener_state.watchers.erase(it);
-    if (listener_state.watchers.empty()) {
-      authority_state.listener_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-          XdsApi::kLdsTypeUrl, std::string(listener_name),
-          delay_unsubscription);
-      if (!authority_state.HasSubscribedResources()) {
-        authority_state.channel_state.reset();
-      }
-    }
-  } else {
-    auto invalid_resource_watcher_it = invalid_listener_watchers_.find(watcher);
-    if (invalid_resource_watcher_it != invalid_listener_watchers_.end()) {
-      invalid_listener_watchers_.erase(invalid_resource_watcher_it);
-    }
+  if (it == listener_state.watchers.end()) {
+    invalid_listener_watchers_.erase(watcher);
+    return;
   }
+  listener_state.watchers.erase(it);
+  if (!listener_state.watchers.empty()) return;
+  authority_state.listener_map.erase(resource->id);
+  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+      XdsApi::kLdsTypeUrl, std::string(listener_name), delay_unsubscription);
+  if (authority_state.HasSubscribedResources()) return;
+  authority_state.channel_state.reset();
 }
 
 void XdsClient::WatchRouteConfigData(
@@ -2172,24 +2166,18 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   RouteConfigState& route_config_state =
       authority_state.route_config_map[resource->id];
   auto it = route_config_state.watchers.find(watcher);
-  if (it != route_config_state.watchers.end()) {
-    route_config_state.watchers.erase(it);
-    if (route_config_state.watchers.empty()) {
-      authority_state.route_config_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-          XdsApi::kRdsTypeUrl, std::string(route_config_name),
-          delay_unsubscription);
-      if (!authority_state.HasSubscribedResources()) {
-        authority_state.channel_state.reset();
-      }
-    }
-  } else {
-    auto invalid_resource_watcher_it =
-        invalid_route_config_watchers_.find(watcher);
-    if (invalid_resource_watcher_it != invalid_route_config_watchers_.end()) {
-      invalid_route_config_watchers_.erase(invalid_resource_watcher_it);
-    }
+  if (it == route_config_state.watchers.end()) {
+    invalid_route_config_watchers_.erase(watcher);
+    return;
   }
+  route_config_state.watchers.erase(it);
+  if (!route_config_state.watchers.empty()) return;
+  authority_state.route_config_map.erase(resource->id);
+  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+      XdsApi::kRdsTypeUrl, std::string(route_config_name),
+      delay_unsubscription);
+  if (authority_state.HasSubscribedResources()) return;
+  authority_state.channel_state.reset();
 }
 
 void XdsClient::WatchClusterData(
@@ -2237,22 +2225,17 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   auto& authority_state = authority_state_map_[resource->authority];
   ClusterState& cluster_state = authority_state.cluster_map[resource->id];
   auto it = cluster_state.watchers.find(watcher);
-  if (it != cluster_state.watchers.end()) {
-    cluster_state.watchers.erase(it);
-    if (cluster_state.watchers.empty()) {
-      authority_state.cluster_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-          XdsApi::kCdsTypeUrl, std::string(cluster_name), delay_unsubscription);
-      if (!authority_state.HasSubscribedResources()) {
-        authority_state.channel_state.reset();
-      }
-    }
-  } else {
-    auto invalid_resource_watcher_it = invalid_cluster_watchers_.find(watcher);
-    if (invalid_resource_watcher_it != invalid_cluster_watchers_.end()) {
-      invalid_cluster_watchers_.erase(invalid_resource_watcher_it);
-    }
+  if (it == cluster_state.watchers.end()) {
+    invalid_cluster_watchers_.erase(watcher);
+    return;
   }
+  cluster_state.watchers.erase(it);
+  if (!cluster_state.watchers.empty()) return;
+  authority_state.cluster_map.erase(resource->id);
+  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+      XdsApi::kCdsTypeUrl, std::string(cluster_name), delay_unsubscription);
+  if (authority_state.HasSubscribedResources()) return;
+  authority_state.channel_state.reset();
 }
 
 void XdsClient::WatchEndpointData(
@@ -2303,23 +2286,17 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   auto& authority_state = authority_state_map_[resource->authority];
   EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
   auto it = endpoint_state.watchers.find(watcher);
-  if (it != endpoint_state.watchers.end()) {
-    endpoint_state.watchers.erase(it);
-    if (endpoint_state.watchers.empty()) {
-      authority_state.endpoint_map.erase(resource->id);
-      xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-          XdsApi::kEdsTypeUrl, std::string(eds_service_name),
-          delay_unsubscription);
-      if (!authority_state.HasSubscribedResources()) {
-        authority_state.channel_state.reset();
-      }
-    }
-  } else {
-    auto invalid_resource_watcher_it = invalid_endpoint_watchers_.find(watcher);
-    if (invalid_resource_watcher_it != invalid_endpoint_watchers_.end()) {
-      invalid_endpoint_watchers_.erase(invalid_resource_watcher_it);
-    }
+  if (it == endpoint_state.watchers.end()) {
+    invalid_endpoint_watchers_.erase(watcher);
+    return;
   }
+  endpoint_state.watchers.erase(it);
+  if (!endpoint_state.watchers.empty()) return;
+  authority_state.endpoint_map.erase(resource->id);
+  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+      XdsApi::kEdsTypeUrl, std::string(eds_service_name), delay_unsubscription);
+  if (authority_state.HasSubscribedResources()) return;
+  authority_state.channel_state.reset();
 }
 
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(

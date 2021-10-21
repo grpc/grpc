@@ -351,13 +351,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::map<std::string /*type*/, std::string /*version*/> resource_version_map_
       ABSL_GUARDED_BY(mu_);
 
+  // Stores started watchers whose resource name was not parsed successfully,
+  // waiting to be cancelled or reset in Orphan().
   std::map<ListenerWatcherInterface*, std::unique_ptr<ListenerWatcherInterface>>
       invalid_listener_watchers_ ABSL_GUARDED_BY(mu_);
-
   std::map<RouteConfigWatcherInterface*,
            std::unique_ptr<RouteConfigWatcherInterface>>
       invalid_route_config_watchers_ ABSL_GUARDED_BY(mu_);
-
   std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
       invalid_cluster_watchers_ ABSL_GUARDED_BY(mu_);
   std::map<EndpointWatcherInterface*, std::unique_ptr<EndpointWatcherInterface>>

@@ -881,6 +881,45 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
   XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
 }
 
+absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
+    absl::string_view name, absl::string_view expected_resource_type) {
+  // Old-style names use the empty string for authority.
+  // ID is prefixed with "old:" to indicate that it's an old-style name.
+  if (!absl::StartsWith(name, "xdstp:")) {
+    return ResourceName{"", absl::StrCat("old:", name)};
+  }
+  // New style name.  Parse URI.
+  auto uri = URI::Parse(name);
+  if (!uri.ok()) return uri.status();
+  // Split the resource type off of the path to get the id.
+  std::pair<absl::string_view, absl::string_view> path_parts =
+      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
+  if (expected_resource_type != "" &&
+      path_parts.first != expected_resource_type) {
+    return absl::InvalidArgumentError(
+        "xdstp URI path must indicate valid xDS resource type");
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
+      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
+  std::sort(query_parameters.begin(), query_parameters.end());
+  return ResourceName{
+      uri->authority(),
+      absl::StrCat(
+          "xdstp:", path_parts.second, (query_parameters.empty() ? "?" : ""),
+          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
+}
+
+std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
+                                              absl::string_view resource_type,
+                                              absl::string_view name) {
+  if (absl::StartsWith(name, "xdstp:")) {
+    return absl::StrCat("xdstp://", authority, "/", resource_type,
+                        absl::StripPrefix(name, "xdstp:"));
+  } else {
+    return std::string(absl::StripPrefix(name, "old:"));
+  }
+}
+
 namespace {
 
 struct EncodingContext {
@@ -1092,45 +1131,6 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 }
 
 }  // namespace
-
-absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
-    absl::string_view name, absl::string_view expected_resource_type) {
-  // Old-style names use the empty string for authority.
-  // ID is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
-    return ResourceName{"", absl::StrCat("old:", name)};
-  }
-  // New style name.  Parse URI.
-  auto uri = URI::Parse(name);
-  if (!uri.ok()) return uri.status();
-  // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (expected_resource_type != "" &&
-      path_parts.first != expected_resource_type) {
-    return absl::InvalidArgumentError(
-        "xdstp URI path must indicate valid xDS resource type");
-  }
-  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
-      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
-  std::sort(query_parameters.begin(), query_parameters.end());
-  return ResourceName{
-      uri->authority(),
-      absl::StrCat(
-          "xdstp:", path_parts.second, (query_parameters.empty() ? "?" : ""),
-          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
-}
-
-std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
-                                              absl::string_view resource_type,
-                                              absl::string_view name) {
-  if (absl::StartsWith(name, "xdstp:")) {
-    return absl::StrCat("xdstp://", authority, "/", resource_type,
-                        absl::StripPrefix(name, "xdstp:"));
-  } else {
-    return std::string(absl::StripPrefix(name, "old:"));
-  }
-}
 
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, const std::string& type_url,
@@ -3423,9 +3423,8 @@ grpc_error_handle AdsResponseParse(
     auto resource_name_status =
         XdsApi::ParseResourceName(resource_name, expected_resource_type);
     if (!resource_name_status.ok()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("Invalid xDS resource type in resource name \"",
-                       resource_name, "\"")));
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Cannot parse xDS resource name \"", resource_name, "\"")));
       continue;
     }
     if (expected_resource_names.find(resource_name) ==
