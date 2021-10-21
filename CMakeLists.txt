@@ -16839,7 +16839,7 @@ add_executable(xds_channel_stack_modifier_test
   src/cpp/ext/filters/census/rpc_encoding.cc
   src/cpp/ext/filters/census/server_filter.cc
   src/cpp/ext/filters/census/views.cc
-  test/cpp/xds/xds_channel_stack_modifier_test.cc
+  test/core/xds/xds_channel_stack_modifier_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

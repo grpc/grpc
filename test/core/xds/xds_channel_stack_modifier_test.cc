@@ -69,7 +69,7 @@ constexpr char kTestFilter2[] = "test_filter_2";
 TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   CoreConfiguration::Reset();
   grpc_init();
-  // Add 2 dummy test filters to XdsChannelStackModifier
+  // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
       nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
       0,       nullptr, nullptr, nullptr, kTestFilter1};
@@ -114,7 +114,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   CoreConfiguration::Reset();
   grpc::RegisterOpenCensusPlugin();
   grpc_init();
-  // Add 2 dummy test filters to XdsChannelStackModifier
+  // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
       nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
       0,       nullptr, nullptr, nullptr, kTestFilter1};
