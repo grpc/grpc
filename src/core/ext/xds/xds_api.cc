@@ -2579,6 +2579,8 @@ grpc_error_handle FilterChainParse(
         filter_chain_match, &filter_chain->filter_chain_match);
     if (error != GRPC_ERROR_NONE) errors.push_back(error);
   }
+  filter_chain->filter_chain_data =
+      std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
   // Parse the filters list. Currently we only support HttpConnectionManager.
   size_t size = 0;
   auto* filters =
@@ -2614,8 +2616,6 @@ grpc_error_handle FilterChainParse(
               "Could not parse HttpConnectionManager config from filter "
               "typed_config"));
         } else {
-          filter_chain->filter_chain_data =
-              std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
           grpc_error_handle error = HttpConnectionManagerParse(
               false /* is_client */, context, http_connection_manager, is_v2,
               &filter_chain->filter_chain_data->http_connection_manager);

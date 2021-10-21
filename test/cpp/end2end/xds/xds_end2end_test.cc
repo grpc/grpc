@@ -724,13 +724,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     route = virtual_host->add_routes();
     route->mutable_match()->set_prefix("");
     route->mutable_non_forwarding_action();
-    // Construct a simple HttpConnectionManager for tests to use.
-    *simple_server_http_connection_manager_.mutable_route_config() =
-        default_server_route_config_;
-    auto* filter = simple_server_http_connection_manager_.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
     // Construct a default server-side Listener resource
     default_server_listener_.mutable_address()
         ->mutable_socket_address()
@@ -738,16 +731,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     default_server_listener_.mutable_default_filter_chain()
         ->add_filters()
         ->mutable_typed_config()
-        ->PackFrom(simple_server_http_connection_manager_);
-    // Start the backends.
+        ->PackFrom(http_connection_manager);
+    // Create the backends so that ports are allocated. (This is needed to
+    // populate xDS resources for servers.)
     for (size_t i = 0; i < num_backends_; ++i) {
       backends_.emplace_back(
           new BackendServerThread(this, use_xds_enabled_server_));
-      backends_.back()->Start();
     }
-    default_server_listener_.mutable_address()
-        ->mutable_socket_address()
-        ->set_port_value(backends_[0]->port());
     // Start the load balancers.
     for (size_t i = 0; i < num_balancers_; ++i) {
       balancers_.emplace_back(new BalancerServerThread(
@@ -759,7 +749,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       SetListenerAndRouteConfiguration(i, default_listener_,
                                        default_route_config_);
       if (use_xds_enabled_server_) {
-        balancers_[0]->ads_service()->SetLdsResource(default_server_listener_);
+        for (const auto& backend : backends_) {
+          SetServerListenerAndRouteConfiguration(
+              i, PopulateServerListenerNameAndPort(default_server_listener_,
+                                                   backend->port()));
+        }
       }
       balancers_.back()->ads_service()->SetCdsResource(default_cluster_);
     }
@@ -809,6 +803,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       // args for the xDS channel.
       grpc_core::internal::UnsetGlobalXdsClientForTest();
     }
+    // Start the backends
+    for (const auto& backend : backends_) {
+      backend->Start();
+    }
     // Create channel and stub.
     ResetStub();
   }
@@ -828,12 +826,25 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
   }
 
-  Listener PopulateServerListenerName(const Listener& listener_template, int port) {
+  Listener PopulateServerListenerNameAndPort(const Listener& listener_template,
+                                             int port) {
     Listener listener = listener_template;
-    default_server_listener_.set_name(absl::StrCat(
-        "grpc/server?xds.resource.listening_address=",
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port));
+    listener.set_name(
+        absl::StrCat("grpc/server?xds.resource.listening_address=",
+                     ipv6_only_ ? "[::1]:" : "127.0.0.1:", port));
+    listener.mutable_address()->mutable_socket_address()->set_port_value(
+        backends_[0]->port());
     return listener;
+  }
+
+  HttpConnectionManager GetDefaultServerHttpConnectionManager() {
+    HttpConnectionManager http_connection_manager;
+    default_server_listener_.mutable_default_filter_chain()
+        ->mutable_filters()
+        ->at(0)
+        .mutable_typed_config()
+        ->UnpackTo(&http_connection_manager);
+    return http_connection_manager;
   }
 
   void StartAllBackends() {
@@ -1370,6 +1381,37 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return ads_service->lds_response_state();
   }
 
+  void SetServerListenerAndRouteConfiguration(
+      int idx, Listener listener, const RouteConfiguration& route_config) {
+    HttpConnectionManager http_connection_manager;
+    listener.mutable_default_filter_chain()
+        ->mutable_filters()
+        ->at(0)
+        .mutable_typed_config()
+        ->UnpackTo(&http_connection_manager);
+    if (GetParam().enable_rds_testing()) {
+      http_connection_manager.clear_route_config();
+      auto* rds = http_connection_manager.mutable_rds();
+      rds->set_route_config_name(route_config.name());
+      rds->mutable_config_source()->mutable_ads();
+      balancers_[idx]->ads_service()->SetRdsResource(route_config);
+    } else {
+      http_connection_manager.clear_rds();
+      *http_connection_manager.mutable_route_config() = route_config;
+    }
+    listener.mutable_default_filter_chain()
+        ->mutable_filters()
+        ->at(0)
+        .mutable_typed_config()
+        ->PackFrom(http_connection_manager);
+    balancers_[idx]->ads_service()->SetLdsResource(listener);
+  }
+
+  void SetServerListenerAndRouteConfiguration(int idx, Listener listener) {
+    SetServerListenerAndRouteConfiguration(idx, listener,
+                                           default_server_route_config_);
+  }
+
   void SetListenerAndRouteConfiguration(
       int idx, Listener listener, const RouteConfiguration& route_config) {
     auto* api_listener =
@@ -1884,7 +1926,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   Listener default_listener_;
   RouteConfiguration default_route_config_;
   Listener default_server_listener_;
-  HttpConnectionManager simple_server_http_connection_manager_;
   RouteConfiguration default_server_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
@@ -3362,9 +3403,10 @@ TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
   // Set a route with an inappropriate route action
   auto* vhost = route_config.mutable_virtual_hosts(0);
   vhost->mutable_routes(0)->mutable_redirect();
-  // Add another route that we are never going to match on
+  // Add another route to make sure that the resolver code actually tries to
+  // match to a route instead of using a shorthand logic to error out.
   auto* route = vhost->add_routes();
-  route->mutable_match()->set_prefix("/NeverMatch");
+  route->mutable_match()->set_prefix("");
   route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, route_config);
   SetNextResolution({});
@@ -8198,7 +8240,10 @@ TEST_P(XdsEnabledServerTest, Basic) { WaitForBackend(0); }
 TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   Listener listener = default_server_listener_;
   listener.clear_address();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  SetServerListenerAndRouteConfiguration(0, listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8211,7 +8256,8 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
 TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   Listener listener = default_server_listener_;
   listener.mutable_api_listener();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8225,6 +8271,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   Listener listener = default_server_listener_;
   listener.mutable_default_filter_chain()->clear_filters();
   listener.mutable_default_filter_chain()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
+  listener = PopulateServerListenerNameAndPort(listener, backends_[0]->port());
   balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
@@ -8245,7 +8292,8 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
   http_connection_manager.clear_http_filters();
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8276,7 +8324,8 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
       ->at(0)
       .mutable_typed_config()
       ->PackFrom(http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8308,7 +8357,8 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
       ->at(0)
       .mutable_typed_config()
       ->PackFrom(http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8343,7 +8393,8 @@ TEST_P(XdsEnabledServerTest,
       ->at(0)
       .mutable_typed_config()
       ->PackFrom(http_connection_manager);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   WaitForBackend(0);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8357,7 +8408,8 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
   // Set a different listening address in the LDS update
   listener.mutable_address()->mutable_socket_address()->set_address(
       "192.168.1.1");
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::FAILED_PRECONDITION);
@@ -8366,7 +8418,8 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
   Listener listener = default_server_listener_;
   listener.mutable_use_original_dst()->set_value(true);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8443,7 +8496,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       transport_socket->mutable_typed_config()->PackFrom(
           downstream_tls_context);
     }
-    balancers_[0]->ads_service()->SetLdsResource(listener);
+    SetServerListenerAndRouteConfiguration(
+        0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   }
 
   std::shared_ptr<grpc::Channel> CreateMtlsChannel() {
@@ -8595,7 +8649,8 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("unknown_transport_socket");
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8617,7 +8672,8 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
       ->set_instance_name("fake_plugin1");
   downstream_tls_context.mutable_require_sni()->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8640,7 +8696,8 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
       envoy::extensions::transport_sockets::tls::v3::
           DownstreamTlsContext_OcspStaplePolicy_STRICT_STAPLING);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8664,7 +8721,8 @@ TEST_P(
       ->set_instance_name("fake_plugin1");
   downstream_tls_context.mutable_require_client_certificate()->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8684,7 +8742,8 @@ TEST_P(XdsServerSecurityTest,
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8709,7 +8768,8 @@ TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
       ->add_match_subject_alt_names()
       ->set_exact("*.test.google.fr");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8753,18 +8813,10 @@ TEST_P(XdsServerSecurityTest,
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
-  Listener listener;
-  listener.set_name(absl::StrCat(
-      ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
-                 : "grpc/server?xds.resource.listening_address=127.0.0.1:",
-      backends_[0]->port()));
-  listener.mutable_address()->mutable_socket_address()->set_address(
-      ipv6_only_ ? "[::1]" : "127.0.0.1");
-  listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  filter_chain->mutable_filters()->at(0).mutable_typed_config()->PackFrom(
+      GetDefaultServerHttpConnectionManager());
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -8772,7 +8824,8 @@ TEST_P(XdsServerSecurityTest,
       ->mutable_tls_certificate_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -9020,7 +9073,10 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
   void SetInvalidLdsUpdate() {
     Listener listener = default_server_listener_;
     listener.clear_address();
-    balancers_[0]->ads_service()->SetLdsResource(listener);
+    listener.set_name(absl::StrCat(
+        "grpc/server?xds.resource.listening_address=",
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+    SetServerListenerAndRouteConfiguration(0, listener);
   }
 
   void UnsetLdsUpdate() {
@@ -9184,11 +9240,12 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add a filter chain that will never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -9198,12 +9255,13 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with destination port that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9215,10 +9273,11 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   // Add filter chain with server name that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9231,10 +9290,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with transport protocol "tls" that should never match
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol("tls");
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9247,10 +9307,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with application protocol that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9263,17 +9324,18 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with "raw_buffer" transport protocol
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   // Add another filter chain with no transport protocol set but application
   // protocol set (fails match)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // A successful RPC proves that filter chains that mention "raw_buffer" as
   // the transport protocol are chosen as the best match in the round.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9286,7 +9348,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9300,7 +9362,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9313,7 +9375,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // 30)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix("192.168.1.1");
@@ -9322,10 +9384,11 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add another filter chain with no prefix range mentioned
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9337,7 +9400,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the local source type (best match)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   // Add filter chain with the external source type but bad source port.
@@ -9345,7 +9408,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // because it is already being used by a backend.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
@@ -9353,11 +9416,12 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the default source type (ANY) but bad source port.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9372,7 +9436,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // is already being used by a backend.
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   auto* source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9387,7 +9451,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // 24 is the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9400,7 +9464,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // length 30) and bad source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix("192.168.1.1");
@@ -9411,11 +9475,12 @@ TEST_P(XdsServerFilterChainMatchTest,
   // source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // A successful RPC proves that the filter chain with the longest matching
   // source prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9426,7 +9491,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   Listener listener = default_server_listener_;
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   // Since we don't know which port will be used by the channel, just add all
   // ports except for 0.
   for (int i = 1; i < 65536; i++) {
@@ -9436,7 +9501,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // DownstreamTlsContext configuration.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -9445,7 +9510,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   // A successful RPC proves that the filter chain with matching source port
   // was chosen.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9456,13 +9522,13 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   // Add filter chain
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   // Add a duplicate filter chain
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
-  listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+      GetDefaultServerHttpConnectionManager());
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9476,7 +9542,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   // Add filter chain with prefix range
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9488,7 +9554,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   // Add a filter chain with a duplicate prefix range entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9497,7 +9563,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   if (ipv6_only_) {
@@ -9518,28 +9585,22 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
-  Listener listener;
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  auto* socket_address = listener.mutable_address()->mutable_socket_address();
-  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  socket_address->set_port_value(backends_[0]->port());
+  Listener listener = default_server_listener_;
   // Add filter chain with "raw_buffer" transport protocol
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   // Add a duplicate filter chain with the same "raw_buffer" transport
   // protocol entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
-  listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9553,17 +9614,17 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
   // Add filter chain with the local source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   // Add a duplicate filter chain with the same local source type entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
-  listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9578,17 +9639,17 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the external source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   // Add a duplicate filter chain with the same external source type entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
-  listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9603,7 +9664,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with source prefix range
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9615,7 +9676,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add a filter chain with a duplicate source prefix range entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -9624,8 +9685,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
-  listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   if (ipv6_only_) {
@@ -9651,21 +9712,88 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   // Add filter chain with the external source type
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
   // Add a duplicate filter chain with the same source port entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      simple_server_http_connection_manager_);
+      GetDefaultServerHttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
-  listener.clear_default_filter_chain();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetServerListenerAndRouteConfiguration(
+      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {source_ports={8080}}"));
+}
+
+class XdsServerRdsTest : public XdsServerSecurityTest {
+ protected:
+  XdsServerRdsTest() { gpr_setenv("GRPC_XDS_EXPERIMENTAL_RBAC", "true"); }
+
+  ~XdsServerRdsTest() { gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_RBAC"); }
+};
+
+TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
+  RouteConfiguration route_config = default_server_route_config_;
+  route_config.mutable_virtual_hosts()->at(0).add_domains("");
+  SetServerListenerAndRouteConfiguration(
+      0,
+      PopulateServerListenerNameAndPort(default_server_listener_,
+                                        backends_[0]->port()),
+      route_config);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+              ::testing::HasSubstr("Invalid domain pattern \"\""));
+}
+
+TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
+  RouteConfiguration route_config = default_server_route_config_;
+  route_config.mutable_virtual_hosts()->at(0).clear_domains();
+  SetServerListenerAndRouteConfiguration(
+      0,
+      PopulateServerListenerNameAndPort(default_server_listener_,
+                                        backends_[0]->port()),
+      route_config);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+              ::testing::HasSubstr("VirtualHost has no domains"));
+}
+
+TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
+  RouteConfiguration route_config = default_server_route_config_;
+  route_config.mutable_virtual_hosts()->at(0).clear_routes();
+  SetServerListenerAndRouteConfiguration(
+      0,
+      PopulateServerListenerNameAndPort(default_server_listener_,
+                                        backends_[0]->port()),
+      route_config);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+              ::testing::HasSubstr("No route found in the virtual host"));
+}
+
+TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
+  RouteConfiguration route_config = default_server_route_config_;
+  route_config.mutable_virtual_hosts()
+      ->at(0)
+      .mutable_routes()
+      ->at(0)
+      .clear_match();
+  SetServerListenerAndRouteConfiguration(
+      0,
+      PopulateServerListenerNameAndPort(default_server_listener_,
+                                        backends_[0]->port()),
+      route_config);
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+              ::testing::HasSubstr("Match can't be null"));
 }
 
 using EdsTest = BasicTest;
@@ -12362,6 +12490,13 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
+                         ::testing::Values(TestType()
+                                               .set_use_fake_resolver()
+                                               .set_use_xds_credentials()),
+                         &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
                          ::testing::Values(TestType()
                                                .set_use_fake_resolver()
                                                .set_use_xds_credentials()),
