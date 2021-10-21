@@ -266,21 +266,11 @@ grpc_channel* grpc_channel_create(const char* target,
     }
   }
   grpc_channel_stack_builder_set_channel_arguments(builder, args);
+  grpc_channel_args_destroy(args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
-  grpc_core::RefCountedPtr<grpc_core::ChannelStackModifier>
-      channel_stack_modifier =
-          grpc_core::ChannelStackModifier::GetFromChannelArgs(*args);
-  auto modify_channel_stack = [&] {
-    if (channel_stack_modifier != nullptr) {
-      return channel_stack_modifier->ModifyChannelStack(builder);
-    }
-    return true;
-  };
-  grpc_channel_args_destroy(args);
   if (!grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
-          builder, channel_stack_type) ||
-      !modify_channel_stack()) {
+          builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(builder);
     if (resource_user != nullptr) {
       if (preallocated_bytes > 0) {
@@ -433,35 +423,19 @@ grpc_call* grpc_channel_create_pollset_set_call(
 namespace grpc_core {
 
 RegisteredCall::RegisteredCall(const char* method_arg, const char* host_arg)
-    : method(method_arg != nullptr ? method_arg : ""),
-      host(host_arg != nullptr ? host_arg : ""),
-      path(grpc_mdelem_from_slices(
-          GRPC_MDSTR_PATH, grpc_core::ExternallyManagedSlice(method.c_str()))),
-      authority(!host.empty()
-                    ? grpc_mdelem_from_slices(
-                          GRPC_MDSTR_AUTHORITY,
-                          grpc_core::ExternallyManagedSlice(host.c_str()))
-                    : GRPC_MDNULL) {}
+    : path(method_arg != nullptr && method_arg[0] != 0
+               ? grpc_mdelem_from_slices(
+                     GRPC_MDSTR_PATH, grpc_slice_from_copied_string(method_arg))
+               : GRPC_MDNULL),
+      authority(
+          host_arg != nullptr && host_arg[0] != 0
+              ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
+                                        grpc_slice_from_copied_string(host_arg))
+              : GRPC_MDNULL) {}
 
-// TODO(vjpai): Delete copy-constructor when allowed by all supported compilers.
 RegisteredCall::RegisteredCall(const RegisteredCall& other)
-    : RegisteredCall(other.method.c_str(), other.host.c_str()) {}
-
-RegisteredCall::RegisteredCall(RegisteredCall&& other) noexcept
-    : method(std::move(other.method)),
-      host(std::move(other.host)),
-      path(grpc_mdelem_from_slices(
-          GRPC_MDSTR_PATH, grpc_core::ExternallyManagedSlice(method.c_str()))),
-      authority(!host.empty()
-                    ? grpc_mdelem_from_slices(
-                          GRPC_MDSTR_AUTHORITY,
-                          grpc_core::ExternallyManagedSlice(host.c_str()))
-                    : GRPC_MDNULL) {
-  GRPC_MDELEM_UNREF(other.path);
-  GRPC_MDELEM_UNREF(other.authority);
-  other.path = GRPC_MDNULL;
-  other.authority = GRPC_MDNULL;
-}
+    : path(GRPC_MDELEM_REF(other.path)),
+      authority(GRPC_MDELEM_REF(other.authority)) {}
 
 RegisteredCall::~RegisteredCall() {
   GRPC_MDELEM_UNREF(path);

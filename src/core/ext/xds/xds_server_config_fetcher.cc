@@ -40,58 +40,6 @@ TraceFlag grpc_xds_server_config_fetcher_trace(false,
 
 namespace {
 
-class XdsServerChannelStackModifier : public ChannelStackModifier {
- public:
-  explicit XdsServerChannelStackModifier(
-      std::vector<const grpc_channel_filter*> filters)
-      : filters_(std::move(filters)) {}
-  bool ModifyChannelStack(grpc_channel_stack_builder* builder) override {
-    // Destroys grpc_channel_stack_builder_iterator when it goes out of scope
-    class IteratorDestroyer {
-     public:
-      explicit IteratorDestroyer(
-          grpc_channel_stack_builder_iterator* iterator_to_destroy)
-          : iterator_to_destroy_(iterator_to_destroy) {}
-      ~IteratorDestroyer() {
-        grpc_channel_stack_builder_iterator_destroy(iterator_to_destroy_);
-      }
-
-     private:
-      grpc_channel_stack_builder_iterator* iterator_to_destroy_;
-    };
-    // Insert the filters after the server or the census filter
-    grpc_channel_stack_builder_iterator* position_to_insert = nullptr;
-    grpc_channel_stack_builder_iterator* it =
-        grpc_channel_stack_builder_create_iterator_at_first(builder);
-    IteratorDestroyer iterator_destroyer(it);
-    while (grpc_channel_stack_builder_move_next(it)) {
-      if (grpc_channel_stack_builder_iterator_is_end(it)) break;
-      const char* filter_name_at_it =
-          grpc_channel_stack_builder_iterator_filter_name(it);
-      if (strcmp("server", filter_name_at_it) == 0) {
-        position_to_insert = it;
-      }
-      if (strcmp("census_server", filter_name_at_it) ||
-          strcmp("opencensus_server", filter_name_at_it)) {
-        position_to_insert = it;
-        break;
-      }
-    }
-    if (position_to_insert == nullptr) return false;
-    GPR_ASSERT(grpc_channel_stack_builder_move_next(position_to_insert));
-    for (const grpc_channel_filter* filter : filters_) {
-      if (!grpc_channel_stack_builder_add_filter_before(
-              position_to_insert, filter, nullptr, nullptr)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
- private:
-  std::vector<const grpc_channel_filter*> filters_;
-};
-
 class FilterChainMatchManager
     : public grpc_server_config_fetcher::ConnectionManager {
  public:

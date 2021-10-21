@@ -153,7 +153,7 @@ namespace internal {
 
 /// Builds a upb message, google_rpc_Status from a status
 /// This is for internal implementation & test only
-google_rpc_Status* StatusToProto(absl::Status status,
+google_rpc_Status* StatusToProto(const absl::Status& status,
                                  upb_arena* arena) GRPC_MUST_USE_RESULT;
 
 /// Builds a status from a upb message, google_rpc_Status

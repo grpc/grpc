@@ -155,21 +155,4 @@ grpc_error_handle grpc_channel_stack_builder_finish(
 /// Destroy the builder without creating a channel stack
 void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder);
 
-namespace grpc_core {
-
-// ChannelStackModifier allows for modifying the stack after the registered
-// filters have been added. The modifier is expected to be propagated through
-// channel args.
-class ChannelStackModifier : public RefCounted<ChannelStackModifier> {
- public:
-  // Modifies the channel stack after the stack has been created through
-  // `Builder::CreateStack`.
-  virtual bool ModifyChannelStack(grpc_channel_stack_builder* builder) = 0;
-  grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<ChannelStackModifier> GetFromChannelArgs(
-      const grpc_channel_args& args);
-};
-
-}  // namespace grpc_core
-
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

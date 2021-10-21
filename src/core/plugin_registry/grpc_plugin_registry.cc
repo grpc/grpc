@@ -54,6 +54,8 @@ void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
+void RlsLbPluginInit();
+void RlsLbPluginShutdown();
 void ServiceConfigParserInit(void);
 void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
@@ -94,6 +96,8 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_resolver_fake_init, grpc_resolver_fake_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
+  grpc_register_plugin(grpc_core::RlsLbPluginInit,
+                       grpc_core::RlsLbPluginShutdown);
   grpc_register_plugin(grpc_lb_policy_priority_init,
                        grpc_lb_policy_priority_shutdown);
   grpc_register_plugin(grpc_lb_policy_weighted_target_init,
@@ -151,6 +155,10 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
+#ifndef GRPC_NO_XDS
+extern void RegisterXdsChannelStackModifier(
+    CoreConfiguration::Builder* builder);
+#endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -163,6 +171,9 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
+  #ifndef GRPC_NO_XDS
+  RegisterXdsChannelStackModifier(builder);
+  #endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

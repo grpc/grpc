@@ -108,8 +108,10 @@ static void test_create_channel_stack(void) {
 
   channel_stack = static_cast<grpc_channel_stack*>(
       gpr_malloc(grpc_channel_stack_size(&filters, 1)));
-  grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
-                          &chan_args, nullptr, "test", channel_stack);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "grpc_channel_stack_init",
+      grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
+                              &chan_args, nullptr, "test", channel_stack)));
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = static_cast<int*>(channel_elem->channel_data);

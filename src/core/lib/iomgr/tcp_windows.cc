@@ -186,7 +186,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
   }
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
@@ -322,7 +322,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
   }
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;
