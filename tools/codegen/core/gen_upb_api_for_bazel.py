@@ -19,7 +19,7 @@ import collections
 import os
 import shutil
 import subprocess
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree
 
 # Rule object representing the UPB rule of Bazel BUILD.
 Rule = collections.namedtuple('Rule', 'name type srcs deps proto_files')
@@ -49,7 +49,7 @@ def read_upb_bazel_rules():
     # to avoid bazel conflict when running on Kokoro.
     result = subprocess.check_output(
         [BAZEL_BIN, 'query', '--output', 'xml', '--noimplicit_deps', '//:all'])
-    root = ET.fromstring(result)
+    root = xml.etree.ElementTree.fromstring(result)
     rules = [
         parse_bazel_rule(elem)
         for elem in root
@@ -64,7 +64,7 @@ def read_upb_bazel_rules():
         BAZEL_BIN, 'query', '--output', 'xml', '--noimplicit_deps',
         ' union '.join(all_deps)
     ])
-    root = ET.fromstring(result)
+    root = xml.etree.ElementTree.fromstring(result)
     dep_rules = {}
     for dep_rule in (
             parse_bazel_rule(elem) for elem in root if elem.tag == 'rule'):
