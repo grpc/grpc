@@ -58,8 +58,7 @@ TEST(GenerateRbacPoliciesTest, InvalidPolicy) {
       ::testing::StartsWith("Failed to parse SDK authorization policy."));
 }
 
-TEST(GenerateRbacPoliciesTest, UnknownFields) {
-  /*
+TEST(GenerateRbacPoliciesTest, UnknownFieldsTop) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -69,7 +68,14 @@ TEST(GenerateRbacPoliciesTest, UnknownFields) {
       "    }"
       "  ],"
       "  \"foo\": \"123\""
-      "}";*/
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(rbac_policies.status().message(),
+              "Policy contains unknown fields: foo ");
+}
+
+TEST(GenerateRbacPoliciesTest, UnknownFieldsRule) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -84,11 +90,45 @@ TEST(GenerateRbacPoliciesTest, UnknownFields) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
-  /*
-  EXPECT_THAT(rbac_policies.status().message(),
-              "Policy contains unknown fields: foo ");*/
   EXPECT_THAT(rbac_policies.status().message(),
               "allow_rules 0: Policy contains unknown fields: foo ");
+}
+
+TEST(GenerateRbacPoliciesTest, UnknownFieldsSource) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_all\""
+      "    },"
+      "    {"
+      "      \"name\": \"allow_policy\","
+      "      \"source\": { \"principals\": [\"spiffe://foo.abc\"], \"foo\": {} }"
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(rbac_policies.status().message(),
+              "allow_rules 1: Policy contains unknown fields: foo ");
+}
+
+TEST(GenerateRbacPoliciesTest, UnknownFieldsRequest) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_policy\","
+      "      \"request\": { \"foo\": {}, \"bar\": {} }"
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(rbac_policies.status().message(),
+              "allow_rules 0: Policy contains unknown fields: foo bar ");
 }
 
 TEST(GenerateRbacPoliciesTest, MissingAuthorizationPolicyName) {
