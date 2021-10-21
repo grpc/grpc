@@ -279,8 +279,8 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                       grpc.StatusCode.PERMISSION_DENIED)
 
         with self.subTest('03_principal_present'):
-            self.configure_and_assert(
-                test_client, 'principal-present', grpc.StatusCode.OK)
+            self.configure_and_assert(test_client, 'principal-present',
+                                      grpc.StatusCode.OK)
 
         with self.subTest('04_match_principal'):
             self.configure_and_assert(test_client, 'match-principal',
