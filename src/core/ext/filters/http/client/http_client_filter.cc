@@ -79,7 +79,6 @@ struct call_data {
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
   grpc_linked_mdelem content_type;
-  grpc_linked_mdelem user_agent;
   // State for handling recv_initial_metadata ops.
   grpc_metadata_batch* recv_initial_metadata;
   grpc_error_handle recv_initial_metadata_error = GRPC_ERROR_NONE;
@@ -104,7 +103,7 @@ struct call_data {
 
 struct channel_data {
   grpc_mdelem static_scheme;
-  grpc_mdelem user_agent;
+  grpc_core::Slice user_agent;
   size_t max_payload_size_for_get;
 };
 }  // namespace
@@ -443,9 +442,6 @@ static void http_client_start_transport_stream_op_batch(
     remove_if_present(
         batch->payload->send_initial_metadata.send_initial_metadata,
         GRPC_BATCH_CONTENT_TYPE);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_USER_AGENT);
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */

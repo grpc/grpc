@@ -145,6 +145,12 @@ struct grpc_slice_refcount {
     }
   }
 
+  // Only for type REGULAR, is this the only instance?
+  bool IsRegularUnique() {
+    GPR_DEBUG_ASSERT(ref_type_ == Type::REGULAR);
+    return ref_->IsOne();
+  }
+
   grpc_slice_refcount* sub_refcount() const { return sub_refcount_; }
 
  private:

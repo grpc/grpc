@@ -34,6 +34,7 @@
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/parsed_metadata.h"
@@ -83,12 +84,11 @@ struct GrpcTimeoutMetadata {
   using ValueType = grpc_millis;
   using MementoType = grpc_millis;
   static const char* key() { return "grpc-timeout"; }
-  static MementoType ParseMemento(const grpc_slice& value) {
+  static MementoType ParseMemento(Slice value) {
     grpc_millis timeout;
-    if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value, &timeout))) {
+    if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value.c_slice(), &timeout))) {
       timeout = GRPC_MILLIS_INF_FUTURE;
     }
-    grpc_slice_unref_internal(value);
     return timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
@@ -97,7 +97,7 @@ struct GrpcTimeoutMetadata {
     }
     return grpc_core::ExecCtx::Get()->Now() + timeout;
   }
-  static grpc_slice Encode(ValueType x) {
+  static Slice Encode(ValueType x) {
     char timeout[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
     grpc_http2_encode_timeout(x, timeout);
     return grpc_slice_from_copied_string(timeout);
@@ -116,16 +116,15 @@ struct TeMetadata {
   };
   using MementoType = ValueType;
   static const char* key() { return "te"; }
-  static MementoType ParseMemento(const grpc_slice& value) {
+  static MementoType ParseMemento(Slice value) {
     auto out = kInvalid;
-    if (grpc_slice_eq(value, GRPC_MDSTR_TRAILERS)) {
+    if (value == "trailers") {
       out = kTrailers;
     }
-    grpc_slice_unref_internal(value);
     return out;
   }
   static ValueType MementoToValue(MementoType te) { return te; }
-  static grpc_slice Encode(ValueType x) {
+  static Slice Encode(ValueType x) {
     GPR_ASSERT(x == kTrailers);
     return GRPC_MDSTR_TRAILERS;
   }
@@ -136,6 +135,19 @@ struct TeMetadata {
       default:
         return "<discarded-invalid-value>";
     }
+  }
+};
+
+// user-agent metadata trait.
+struct UserAgentMetadata {
+  using ValueType = Slice;
+  using MementoType = Slice;
+  static const char* key() { return "user-agent"; }
+  static MementoType ParseMemento(Slice value) { return value; }
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(ValueType x) { return x; }
+  static absl::string_view DisplayValue(MementoType value) {
+    return value.as_string_view();
   }
 };
 
@@ -897,7 +909,7 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 
 using grpc_metadata_batch =
     grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata,
-                           grpc_core::TeMetadata>;
+                           grpc_core::TeMetadata, grpc_core::UserAgentMetadata>;
 
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
   batch->Clear();

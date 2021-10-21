@@ -329,9 +329,8 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   }
 
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (!chand->surface_user_agent &&
-      b->legacy_index()->named.user_agent != nullptr) {
-    b->Remove(GRPC_BATCH_USER_AGENT);
+  if (!chand->surface_user_agent) {
+    b->Remove(grpc_core::UserAgentMetadata());
   }
 
   return error;

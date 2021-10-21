@@ -177,7 +177,6 @@ METADATA_BATCH_CALLOUTS = [
     'accept-encoding',
     'grpc-internal-encoding-request',
     'grpc-internal-stream-encoding-request',
-    'user-agent',
     'host',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
