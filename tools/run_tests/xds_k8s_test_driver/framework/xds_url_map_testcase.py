@@ -105,7 +105,7 @@ class DumpedXdsConfig(dict):
                             'dynamicEndpointConfigs']:
                         self.eds.append(endpoint['endpointConfig'])
             except Exception as e:
-                logging.debug('Parse dumped xDS config failed with %s: %s',
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for generic_xds_config in self['genericXdsConfigs']:
             try:
@@ -120,7 +120,7 @@ class DumpedXdsConfig(dict):
                                generic_xds_config['typeUrl']):
                     self.eds = generic_xds_config["xdsConfig"]
             except Exception as e:
-                logging.debug('Parse dumped xDS config failed with %s: %s',
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for endpoint_config in self.eds:
             for endpoint in endpoint_config.get('endpoints', {}):

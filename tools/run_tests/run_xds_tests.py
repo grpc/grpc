@@ -2317,7 +2317,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                    generic_xds_config['typeUrl']):
                         seen.add('rds')
                         route_config = generic_xds_config["xds_config"]
-                        if len(route_config['virtual_hosts']) <= 0:
+                        if not len(route_config['virtual_hosts']):
                             logger.info('Invalid number of VirtualHosts %s',
                                         num_vh)
                             ok = False
