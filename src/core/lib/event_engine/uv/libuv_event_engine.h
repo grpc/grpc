@@ -105,9 +105,9 @@ class LibuvEventEngine final
   // Used by IsWorkerThread.
   gpr_thd_id worker_thread_id_;
 
-  // Locked on shutdown to ensure there's no race contention around the kicker_
-  // upon EventEngine destruction.
-  grpc_core::Mutex shutdown_mutex_;
+  // Set by the destructor on shutdown to ensure there's no race contention
+  // around the kicker_ upon EventEngine destruction and uv_loop shutdown.
+  grpc_event_engine::experimental::Promise<bool> uv_shutdown_can_proceed_;
 
   friend class LibuvTask;
 };

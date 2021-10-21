@@ -174,14 +174,13 @@ LibuvEventEngine::~LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::~LibuvEventEngine", this);
   }
-  grpc_core::ReleasableMutexLock lock(&shutdown_mutex_);
   RunInLibuvThread([](LibuvEventEngine* engine) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG,
               "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
               engine);
     }
-    grpc_core::MutexLock lock(&engine->shutdown_mutex_);
+    GPR_ASSERT(engine->uv_shutdown_can_proceed_.Get());
     // Shutting down at this point is essentially just this unref call here.
     // After it, the libuv loop will continue working until it has no more
     // events to monitor. It means that scheduling new work becomes essentially
@@ -213,7 +212,7 @@ LibuvEventEngine::~LibuvEventEngine() {
           nullptr);
     }
   });
-  lock.Release();
+  uv_shutdown_can_proceed_.Set(true);
   thread_.Join();
   GPR_ASSERT(GPR_LIKELY(task_map_.empty()));
 }
