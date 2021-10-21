@@ -2315,6 +2315,32 @@ grpc_error_handle HttpConnectionManagerParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Expected at least one HTTP filter");
   }
+  // Make sure that the last filter is terminal and non-last filters are
+  // non-terminal. Note that this check is being performed in a separate loop to
+  // take care of the case where there are two terminal filters in the list out
+  // of which only one gets added in the final list.
+  for (const auto& http_filter : http_connection_manager->http_filters) {
+    const XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(
+            http_filter.config.config_proto_type_name);
+    if (&http_filter != &http_connection_manager->http_filters.back()) {
+      // Filters before the last filter must not be terminal.
+      if (filter_impl->IsTerminalFilter()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("terminal filter for config type ",
+                         http_filter.config.config_proto_type_name,
+                         " must be the last filter in the chain"));
+      }
+    } else {
+      // The last filter must be terminal.
+      if (!filter_impl->IsTerminalFilter()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("non-terminal filter for config type ",
+                         http_filter.config.config_proto_type_name,
+                         " is the last filter in the chain"));
+      }
+    }
+  }
   // Guarding parsing of RouteConfig on the server side with the environmental
   // variable since that's the first feature on the server side that will be
   // using this.
