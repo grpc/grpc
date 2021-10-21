@@ -21,7 +21,9 @@ load(
     "py_proto_library",
 )
 
-package(default_testonly = 1)
+package(
+    default_testonly = 1,
+)
 
 proto_library(
     name = "helloworld_proto",
@@ -103,5 +105,45 @@ py_test(
         ":helloworld_moved_py_pb2",
         ":helloworld_moved_py_pb2_grpc",
         ":timestamp_py_pb2",
+    ],
+)
+
+# Test that a py_proto_library wrapping a proto_library in another package can
+# be imported from the package that contains the py_proto_library *AND* from
+# the package that contains the proto_library.
+py_proto_library(
+    name = "subpackage_py_pb2",
+    deps = ["//in_subpackage:subpackage_proto"],
+)
+
+py_test(
+    name = "import_from_this_package_subpackage_test",
+    srcs = ["import_from_this_package.py"],
+    main = "import_from_this_package.py",
+    python_version = "PY3",
+    deps = [
+        ":subpackage_py_pb2",
+    ],
+)
+
+py_test(
+    name = "import_from_proto_library_package_test",
+    srcs = ["import_from_proto_library_package.py"],
+    main = "import_from_proto_library_package.py",
+    python_version = "PY3",
+    deps = [
+        ":subpackage_py_pb2",
+    ],
+)
+
+# Test that a py_proto_library can be successfully imported without requiring
+# explicit dependencies on unused dependencies of the generated code.
+py_test(
+    name = "transitive_proto_dep_test",
+    srcs = ["transitive_proto_dep.py"],
+    main = "transitive_proto_dep.py",
+    python_version = "PY3",
+    deps = [
+        ":helloworld_py_pb2",
     ],
 )
