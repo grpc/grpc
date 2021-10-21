@@ -33,7 +33,7 @@ find_package(PkgConfig REQUIRED)
 # becomes the minimum required: that will take care of the add_library() and
 # set_property() calls; then we can simply alias PkgConfig::uv as uv::uv.
 # For now, we can only set INTERFACE_* properties that existed in CMake 3.5.
-pkg_check_modules(UV QUIET uv)
+pkg_check_modules(UV uv)
 if(UV_FOUND)
   set(uv_FOUND "${UV_FOUND}")
   add_library(uv::uv INTERFACE IMPORTED)
