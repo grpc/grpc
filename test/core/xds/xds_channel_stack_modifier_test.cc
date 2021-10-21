@@ -106,6 +106,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it),
                kTestFilter2);
   grpc_channel_stack_builder_iterator_destroy(it);
+  grpc_channel_stack_builder_destroy(builder);
   grpc_shutdown();
 }
 
@@ -154,6 +155,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it),
                kTestFilter2);
   grpc_channel_stack_builder_iterator_destroy(it);
+  grpc_channel_stack_builder_destroy(builder);
   grpc_shutdown();
 }
 
