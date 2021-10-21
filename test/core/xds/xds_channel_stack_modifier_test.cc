@@ -27,7 +27,7 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc {
+namespace grpc_core {
 namespace testing {
 namespace {
 
@@ -36,12 +36,12 @@ namespace {
 TEST(XdsChannelStackModifierTest, CopyChannelArgs) {
   grpc_init();
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<grpc_core::XdsChannelStackModifier>(
+      MakeRefCounted<XdsChannelStackModifier>(
           std::vector<const grpc_channel_filter*>{});
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   EXPECT_EQ(server_config_selector_provider,
-            grpc_core::XdsChannelStackModifier::GetFromChannelArgs(*args));
+            XdsChannelStackModifier::GetFromChannelArgs(*args));
   grpc_channel_args_destroy(args);
   grpc_shutdown();
 }
@@ -50,13 +50,13 @@ TEST(XdsChannelStackModifierTest, CopyChannelArgs) {
 TEST(XdsChannelStackModifierTest, ChannelArgsCompare) {
   grpc_init();
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<grpc_core::XdsChannelStackModifier>(
+      MakeRefCounted<XdsChannelStackModifier>(
           std::vector<const grpc_channel_filter*>{});
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   grpc_channel_args* new_args = grpc_channel_args_copy(args);
-  EXPECT_EQ(grpc_core::XdsChannelStackModifier::GetFromChannelArgs(*new_args),
-            grpc_core::XdsChannelStackModifier::GetFromChannelArgs(*args));
+  EXPECT_EQ(XdsChannelStackModifier::GetFromChannelArgs(*new_args),
+            XdsChannelStackModifier::GetFromChannelArgs(*args));
   grpc_channel_args_destroy(args);
   grpc_channel_args_destroy(new_args);
   grpc_shutdown();
@@ -67,7 +67,7 @@ constexpr char kTestFilter2[] = "test_filter_2";
 
 // Test filters insertion
 TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
-  grpc_core::CoreConfiguration::Reset();
+  CoreConfiguration::Reset();
   grpc_init();
   // Add 2 dummy test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
@@ -77,7 +77,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
       nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
       0,       nullptr, nullptr, nullptr, kTestFilter2};
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<grpc_core::XdsChannelStackModifier>(
+      MakeRefCounted<XdsChannelStackModifier>(
           std::vector<const grpc_channel_filter*>{&test_filter_1,
                                                   &test_filter_2});
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
@@ -93,7 +93,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added
-  ASSERT_TRUE(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(
       builder, GRPC_SERVER_CHANNEL));
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
@@ -111,8 +111,8 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
 
 // Test filters insertion with OpenCensus plugin registered
 TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
-  grpc_core::CoreConfiguration::Reset();
-  RegisterOpenCensusPlugin();
+  CoreConfiguration::Reset();
+  grpc::RegisterOpenCensusPlugin();
   grpc_init();
   // Add 2 dummy test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
@@ -122,7 +122,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
       nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
       0,       nullptr, nullptr, nullptr, kTestFilter2};
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<grpc_core::XdsChannelStackModifier>(
+      MakeRefCounted<XdsChannelStackModifier>(
           std::vector<const grpc_channel_filter*>{&test_filter_1,
                                                   &test_filter_2});
   grpc_arg arg = server_config_selector_provider->MakeChannelArg();
@@ -138,7 +138,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added after the census filter
-  ASSERT_TRUE(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(
       builder, GRPC_SERVER_CHANNEL));
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
@@ -159,7 +159,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
 
 }  // namespace
 }  // namespace testing
-}  // namespace grpc
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
