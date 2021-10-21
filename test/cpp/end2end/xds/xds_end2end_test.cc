@@ -9733,7 +9733,7 @@ class XdsServerRdsTest : public XdsServerSecurityTest {
  protected:
   XdsServerRdsTest() { gpr_setenv("GRPC_XDS_EXPERIMENTAL_RBAC", "true"); }
 
-  ~XdsServerRdsTest() { gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_RBAC"); }
+  ~XdsServerRdsTest() override { gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_RBAC"); }
 };
 
 TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
