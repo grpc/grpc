@@ -3722,6 +3722,7 @@ grpc_error_handle XdsApi::ParseLrsResponse(
 }
 
 namespace {
+
 google_protobuf_Timestamp* GrpcMillisToTimestamp(const EncodingContext& context,
                                                  grpc_millis value) {
   google_protobuf_Timestamp* timestamp =
@@ -3730,218 +3731,6 @@ google_protobuf_Timestamp* GrpcMillisToTimestamp(const EncodingContext& context,
   google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
   google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
   return timestamp;
-}
-
-envoy_admin_v3_UpdateFailureState* CreateUpdateFailureStateUpb(
-    const EncodingContext& context,
-    const XdsApi::ResourceMetadata* resource_metadata) {
-  auto* update_failure_state =
-      envoy_admin_v3_UpdateFailureState_new(context.arena);
-  envoy_admin_v3_UpdateFailureState_set_details(
-      update_failure_state,
-      StdStringToUpbString(resource_metadata->failed_details));
-  envoy_admin_v3_UpdateFailureState_set_version_info(
-      update_failure_state,
-      StdStringToUpbString(resource_metadata->failed_version));
-  envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
-      update_failure_state,
-      GrpcMillisToTimestamp(context, resource_metadata->failed_update_time));
-  return update_failure_state;
-}
-
-void DumpLdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kLdsTypeUrlUpb = upb_strview_makez(XdsApi::kLdsTypeUrl);
-  auto* listener_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_listener_config(
-          per_xds_config, context.arena);
-  envoy_admin_v3_ListenersConfigDump_set_version_info(
-      listener_config_dump,
-      StdStringToUpbString(resource_type_metadata.version));
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_listener =
-        envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(
-            listener_config_dump, context.arena);
-    envoy_admin_v3_ListenersConfigDump_DynamicListener_set_name(
-        dynamic_listener, name_upb);
-    envoy_admin_v3_ListenersConfigDump_DynamicListener_set_client_status(
-        dynamic_listener, meta->client_status);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective listeners
-      auto* dynamic_listener_state =
-          envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_active_state(
-              dynamic_listener, context.arena);
-      envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_version_info(
-          dynamic_listener_state, StdStringToUpbString(meta->version));
-      envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_last_updated(
-          dynamic_listener_state,
-          GrpcMillisToTimestamp(context, meta->update_time));
-      auto* listener_any =
-          envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_listener(
-              dynamic_listener_state, context.arena);
-      google_protobuf_Any_set_type_url(listener_any, kLdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          listener_any, StdStringToUpbString(meta->serialized_proto));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_ListenersConfigDump_DynamicListener_set_error_state(
-          dynamic_listener, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
-}
-
-void DumpRdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kRdsTypeUrlUpb = upb_strview_makez(XdsApi::kRdsTypeUrl);
-  auto* route_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_route_config(per_xds_config,
-                                                                context.arena);
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_route_config =
-        envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(
-            route_config_dump, context.arena);
-    envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_client_status(
-        dynamic_route_config, meta->client_status);
-    auto* route_config_any =
-        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_route_config(
-            dynamic_route_config, context.arena);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective route configs
-      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_version_info(
-          dynamic_route_config, StdStringToUpbString(meta->version));
-      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_last_updated(
-          dynamic_route_config,
-          GrpcMillisToTimestamp(context, meta->update_time));
-      google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          route_config_any, StdStringToUpbString(meta->serialized_proto));
-    } else {
-      // If there isn't a working route config, we still need to print the
-      // name.
-      auto* route_config =
-          envoy_config_route_v3_RouteConfiguration_new(context.arena);
-      envoy_config_route_v3_RouteConfiguration_set_name(route_config, name_upb);
-      size_t length;
-      char* bytes = envoy_config_route_v3_RouteConfiguration_serialize(
-          route_config, context.arena, &length);
-      google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
-      google_protobuf_Any_set_value(route_config_any,
-                                    upb_strview_make(bytes, length));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_error_state(
-          dynamic_route_config, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
-}
-
-void DumpCdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kCdsTypeUrlUpb = upb_strview_makez(XdsApi::kCdsTypeUrl);
-  auto* cluster_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_cluster_config(
-          per_xds_config, context.arena);
-  envoy_admin_v3_ClustersConfigDump_set_version_info(
-      cluster_config_dump,
-      StdStringToUpbString(resource_type_metadata.version));
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_cluster =
-        envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(
-            cluster_config_dump, context.arena);
-    envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_client_status(
-        dynamic_cluster, meta->client_status);
-    auto* cluster_any =
-        envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_cluster(
-            dynamic_cluster, context.arena);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective clusters
-      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_version_info(
-          dynamic_cluster, StdStringToUpbString(meta->version));
-      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_last_updated(
-          dynamic_cluster, GrpcMillisToTimestamp(context, meta->update_time));
-      google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          cluster_any, StdStringToUpbString(meta->serialized_proto));
-    } else {
-      // If there isn't a working cluster, we still need to print the name.
-      auto* cluster = envoy_config_cluster_v3_Cluster_new(context.arena);
-      envoy_config_cluster_v3_Cluster_set_name(cluster, name_upb);
-      size_t length;
-      char* bytes = envoy_config_cluster_v3_Cluster_serialize(
-          cluster, context.arena, &length);
-      google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
-      google_protobuf_Any_set_value(cluster_any,
-                                    upb_strview_make(bytes, length));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_error_state(
-          dynamic_cluster, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
-}
-
-void DumpEdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kEdsTypeUrlUpb = upb_strview_makez(XdsApi::kEdsTypeUrl);
-  auto* endpoint_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_endpoint_config(
-          per_xds_config, context.arena);
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_endpoint =
-        envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(
-            endpoint_config_dump, context.arena);
-    envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_client_status(
-        dynamic_endpoint, meta->client_status);
-    auto* endpoint_any =
-        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_endpoint_config(
-            dynamic_endpoint, context.arena);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective endpoints
-      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_version_info(
-          dynamic_endpoint, StdStringToUpbString(meta->version));
-      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_last_updated(
-          dynamic_endpoint, GrpcMillisToTimestamp(context, meta->update_time));
-      google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          endpoint_any, StdStringToUpbString(meta->serialized_proto));
-    } else {
-      // If there isn't a working endpoint, we still need to print the name.
-      auto* cluster_load_assignment =
-          envoy_config_endpoint_v3_ClusterLoadAssignment_new(context.arena);
-      envoy_config_endpoint_v3_ClusterLoadAssignment_set_cluster_name(
-          cluster_load_assignment, name_upb);
-      size_t length;
-      char* bytes = envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(
-          cluster_load_assignment, context.arena, &length);
-      google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
-      google_protobuf_Any_set_value(endpoint_any,
-                                    upb_strview_make(bytes, length));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_error_state(
-          dynamic_endpoint, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
 }
 
 }  // namespace
@@ -3959,33 +3748,50 @@ std::string XdsApi::AssembleClientConfig(
       arena.ptr(), true,    certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
-  // Dump each xDS-type config into PerXdsConfig
-  for (auto& p : resource_type_metadata_map) {
+  // Dump each resource.
+  for (const auto& p : resource_type_metadata_map) {
     absl::string_view type_url = p.first;
-    const ResourceTypeMetadata& resource_type_metadata = p.second;
-    if (type_url == kLdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpLdsConfig(context, resource_type_metadata, per_xds_config);
-    } else if (type_url == kRdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpRdsConfig(context, resource_type_metadata, per_xds_config);
-    } else if (type_url == kCdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpCdsConfig(context, resource_type_metadata, per_xds_config);
-    } else if (type_url == kEdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpEdsConfig(context, resource_type_metadata, per_xds_config);
-    } else {
-      gpr_log(GPR_ERROR, "invalid type_url %s", std::string(type_url).c_str());
-      return "";
+    const ResourceMetadataMap& resource_metadata_map = p.second;
+    for (const auto& q : resource_metadata_map) {
+      absl::string_view resource_name = q.first;
+      const ResourceMetadata& metadata = *q.second;
+      auto* entry =
+          envoy_service_status_v3_ClientConfig_add_generic_xds_configs(
+              client_config, context.arena);
+      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(
+          entry, StdStringToUpbString(type_url));
+      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(
+          entry, StdStringToUpbString(resource_name));
+      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(
+          entry, metadata.client_status);
+      if (!metadata.serialized_proto.empty()) {
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(
+            entry, StdStringToUpbString(metadata.version));
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(
+            entry, GrpcMillisToTimestamp(context, metadata.update_time));
+        auto* any_field =
+            envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
+                entry, context.arena);
+        google_protobuf_Any_set_type_url(any_field,
+                                         StdStringToUpbString(type_url));
+        google_protobuf_Any_set_value(
+            any_field, StdStringToUpbString(metadata.serialized_proto));
+      }
+      if (metadata.client_status == XdsApi::ResourceMetadata::NACKED) {
+        auto* update_failure_state =
+            envoy_admin_v3_UpdateFailureState_new(context.arena);
+        envoy_admin_v3_UpdateFailureState_set_details(
+            update_failure_state,
+            StdStringToUpbString(metadata.failed_details));
+        envoy_admin_v3_UpdateFailureState_set_version_info(
+            update_failure_state,
+            StdStringToUpbString(metadata.failed_version));
+        envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
+            update_failure_state,
+            GrpcMillisToTimestamp(context, metadata.failed_update_time));
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
+            entry, update_failure_state);
+      }
     }
   }
   // Serialize the upb message to bytes
