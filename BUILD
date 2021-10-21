@@ -2367,20 +2367,9 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "rls_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
+    deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
 )
 
 grpc_cc_library(
