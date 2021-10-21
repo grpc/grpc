@@ -107,7 +107,7 @@ class DumpedXdsConfig(dict):
             except Exception as e:
                 logging.debug('Parse dumped xDS config failed with %s: %s',
                               type(e), e)
-        for generic_xds_config in self['GenericXdsConfig']:
+        for generic_xds_config in self['genericXdsConfigs']:
             try:
                 if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
                     self.lds = generic_xds_config["xdsConfig"]

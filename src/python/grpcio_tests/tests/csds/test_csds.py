@@ -115,7 +115,7 @@ class TestCsds(unittest.TestCase):
                             ok = True
                             break
                 for generic_xds_config in config["config"][0][
-                        "genericXdsConfig"]:
+                        "genericXdsConfigs"]:
                     if "Listener" in generic_xds_config["typeUrl"]:
                         if generic_xds_config[
                                 'clientStatus'] == 'DOES_NOT_EXIST':
