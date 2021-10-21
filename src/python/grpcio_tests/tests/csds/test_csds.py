@@ -85,7 +85,10 @@ class TestCsds(unittest.TestCase):
     def test_has_node(self):
         resp = self.get_xds_config_dump()
         self.assertEqual(1, len(resp.config))
-        self.assertEqual(4, len(resp.config[0].xds_config))
+        self.assertEqual(
+            4,
+            len(resp.config[0].xds_config) +
+            len(resp.config[0].generic_xds_config))
         self.assertEqual('python_test_csds', resp.config[0].node.id)
         self.assertEqual('test', resp.config[0].node.cluster)
 
@@ -109,6 +112,13 @@ class TestCsds(unittest.TestCase):
                         listener = xds_config["listenerConfig"][
                             "dynamicListeners"][0]
                         if listener['clientStatus'] == 'DOES_NOT_EXIST':
+                            ok = True
+                            break
+                for generic_xds_config in config["config"][0][
+                        "genericXdsConfig"]:
+                    if "Listener" in generic_xds_config["typeUrl"]:
+                        if generic_xds_config[
+                                'clientStatus'] == 'DOES_NOT_EXIST':
                             ok = True
                             break
             except KeyError as e:

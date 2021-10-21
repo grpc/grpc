@@ -107,6 +107,21 @@ class DumpedXdsConfig(dict):
             except Exception as e:
                 logging.debug('Parse dumped xDS config failed with %s: %s',
                               type(e), e)
+        for generic_xds_config in self['GenericXdsConfig']:
+            try:
+                if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
+                    self.lds = generic_xds_config["xdsConfig"]
+                elif re.search(r'\.RouteConfiguration$',
+                               generic_xds_config['typeUrl']):
+                    self.rds = generic_xds_config["xdsConfig"]
+                elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
+                    self.cds = generic_xds_config["xdsConfig"]
+                elif re.search(r'\.ClusterLoadAssignment$',
+                               generic_xds_config['typeUrl']):
+                    self.eds = generic_xds_config["xdsConfig"]
+            except Exception as e:
+                logging.debug('Parse dumped xDS config failed with %s: %s',
+                              type(e), e)
         for endpoint_config in self.eds:
             for endpoint in endpoint_config.get('endpoints', {}):
                 for lb_endpoint in endpoint.get('lbEndpoints', {}):
