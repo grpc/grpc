@@ -268,9 +268,21 @@ class Table {
   TypeIndex<I>* set(Args&&... args) {
     auto* p = element_ptr<I>();
     if (set_present<I>(true)) {
-      *p = TypeIndex<I>(std::forward<Args>(args)...);
+      TypeIndex<I> replacement(std::forward<Args>(args)...);
+      *p = std::move(replacement);
     } else {
       new (p) TypeIndex<I>(std::forward<Args>(args)...);
+    }
+    return p;
+  }
+
+  template <size_t I>
+  TypeIndex<I>* set(TypeIndex<I>&& value) {
+    auto* p = element_ptr<I>();
+    if (set_present<I>(true)) {
+      *p = std::forward<TypeIndex<I>>(value);
+    } else {
+      new (p) TypeIndex<I>(std::forward<TypeIndex<I>>(value));
     }
     return p;
   }

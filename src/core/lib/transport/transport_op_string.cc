@@ -62,7 +62,7 @@ class MetadataListEncoder {
   }
 
   template <typename Which>
-  void Encode(Which, typename Which::ValueType value) {
+  void Encode(Which, const typename Which::ValueType& value) {
     MaybeAddComma();
     out_->push_back(
         absl::StrCat(Which::key(), "=", Which::DisplayValue(value)));

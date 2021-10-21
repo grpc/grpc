@@ -19,24 +19,26 @@ namespace grpc_core {
 
 namespace slice_detail {
 
+static constexpr grpc_slice EmptySlice() { return {nullptr, {}}; }
+
 enum class Storage {
   kStatic,
   kBorrowed,
   kOwned,
-  kInlined,
   kUniquelyOwned,
   kUnknown,
 };
 
-static inline constexpr bool Reffable(Storage storage) {
-  return storage == Storage::kOwned || storage == Storage::kUnknown;
-}
-
 static inline constexpr bool Mutable(Storage storage) {
-  return storage == Storage::kUniquelyOwned || storage == Storage::kInlined;
+  return storage == Storage::kUniquelyOwned;
 }
 
 static inline constexpr bool Owned(Storage storage) {
+  return storage == Storage::kOwned || storage == Storage::kUniquelyOwned ||
+         storage == Storage::kUnknown;
+}
+
+static inline constexpr bool HasCopyConstructors(Storage storage) {
   return storage == Storage::kOwned || storage == Storage::kUniquelyOwned ||
          storage == Storage::kUnknown;
 }
@@ -45,7 +47,6 @@ static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
                                      Storage storage) {
   if (refcount == nullptr) {
     switch (storage) {
-      case Storage::kInlined:
       case Storage::kUnknown:
       case Storage::kUniquelyOwned:
         return true;
@@ -91,146 +92,24 @@ static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
   }
 }
 
-template <Storage kStorage>
-struct IntoMutable;
-
-template <>
-struct IntoMutable<Storage::kUniquelyOwned> {
-  static constexpr Storage kStorage = Storage::kUniquelyOwned;
-  static grpc_slice From(grpc_slice* slice) {
-    auto out = *slice;
-    *slice = grpc_empty_slice();
-    return out;
-  }
-};
-
-template <>
-struct IntoMutable<Storage::kStatic> {
-  static constexpr Storage kStorage = Storage::kUniquelyOwned;
-  grpc_slice From(grpc_slice* slice) { return grpc_slice_copy(*slice); }
-};
-
-template <>
-struct IntoMutable<Storage::kUnknown> {
-  static constexpr Storage kStorage = Storage::kUniquelyOwned;
-  static grpc_slice From(grpc_slice* slice) {
-    if (slice->refcount == nullptr) {
-      return *slice;
-    }
-    if (slice->refcount->GetType() == grpc_slice_refcount::Type::REGULAR &&
-        slice->refcount->IsRegularUnique()) {
-      auto out = *slice;
-      *slice = grpc_empty_slice();
-      return out;
-    }
-    return grpc_slice_copy(*slice);
-  }
-};
-
-template <Storage kStorage>
-struct AsOwned;
-
-template <>
-struct AsOwned<Storage::kStatic> {
-  static constexpr Storage kStorage = Storage::kStatic;
-  static grpc_slice From(grpc_slice slice) { return slice; }
-};
-
-template <>
-struct AsOwned<Storage::kUnknown> {
-  static constexpr Storage kStorage = Storage::kUnknown;
-  static grpc_slice From(grpc_slice slice) {
-    if (slice.refcount == nullptr) {
-      return slice;
-    }
-    switch (slice.refcount->GetType()) {
-      case grpc_slice_refcount::Type::STATIC:
-        return slice;
-      case grpc_slice_refcount::Type::INTERNED:
-      case grpc_slice_refcount::Type::REGULAR:
-        return grpc_slice_ref_internal(slice);
-      case grpc_slice_refcount::Type::NOP:
-        return grpc_slice_copy(slice);
-    }
-  }
-};
-
-template <Storage kStorage>
-class BasicSlice {
+// BaseSlice holds the grpc_slice object, but does not apply refcounting policy.
+// It does export immutable access into the slice, such that this can be shared
+// by all storage policies.
+class BaseSlice {
  public:
-  BasicSlice(const grpc_slice& slice) : slice_(slice) {
-    GPR_ASSERT(CompatibleStorage(this->slice_.refcount, kStorage));
-  }
-
-  BasicSlice(const BasicSlice& other) : slice_(other.slice_) {
-    static_assert(!Owned(kStorage),
-                  "Need to choose Ref() or Copy() for owned slices");
-  }
-  BasicSlice& operator=(const BasicSlice& other) {
-    static_assert(!Owned(kStorage),
-                  "Need to choose Ref() or Copy() for owned slices");
-    slice_ = other.slice_;
-    return *this;
-  }
-
-  BasicSlice(BasicSlice&& other);
-  BasicSlice& operator=(BasicSlice&& other);
-
-  ~BasicSlice() {
-    if (Owned(kStorage)) {
-      grpc_slice_unref_internal(slice_);
-    }
-  }
-
-  BasicSlice Ref() const {
-    static_assert(Reffable(kStorage), "Ref() is not supported");
-    return BasicSlice(grpc_slice_ref_internal(this->slice_));
-  }
-  BasicSlice<Storage::kUniquelyOwned> Copy() const {
-    return BasicSlice<Storage::kUniquelyOwned>(grpc_slice_copy(this->slice_));
-  }
-  BasicSlice<IntoMutable<kStorage>::kStorage> IntoMutable() {
-    using Impl = ::grpc_core::slice_detail::IntoMutable<kStorage>;
-    return BasicSlice<Impl::kStorage>(Impl::From(&this->slice_));
-  }
-  BasicSlice<AsOwned<kStorage>::kStorage> AsOwned() const {
-    using Impl = ::grpc_core::slice_detail::AsOwned<kStorage>;
-    return BasicSlice<Impl::kStorage>(Impl::From(&this->slice_));
-  }
-
-  operator const BasicSlice<Storage::kUnknown>&() const {
-    return *reinterpret_cast<const BasicSlice<Storage::kUnknown>*>(this);
-  }
-
-  // Named constructors
-  static BasicSlice<Storage::kStatic> FromStaticString(const char* str) {
-    static_assert(kStorage == Storage::kStatic,
-                  "Static string must be created with static storage");
-    return BasicSlice<Storage::kStatic>(grpc_slice_from_static_string(str));
-  }
-
-  // Create a new slice with uninitialized contents of some length.
-  BasicSlice<Storage::kUniquelyOwned> MakeUninitialized(size_t length) {
-    return BasicSlice<Storage::kUniquelyOwned>(grpc_slice_malloc(length));
-  }
-
   // Iterator access to the underlying bytes
-  uint8_t* begin() {
-    static_assert(Mutable(kStorage),
-                  "Slice must be mutable to use mutable begin()");
-    return GRPC_SLICE_START_PTR(this->slice_);
-  }
-  uint8_t* end() {
-    static_assert(Mutable(kStorage),
-                  "Slice must be mutable to use mutable end()");
-    return GRPC_SLICE_END_PTR(this->slice_);
-  }
   const uint8_t* begin() const { return GRPC_SLICE_START_PTR(this->slice_); }
   const uint8_t* end() const { return GRPC_SLICE_END_PTR(this->slice_); }
   const uint8_t* cbegin() const { return GRPC_SLICE_START_PTR(this->slice_); }
   const uint8_t* cend() const { return GRPC_SLICE_END_PTR(this->slice_); }
 
-  const grpc_slice& c_slice() { return this->slice_; }
+  const grpc_slice& c_slice() const { return this->slice_; }
+
+  grpc_slice TakeCSlice() {
+    grpc_slice out = this->slice_;
+    this->slice_ = EmptySlice();
+    return out;
+  }
 
   // As other things... borrowed references.
   absl::string_view as_string_view() const {
@@ -241,18 +120,8 @@ class BasicSlice {
   uint8_t operator[](size_t i) const {
     return GRPC_SLICE_START_PTR(this->slice_)[i];
   }
-  uint8_t& operator[](size_t i) {
-    static_assert(Mutable(kStorage),
-                  "Slice must be mutable to use mutable operator[]");
-    return GRPC_SLICE_START_PTR(this->slice_)[i];
-  }
 
   // Access underlying data
-  uint8_t* data() {
-    static_assert(Mutable(kStorage),
-                  "Slice must be mutable to use mutable data()");
-    return GRPC_SLICE_START_PTR(this->slice_);
-  }
   const uint8_t* data() const { return GRPC_SLICE_START_PTR(this->slice_); }
 
   // Size of the slice
@@ -260,39 +129,188 @@ class BasicSlice {
   size_t length() const { return size(); }
   bool empty() const { return size() == 0; }
 
-  // Comparisons
-  template <Storage kOtherStorage>
-  bool operator==(const BasicSlice<kOtherStorage>& rhs) const {
-    return grpc_slice_eq(c_slice(), rhs.c_slice());
-  }
-  bool operator==(absl::string_view rhs) const {
-    return as_string_view() == rhs;
-  }
-  template <Storage kOtherStorage>
-  bool operator<(const BasicSlice<kOtherStorage>& rhs) const {
-    return grpc_slice_cmp(c_slice(), rhs.c_slice()) < 0;
-  }
-  template <Storage kOtherStorage>
-  bool operator>(const BasicSlice<kOtherStorage>& rhs) const {
-    return grpc_slice_cmp(c_slice(), rhs.c_slice()) > 0;
+  bool is_equivalent(const BaseSlice& other) const {
+    return grpc_slice_is_equivalent(slice_, other.slice_);
   }
 
-  // Does this slice point to the same object with the same length?
-  template <Storage kOtherStorage>
-  bool is_equivalent_to(const BasicSlice<kOtherStorage>& other) const {
-    return grpc_slice_is_equivalent(c_slice(), other.c_slice()) != 0;
-  }
-
- private:
+ protected:
+  BaseSlice() : slice_(EmptySlice()) {}
+  BaseSlice(const grpc_slice& slice) : slice_(slice) {}
+  ~BaseSlice() = default;
   grpc_slice slice_;
 };
 
+inline bool operator==(const BaseSlice& a, const BaseSlice& b) {
+  return grpc_slice_eq(a.c_slice(), b.c_slice()) != 0;
+}
+
+inline bool operator==(const BaseSlice& a, absl::string_view b) {
+  return a.as_string_view() == b;
+}
+
+inline bool operator==(absl::string_view a, const BaseSlice& b) {
+  return a == b.as_string_view();
+}
+
+inline bool operator==(const BaseSlice& a, const grpc_slice& b) {
+  return grpc_slice_eq(a.c_slice(), b) != 0;
+}
+
+inline bool operator==(const grpc_slice& a, const BaseSlice& b) {
+  return grpc_slice_eq(a, b.c_slice()) != 0;
+}
+
+template <bool kOwned, class Base>
+class CopyPolicy;
+
+template <class Base>
+class CopyPolicy<true, Base> : public Base {
+ public:
+  CopyPolicy(const CopyPolicy&) = delete;
+  CopyPolicy& operator=(const CopyPolicy&) = delete;
+  CopyPolicy(CopyPolicy&& other) : Base(other.slice_) {
+    other.slice_ = EmptySlice();
+  }
+  CopyPolicy& operator=(CopyPolicy&& other) {
+    std::swap(this->slice_, other.slice_);
+    return *this;
+  }
+
+ protected:
+  CopyPolicy() = default;
+  CopyPolicy(grpc_slice slice) : Base(slice) {}
+  ~CopyPolicy() { grpc_slice_unref_internal(this->slice_); }
+};
+
+template <class Base>
+class CopyPolicy<false, Base> : public Base {
+ public:
+  CopyPolicy(const CopyPolicy&) = default;
+  CopyPolicy& operator=(const CopyPolicy&) = default;
+
+ protected:
+  CopyPolicy() = default;
+  CopyPolicy(grpc_slice slice) : Base(slice) {}
+  ~CopyPolicy() = default;
+};
+
+template <Storage kStorage>
+class SliceImpl;
+
+template <Storage kStorage, class Base>
+class CommonMethods : public Base {
+ public:
+  SliceImpl<Storage::kUnknown> AsOwned() const;
+  SliceImpl<Storage::kUnknown> IntoOwned() const;
+
+ protected:
+  CommonMethods() = default;
+  CommonMethods(const grpc_slice& slice) : Base(slice) {}
+  ~CommonMethods() = default;
+};
+
+template <Storage kStorage, class Base>
+class RefMethod : public Base {
+ protected:
+  RefMethod() = default;
+  RefMethod(const grpc_slice& slice) : Base(slice) {}
+  ~RefMethod() = default;
+};
+
+template <class Base>
+class RefMethod<Storage::kOwned, Base> : public Base {
+ public:
+  SliceImpl<Storage::kOwned> Ref() const;
+
+ protected:
+  RefMethod() = default;
+  RefMethod(const grpc_slice& slice) : Base(slice) {}
+  ~RefMethod() = default;
+};
+
+template <class Base>
+class RefMethod<Storage::kUnknown, Base> : public Base {
+ public:
+  SliceImpl<Storage::kUnknown> Ref() const;
+
+ protected:
+  RefMethod() = default;
+  RefMethod(const grpc_slice& slice) : Base(slice) {}
+  ~RefMethod() = default;
+};
+
+template <bool kHasCopyConstructors>
+struct CopyConstructors {};
+
+template <>
+struct CopyConstructors<true> {
+  static SliceImpl<Storage::kUniquelyOwned> FromCopiedString(const char* name);
+};
+
+template <Storage kStorage>
+using BasicSlice =
+    CopyPolicy<Owned(kStorage),
+               RefMethod<kStorage, CommonMethods<kStorage, BaseSlice>>>;
+
+template <Storage kStorage>
+using NamedConstructors = CopyConstructors<HasCopyConstructors(kStorage)>;
+
+template <Storage kStorage>
+class SliceImpl : public BasicSlice<kStorage>,
+                  public NamedConstructors<kStorage> {
+ public:
+  SliceImpl() = default;
+  explicit SliceImpl(const grpc_slice& slice) : BasicSlice<kStorage>(slice) {
+    GPR_ASSERT(CompatibleStorage(this->slice_.refcount, kStorage));
+  }
+};
+
+template <>
+class SliceImpl<Storage::kUnknown>
+    : public BasicSlice<Storage::kUnknown>,
+      public NamedConstructors<Storage::kUnknown> {
+ public:
+  SliceImpl() = default;
+  explicit SliceImpl(const grpc_slice& slice)
+      : BasicSlice<Storage::kUnknown>(slice) {}
+  template <Storage kStorage>
+  SliceImpl(SliceImpl<kStorage>&& other)
+      : BasicSlice<Storage::kUnknown>(other.TakeCSlice()) {}
+
+  static SliceImpl FromRefcountAndBytes(grpc_slice_refcount* r,
+                                        const uint8_t* begin,
+                                        const uint8_t* end) {
+    grpc_slice out;
+    out.refcount = r;
+    r->Ref();
+    out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
+    out.data.refcounted.length = end - begin;
+    return SliceImpl(out);
+  }
+};
+
+template <>
+class SliceImpl<Storage::kStatic> : public BasicSlice<Storage::kStatic>,
+                                    public NamedConstructors<Storage::kStatic> {
+ public:
+  SliceImpl() = default;
+  explicit SliceImpl(const grpc_slice& slice)
+      : BasicSlice<Storage::kStatic>(slice) {}
+  SliceImpl(const StaticMetadataSlice& slice)
+      : BasicSlice<Storage::kStatic>(slice) {}
+};
+
+template <class Base>
+SliceImpl<Storage::kOwned> RefMethod<Storage::kOwned, Base>::Ref() const {
+  this->slice_.refcount->Ref();
+  return SliceImpl<Storage::kOwned>(this->slice_);
+}
+
 }  // namespace slice_detail
 
-using Slice = slice_detail::BasicSlice<slice_detail::Storage::kUnknown>;
-using StaticSlice = slice_detail::BasicSlice<slice_detail::Storage::kStatic>;
-using ExternalSlice =
-    slice_detail::BasicSlice<slice_detail::Storage::kBorrowed>;
+using Slice = slice_detail::SliceImpl<slice_detail::Storage::kUnknown>;
+using StaticSlice = slice_detail::SliceImpl<slice_detail::Storage::kStatic>;
+using ExternalSlice = slice_detail::SliceImpl<slice_detail::Storage::kBorrowed>;
 
 }  // namespace grpc_core
 

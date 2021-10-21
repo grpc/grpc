@@ -100,7 +100,7 @@ struct GrpcTimeoutMetadata {
   static Slice Encode(ValueType x) {
     char timeout[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
     grpc_http2_encode_timeout(x, timeout);
-    return grpc_slice_from_copied_string(timeout);
+    return Slice::FromCopiedString(timeout);
   }
   static MementoType DisplayValue(MementoType x) { return x; }
 };
@@ -124,7 +124,7 @@ struct TeMetadata {
     return out;
   }
   static ValueType MementoToValue(MementoType te) { return te; }
-  static Slice Encode(ValueType x) {
+  static StaticSlice Encode(ValueType x) {
     GPR_ASSERT(x == kTrailers);
     return GRPC_MDSTR_TRAILERS;
   }
@@ -143,10 +143,10 @@ struct UserAgentMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
   static const char* key() { return "user-agent"; }
-  static MementoType ParseMemento(Slice value) { return value; }
+  static MementoType ParseMemento(Slice value) { return value.IntoOwned(); }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(ValueType x) { return x; }
-  static absl::string_view DisplayValue(MementoType value) {
+  static absl::string_view DisplayValue(const MementoType& value) {
     return value.as_string_view();
   }
 };
@@ -163,25 +163,24 @@ struct ParseHelper;
 template <typename Container, typename Trait, typename... Traits>
 struct ParseHelper<Container, Trait, Traits...> {
   template <typename NotFound>
-  static ParsedMetadata<Container> Parse(absl::string_view key,
-                                         const grpc_slice& value,
+  static ParsedMetadata<Container> Parse(absl::string_view key, Slice value,
                                          NotFound not_found) {
     if (key == Trait::key()) {
       return ParsedMetadata<Container>(
-          Trait(), Trait::ParseMemento(value),
-          ParsedMetadata<Container>::TransportSize(key.size(),
-                                                   GRPC_SLICE_LENGTH(value)));
+          Trait(), Trait::ParseMemento(value.IntoOwned()),
+          ParsedMetadata<Container>::TransportSize(key.size(), value.size()));
     }
-    return ParseHelper<Container, Traits...>::Parse(key, value, not_found);
+    return ParseHelper<Container, Traits...>::Parse(key, std::move(value),
+                                                    not_found);
   }
 };
 
 template <typename Container>
 struct ParseHelper<Container> {
   template <typename NotFound>
-  static ParsedMetadata<Container> Parse(absl::string_view, const grpc_slice&,
+  static ParsedMetadata<Container> Parse(absl::string_view, Slice value,
                                          NotFound not_found) {
-    return not_found();
+    return not_found(std::move(value));
   }
 };
 
@@ -362,19 +361,16 @@ class MetadataMap {
   // that result.
   // TODO(ctiller): key should probably be an absl::string_view.
   // Once we don't care about interning anymore, make that change!
-  template <class KeySlice, class ValueSlice>
-  static ParsedMetadata<MetadataMap> Parse(const KeySlice& key,
-                                           const ValueSlice& value) {
+  static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value) {
     bool parsed = true;
     auto out = metadata_detail::ParseHelper<MetadataMap, Traits...>::Parse(
-        StringViewFromSlice(key), value, [&] {
+        key, std::move(value), [&](Slice value) {
           parsed = false;
-          return ParsedMetadata<MetadataMap>(
-              grpc_mdelem_from_slices(key, value));
+          return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(
+              grpc_slice_intern(
+                  grpc_slice_from_copied_buffer(key.data(), key.size())),
+              value.TakeCSlice()));
         });
-    if (parsed) {
-      grpc_slice_unref_internal(key);
-    }
     return out;
   }
 
@@ -506,10 +502,15 @@ class MetadataMap {
   struct Value {
     Value() = default;
     explicit Value(const typename Which::ValueType& value) : value(value) {}
-    Value(const Value&) = default;
-    Value& operator=(const Value&) = default;
+    explicit Value(typename Which::ValueType&& value)
+        : value(std::forward<typename Which::ValueType>(value)) {}
+    Value(const Value&) = delete;
+    Value& operator=(const Value&) = delete;
     Value(Value&&) noexcept = default;
-    Value& operator=(Value&&) noexcept = default;
+    Value& operator=(Value&& other) noexcept {
+      value = std::move(other.value);
+      return *this;
+    }
     GPR_NO_UNIQUE_ADDRESS typename Which::ValueType value;
   };
   // Callable for the ForEach in Encode() -- for each value, call the
