@@ -237,22 +237,21 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
 
 struct made_transport_stream_op {
   grpc_closure outer_on_complete;
-  grpc_closure* inner_on_complete;
+  grpc_closure* inner_on_complete = nullptr;
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload payload;
+  grpc_transport_stream_op_batch_payload payload{nullptr};
 };
 static void destroy_made_transport_stream_op(void* arg,
                                              grpc_error_handle error) {
   made_transport_stream_op* op = static_cast<made_transport_stream_op*>(arg);
   grpc_closure* c = op->inner_on_complete;
-  gpr_free(op);
+  delete op;
   grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_REF(error));
 }
 
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
     grpc_closure* on_complete) {
-  made_transport_stream_op* op =
-      static_cast<made_transport_stream_op*>(gpr_zalloc(sizeof(*op)));
+  made_transport_stream_op* op = new made_transport_stream_op();
   op->op.payload = &op->payload;
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_stream_op,
                     op, grpc_schedule_on_exec_ctx);

@@ -2165,8 +2165,8 @@ validate_external_account_creds_token_exchage_request_with_url_encode(
           "3Agrant-type%3Atoken-exchange&requested_token_type=urn%3Aietf%"
           "3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&subject_token_type="
           "subject_token_type_!%40%23%24&subject_token=test_subject_token&"
-          "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform") ==
-      0);
+          "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&"
+          "options=%7B%7D") == 0);
 
   // Check the rest of the request.
   GPR_ASSERT(strcmp(request->host, "foo.com:5555") == 0);
@@ -2371,6 +2371,7 @@ static void test_external_account_creds_success(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   /* Check security level. */
@@ -2409,6 +2410,7 @@ static void test_external_account_creds_success_with_url_encode(void) {
       "quota_project_id",                       // quota_project_id;
       "client_id",                              // client_id;
       "client_secret",                          // client_secret;
+      "",                                       // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   RequestMetadataState* state =
@@ -2439,6 +2441,7 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
       "quota_project_id",  // quota_project_id;
       "client_id",         // client_id;
       "client_secret",     // client_secret;
+      "",                  // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
   /* Check security level. */
@@ -2469,6 +2472,7 @@ static void test_external_account_creds_failure_invalid_token_url(void) {
       "quota_project_id",  // quota_project_id;
       "client_id",         // client_id;
       "client_secret",     // client_secret;
+      "",                  // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
@@ -2504,6 +2508,7 @@ test_external_account_creds_failure_invalid_service_account_impersonation_url(
       "quota_project_id",                           // quota_project_id;
       "client_id",                                  // client_id;
       "client_secret",                              // client_secret;
+      "",  // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
@@ -2540,6 +2545,7 @@ test_external_account_creds_failure_token_exchange_response_missing_access_token
       "quota_project_id",  // quota_project_id;
       "client_id",         // client_id;
       "client_secret",     // client_secret;
+      "",                  // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
   grpc_httpcli_set_override(
@@ -2582,6 +2588,7 @@ static void test_url_external_account_creds_success_format_text(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
@@ -2620,6 +2627,7 @@ test_url_external_account_creds_success_with_qurey_params_format_text(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
@@ -2657,6 +2665,7 @@ static void test_url_external_account_creds_success_format_json(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
@@ -2689,6 +2698,7 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::UrlExternalAccountCredentials::Create(options, {}, &error);
@@ -2725,6 +2735,7 @@ static void test_file_external_account_creds_success_format_text(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
@@ -2775,6 +2786,7 @@ static void test_file_external_account_creds_success_format_json(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
@@ -2811,6 +2823,7 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
@@ -2861,6 +2874,7 @@ static void test_file_external_account_creds_failure_invalid_json_content(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::FileExternalAccountCredentials::Create(options, {}, &error);
@@ -2903,6 +2917,7 @@ static void test_aws_external_account_creds_success(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -2941,6 +2956,7 @@ static void test_aws_external_account_creds_success_path_region_env_keys_url(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -2980,6 +2996,7 @@ test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3022,6 +3039,7 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3064,6 +3082,7 @@ static void test_aws_external_account_creds_success_path_region_url_keys_env(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3108,6 +3127,7 @@ static void test_aws_external_account_creds_success_path_region_env_keys_env(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3153,6 +3173,7 @@ test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3201,6 +3222,7 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3239,6 +3261,7 @@ static void test_aws_external_account_creds_failure_unmatched_environment_id(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3271,6 +3294,7 @@ static void test_aws_external_account_creds_failure_invalid_region_url(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3312,6 +3336,7 @@ static void test_aws_external_account_creds_failure_invalid_url(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3352,6 +3377,7 @@ static void test_aws_external_account_creds_failure_missing_role_name(void) {
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3395,6 +3421,7 @@ test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
   };
   auto creds =
       grpc_core::AwsExternalAccountCredentials::Create(options, {}, &error);
@@ -3502,6 +3529,50 @@ test_external_account_credentials_create_failure_invalid_options_credential_sour
   GPR_ASSERT(creds == nullptr);
 }
 
+static void test_external_account_credentials_create_success_workforce_pool(
+    void) {
+  const char* url_options_string =
+      "{\"type\":\"external_account\",\"audience\":\"//iam.googleapis.com/"
+      "locations/location/workforcePools/pool/providers/provider\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
+      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
+      "\"access_token\"}},\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\",\"workforce_pool_user_project\":\"workforce_pool_user_"
+      "project\"}";
+  const char* url_scopes_string = "scope1,scope2";
+  grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
+      url_options_string, url_scopes_string);
+  GPR_ASSERT(url_creds != nullptr);
+  url_creds->Unref();
+}
+
+static void
+test_external_account_credentials_create_failure_invalid_workforce_pool_audience(
+    void) {
+  const char* url_options_string =
+      "{\"type\":\"external_account\",\"audience\":\"invalid_workforce_pool_"
+      "audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
+      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
+      "\"access_token\"}},\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\",\"workforce_pool_user_project\":\"workforce_pool_user_"
+      "project\"}";
+  const char* url_scopes_string = "scope1,scope2";
+  grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
+      url_options_string, url_scopes_string);
+  GPR_ASSERT(url_creds == nullptr);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -3581,6 +3652,8 @@ int main(int argc, char** argv) {
   test_external_account_credentials_create_failure_invalid_json_format();
   test_external_account_credentials_create_failure_invalid_options_format();
   test_external_account_credentials_create_failure_invalid_options_credential_source();
+  test_external_account_credentials_create_success_workforce_pool();
+  test_external_account_credentials_create_failure_invalid_workforce_pool_audience();
   grpc_shutdown();
   return 0;
 }

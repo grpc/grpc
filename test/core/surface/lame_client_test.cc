@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
 
   test_transport_op(chan);
 
-  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
+  GPR_ASSERT(GRPC_CHANNEL_TRANSIENT_FAILURE ==
              grpc_channel_check_connectivity_state(chan, 0));
 
   cq = grpc_completion_queue_create_for_next(nullptr);

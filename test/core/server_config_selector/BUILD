@@ -12,35 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "layering_check",
-    ],
-)
+grpc_package(name = "test/core/server_config_selector")
 
-grpc_cc_library(
-    name = "transport_stream_receiver",
-    srcs = [
-        "transport_stream_receiver_impl.cc",
-    ],
-    hdrs = [
-        "transport_stream_receiver.h",
-        "transport_stream_receiver_impl.h",
-    ],
+grpc_cc_test(
+    name = "server_config_selector_test",
+    srcs = ["server_config_selector_test.cc"],
     external_deps = [
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/synchronization",
+        "gtest",
     ],
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
-        "//:gpr_base",
-        "//:gpr_platform",
-        "//src/core/ext/transport/binder/wire_format:transaction",
+        "//:grpc",
+        "//:grpc_server_config_selector",
+        "//test/core/util:grpc_test_util",
     ],
 )
