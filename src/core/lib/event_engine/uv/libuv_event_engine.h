@@ -84,8 +84,6 @@ class LibuvEventEngine final
   // This should be set only once to true by the thread when it's done setting
   // itself up.
   grpc_event_engine::experimental::Promise<bool> ready_;
-  // Set by the libuv run thread, allowing the destructor to return
-  grpc_event_engine::experimental::Promise<bool> perish_;
   grpc_core::Thread thread_;
   grpc_core::MultiProducerSingleConsumerQueue queue_;
 
@@ -106,6 +104,10 @@ class LibuvEventEngine final
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
   gpr_thd_id worker_thread_id_;
+
+  // Locked on shutdown to ensure there's no race contention around the kicker_
+  // upon EventEngine destruction.
+  grpc_core::Mutex shutdown_mutex_;
 
   friend class LibuvTask;
 };

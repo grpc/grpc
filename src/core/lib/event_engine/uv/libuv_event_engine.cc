@@ -86,7 +86,8 @@ class LibuvTask {
 LibuvTask::LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn)
     : fn_(std::move(fn)), key_(engine->task_key_.fetch_add(1)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_DEBUG, "LibuvTask@%p, created: key = %" PRIiPTR, this, key_);
+    gpr_log(GPR_DEBUG, "LibuvTask@%p, created task: key = %" PRIiPTR, this,
+            key_);
   }
   timer_.data = this;
 }
@@ -173,12 +174,14 @@ LibuvEventEngine::~LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::~LibuvEventEngine", this);
   }
+  grpc_core::ReleasableMutexLock lock(&shutdown_mutex_);
   RunInLibuvThread([](LibuvEventEngine* engine) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG,
               "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
               engine);
     }
+    grpc_core::MutexLock lock(&engine->shutdown_mutex_);
     // Shutting down at this point is essentially just this unref call here.
     // After it, the libuv loop will continue working until it has no more
     // events to monitor. It means that scheduling new work becomes essentially
@@ -189,6 +192,12 @@ LibuvEventEngine::~LibuvEventEngine() {
     // appear here.
     uv_close(reinterpret_cast<uv_handle_t*>(&engine->kicker_), nullptr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_map_.size=%zu", engine,
+              engine->task_map_.size());
+      for (const auto& entry : engine->task_map_) {
+        gpr_log(GPR_DEBUG, " - key@%" PRIdPTR " maps to task %p", entry.first,
+                entry.second);
+      }
       // This is an unstable API from libuv that we use for its intended
       // purpose: debugging. This can tell us if there's lingering handles
       // that are still going to hold up the loop at this point.
@@ -204,17 +213,9 @@ LibuvEventEngine::~LibuvEventEngine() {
           nullptr);
     }
   });
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_map_.size=%zu", this,
-            task_map_.size());
-    for (const auto& entry : task_map_) {
-      gpr_log(GPR_DEBUG, " - key@%" PRIdPTR " maps to task %p", entry.first,
-              entry.second);
-    }
-  }
+  lock.Release();
   thread_.Join();
   GPR_ASSERT(GPR_LIKELY(task_map_.empty()));
-  GPR_ASSERT(GPR_LIKELY(perish_.Get()));
 }
 
 // Since libuv is single-threaded and not thread-safe, we will be running all
@@ -312,15 +313,11 @@ void LibuvEventEngine::RunThread() {
               this);
     }
     ctx.Flush();
-    if (!uv_loop_alive(&loop_)) {
-      break;
-    }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::Thread, shutting down", this);
   }
   GPR_ASSERT(GPR_LIKELY(uv_loop_close(&loop_) != UV_EBUSY));
-  perish_.Set(true);
 }
 
 void LibuvEventEngine::Run(std::function<void()> fn) {
