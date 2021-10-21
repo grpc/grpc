@@ -94,8 +94,7 @@
       sorted((set(list_lib_files("grpc", ("public_headers", ))) -
               set(address_sorting_unwanted_files) -
               set(libuv_unwanted_files))
-             | set(list_lib_files("re2", ("public_headers", )))
-             | set(libuv_wanted_headers)))
+             | set(list_lib_files("re2", ("public_headers", )))))
   grpc_private_headers = list(
       sorted((set(list_lib_files("grpc", ("headers", ))) -
               set(address_sorting_unwanted_files) -

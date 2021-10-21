@@ -162,22 +162,7 @@ Pod::Spec.new do |s|
                       'include/grpc/support/sync_windows.h',
                       'include/grpc/support/thd_id.h',
                       'include/grpc/support/time.h',
-                      'include/grpc/support/workaround_list.h',
-                      'third_party/libuv/include/uv.h',
-                      'third_party/libuv/include/uv/darwin.h',
-                      'third_party/libuv/include/uv/errno.h',
-                      'third_party/libuv/include/uv/threadpool.h',
-                      'third_party/libuv/include/uv/tree.h',
-                      'third_party/libuv/include/uv/unix.h',
-                      'third_party/libuv/include/uv/version.h',
-                      'third_party/libuv/src/heap-inl.h',
-                      'third_party/libuv/src/idna.h',
-                      'third_party/libuv/src/queue.h',
-                      'third_party/libuv/src/strscpy.h',
-                      'third_party/libuv/src/unix/atomic-ops.h',
-                      'third_party/libuv/src/unix/internal.h',
-                      'third_party/libuv/src/unix/spinlock.h',
-                      'third_party/libuv/src/uv-common.h'
+                      'include/grpc/support/workaround_list.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
