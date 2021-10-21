@@ -2824,6 +2824,7 @@ add_library(grpc++
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
 )
+add_library(gPRC::grpc++ ALIAS grpc++)
 
 set_target_properties(grpc++ PROPERTIES
   VERSION ${gRPC_CPP_VERSION}
