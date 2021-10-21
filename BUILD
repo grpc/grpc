@@ -2476,6 +2476,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_xds_channel_stack_modifier",
+    srcs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.h",
+    ],
+    language = "c++",
+    deps = [
+        "channel_init",
+        "config",
+        "gpr_base",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
@@ -2487,6 +2504,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
     ],
 )
