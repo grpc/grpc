@@ -909,7 +909,7 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
     c->retry_immediately_ = false;
     error = GRPC_ERROR_NONE;
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO,

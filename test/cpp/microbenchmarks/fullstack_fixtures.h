@@ -185,8 +185,10 @@ class EndpointPairFixture : public BaseFixture {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      server_->c_server()->core_server->SetupTransport(
-          server_transport_, nullptr, server_args, nullptr);
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "SetupTransport",
+          server_->c_server()->core_server->SetupTransport(
+              server_transport_, nullptr, server_args, nullptr)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
                                           nullptr);
     }

@@ -41,7 +41,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.0'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -157,6 +157,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/priority/priority.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc )
@@ -485,6 +486,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h )
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c )
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h )
+  s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c )
+  s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/migrate.upb.c )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/migrate.upb.h )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/security.upb.c )
