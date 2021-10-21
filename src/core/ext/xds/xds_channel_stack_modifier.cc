@@ -51,7 +51,7 @@ const char* kXdsChannelStackModifierChannelArgName =
 
 bool XdsChannelStackModifier::ModifyChannelStack(
     grpc_channel_stack_builder* builder) {
-  // Insert the filters after the census filter if present
+  // Insert the filters after the census filter if present.
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
   while (grpc_channel_stack_builder_move_next(it)) {
@@ -64,7 +64,11 @@ bool XdsChannelStackModifier::ModifyChannelStack(
     }
   }
   if (grpc_channel_stack_builder_iterator_is_end(it)) {
-    // No census filter found. Reset iterator to the beginning.
+    // No census filter found. Reset iterator to the beginning. This will result
+    // in prepending the list of xDS HTTP filters to the current stack. Note
+    // that this stage is run before the stage that adds the top server filter,
+    // resulting in these filters being finally placed after the `server`
+    // filter.
     grpc_channel_stack_builder_iterator_destroy(it);
     it = grpc_channel_stack_builder_create_iterator_at_first(builder);
   }
