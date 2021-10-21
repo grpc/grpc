@@ -74,7 +74,7 @@ grpc_ssl_credentials::create_security_connector(
       overridden_target_name = arg->value.string;
     }
     if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
-        arg->type == GRPC_ARG_POINTER) {
+        arg->type == GRPC_ARG_POINTER && arg->value.pointer.vtable == grpc_ssl_session_cache_arg_vtable()) {
       ssl_session_cache =
           static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
