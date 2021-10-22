@@ -43,6 +43,8 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
+using api_fuzzer::ChannelAction;
+
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
@@ -58,6 +60,8 @@ static gpr_timespec g_now;
 static grpc_server* g_server;
 static grpc_channel* g_channel;
 static grpc_resource_quota* g_resource_quota;
+static std::vector<ChannelAction> g_channel_actions;
+static std::atomic<bool> g_channel_force_delete{false};
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
@@ -146,6 +150,47 @@ grpc_ares_request* my_dns_lookup_ares_locked(
 static void my_cancel_ares_request_locked(grpc_ares_request* request) {
   GPR_ASSERT(request == nullptr);
 }
+////////////////////////////////////////////////////////////////////////////////
+// channel effect actions
+
+typedef struct {
+  grpc_timer timer;
+  grpc_endpoint* ep;
+  int action_idx;
+} future_action;
+
+static void sched_channel_action(grpc_endpoint* ep, int action_idx);
+
+static void do_sched_channel_action(void* arg, grpc_error_handle error) {
+  future_action* fa = static_cast<future_action*>(arg);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_free(fa);
+    g_channel_force_delete = true;
+    return;
+  }
+  int action_idx = fa->action_idx;
+  grpc_endpoint*ep = fa->ep;
+  update_grpc_passthru_endpoint_channel_effects(
+    ep, g_channel_actions[action_idx].add_n_bytes_readable(),
+    g_channel_actions[action_idx].add_n_bytes_writable());
+  flush_grpc_passthru_endpoint_pending_ops(ep, GRPC_ERROR_NONE);
+  gpr_free(fa);
+  sched_channel_action(ep, ++action_idx);
+}
+
+static void sched_channel_action(grpc_endpoint* ep, int action_idx) {
+  if (action_idx >= g_channel_actions.size()) {
+    g_channel_force_delete = true;
+    return;
+  }
+  future_action* fa = static_cast<future_action*>(gpr_malloc(sizeof(*fa)));
+  fa->action_idx = action_idx;
+  grpc_timer_init(
+      &fa->timer, g_channel_actions[action_idx].wait_ms()
+      + grpc_core::ExecCtx::Get()->Now(),
+      GRPC_CLOSURE_CREATE(
+        do_sched_channel_action, fa, grpc_schedule_on_exec_ctx));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // client connection
@@ -174,7 +219,7 @@ static void do_connect(void* arg, grpc_error_handle error) {
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr);
     *fc->ep = client;
-
+    sched_channel_action(client, 0);
     grpc_transport* transport = grpc_create_chttp2_transport(
         nullptr, server, false,
         grpc_resource_user_create(g_resource_quota, "transport-user"));
@@ -223,6 +268,7 @@ static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
@@ -763,6 +809,12 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
     grpc_timer_manager_tick();
 
+    if (g_channel_force_delete.exchange(false) && g_channel) {
+      grpc_channel_destroy(g_channel);
+      g_channel = nullptr;
+      g_channel_actions.clear();
+    }
+
     const api_fuzzer::Action& action = msg.actions(action_index);
     action_index++;
     switch (action.type_case()) {
@@ -782,7 +834,10 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       }
       // create an insecure channel
       case api_fuzzer::Action::kCreateChannel: {
-        if (g_channel == nullptr) {
+        if (!action.create_channel().channel_actions_size() ||
+            g_channel != nullptr) {
+          no_more_actions();
+        } else {
           grpc_channel_args* args =
               ReadArgs(action.create_channel().channel_args());
           if (action.create_channel().has_channel_creds()) {
@@ -795,13 +850,18 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
             g_channel = grpc_insecure_channel_create(
                 action.create_channel().target().c_str(), args, nullptr);
           }
+          g_channel_actions.clear();
+          for (int i = 0; i <
+            action.create_channel().channel_actions_size(); i++) {
+              g_channel_actions.push_back(
+                action.create_channel().channel_actions(i));
+          }
           GPR_ASSERT(g_channel != nullptr);
+          g_channel_force_delete = false;
           {
             grpc_core::ExecCtx exec_ctx;
             grpc_channel_args_destroy(args);
           }
-        } else {
-          no_more_actions();
         }
         break;
       }
@@ -1066,6 +1126,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_completion_queue_destroy(cq);
 
   grpc_resource_quota_unref(g_resource_quota);
-
   grpc_shutdown_blocking();
 }

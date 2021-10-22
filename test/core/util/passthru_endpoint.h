@@ -31,12 +31,18 @@ typedef struct {
   gpr_atm num_writes;
 } grpc_passthru_endpoint_stats;
 
-void grpc_passthru_endpoint_create(grpc_endpoint** client,
-                                   grpc_endpoint** server,
-                                   grpc_passthru_endpoint_stats* stats);
+void grpc_passthru_endpoint_create(
+  grpc_endpoint** client, grpc_endpoint** server,
+  grpc_passthru_endpoint_stats* stats);
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
 
 void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
+
+void flush_grpc_passthru_endpoint_pending_ops(grpc_endpoint*ep,
+  grpc_error_handle error);
+
+void update_grpc_passthru_endpoint_channel_effects(grpc_endpoint* ep,
+  uint64_t add_n_readable_bytes, uint64_t add_n_writable_bytes);
 
 #endif  // PASSTHRU_ENDPOINT_H
