@@ -317,4 +317,4 @@ using StaticSlice = slice_detail::SliceImpl<slice_detail::Storage::kStatic>;
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_SLICE_SLICE_H
