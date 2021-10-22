@@ -142,6 +142,14 @@ void ExecCtx::GlobalInit(void) {
   g_start_cycle = (cycle_before + cycle_after) / 2;
 }
 
+ExecCtx* ExecCtx::Get() {
+  return exec_ctx_;
+}
+
+void ExecCtx::Set(ExecCtx* exec_ctx) {
+  exec_ctx_ = exec_ctx;
+}
+
 bool ExecCtx::Flush() {
   bool did_something = false;
   GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
@@ -224,4 +232,36 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
   list->head = list->tail = nullptr;
 }
 
+ApplicationCallbackExecCtx::~ApplicationCallbackExecCtx() {
+    if (Get() == this) {
+      while (head_ != nullptr) {
+        auto* f = head_;
+        head_ = f->internal_next;
+        if (f->internal_next == nullptr) {
+          tail_ = nullptr;
+        }
+        (*f->functor_run)(f, f->internal_success);
+      }
+      callback_exec_ctx_ = nullptr;
+      if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
+        grpc_core::Fork::DecExecCtxCount();
+      }
+    } else {
+      GPR_DEBUG_ASSERT(head_ == nullptr);
+      GPR_DEBUG_ASSERT(tail_ == nullptr);
+    }
+  }
+
+ApplicationCallbackExecCtx* ApplicationCallbackExecCtx::Get() {
+  return callback_exec_ctx_;
+}
+
+void ApplicationCallbackExecCtx::Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
+    if (Get() == nullptr) {
+      if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
+        grpc_core::Fork::IncExecCtxCount();
+      }
+      callback_exec_ctx_ = exec_ctx;
+    }
+  }
 }  // namespace grpc_core

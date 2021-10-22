@@ -219,9 +219,9 @@ class ExecCtx {
   static void GlobalShutdown(void) {}
 
   /** Gets pointer to current exec_ctx. */
-  static ExecCtx* Get() { return exec_ctx_; }
+  static ExecCtx* Get();
 
-  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
+  static void Set(ExecCtx* exec_ctx);
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error);
@@ -308,38 +308,13 @@ class ApplicationCallbackExecCtx {
     Set(this, flags_);
   }
 
-  ~ApplicationCallbackExecCtx() {
-    if (Get() == this) {
-      while (head_ != nullptr) {
-        auto* f = head_;
-        head_ = f->internal_next;
-        if (f->internal_next == nullptr) {
-          tail_ = nullptr;
-        }
-        (*f->functor_run)(f, f->internal_success);
-      }
-      callback_exec_ctx_ = nullptr;
-      if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
-        grpc_core::Fork::DecExecCtxCount();
-      }
-    } else {
-      GPR_DEBUG_ASSERT(head_ == nullptr);
-      GPR_DEBUG_ASSERT(tail_ == nullptr);
-    }
-  }
+  ~ApplicationCallbackExecCtx();
 
   uintptr_t Flags() { return flags_; }
 
-  static ApplicationCallbackExecCtx* Get() { return callback_exec_ctx_; }
+  static ApplicationCallbackExecCtx* Get();
 
-  static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
-    if (Get() == nullptr) {
-      if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
-        grpc_core::Fork::IncExecCtxCount();
-      }
-      callback_exec_ctx_ = exec_ctx;
-    }
-  }
+  static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags);
 
   static void Enqueue(grpc_completion_queue_functor* functor, int is_success) {
     functor->internal_success = is_success;
