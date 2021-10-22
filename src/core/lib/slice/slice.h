@@ -127,7 +127,7 @@ class BaseSlice {
 
  protected:
   BaseSlice() : slice_(EmptySlice()) {}
-  BaseSlice(const grpc_slice& slice) : slice_(slice) {}
+  explicit BaseSlice(const grpc_slice& slice) : slice_(slice) {}
   ~BaseSlice() = default;
   grpc_slice slice_;
 };
@@ -160,17 +160,17 @@ class CopyPolicy<true, Base> : public Base {
  public:
   CopyPolicy(const CopyPolicy&) = delete;
   CopyPolicy& operator=(const CopyPolicy&) = delete;
-  CopyPolicy(CopyPolicy&& other) : Base(other.slice_) {
+  CopyPolicy(CopyPolicy&& other) noexcept : Base(other.slice_) {
     other.slice_ = EmptySlice();
   }
-  CopyPolicy& operator=(CopyPolicy&& other) {
+  CopyPolicy& operator=(CopyPolicy&& other) noexcept {
     std::swap(this->slice_, other.slice_);
     return *this;
   }
 
  protected:
   CopyPolicy() = default;
-  CopyPolicy(grpc_slice slice) : Base(slice) {}
+  explicit CopyPolicy(grpc_slice slice) : Base(slice) {}
   ~CopyPolicy() { grpc_slice_unref_internal(this->slice_); }
 };
 
@@ -182,7 +182,7 @@ class CopyPolicy<false, Base> : public Base {
 
  protected:
   CopyPolicy() = default;
-  CopyPolicy(grpc_slice slice) : Base(slice) {}
+  explicit CopyPolicy(grpc_slice slice) : Base(slice) {}
   ~CopyPolicy() = default;
 };
 
@@ -193,7 +193,7 @@ template <Storage kStorage, class Base>
 class RefMethod : public Base {
  protected:
   RefMethod() = default;
-  RefMethod(const grpc_slice& slice) : Base(slice) {}
+  explicit RefMethod(const grpc_slice& slice) : Base(slice) {}
   ~RefMethod() = default;
 };
 
@@ -204,7 +204,7 @@ class RefMethod<Storage::kUnknown, Base> : public Base {
 
  protected:
   RefMethod() = default;
-  RefMethod(const grpc_slice& slice) : Base(slice) {}
+  explicit RefMethod(const grpc_slice& slice) : Base(slice) {}
   ~RefMethod() = default;
 };
 
@@ -235,7 +235,7 @@ class SliceImpl<Storage::kUnknown>
   explicit SliceImpl(const grpc_slice& slice)
       : BasicSlice<Storage::kUnknown>(slice) {}
   template <Storage kStorage>
-  SliceImpl(SliceImpl<kStorage>&& other)
+  explicit SliceImpl(SliceImpl<kStorage>&& other)
       : BasicSlice<Storage::kUnknown>(other.TakeCSlice()) {}
 
   SliceImpl<Storage::kUnknown> IntoOwned() {
@@ -279,7 +279,7 @@ class SliceImpl<Storage::kStatic> : public BasicSlice<Storage::kStatic>,
       : BasicSlice<Storage::kStatic>(slice) {
     GPR_ASSERT(CompatibleStorage(slice.refcount, Storage::kStatic));
   }
-  SliceImpl(const StaticMetadataSlice& slice)
+  explicit SliceImpl(const StaticMetadataSlice& slice)
       : BasicSlice<Storage::kStatic>(slice) {}
 };
 
