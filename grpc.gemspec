@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.17'
+  s.add_dependency 'google-protobuf', '~> 3.18'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -177,6 +177,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver.h )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc )
