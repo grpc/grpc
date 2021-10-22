@@ -23,7 +23,6 @@ load(
     "get_proto_arguments",
     "get_staged_proto_file",
     "includes_from_deps",
-    "is_in_virtual_imports",
     "is_well_known",
     "protos_from_context",
 )
