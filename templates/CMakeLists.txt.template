@@ -738,7 +738,7 @@
   install(FILES
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findc-ares.cmake
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findre2.cmake
-      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Finduv.cmake
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findlibuv.cmake
     DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
   )
 
