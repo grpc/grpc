@@ -146,6 +146,10 @@ class HPackCompressor {
                                                 const grpc_slice& value_slice);
     void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
 
+    void EncodeAlwaysIndexed(uint32_t* index, const grpc_slice& key,
+                             const grpc_slice& value,
+                             uint32_t transport_length);
+
     size_t CurrentFrameSize() const;
     void Add(grpc_slice slice);
     uint8_t* AddTiny(size_t len);

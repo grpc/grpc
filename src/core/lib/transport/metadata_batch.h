@@ -194,14 +194,14 @@ struct AppendHelper;
 template <typename Container, typename Trait, typename... Traits>
 struct AppendHelper<Container, Trait, Traits...> {
   template <typename NotFound>
-  static void Append(Container* container, absl::string_view key,
-                     const grpc_slice& value, NotFound not_found) {
+  static void Append(Container* container, absl::string_view key, Slice value,
+                     NotFound not_found) {
     if (key == Trait::key()) {
-      container->Set(Trait(),
-                     Trait::MementoToValue(Trait::ParseMemento(value)));
+      container->Set(Trait(), Trait::MementoToValue(
+                                  Trait::ParseMemento(value.IntoOwned())));
       return;
     }
-    AppendHelper<Container, Traits...>::Append(container, key, value,
+    AppendHelper<Container, Traits...>::Append(container, key, std::move(value),
                                                not_found);
   }
 };
@@ -209,9 +209,9 @@ struct AppendHelper<Container, Trait, Traits...> {
 template <typename Container>
 struct AppendHelper<Container> {
   template <typename NotFound>
-  static void Append(Container*, absl::string_view, const grpc_slice&,
+  static void Append(Container*, absl::string_view, Slice value,
                      NotFound not_found) {
-    not_found();
+    not_found(std::move(value));
   }
 };
 
@@ -368,7 +368,7 @@ class MetadataMap {
           parsed = false;
           return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(
               grpc_slice_intern(
-                  grpc_slice_from_copied_buffer(key.data(), key.size())),
+                  grpc_slice_from_static_buffer(key.data(), key.size())),
               value.TakeCSlice()));
         });
     return out;
@@ -381,14 +381,14 @@ class MetadataMap {
   }
 
   // Append a key/value pair - takes ownership of value
-  void Append(absl::string_view key, const grpc_slice& value) {
+  void Append(absl::string_view key, Slice value) {
     metadata_detail::AppendHelper<MetadataMap, Traits...>::Append(
-        this, key, value, [&] {
+        this, key, std::move(value), [this, key](Slice value) {
           GPR_ASSERT(GRPC_ERROR_NONE ==
                      Append(grpc_mdelem_from_slices(
                          grpc_slice_intern(grpc_slice_from_static_buffer(
                              key.data(), key.length())),
-                         value)));
+                         value.TakeCSlice())));
         });
   }
 

@@ -24,6 +24,7 @@
 #include "absl/strings/match.h"
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -75,7 +76,11 @@ class ParsedMetadata {
     value_.pointer = new typename Which::MementoType(std::move(value));
   }
   template <typename Which>
-  ParsedMetadata(Which, Slice value, uint32_t transport_size);
+  ParsedMetadata(Which, Slice value, uint32_t transport_size)
+      : vtable_(ParsedMetadata::template SliceTraitVTable<Which>()),
+        transport_size_(transport_size) {
+    value_.slice = value.TakeCSlice();
+  }
   // Takes ownership of elem
   explicit ParsedMetadata(grpc_mdelem elem)
       : vtable_(grpc_is_binary_header_internal(GRPC_MDKEY(elem))
@@ -129,7 +134,7 @@ class ParsedMetadata {
  private:
   union Buffer {
     uint64_t trivial;
-    void* ptr;
+    void* pointer;
     grpc_slice slice;
     grpc_mdelem mdelem;
   };
@@ -149,6 +154,8 @@ class ParsedMetadata {
   static const VTable* TrivialTraitVTable();
   template <typename Which>
   static const VTable* NonTrivialTraitVTable();
+  template <typename Which>
+  static const VTable* SliceTraitVTable();
   template <bool kIsBinaryHeader>
   static const VTable* MdelemVtable();
 
@@ -212,11 +219,11 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       absl::EndsWith(Which::key(), "-bin"),
       // destroy
       [](const Buffer& value) {
-        delete reinterpret_cast<typename Which::MementoType*>(value);
+        delete static_cast<typename Which::MementoType*>(value.pointer);
       },
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        auto* p = reinterpret_cast<typename Which::MementoType*>(value);
+        auto* p = static_cast<typename Which::MementoType*>(value.pointer);
         map->Set(Which(), Which::MementoToValue(*p));
         return GRPC_ERROR_NONE;
       },
@@ -228,8 +235,36 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        auto* p = reinterpret_cast<typename Which::MementoType*>(value);
+        auto* p = static_cast<typename Which::MementoType*>(value.pointer);
         return absl::StrCat(Which::key(), ": ", Which::DisplayValue(*p));
+      }};
+  return &vtable;
+}
+
+template <typename MetadataContainer>
+template <typename Which>
+const typename ParsedMetadata<MetadataContainer>::VTable*
+ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
+  static const VTable vtable = {
+      absl::EndsWith(Which::key(), "-bin"),
+      // destroy
+      [](const Buffer& value) { grpc_slice_unref_internal(value.slice); },
+      // set
+      [](const Buffer& value, MetadataContainer* map) {
+        map->Set(Which(), Slice(grpc_slice_ref_internal(value.slice)));
+        return GRPC_ERROR_NONE;
+      },
+      // with_new_value
+      [](const Buffer&, Slice value) {
+        const auto length = value.length();
+        return ParsedMetadata(Which(), Which::ParseMemento(std::move(value)),
+                              TransportSize(strlen(Which::key()), length));
+      },
+      // debug_string
+      [](const Buffer& value) {
+        return absl::StrCat(
+            Which::key(), ": ",
+            Which::DisplayValue(Slice(grpc_slice_ref_internal(value.slice))));
       }};
   return &vtable;
 }

@@ -23,24 +23,20 @@ static constexpr grpc_slice EmptySlice() { return {nullptr, {}}; }
 
 enum class Storage {
   kStatic,
-  kBorrowed,
-  kOwned,
-  kUniquelyOwned,
+  kUnique,
   kUnknown,
 };
 
 static inline constexpr bool Mutable(Storage storage) {
-  return storage == Storage::kUniquelyOwned;
+  return storage == Storage::kUnique;
 }
 
 static inline constexpr bool Owned(Storage storage) {
-  return storage == Storage::kOwned || storage == Storage::kUniquelyOwned ||
-         storage == Storage::kUnknown;
+  return storage == Storage::kUnique || storage == Storage::kUnknown;
 }
 
 static inline constexpr bool HasCopyConstructors(Storage storage) {
-  return storage == Storage::kOwned || storage == Storage::kUniquelyOwned ||
-         storage == Storage::kUnknown;
+  return storage == Storage::kUnique || storage == Storage::kUnknown;
 }
 
 static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
@@ -48,7 +44,7 @@ static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
   if (refcount == nullptr) {
     switch (storage) {
       case Storage::kUnknown:
-      case Storage::kUniquelyOwned:
+      case Storage::kUnique:
         return true;
       default:
         return false;
@@ -58,7 +54,6 @@ static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
     case grpc_slice_refcount::Type::STATIC:
       switch (storage) {
         case Storage::kStatic:
-        case Storage::kBorrowed:
         case Storage::kUnknown:
           return true;
         default:
@@ -66,7 +61,6 @@ static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
       }
     case grpc_slice_refcount::Type::INTERNED:
       switch (storage) {
-        case Storage::kOwned:
         case Storage::kUnknown:
           return true;
         default:
@@ -74,7 +68,6 @@ static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
       }
     case grpc_slice_refcount::Type::NOP:
       switch (storage) {
-        case Storage::kBorrowed:
         case Storage::kUnknown:
           return true;
         default:
@@ -82,9 +75,8 @@ static inline bool CompatibleStorage(grpc_slice_refcount* refcount,
       }
     case grpc_slice_refcount::Type::REGULAR:
       switch (storage) {
-        case Storage::kOwned:
         case Storage::kUnknown:
-        case Storage::kUniquelyOwned:
+        case Storage::kUnique:
           return true;
         default:
           return false;
@@ -198,30 +190,7 @@ template <Storage kStorage>
 class SliceImpl;
 
 template <Storage kStorage, class Base>
-class CommonMethods : public Base {
- public:
-  SliceImpl<Storage::kUnknown> AsOwned() const;
-  SliceImpl<Storage::kUnknown> IntoOwned() const;
-
- protected:
-  CommonMethods() = default;
-  CommonMethods(const grpc_slice& slice) : Base(slice) {}
-  ~CommonMethods() = default;
-};
-
-template <Storage kStorage, class Base>
 class RefMethod : public Base {
- protected:
-  RefMethod() = default;
-  RefMethod(const grpc_slice& slice) : Base(slice) {}
-  ~RefMethod() = default;
-};
-
-template <class Base>
-class RefMethod<Storage::kOwned, Base> : public Base {
- public:
-  SliceImpl<Storage::kOwned> Ref() const;
-
  protected:
   RefMethod() = default;
   RefMethod(const grpc_slice& slice) : Base(slice) {}
@@ -244,26 +213,18 @@ struct CopyConstructors {};
 
 template <>
 struct CopyConstructors<true> {
-  static SliceImpl<Storage::kUniquelyOwned> FromCopiedString(const char* name);
+  static SliceImpl<Storage::kUnique> FromCopiedString(const char* s);
+  static SliceImpl<Storage::kUnique> FromCopiedString(const std::string& s);
 };
 
 template <Storage kStorage>
-using BasicSlice =
-    CopyPolicy<Owned(kStorage),
-               RefMethod<kStorage, CommonMethods<kStorage, BaseSlice>>>;
+using BasicSlice = CopyPolicy<Owned(kStorage), RefMethod<kStorage, BaseSlice>>;
 
 template <Storage kStorage>
 using NamedConstructors = CopyConstructors<HasCopyConstructors(kStorage)>;
 
 template <Storage kStorage>
-class SliceImpl : public BasicSlice<kStorage>,
-                  public NamedConstructors<kStorage> {
- public:
-  SliceImpl() = default;
-  explicit SliceImpl(const grpc_slice& slice) : BasicSlice<kStorage>(slice) {
-    GPR_ASSERT(CompatibleStorage(this->slice_.refcount, kStorage));
-  }
-};
+class SliceImpl;
 
 template <>
 class SliceImpl<Storage::kUnknown>
@@ -276,6 +237,26 @@ class SliceImpl<Storage::kUnknown>
   template <Storage kStorage>
   SliceImpl(SliceImpl<kStorage>&& other)
       : BasicSlice<Storage::kUnknown>(other.TakeCSlice()) {}
+
+  SliceImpl<Storage::kUnknown> IntoOwned() {
+    if (this->slice_.refcount == nullptr) {
+      return SliceImpl<Storage::kUnknown>(this->slice_);
+    }
+    if (this->slice_.refcount->GetType() == grpc_slice_refcount::Type::NOP) {
+      return SliceImpl<Storage::kUnknown>(grpc_slice_copy(this->slice_));
+    }
+    return SliceImpl<Storage::kUnknown>(TakeCSlice());
+  }
+
+  SliceImpl<Storage::kUnknown> AsOwned() const {
+    if (this->slice_.refcount == nullptr) {
+      return SliceImpl<Storage::kUnknown>(this->slice_);
+    }
+    if (this->slice_.refcount->GetType() == grpc_slice_refcount::Type::NOP) {
+      return SliceImpl<Storage::kUnknown>(grpc_slice_copy(this->slice_));
+    }
+    return SliceImpl<Storage::kUnknown>(grpc_slice_ref(this->slice_));
+  }
 
   static SliceImpl FromRefcountAndBytes(grpc_slice_refcount* r,
                                         const uint8_t* begin,
@@ -295,22 +276,44 @@ class SliceImpl<Storage::kStatic> : public BasicSlice<Storage::kStatic>,
  public:
   SliceImpl() = default;
   explicit SliceImpl(const grpc_slice& slice)
-      : BasicSlice<Storage::kStatic>(slice) {}
+      : BasicSlice<Storage::kStatic>(slice) {
+    GPR_ASSERT(CompatibleStorage(slice.refcount, Storage::kStatic));
+  }
   SliceImpl(const StaticMetadataSlice& slice)
       : BasicSlice<Storage::kStatic>(slice) {}
 };
 
+template <>
+class SliceImpl<Storage::kUnique> : public BasicSlice<Storage::kUnique>,
+                                    public NamedConstructors<Storage::kUnique> {
+ public:
+  SliceImpl() = default;
+  explicit SliceImpl(const grpc_slice& slice)
+      : BasicSlice<Storage::kUnique>(slice) {
+    GPR_ASSERT(CompatibleStorage(slice.refcount, Storage::kUnique));
+  }
+};
+
 template <class Base>
-SliceImpl<Storage::kOwned> RefMethod<Storage::kOwned, Base>::Ref() const {
+SliceImpl<Storage::kUnknown> RefMethod<Storage::kUnknown, Base>::Ref() const {
   this->slice_.refcount->Ref();
-  return SliceImpl<Storage::kOwned>(this->slice_);
+  return SliceImpl<Storage::kUnknown>(this->slice_);
+}
+
+inline SliceImpl<Storage::kUnique> CopyConstructors<true>::FromCopiedString(
+    const char* s) {
+  return SliceImpl<Storage::kUnique>(grpc_slice_from_copied_string(s));
+}
+
+inline SliceImpl<Storage::kUnique> CopyConstructors<true>::FromCopiedString(
+    const std::string& s) {
+  return SliceImpl<Storage::kUnique>(grpc_slice_from_cpp_string(s));
 }
 
 }  // namespace slice_detail
 
 using Slice = slice_detail::SliceImpl<slice_detail::Storage::kUnknown>;
 using StaticSlice = slice_detail::SliceImpl<slice_detail::Storage::kStatic>;
-using ExternalSlice = slice_detail::SliceImpl<slice_detail::Storage::kBorrowed>;
 
 }  // namespace grpc_core
 
