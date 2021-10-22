@@ -19,6 +19,10 @@ from grpc_testing import _common
 from grpc_testing._channel import _rpc_state
 
 
+class TimeoutException(Exception):
+    pass
+
+
 class State(_common.ChannelHandler):
 
     def __init__(self):
@@ -45,4 +49,4 @@ class State(_common.ChannelHandler):
                     return method_rpc_states.pop(0)
                 else:
                     if not self._condition.wait(timeout=timeout):
-                        raise Exception("Timeout while waiting for rpc.")
+                        raise TimeoutException("Timeout while waiting for rpc.")
