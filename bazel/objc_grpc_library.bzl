@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Contains the objc_grpc_library rule.
+"""
+
 load(
     "//bazel:generate_objc.bzl",
     "generate_objc",
@@ -18,7 +22,6 @@ load(
     "generate_objc_non_arc_srcs",
     "generate_objc_srcs",
 )
-load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
 def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kwargs):
     """Generates messages and/or service stubs for given proto_library and all transitively dependent proto files

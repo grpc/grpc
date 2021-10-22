@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
+
 package(
     default_visibility = ["//visibility:public"],
     features = [
@@ -21,8 +23,6 @@ package(
 )
 
 licenses(["notice"])
-
-load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
 
 grpc_py_binary(
     name = "dns_server",

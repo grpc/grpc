@@ -11,6 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""
+This module contains build rules relating to gRPC Objective-C.
+"""
+
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
@@ -44,13 +49,13 @@ def _generate_objc_impl(ctx):
 
     outs = []
     for proto in protos:
-        outs += [_get_output_file_name_from_proto(proto, _PROTO_HEADER_FMT)]
-        outs += [_get_output_file_name_from_proto(proto, _PROTO_SRC_FMT)]
+        outs.append(_get_output_file_name_from_proto(proto, _PROTO_HEADER_FMT))
+        outs.append(_get_output_file_name_from_proto(proto, _PROTO_SRC_FMT))
 
         file_path = _get_full_path_from_file(proto)
         if file_path in files_with_rpc:
-            outs += [_get_output_file_name_from_proto(proto, _GRPC_PROTO_HEADER_FMT)]
-            outs += [_get_output_file_name_from_proto(proto, _GRPC_PROTO_SRC_FMT)]
+            outs.append(_get_output_file_name_from_proto(proto, _GRPC_PROTO_HEADER_FMT))
+            outs.append(_get_output_file_name_from_proto(proto, _GRPC_PROTO_SRC_FMT))
 
     out_files = [ctx.actions.declare_file(out) for out in outs]
     dir_out = _join_directories([
@@ -60,6 +65,7 @@ def _generate_objc_impl(ctx):
     ])
 
     arguments = []
+    tools = []
     if ctx.executable.plugin:
         arguments += get_plugin_args(
             ctx.executable.plugin,
@@ -68,9 +74,9 @@ def _generate_objc_impl(ctx):
             False,
         )
         tools = [ctx.executable.plugin]
-    arguments += ["--objc_out=" + dir_out]
+    arguments.append("--objc_out=" + dir_out)
 
-    arguments += ["--proto_path=."]
+    arguments.append("--proto_path=.")
     arguments += [
         "--proto_path={}".format(get_include_directory(i))
         for i in protos
@@ -78,7 +84,7 @@ def _generate_objc_impl(ctx):
 
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
-    arguments += ["--proto_path={}".format(dir_out)]
+    arguments.append("--proto_path={}".format(dir_out))
     arguments += ["--proto_path={}".format(_get_directory_from_proto(proto)) for proto in protos]
     arguments += [_get_full_path_from_file(proto) for proto in protos]
 
@@ -88,7 +94,7 @@ def _generate_objc_impl(ctx):
         f = ctx.attr.well_known_protos.files.to_list()[0].dirname
 
         # go two levels up so that #import "google/protobuf/..." is correct
-        arguments += ["-I{0}".format(f + "/../..")]
+        arguments.append("-I{0}".format(f + "/../.."))
         well_known_proto_files = ctx.attr.well_known_protos.files.to_list()
     ctx.actions.run(
         inputs = protos + well_known_proto_files,
@@ -98,7 +104,7 @@ def _generate_objc_impl(ctx):
         arguments = arguments,
     )
 
-    return struct(files = depset(out_files))
+    return struct(files = depset(out_files))  # buildifier: disable=rule-impl-return
 
 def _label_to_full_file_path(src, package):
     if not src.startswith("//"):
@@ -198,7 +204,7 @@ def _group_objc_files_impl(ctx):
         for file in ctx.attr.src.files.to_list()
         if file.basename.endswith(suffix)
     ]
-    return struct(files = depset(out_files))
+    return struct(files = depset(out_files))  # buildifier: disable=rule-impl-return
 
 generate_objc_hdrs = rule(
     attrs = {

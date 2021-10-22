@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # Follows convention set in objectivec_helpers.cc in the protobuf ObjC compiler.
+
+"""
+Contains generic helper utilities.
+"""
+
 _upper_segments_list = ["url", "http", "https"]
 
 def strip_extension(str):
@@ -24,6 +29,14 @@ def capitalize(word):
         return word.capitalize()
 
 def lower_underscore_to_upper_camel(str):
+    """Converts from lower underscore case to upper camel case.
+
+    Args:
+      str: The snake case string to convert.
+
+    Returns:
+      The title case version of str.
+    """
     str = strip_extension(str)
     camel_case_str = ""
     word = ""

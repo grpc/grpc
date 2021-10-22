@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/http")
 
 licenses(["notice"])
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "response_fuzzer",
@@ -61,8 +60,6 @@ grpc_fuzzer(
 # limitations under the License.
 
 licenses(["notice"])
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_cc_test(
     name = "httpcli_test",

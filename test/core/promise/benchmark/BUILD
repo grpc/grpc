@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
+
 licenses(["notice"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-
 grpc_package(name = "test/core/promise/benchmark")
-
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
 
 grpc_cc_test(
     name = "competition",

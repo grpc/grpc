@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Houses utility rules for grpcio-tools.
+"""
+
 def _generate_copied_files_impl(ctx):
     srcs = ctx.attr.srcs[0]
     strip_prefix = ctx.attr.strip_prefix

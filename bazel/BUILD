@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Contains build targets used by Starlark files in the bazel/ directory.
+"""
+
 licenses(["notice"])
 
 package(default_visibility = ["//:__subpackages__"])
-
-load(":cc_grpc_library.bzl", "cc_grpc_library")
 
 filegroup(
     name = "_gevent_test_main",

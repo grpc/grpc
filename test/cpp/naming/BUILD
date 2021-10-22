@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_py_binary")
+load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
+
 package(
     default_visibility = ["//visibility:public"],
     features = [
@@ -21,9 +24,6 @@ package(
 )
 
 licenses(["notice"])
-
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_py_binary")
-load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
 
 # Meant to be invoked only through the top-level shell script driver.
 grpc_py_binary(

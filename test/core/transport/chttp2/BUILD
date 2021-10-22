@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/transport/chttp2")
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
-load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 grpc_proto_fuzzer(
     name = "hpack_parser_fuzzer",
@@ -164,7 +163,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    "too_many_pings_test",
+    name = "too_many_pings_test",
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = ["gtest"],

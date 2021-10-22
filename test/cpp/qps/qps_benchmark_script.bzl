@@ -38,6 +38,7 @@ def add_suffix(name):
     else:
         return name
 
+# buildifier: disable=unnamed-macro
 def qps_json_driver_batch():
     for scenario in QPS_JSON_DRIVER_SCENARIOS:
         grpc_cc_test(
@@ -63,6 +64,7 @@ def qps_json_driver_batch():
             flaky = True,
         )
 
+# buildifier: disable=unnamed-macro
 def json_run_localhost_batch():
     for scenario in JSON_RUN_LOCALHOST_SCENARIOS:
         grpc_cc_test(
