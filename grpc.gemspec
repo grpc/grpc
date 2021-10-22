@@ -723,6 +723,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_certificate_provider.cc )
   s.files += %w( src/core/ext/xds/xds_certificate_provider.h )
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.cc )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.h )
   s.files += %w( src/core/ext/xds/xds_client.cc )
   s.files += %w( src/core/ext/xds/xds_client.h )
   s.files += %w( src/core/ext/xds/xds_client_stats.cc )
