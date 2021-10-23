@@ -335,7 +335,7 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
   X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
   char* contents;
   long len = BIO_get_mem_data(bio, &contents);
-  if (len <= 0) {
+  if (len < 0) {
     gpr_log(GPR_ERROR, "Could not get subject entry from certificate.");
     BIO_free(bio);
     return TSI_INTERNAL_ERROR;
