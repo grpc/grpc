@@ -386,20 +386,30 @@ class XdsApi {
     std::string ToString() const;
   };
 
+  struct ResourceName {
+    std::string authority;
+    std::string id;
+
+    bool operator<(const ResourceName& other) const {
+      if (authority < other.authority) return true;
+      if (id < other.id) return true;
+      return false;
+    }
+  };
+
   struct LdsResourceData {
     LdsUpdate resource;
     std::string serialized_proto;
   };
 
-  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsResourceData>;
+  using LdsUpdateMap = std::map<ResourceName, LdsResourceData>;
 
   struct RdsResourceData {
     RdsUpdate resource;
     std::string serialized_proto;
   };
 
-  using RdsUpdateMap =
-      std::map<std::string /*route_config_name*/, RdsResourceData>;
+  using RdsUpdateMap = std::map<ResourceName, RdsResourceData>;
 
   struct CdsUpdate {
     enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
@@ -455,7 +465,7 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsResourceData>;
+  using CdsUpdateMap = std::map<ResourceName, CdsResourceData>;
 
   struct EdsUpdate {
     struct Priority {
@@ -544,8 +554,7 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using EdsUpdateMap =
-      std::map<std::string /*eds_service_name*/, EdsResourceData>;
+  using EdsUpdateMap = std::map<ResourceName, EdsResourceData>;
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
@@ -635,11 +644,6 @@ class XdsApi {
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
     std::set<std::string> resource_names_failed;
-  };
-
-  struct ResourceName {
-    std::string authority;
-    std::string id;
   };
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,

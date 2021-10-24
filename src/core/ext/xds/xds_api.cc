@@ -3434,7 +3434,7 @@ grpc_error_handle AdsResponseParse(
       continue;
     }
     // Fail on duplicate resources.
-    if (update_map->find(resource_name) != update_map->end()) {
+    if (update_map->find(resource_name_status.value()) != update_map->end()) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("duplicate resource name \"", resource_name, "\"")));
       resource_names_failed->insert(resource_name);
@@ -3452,7 +3452,7 @@ grpc_error_handle AdsResponseParse(
       resource_names_failed->insert(resource_name);
     } else {
       // Store result in update map, in both validated and serialized form.
-      auto& resource_data = (*update_map)[resource_name];
+      auto& resource_data = (*update_map)[resource_name_status.value()];
       resource_data.resource = std::move(update);
       resource_data.serialized_proto =
           UpbStringToStdString(serialized_resource);

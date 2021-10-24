@@ -965,7 +965,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
   std::set<std::string> rds_resource_names_seen;
   for (auto& p : lds_update_map) {
-    const std::string& listener_name = p.first;
+    std::string listener_name = XdsApi::ConstructFullResourceName(
+        p.first.authority, XdsApi::kLdsTypeUrl, p.first.id);
     XdsApi::LdsUpdate& lds_update = p.second.resource;
     auto& state = lds_state.subscribed_resources[listener_name];
     if (state != nullptr) state->Finish();
@@ -1019,7 +1020,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     if (it != listener_map.end()) {
       auto& update = it->second.update;
       if (!update.has_value()) continue;
-      lds_update_map[listener_name];
+      lds_update_map[resource.value()];
       if (!update->http_connection_manager.route_config_name.empty()) {
         rds_resource_names_seen.insert(
             update->http_connection_manager.route_config_name);
@@ -1030,9 +1031,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // remove it from the cache and notify watchers that it does not exist.
   for (const auto& p : lds_state.subscribed_resources) {
     const std::string& listener_name = p.first;
-    if (lds_update_map.find(listener_name) == lds_update_map.end()) {
-      auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
-      GPR_ASSERT(resource.ok());
+    auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
+    GPR_ASSERT(resource.ok());
+    if (lds_update_map.find(resource.value()) == lds_update_map.end()) {
       ListenerState& listener_state =
           xds_client()
               ->authority_state_map_[resource->authority]
@@ -1084,7 +1085,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
-    const std::string& route_config_name = p.first;
+    const std::string& route_config_name = XdsApi::ConstructFullResourceName(
+        p.first.authority, XdsApi::kRdsTypeUrl, p.first.id);
     XdsApi::RdsUpdate& rds_update = p.second.resource;
     auto& state = rds_state.subscribed_resources[route_config_name];
     if (state != nullptr) state->Finish();
@@ -1135,7 +1137,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   auto& cds_state = state_map_[XdsApi::kCdsTypeUrl];
   std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
-    const std::string& cluster_name = p.first;
+    const std::string& cluster_name = XdsApi::ConstructFullResourceName(
+        p.first.authority, XdsApi::kCdsTypeUrl, p.first.id);
     XdsApi::CdsUpdate& cds_update = p.second.resource;
     auto& state = cds_state.subscribed_resources[cluster_name];
     if (state != nullptr) state->Finish();
@@ -1187,7 +1190,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     if (it != cluster_map.end()) {
       auto& update = it->second.update;
       if (!update.has_value()) continue;
-      cds_update_map[cluster_name];
+      cds_update_map[resource.value()];
       eds_resource_names_seen.insert(update->eds_service_name.empty()
                                          ? cluster_name
                                          : update->eds_service_name);
@@ -1197,9 +1200,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // remove it from the cache and notify watchers that it does not exist.
   for (const auto& p : cds_state.subscribed_resources) {
     const std::string& cluster_name = p.first;
-    if (cds_update_map.find(cluster_name) == cds_update_map.end()) {
-      auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
-      GPR_ASSERT(resource.ok());
+    auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
+    GPR_ASSERT(resource.ok());
+    if (cds_update_map.find(resource.value()) == cds_update_map.end()) {
       ClusterState& cluster_state =
           xds_client()
               ->authority_state_map_[resource->authority]
@@ -1251,7 +1254,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
   }
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
-    const std::string& eds_resource_name = p.first;
+    const std::string& eds_resource_name = XdsApi::ConstructFullResourceName(
+        p.first.authority, XdsApi::kCdsTypeUrl, p.first.id);
     XdsApi::EdsUpdate& eds_update = p.second.resource;
     auto& state = eds_state.subscribed_resources[eds_resource_name];
     if (state != nullptr) state->Finish();
