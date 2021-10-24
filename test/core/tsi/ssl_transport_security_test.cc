@@ -269,39 +269,18 @@ static bool check_property(tsi_peer* peer, const char* property_name,
   return false;
 }
 
-static bool check_subject_name(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_SUBJECT_PEER_PROPERTY, name);
-}
-
-static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
-                        name);
-}
-
-static bool check_dns(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_DNS_PEER_PROPERTY, name);
-}
-
-static bool check_uri(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_URI_PEER_PROPERTY, name);
-}
-
-static bool check_email(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_EMAIL_PEER_PROPERTY, name);
-}
-
-static bool check_ip(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_IP_PEER_PROPERTY, name);
-}
-
 void check_server1_peer(tsi_peer* peer) {
   const tsi_peer_property* property =
       check_basic_authenticated_peer_and_get_common_name(peer);
   const char* expected_match = "*.test.google.com";
   GPR_ASSERT(memcmp(property->value.data, expected_match,
                     property->value.length) == 0);
-  GPR_ASSERT(check_subject_alt_name(peer, "*.test.google.fr") == 1);
-  GPR_ASSERT(check_subject_alt_name(peer, "waterzooi.test.google.be") == 1);
+  GPR_ASSERT(check_property(peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "*.test.google.fr") == 1);
+  GPR_ASSERT(check_property(peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "waterzooi.test.google.be") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.test.google.fr") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.fr") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "waterzooi.test.google.be") == 1);
@@ -940,8 +919,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   size_t expected_property_count = 22;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check subject
-  GPR_ASSERT(
-      check_subject_name(&peer, "CN=xpigors,OU=Google,L=SF,ST=CA,C=US") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_SUBJECT_PEER_PROPERTY,
+                            "CN=xpigors,OU=Google,L=SF,ST=CA,C=US") == 1);
   // Check common name
   const char* expected_cn = "xpigors";
   const tsi_peer_property* property = tsi_peer_get_property_by_name(
@@ -954,32 +933,58 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(property != nullptr);
   GPR_ASSERT(memcmp(property->value.data, cert, property->value.length) == 0);
   // Check DNS
-  GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
-  GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
-  GPR_ASSERT(check_dns(&peer, "foo.test.domain.com") == 1);
-  GPR_ASSERT(check_dns(&peer, "bar.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "bar.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_DNS_PEER_PROPERTY,
+                            "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_DNS_PEER_PROPERTY,
+                            "bar.test.domain.com") == 1);
   // Check URI
   // Note that a valid SPIFFE certificate should only have one URI.
-  GPR_ASSERT(check_subject_alt_name(&peer, "spiffe://foo.com/bar/baz") == 1);
-  GPR_ASSERT(
-      check_subject_alt_name(&peer, "https://foo.test.domain.com/test") == 1);
-  GPR_ASSERT(
-      check_subject_alt_name(&peer, "https://bar.test.domain.com/test") == 1);
-  GPR_ASSERT(check_uri(&peer, "spiffe://foo.com/bar/baz") == 1);
-  GPR_ASSERT(check_uri(&peer, "https://foo.test.domain.com/test") == 1);
-  GPR_ASSERT(check_uri(&peer, "https://bar.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "spiffe://foo.com/bar/baz") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "https://bar.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                            "spiffe://foo.com/bar/baz") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                            "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                            "https://bar.test.domain.com/test") == 1);
   // Check email address
-  GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
-  GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
-  GPR_ASSERT(check_email(&peer, "foo@test.domain.com") == 1);
-  GPR_ASSERT(check_email(&peer, "bar@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "bar@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_EMAIL_PEER_PROPERTY,
+                            "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_EMAIL_PEER_PROPERTY,
+                            "bar@test.domain.com") == 1);
   // Check ip address
-  GPR_ASSERT(check_subject_alt_name(&peer, "192.168.7.1") == 1);
-  GPR_ASSERT(check_subject_alt_name(&peer, "13::17") == 1);
-  GPR_ASSERT(check_ip(&peer, "192.168.7.1") == 1);
-  GPR_ASSERT(check_ip(&peer, "13::17") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "192.168.7.1") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "13::17") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_IP_PEER_PROPERTY, "192.168.7.1") ==
+             1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_IP_PEER_PROPERTY, "13::17") == 1);
   // Check other fields
-  GPR_ASSERT(check_subject_alt_name(&peer, "other types of SAN") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "other types of SAN") == 1);
   // Free memory
   gpr_free(cert);
   tsi_peer_destruct(&peer);
