@@ -919,11 +919,15 @@ void ssl_tsi_test_extract_x509_subject_names() {
   size_t expected_property_count = 22;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check subject
-  GPR_ASSERT(check_property(&peer, TSI_X509_SUBJECT_PEER_PROPERTY,
-                            "CN=xpigors,OU=Google,L=SF,ST=CA,C=US") == 1);
+  const char* expected_subject = "CN=xpigors,OU=Google,L=SF,ST=CA,C=US";
+  const tsi_peer_property* property =
+      tsi_peer_get_property_by_name(&peer, TSI_X509_SUBJECT_PEER_PROPERTY);
+  GPR_ASSERT(property != nullptr);
+  GPR_ASSERT(memcmp(property->value.data, expected_subject,
+                    property->value.length) == 0);
   // Check common name
   const char* expected_cn = "xpigors";
-  const tsi_peer_property* property = tsi_peer_get_property_by_name(
+  property = tsi_peer_get_property_by_name(
       &peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
   GPR_ASSERT(property != nullptr);
   GPR_ASSERT(
