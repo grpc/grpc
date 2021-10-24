@@ -71,7 +71,11 @@ TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
 
 namespace {
 
+gpr_once g_once_init = GPR_ONCE_INIT;
 Mutex* g_mu = nullptr;
+
+void init_global_mutex() { g_mu = new Mutex(); }
+
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
@@ -2033,7 +2037,7 @@ void XdsClient::Orphan() {
   }
   {
     // debug this
-    // MutexLock lock(g_mu);
+    MutexLock lock(g_mu);
     if (g_xds_client == this) g_xds_client = nullptr;
   }
   {
@@ -2603,6 +2607,7 @@ std::string XdsClient::DumpClientConfigBinary() {
 //
 
 void XdsClientGlobalInit() {
+  gpr_once_init(&g_once_init, init_global_mutex);
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
 }
@@ -2612,8 +2617,6 @@ void XdsClientGlobalInit() {
 void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   gpr_free(g_fallback_bootstrap_config);
   g_fallback_bootstrap_config = nullptr;
-  delete g_mu;
-  g_mu = nullptr;
   XdsHttpFilterRegistry::Shutdown();
 }
 
