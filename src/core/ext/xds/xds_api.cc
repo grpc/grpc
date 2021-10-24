@@ -3391,7 +3391,8 @@ grpc_error_handle AdsResponseParse(
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const char* resource_type_string,
     const std::set<absl::string_view>& expected_resource_names,
-    UpdateMap* update_map, std::set<std::string>* resource_names_failed) {
+    UpdateMap* update_map,
+    std::set<XdsApi::ResourceName>* resource_names_failed) {
   std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
   size_t size;
@@ -3437,7 +3438,7 @@ grpc_error_handle AdsResponseParse(
     if (update_map->find(resource_name_status.value()) != update_map->end()) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("duplicate resource name \"", resource_name, "\"")));
-      resource_names_failed->insert(resource_name);
+      resource_names_failed->insert(resource_name_status.value());
       continue;
     }
     // Validate resource.
@@ -3449,7 +3450,7 @@ grpc_error_handle AdsResponseParse(
           grpc_error_add_child(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
                                    resource_name, ": validation error")),
                                error));
-      resource_names_failed->insert(resource_name);
+      resource_names_failed->insert(resource_name_status.value());
     } else {
       // Store result in update map, in both validated and serialized form.
       auto& resource_data = (*update_map)[resource_name_status.value()];

@@ -643,7 +643,7 @@ class XdsApi {
     RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
-    std::set<std::string> resource_names_failed;
+    std::set<ResourceName> resource_names_failed;
   };
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
