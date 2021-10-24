@@ -292,6 +292,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
         route_config_map;
     std::map<std::string /*cluster_name*/, ClusterState> cluster_map;
     std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
+    // Stores the most recent accepted resource version for each resource type.
+    std::map<std::string /*type*/, std::string /*version*/>
+        resource_version_map;
 
     bool HasSubscribedResources() {
       return !listener_map.empty() || !route_config_map.empty() ||
@@ -346,10 +349,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       LoadReportState>
       load_report_map_ ABSL_GUARDED_BY(mu_);
-
-  // Stores the most recent accepted resource version for each resource type.
-  std::map<std::string /*type*/, std::string /*version*/> resource_version_map_
-      ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,
   // waiting to be cancelled or reset in Orphan().
