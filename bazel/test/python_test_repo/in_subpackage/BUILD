@@ -1,4 +1,6 @@
-# Copyright 2020 gRPC authors.
+# gRPC Bazel BUILD file.
+#
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
+load("@rules_proto//proto:defs.bzl", "proto_library")
 
-VERSION = '1.42.0.dev0'
-PROTOBUF_VERSION = '3.18.1'
+package(
+    default_testonly = 1,
+    default_visibility = ["//:__subpackages__"],
+)
+
+proto_library(
+    name = "subpackage_proto",
+    srcs = ["subpackage.proto"],
+)

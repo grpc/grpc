@@ -710,8 +710,6 @@ class CronetMetadataEncoder {
         gpr_malloc(sizeof(bidirectional_stream_header) * capacity_));
   }
 
-  ~CronetMetadataEncoder() { gpr_free(headers_); }
-
   CronetMetadataEncoder(const CronetMetadataEncoder&) = delete;
   CronetMetadataEncoder& operator=(const CronetMetadataEncoder&) = delete;
 
