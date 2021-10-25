@@ -95,9 +95,11 @@ Rbac::Permission::Permission(Permission::RuleType type, CidrRange ip)
     : type(type), ip(std::move(ip)) {}
 Rbac::Permission::Permission(Permission::RuleType type, int port)
     : type(type), port(port) {}
+Rbac::Permission::Permission(Permission::RuleType type, bool invert)
+    : type(type), invert(invert) {}
 
 Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
-    : type(other.type) {
+    : type(other.type), invert(other.invert) {
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -124,6 +126,7 @@ Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
 Rbac::Permission& Rbac::Permission::operator=(
     Rbac::Permission&& other) noexcept {
   type = other.type;
+  invert = other.invert;
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -178,6 +181,8 @@ std::string Rbac::Permission::ToString() const {
       return absl::StrFormat("dest_ip=%s", ip.ToString());
     case RuleType::kDestPort:
       return absl::StrFormat("dest_port=%d", port);
+    case RuleType::kMetadata:
+      return absl::StrFormat("%smetadata", invert ? "invert " : "");
     case RuleType::kReqServerName:
       return absl::StrFormat("requested_server_name=%s",
                              string_matcher.ToString());
@@ -207,9 +212,11 @@ Rbac::Principal::Principal(Principal::RuleType type, CidrRange ip)
 Rbac::Principal::Principal(Principal::RuleType type,
                            HeaderMatcher header_matcher)
     : type(type), header_matcher(std::move(header_matcher)) {}
+Rbac::Principal::Principal(Principal::RuleType type, bool invert)
+    : type(type), invert(invert) {}
 
 Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
-    : type(other.type) {
+    : type(other.type), invert(other.invert) {
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -232,6 +239,7 @@ Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
 
 Rbac::Principal& Rbac::Principal::operator=(Rbac::Principal&& other) noexcept {
   type = other.type;
+  invert = other.invert;
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -287,6 +295,8 @@ std::string Rbac::Principal::ToString() const {
       return absl::StrFormat("header=%s", header_matcher.ToString());
     case RuleType::kPath:
       return absl::StrFormat("path=%s", string_matcher.ToString());
+    case RuleType::kMetadata:
+      return absl::StrFormat("%smetadata", invert ? "invert " : "");
     default:
       return "";
   }

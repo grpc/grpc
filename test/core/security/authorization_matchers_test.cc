@@ -237,6 +237,18 @@ TEST_F(AuthorizationMatchersTest,
   EXPECT_FALSE(matcher.Matches(args));
 }
 
+TEST_F(AuthorizationMatchersTest, MetadataAuthorizationMatcherSuccessfulMatch) {
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  MetadataAuthorizationMatcher matcher(/*invert=*/true);
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, MetadataAuthorizationMatcherFailedMatch) {
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  MetadataAuthorizationMatcher matcher(/*invert=*/false);
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
 TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherSuccessfulMatch) {
   args_.AddPairToMetadata("key123", "foo_xxx");
   EvaluateArgs args = args_.MakeEvaluateArgs();

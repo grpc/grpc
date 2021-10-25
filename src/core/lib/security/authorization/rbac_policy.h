@@ -44,7 +44,7 @@ struct Rbac {
     uint32_t prefix_len;
   };
 
-  // TODO(ashithasantosh): Add metadata field to Permission and Principal.
+  // TODO(ashithasantosh): Support for destination_port_range.
   struct Permission {
     enum class RuleType {
       kAnd,
@@ -55,6 +55,7 @@ struct Rbac {
       kPath,
       kDestIp,
       kDestPort,
+      kMetadata,
       kReqServerName,
     };
 
@@ -74,6 +75,9 @@ struct Rbac {
     Permission(Permission::RuleType type, CidrRange ip);
     // For kDestPort RuleType.
     Permission(Permission::RuleType type, int port);
+    // For kMetadata RuleType. All the other fields in MetadataMatcher are
+    // ignored except invert.
+    Permission(Permission::RuleType type, bool invert);
 
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
@@ -88,6 +92,8 @@ struct Rbac {
     // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
     // element.
     std::vector<std::unique_ptr<Permission>> permissions;
+    // For kMetadata
+    bool invert;
   };
 
   struct Principal {
@@ -102,6 +108,7 @@ struct Rbac {
       kRemoteIp,
       kHeader,
       kPath,
+      kMetadata,
     };
 
     Principal() = default;
@@ -118,6 +125,9 @@ struct Rbac {
     Principal(Principal::RuleType type, CidrRange ip);
     // For kHeader RuleType.
     Principal(Principal::RuleType type, HeaderMatcher header_matcher);
+    // For kMetadata RuleType. All the other fields in MetadataMatcher are
+    // ignored except invert.
+    Principal(Principal::RuleType type, bool invert);
 
     Principal(Principal&& other) noexcept;
     Principal& operator=(Principal&& other) noexcept;
@@ -131,6 +141,8 @@ struct Rbac {
     // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
     // element.
     std::vector<std::unique_ptr<Principal>> principals;
+    // For kMetadata
+    bool invert;
   };
 
   struct Policy {

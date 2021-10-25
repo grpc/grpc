@@ -55,6 +55,8 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
           IpAuthorizationMatcher::Type::kDestIp, std::move(permission.ip));
     case Rbac::Permission::RuleType::kDestPort:
       return absl::make_unique<PortAuthorizationMatcher>(permission.port);
+    case Rbac::Permission::RuleType::kMetadata:
+      return absl::make_unique<MetadataAuthorizationMatcher>(permission.invert);
     case Rbac::Permission::RuleType::kReqServerName:
       return absl::make_unique<ReqServerNameAuthorizationMatcher>(
           std::move(permission.string_matcher));
@@ -103,6 +105,8 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     case Rbac::Principal::RuleType::kPath:
       return absl::make_unique<PathAuthorizationMatcher>(
           std::move(principal.string_matcher));
+    case Rbac::Principal::RuleType::kMetadata:
+      return absl::make_unique<MetadataAuthorizationMatcher>(principal.invert);
   }
   return nullptr;
 }
