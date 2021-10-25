@@ -1656,6 +1656,8 @@ src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
+src/core/ext/xds/xds_channel_stack_modifier.cc \
+src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
 src/core/ext/xds/xds_client_stats.cc \
@@ -2100,6 +2102,7 @@ src/core/lib/slice/b64.h \
 src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \
+src/core/lib/slice/slice.h \
 src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
 src/core/lib/slice/slice_intern.cc \

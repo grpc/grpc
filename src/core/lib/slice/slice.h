@@ -74,7 +74,7 @@ class BaseSlice {
 
  protected:
   BaseSlice() : slice_(EmptySlice()) {}
-  BaseSlice(const grpc_slice& slice) : slice_(slice) {}
+  explicit BaseSlice(const grpc_slice& slice) : slice_(slice) {}
   ~BaseSlice() = default;
   grpc_slice slice_;
 };
