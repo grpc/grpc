@@ -44,6 +44,7 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
+#include "src/core/ext/transport/binder/client/connection_id_generator.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
@@ -56,10 +57,13 @@
 namespace grpc {
 namespace experimental {
 
+namespace {
 // TODO(mingcl): To support multiple binder transport connection at the same
 // time, we will need to generate unique connection id for each connection.
-// For now we use a fixed connection id. This will be fixed in the next PR
-std::string kConnectionId = "connection_id_placeholder";
+// For now we just use a single connection id globally. This will be fixed after
+// we drop the BindToOnDeviceServerService interface
+std::string g_connection_id;
+}  // namespace
 
 void BindToOnDeviceServerService(void* jni_env_void, jobject application,
                                  absl::string_view package_name,
@@ -70,12 +74,19 @@ void BindToOnDeviceServerService(void* jni_env_void, jobject application,
 
   JNIEnv* jni_env = static_cast<JNIEnv*>(jni_env_void);
 
+  {
+    GPR_ASSERT(g_connection_id == "");
+    g_connection_id = grpc_binder::GetConnectionIdGenerator()->Generate(
+        std::string(package_name), std::string(class_name));
+    GPR_ASSERT(g_connection_id != "");
+  }
+
   // clang-format off
   grpc_binder::CallStaticJavaMethod(jni_env,
                        "io/grpc/binder/cpp/NativeConnectionHelper",
                        "tryEstablishConnection",
                        "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-                       application, std::string(package_name), std::string(class_name), kConnectionId);
+                       application, std::string(package_name), std::string(class_name), g_connection_id);
   // clang-format on
 }
 
@@ -104,7 +115,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 
   std::unique_ptr<grpc_binder::Binder> endpoint_binder;
   grpc_binder::GetEndpointBinderPool()->GetEndpointBinder(
-      kConnectionId, [&](std::unique_ptr<grpc_binder::Binder> e) {
+      g_connection_id, [&](std::unique_ptr<grpc_binder::Binder> e) {
         endpoint_binder = std::move(e);
       });
   // This assumes the above callback will be called immediately before
