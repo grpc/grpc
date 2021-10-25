@@ -8,7 +8,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOU WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
@@ -18,6 +18,10 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
 
 cdef _interpret_event(grpc_event c_event)
 
+# TODO: Get rid of this.
+cdef class _LatentEventArg:
+  cdef grpc_completion_queue *c_completion_queue
+  cdef object deadline
 
 cdef class CompletionQueue:
 

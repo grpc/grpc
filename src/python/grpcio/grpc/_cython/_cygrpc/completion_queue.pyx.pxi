@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
+import sys
 
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
-
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *:
   cdef gpr_timespec c_increment
@@ -27,6 +28,7 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
     c_deadline = _timespec_from_time(deadline)
 
   while True:
+    # sys.stderr.write("{}: Poll CQ\n".format(datetime.datetime.now()))
     with nogil:
       c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
@@ -37,13 +39,14 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
       if (c_event.type != GRPC_QUEUE_TIMEOUT or
           gpr_time_cmp(c_timeout, c_deadline) == 0):
         break
+    # sys.stderr.write("{}: Polled CQ\n".format(datetime.datetime.now())); sys.stderr.flush()
 
     # Handle any signals
     cpython.PyErr_CheckSignals()
     import gevent; gevent.sleep(0)
   return c_event
 
-
+# TODO: Make this one work with gevent as well.
 cdef _interpret_event(grpc_event c_event):
   cdef _Tag tag
   if c_event.type == GRPC_QUEUE_TIMEOUT:
@@ -59,11 +62,17 @@ cdef _interpret_event(grpc_event c_event):
     cpython.Py_DECREF(tag)
     return tag, tag.event(c_event)
 
-
-cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
-  cdef grpc_event c_event = _next(c_completion_queue, deadline)
+cdef _internal_latent_event(_LatentEventArg latent_event_arg):
+  cdef grpc_event c_event = _next(latent_event_arg.c_completion_queue, latent_event_arg.deadline)
   return _interpret_event(c_event)
 
+cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
+    from gevent import get_hub
+    pool = get_hub().threadpool
+    latent_event_arg = _LatentEventArg()
+    latent_event_arg.c_completion_queue = c_completion_queue
+    latent_event_arg.deadline = deadline
+    return pool.apply(_internal_latent_event, (latent_event_arg,))
 
 cdef class CompletionQueue:
 
@@ -87,10 +96,16 @@ cdef class CompletionQueue:
       self.is_shutdown = True
     return event
 
+  def _internal_poll(self, deadline):
+    return self._interpret_event(_next(self.c_completion_queue, deadline))
+
   # We name this 'poll' to avoid problems with CPython's expectations for
   # 'special' methods (like next and __next__).
   def poll(self, deadline=None):
-    return self._interpret_event(_next(self.c_completion_queue, deadline))
+    from gevent import get_hub
+    pool = get_hub().threadpool
+    return pool.apply(CompletionQueue._internal_poll, (self, deadline))
+    # return self._interpret_event(_next(self.c_completion_queue, deadline))
 
   def shutdown(self):
     with nogil:
