@@ -20,8 +20,6 @@ from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from framework.helpers import retryers
-from framework.infrastructure import k8s
-from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -34,7 +32,6 @@ _TD_CONFIG_RETRY_WAIT_SEC = 2
 
 
 class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
-    previous_route_config_version: str
 
     def test_api_listener(self) -> None:
         with self.subTest('00_create_health_check'):
@@ -43,46 +40,48 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('01_create_backend_services'):
             self.td.create_backend_service()
 
-        with self.subTest('02_create_default_url_maps'):
+        with self.subTest('02_create_default_url_map'):
             self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
-        with self.subTest('03_create_default_target_proxies'):
+        with self.subTest('03_create_default_target_proxy'):
             self.td.create_target_proxy()
 
         with self.subTest('04_create_default_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
 
         with self.subTest('05_start_test_servers'):
-            self.test_servers: List[_XdsTestServer] = self.startTestServers()
+            test_servers: List[_XdsTestServer] = self.startTestServers()
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
 
         with self.subTest('07_start_test_client'):
-            self.test_client: _XdsTestClient = self.startTestClient(
-                self.test_servers[0])
+            test_client: _XdsTestClient = self.startTestClient(test_servers[0])
 
         with self.subTest('08_test_client_xds_config_exists'):
-            self.assertXdsConfigExists(self.test_client)
+            self.assertXdsConfigExists(test_client)
 
         with self.subTest('09_test_server_received_rpcs'):
-            self.assertSuccessfulRpcs(self.test_client)
+            self.assertSuccessfulRpcs(test_client)
 
-        with self.subTest('10_create_alternate_url_maps'):
+        with self.subTest('10_create_alternate_url_map'):
             self.td.create_alternative_url_map(self.server_xds_host,
                                                self.server_xds_port)
 
-        with self.subTest('11_create_alternate_target_proxies'):
+        with self.subTest('11_create_alternate_target_proxy'):
             self.td.create_alternative_target_proxy()
 
+        # create a second suite of map+tp+fr with the same host name in host rule.
+        # We set fr ip_address to be different from `0.0.0.0` and then set
+        # validate_for_proxyless=false because ip:port needs to be unique.
         with self.subTest('12_create_alternate_forwarding_rule'):
             self.td.create_alternative_forwarding_rule(self.server_xds_port,
                                                        ip_address='10.10.10.10')
 
         with self.subTest('13_test_server_received_rpcs_with_two_url_maps'):
-            self.assertSuccessfulRpcs(self.test_client)
-            self.previous_route_config_version = self.getRouteConfigVersion(
-                self.test_client)
+            self.assertSuccessfulRpcs(test_client)
+            previous_route_config_version = self.getRouteConfigVersion(
+                test_client)
 
         with self.subTest('14_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()
@@ -97,26 +96,29 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 timeout=datetime.timedelta(
                     seconds=xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC),
                 retry_on_exceptions=(TdPropagationRetryableError,),
-                logger=logging,
+                logger=logger,
                 log_level=logging.INFO)
             try:
-                retryer(self.verify_route_traffic_continues)
+                retryer(self.verify_route_traffic_continues,
+                        version=previous_route_config_version,
+                        test_client=test_client)
             except retryers.RetryError as retry_error:
-                logging.info(
+                logger.info(
                     'Retry exhausted. TD routing config propagation failed after timeout %ds.',
                     xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
                 raise retry_error
 
-    def verify_route_traffic_continues(self):
-        self.assertSuccessfulRpcs(self.test_client)
-        if self.previous_route_config_version == self.getRouteConfigVersion(
-                self.test_client):
+    def verify_route_traffic_continues(self, **kwargs):
+        test_client = kwargs['test_client']
+        previous_route_config_version = kwargs['version']
+        self.assertSuccessfulRpcs(test_client)
+        if previous_route_config_version == 0:
             logger.info('Routing config not propagated yet. Retrying.')
             raise TdPropagationRetryableError(
                 "CSDS not get updated routing config corresponding"
                 " to the second set of url maps")
         else:
-            self.assertSuccessfulRpcs(self.test_client)
+            self.assertSuccessfulRpcs(test_client)
             logger.info('Success.')
 
 
