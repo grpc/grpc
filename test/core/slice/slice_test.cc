@@ -21,11 +21,12 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -101,7 +102,8 @@ TEST(GrpcSliceTest, SliceNewWithLenReturnsSomethingSensible) {
   int i;
 
   grpc_slice slice = grpc_slice_new_with_len(&x, 1, do_nothing_with_len_1);
-  EXPECT_NE(slice.refcount, nullptr); /* ref count is initialized to 1 at this point */
+  EXPECT_NE(slice.refcount,
+            nullptr); /* ref count is initialized to 1 at this point */
   EXPECT_EQ(slice.data.refcounted.bytes, &x);
   EXPECT_EQ(slice.data.refcounted.length, 1);
   EXPECT_EQ(do_nothing_with_len_1_calls, 0);
@@ -156,11 +158,11 @@ TEST_P(GrpcSliceSizedTest, SliceSubWorks) {
 static void check_head_tail(grpc_slice slice, grpc_slice head,
                             grpc_slice tail) {
   EXPECT_EQ(GRPC_SLICE_LENGTH(slice),
-             GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
-  EXPECT_EQ(0, memcmp(GRPC_SLICE_START_PTR(slice),
-                         GRPC_SLICE_START_PTR(head), GRPC_SLICE_LENGTH(head)));
+            GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
+  EXPECT_EQ(0, memcmp(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_START_PTR(head),
+                      GRPC_SLICE_LENGTH(head)));
   EXPECT_EQ(0, memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
-                         GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
+                      GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
 }
 
 TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
@@ -239,8 +241,7 @@ TEST(GrpcSliceTest, MovedStringSlice) {
   grpc_slice small =
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
   EXPECT_EQ(GRPC_SLICE_LENGTH(small), strlen(kSmallStr));
-  EXPECT_NE(GRPC_SLICE_START_PTR(small),
-             reinterpret_cast<uint8_t*>(small_ptr));
+  EXPECT_NE(GRPC_SLICE_START_PTR(small), reinterpret_cast<uint8_t*>(small_ptr));
   grpc_slice_unref_internal(small);
 
   // Large string should be move the reference.
@@ -249,8 +250,7 @@ TEST(GrpcSliceTest, MovedStringSlice) {
   grpc_slice large =
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
   EXPECT_EQ(GRPC_SLICE_LENGTH(large), strlen(kSLargeStr));
-  EXPECT_EQ(GRPC_SLICE_START_PTR(large),
-             reinterpret_cast<uint8_t*>(large_ptr));
+  EXPECT_EQ(GRPC_SLICE_START_PTR(large), reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref_internal(large);
 
   // Moved buffer must respect the provided length not the actual length of the
@@ -259,8 +259,7 @@ TEST(GrpcSliceTest, MovedStringSlice) {
   small = grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char>(large_ptr),
                                        strlen(kSmallStr));
   EXPECT_EQ(GRPC_SLICE_LENGTH(small), strlen(kSmallStr));
-  EXPECT_NE(GRPC_SLICE_START_PTR(small),
-             reinterpret_cast<uint8_t*>(large_ptr));
+  EXPECT_NE(GRPC_SLICE_START_PTR(small), reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref_internal(small);
 }
 
@@ -271,7 +270,7 @@ TEST(GrpcSliceTest, StringViewFromSlice) {
   EXPECT_EQ(std::string(sv), kStr);
 }
 
-int main(int, char**) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
