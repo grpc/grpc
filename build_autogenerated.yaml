@@ -4163,31 +4163,6 @@ targets:
   - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
-- name: test_core_slice_slice_test
-  build: test
-  language: c
-  headers:
-  - src/core/lib/debug/trace.h
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
-  src:
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
-  - test/core/slice/slice_test.cc
-  deps:
-  - gpr
-  uses_polling: false
 - name: thd_test
   build: test
   language: c
@@ -7998,6 +7973,32 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - gpr
+  uses_polling: false
+- name: test_core_slice_slice_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
+  - src/core/lib/slice/static_slice.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/slice/static_slice.cc
+  - test/core/slice/slice_test.cc
+  deps:
   - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
