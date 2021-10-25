@@ -17,7 +17,7 @@ set -e
 
 BUILDIFIER_VERSION="4.2.2"
 TEMP_BUILDIFIER_PATH="/tmp/buildifier"
-EXTRA_BUILDIFIER_FLAGS="-lint fix $*"
+EXTRA_BUILDIFIER_FLAGS="$*"
 
 function error_handling() {
     error=$1
