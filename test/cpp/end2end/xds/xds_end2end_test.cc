@@ -758,9 +758,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                        default_route_config_);
       if (use_xds_enabled_server_) {
         for (const auto& backend : backends_) {
-          SetServerListenerAndRouteConfiguration(
-              i, PopulateServerListenerNameAndPort(default_server_listener_,
-                                                   backend->port()));
+          SetServerListenerNameAndRouteConfiguration(
+              i, default_server_listener_, backend->port(),
+              default_server_route_config_);
         }
       }
       balancers_.back()->ads_service()->SetCdsResource(default_cluster_);
@@ -1374,8 +1374,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     listener.set_name(
         absl::StrCat("grpc/server?xds.resource.listening_address=",
                      ipv6_only_ ? "[::1]:" : "127.0.0.1:", port));
-    listener.mutable_address()->mutable_socket_address()->set_port_value(
-        backends_[0]->port());
+    listener.mutable_address()->mutable_socket_address()->set_port_value(port);
     return listener;
   }
 
@@ -1440,15 +1439,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     balancers_[idx]->ads_service()->SetLdsResource(listener);
   }
 
-  void SetServerListenerAndRouteConfiguration(
-      int idx, Listener listener, const RouteConfiguration& route_config) {
-    SetListenerAndRouteConfiguration(idx, listener, route_config,
-                                     ServerHcmAccessor());
-  }
-
-  void SetServerListenerAndRouteConfiguration(int idx, Listener listener) {
-    SetServerListenerAndRouteConfiguration(idx, listener,
-                                           default_server_route_config_);
+  void SetServerListenerNameAndRouteConfiguration(
+      int idx, Listener listener, int port,
+      const RouteConfiguration& route_config) {
+    SetListenerAndRouteConfiguration(
+        idx, PopulateServerListenerNameAndPort(listener, port), route_config,
+        ServerHcmAccessor());
   }
 
   void SetRouteConfiguration(int idx, const RouteConfiguration& route_config,
@@ -2864,10 +2860,12 @@ TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
+  // The default_listener_ has a terminal router filter by default. Add an
+  // additional filter.
   auto* filter = http_connection_manager.add_http_filters();
-  filter->set_name("grpc.testing.client_only_http_filter");
+  filter->set_name("grpc.testing.terminal_http_filter");
   filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.client_only_http_filter");
+      "grpc.testing.terminal_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
@@ -8266,7 +8264,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  SetServerListenerAndRouteConfiguration(0, listener);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8279,8 +8277,8 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
 TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   Listener listener = default_server_listener_;
   listener.mutable_api_listener();
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8294,8 +8292,8 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   Listener listener = default_server_listener_;
   listener.mutable_default_filter_chain()->clear_filters();
   listener.mutable_default_filter_chain()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
-  listener = PopulateServerListenerNameAndPort(listener, backends_[0]->port());
-  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetLdsResource(
+      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8315,8 +8313,8 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
   http_connection_manager.clear_http_filters();
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8347,8 +8345,8 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
       ->at(0)
       .mutable_typed_config()
       ->PackFrom(http_connection_manager);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8380,8 +8378,8 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
       ->at(0)
       .mutable_typed_config()
       ->PackFrom(http_connection_manager);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8416,8 +8414,8 @@ TEST_P(XdsEnabledServerTest,
       ->at(0)
       .mutable_typed_config()
       ->PackFrom(http_connection_manager);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   WaitForBackend(0);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8431,8 +8429,8 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
   // Set a different listening address in the LDS update
   listener.mutable_address()->mutable_socket_address()->set_address(
       "192.168.1.1");
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::FAILED_PRECONDITION);
@@ -8441,8 +8439,8 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
   Listener listener = default_server_listener_;
   listener.mutable_use_original_dst()->set_value(true);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8519,8 +8517,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       transport_socket->mutable_typed_config()->PackFrom(
           downstream_tls_context);
     }
-    SetServerListenerAndRouteConfiguration(
-        0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+    SetServerListenerNameAndRouteConfiguration(
+        0, listener, backends_[0]->port(), default_server_route_config_);
   }
 
   std::shared_ptr<grpc::Channel> CreateMtlsChannel() {
@@ -8672,8 +8670,8 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   auto* filter_chain = listener.mutable_default_filter_chain();
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("unknown_transport_socket");
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8695,8 +8693,8 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
       ->set_instance_name("fake_plugin1");
   downstream_tls_context.mutable_require_sni()->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8719,8 +8717,8 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
       envoy::extensions::transport_sockets::tls::v3::
           DownstreamTlsContext_OcspStaplePolicy_STRICT_STAPLING);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8744,8 +8742,8 @@ TEST_P(
       ->set_instance_name("fake_plugin1");
   downstream_tls_context.mutable_require_client_certificate()->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8765,8 +8763,8 @@ TEST_P(XdsServerSecurityTest,
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8791,8 +8789,8 @@ TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
       ->add_match_subject_alt_names()
       ->set_exact("*.test.google.fr");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8847,8 +8845,8 @@ TEST_P(XdsServerSecurityTest,
       ->mutable_tls_certificate_certificate_provider_instance()
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -9099,7 +9097,7 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
     listener.set_name(absl::StrCat(
         "grpc/server?xds.resource.listening_address=",
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-    SetServerListenerAndRouteConfiguration(0, listener);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
   }
 
   void UnsetLdsUpdate() {
@@ -9267,8 +9265,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -9550,8 +9548,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       ServerHcmAccessor().Unpack(listener));
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9586,8 +9584,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   if (ipv6_only_) {
@@ -9622,8 +9620,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
       ServerHcmAccessor().Unpack(listener));
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9646,8 +9644,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
       ServerHcmAccessor().Unpack(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9671,8 +9669,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       ServerHcmAccessor().Unpack(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9708,8 +9706,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   if (ipv6_only_) {
@@ -9742,8 +9740,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       ServerHcmAccessor().Unpack(listener));
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
-  SetServerListenerAndRouteConfiguration(
-      0, PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9766,11 +9764,8 @@ class XdsServerRdsTest : public XdsServerSecurityTest {
 TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
   RouteConfiguration route_config = default_server_route_config_;
   route_config.mutable_virtual_hosts()->at(0).add_domains("");
-  SetServerListenerAndRouteConfiguration(
-      0,
-      PopulateServerListenerNameAndPort(default_server_listener_,
-                                        backends_[0]->port()),
-      route_config);
+  SetServerListenerNameAndRouteConfiguration(
+      0, default_server_listener_, backends_[0]->port(), route_config);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9780,11 +9775,8 @@ TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
 TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
   RouteConfiguration route_config = default_server_route_config_;
   route_config.mutable_virtual_hosts()->at(0).clear_domains();
-  SetServerListenerAndRouteConfiguration(
-      0,
-      PopulateServerListenerNameAndPort(default_server_listener_,
-                                        backends_[0]->port()),
-      route_config);
+  SetServerListenerNameAndRouteConfiguration(
+      0, default_server_listener_, backends_[0]->port(), route_config);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9794,11 +9786,8 @@ TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
 TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
   RouteConfiguration route_config = default_server_route_config_;
   route_config.mutable_virtual_hosts()->at(0).clear_routes();
-  SetServerListenerAndRouteConfiguration(
-      0,
-      PopulateServerListenerNameAndPort(default_server_listener_,
-                                        backends_[0]->port()),
-      route_config);
+  SetServerListenerNameAndRouteConfiguration(
+      0, default_server_listener_, backends_[0]->port(), route_config);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9812,11 +9801,8 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
       .mutable_routes()
       ->at(0)
       .clear_match();
-  SetServerListenerAndRouteConfiguration(
-      0,
-      PopulateServerListenerNameAndPort(default_server_listener_,
-                                        backends_[0]->port()),
-      route_config);
+  SetServerListenerNameAndRouteConfiguration(
+      0, default_server_listener_, backends_[0]->port(), route_config);
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -12704,7 +12690,7 @@ int main(int argc, char** argv) {
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.terminal_http_filter",
-          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
+          /* supported_on_clients = */ true, /* supported_on_servers = */ true,
           /* is_terminal_filter */ true),
       {"grpc.testing.terminal_http_filter"});
   const auto result = RUN_ALL_TESTS();
