@@ -163,9 +163,6 @@ class MutableSlice : public slice_detail::BaseSlice,
   uint8_t& operator[](size_t i) {
     return GRPC_SLICE_START_PTR(this->slice_)[i];
   }
-
-  // Access underlying data
-  const uint8_t* data() const { return GRPC_SLICE_START_PTR(this->slice_); }
 };
 
 class Slice : public slice_detail::BaseSlice,
