@@ -1136,9 +1136,8 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, const std::string& type_url,
-    const std::set<absl::string_view>& resource_names,
-    const std::string& version, const std::string& nonce,
-    grpc_error_handle error, bool populate_node) {
+    const std::set<std::string>& resource_names, const std::string& version,
+    const std::string& nonce, grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
   const EncodingContext context = {client_,
                                    tracer_,
@@ -3390,8 +3389,7 @@ grpc_error_handle AdsResponseParse(
     ResourceParseFunction resource_parse_function,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const char* resource_type_string,
-    const std::set<absl::string_view>& expected_resource_names,
-    UpdateMap* update_map,
+    const std::set<std::string>& expected_resource_names, UpdateMap* update_map,
     std::set<XdsApi::ResourceName>* resource_names_failed) {
   std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
@@ -3500,10 +3498,10 @@ upb_strview EdsResourceName(
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-    const std::set<absl::string_view>& expected_listener_names,
-    const std::set<absl::string_view>& expected_route_configuration_names,
-    const std::set<absl::string_view>& expected_cluster_names,
-    const std::set<absl::string_view>& expected_eds_service_names) {
+    const std::set<std::string>& expected_listener_names,
+    const std::set<std::string>& expected_route_configuration_names,
+    const std::set<std::string>& expected_cluster_names,
+    const std::set<std::string>& expected_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
   const EncodingContext context = {client_,

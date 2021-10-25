@@ -140,10 +140,10 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
   void SubscribeLocked(const std::string& type_url,
-                       const std::string& authority, const std::string& name)
+                       const XdsApi::ResourceName& resource)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   void UnsubscribeLocked(const std::string& type_url,
-                         const std::string& authority, const std::string& name,
+                         const XdsApi::ResourceName& resource,
                          bool delay_unsubscription)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -265,7 +265,7 @@ class XdsClient::ChannelState::AdsCallState
     grpc_error_handle error = GRPC_ERROR_NONE;
 
     // Subscribed resources of this type.
-    std::map<std::string /* name */, OrphanablePtr<ResourceState>>
+    std::map<XdsApi::ResourceName, OrphanablePtr<ResourceState>>
         subscribed_resources;
   };
 
@@ -314,8 +314,7 @@ class XdsClient::ChannelState::AdsCallState
 
   bool IsCurrentCallOnChannel() const;
 
-  std::set<absl::string_view> ResourceNamesForRequest(
-      const std::string& type_url);
+  std::set<std::string> ResourceNamesForRequest(const std::string& type_url);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -596,7 +595,7 @@ void XdsClient::ChannelState::SubscribeLocked(const std::string& type_url,
   // Subscribe to this resource if the ADS call is active.
   auto resource = XdsApi::ParseResourceName(name);
   GPR_ASSERT(resource.ok());
-  ads_calld()->SubscribeLocked(type_url, resource->authority, resource->id);
+  ads_calld()->SubscribeLocked(type_url, resource.value());
 }
 
 void XdsClient::ChannelState::UnsubscribeLocked(const std::string& type_url,
@@ -607,7 +606,7 @@ void XdsClient::ChannelState::UnsubscribeLocked(const std::string& type_url,
     if (calld != nullptr) {
       auto resource = XdsApi::ParseResourceName(name);
       GPR_ASSERT(resource.ok());
-      calld->UnsubscribeLocked(type_url, resource->authority, resource->id,
+      calld->UnsubscribeLocked(type_url, resource.value(),
                                delay_unsubscription);
       if (!calld->HasSubscribedResources()) {
         ads_calld_.reset();
@@ -774,16 +773,16 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                     grpc_schedule_on_exec_ctx);
   for (const auto& a : xds_client()->authority_state_map_) {
     for (const auto& l : a.second.listener_map) {
-      SubscribeLocked(XdsApi::kLdsTypeUrl, a.first, l.first);
+      SubscribeLocked(XdsApi::kLdsTypeUrl, {a.first, l.first});
     }
     for (const auto& r : a.second.route_config_map) {
-      SubscribeLocked(XdsApi::kRdsTypeUrl, a.first, r.first);
+      SubscribeLocked(XdsApi::kRdsTypeUrl, {a.first, r.first});
     }
     for (const auto& c : a.second.cluster_map) {
-      SubscribeLocked(XdsApi::kCdsTypeUrl, a.first, c.first);
+      SubscribeLocked(XdsApi::kCdsTypeUrl, {a.first, c.first});
     }
     for (const auto& e : a.second.endpoint_map) {
-      SubscribeLocked(XdsApi::kEdsTypeUrl, a.first, e.first);
+      SubscribeLocked(XdsApi::kEdsTypeUrl, {a.first, e.first});
     }
   }
   // Op: recv initial metadata.
@@ -857,8 +856,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type_url];
   grpc_slice request_payload_slice;
-  std::set<absl::string_view> resource_names =
-      ResourceNamesForRequest(type_url);
+  std::set<std::string> resource_names = ResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
       chand()->server_, type_url, resource_names,
       xds_client()
@@ -907,28 +905,28 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
 }
 
 void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
-    const std::string& type_url, const std::string& authority,
-    const std::string& name) {
-  std::string name_str =
-      XdsApi::ConstructFullResourceName(authority, type_url, name);
-  auto& state = state_map_[type_url].subscribed_resources[name_str];
+    const std::string& type_url, const XdsApi::ResourceName& resource) {
+  std::string name_str = XdsApi::ConstructFullResourceName(
+      resource.authority, type_url, resource.id);
+  auto& state = state_map_[type_url].subscribed_resources[resource];
   if (state == nullptr) {
-    state = MakeOrphanable<ResourceState>(type_url, name_str,
-                                          !xds_client()
-                                               ->authority_state_map_[authority]
-                                               .resource_version_map[type_url]
-                                               .empty());
-    SendMessageLocked(type_url, authority);
+    state = MakeOrphanable<ResourceState>(
+        type_url, name_str,
+        !xds_client()
+             ->authority_state_map_[resource.authority]
+             .resource_version_map[type_url]
+             .empty());
+    SendMessageLocked(type_url, resource.authority);
   }
 }
 
 void XdsClient::ChannelState::AdsCallState::UnsubscribeLocked(
-    const std::string& type_url, const std::string& authority,
-    const std::string& name, bool delay_unsubscription) {
-  std::string name_str =
-      XdsApi::ConstructFullResourceName(authority, type_url, name);
-  state_map_[type_url].subscribed_resources.erase(name_str);
-  if (!delay_unsubscription) SendMessageLocked(type_url, authority);
+    const std::string& type_url, const XdsApi::ResourceName& resource,
+    bool delay_unsubscription) {
+  std::string name_str = XdsApi::ConstructFullResourceName(
+      resource.authority, type_url, resource.id);
+  state_map_[type_url].subscribed_resources.erase(resource);
+  if (!delay_unsubscription) SendMessageLocked(type_url, resource.authority);
 }
 
 bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
@@ -970,7 +968,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     std::string listener_name = XdsApi::ConstructFullResourceName(
         p.first.authority, XdsApi::kLdsTypeUrl, p.first.id);
     XdsApi::LdsUpdate& lds_update = p.second.resource;
-    auto& state = lds_state.subscribed_resources[listener_name];
+    auto& state = lds_state.subscribed_resources[p.first];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
@@ -1028,14 +1026,11 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // For any subscribed resource that is not present in the update,
   // remove it from the cache and notify watchers that it does not exist.
   for (const auto& p : lds_state.subscribed_resources) {
-    const std::string& listener_name = p.first;
-    auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
-    GPR_ASSERT(resource.ok());
-    if (lds_update_map.find(resource.value()) == lds_update_map.end()) {
+    if (lds_update_map.find(p.first) == lds_update_map.end()) {
       ListenerState& listener_state =
           xds_client()
-              ->authority_state_map_[resource->authority]
-              .listener_map[resource->id];
+              ->authority_state_map_[p.first.authority]
+              .listener_map[p.first.id];
       // If the resource was newly requested but has not yet been received,
       // we don't want to generate an error for the watchers, because this LDS
       // response may be in reaction to an earlier request that did not yet
@@ -1054,16 +1049,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // does not exist.
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (const auto& p : rds_state.subscribed_resources) {
-    const std::string& rds_resource_name = p.first;
-    if (rds_resource_names_seen.find(rds_resource_name) ==
+    if (rds_resource_names_seen.find(XdsApi::ConstructFullResourceName(
+            p.first.authority, XdsApi::kRdsTypeUrl, p.first.id)) ==
         rds_resource_names_seen.end()) {
-      auto resource =
-          XdsApi::ParseResourceName(rds_resource_name, XdsApi::IsRds);
-      GPR_ASSERT(resource.ok());
       RouteConfigState& route_config_state =
           xds_client()
-              ->authority_state_map_[resource->authority]
-              .route_config_map[resource->id];
+              ->authority_state_map_[p.first.authority]
+              .route_config_map[p.first.id];
       route_config_state.update.reset();
       for (const auto& p : route_config_state.watchers) {
         p.first->OnResourceDoesNotExist();
@@ -1083,10 +1075,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
   }
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
-    const std::string& route_config_name = XdsApi::ConstructFullResourceName(
-        p.first.authority, XdsApi::kRdsTypeUrl, p.first.id);
     XdsApi::RdsUpdate& rds_update = p.second.resource;
-    auto& state = rds_state.subscribed_resources[route_config_name];
+    auto& state = rds_state.subscribed_resources[p.first];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
@@ -1134,9 +1124,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
     XdsApi::CdsUpdate& cds_update = p.second.resource;
-    auto& state =
-        cds_state.subscribed_resources[XdsApi::ConstructFullResourceName(
-            p.first.authority, XdsApi::kCdsTypeUrl, p.first.id)];
+    auto& state = cds_state.subscribed_resources[p.first];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] cluster=%s: %s", xds_client(),
@@ -1197,14 +1185,11 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // For any subscribed resource that is not present in the update,
   // remove it from the cache and notify watchers that it does not exist.
   for (const auto& p : cds_state.subscribed_resources) {
-    const std::string& cluster_name = p.first;
-    auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
-    GPR_ASSERT(resource.ok());
-    if (cds_update_map.find(resource.value()) == cds_update_map.end()) {
+    if (cds_update_map.find(p.first) == cds_update_map.end()) {
       ClusterState& cluster_state =
           xds_client()
-              ->authority_state_map_[resource->authority]
-              .cluster_map[resource->id];
+              ->authority_state_map_[p.first.authority]
+              .cluster_map[p.first.id];
       // If the resource was newly requested but has not yet been received,
       // we don't want to generate an error for the watchers, because this CDS
       // response may be in reaction to an earlier request that did not yet
@@ -1223,16 +1208,13 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // does not exist.
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (const auto& p : eds_state.subscribed_resources) {
-    const std::string& eds_resource_name = p.first;
-    if (eds_resource_names_seen.find(eds_resource_name) ==
+    if (eds_resource_names_seen.find(XdsApi::ConstructFullResourceName(
+            p.first.authority, XdsApi::kEdsTypeUrl, p.first.id)) ==
         eds_resource_names_seen.end()) {
-      auto resource =
-          XdsApi::ParseResourceName(eds_resource_name, XdsApi::IsEds);
-      GPR_ASSERT(resource.ok());
       EndpointState& endpoint_state =
           xds_client()
-              ->authority_state_map_[resource->authority]
-              .endpoint_map[resource->id];
+              ->authority_state_map_[p.first.authority]
+              .endpoint_map[p.first.id];
       endpoint_state.update.reset();
       for (const auto& p : endpoint_state.watchers) {
         p.first->OnResourceDoesNotExist();
@@ -1253,9 +1235,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
     XdsApi::EdsUpdate& eds_update = p.second.resource;
-    auto& state =
-        eds_state.subscribed_resources[XdsApi::ConstructFullResourceName(
-            p.first.authority, XdsApi::kEdsTypeUrl, p.first.id)];
+    auto& state = eds_state.subscribed_resources[p.first];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
@@ -1534,14 +1514,17 @@ bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
   return this == chand()->ads_calld_->calld();
 }
 
-std::set<absl::string_view>
+// std::set<absl::string_view>
+std::set<std::string>
 XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
     const std::string& type_url) {
-  std::set<absl::string_view> resource_names;
+  // std::set<absl::string_view> resource_names;
+  std::set<std::string> resource_names;
   auto it = state_map_.find(type_url);
   if (it != state_map_.end()) {
     for (auto& p : it->second.subscribed_resources) {
-      resource_names.insert(p.first);
+      resource_names.insert(XdsApi::ConstructFullResourceName(
+          p.first.authority, type_url, p.first.id));
       OrphanablePtr<ResourceState>& state = p.second;
       state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
     }

@@ -670,7 +670,7 @@ class XdsApi {
   // Takes ownership of \a error.
   grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
                               const std::string& type_url,
-                              const std::set<absl::string_view>& resource_names,
+                              const std::set<std::string>& resource_names,
                               const std::string& version,
                               const std::string& nonce, grpc_error_handle error,
                               bool populate_node);
@@ -678,10 +678,10 @@ class XdsApi {
   // Parses an ADS response.
   AdsParseResult ParseAdsResponse(
       const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-      const std::set<absl::string_view>& expected_listener_names,
-      const std::set<absl::string_view>& expected_route_configuration_names,
-      const std::set<absl::string_view>& expected_cluster_names,
-      const std::set<absl::string_view>& expected_eds_service_names);
+      const std::set<std::string>& expected_listener_names,
+      const std::set<std::string>& expected_route_configuration_names,
+      const std::set<std::string>& expected_cluster_names,
+      const std::set<std::string>& expected_eds_service_names);
 
   // Creates an initial LRS request.
   grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
