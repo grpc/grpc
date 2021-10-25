@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_H
 #define GRPC_CORE_LIB_SLICE_SLICE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
@@ -125,7 +127,7 @@ class StaticSlice : public slice_detail::BaseSlice {
     GPR_DEBUG_ASSERT(slice.refcount->GetType() ==
                      grpc_slice_refcount::Type::STATIC);
   }
-  StaticSlice(const StaticMetadataSlice& slice)
+  explicit StaticSlice(const StaticMetadataSlice& slice)
       : slice_detail::BaseSlice(slice) {}
 
   StaticSlice(const StaticSlice& other)
@@ -134,9 +136,9 @@ class StaticSlice : public slice_detail::BaseSlice {
     slice_ = other.slice_;
     return *this;
   }
-  StaticSlice(StaticSlice&& other)
+  StaticSlice(StaticSlice&& other) noexcept
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
-  StaticSlice& operator=(StaticSlice&& other) {
+  StaticSlice& operator=(StaticSlice&& other) noexcept {
     std::swap(slice_, other.slice_);
     return *this;
   }
@@ -155,9 +157,9 @@ class MutableSlice : public slice_detail::BaseSlice,
 
   MutableSlice(const MutableSlice&) = delete;
   MutableSlice& operator=(const MutableSlice&) = delete;
-  MutableSlice(MutableSlice&& other)
+  MutableSlice(MutableSlice&& other) noexcept
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
-  MutableSlice& operator=(MutableSlice&& other) {
+  MutableSlice& operator=(MutableSlice&& other) noexcept {
     std::swap(slice_, other.slice_);
     return *this;
   }
@@ -179,15 +181,15 @@ class Slice : public slice_detail::BaseSlice,
   ~Slice() { grpc_slice_unref_internal(slice_); }
   explicit Slice(const grpc_slice& slice) : slice_detail::BaseSlice(slice) {}
   template <class SliceType>
-  Slice(absl::enable_if_t<
-        std::is_base_of<slice_detail::BaseSlice, SliceType>::value, SliceType>&&
-            other)
+  explicit Slice(absl::enable_if_t<
+                 std::is_base_of<slice_detail::BaseSlice, SliceType>::value,
+                 SliceType>&& other)
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
 
   Slice(const Slice&) = delete;
   Slice& operator=(const Slice&) = delete;
-  Slice(Slice&& other) : slice_detail::BaseSlice(other.TakeCSlice()) {}
-  Slice& operator=(Slice&& other) {
+  Slice(Slice&& other) noexcept : slice_detail::BaseSlice(other.TakeCSlice()) {}
+  Slice& operator=(Slice&& other) noexcept {
     std::swap(slice_, other.slice_);
     return *this;
   }
