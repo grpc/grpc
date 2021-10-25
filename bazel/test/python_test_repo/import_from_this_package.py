@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2021 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""A trivial executable that imports Protobuf generated code where the
+proto_library and py_proto_library are in different Bazel packages.
+"""
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
-
-VERSION = '1.42.0.dev0'
-PROTOBUF_VERSION = '3.18.1'
+import subpackage_pb2

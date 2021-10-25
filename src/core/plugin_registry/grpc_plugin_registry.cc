@@ -87,6 +87,11 @@ void GoogleCloud2ProdResolverShutdown();
 }  // namespace grpc_core
 #endif
 
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+void grpc_resolver_binder_init(void);
+void grpc_resolver_binder_shutdown(void);
+#endif
+
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
   grpc_register_plugin(grpc_core::ServiceConfigParserInit,
@@ -136,6 +141,11 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
                        grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+  grpc_register_plugin(grpc_resolver_binder_init,
+                       grpc_resolver_binder_shutdown);
+#endif
 }
 
 namespace grpc_core {
@@ -155,6 +165,10 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
+#ifndef GRPC_NO_XDS
+extern void RegisterXdsChannelStackModifier(
+    CoreConfiguration::Builder* builder);
+#endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -167,6 +181,9 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
+  #ifndef GRPC_NO_XDS
+  RegisterXdsChannelStackModifier(builder);
+  #endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

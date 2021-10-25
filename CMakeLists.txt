@@ -574,7 +574,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c buffer_list_test)
   add_dependencies(buildtests_c channel_args_test)
   add_dependencies(buildtests_c channel_create_test)
-  add_dependencies(buildtests_c channel_stack_builder_test)
   add_dependencies(buildtests_c channel_stack_test)
   add_dependencies(buildtests_c check_gcp_environment_linux_test)
   add_dependencies(buildtests_c check_gcp_environment_windows_test)
@@ -751,6 +750,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx bdp_estimator_test)
   endif()
+  add_dependencies(buildtests_cxx binder_resolver_test)
   add_dependencies(buildtests_cxx binder_server_test)
   add_dependencies(buildtests_cxx binder_transport_test)
   add_dependencies(buildtests_cxx bitset_test)
@@ -764,6 +764,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx cfstream_test)
   add_dependencies(buildtests_cxx channel_arguments_test)
   add_dependencies(buildtests_cxx channel_filter_test)
+  add_dependencies(buildtests_cxx channel_stack_builder_test)
   add_dependencies(buildtests_cxx channel_trace_test)
   add_dependencies(buildtests_cxx channelz_registry_test)
   add_dependencies(buildtests_cxx channelz_service_test)
@@ -1529,6 +1530,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
+  src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1795,6 +1797,7 @@ add_library(grpc
   src/core/ext/xds/xds_api.cc
   src/core/ext/xds/xds_bootstrap.cc
   src/core/ext/xds/xds_certificate_provider.cc
+  src/core/ext/xds/xds_channel_stack_modifier.cc
   src/core/ext/xds/xds_client.cc
   src/core/ext/xds/xds_client_stats.cc
   src/core/ext/xds/xds_http_fault_filter.cc
@@ -2365,6 +2368,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
+  src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -4678,33 +4682,6 @@ target_include_directories(channel_create_test
 )
 
 target_link_libraries(channel_create_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(channel_stack_builder_test
-  test/core/channel/channel_stack_builder_test.cc
-)
-
-target_include_directories(channel_stack_builder_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(channel_stack_builder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8295,6 +8272,41 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(binder_resolver_test
+  test/core/client_channel/resolvers/binder_resolver_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(binder_resolver_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(binder_resolver_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -8310,6 +8322,7 @@ add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -8363,6 +8376,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(binder_transport_test
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -8859,6 +8873,41 @@ target_link_libraries(channel_filter_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(channel_stack_builder_test
+  test/core/channel/channel_stack_builder_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(channel_stack_builder_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(channel_stack_builder_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 
@@ -9979,6 +10028,7 @@ add_executable(end2end_binder_transport_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -10087,6 +10137,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_binder_pool_test
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -10503,6 +10554,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(fake_binder_test
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -16137,6 +16189,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(transport_stream_receiver_test
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -16452,6 +16505,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(wire_reader_test
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -16551,6 +16605,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(wire_writer_test
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
