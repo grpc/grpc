@@ -402,6 +402,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
+        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
@@ -490,6 +491,77 @@ grpc_cc_library(
         "json",
         "ref_counted_ptr",
         "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_binder",
+    srcs = [
+        "src/core/ext/transport/binder/client/channel_create.cc",
+        "src/core/ext/transport/binder/client/channel_create_impl.cc",
+        "src/core/ext/transport/binder/client/connection_id_generator.cc",
+        "src/core/ext/transport/binder/client/endpoint_binder_pool.cc",
+        "src/core/ext/transport/binder/client/jni_utils.cc",
+        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc",
+        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc",
+        "src/core/ext/transport/binder/server/binder_server.cc",
+        "src/core/ext/transport/binder/server/binder_server_credentials.cc",
+        "src/core/ext/transport/binder/transport/binder_transport.cc",
+        "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc",
+        "src/core/ext/transport/binder/wire_format/binder_android.cc",
+        "src/core/ext/transport/binder/wire_format/binder_constants.cc",
+        "src/core/ext/transport/binder/wire_format/transaction.cc",
+        "src/core/ext/transport/binder/wire_format/wire_reader_impl.cc",
+        "src/core/ext/transport/binder/wire_format/wire_writer.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/binder/client/channel_create.h",
+        "src/core/ext/transport/binder/client/channel_create_impl.h",
+        "src/core/ext/transport/binder/client/connection_id_generator.h",
+        "src/core/ext/transport/binder/client/endpoint_binder_pool.h",
+        "src/core/ext/transport/binder/client/jni_utils.h",
+        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h",
+        "src/core/ext/transport/binder/security_policy/security_policy.h",
+        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h",
+        "src/core/ext/transport/binder/server/binder_server.h",
+        "src/core/ext/transport/binder/server/binder_server_credentials.h",
+        "src/core/ext/transport/binder/transport/binder_stream.h",
+        "src/core/ext/transport/binder/transport/binder_transport.h",
+        "src/core/ext/transport/binder/utils/transport_stream_receiver.h",
+        "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h",
+        "src/core/ext/transport/binder/wire_format/binder.h",
+        "src/core/ext/transport/binder/wire_format/binder_android.h",
+        "src/core/ext/transport/binder/wire_format/binder_constants.h",
+        "src/core/ext/transport/binder/wire_format/transaction.h",
+        "src/core/ext/transport/binder/wire_format/wire_reader.h",
+        "src/core/ext/transport/binder/wire_format/wire_reader_impl.h",
+        "src/core/ext/transport/binder/wire_format/wire_writer.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/memory",
+        "absl/status",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/status:statusor",
+        "absl/time",
+    ],
+    language = "c++",
+    # TODO(mingcl): Move public headers under include/ and put them here
+    public_hdrs = [
+    ],
+    deps = [
+        "gpr",
+        "gpr_base",
+        "gpr_platform",
+        "grpc",
+        "grpc++_base",
+        "grpc++_internals",
+        "grpc_base",
+        "grpc_codegen",
+        "orphanable",
+        "slice_refcount",
     ],
 )
 
@@ -1858,6 +1930,7 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
+        "grpc_resolver_binder",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
@@ -2289,6 +2362,51 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "rls_upb",
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+        "upb_lib_descriptor",
+        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_rls",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/hash",
+        "absl/memory",
+        "absl/strings",
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "dual_ref_counted",
+        "gpr_base",
+        "gpr_codegen",
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_codegen",
+        "grpc_secure",
+        "json",
+        "json_util",
+        "orphanable",
+        "ref_counted",
+        "rls_upb",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
@@ -2361,6 +2479,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_xds_channel_stack_modifier",
+    srcs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.h",
+    ],
+    language = "c++",
+    deps = [
+        "channel_init",
+        "config",
+        "gpr_base",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
@@ -2372,6 +2507,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
     ],
 )
@@ -2840,6 +2976,23 @@ grpc_cc_library(
     name = "grpc_resolver_sockaddr",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_client_channel",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_binder",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc",
     ],
     external_deps = [
         "absl/strings",

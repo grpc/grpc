@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
@@ -571,8 +572,7 @@ static tsi_result fake_handshaker_result_create(
       handshaker_result == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  fake_handshaker_result* result =
-      static_cast<fake_handshaker_result*>(gpr_zalloc(sizeof(*result)));
+  fake_handshaker_result* result = grpc_core::Zalloc<fake_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
   if (unused_bytes_size > 0) {
     result->unused_bytes =
@@ -764,8 +764,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 };
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {
-  tsi_fake_handshaker* impl =
-      static_cast<tsi_fake_handshaker*>(gpr_zalloc(sizeof(*impl)));
+  tsi_fake_handshaker* impl = grpc_core::Zalloc<tsi_fake_handshaker>();
   impl->base.vtable = &handshaker_vtable;
   impl->is_client = is_client;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
@@ -786,7 +785,7 @@ tsi_handshaker* tsi_create_fake_handshaker(int is_client) {
 tsi_frame_protector* tsi_create_fake_frame_protector(
     size_t* max_protected_frame_size) {
   tsi_fake_frame_protector* impl =
-      static_cast<tsi_fake_frame_protector*>(gpr_zalloc(sizeof(*impl)));
+      grpc_core::Zalloc<tsi_fake_frame_protector>();
   impl->max_frame_size = (max_protected_frame_size == nullptr)
                              ? TSI_FAKE_DEFAULT_FRAME_SIZE
                              : *max_protected_frame_size;

@@ -86,7 +86,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
   GPR_ASSERT(*ep == NULL);
   grpc_closure* on_done = ac->on_done;
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;

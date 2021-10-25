@@ -31,15 +31,15 @@
 namespace grpc {
 namespace testing {
 
-static const int WARMUP = 5;
-static const int BENCHMARK = 5;
+static const int WARMUP = 1;
+static const int BENCHMARK = 3;
 
 static void RunQPS() {
   gpr_log(GPR_INFO, "Running QPS test, open-loop");
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_outstanding_rpcs_per_channel(1000);
+  client_config.set_outstanding_rpcs_per_channel(100);
   client_config.set_client_channels(8);
   client_config.set_async_client_threads(8);
   client_config.set_rpc_type(STREAMING);
