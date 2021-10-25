@@ -392,11 +392,11 @@ def grpc_deps():
         http_archive(
             name = "libuv",
             build_file = "@com_github_grpc_grpc//third_party:libuv.BUILD",
-            sha256 = "ee60cddee88e6346a6674b8a7fc28d8adc9b63fd230064ce918fda7141ab8fab",
-            strip_prefix = "libuv-6ce14710da7079eb248868171f6343bc409ea3a4",
+            sha256 = "34447f521682d5c6e9c67a019eaff21da7e0c06a4f8ade41d80ab5a4917a18a8",
+            strip_prefix = "libuv-595b9d968944705efb0a76bd1c8b6dca8675cb86",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/libuv/libuv/archive/6ce14710da7079eb248868171f6343bc409ea3a4.tar.gz",
-                "https://github.com/libuv/libuv/archive/6ce14710da7079eb248868171f6343bc409ea3a4.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/libuv/libuv/archive/595b9d968944705efb0a76bd1c8b6dca8675cb86.tar.gz",
+                "https://github.com/libuv/libuv/archive/595b9d968944705efb0a76bd1c8b6dca8675cb86.tar.gz",
             ],
         )
 
