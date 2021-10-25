@@ -8304,15 +8304,10 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
 
 TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
   Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->UnpackTo(&http_connection_manager);
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
   http_connection_manager.clear_http_filters();
-  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
-      http_connection_manager);
+  ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
@@ -8325,12 +8320,8 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
 
 TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->UnpackTo(&http_connection_manager);
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
   http_connection_manager.clear_http_filters();
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.unsupported_http_filter");
@@ -8340,11 +8331,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
-  listener.mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->PackFrom(http_connection_manager);
+  ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
@@ -8358,12 +8345,8 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
 
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->UnpackTo(&http_connection_manager);
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
   http_connection_manager.clear_http_filters();
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
@@ -8373,11 +8356,7 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
-  listener.mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->PackFrom(http_connection_manager);
+  ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
@@ -8393,12 +8372,8 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
 TEST_P(XdsEnabledServerTest,
        HttpFilterNotSupportedOnServerIgnoredWhenOptional) {
   Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->UnpackTo(&http_connection_manager);
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
   http_connection_manager.clear_http_filters();
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
@@ -8409,11 +8384,7 @@ TEST_P(XdsEnabledServerTest,
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
       envoy::extensions::filters::http::router::v3::Router());
-  listener.mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->PackFrom(http_connection_manager);
+  ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   WaitForBackend(0);
