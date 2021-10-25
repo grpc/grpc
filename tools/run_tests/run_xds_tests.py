@@ -2265,7 +2265,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                 args.zone)
                     ok = False
                 seen = set()
-                for xds_config in client_config['xds_config']:
+                for xds_config in client_config.get('xds_config', []):
                     if 'listener_config' in xds_config:
                         listener_name = xds_config['listener_config'][
                             'dynamic_listeners'][0]['active_state']['listener'][
@@ -2305,7 +2305,8 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                             ok = False
                         else:
                             seen.add('eds')
-                for generic_xds_config in client_config['genericXdsConfigs']:
+                for generic_xds_config in client_config.get(
+                        'genericXdsConfigs', []):
                     if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
                         seen.add('lds')
                         listener = generic_xds_config["xds_config"]

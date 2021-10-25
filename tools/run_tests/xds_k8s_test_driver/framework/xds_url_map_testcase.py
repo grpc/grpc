@@ -88,7 +88,7 @@ class DumpedXdsConfig(dict):
         self.cds = []
         self.eds = []
         self.endpoints = []
-        for xds_config in self['xdsConfig']:
+        for xds_config in self.get('xdsConfig', []):
             try:
                 if 'listenerConfig' in xds_config:
                     self.lds = xds_config['listenerConfig']['dynamicListeners'][
@@ -107,7 +107,7 @@ class DumpedXdsConfig(dict):
             except Exception as e:
                 logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
-        for generic_xds_config in self['genericXdsConfigs']:
+        for generic_xds_config in self.get('genericXdsConfigs', []):
             try:
                 if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
                     self.lds = generic_xds_config["xdsConfig"]
