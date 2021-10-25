@@ -292,7 +292,9 @@ class Call : public std::enable_shared_from_this<Call> {
   explicit Call(CallType type) : type_(type) {
     grpc_metadata_array_init(&recv_initial_metadata_);
     grpc_metadata_array_init(&recv_trailing_metadata_);
-    grpc_call_details_init(&call_details_);}
+    grpc_call_details_init(&call_details_);
+  }
+
   ~Call();
 
   CallType type() const { return type_; }
