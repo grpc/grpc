@@ -15,6 +15,12 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_H
 #define GRPC_CORE_LIB_SLICE_SLICE_H
 
+#include "absl/strings/string_view.h"
+
+#include <grpc/slice.h>
+
+#include "src/core/lib/slice/slice_internal.h"
+
 namespace grpc_core {
 
 // Forward declarations
@@ -104,8 +110,8 @@ struct CopyConstructors {
   static Out FromCopiedString(const char* s) {
     return Out(grpc_slice_from_copied_string(s));
   }
-  static Out FromCopiedString(const std::string& s) {
-    return Out(grpc_slice_from_cpp_string(s));
+  static Out FromCopiedString(std::string s) {
+    return Out(grpc_slice_from_cpp_string(std::move(s)));
   }
 };
 
@@ -145,6 +151,7 @@ class MutableSlice : public slice_detail::BaseSlice,
     GPR_DEBUG_ASSERT(slice.refcount == nullptr ||
                      slice.refcount->IsRegularUnique());
   }
+  ~MutableSlice() { grpc_slice_unref_internal(slice_); }
 
   MutableSlice(const MutableSlice&) = delete;
   MutableSlice& operator=(const MutableSlice&) = delete;
@@ -169,6 +176,7 @@ class Slice : public slice_detail::BaseSlice,
               public slice_detail::CopyConstructors<Slice> {
  public:
   Slice() = default;
+  ~Slice() { grpc_slice_unref_internal(slice_); }
   explicit Slice(const grpc_slice& slice) : slice_detail::BaseSlice(slice) {}
   template <class SliceType>
   Slice(absl::enable_if_t<
@@ -201,7 +209,7 @@ class Slice : public slice_detail::BaseSlice,
     if (this->slice_.refcount->GetType() == grpc_slice_refcount::Type::NOP) {
       return Slice(grpc_slice_copy(this->slice_));
     }
-    return Slice(grpc_slice_ref(this->slice_));
+    return Slice(grpc_slice_ref_internal(this->slice_));
   }
 
   MutableSlice IntoMutable() {
@@ -216,7 +224,7 @@ class Slice : public slice_detail::BaseSlice,
     return MutableSlice(grpc_slice_copy(this->slice_));
   }
 
-  Slice Ref() const { return Slice(grpc_slice_ref(this->slice_)); }
+  Slice Ref() const { return Slice(grpc_slice_ref_internal(this->slice_)); }
 
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
                                     const uint8_t* begin, const uint8_t* end) {

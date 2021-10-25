@@ -18,8 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/slice/slice.h"
+
 #include <inttypes.h>
 #include <string.h>
+
+#include <random>
 
 #include <gtest/gtest.h>
 
@@ -223,6 +227,18 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   grpc_slice_unref_internal(slice);
 }
 
+INSTANTIATE_TEST_SUITE_P(GrpcSliceSizedTest, GrpcSliceSizedTest,
+                         ::testing::ValuesIn([] {
+                           std::vector<size_t> out;
+                           for (size_t i = 0; i < 128; i++) {
+                             out.push_back(i);
+                           }
+                           return out;
+                         }()),
+                         [](const testing::TestParamInfo<size_t>& info) {
+                           return std::to_string(info.param);
+                         });
+
 TEST(GrpcSliceTest, SliceFromCopiedString) {
   static const char* text = "HELLO WORLD!";
   grpc_slice slice;
@@ -269,6 +285,90 @@ TEST(GrpcSliceTest, StringViewFromSlice) {
       grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
   EXPECT_EQ(std::string(sv), kStr);
 }
+
+namespace grpc_core {
+namespace {
+
+TEST(SliceTest, FromSmallCopiedString) {
+  Slice slice = Slice::FromCopiedString("hello");
+  EXPECT_EQ(slice[0], 'h');
+  EXPECT_EQ(slice[1], 'e');
+  EXPECT_EQ(slice[2], 'l');
+  EXPECT_EQ(slice[3], 'l');
+  EXPECT_EQ(slice[4], 'o');
+  EXPECT_EQ(slice.size(), 5);
+  EXPECT_EQ(slice.length(), 5);
+  EXPECT_EQ(slice.as_string_view(), "hello");
+  EXPECT_EQ(0, memcmp(slice.data(), "hello", 5));
+}
+
+class SliceSizedTest : public ::testing::TestWithParam<size_t> {};
+
+std::string RandomString(size_t length) {
+  std::string str;
+  std::random_device r;
+  for (size_t i = 0; i < length; ++i) {
+    str.push_back(char(r()));
+  }
+  return str;
+}
+
+TEST_P(SliceSizedTest, FromCopiedString) {
+  const std::string str = RandomString(GetParam());
+  Slice slice = Slice::FromCopiedString(str);
+
+  EXPECT_EQ(slice.size(), str.size());
+  EXPECT_EQ(slice.length(), str.size());
+  EXPECT_EQ(slice.as_string_view(), str);
+  EXPECT_EQ(0, memcmp(slice.data(), str.data(), str.size()));
+  for (size_t i = 0; i < str.size(); ++i) {
+    EXPECT_EQ(slice[i], uint8_t(str[i]));
+  }
+
+  EXPECT_TRUE(slice.is_equivalent(slice.Ref()));
+  EXPECT_TRUE(slice.is_equivalent(slice.AsOwned()));
+  EXPECT_TRUE(slice.is_equivalent(slice.Ref().IntoOwned()));
+}
+
+INSTANTIATE_TEST_SUITE_P(SliceSizedTest, SliceSizedTest,
+                         ::testing::ValuesIn([] {
+                           std::vector<size_t> out;
+                           size_t i = 1;
+                           size_t j = 1;
+                           while (i < 1024 * 1024) {
+                             out.push_back(j);
+                             size_t n = i + j;
+                             i = j;
+                             j = n;
+                           }
+                           return out;
+                         }()),
+                         [](const testing::TestParamInfo<size_t>& info) {
+                           return std::to_string(info.param);
+                         });
+
+size_t SumSlice(const Slice& slice) {}
+
+TEST(SliceTest, ExternalIntoOwned) {
+  std::unique_ptr<std::string> external_string(
+      new std::string(RandomString(1024)));
+  Slice slice(ExternallyManagedSlice(external_string->data(),
+                                     external_string->length()));
+  Slice owned = slice.IntoOwned();
+  external_string.reset();
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+  ASSERT_DEATH(
+      {
+        for (auto c : slice) gpr_log(GPR_INFO, "%d", c);
+      },
+      "");
+#endif
+#endif
+}
+
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
