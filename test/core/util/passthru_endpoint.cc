@@ -43,14 +43,18 @@ typedef struct {
 } pending_op;
 
 typedef struct {
+  grpc_timer timer;
   uint64_t allowed_write_bytes;
   uint64_t allowed_read_bytes;
+  std::vector<grpc_passthru_endpoint_channel_action> actions;
+  std::function<void()> on_complete;
 } grpc_passthru_endpoint_channel_effects;
 
 typedef struct {
   grpc_endpoint base;
   passthru_endpoint* parent;
   grpc_slice_buffer read_buffer;
+  grpc_slice_buffer write_buffer;
   grpc_slice_buffer* on_read_out;
   grpc_closure* on_read;
   grpc_slice_allocator* slice_allocator;
@@ -65,22 +69,11 @@ struct passthru_endpoint {
   int halves;
   grpc_passthru_endpoint_stats* stats;
   grpc_passthru_endpoint_channel_effects* channel_effects;
+  bool simulate_channel_actions;
   bool shutdown;
   half client;
   half server;
 };
-
-static void do_read_locked(half* m, grpc_closure* cb,
-  grpc_slice_buffer* slices, grpc_error_handle error) {
-  if (m->read_buffer.count > 0) {
-    grpc_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
-  } else {
-    m->on_read = cb;
-    m->on_read_out = slices;
-  }
-}
-
 
 static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
   GPR_ASSERT(m->pending_read_op.is_armed);
@@ -164,7 +157,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
         DEBUG_LOCATION, m->pending_write_op.cb,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
     m->pending_write_op.is_armed = false;
-    gpr_free(m->pending_write_op.slices);
+    grpc_slice_buffer_reset_and_unref(m->pending_write_op.slices);
     return;
   }
   if (m->bytes_written_so_far ==
@@ -179,6 +172,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   uint64_t max_readable = other->parent->channel_effects->allowed_read_bytes - other->bytes_read_so_far;
   uint64_t immediate_bytes_read = other->on_read != nullptr ?
     std::min(max_readable, max_writable) : 0;
+
   GPR_ASSERT(max_writable > 0);
   GPR_ASSERT(max_readable >= 0);
   // At the end of this process, we should have written max_writable bytes;
@@ -193,6 +187,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   while(max_writable > 0) {
     grpc_slice slice = grpc_slice_buffer_take_first(slices);
     uint64_t slice_length = GPR_SLICE_LENGTH(slice);
+    GPR_ASSERT(slice_length > 0);
     grpc_slice split1, split2;
     ssize_t split_length = 0;
     if (slice_length <= max_readable) {
@@ -212,10 +207,12 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     grpc_slice_copy_split(slice, split_length, split1, split2);
     grpc_slice_unref_internal(slice);
     // Write a copy of the slice to the destination to be read
-    grpc_slice_buffer_add(dest, split1);
+    grpc_slice_buffer_add_indexed(dest, split1);
     // Re-insert split2 into source for next iteration.
     if (GPR_SLICE_LENGTH(split2) > 0) {
       grpc_slice_buffer_undo_take_first(slices, split2);
+    } else {
+      grpc_slice_unref_internal(split2);
     }
 
     if (max_readable > 0) {
@@ -233,10 +230,13 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     other->on_read = nullptr;
   }
 
+
   if (!would_write_be_pending) {
+    // No slices should be left
+    GPR_ASSERT(m->pending_write_op.slices->count == 0);
+    grpc_slice_buffer_reset_and_unref(m->pending_write_op.slices);
     m->pending_write_op.is_armed = false;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_write_op.cb, error);
-    gpr_free(m->pending_write_op.slices);
   }
 }
 
@@ -253,12 +253,11 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     m->pending_write_op.is_armed = true;
     m->pending_write_op.cb = cb;
     m->pending_write_op.ep = ep;
-    // Copy slices into m->pending_op.slices
-    m->pending_write_op.slices =
-      reinterpret_cast<grpc_slice_buffer*>(
-        gpr_malloc(sizeof(grpc_slice_buffer)));
+    // Copy slices into m->pending_write_op.slices
+    m->pending_write_op.slices = &m->write_buffer;
+    GPR_ASSERT(m->pending_write_op.slices->count == 0);
     for (int i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(m->pending_write_op.slices,
+      grpc_slice_buffer_add_indexed(m->pending_write_op.slices,
         grpc_slice_copy(slices->slices[i]));
     }
     do_pending_write_op_locked(m, GRPC_ERROR_NONE);
@@ -273,15 +272,6 @@ void flush_pending_ops_locked(half* m, grpc_error_handle error) {
   if (m->pending_write_op.is_armed) {
     do_pending_write_op_locked(m, error);
   }
-}
-
-void flush_grpc_passthru_endpoint_pending_ops(
-  grpc_endpoint*ep, grpc_error_handle error) {
-  half* m = reinterpret_cast<half*>(ep);
-  gpr_mu_lock(&m->parent->mu);
-  flush_pending_ops_locked(m, error);
-  flush_pending_ops_locked(other_half(m), error);
-  gpr_mu_unlock(&m->parent->mu);
 }
 
 static void me_add_to_pollset(grpc_endpoint* /*ep*/,
@@ -316,23 +306,30 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   GRPC_ERROR_UNREF(why);
 }
 
-void grpc_passthru_endpoint_channel_effects_destroy(
-  grpc_passthru_endpoint_channel_effects* channel_effects);
+void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
+  gpr_mu_destroy(&p->mu);
+  grpc_passthru_endpoint_stats_destroy(p->stats);
+  delete p->channel_effects;
+  grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
+  grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
+  grpc_slice_allocator_destroy(p->client.slice_allocator);
+  grpc_slice_allocator_destroy(p->server.slice_allocator);
+  grpc_slice_buffer_destroy_internal(&p->client.write_buffer);
+  grpc_slice_buffer_destroy_internal(&p->server.write_buffer);
+  gpr_free(p);
+}
 
 static void me_destroy(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
   gpr_mu_lock(&p->mu);
-  if (0 == --p->halves) {
+  if (0 == --p->halves && !p->channel_effects->actions.size()) {
+    // no pending channel actions exist
     gpr_mu_unlock(&p->mu);
-    gpr_mu_destroy(&p->mu);
-    grpc_passthru_endpoint_stats_destroy(p->stats);
-    grpc_passthru_endpoint_channel_effects_destroy(p->channel_effects);
-    grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
-    grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
-    grpc_slice_allocator_destroy(p->client.slice_allocator);
-    grpc_slice_allocator_destroy(p->server.slice_allocator);
-    gpr_free(p);
+    grpc_passthru_endpoint_destroy(p);
   } else {
+    if (p->halves == 0 && p->simulate_channel_actions) {
+      grpc_timer_cancel(&p->channel_effects->timer);
+    }
     gpr_mu_unlock(&p->mu);
   }
 }
@@ -375,6 +372,8 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->base.vtable = &vtable;
   m->parent = parent;
   grpc_slice_buffer_init(&m->read_buffer);
+  grpc_slice_buffer_init(&m->write_buffer);
+  m->pending_write_op.slices = nullptr;
   m->on_read = nullptr;
   m->bytes_read_so_far = 0;
   m->bytes_written_so_far = 0;
@@ -383,18 +382,9 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->slice_allocator = slice_allocator;
 }
 
-grpc_passthru_endpoint_channel_effects*
-  grpc_passthru_endpoint_channel_effects_create() {
-    grpc_passthru_endpoint_channel_effects* effects =
-      static_cast<grpc_passthru_endpoint_channel_effects*>(
-          gpr_malloc(sizeof(grpc_passthru_endpoint_channel_effects)));
-  memset(effects, 0, sizeof(*effects));
-  return effects;
-}
-
 void grpc_passthru_endpoint_create(
   grpc_endpoint** client, grpc_endpoint** server,
-  grpc_passthru_endpoint_stats* stats) {
+  grpc_passthru_endpoint_stats* stats, bool simulate_channel_actions) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
@@ -405,19 +395,17 @@ void grpc_passthru_endpoint_create(
     gpr_ref(&stats->refs);
     m->stats = stats;
   }
-  m->channel_effects = grpc_passthru_endpoint_channel_effects_create();
+  m->channel_effects = new grpc_passthru_endpoint_channel_effects();
+  m->simulate_channel_actions = simulate_channel_actions;
+  if (!simulate_channel_actions) {
+    m->channel_effects->allowed_read_bytes = UINT64_MAX;
+    m->channel_effects->allowed_write_bytes = UINT64_MAX;
+  }
   half_init(&m->client, m, grpc_slice_allocator_create_unlimited(), "client");
   half_init(&m->server, m, grpc_slice_allocator_create_unlimited(), "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;
-}
-
-void update_grpc_passthru_endpoint_channel_effects(grpc_endpoint* ep,
-  uint64_t add_n_readable_bytes, uint64_t add_n_writable_bytes) {
-    half* m = reinterpret_cast<half*>(ep);
-    m->parent->channel_effects->allowed_read_bytes += add_n_readable_bytes;
-    m->parent->channel_effects->allowed_write_bytes += add_n_writable_bytes;
 }
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create() {
@@ -435,7 +423,55 @@ void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats) {
   }
 }
 
-void grpc_passthru_endpoint_channel_effects_destroy(
-  grpc_passthru_endpoint_channel_effects* channel_effects) {
-  gpr_free(channel_effects);
+static void sched_next_channel_action_locked(half* m);
+
+static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
+  half* m = reinterpret_cast<half*>(arg);
+  gpr_mu_lock(&m->parent->mu);
+  GPR_ASSERT(m->parent->channel_effects->actions.size());
+  if (m->parent->halves == 0) {
+    gpr_mu_unlock(&m->parent->mu);
+    grpc_passthru_endpoint_destroy(m->parent);
+    return;
+  }
+  auto curr_action = m->parent->channel_effects->actions[0];
+  m->parent->channel_effects->actions.erase(
+    m->parent->channel_effects->actions.begin());
+  m->parent->channel_effects->allowed_read_bytes +=
+    curr_action.add_n_readable_bytes;
+  m->parent->channel_effects->allowed_write_bytes +=
+    curr_action.add_n_writable_bytes;
+  flush_pending_ops_locked(m, error);
+  flush_pending_ops_locked(other_half(m), error);
+  sched_next_channel_action_locked(m);
+  gpr_mu_unlock(&m->parent->mu);
+}
+
+static void sched_next_channel_action_locked(half* m) {
+  if (!m->parent->channel_effects->actions.size()) {
+    m->parent->channel_effects->on_complete();
+    return;
+  }
+  grpc_timer_init(
+      &m->parent->channel_effects->timer,
+      m->parent->channel_effects->actions[0].wait_ms
+      + grpc_core::ExecCtx::Get()->Now(),
+      GRPC_CLOSURE_CREATE(
+        do_next_sched_channel_action, m, grpc_schedule_on_exec_ctx));
+}
+
+void start_scheduling_grpc_passthru_endpoint_channel_effects(grpc_endpoint* ep,
+  const std::vector<grpc_passthru_endpoint_channel_action>& actions,
+  std::function<void()> on_complete) {
+  half* m = reinterpret_cast<half*>(ep);
+  gpr_mu_lock(&m->parent->mu);
+  if (!m->parent->simulate_channel_actions ||
+    m->parent->shutdown) {
+    gpr_mu_unlock(&m->parent->mu);
+    return;
+  }
+  m->parent->channel_effects->actions = actions;
+  m->parent->channel_effects->on_complete = std::move(on_complete);
+  sched_next_channel_action_locked(m);
+  gpr_mu_unlock(&m->parent->mu);
 }
