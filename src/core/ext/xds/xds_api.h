@@ -27,6 +27,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "envoy/admin/v3/config_dump.upb.h"
 #include "re2/re2.h"
 #include "upb/def.hpp"
@@ -65,6 +66,29 @@ class XdsApi {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
 
+  struct RetryPolicy {
+    internal::StatusCodeSet retry_on;
+    uint32_t num_retries;
+
+    struct RetryBackOff {
+      Duration base_interval;
+      Duration max_interval;
+
+      bool operator==(const RetryBackOff& other) const {
+        return base_interval == other.base_interval &&
+               max_interval == other.max_interval;
+      }
+      std::string ToString() const;
+    };
+    RetryBackOff retry_back_off;
+
+    bool operator==(const RetryPolicy& other) const {
+      return (retry_on == other.retry_on && num_retries == other.num_retries &&
+              retry_back_off == other.retry_back_off);
+    }
+    std::string ToString() const;
+  };
+
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
@@ -82,85 +106,83 @@ class XdsApi {
       std::string ToString() const;
     };
 
-    struct HashPolicy {
-      enum Type { HEADER, CHANNEL_ID };
-      Type type;
-      bool terminal = false;
-      // Fields used for type HEADER.
-      std::string header_name;
-      std::unique_ptr<RE2> regex = nullptr;
-      std::string regex_substitution;
-
-      HashPolicy() {}
-
-      // Copyable.
-      HashPolicy(const HashPolicy& other);
-      HashPolicy& operator=(const HashPolicy& other);
-
-      // Moveable.
-      HashPolicy(HashPolicy&& other) noexcept;
-      HashPolicy& operator=(HashPolicy&& other) noexcept;
-
-      bool operator==(const HashPolicy& other) const;
-      std::string ToString() const;
-    };
     Matchers matchers;
-    std::vector<HashPolicy> hash_policies;
 
-    struct RetryPolicy {
-      internal::StatusCodeSet retry_on;
-      uint32_t num_retries;
+    struct UnknownAction {
+      bool operator==(const UnknownAction& /* other */) const { return true; }
+    };
 
-      struct RetryBackOff {
-        Duration base_interval;
-        Duration max_interval;
+    struct RouteAction {
+      struct HashPolicy {
+        enum Type { HEADER, CHANNEL_ID };
+        Type type;
+        bool terminal = false;
+        // Fields used for type HEADER.
+        std::string header_name;
+        std::unique_ptr<RE2> regex = nullptr;
+        std::string regex_substitution;
 
-        bool operator==(const RetryBackOff& other) const {
-          return base_interval == other.base_interval &&
-                 max_interval == other.max_interval;
+        HashPolicy() {}
+
+        // Copyable.
+        HashPolicy(const HashPolicy& other);
+        HashPolicy& operator=(const HashPolicy& other);
+
+        // Moveable.
+        HashPolicy(HashPolicy&& other) noexcept;
+        HashPolicy& operator=(HashPolicy&& other) noexcept;
+
+        bool operator==(const HashPolicy& other) const;
+        std::string ToString() const;
+      };
+
+      struct ClusterWeight {
+        std::string name;
+        uint32_t weight;
+        TypedPerFilterConfig typed_per_filter_config;
+
+        bool operator==(const ClusterWeight& other) const {
+          return name == other.name && weight == other.weight &&
+                 typed_per_filter_config == other.typed_per_filter_config;
         }
         std::string ToString() const;
       };
-      RetryBackOff retry_back_off;
 
-      bool operator==(const RetryPolicy& other) const {
-        return (retry_on == other.retry_on &&
-                num_retries == other.num_retries &&
-                retry_back_off == other.retry_back_off);
+      std::vector<HashPolicy> hash_policies;
+      absl::optional<RetryPolicy> retry_policy;
+
+      // Action for this route.
+      // TODO(roth): When we can use absl::variant<>, consider using that
+      // here, to enforce the fact that only one of the two fields can be set.
+      std::string cluster_name;
+      std::vector<ClusterWeight> weighted_clusters;
+      // Storing the timeout duration from route action:
+      // RouteAction.max_stream_duration.grpc_timeout_header_max or
+      // RouteAction.max_stream_duration.max_stream_duration if the former is
+      // not set.
+      absl::optional<Duration> max_stream_duration;
+
+      bool operator==(const RouteAction& other) const {
+        return hash_policies == other.hash_policies &&
+               retry_policy == other.retry_policy &&
+               cluster_name == other.cluster_name &&
+               weighted_clusters == other.weighted_clusters &&
+               max_stream_duration == other.max_stream_duration;
       }
       std::string ToString() const;
     };
-    absl::optional<RetryPolicy> retry_policy;
 
-    // Action for this route.
-    // TODO(roth): When we can use absl::variant<>, consider using that
-    // here, to enforce the fact that only one of the two fields can be set.
-    std::string cluster_name;
-    struct ClusterWeight {
-      std::string name;
-      uint32_t weight;
-      TypedPerFilterConfig typed_per_filter_config;
-
-      bool operator==(const ClusterWeight& other) const {
-        return name == other.name && weight == other.weight &&
-               typed_per_filter_config == other.typed_per_filter_config;
+    struct NonForwardingAction {
+      bool operator==(const NonForwardingAction& /* other */) const {
+        return true;
       }
-      std::string ToString() const;
     };
-    std::vector<ClusterWeight> weighted_clusters;
-    // Storing the timeout duration from route action:
-    // RouteAction.max_stream_duration.grpc_timeout_header_max or
-    // RouteAction.max_stream_duration.max_stream_duration if the former is
-    // not set.
-    absl::optional<Duration> max_stream_duration;
 
+    absl::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {
-      return matchers == other.matchers && cluster_name == other.cluster_name &&
-             retry_policy == other.retry_policy &&
-             weighted_clusters == other.weighted_clusters &&
-             max_stream_duration == other.max_stream_duration &&
+      return matchers == other.matchers && action == other.action &&
              typed_per_filter_config == other.typed_per_filter_config;
     }
     std::string ToString() const;
