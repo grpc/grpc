@@ -1128,8 +1128,12 @@ class HPackParser::Parser {
     if (GPR_UNLIKELY(!value.has_value())) {
       return {};
     }
+    auto key_string = key->string_view();
+    auto value_slice = value->Take<TakeValueType>();
+    const auto transport_size = key_string.size() + value_slice.size() +
+                                hpack_constants::kEntryOverhead;
     return grpc_metadata_batch::Parse(key->string_view(),
-                                      value->Take<TakeValueType>());
+                                      std::move(value_slice), transport_size);
   }
 
   // Parse an index encoded key and a string encoded value

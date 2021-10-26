@@ -164,14 +164,14 @@ template <typename Container, typename Trait, typename... Traits>
 struct ParseHelper<Container, Trait, Traits...> {
   template <typename NotFound>
   static ParsedMetadata<Container> Parse(absl::string_view key, Slice value,
+                                         uint32_t transport_size,
                                          NotFound not_found) {
     if (key == Trait::key()) {
       return ParsedMetadata<Container>(
-          Trait(), Trait::ParseMemento(value.IntoOwned()),
-          ParsedMetadata<Container>::TransportSize(key.size(), value.size()));
+          Trait(), Trait::ParseMemento(value.IntoOwned()), transport_size);
     }
     return ParseHelper<Container, Traits...>::Parse(key, std::move(value),
-                                                    not_found);
+                                                    transport_size, not_found);
   }
 };
 
@@ -179,7 +179,7 @@ template <typename Container>
 struct ParseHelper<Container> {
   template <typename NotFound>
   static ParsedMetadata<Container> Parse(absl::string_view, Slice value,
-                                         NotFound not_found) {
+                                         uint32_t, NotFound not_found) {
     return not_found(std::move(value));
   }
 };
@@ -361,10 +361,11 @@ class MetadataMap {
   // that result.
   // TODO(ctiller): key should probably be an absl::string_view.
   // Once we don't care about interning anymore, make that change!
-  static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value) {
+  static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value,
+                                           uint32_t transport_size) {
     bool parsed = true;
     auto out = metadata_detail::ParseHelper<MetadataMap, Traits...>::Parse(
-        key, std::move(value), [&](Slice value) {
+        key, std::move(value), transport_size, [&](Slice value) {
           parsed = false;
           return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(
               grpc_slice_intern(
