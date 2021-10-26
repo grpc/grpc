@@ -617,12 +617,8 @@ class XdsApi {
   };
   using ResourceMetadataMap =
       std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
-  struct ResourceTypeMetadata {
-    absl::string_view version;
-    ResourceMetadataMap resource_metadata_map;
-  };
   using ResourceTypeMetadataMap =
-      std::map<absl::string_view /*type_url*/, ResourceTypeMetadata>;
+      std::map<absl::string_view /*type_url*/, ResourceMetadataMap>;
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
                     envoy_admin_v3_REQUESTED) ==
                     ResourceMetadata::ClientResourceStatus::REQUESTED,
