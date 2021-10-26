@@ -84,32 +84,45 @@ bool ExtractJsonObject(const Json& json, const std::string& field_name,
                        const Json::Object** output,
                        std::vector<grpc_error_handle>* error_list);
 
+// Wrappers for automatically choosing one of the above functions based
+// on output parameter type.
 template <typename NumericType>
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     NumericType* output,
-                     std::vector<grpc_error_handle>* error_list) {
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            NumericType* output,
+                            std::vector<grpc_error_handle>* error_list) {
   return ExtractJsonNumber(json, field_name, output, error_list);
 }
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            bool* output,
+                            std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonBool(json, field_name, output, error_list);
+}
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            std::string* output,
+                            std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonString(json, field_name, output, error_list);
+}
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            absl::string_view* output,
+                            std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonString(json, field_name, output, error_list);
+}
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            const Json::Array** output,
+                            std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonArray(json, field_name, output, error_list);
+}
+inline bool ExtractJsonType(const Json& json, const std::string& field_name,
+                            const Json::Object** output,
+                            std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonObject(json, field_name, output, error_list);
+}
 
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     bool* output, std::vector<grpc_error_handle>* error_list);
-
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     std::string* output,
-                     std::vector<grpc_error_handle>* error_list);
-
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     absl::string_view* output,
-                     std::vector<grpc_error_handle>* error_list);
-
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     const Json::Array** output,
-                     std::vector<grpc_error_handle>* error_list);
-
-bool ExtractJsonType(const Json& json, const std::string& field_name,
-                     const Json::Object** output,
-                     std::vector<grpc_error_handle>* error_list);
-
+// Extracts a field from a JSON object, automatically selecting the type
+// of parsing based on the output parameter type.
+// If the field is not present, returns false, and if required is true,
+// adds an error to error_list.
+// Upon any other error, adds an error to error_list and returns false.
 template <typename T>
 bool ParseJsonObjectField(const Json::Object& object,
                           const std::string& field_name, T* output,
@@ -127,6 +140,7 @@ bool ParseJsonObjectField(const Json::Object& object,
   return ExtractJsonType(child_object_json, field_name, output, error_list);
 }
 
+// Alternative to ParseJsonObjectField() for duration-value fields.
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     const std::string& field_name,
                                     grpc_millis* output,
