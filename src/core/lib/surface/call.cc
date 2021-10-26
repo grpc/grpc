@@ -1005,10 +1005,6 @@ class PublishToAppEncoder {
 
  private:
   void Append(grpc_slice key, grpc_slice value) {
-    gpr_log(GPR_INFO, "EXPORT: %s",
-            absl::StrCat(grpc_core::StringViewFromSlice(key), ": ",
-                         grpc_core::StringViewFromSlice(value))
-                .c_str());
     auto* mdusr = &dest_->metadata[dest_->count++];
     mdusr->key = key;
     mdusr->value = value;
