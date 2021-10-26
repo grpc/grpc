@@ -563,7 +563,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 - (void)testTimeoutBackoffWithTimeout:(double)timeout Backoff:(double)backoff {
   const double maxConnectTime = timeout > backoff ? timeout : backoff;
-  const double kMargin = 0.1;
+  const double kMargin = 0.2;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
   NSString *const kPhonyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];

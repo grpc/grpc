@@ -76,6 +76,7 @@ some configuration as environment variables that can be set.
   - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals
   - ring_hash_lb - traces the ring hash load balancing policy
+  - rls_lb - traces the RLS load balancing policy
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
   - sdk_authz - traces sdk authorization

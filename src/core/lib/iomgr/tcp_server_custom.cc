@@ -28,6 +28,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
@@ -303,7 +304,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s,
 
   GPR_ASSERT(port >= 0);
   GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-  sp = static_cast<grpc_tcp_listener*>(gpr_zalloc(sizeof(grpc_tcp_listener)));
+  sp = grpc_core::Zalloc<grpc_tcp_listener>();
   sp->next = nullptr;
   if (s->head == nullptr) {
     s->head = sp;

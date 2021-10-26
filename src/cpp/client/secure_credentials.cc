@@ -524,6 +524,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
     std::unique_ptr<MetadataCredentialsPlugin> plugin)
-    : thread_pool_(CreateDefaultThreadPool()), plugin_(std::move(plugin)) {}
+    : plugin_(std::move(plugin)) {
+  if (plugin_->IsBlocking()) {
+    thread_pool_.reset(CreateDefaultThreadPool());
+  }
+}
 
 }  // namespace grpc

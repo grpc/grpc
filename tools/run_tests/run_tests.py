@@ -1405,6 +1405,7 @@ argp.add_argument(
         'python3.6',
         'python3.7',
         'python3.8',
+        'python3.9',
         'pypy',
         'pypy3',
         'python_alpine',

@@ -2509,7 +2509,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   grpc_error_handle err = error;
   if (err != GRPC_ERROR_NONE) {

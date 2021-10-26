@@ -49,13 +49,13 @@ void grpc_resolver_sockaddr_init(void);
 void grpc_resolver_sockaddr_shutdown(void);
 void grpc_message_size_filter_init(void);
 void grpc_message_size_filter_shutdown(void);
-void grpc_workaround_cronet_compression_filter_init(void);
-void grpc_workaround_cronet_compression_filter_shutdown(void);
 namespace grpc_core {
 void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
+void RlsLbPluginInit();
+void RlsLbPluginShutdown();
 void ServiceConfigParserInit(void);
 void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
@@ -87,6 +87,11 @@ void GoogleCloud2ProdResolverShutdown();
 }  // namespace grpc_core
 #endif
 
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+void grpc_resolver_binder_init(void);
+void grpc_resolver_binder_shutdown(void);
+#endif
+
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
   grpc_register_plugin(grpc_core::ServiceConfigParserInit,
@@ -96,6 +101,8 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_resolver_fake_init, grpc_resolver_fake_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
+  grpc_register_plugin(grpc_core::RlsLbPluginInit,
+                       grpc_core::RlsLbPluginShutdown);
   grpc_register_plugin(grpc_lb_policy_priority_init,
                        grpc_lb_policy_priority_shutdown);
   grpc_register_plugin(grpc_lb_policy_weighted_target_init,
@@ -116,8 +123,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_message_size_filter_shutdown);
   grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
                        grpc_core::FaultInjectionFilterShutdown);
-  grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
-                       grpc_workaround_cronet_compression_filter_shutdown);
 #ifndef GRPC_NO_XDS
   grpc_register_plugin(grpc_core::XdsClientGlobalInit,
                        grpc_core::XdsClientGlobalShutdown);
@@ -135,6 +140,11 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_resolver_xds_init, grpc_resolver_xds_shutdown);
   grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
                        grpc_core::GoogleCloud2ProdResolverShutdown);
+#endif
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+  grpc_register_plugin(grpc_resolver_binder_init,
+                       grpc_resolver_binder_shutdown);
 #endif
 }
 
@@ -155,8 +165,10 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
-extern void RegisterWorkaroundCronetCompressionFilter(
+#ifndef GRPC_NO_XDS
+extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
+#endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -168,8 +180,10 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterMaxAgeFilter(builder);
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
-  RegisterWorkaroundCronetCompressionFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
+  #ifndef GRPC_NO_XDS
+  RegisterXdsChannelStackModifier(builder);
+  #endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

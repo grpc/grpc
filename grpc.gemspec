@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.17'
+  s.add_dependency 'google-protobuf', '~> 3.18'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -41,7 +41,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.0'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -157,6 +157,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/priority/priority.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc )
@@ -176,6 +177,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver.h )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc )
@@ -238,10 +240,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/max_age/max_age_filter.h )
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.cc )
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.h )
-  s.files += %w( src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc )
-  s.files += %w( src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h )
-  s.files += %w( src/core/ext/filters/workarounds/workaround_utils.cc )
-  s.files += %w( src/core/ext/filters/workarounds/workaround_utils.h )
   s.files += %w( src/core/ext/service_config/service_config.cc )
   s.files += %w( src/core/ext/service_config/service_config.h )
   s.files += %w( src/core/ext/service_config/service_config_call_data.h )
@@ -489,6 +487,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h )
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c )
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h )
+  s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c )
+  s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/migrate.upb.c )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/migrate.upb.h )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/security.upb.c )
@@ -499,10 +499,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/status.upb.h )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/versioning.upb.c )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/versioning.upb.h )
-  s.files += %w( src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c )
-  s.files += %w( src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h )
-  s.files += %w( src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c )
-  s.files += %w( src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h )
   s.files += %w( src/core/ext/upb-generated/validate/validate.upb.c )
   s.files += %w( src/core/ext/upb-generated/validate/validate.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/annotations/v3/status.upb.c )
@@ -519,6 +515,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c )
@@ -691,8 +691,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h )
-  s.files += %w( src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c )
-  s.files += %w( src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/validate/validate.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/validate/validate.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c )
@@ -709,6 +707,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h )
   s.files += %w( src/core/ext/xds/certificate_provider_factory.h )
   s.files += %w( src/core/ext/xds/certificate_provider_registry.cc )
   s.files += %w( src/core/ext/xds/certificate_provider_registry.h )
@@ -723,6 +723,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_certificate_provider.cc )
   s.files += %w( src/core/ext/xds/xds_certificate_provider.h )
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.cc )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.h )
   s.files += %w( src/core/ext/xds/xds_client.cc )
   s.files += %w( src/core/ext/xds/xds_client.h )
   s.files += %w( src/core/ext/xds/xds_client_stats.cc )
