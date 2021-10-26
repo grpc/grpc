@@ -242,12 +242,12 @@ struct AppendHelper<Container> {
 //   static constexpr char* key() { return "grpc-xyz"; }
 //   // Parse a memento from a slice
 //   // Takes ownership of value
-//   static MementoType ParseMemento(const grpc_slice& value) { ... }
+//   static MementoType ParseMemento(Slice value) { ... }
 //   // Convert a memento to a value
 //   static ValueType MementoToValue(MementoType memento) { ... }
 //   // Convert a value to its canonical text wire format (the format that
 //   // ParseMemento will accept!)
-//   static grpc_slice Encode(ValueType value);
+//   static Slice Encode(const ValueType& value);
 //   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(MementoType value) { ... }
