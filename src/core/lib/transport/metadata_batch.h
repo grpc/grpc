@@ -145,7 +145,7 @@ struct UserAgentMetadata {
   static const char* key() { return "user-agent"; }
   static MementoType ParseMemento(Slice value) { return value.IntoOwned(); }
   static ValueType MementoToValue(MementoType value) { return value; }
-  static Slice Encode(ValueType x) { return x; }
+  static Slice Encode(const ValueType& x) { return x.Ref(); }
   static absl::string_view DisplayValue(const MementoType& value) {
     return value.as_string_view();
   }
