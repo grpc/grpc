@@ -991,7 +991,7 @@ static grpc_stream_compression_algorithm decode_stream_compression(
 namespace {
 class PublishToAppEncoder {
  public:
-  PublishToAppEncoder(grpc_metadata_array* dest) : dest_(dest) {}
+  explicit PublishToAppEncoder(grpc_metadata_array* dest) : dest_(dest) {}
 
   void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
 
