@@ -347,24 +347,91 @@ INSTANTIATE_TEST_SUITE_P(SliceSizedTest, SliceSizedTest,
                            return std::to_string(info.param);
                          });
 
-size_t SumSlice(const Slice& slice) {}
+size_t SumSlice(const Slice& slice) {
+  size_t x = 0;
+  for (size_t i = 0; i < slice.size(); ++i) {
+    x += slice[i];
+  }
+  return x;
+}
 
-TEST(SliceTest, ExternalIntoOwned) {
+TEST(SliceTest, ExternalAsOwned) {
   std::unique_ptr<std::string> external_string(
       new std::string(RandomString(1024)));
   Slice slice(ExternallyManagedSlice(external_string->data(),
                                      external_string->length()));
-  Slice owned = slice.IntoOwned();
+  const auto initial_sum = SumSlice(slice);
+  Slice owned = slice.AsOwned();
+  EXPECT_EQ(initial_sum, SumSlice(owned));
   external_string.reset();
+  // In ASAN (where we can be sure that it'll crash), go ahead and read the
+  // bytes we just deleted.
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)
-  ASSERT_DEATH(
-      {
-        for (auto c : slice) gpr_log(GPR_INFO, "%d", c);
-      },
-      "");
+  ASSERT_DEATH({ SumSlice(slice); }, "");
 #endif
 #endif
+  EXPECT_EQ(initial_sum, SumSlice(owned));
+}
+
+TEST(SliceTest, ExternalIntoOwned) {
+  std::unique_ptr<std::string> external_string(
+      new std::string(RandomString(1024)));
+  SumSlice(Slice(ExternallyManagedSlice(external_string->data(),
+                                        external_string->length()))
+               .IntoOwned());
+}
+
+TEST(SliceTest, StaticSlice) {
+  static const char* hello = "hello";
+  StaticSlice slice = StaticSlice::FromStaticString(hello);
+  EXPECT_EQ(slice[0], 'h');
+  EXPECT_EQ(slice[1], 'e');
+  EXPECT_EQ(slice[2], 'l');
+  EXPECT_EQ(slice[3], 'l');
+  EXPECT_EQ(slice[4], 'o');
+  EXPECT_EQ(slice.size(), 5);
+  EXPECT_EQ(slice.length(), 5);
+  EXPECT_EQ(slice.as_string_view(), "hello");
+  EXPECT_EQ(0, memcmp(slice.data(), "hello", 5));
+  EXPECT_EQ(reinterpret_cast<const uint8_t*>(hello), slice.data());
+}
+
+TEST(SliceTest, SliceEquality) {
+  auto a = Slice::FromCopiedString(
+      "hello world 123456789123456789123456789123456789123456789");
+  auto b = Slice::FromCopiedString(
+      "hello world 123456789123456789123456789123456789123456789");
+  auto c = Slice::FromCopiedString(
+      "this is not the same as the other two strings!!!!!!!!!!!!");
+  EXPECT_FALSE(a.is_equivalent(b));
+  EXPECT_FALSE(b.is_equivalent(a));
+  EXPECT_EQ(a, b);
+  EXPECT_NE(a, c);
+  EXPECT_NE(b, c);
+  EXPECT_EQ(a, "hello world 123456789123456789123456789123456789123456789");
+  EXPECT_NE(a, "pfoooey");
+  EXPECT_EQ(c, "this is not the same as the other two strings!!!!!!!!!!!!");
+  EXPECT_EQ("hello world 123456789123456789123456789123456789123456789", a);
+  EXPECT_NE("pfoooey", a);
+  EXPECT_EQ("this is not the same as the other two strings!!!!!!!!!!!!", c);
+}
+
+TEST(SliceTest, LetsGetMutable) {
+  auto slice = MutableSlice::FromCopiedString("hello");
+  EXPECT_EQ(slice[0], 'h');
+  EXPECT_EQ(slice[1], 'e');
+  EXPECT_EQ(slice[2], 'l');
+  EXPECT_EQ(slice[3], 'l');
+  EXPECT_EQ(slice[4], 'o');
+  EXPECT_EQ(slice.size(), 5);
+  EXPECT_EQ(slice.length(), 5);
+  EXPECT_EQ(slice.as_string_view(), "hello");
+  EXPECT_EQ(0, memcmp(slice.data(), "hello", 5));
+  slice[2] = 'm';
+  EXPECT_EQ(slice.as_string_view(), "hemlo");
+  for (auto& c : slice) c++;
+  EXPECT_EQ(slice.as_string_view(), "ifnmp");
 }
 
 }  // namespace

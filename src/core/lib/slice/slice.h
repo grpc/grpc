@@ -91,20 +91,40 @@ inline bool operator==(const BaseSlice& a, const BaseSlice& b) {
   return grpc_slice_eq(a.c_slice(), b.c_slice()) != 0;
 }
 
+inline bool operator!=(const BaseSlice& a, const BaseSlice& b) {
+  return grpc_slice_eq(a.c_slice(), b.c_slice()) == 0;
+}
+
 inline bool operator==(const BaseSlice& a, absl::string_view b) {
   return a.as_string_view() == b;
+}
+
+inline bool operator!=(const BaseSlice& a, absl::string_view b) {
+  return a.as_string_view() != b;
 }
 
 inline bool operator==(absl::string_view a, const BaseSlice& b) {
   return a == b.as_string_view();
 }
 
+inline bool operator!=(absl::string_view a, const BaseSlice& b) {
+  return a != b.as_string_view();
+}
+
 inline bool operator==(const BaseSlice& a, const grpc_slice& b) {
   return grpc_slice_eq(a.c_slice(), b) != 0;
 }
 
+inline bool operator!=(const BaseSlice& a, const grpc_slice& b) {
+  return grpc_slice_eq(a.c_slice(), b) == 0;
+}
+
 inline bool operator==(const grpc_slice& a, const BaseSlice& b) {
   return grpc_slice_eq(a, b.c_slice()) != 0;
+}
+
+inline bool operator!=(const grpc_slice& a, const BaseSlice& b) {
+  return grpc_slice_eq(a, b.c_slice()) == 0;
 }
 
 template <typename Out>
@@ -124,11 +144,16 @@ class StaticSlice : public slice_detail::BaseSlice {
   StaticSlice() = default;
   explicit StaticSlice(const grpc_slice& slice)
       : slice_detail::BaseSlice(slice) {
-    GPR_DEBUG_ASSERT(slice.refcount->GetType() ==
-                     grpc_slice_refcount::Type::STATIC);
+    GPR_DEBUG_ASSERT(
+        slice.refcount->GetType() == grpc_slice_refcount::Type::STATIC ||
+        slice.refcount->GetType() == grpc_slice_refcount::Type::NOP);
   }
   explicit StaticSlice(const StaticMetadataSlice& slice)
       : slice_detail::BaseSlice(slice) {}
+
+  static StaticSlice FromStaticString(const char* s) {
+    return StaticSlice(grpc_slice_from_static_string(s));
+  }
 
   StaticSlice(const StaticSlice& other)
       : slice_detail::BaseSlice(other.slice_) {}
