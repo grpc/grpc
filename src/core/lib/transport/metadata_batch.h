@@ -126,7 +126,7 @@ struct TeMetadata {
   static ValueType MementoToValue(MementoType te) { return te; }
   static StaticSlice Encode(ValueType x) {
     GPR_ASSERT(x == kTrailers);
-    return GRPC_MDSTR_TRAILERS;
+    return StaticSlice(GRPC_MDSTR_TRAILERS);
   }
   static const char* DisplayValue(MementoType te) {
     switch (te) {
