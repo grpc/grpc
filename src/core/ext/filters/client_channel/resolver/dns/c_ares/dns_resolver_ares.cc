@@ -193,7 +193,7 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -305,7 +305,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 
 void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -445,7 +445,13 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& /*uri*/) const override { return true; }
+  bool IsValidUri(const URI& uri) const override {
+    if (absl::StripPrefix(uri.path(), "/").empty()) {
+      gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+      return false;
+    }
+    return true;
+  }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));

@@ -212,11 +212,11 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "dd53cb731b1b6b515d3d679644344bf33bb9f5b88c98187ae5c7be734a665c57",
-            strip_prefix = "protobuf-909a0f36a10075c4b4bc70fdee2c7e32dd612a72",
+            sha256 = "74b5c6f7ca553a8d7c365ff0b5008ef5a44bc1aaeca6f964ad7557c2fa430691",
+            strip_prefix = "protobuf-0dab03ba7bc438d7ba3eac2b2c1eb39ed520f928",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/909a0f36a10075c4b4bc70fdee2c7e32dd612a72.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/909a0f36a10075c4b4bc70fdee2c7e32dd612a72.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/0dab03ba7bc438d7ba3eac2b2c1eb39ed520f928.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/0dab03ba7bc438d7ba3eac2b2c1eb39ed520f928.tar.gz",
             ],
             patches = ["@com_github_grpc_grpc//third_party:protobuf.patch"],
             patch_args = ["-p1"],
@@ -284,11 +284,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "35f22ef5cb286f09954b7cc4c85b5a3f6221c9d4df6b8c4a1e9d399555b366ee",
-            strip_prefix = "abseil-cpp-997aaf3a28308eba1b9156aa35ab7bca9688e9f6",
+            sha256 = "1764491a199eb9325b177126547f03d244f86b4ff28f16f206c7b3e7e4f777ec",
+            strip_prefix = "abseil-cpp-278e0a071885a22dcd2fd1b5576cc44757299343",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/997aaf3a28308eba1b9156aa35ab7bca9688e9f6.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/997aaf3a28308eba1b9156aa35ab7bca9688e9f6.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/278e0a071885a22dcd2fd1b5576cc44757299343.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/278e0a071885a22dcd2fd1b5576cc44757299343.tar.gz",
             ],
         )
 

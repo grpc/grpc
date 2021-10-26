@@ -599,6 +599,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/security.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
@@ -716,6 +717,7 @@ libs:
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
+  - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
   - src/core/ext/xds/xds_http_fault_filter.h
@@ -984,6 +986,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
+  - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
@@ -994,6 +997,7 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
+  - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1144,6 +1148,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/security.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1259,6 +1264,7 @@ libs:
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_certificate_provider.cc
+  - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
@@ -1527,6 +1533,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:bind_front
+  - absl/hash:hash
   - absl/status:statusor
   - absl/types:variant
   - absl/utility:utility
@@ -1964,6 +1971,7 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
+  - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -3134,14 +3142,6 @@ targets:
   headers: []
   src:
   - test/core/surface/channel_create_test.cc
-  deps:
-  - grpc_test_util
-- name: channel_stack_builder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
 - name: channel_stack_test
@@ -4605,6 +4605,15 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/binder_resolver_test.cc
+  deps:
+  - grpc_test_util
 - name: binder_server_test
   gtest: true
   build: test
@@ -4612,6 +4621,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -4638,6 +4648,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -4664,6 +4675,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -4697,6 +4709,7 @@ targets:
   src:
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -4898,6 +4911,15 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: channel_stack_builder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_builder_test.cc
+  deps:
+  - grpc_test_util
 - name: channel_trace_test
   gtest: true
   build: test
@@ -5436,6 +5458,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -5463,6 +5486,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -5509,6 +5533,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -5542,6 +5567,7 @@ targets:
   src:
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -5739,6 +5765,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -5772,6 +5799,7 @@ targets:
   src:
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -7487,6 +7515,35 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: rls_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/test_lb_policies.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/core/util/test_lb_policies.cc
+  - test/cpp/end2end/rls_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - grpc++_test_config
+  - grpc++_test_util
+- name: rls_lb_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/rls_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
 - name: sdk_authz_end2end_test
   gtest: true
   build: test
@@ -8093,6 +8150,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -8125,6 +8183,7 @@ targets:
   src:
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -8283,6 +8342,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -8316,6 +8376,7 @@ targets:
   src:
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
@@ -8389,6 +8450,7 @@ targets:
   headers:
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
@@ -8422,6 +8484,7 @@ targets:
   src:
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc

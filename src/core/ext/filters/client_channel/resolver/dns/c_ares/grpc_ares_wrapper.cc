@@ -260,7 +260,7 @@ static void on_timeout_locked(grpc_ares_ev_driver* driver,
 
 static void on_timeout(void* arg, grpc_error_handle error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   driver->work_serializer->Run(
       [driver, error]() { on_timeout_locked(driver, error); }, DEBUG_LOCATION);
 }
@@ -272,7 +272,7 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
 
 static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   driver->work_serializer->Run(
       [driver, error]() { on_ares_backup_poll_alarm_locked(driver, error); },
       DEBUG_LOCATION);
@@ -355,7 +355,7 @@ static void on_readable_locked(fd_node* fdn, grpc_error_handle error) {
 
 static void on_readable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
-  GRPC_ERROR_REF(error); /* ref owned by lambda */
+  (void)GRPC_ERROR_REF(error); /* ref owned by lambda */
   fdn->ev_driver->work_serializer->Run(
       [fdn, error]() { on_readable_locked(fdn, error); }, DEBUG_LOCATION);
 }
@@ -385,7 +385,7 @@ static void on_writable_locked(fd_node* fdn, grpc_error_handle error) {
 
 static void on_writable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
-  GRPC_ERROR_REF(error); /* ref owned by lambda */
+  (void)GRPC_ERROR_REF(error); /* ref owned by lambda */
   fdn->ev_driver->work_serializer->Run(
       [fdn, error]() { on_writable_locked(fdn, error); }, DEBUG_LOCATION);
 }
@@ -1160,7 +1160,7 @@ static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,
 static void on_dns_lookup_done(void* arg, grpc_error_handle error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer->Run([r, error]() { on_dns_lookup_done_locked(r, error); },
                           DEBUG_LOCATION);
 }

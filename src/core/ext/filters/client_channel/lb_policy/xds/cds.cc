@@ -207,7 +207,7 @@ CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
 void CdsLb::ClusterWatcher::Notifier::RunInExecCtx(void* arg,
                                                    grpc_error_handle error) {
   Notifier* self = static_cast<Notifier*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   self->parent_->work_serializer()->Run(
       [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
 }

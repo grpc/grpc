@@ -13,6 +13,7 @@
 # limitations under the License.
 """Insecure client-server interoperability as a unit test."""
 
+import sys
 import unittest
 
 import grpc
@@ -24,6 +25,8 @@ from tests.interop import service
 from tests.unit import test_common
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class InsecureIntraopTest(_intraop_test_case.IntraopTestCase,
                           unittest.TestCase):
 

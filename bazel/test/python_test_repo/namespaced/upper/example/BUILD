@@ -17,7 +17,6 @@
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "@com_github_grpc_grpc//bazel:python_rules.bzl",
-    "py2and3_test",
     "py_grpc_library",
     "py_proto_library",
 )
@@ -124,40 +123,44 @@ py_grpc_library(
 # Both Import and Strip
 # bazel-out/darwin-fastbuild/bin/namespaced/upper/example/_virtual_imports/namespaced_example_proto/upper/example/namespaced_example_pb2.py
 
-py2and3_test(
-    "import_no_strip_test",
+py_test(
+    name = "import_no_strip_test",
     srcs = ["import_no_strip_test.py"],
     main = "import_no_strip_test.py",
+    python_version = "PY3",
     deps = [
         ":import_no_strip_py_pb2",
         ":import_no_strip_py_pb2_grpc",
     ],
 )
 
-py2and3_test(
-    "import_strip_test",
+py_test(
+    name = "import_strip_test",
     srcs = ["import_strip_test.py"],
     main = "import_strip_test.py",
+    python_version = "PY3",
     deps = [
         ":import_strip_py_pb2",
         ":import_strip_py_pb2_grpc",
     ],
 )
 
-py2and3_test(
-    "no_import_no_strip_test",
+py_test(
+    name = "no_import_no_strip_test",
     srcs = ["no_import_no_strip_test.py"],
     main = "no_import_no_strip_test.py",
+    python_version = "PY3",
     deps = [
         ":no_import_no_strip_py_pb2",
         ":no_import_no_strip_py_pb2_grpc",
     ],
 )
 
-py2and3_test(
-    "no_import_strip_test",
+py_test(
+    name = "no_import_strip_test",
     srcs = ["no_import_strip_test.py"],
     main = "no_import_strip_test.py",
+    python_version = "PY3",
     deps = [
         ":no_import_strip_py_pb2",
         ":no_import_strip_py_pb2_grpc",

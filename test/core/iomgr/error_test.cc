@@ -88,7 +88,7 @@ TEST(ErrorTest, CopyAndUnRef) {
   EXPECT_EQ(str, "message");
 
   // error 1 has two refs
-  GRPC_ERROR_REF(error1);
+  (void)GRPC_ERROR_REF(error1);
   // this gives error3 a ref to the new error, and decrements error1 to one ref
   grpc_error_handle error3 =
       grpc_error_set_str(error1, GRPC_ERROR_STR_SYSCALL, "syscall");

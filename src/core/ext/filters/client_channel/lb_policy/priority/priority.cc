@@ -657,7 +657,7 @@ void PriorityLb::ChildPriority::MaybeCancelFailoverTimerLocked() {
 void PriorityLb::ChildPriority::OnFailoverTimer(void* arg,
                                                 grpc_error_handle error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnFailoverTimerLocked(error); }, DEBUG_LOCATION);
 }
@@ -714,7 +714,7 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 void PriorityLb::ChildPriority::OnDeactivationTimer(void* arg,
                                                     grpc_error_handle error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnDeactivationTimerLocked(error); },
       DEBUG_LOCATION);
