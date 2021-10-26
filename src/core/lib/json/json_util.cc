@@ -55,7 +55,7 @@ bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
   return true;
 }
 
-bool ExtractJsonBool(const Json& json, const std::string& field_name,
+bool ExtractJsonBool(const Json& json, absl::string_view field_name,
                      bool* output, std::vector<grpc_error_handle>* error_list) {
   switch (json.type()) {
     case Json::Type::JSON_TRUE:
@@ -71,7 +71,7 @@ bool ExtractJsonBool(const Json& json, const std::string& field_name,
   }
 }
 
-bool ExtractJsonArray(const Json& json, const std::string& field_name,
+bool ExtractJsonArray(const Json& json, absl::string_view field_name,
                       const Json::Array** output,
                       std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::ARRAY) {
@@ -84,7 +84,7 @@ bool ExtractJsonArray(const Json& json, const std::string& field_name,
   return true;
 }
 
-bool ExtractJsonObject(const Json& json, const std::string& field_name,
+bool ExtractJsonObject(const Json& json, absl::string_view field_name,
                        const Json::Object** output,
                        std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::OBJECT) {
@@ -98,11 +98,13 @@ bool ExtractJsonObject(const Json& json, const std::string& field_name,
 }
 
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
-                                    const std::string& field_name,
+                                    absl::string_view field_name,
                                     grpc_millis* output,
                                     std::vector<grpc_error_handle>* error_list,
                                     bool required) {
-  auto it = object.find(field_name);
+  // TODO(roth): Once we can use C++14 heterogenous lookups, stop
+  // creating a std::string here.
+  auto it = object.find(std::string(field_name));
   if (it == object.end()) {
     if (required) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
