@@ -97,6 +97,36 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
   return true;
 }
 
+bool ExtractJsonType(const Json& json, absl::string_view field_name,
+                     bool* output,
+                     std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonBool(json, field_name, output, error_list);
+}
+
+bool ExtractJsonType(const Json& json, absl::string_view field_name,
+                     std::string* output,
+                     std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonString(json, field_name, output, error_list);
+}
+
+bool ExtractJsonType(const Json& json, absl::string_view field_name,
+                     absl::string_view* output,
+                     std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonString(json, field_name, output, error_list);
+}
+
+bool ExtractJsonType(const Json& json, absl::string_view field_name,
+                     const Json::Array** output,
+                     std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonArray(json, field_name, output, error_list);
+}
+
+bool ExtractJsonType(const Json& json, absl::string_view field_name,
+                     const Json::Object** output,
+                     std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonObject(json, field_name, output, error_list);
+}
+
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     absl::string_view field_name,
                                     grpc_millis* output,
