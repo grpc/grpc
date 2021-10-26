@@ -239,6 +239,16 @@ class Slice : public slice_detail::BaseSlice,
     return *this;
   }
 
+  // A slice might refer to some memory that we keep a refcount to (this is
+  // owned), or some memory that's inlined into the slice (also owned), or some
+  // other block of memory that we know will be available for the lifetime of
+  // some operation in the common case (not owned). In the *less common* case
+  // that we need to keep that slice text for longer than our API's guarantee us
+  // access, we need to take a copy and turn this into something that we do own.
+
+  // IntoOwned returns an owned slice regardless of current ownership, and
+  // leaves the current slice empty - in doing so it can avoid adding a ref to
+  // the underlying slice.
   Slice IntoOwned() {
     if (this->slice_.refcount == nullptr) {
       return Slice(this->slice_);
@@ -249,6 +259,8 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(TakeCSlice());
   }
 
+  // AsOwned returns an owned slice but does not mutate the current slice,
+  // meaning that it may add a reference to the underlying slice.
   Slice AsOwned() const {
     if (this->slice_.refcount == nullptr) {
       return Slice(this->slice_);
@@ -259,6 +271,13 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(grpc_slice_ref_internal(this->slice_));
   }
 
+  // IntoMutable returns a MutableSlice, and leaves the current slice empty.
+  // A mutable slice requires only one reference to the bytes of the slice -
+  // this can be achieved either with inlined storage or with a single
+  // reference.
+  // If the current slice is refcounted and there are more than one references
+  // to that slice, then the slice is copied in order to achieve a mutable
+  // version.
   MutableSlice IntoMutable() {
     if (this->slice_.refcount == nullptr) {
       return MutableSlice(this->slice_);
