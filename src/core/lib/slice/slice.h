@@ -23,6 +23,19 @@
 
 #include "src/core/lib/slice/slice_internal.h"
 
+// Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
+// They aim to keep you safe by providing strong guarantees around lifetime and
+// mutability.
+//
+// The team:
+//   Slice        - provides a wrapper around an unknown type of slice.
+//                  Immutable (since we don't know who else might be referencing
+//                  it), and potentially ref counted.
+//   StaticSlice  - provides a wrapper around a static slice. Not refcounted,
+//                  fast to copy.
+//   MutableSlice - provides a guarantee of unique ownership, meaning the
+//                  underlying data can be mutated safely.
+
 namespace grpc_core {
 
 // Forward declarations
@@ -32,6 +45,7 @@ class MutableSlice;
 
 namespace slice_detail {
 
+// Returns an empty slice.
 static constexpr grpc_slice EmptySlice() { return {nullptr, {}}; }
 
 // BaseSlice holds the grpc_slice object, but does not apply refcounting policy.
@@ -50,8 +64,11 @@ class BaseSlice {
   const uint8_t* cbegin() const { return GRPC_SLICE_START_PTR(this->slice_); }
   const uint8_t* cend() const { return GRPC_SLICE_END_PTR(this->slice_); }
 
+  // Retrieve a borrowed reference to the underlying grpc_slice.
   const grpc_slice& c_slice() const { return this->slice_; }
 
+  // Retrieve the underlying grpc_slice, and replace the one in this object with
+  // EmptySlice().
   grpc_slice TakeCSlice() {
     grpc_slice out = this->slice_;
     this->slice_ = EmptySlice();
@@ -76,6 +93,9 @@ class BaseSlice {
   size_t length() const { return size(); }
   bool empty() const { return size() == 0; }
 
+  // For inlined slices - are these two slices equal?
+  // For non-inlined slices - do these two slices refer to the same block of
+  // memory?
   bool is_equivalent(const BaseSlice& other) const {
     return grpc_slice_is_equivalent(slice_, other.slice_);
   }
