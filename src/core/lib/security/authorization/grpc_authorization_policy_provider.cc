@@ -38,7 +38,7 @@ StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
 }
 
 StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
-    std::vector<Rbac> policies) {
+    absl::InlinedVector<Rbac, 2> policies) {
   GPR_ASSERT(policies.size() <= 2);
   if (policies.size() == 1) {
     GPR_ASSERT(policies[0].action == Rbac::Action::kAllow);
@@ -146,6 +146,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     GPR_ASSERT(policies_or->at(0).action == Rbac::Action::kAllow);
     allow_engine_ =
         MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies_or->at(0)));
+    deny_engine_ = nullptr;
   } else {
     GPR_ASSERT(policies_or->at(0).action == Rbac::Action::kDeny);
     GPR_ASSERT(policies_or->at(1).action == Rbac::Action::kAllow);

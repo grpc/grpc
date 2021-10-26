@@ -30,7 +30,7 @@ namespace grpc_core {
 // 2. Two RBAC policies, deny policy followed by allow policy.
 // Returns error on failure.
 // authz_policy: Authorization Policy string in JSON format.
-absl::StatusOr<std::vector<Rbac>> GenerateRbacPolicies(
+absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
     absl::string_view authz_policy);
 
 }  // namespace grpc_core

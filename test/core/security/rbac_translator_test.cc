@@ -58,7 +58,7 @@ TEST(GenerateRbacPoliciesTest, InvalidPolicy) {
       ::testing::StartsWith("Failed to parse SDK authorization policy."));
 }
 
-TEST(GenerateRbacPoliciesTest, UnknownFieldsTop) {
+TEST(GenerateRbacPoliciesTest, UnknownFieldsInTopLayer) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -72,7 +72,7 @@ TEST(GenerateRbacPoliciesTest, UnknownFieldsTop) {
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(rbac_policies.status().message(),
-              "Policy contains unknown fields: foo ");
+              "policy contains unknown field \"foo\".");
 }
 
 TEST(GenerateRbacPoliciesTest, UnknownFieldsRule) {
@@ -91,10 +91,10 @@ TEST(GenerateRbacPoliciesTest, UnknownFieldsRule) {
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(rbac_policies.status().message(),
-              "allow_rules 0: Policy contains unknown fields: foo ");
+              "allow_rules 0: policy contains unknown field \"foo\".");
 }
 
-TEST(GenerateRbacPoliciesTest, UnknownFieldsSource) {
+TEST(GenerateRbacPoliciesTest, UnknownFieldInSource) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -104,38 +104,42 @@ TEST(GenerateRbacPoliciesTest, UnknownFieldsSource) {
       "    },"
       "    {"
       "      \"name\": \"allow_policy\","
-      "      \"source\": { \"principals\": [\"spiffe://foo.abc\"], \"foo\": {} }"
+      "      \"source\": "
+      "      {"
+      "        \"principals\": [\"spiffe://foo.abc\"],"
+      "        \"foo\": {} "
+      "      }"
       "    }"
       "  ]"
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(rbac_policies.status().message(),
-              "allow_rules 1: Policy contains unknown fields: foo ");
+              "allow_rules 1: policy contains unknown field \"foo\".");
 }
 
-TEST(GenerateRbacPoliciesTest, UnknownFieldsRequest) {
+TEST(GenerateRbacPoliciesTest, UnknownFieldInRequest) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
       "    {"
       "      \"name\": \"allow_policy\","
-      "      \"request\": { \"foo\": {}, \"bar\": {} }"
+      "      \"request\": { \"foo\": {}}"
       "    }"
       "  ]"
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(rbac_policies.status().message(),
-              "allow_rules 0: Policy contains unknown fields: foo bar ");
+              "allow_rules 0: policy contains unknown field \"foo\".");
 }
 
 TEST(GenerateRbacPoliciesTest, MissingAuthorizationPolicyName) {
   const char* authz_policy = "{}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(rbac_policies.status().message(), "\"name\" field is not present.");
+  EXPECT_EQ(rbac_policies.status().message(), "\"name\" is not present.");
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectAuthorizationPolicyNameType) {
@@ -209,6 +213,17 @@ TEST(GenerateRbacPoliciesTest, IncorrectRuleType) {
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(rbac_policies.status().message(),
             "allow_rules 0: is not an object.");
+}
+
+TEST(GenerateRbacPoliciesTest, EmptyRuleArray) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": []"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(rbac_policies.status().message(), "allow_rules is empty.");
 }
 
 TEST(GenerateRbacPoliciesTest, MissingRuleNameField) {
@@ -578,6 +593,52 @@ TEST(GenerateRbacPoliciesTest, IncorrectHeaderType) {
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(rbac_policies.status().message(),
             "deny_rules 0: \"headers\" 0: is not an object.");
+}
+
+TEST(GenerateRbacPoliciesTest, MissingHeaderKeyField) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"policy\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {}"
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(rbac_policies.status().message(),
+            "allow_rules 0: \"headers\" 0: missing required field(s) \"key\" "
+            "or \"values\".");
+}
+
+TEST(GenerateRbacPoliciesTest, MissingHeaderValuesField) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"policy\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-abc\""
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(rbac_policies.status().message(),
+            "allow_rules 0: \"headers\" 0: missing required field(s) \"key\" "
+            "or \"values\".");
 }
 
 TEST(GenerateRbacPoliciesTest, UnsupportedGrpcHeaders) {
