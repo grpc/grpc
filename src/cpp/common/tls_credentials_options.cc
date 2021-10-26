@@ -125,28 +125,6 @@ TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
   grpc_tls_server_authorization_check_config_release(c_config_);
 }
 
-TlsSessionKeyLoggerConfig::TlsSessionKeyLoggerConfig():
-  c_config_(grpc_tls_session_key_log_config_create()) {}
-
-TlsSessionKeyLoggerConfig::~TlsSessionKeyLoggerConfig() {
-  grpc_tls_session_key_log_config_release(c_config_);
-}
-
-// Sets the tls session key log file path.
-void TlsSessionKeyLoggerConfig::set_tls_session_key_log_file_path(
-    std::string key_log_file_path) {
-  grpc_tls_session_key_log_config_set_log_path(c_config_,
-                                               key_log_file_path.c_str());
-}
-
-// Sets the tls session key logging format. Currently only NSS format is
-// supported.
-void TlsSessionKeyLoggerConfig::set_tls_session_key_log_format(
-    grpc_tls_session_key_log_format tls_session_key_log_format) {
-  grpc_tls_session_key_log_config_set_log_format(c_config_,
-                                                 tls_session_key_log_format);
-}
-
 TlsCredentialsOptions::TlsCredentialsOptions() {
   c_credentials_options_ = grpc_tls_credentials_options_create();
 }
@@ -181,10 +159,10 @@ void TlsCredentialsOptions::set_identity_cert_name(
       c_credentials_options_, identity_cert_name.c_str());
 }
 
-void TlsCredentialsOptions::set_tls_session_key_log_config(
-    const TlsSessionKeyLoggerConfig& tls_session_key_log_config) {
-  grpc_tls_credentials_options_set_tls_session_key_log_config(
-      c_credentials_options_, tls_session_key_log_config.c_config());
+void TlsCredentialsOptions::set_tls_session_key_log_file_path(
+      const std::string& tls_session_key_log_file_path) {
+  grpc_tls_credentials_options_set_tls_session_key_log_file_path(
+      c_credentials_options_, tls_session_key_log_file_path.c_str());
 }
 
 void TlsChannelCredentialsOptions::set_server_verification_option(

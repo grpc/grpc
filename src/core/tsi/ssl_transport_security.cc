@@ -79,7 +79,7 @@ extern "C" {
    SSL structure. This is what we would ultimately want though... */
 #define TSI_SSL_MAX_PROTECTION_OVERHEAD 100
 
-typedef tsi::TlsSessionKeyLogFileWriterCache::TlsSessionKeyLogger TlsSessionKeyLogger;
+typedef tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger TlsSessionKeyLogger;
 
 /* --- Structure definitions. ---*/
 

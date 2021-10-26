@@ -114,11 +114,12 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
           overridden_target_name == nullptr ? "" : overridden_target_name),
       ssl_session_cache_(ssl_session_cache) {
   if (options_ != nullptr) {
-    auto config = options_->tls_session_key_log_config();
-    if (config != nullptr) {
+    std::string tls_session_key_log_file_path =
+      options_->tls_session_key_log_file_path();
+    if (!tls_session_key_log_file_path.empty()) {
       tls_session_key_logger_ =
-        tsi::TlsSessionKeyLogFileWriterCache::Get(
-          config->get_tsi_config());
+        tsi::TlsSessionKeyLoggerCache::Get(
+          tls_session_key_log_file_path);
     }
   }
   if (ssl_session_cache_ != nullptr) {
@@ -516,11 +517,12 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
                                      std::move(server_creds)),
       options_(std::move(options)) {
   if (options_ != nullptr) {
-    auto config = options_->tls_session_key_log_config();
-    if (config != nullptr) {
+    std::string tls_session_key_log_file_path =
+      options_->tls_session_key_log_file_path();
+    if (!tls_session_key_log_file_path.empty()) {
       tls_session_key_logger_ =
-        tsi::TlsSessionKeyLogFileWriterCache::Get(
-          config->get_tsi_config());
+        tsi::TlsSessionKeyLoggerCache::Get(
+          tls_session_key_log_file_path);
     }
   }
   // Create a watcher.

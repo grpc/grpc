@@ -1140,48 +1140,8 @@ GRPCAPI void grpc_authorization_policy_provider_release(
  * is expected to be used only for debugging purposes and never in production.
  * Tls session key logging is only enabled when:
  *  At least one grpc_tls_credentials_options object is assigned a tls session
- *  key logging config using the API specified below.
+ *  key logging file path using the API specified below.
  */
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * An opaque type pointing to a Tls session key logging configuration.
- */
-typedef struct grpc_tls_session_key_log_config grpc_tls_session_key_log_config;
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * Creates and returns a grpc_tls_session_key_log_config. The caller becomes an
- * owner of the returned object and can free the allocated resources
- * appropriately using the grpc_tls_session_key_log_config_release API
- */
-
-GRPCAPI grpc_tls_session_key_log_config*
-  grpc_tls_session_key_log_config_create();
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * Releases the ownership of a previously created
- * grpc_tls_session_key_log_config object.
- */
-GRPCAPI void grpc_tls_session_key_log_config_release(
-    grpc_tls_session_key_log_config* config);
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * Sets the logging format for TLS session key logging.
- */
-GRPCAPI void grpc_tls_session_key_log_config_set_log_format(
-    grpc_tls_session_key_log_config* config,
-    grpc_tls_session_key_log_format format);
-
-/**
- * EXPERIMENTAL API - Subject to change.
- * Sets the file path for TLS session key logging.
- */
-
-GRPCAPI void grpc_tls_session_key_log_config_set_log_path(
-    grpc_tls_session_key_log_config* config, const char* path);
 
 
 /**
@@ -1189,12 +1149,12 @@ GRPCAPI void grpc_tls_session_key_log_config_set_log_path(
  * Associates a session key logging config with a
  * grpc_tls_credentials_options object.
  * - options is the grpc_tls_credentials_options object
- * - config is a grpc_tls_session_key_log_config object containing session key
- *   logging configuration.
+ * - path is a string pointing to the location where TLS session keys would be
+ *   stored.
  */
-GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_config(
+GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
     grpc_tls_credentials_options* options,
-    grpc_tls_session_key_log_config* config);
+    const char* path);
 
 #ifdef __cplusplus
 }

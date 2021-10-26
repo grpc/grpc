@@ -97,41 +97,13 @@ struct grpc_tls_server_authorization_check_config
   void (*destruct_)(void* config_user_data);
 };
 
-// Implementation of grpc_tls_session_key_log_config struct defined in
-// grpc_security.h
-struct grpc_tls_session_key_log_config:
-    public grpc_core::RefCounted<grpc_tls_session_key_log_config> {
- public:
-  grpc_tls_session_key_log_config() = default;
-  void set_tls_session_key_log_file_path(std::string path) {
-    config_.tls_session_key_log_file_path_ = path;
-  }
-  void set_tls_session_key_logging_format(
-      grpc_tls_session_key_log_format format) {
-    config_.session_key_logging_format_ = format;
-  }
-  std::string tls_session_key_log_file_path() {
-    return config_.tls_session_key_log_file_path_;
-  }
-  grpc_tls_session_key_log_format tls_session_key_logging_format() {
-    return config_.session_key_logging_format_;
-  }
-
-  const tsi::TsiTlsSessionKeyLogConfig& get_tsi_config() const {
-    return config_;
-  }
-
- private:
-  tsi::TsiTlsSessionKeyLogConfig config_;
-};
-
 // Contains configurable options specified by callers to configure their certain
 // security features supported in TLS.
 // TODO(ZhenLian): consider making this not ref-counted.
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
-  ~grpc_tls_credentials_options() override;
+  ~grpc_tls_credentials_options() = default;
   // Getters for member fields.
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
@@ -154,9 +126,9 @@ struct grpc_tls_credentials_options
   const std::string& root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
   const std::string& identity_cert_name() { return identity_cert_name_; }
-  // Returns the previously set tls session key logger object.
-  grpc_tls_session_key_log_config* tls_session_key_log_config() {
-    return tls_session_key_log_config_;
+  // Returns the previously set tls session key log file path.
+  const std::string& tls_session_key_log_file_path() {
+    return tls_session_key_log_file_path_;
   }
   // Setters for member fields.
   void set_cert_request_type(
@@ -205,15 +177,10 @@ struct grpc_tls_credentials_options
   void set_identity_cert_name(std::string identity_cert_name) {
     identity_cert_name_ = std::move(identity_cert_name);
   }
-  // Sets the tls session key logger object.
-  void set_tls_session_key_log_config(
-    grpc_tls_session_key_log_config* tls_session_key_log_config) {
-    if (tls_session_key_log_config_) {
-      // unref previous config and overwrite
-      tls_session_key_log_config_->Unref();
-    }
-    tls_session_key_log_config_ = tls_session_key_log_config;
-    tls_session_key_log_config_->Ref().release();
+  // Sets the tls session key log file path.
+  void set_tls_session_key_log_file_path(
+    std::string tls_session_key_log_file_path) {
+    tls_session_key_log_file_path_ = std::move(tls_session_key_log_file_path);
   }
 
  private:
@@ -230,7 +197,7 @@ struct grpc_tls_credentials_options
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
-  grpc_tls_session_key_log_config* tls_session_key_log_config_ = nullptr;
+  std::string tls_session_key_log_file_path_;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

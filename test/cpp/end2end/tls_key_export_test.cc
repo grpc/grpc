@@ -55,7 +55,6 @@ extern "C" {
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
-using ::grpc::experimental::TlsSessionKeyLoggerConfig;
 using ::grpc::experimental::TlsServerCredentialsOptions;
 
 namespace grpc {
@@ -71,8 +70,7 @@ class EchoServer final : public EchoTestService::Service {
       return ::grpc::Status::OK;
     } else {
       return ::grpc::Status(static_cast<::grpc::StatusCode>(
-                                request->param().expected_error().code()),
-                            "");
+        request->param().expected_error().code()), "");
     }
   }
 };
@@ -187,7 +185,6 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       // Configure tls credential options for each port
-      TlsSessionKeyLoggerConfig server_port_tls_key_log_config;
       TlsServerCredentialsOptions server_creds_options(
           server_certificate_provider);
       server_creds_options.set_cert_request_type(
@@ -204,10 +201,8 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
       }
 
       if (GetParam().enable_tls_key_logging()) {
-        server_port_tls_key_log_config.set_tls_session_key_log_file_path(
+        server_creds_options.set_tls_session_key_log_file_path(
             tmp_server_tls_key_log_file_by_port_[i]);
-        server_creds_options.set_tls_session_key_log_config(
-            server_port_tls_key_log_config);
       }
 
       builder.AddListeningPort(
@@ -228,7 +223,6 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
       // Configure tls credential options for each stub. Each stub connects to
       // a separate port on the server.
-      TlsSessionKeyLoggerConfig stub_tls_key_log_config;
       TlsChannelCredentialsOptions channel_creds_options;
       channel_creds_options.set_certificate_provider(
           channel_certificate_provider);
@@ -246,10 +240,8 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
       }
 
       if (GetParam().enable_tls_key_logging()) {
-        stub_tls_key_log_config.set_tls_session_key_log_file_path(
+        channel_creds_options.set_tls_session_key_log_file_path(
             tmp_stub_tls_key_log_file_[i]);
-        channel_creds_options.set_tls_session_key_log_config(
-            stub_tls_key_log_config);
       }
 
       stubs_.push_back(EchoTestService::NewStub(::grpc::CreateCustomChannel(

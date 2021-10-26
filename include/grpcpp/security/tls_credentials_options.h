@@ -36,7 +36,6 @@ typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
-typedef struct grpc_tls_session_key_log_config grpc_tls_session_key_log_config;
 
 namespace grpc {
 namespace experimental {
@@ -147,35 +146,6 @@ class TlsServerAuthorizationCheckConfig {
       server_authorization_check_interface_;
 };
 
-// Configuration for Tls key logging.
-class TlsSessionKeyLoggerConfig {
- public:
-
-  TlsSessionKeyLoggerConfig();
-  ~TlsSessionKeyLoggerConfig();
-
-  // Disable copy and assignment
-  TlsSessionKeyLoggerConfig(const TlsSessionKeyLoggerConfig& copy) = delete;
-  TlsSessionKeyLoggerConfig & operator=(
-      const TlsSessionKeyLoggerConfig&) = delete;
-
-  // Sets the tls session key log file path.
-  void set_tls_session_key_log_file_path(std::string key_log_file_path);
-
-  // Sets the tls session key logging format. Currently only NSS format is
-  // supported.
-  void set_tls_session_key_log_format(
-      grpc_tls_session_key_log_format tls_session_key_log_format);
-
-  // Returns the core c_config struct associated with this configuration
-  // wrapper class
-  grpc_tls_session_key_log_config * c_config() const {
-    return c_config_;
-  }
- private:
-  grpc_tls_session_key_log_config* c_config_;
-};
-
 // Base class of configurable options specified by users to configure their
 // certain security features supported in TLS. It is used for experimental
 // purposes for now and it is subject to change.
@@ -222,10 +192,10 @@ class TlsCredentialsOptions {
   // debugging purposes. It should never be used in a production environment
   // due to security concerns.
   //
-  // @param tls_session_key_log_config: Tls session key logging config of the
-  // type gprc::experimental::TlsSessionKeyLoggerConfig
-  void set_tls_session_key_log_config(
-      const TlsSessionKeyLoggerConfig& tls_session_key_log_config);
+  // @param tls_session_key_log_file_path: Path where tls session keys would
+  // be logged.
+  void set_tls_session_key_log_file_path(
+      const std::string& tls_session_key_log_file_path);
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.

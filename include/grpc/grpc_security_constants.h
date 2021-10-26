@@ -158,16 +158,6 @@ typedef enum { UDS = 0, LOCAL_TCP } grpc_local_connect_type;
 /** The TLS versions that are supported by the SSL stack. **/
 typedef enum { TLS1_2, TLS1_3 } grpc_tls_version;
 
-/** Supported TLS session key logging formats. Future extensions can support
- * more formats.
- */
-typedef enum {
-  /** NSS is the default session key logging format used by browsers like
-   * chrome, firefox and by packet capture tools like wireshark.
-  */
-  GRPC_TLS_KEY_LOG_FORMAT_NSS = 0
-} grpc_tls_session_key_log_format;
-
 #ifdef __cplusplus
 }
 #endif

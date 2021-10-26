@@ -84,12 +84,6 @@ void grpc_tls_server_authorization_check_config::Cancel(
   cancel_(config_user_data_, arg);
 }
 
-grpc_tls_credentials_options::~grpc_tls_credentials_options() {
- if (tls_session_key_log_config_) {
-   tls_session_key_log_config_->Unref();
- }
-}
-
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
@@ -182,51 +176,22 @@ void grpc_tls_server_authorization_check_config_release(
   if (config != nullptr) config->Unref();
 }
 
-void grpc_tls_credentials_options_set_tls_session_key_log_config(
-    grpc_tls_credentials_options* options,
-    struct grpc_tls_session_key_log_config* config) {
+void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
+    grpc_tls_credentials_options* options, const char* path) {
   if (!tsi_tls_session_key_logging_supported() ||
-      options == nullptr || config == nullptr) {
+      options == nullptr || path == nullptr) {
     return;
   }
   GRPC_API_TRACE(
-      "grpc_tls_credentials_options_set_tls_session_key_log_config(options=%p)", 1,
-      (options));
+      "grpc_tls_credentials_options_set_tls_session_key_log_config(options=%p)",
+      1, (options));
 
   // Tls session key logging is assumed to be enabled if the specified log
   // file is non-empty.
-  if (!config->tls_session_key_log_file_path().empty()) {
+  if (strlen(path) > 0) {
     gpr_log(
         GPR_INFO, "Enabling TLS session key logging with keys stored at: %s",
-        config->tls_session_key_log_file_path().c_str());
-    options->set_tls_session_key_log_config(config);
-  }
-}
-
-grpc_tls_session_key_log_config* grpc_tls_session_key_log_config_create() {
-  grpc_core::RefCountedPtr<grpc_tls_session_key_log_config> config =
-      grpc_core::MakeRefCounted<grpc_tls_session_key_log_config>();
-  return config.release();
-}
-
-void grpc_tls_session_key_log_config_release(
-    grpc_tls_session_key_log_config* config) {
-  if (config != nullptr) {
-    config->Unref();
-  }
-}
-
-void grpc_tls_session_key_log_config_set_log_format(
-    grpc_tls_session_key_log_config* config,
-    grpc_tls_session_key_log_format format) {
-  if (config != nullptr) {
-    config->set_tls_session_key_logging_format(format);
-  }
-}
-
-void grpc_tls_session_key_log_config_set_log_path(
-    grpc_tls_session_key_log_config* config, const char* path) {
-  if (config != nullptr) {
-    config->set_tls_session_key_log_file_path(path);
+        path);
+    options->set_tls_session_key_log_file_path(path);
   }
 }
