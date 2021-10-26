@@ -98,8 +98,7 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
 }
 
 bool ExtractJsonType(const Json& json, absl::string_view field_name,
-                     bool* output,
-                     std::vector<grpc_error_handle>* error_list) {
+                     bool* output, std::vector<grpc_error_handle>* error_list) {
   return ExtractJsonBool(json, field_name, output, error_list);
 }
 

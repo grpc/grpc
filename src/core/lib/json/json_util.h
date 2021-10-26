@@ -92,13 +92,12 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
 
 template <typename NumericType>
 bool ExtractJsonType(const Json& json, absl::string_view field_name,
-                            NumericType* output,
-                            std::vector<grpc_error_handle>* error_list) {
+                     NumericType* output,
+                     std::vector<grpc_error_handle>* error_list) {
   return ExtractJsonNumber(json, field_name, output, error_list);
 }
 bool ExtractJsonType(const Json& json, absl::string_view field_name,
-                     bool* output,
-                     std::vector<grpc_error_handle>* error_list);
+                     bool* output, std::vector<grpc_error_handle>* error_list);
 bool ExtractJsonType(const Json& json, absl::string_view field_name,
                      std::string* output,
                      std::vector<grpc_error_handle>* error_list);
