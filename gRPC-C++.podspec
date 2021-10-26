@@ -196,6 +196,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
@@ -386,6 +387,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
                       'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/security.upb.h',
                       'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
@@ -504,6 +506,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_bootstrap.h',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
+                      'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.h',
                       'src/core/ext/xds/xds_http_fault_filter.h',
@@ -1074,6 +1077,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                               'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                              'src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/migrate.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/security.upb.h',
                               'src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h',
@@ -1192,6 +1196,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
+                              'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',

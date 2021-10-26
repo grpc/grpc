@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.17'
+  s.add_dependency 'google-protobuf', '~> 3.18'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -158,6 +158,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/priority/priority.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/rls/rls.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc )
@@ -177,6 +178,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver.h )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc )
@@ -486,6 +488,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h )
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c )
   s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h )
+  s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c )
+  s.files += %w( src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/migrate.upb.c )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/migrate.upb.h )
   s.files += %w( src/core/ext/upb-generated/udpa/annotations/security.upb.c )
@@ -720,6 +724,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_certificate_provider.cc )
   s.files += %w( src/core/ext/xds/xds_certificate_provider.h )
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.cc )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.h )
   s.files += %w( src/core/ext/xds/xds_client.cc )
   s.files += %w( src/core/ext/xds/xds_client.h )
   s.files += %w( src/core/ext/xds/xds_client_stats.cc )

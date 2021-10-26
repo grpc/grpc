@@ -288,23 +288,31 @@ BENCHMARK(BM_StreamCreateDestroy);
 
 class RepresentativeClientInitialMetadata {
  public:
-  static std::vector<grpc_mdelem> GetElems() {
-    return {
-        GRPC_MDELEM_SCHEME_HTTP,
-        GRPC_MDELEM_METHOD_POST,
-        grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
-                                grpc_slice_intern(grpc_slice_from_static_string(
-                                    "/foo/bar/bm_chttp2_transport"))),
-        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                grpc_slice_intern(grpc_slice_from_static_string(
-                                    "foo.test.google.fr:1234"))),
-        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
-        GRPC_MDELEM_TE_TRAILERS,
-        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_USER_AGENT,
-            grpc_slice_intern(grpc_slice_from_static_string(
-                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(grpc_mdelem_from_slices(
+            GRPC_MDSTR_PATH, grpc_slice_intern(grpc_slice_from_static_string(
+                                 "/foo/bar/bm_chttp2_transport"))))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     GRPC_MDSTR_AUTHORITY,
+                     grpc_slice_intern(grpc_slice_from_static_string(
+                         "foo.test.google.fr:1234"))))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(
+            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     GRPC_MDSTR_USER_AGENT,
+                     grpc_slice_intern(grpc_slice_from_static_string(
+                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
   }
 };
 
@@ -325,13 +333,8 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   };
 
   auto arena = grpc_core::MakeScopedArena(1024);
-  std::vector<grpc_mdelem> elems = Metadata::GetElems();
-  std::vector<grpc_linked_mdelem> storage(elems.size());
   grpc_metadata_batch b(arena.get());
-  for (size_t i = 0; i < elems.size(); i++) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
-  }
+  Metadata::Prepare(&b);
 
   f.FlushExecCtx();
   gpr_event bm_done;
@@ -426,15 +429,9 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   grpc_slice send_slice = grpc_slice_malloc_large(state.range(0));
   memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
-  std::vector<grpc_mdelem> elems =
-      RepresentativeClientInitialMetadata::GetElems();
-  std::vector<grpc_linked_mdelem> storage(elems.size());
   auto arena = grpc_core::MakeScopedArena(1024);
   grpc_metadata_batch b(arena.get());
-  for (size_t i = 0; i < elems.size(); i++) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
-  }
+  RepresentativeClientInitialMetadata::Prepare(&b);
 
   gpr_event* bm_done = new gpr_event;
   gpr_event_init(bm_done);
@@ -567,14 +564,8 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   };
 
   auto arena = grpc_core::MakeScopedArena(1024);
-  std::vector<grpc_mdelem> elems =
-      RepresentativeClientInitialMetadata::GetElems();
-  std::vector<grpc_linked_mdelem> storage(elems.size());
   grpc_metadata_batch b(arena.get());
-  for (size_t i = 0; i < elems.size(); i++) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
-  }
+  RepresentativeClientInitialMetadata::Prepare(&b);
 
   std::unique_ptr<TestClosure> do_nothing =
       MakeTestClosure([](grpc_error_handle /*error*/) {});
