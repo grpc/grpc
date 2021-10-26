@@ -113,7 +113,7 @@ absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
       }
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
-          "policy contains unknown field \"%s\".", object.first));
+          "policy contains unknown field \"%s\" in \"source\".", object.first));
     }
   }
   if (peer.empty()) {
@@ -148,14 +148,12 @@ absl::StatusOr<Rbac::Permission> ParseHeaderValues(
 
 absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
   absl::string_view key;
-  Json values;
-  bool has_key = false, has_values = false;
+  const Json* values = nullptr;
   for (const auto& object : json.object_value()) {
     if (object.first == "key") {
       if (object.second.type() != Json::Type::STRING) {
         return absl::InvalidArgumentError("\"key\" is not a string.");
       }
-      has_key = true;
       key = object.second.string_value();
       if (absl::StartsWith(key, ":") || absl::StartsWith(key, "grpc-") ||
           IsUnsupportedHeader(key)) {
@@ -166,18 +164,19 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
       if (object.second.type() != Json::Type::ARRAY) {
         return absl::InvalidArgumentError("\"values\" is not an array.");
       }
-      has_values = true;
-      values = std::move(object.second);
+      values = &object.second;
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
           "policy contains unknown field \"%s\".", object.first));
     }
   }
-  if (!has_key || !has_values) {
-    return absl::InvalidArgumentError(
-        "missing required field(s) \"key\" or \"values\".");
+  if (key.empty()) {
+    return absl::InvalidArgumentError("\"key\" is not present.");
   }
-  return ParseHeaderValues(values, key);
+  if (values == nullptr) {
+    return absl::InvalidArgumentError("\"values\" is not present.");
+  }
+  return ParseHeaderValues(*values, key);
 }
 
 absl::StatusOr<Rbac::Permission> ParseHeadersArray(const Json& json) {
@@ -245,7 +244,8 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
       }
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
-          "policy contains unknown field \"%s\".", object.first));
+          "policy contains unknown field \"%s\" in \"request\".",
+          object.first));
     }
   }
   if (request.empty()) {
@@ -256,48 +256,48 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
 
 absl::StatusOr<Rbac::Policy> ParseRule(const Json& json,
                                        std::string* policy_name) {
-  Rbac::Principal principals;
-  Rbac::Permission permissions;
-  bool has_name = false, has_source = false, has_request = false;
+  std::unique_ptr<Rbac::Principal> principals;
+  std::unique_ptr<Rbac::Permission> permissions;
   for (const auto& object : json.object_value()) {
     if (object.first == "name") {
       if (object.second.type() != Json::Type::STRING) {
         return absl::InvalidArgumentError(
             absl::StrCat("\"name\" is not a string."));
       }
-      has_name = true;
       *policy_name = object.second.string_value();
     } else if (object.first == "source") {
       if (object.second.type() != Json::Type::OBJECT) {
         return absl::InvalidArgumentError("\"source\" is not an object.");
       }
-      has_source = true;
       auto peer_or = ParsePeer(object.second);
       if (!peer_or.ok()) return peer_or.status();
-      principals = std::move(peer_or.value());
+      principals =
+          absl::make_unique<Rbac::Principal>(std::move(peer_or.value()));
     } else if (object.first == "request") {
       if (object.second.type() != Json::Type::OBJECT) {
         return absl::InvalidArgumentError("\"request\" is not an object.");
       }
-      has_request = true;
       auto request_or = ParseRequest(object.second);
       if (!request_or.ok()) return request_or.status();
-      permissions = std::move(request_or.value());
+      permissions =
+          absl::make_unique<Rbac::Permission>(std::move(request_or.value()));
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
-          "policy contains unknown field \"%s\".", object.first));
+          "policy contains unknown field \"%s\" in \"rule\".", object.first));
     }
   }
-  if (!has_name) {
+  if (policy_name->empty()) {
     return absl::InvalidArgumentError(absl::StrCat("\"name\" is not present."));
   }
-  if (!has_source) {
-    principals = Rbac::Principal(Rbac::Principal::RuleType::kAny);
+  if (principals == nullptr) {
+    principals = absl::make_unique<Rbac::Principal>(
+        Rbac::Principal(Rbac::Principal::RuleType::kAny));
   }
-  if (!has_request) {
-    permissions = Rbac::Permission(Rbac::Permission::RuleType::kAny);
+  if (permissions == nullptr) {
+    permissions = absl::make_unique<Rbac::Permission>(
+        Rbac::Permission(Rbac::Permission::RuleType::kAny));
   }
-  return Rbac::Policy(std::move(permissions), std::move(principals));
+  return Rbac::Policy(std::move(*permissions), std::move(*principals));
 }
 
 absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
@@ -356,17 +356,16 @@ absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
     return absl::InvalidArgumentError(
         "SDK authorization policy is not an object.");
   }
-  auto name_it = json.object_value().find("name");
-  if (name_it == json.object_value().end()) {
-    return absl::InvalidArgumentError("\"name\" is not present.");
+  auto it = json.object_value().find("name");
+  if (it == json.object_value().end()) {
+    return absl::InvalidArgumentError("\"name\" field is not present.");
   }
-  if (name_it->second.type() != Json::Type::STRING) {
+  if (it->second.type() != Json::Type::STRING) {
     return absl::InvalidArgumentError("\"name\" is not a string.");
   }
-  absl::string_view name = name_it->second.string_value();
-  Rbac allow;
-  Rbac deny;
-  bool has_deny_rules = false, has_allow_rules = false;
+  absl::string_view name = it->second.string_value();
+  std::unique_ptr<Rbac> allow_rbac;
+  std::unique_ptr<Rbac> deny_rbac;
   for (const auto& object : json.object_value()) {
     if (object.first == "name") {
       continue;
@@ -374,41 +373,37 @@ absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
       if (object.second.type() != Json::Type::ARRAY) {
         return absl::InvalidArgumentError("\"deny_rules\" is not an array.");
       }
-      has_deny_rules = true;
       auto deny_policy_or = ParseDenyRulesArray(object.second, name);
       if (!deny_policy_or.ok()) {
         return absl::Status(
             deny_policy_or.status().code(),
             absl::StrCat("deny_", deny_policy_or.status().message()));
       }
-      deny = std::move(deny_policy_or.value());
+      deny_rbac = absl::make_unique<Rbac>(std::move(deny_policy_or.value()));
     } else if (object.first == "allow_rules") {
       if (object.second.type() != Json::Type::ARRAY) {
         return absl::InvalidArgumentError("\"allow_rules\" is not an array.");
       }
-      has_allow_rules = true;
       auto allow_policy_or = ParseAllowRulesArray(object.second, name);
       if (!allow_policy_or.ok()) {
         return absl::Status(
             allow_policy_or.status().code(),
             absl::StrCat("allow_", allow_policy_or.status().message()));
       }
-      allow = std::move(allow_policy_or.value());
+      allow_rbac = absl::make_unique<Rbac>(std::move(allow_policy_or.value()));
     } else {
       return absl::InvalidArgumentError(absl::StrFormat(
           "policy contains unknown field \"%s\".", object.first));
     }
   }
-  if (!has_allow_rules) {
+  if (allow_rbac == nullptr) {
     return absl::InvalidArgumentError("\"allow_rules\" is not present.");
   }
   absl::InlinedVector<Rbac, 2> rbacs;
-  if (has_deny_rules) {
-    rbacs.push_back(std::move(deny));
-    rbacs.push_back(std::move(allow));
-  } else {
-    rbacs.push_back(std::move(allow));
-  };
+  if (deny_rbac != nullptr) {
+    rbacs.push_back(std::move(*deny_rbac));
+  }
+  rbacs.push_back(std::move(*allow_rbac));
   return std::move(rbacs);
 }
 
