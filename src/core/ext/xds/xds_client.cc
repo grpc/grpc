@@ -773,6 +773,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
                     grpc_schedule_on_exec_ctx);
   for (const auto& a : xds_client()->authority_state_map_) {
+    // Skip authorities that are not using this xDS channel.
+    if (a.second.channel_state != chand()) continue;
     for (const auto& l : a.second.listener_map) {
       SubscribeLocked(XdsApi::kLdsTypeUrl, {a.first, l.first});
     }
@@ -2564,8 +2566,8 @@ std::string XdsClient::DumpClientConfigBinary() {
       resource_type_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
   auto& eds_map =
       resource_type_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
-  // Collect resource metadata from listeners
   for (auto& a : authority_state_map_) {
+    // Collect resource metadata from listeners
     for (auto& p : a.second.listener_map) {
       lds_map[XdsApi::ConstructFullResourceName(a.first, XdsApi::kLdsTypeUrl,
                                                 p.first)] = &p.second.meta;

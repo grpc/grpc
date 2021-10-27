@@ -804,6 +804,27 @@ const char* kCdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
 const char* kEdsV2TypeUrl =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
+bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
+  if (type_url == XdsApi::kLdsTypeUrl) return true;
+  if (type_url == kLdsV2TypeUrl) {
+    if (is_v2 != nullptr) *is_v2 = true;
+    return true;
+  }
+  return false;
+}
+
+bool IsRdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
+  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
+}
+
+bool IsCdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
+  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
+}
+
+bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
+  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
+}
+
 }  // namespace
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
@@ -860,30 +881,24 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
   XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
 }
 
-bool XdsApi::IsLds(absl::string_view type_url, bool* is_v2) {
-  if (type_url == XdsApi::kLdsTypeUrl) return true;
-  if (type_url == kLdsV2TypeUrl) {
-    if (is_v2 != nullptr) *is_v2 = true;
-    return true;
-  }
-  return false;
+bool XdsApi::IsLds(absl::string_view type_url) {
+  return IsLdsInternal(type_url);
 }
 
-bool XdsApi::IsRds(absl::string_view type_url, bool* is_v2) {
-  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
+bool XdsApi::IsRds(absl::string_view type_url) {
+  return IsRdsInternal(type_url);
 }
 
-bool XdsApi::IsCds(absl::string_view type_url, bool* is_v2) {
-  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
+bool XdsApi::IsCds(absl::string_view type_url) {
+  return IsCdsInternal(type_url);
 }
 
-bool XdsApi::IsEds(absl::string_view type_url, bool* is_v2) {
-  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
+bool XdsApi::IsEds(absl::string_view type_url) {
+  return IsEdsInternal(type_url);
 }
 
 absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
-    absl::string_view name,
-    bool (*is_expected_type)(absl::string_view, bool*)) {
+    absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
   // Old-style names use the empty string for authority.
   // ID is prefixed with "old:" to indicate that it's an old-style name.
   if (!absl::StartsWith(name, "xdstp:")) {
@@ -896,7 +911,7 @@ absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
   std::pair<absl::string_view, absl::string_view> path_parts =
       absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
   if (is_expected_type != nullptr) {
-    if (!((*is_expected_type)(path_parts.first, nullptr))) {
+    if (!((*is_expected_type)(path_parts.first))) {
       return absl::InvalidArgumentError(
           "xdstp URI path must indicate valid xDS resource type");
     }
@@ -3379,12 +3394,14 @@ grpc_error_handle EdsResourceParse(
 }
 
 template <typename ProtoParseFunction, typename ProtoResourceNameFunction,
-          typename ResourceTypeSelectorFunction, typename ProtoLogFunction,
+          typename ResourceTypeSelectorFunction,
+          typename ResourceNameValidationFunction, typename ProtoLogFunction,
           typename ResourceParseFunction, typename UpdateMap>
 grpc_error_handle AdsResponseParse(
     const EncodingContext& context, ProtoParseFunction proto_parse_function,
     ProtoResourceNameFunction proto_resource_name_function,
     ResourceTypeSelectorFunction resource_type_selector_function,
+    ResourceNameValidationFunction resource_name_validation_function,
     ProtoLogFunction proto_log_function,
     ResourceParseFunction resource_parse_function,
     const char* resource_type_string,
@@ -3422,7 +3439,7 @@ grpc_error_handle AdsResponseParse(
     std::string resource_name =
         UpbStringToStdString(proto_resource_name_function(resource));
     auto resource_name_status = XdsApi::ParseResourceName(
-        resource_name, resource_type_selector_function);
+        resource_name, resource_name_validation_function);
     if (!resource_name_status.ok()) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "Cannot parse xDS resource name \"", resource_name, "\"")));
@@ -3536,27 +3553,27 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   if (IsLds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
-        IsLds, MaybeLogListener, LdsResourceParse, "LDS", response,
-        expected_listener_names, &result.lds_update_map,
+        IsLdsInternal, IsLds, MaybeLogListener, LdsResourceParse, "LDS",
+        response, expected_listener_names, &result.lds_update_map,
         &result.resource_names_failed);
   } else if (IsRds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_route_v3_RouteConfiguration_parse,
-        RdsResourceName, IsRds, MaybeLogRouteConfiguration, RouteConfigParse,
-        "RDS", response, expected_route_configuration_names,
+        RdsResourceName, IsRdsInternal, IsRds, MaybeLogRouteConfiguration,
+        RouteConfigParse, "RDS", response, expected_route_configuration_names,
         &result.rds_update_map, &result.resource_names_failed);
   } else if (IsCds(result.type_url)) {
     result.parse_error = AdsResponseParse(
-        context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName, IsCds,
-        MaybeLogCluster, CdsResourceParse, "CDS", response,
-        expected_cluster_names, &result.cds_update_map,
+        context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName,
+        IsCdsInternal, IsCds, MaybeLogCluster, CdsResourceParse, "CDS",
+        response, expected_cluster_names, &result.cds_update_map,
         &result.resource_names_failed);
   } else if (IsEds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
-        EdsResourceName, IsEds, MaybeLogClusterLoadAssignment, EdsResourceParse,
-        "EDS", response, expected_eds_service_names, &result.eds_update_map,
-        &result.resource_names_failed);
+        EdsResourceName, IsEdsInternal, IsEds, MaybeLogClusterLoadAssignment,
+        EdsResourceParse, "EDS", response, expected_eds_service_names,
+        &result.eds_update_map, &result.resource_names_failed);
   }
   return result;
 }
