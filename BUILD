@@ -58,6 +58,14 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
+selects.config_setting_group(
+    name = "grpc_mobile",
+    match_any = [
+        ":android",
+        ":ios",
+    ],
+)
+
 # Fuzzers can be built as fuzzers or as tests
 config_setting(
     name = "grpc_build_fuzzers",
@@ -72,8 +80,24 @@ selects.config_setting_group(
         # specified, we also disable it on mobile platforms where it is not
         # likely to be needed and where reducing the binary size is more
         # important.
-        ":android",
-        ":ios",
+        ":grpc_mobile",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_rls",
+    match_any = [
+        # Disable it on mobile platforms where it is not likely to be needed
+        # and where reducing the binary size is more important.
+        ":grpc_mobile",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_xds_or_rls",
+    match_all = [
+        ":grpc_no_xds",
+        ":grpc_no_rls",
     ],
 )
 
@@ -368,6 +392,16 @@ grpc_cc_library(
     ],
 )
 
+GRPC_XDS_TARGETS = [
+    "grpc_lb_policy_cds",
+    "grpc_lb_policy_xds_cluster_impl",
+    "grpc_lb_policy_xds_cluster_manager",
+    "grpc_lb_policy_xds_cluster_resolver",
+    "grpc_resolver_xds",
+    "grpc_resolver_c2p",
+    "grpc_xds_server_config_fetcher",
+]
+
 grpc_cc_library(
     name = "grpc",
     srcs = [
@@ -376,21 +410,20 @@ grpc_cc_library(
     ],
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
+        "grpc_no_rls": ["GRPC_NO_RLS"],
+        "grpc_no_xds_or_rls": ["GRPC_NO_XDS", "GRPC_NO_RLS"],
         "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc_lb_policy_cds",
-            "grpc_lb_policy_xds_cluster_impl",
-            "grpc_lb_policy_xds_cluster_manager",
-            "grpc_lb_policy_xds_cluster_resolver",
-            "grpc_resolver_xds",
-            "grpc_resolver_c2p",
-            "grpc_xds_server_config_fetcher",
-        ],
+        # TODO(roth): This is pretty horrible.  Is there a better way to
+        # apply two different settings without having to expand the
+        # cross-product of the two?
+        "grpc_no_xds": ["grpc_lb_policy_rls"],
+        "grpc_no_rls": GRPC_XDS_TARGETS,
+        "grpc_no_xds_or_rls": [],
+        "//conditions:default": ["grpc_lb_policy_rls"] + GRPC_XDS_TARGETS,
     },
     standalone = True,
     visibility = [
@@ -402,7 +435,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
