@@ -20,7 +20,7 @@
 #include <functional>
 #include <unordered_map>
 
-#include <uv.h>
+#include "uv.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/thd_id.h>
