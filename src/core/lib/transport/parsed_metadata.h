@@ -69,7 +69,7 @@ class ParsedMetadata {
       Which,
       absl::enable_if_t<
           !metadata_detail::HasSimpleMemento<Which>::value &&
-              !std::is_convertible<typename Which::ValueType, Slice>::value,
+              !std::is_convertible<typename Which::MementoType, Slice>::value,
           typename Which::MementoType>
           value,
       uint32_t transport_size)
