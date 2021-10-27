@@ -411,7 +411,10 @@ grpc_cc_library(
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
         "grpc_no_rls": ["GRPC_NO_RLS"],
-        "grpc_no_xds_or_rls": ["GRPC_NO_XDS", "GRPC_NO_RLS"],
+        "grpc_no_xds_or_rls": [
+            "GRPC_NO_XDS",
+            "GRPC_NO_RLS",
+        ],
         "//conditions:default": [],
     }),
     language = "c++",
