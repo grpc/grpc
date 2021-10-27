@@ -851,7 +851,8 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
   XdsApi::RdsUpdate::VirtualHost* vhost =
-      rds_update.FindVirtualHostForDomain(server_name_);
+      XdsApi::RdsUpdate::FindVirtualHostForDomain(&rds_update.virtual_hosts,
+                                                  server_name_);
   if (vhost == nullptr) {
     OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,

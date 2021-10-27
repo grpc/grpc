@@ -9780,6 +9780,178 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
               ::testing::HasSubstr("Match can't be null"));
 }
 
+TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  HttpConnectionManager http_connection_manager;
+  *http_connection_manager.mutable_route_config() =
+      default_route_config_;  // inappropriate route config for servers
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetRdsResource(default_server_route_config_);
+  // The server should be ready to serve but RPCs should fail.
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerRdsTest, NonInlineRouteConfiguration) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  HttpConnectionManager http_connection_manager;
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultServerRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetRdsResource(default_server_route_config_);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationDefaultFilterChain) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  HttpConnectionManager http_connection_manager;
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultServerRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetRdsResource(default_server_route_config_);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  HttpConnectionManager http_connection_manager;
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultServerRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerRdsTest, MultipleRouteConfigurationsToFetch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  // Set a filter chain with simple_server_route_config name
+  HttpConnectionManager http_connection_manager;
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultServerRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("router");
+  http_filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  // Set default filter chain with a different route config name
+  auto new_route_config = default_server_route_config_;
+  new_route_config.set_name("new_server_route_config");
+  http_connection_manager.mutable_rds()->set_route_config_name(
+      new_route_config.name());
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(http_connection_manager);
+  // Set another filter chain with another route config name
+  auto another_route_config = default_server_route_config_;
+  another_route_config.set_name("another_server_route_config");
+  http_connection_manager.mutable_rds()->set_route_config_name(
+      another_route_config.name());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::SAME_IP_OR_LOOPBACK);
+  // Add another filter chain with the same route config name
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::EXTERNAL);
+  // Add another filter chain with an inline route config
+  filter_chain = listener.add_filter_chains();
+  filter_chain->mutable_filter_chain_match()->add_source_ports(1234);
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      ServerHcmAccessor().Unpack(listener));
+  // Set resources on the ADS service
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  balancers_[0]->ads_service()->SetRdsResource(default_server_route_config_);
+  balancers_[0]->ads_service()->SetRdsResource(new_route_config);
+  balancers_[0]->ads_service()->SetRdsResource(another_route_config);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
 using EdsTest = BasicTest;
 
 // Tests that EDS client should send a NACK if the EDS update contains

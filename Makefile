@@ -1119,6 +1119,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
+    src/core/ext/filters/server_config_selector/server_config_selector.cc \
+    src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
     src/core/ext/service_config/service_config.cc \
     src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
@@ -2712,6 +2714,8 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPEN
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
+src/core/ext/filters/server_config_selector/server_config_selector.cc: $(OPENSSL_DEP)
+src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c: $(OPENSSL_DEP)

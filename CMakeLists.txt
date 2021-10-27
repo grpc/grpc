@@ -1567,6 +1567,8 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/filters/server_config_selector/server_config_selector.cc
+  src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   src/core/ext/service_config/service_config.cc
   src/core/ext/service_config/service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
@@ -14741,7 +14743,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_config_selector_test
-  src/core/ext/filters/server_config_selector/server_config_selector.cc
   test/core/server_config_selector/server_config_selector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
