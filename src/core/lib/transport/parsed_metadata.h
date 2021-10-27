@@ -67,8 +67,10 @@ class ParsedMetadata {
   template <typename Which>
   ParsedMetadata(
       Which,
-      absl::enable_if_t<!metadata_detail::HasSimpleMemento<Which>::value,
-                        typename Which::MementoType>
+      absl::enable_if_t<
+          !metadata_detail::HasSimpleMemento<Which>::value &&
+              !std::is_convertible<typename Which::ValueType, Slice>::value,
+          typename Which::MementoType>
           value,
       uint32_t transport_size)
       : vtable_(ParsedMetadata::template NonTrivialTraitVTable<Which>()),
