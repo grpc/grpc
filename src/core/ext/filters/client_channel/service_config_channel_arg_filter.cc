@@ -19,11 +19,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/service_config/service_config_call_data.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 

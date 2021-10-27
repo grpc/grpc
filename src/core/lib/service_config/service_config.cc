@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config.h"
 
 #include <string>
 
@@ -24,8 +24,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {

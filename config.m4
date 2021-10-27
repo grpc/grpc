@@ -114,8 +114,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
-    src/core/ext/service_config/service_config.cc \
-    src/core/ext/service_config/service_config_parser.cc \
+    src/core/lib/service_config/service_config.cc \
+    src/core/lib/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
@@ -1093,7 +1093,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/max_age)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/service_config)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)

@@ -23,10 +23,10 @@
 
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/service_config/service_config.h"
-#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
 

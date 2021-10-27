@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/ext/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -28,8 +28,8 @@
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
-#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

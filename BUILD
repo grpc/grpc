@@ -1941,13 +1941,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_service_config",
     srcs = [
-        "src/core/ext/service_config/service_config.cc",
-        "src/core/ext/service_config/service_config_parser.cc",
+        "src/core/lib/service_config/service_config.cc",
+        "src/core/lib/service_config/service_config_parser.cc",
     ],
     hdrs = [
-        "src/core/ext/service_config/service_config.h",
-        "src/core/ext/service_config/service_config_call_data.h",
-        "src/core/ext/service_config/service_config_parser.h",
+        "src/core/lib/service_config/service_config.h",
+        "src/core/lib/service_config/service_config_call_data.h",
+        "src/core/lib/service_config/service_config_parser.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",
