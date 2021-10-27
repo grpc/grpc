@@ -266,8 +266,11 @@ class XdsClient::ChannelState::AdsCallState
     grpc_error_handle error = GRPC_ERROR_NONE;
 
     // Subscribed resources of this type.
-    std::map<XdsApi::ResourceName, OrphanablePtr<ResourceState>>
+    std::map<std::string /*authority*/,
+             std::map<std::string /*name*/, OrphanablePtr<ResourceState>>>
         subscribed_resources;
+    // std::map<XdsApi::ResourceName, OrphanablePtr<ResourceState>>
+    // subscribed_resources;
   };
 
   void SendMessageLocked(const std::string& type_url,
@@ -904,7 +907,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
 
 void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
     const std::string& type_url, const XdsApi::ResourceName& resource) {
-  auto& state = state_map_[type_url].subscribed_resources[resource];
+  auto& state = state_map_[type_url]
+                    .subscribed_resources[resource.authority][resource.id];
   if (state == nullptr) {
     state = MakeOrphanable<ResourceState>(
         type_url, resource,
@@ -919,7 +923,11 @@ void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
 void XdsClient::ChannelState::AdsCallState::UnsubscribeLocked(
     const std::string& type_url, const XdsApi::ResourceName& resource,
     bool delay_unsubscription) {
-  state_map_[type_url].subscribed_resources.erase(resource);
+  state_map_[type_url].subscribed_resources[resource.authority].erase(
+      resource.id);
+  if (state_map_[type_url].subscribed_resources[resource.authority].empty()) {
+    state_map_[type_url].subscribed_resources.erase(resource.authority);
+  }
   if (!delay_unsubscription) SendMessageLocked(type_url, resource.authority);
 }
 
@@ -960,7 +968,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   std::set<std::string> rds_resource_names_seen;
   for (auto& p : lds_update_map) {
     XdsApi::LdsUpdate& lds_update = p.second.resource;
-    auto& state = lds_state.subscribed_resources[p.first];
+    auto& state = lds_state.subscribed_resources[p.first.authority][p.first.id];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
@@ -1023,22 +1031,22 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   }
   // For any subscribed resource that is not present in the update,
   // remove it from the cache and notify watchers that it does not exist.
-  for (const auto& p : lds_state.subscribed_resources) {
-    if (lds_update_map.find(p.first) == lds_update_map.end()) {
-      ListenerState& listener_state =
-          xds_client()
-              ->authority_state_map_[p.first.authority]
-              .listener_map[p.first.id];
-      // If the resource was newly requested but has not yet been received,
-      // we don't want to generate an error for the watchers, because this LDS
-      // response may be in reaction to an earlier request that did not yet
-      // request the new resource, so its absence from the response does not
-      // necessarily indicate that the resource does not exist.
-      // For that case, we rely on the request timeout instead.
-      if (!listener_state.update.has_value()) continue;
-      listener_state.update.reset();
-      for (const auto& p : listener_state.watchers) {
-        p.first->OnResourceDoesNotExist();
+  for (const auto& a : lds_state.subscribed_resources) {
+    for (const auto& p : a.second) {
+      if (lds_update_map.find({a.first, p.first}) == lds_update_map.end()) {
+        ListenerState& listener_state =
+            xds_client()->authority_state_map_[a.first].listener_map[p.first];
+        // If the resource was newly requested but has not yet been received,
+        // we don't want to generate an error for the watchers, because this LDS
+        // response may be in reaction to an earlier request that did not yet
+        // request the new resource, so its absence from the response does not
+        // necessarily indicate that the resource does not exist.
+        // For that case, we rely on the request timeout instead.
+        if (!listener_state.update.has_value()) continue;
+        listener_state.update.reset();
+        for (const auto& p : listener_state.watchers) {
+          p.first->OnResourceDoesNotExist();
+        }
       }
     }
   }
@@ -1046,17 +1054,19 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // resources, remove it from the cache and notify watchers that it
   // does not exist.
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
-  for (const auto& p : rds_state.subscribed_resources) {
-    if (rds_resource_names_seen.find(XdsApi::ConstructFullResourceName(
-            p.first.authority, XdsApi::kRdsTypeUrl, p.first.id)) ==
-        rds_resource_names_seen.end()) {
-      RouteConfigState& route_config_state =
-          xds_client()
-              ->authority_state_map_[p.first.authority]
-              .route_config_map[p.first.id];
-      route_config_state.update.reset();
-      for (const auto& p : route_config_state.watchers) {
-        p.first->OnResourceDoesNotExist();
+  for (const auto& a : rds_state.subscribed_resources) {
+    for (const auto& p : a.second) {
+      if (rds_resource_names_seen.find(XdsApi::ConstructFullResourceName(
+              a.first, XdsApi::kRdsTypeUrl, p.first)) ==
+          rds_resource_names_seen.end()) {
+        RouteConfigState& route_config_state =
+            xds_client()
+                ->authority_state_map_[a.first]
+                .route_config_map[p.first];
+        route_config_state.update.reset();
+        for (const auto& p : route_config_state.watchers) {
+          p.first->OnResourceDoesNotExist();
+        }
       }
     }
   }
@@ -1074,7 +1084,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
     XdsApi::RdsUpdate& rds_update = p.second.resource;
-    auto& state = rds_state.subscribed_resources[p.first];
+    auto& state = rds_state.subscribed_resources[p.first.authority][p.first.id];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
@@ -1122,7 +1132,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
     XdsApi::CdsUpdate& cds_update = p.second.resource;
-    auto& state = cds_state.subscribed_resources[p.first];
+    auto& state = cds_state.subscribed_resources[p.first.authority][p.first.id];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] cluster=%s: %s", xds_client(),
@@ -1182,22 +1192,22 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   }
   // For any subscribed resource that is not present in the update,
   // remove it from the cache and notify watchers that it does not exist.
-  for (const auto& p : cds_state.subscribed_resources) {
-    if (cds_update_map.find(p.first) == cds_update_map.end()) {
-      ClusterState& cluster_state =
-          xds_client()
-              ->authority_state_map_[p.first.authority]
-              .cluster_map[p.first.id];
-      // If the resource was newly requested but has not yet been received,
-      // we don't want to generate an error for the watchers, because this CDS
-      // response may be in reaction to an earlier request that did not yet
-      // request the new resource, so its absence from the response does not
-      // necessarily indicate that the resource does not exist.
-      // For that case, we rely on the request timeout instead.
-      if (!cluster_state.update.has_value()) continue;
-      cluster_state.update.reset();
-      for (const auto& p : cluster_state.watchers) {
-        p.first->OnResourceDoesNotExist();
+  for (const auto& a : cds_state.subscribed_resources) {
+    for (const auto& p : a.second) {
+      if (cds_update_map.find({a.first, p.first}) == cds_update_map.end()) {
+        ClusterState& cluster_state =
+            xds_client()->authority_state_map_[a.first].cluster_map[p.first];
+        // If the resource was newly requested but has not yet been received,
+        // we don't want to generate an error for the watchers, because this CDS
+        // response may be in reaction to an earlier request that did not yet
+        // request the new resource, so its absence from the response does not
+        // necessarily indicate that the resource does not exist.
+        // For that case, we rely on the request timeout instead.
+        if (!cluster_state.update.has_value()) continue;
+        cluster_state.update.reset();
+        for (const auto& p : cluster_state.watchers) {
+          p.first->OnResourceDoesNotExist();
+        }
       }
     }
   }
@@ -1205,17 +1215,17 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   // resources, remove it from the cache and notify watchers that it
   // does not exist.
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
-  for (const auto& p : eds_state.subscribed_resources) {
-    if (eds_resource_names_seen.find(XdsApi::ConstructFullResourceName(
-            p.first.authority, XdsApi::kEdsTypeUrl, p.first.id)) ==
-        eds_resource_names_seen.end()) {
-      EndpointState& endpoint_state =
-          xds_client()
-              ->authority_state_map_[p.first.authority]
-              .endpoint_map[p.first.id];
-      endpoint_state.update.reset();
-      for (const auto& p : endpoint_state.watchers) {
-        p.first->OnResourceDoesNotExist();
+  for (const auto& a : eds_state.subscribed_resources) {
+    for (const auto& p : a.second) {
+      if (eds_resource_names_seen.find(XdsApi::ConstructFullResourceName(
+              a.first, XdsApi::kEdsTypeUrl, p.first)) ==
+          eds_resource_names_seen.end()) {
+        EndpointState& endpoint_state =
+            xds_client()->authority_state_map_[a.first].endpoint_map[p.first];
+        endpoint_state.update.reset();
+        for (const auto& p : endpoint_state.watchers) {
+          p.first->OnResourceDoesNotExist();
+        }
       }
     }
   }
@@ -1233,7 +1243,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
     XdsApi::EdsUpdate& eds_update = p.second.resource;
-    auto& state = eds_state.subscribed_resources[p.first];
+    auto& state = eds_state.subscribed_resources[p.first.authority][p.first.id];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
@@ -1520,11 +1530,13 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
   std::set<std::string> resource_names;
   auto it = state_map_.find(type_url);
   if (it != state_map_.end()) {
-    for (auto& p : it->second.subscribed_resources) {
-      resource_names.insert(XdsApi::ConstructFullResourceName(
-          p.first.authority, type_url, p.first.id));
-      OrphanablePtr<ResourceState>& state = p.second;
-      state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
+    for (auto& a : it->second.subscribed_resources) {
+      for (auto& p : a.second) {
+        resource_names.insert(
+            XdsApi::ConstructFullResourceName(a.first, type_url, p.first));
+        OrphanablePtr<ResourceState>& state = p.second;
+        state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
+      }
     }
   }
   return resource_names;
