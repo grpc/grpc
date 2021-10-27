@@ -44,7 +44,7 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_no_xds_define",
+    name = "grpc_no_xds",
     values = {"define": "grpc_no_xds=true"},
 )
 
@@ -70,35 +70,6 @@ selects.config_setting_group(
 config_setting(
     name = "grpc_build_fuzzers",
     values = {"define": "grpc_build_fuzzers=true"},
-)
-
-selects.config_setting_group(
-    name = "grpc_no_xds",
-    match_any = [
-        ":grpc_no_xds_define",
-        # In addition to disabling XDS support when --define=grpc_no_xds=true is
-        # specified, we also disable it on mobile platforms where it is not
-        # likely to be needed and where reducing the binary size is more
-        # important.
-        ":grpc_mobile",
-    ],
-)
-
-selects.config_setting_group(
-    name = "grpc_no_rls",
-    match_any = [
-        # Disable it on mobile platforms where it is not likely to be needed
-        # and where reducing the binary size is more important.
-        ":grpc_mobile",
-    ],
-)
-
-selects.config_setting_group(
-    name = "grpc_no_xds_or_rls",
-    match_all = [
-        ":grpc_no_xds",
-        ":grpc_no_rls",
-    ],
 )
 
 config_setting(
@@ -409,23 +380,24 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
-        "grpc_no_rls": ["GRPC_NO_RLS"],
-        "grpc_no_xds_or_rls": [
+        # On mobile, don't build RLS or xDS.
+        "grpc_mobile": [
             "GRPC_NO_XDS",
             "GRPC_NO_RLS",
         ],
+        # Don't build xDS if --define=grpc_no_xds=true is used.
+        "grpc_no_xds": ["GRPC_NO_XDS"],
+        # By default, build both RLS and xDS.
         "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     select_deps = {
-        # TODO(roth): This is pretty horrible.  Is there a better way to
-        # apply two different settings without having to expand the
-        # cross-product of the two?
+        # On mobile, don't build RLS or xDS.
+        "grpc_mobile": [],
+        # Don't build xDS if --define=grpc_no_xds=true is used.
         "grpc_no_xds": ["grpc_lb_policy_rls"],
-        "grpc_no_rls": GRPC_XDS_TARGETS,
-        "grpc_no_xds_or_rls": [],
+        # By default, build both RLS and xDS.
         "//conditions:default": ["grpc_lb_policy_rls"] + GRPC_XDS_TARGETS,
     },
     standalone = True,
