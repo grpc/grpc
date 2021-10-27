@@ -248,7 +248,11 @@ class RlsEnd2endTest : public ::testing::Test {
     gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
     grpc_init();
-    grpc_core::RegisterFixedAddressLoadBalancingPolicy();
+
+    if (!is_fixed_address_load_balancing_policy_registered_) {
+      grpc_core::RegisterFixedAddressLoadBalancingPolicy();
+      is_fixed_address_load_balancing_policy_registered_ = true;
+    }
   }
 
   static void TearDownTestSuite() {
@@ -560,6 +564,7 @@ class RlsEnd2endTest : public ::testing::Test {
     bool running_ = false;
   };
 
+  static bool is_fixed_address_load_balancing_policy_registered_;
   bool ipv6_only_;
   std::vector<std::unique_ptr<ServerThread<MyTestServiceImpl>>> backends_;
   std::unique_ptr<ServerThread<RlsServiceImpl>> rls_server_;
@@ -568,6 +573,8 @@ class RlsEnd2endTest : public ::testing::Test {
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
 };
+
+bool RlsEnd2endTest::is_fixed_address_load_balancing_policy_registered_ = false;
 
 TEST_F(RlsEnd2endTest, Basic) {
   StartBackends(1);
