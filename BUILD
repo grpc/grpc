@@ -1957,8 +1957,8 @@ grpc_cc_library(
     deps = [
         "error",
         "gpr_base",
-        "grpc_base",
         "json",
+        "slice",
     ],
 )
 
