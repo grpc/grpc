@@ -3387,8 +3387,8 @@ grpc_error_handle AdsResponseParse(
     ResourceTypeSelectorFunction resource_type_selector_function,
     ProtoLogFunction proto_log_function,
     ResourceParseFunction resource_parse_function,
-    const envoy_service_discovery_v3_DiscoveryResponse* response,
     const char* resource_type_string,
+    const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<std::string>& expected_resource_names, UpdateMap* update_map,
     std::set<XdsApi::ResourceName>* resource_names_failed) {
   std::vector<grpc_error_handle> errors;
@@ -3433,10 +3433,10 @@ grpc_error_handle AdsResponseParse(
       continue;
     }
     // Fail on duplicate resources.
-    if (update_map->find(resource_name_status.value()) != update_map->end()) {
+    if (update_map->find(*resource_name_status) != update_map->end()) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("duplicate resource name \"", resource_name, "\"")));
-      resource_names_failed->insert(resource_name_status.value());
+      resource_names_failed->insert(*resource_name_status);
       continue;
     }
     // Validate resource.
@@ -3448,10 +3448,10 @@ grpc_error_handle AdsResponseParse(
           grpc_error_add_child(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
                                    resource_name, ": validation error")),
                                error));
-      resource_names_failed->insert(resource_name_status.value());
+      resource_names_failed->insert(*resource_name_status);
     } else {
       // Store result in update map, in both validated and serialized form.
-      auto& resource_data = (*update_map)[resource_name_status.value()];
+      auto& resource_data = (*update_map)[*resource_name_status];
       resource_data.resource = std::move(update);
       resource_data.serialized_proto =
           UpbStringToStdString(serialized_resource);
@@ -3536,26 +3536,26 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   if (IsLds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
-        IsLds, MaybeLogListener, LdsResourceParse, response, "LDS",
+        IsLds, MaybeLogListener, LdsResourceParse, "LDS", response,
         expected_listener_names, &result.lds_update_map,
         &result.resource_names_failed);
   } else if (IsRds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_route_v3_RouteConfiguration_parse,
         RdsResourceName, IsRds, MaybeLogRouteConfiguration, RouteConfigParse,
-        response, "RDS", expected_route_configuration_names,
+        "RDS", response, expected_route_configuration_names,
         &result.rds_update_map, &result.resource_names_failed);
   } else if (IsCds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName, IsCds,
-        MaybeLogCluster, CdsResourceParse, response, "CDS",
+        MaybeLogCluster, CdsResourceParse, "CDS", response,
         expected_cluster_names, &result.cds_update_map,
         &result.resource_names_failed);
   } else if (IsEds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
         EdsResourceName, IsEds, MaybeLogClusterLoadAssignment, EdsResourceParse,
-        response, "EDS", expected_eds_service_names, &result.eds_update_map,
+        "EDS", response, expected_eds_service_names, &result.eds_update_map,
         &result.resource_names_failed);
   }
   return result;

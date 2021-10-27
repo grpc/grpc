@@ -294,7 +294,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
     // Stores the most recent accepted resource version for each resource type.
     std::map<std::string /*type*/, std::string /*version*/>
-        resource_version_map;
+        resource_type_version_map;
 
     bool HasSubscribedResources() {
       return !listener_map.empty() || !route_config_map.empty() ||
@@ -316,8 +316,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
-  // Stores watchers for invalid resource names, we need to make sure these
-  // Sends an error notification to all watchers.
   void NotifyOnErrorLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 

@@ -74,7 +74,7 @@ namespace {
 gpr_once g_once_init = GPR_ONCE_INIT;
 Mutex* g_mu = nullptr;
 
-void init_global_mutex() { g_mu = new Mutex(); }
+void InitGlobalMutex() { g_mu = new Mutex(); }
 
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
@@ -862,25 +862,25 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       chand()->server_, type_url, resource_names,
       xds_client()
           ->authority_state_map_[authority]
-          .resource_version_map[type_url],
+          .resource_type_version_map[type_url],
       state.nonce, GRPC_ERROR_REF(state.error), !sent_initial_message_);
   if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
       type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
   }
   sent_initial_message_ = true;
-  // if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-  gpr_log(GPR_INFO,
-          "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
-          "error=%s resources=%s",
-          xds_client(), type_url.c_str(),
-          xds_client()
-              ->authority_state_map_[authority]
-              .resource_version_map[type_url]
-              .c_str(),
-          state.nonce.c_str(), grpc_error_std_string(state.error).c_str(),
-          absl::StrJoin(resource_names, " ").c_str());
-  //}
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
+            "error=%s resources=%s",
+            xds_client(), type_url.c_str(),
+            xds_client()
+                ->authority_state_map_[authority]
+                .resource_type_version_map[type_url]
+                .c_str(),
+            state.nonce.c_str(), grpc_error_std_string(state.error).c_str(),
+            absl::StrJoin(resource_names, " ").c_str());
+  }
   GRPC_ERROR_UNREF(state.error);
   state.error = GRPC_ERROR_NONE;
   // Create message payload.
@@ -913,7 +913,7 @@ void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
         type_url, resource,
         !xds_client()
              ->authority_state_map_[resource.authority]
-             .resource_version_map[type_url]
+             .resource_type_version_map[type_url]
              .empty());
     SendMessageLocked(type_url, resource.authority);
   }
@@ -983,7 +983,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
             .listener_map[p.first.id];
     xds_client()
         ->authority_state_map_[p.first.authority]
-        .resource_version_map[XdsApi::kLdsTypeUrl] = version;
+        .resource_type_version_map[XdsApi::kLdsTypeUrl] = version;
     // Ignore identical update.
     if (listener_state.update.has_value() &&
         *listener_state.update == lds_update) {
@@ -1089,7 +1089,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
             .route_config_map[p.first.id];
     xds_client()
         ->authority_state_map_[p.first.authority]
-        .resource_version_map[XdsApi::kRdsTypeUrl] = version;
+        .resource_type_version_map[XdsApi::kRdsTypeUrl] = version;
     // Ignore identical update.
     if (route_config_state.update.has_value() &&
         *route_config_state.update == rds_update) {
@@ -1145,7 +1145,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
                                       .cluster_map[p.first.id];
     xds_client()
         ->authority_state_map_[p.first.authority]
-        .resource_version_map[XdsApi::kCdsTypeUrl] = version;
+        .resource_type_version_map[XdsApi::kCdsTypeUrl] = version;
     // Ignore identical update.
     if (cluster_state.update.has_value() &&
         *cluster_state.update == cds_update) {
@@ -1251,7 +1251,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
             .endpoint_map[p.first.id];
     xds_client()
         ->authority_state_map_[p.first.authority]
-        .resource_version_map[XdsApi::kEdsTypeUrl] = version;
+        .resource_type_version_map[XdsApi::kEdsTypeUrl] = version;
     // Ignore identical update.
     if (endpoint_state.update.has_value() &&
         *endpoint_state.update == eds_update) {
@@ -2021,7 +2021,6 @@ void XdsClient::Orphan() {
     gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
   }
   {
-    // debug this
     MutexLock lock(g_mu);
     if (g_xds_client == this) g_xds_client = nullptr;
   }
@@ -2116,8 +2115,9 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   authority_state.listener_map.erase(resource->id);
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kLdsTypeUrl, std::string(listener_name), delay_unsubscription);
-  if (authority_state.HasSubscribedResources()) return;
-  authority_state.channel_state.reset();
+  if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state.reset();
+  }
 }
 
 void XdsClient::WatchRouteConfigData(
@@ -2179,8 +2179,9 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kRdsTypeUrl, std::string(route_config_name),
       delay_unsubscription);
-  if (authority_state.HasSubscribedResources()) return;
-  authority_state.channel_state.reset();
+  if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state.reset();
+  }
 }
 
 void XdsClient::WatchClusterData(
@@ -2237,8 +2238,9 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   authority_state.cluster_map.erase(resource->id);
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kCdsTypeUrl, std::string(cluster_name), delay_unsubscription);
-  if (authority_state.HasSubscribedResources()) return;
-  authority_state.channel_state.reset();
+  if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state.reset();
+  }
 }
 
 void XdsClient::WatchEndpointData(
@@ -2296,8 +2298,9 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   authority_state.endpoint_map.erase(resource->id);
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kEdsTypeUrl, std::string(eds_service_name), delay_unsubscription);
-  if (authority_state.HasSubscribedResources()) return;
-  authority_state.channel_state.reset();
+  if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state.reset();
+  }
 }
 
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
@@ -2549,7 +2552,7 @@ std::string XdsClient::DumpClientConfigBinary() {
   // Update per-xds-type version if available, this version corresponding to the
   // last successful ADS update version.
   for (auto& a : authority_state_map_) {
-    for (auto& p : a.second.resource_version_map) {
+    for (auto& p : a.second.resource_type_version_map) {
       resource_type_metadata_map[p.first].version = p.second;
     }
   }
@@ -2592,8 +2595,7 @@ std::string XdsClient::DumpClientConfigBinary() {
 //
 
 void XdsClientGlobalInit() {
-  gpr_once_init(&g_once_init, init_global_mutex);
-  g_mu = new Mutex;
+  gpr_once_init(&g_once_init, InitGlobalMutex);
   XdsHttpFilterRegistry::Init();
 }
 
