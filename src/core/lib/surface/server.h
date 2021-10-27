@@ -110,7 +110,7 @@ class Server : public InternallyRefCounted<Server> {
   }
 
   void set_config_fetcher(
-      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
+      RefCountedPtr<grpc_server_config_fetcher> config_fetcher) {
     config_fetcher_ = std::move(config_fetcher);
   }
 
@@ -411,7 +411,7 @@ class Server : public InternallyRefCounted<Server> {
 
   grpc_channel_args* const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
-  std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
+  RefCountedPtr<grpc_server_config_fetcher> config_fetcher_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
@@ -470,7 +470,8 @@ struct grpc_server {
 // would be to do something like ServiceConfig and ConfigSelector, but
 // that might add unnecessary per-call overhead.  Need to consider other
 // approaches here.
-struct grpc_server_config_fetcher {
+struct grpc_server_config_fetcher
+    : public grpc_core::RefCounted<grpc_server_config_fetcher> {
  public:
   class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
    public:

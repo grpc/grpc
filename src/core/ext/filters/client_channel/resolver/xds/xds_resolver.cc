@@ -31,6 +31,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -596,39 +597,13 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   }
 }
 
-absl::optional<absl::string_view> GetHeaderValue(
-    grpc_metadata_batch* initial_metadata, absl::string_view header_name,
-    std::string* concatenated_value) {
-  // Note: If we ever allow binary headers here, we still need to
-  // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
-  // they are not visible to the LB policy in grpc-go.
-  if (absl::EndsWith(header_name, "-bin")) {
-    return absl::nullopt;
-  } else if (header_name == "content-type") {
-    return "application/grpc";
-  }
-  return initial_metadata->GetValue(header_name, concatenated_value);
-}
-
-bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
-                  grpc_metadata_batch* initial_metadata) {
-  for (const auto& header_matcher : header_matchers) {
-    std::string concatenated_value;
-    if (!header_matcher.Match(GetHeaderValue(
-            initial_metadata, header_matcher.name(), &concatenated_value))) {
-      return false;
-    }
-  }
-  return true;
-}
-
 absl::optional<uint64_t> HeaderHashHelper(
     const XdsApi::Route::RouteAction::HashPolicy& policy,
     grpc_metadata_batch* initial_metadata) {
   GPR_ASSERT(policy.type == XdsApi::Route::RouteAction::HashPolicy::HEADER);
   std::string value_buffer;
-  absl::optional<absl::string_view> header_value =
-      GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
+  absl::optional<absl::string_view> header_value = XdsRouting::GetHeaderValue(
+      initial_metadata, policy.header_name, &value_buffer);
   if (!header_value.has_value()) {
     return absl::nullopt;
   }
@@ -644,12 +619,6 @@ absl::optional<uint64_t> HeaderHashHelper(
   return XXH64(header_value->data(), header_value->size(), 0);
 }
 
-bool UnderFraction(const uint32_t fraction_per_million) {
-  // Generate a random number in [0, 1000000).
-  const uint32_t random_number = rand() % 1000000;
-  return random_number < fraction_per_million;
-}
-
 ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     GetCallConfigArgs args) {
   for (const auto& entry : route_table_) {
@@ -659,13 +628,14 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       continue;
     }
     // Header Matching.
-    if (!HeadersMatch(entry.route.matchers.header_matchers,
-                      args.initial_metadata)) {
+    if (!XdsRouting::HeadersMatch(entry.route.matchers.header_matchers,
+                                  args.initial_metadata)) {
       continue;
     }
     // Match fraction check
     if (entry.route.matchers.fraction_per_million.has_value() &&
-        !UnderFraction(entry.route.matchers.fraction_per_million.value())) {
+        !XdsRouting::UnderFraction(
+            entry.route.matchers.fraction_per_million.value())) {
       continue;
     }
     // Found a route match
@@ -850,9 +820,8 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated route config", this);
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
-  XdsApi::RdsUpdate::VirtualHost* vhost =
-      XdsApi::RdsUpdate::FindVirtualHostForDomain(&rds_update.virtual_hosts,
-                                                  server_name_);
+  XdsApi::RdsUpdate::VirtualHost* vhost = XdsRouting::FindVirtualHostForDomain(
+      &rds_update.virtual_hosts, server_name_);
   if (vhost == nullptr) {
     OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,

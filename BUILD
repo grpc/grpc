@@ -2419,6 +2419,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
+        "src/core/ext/xds/xds_routing.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
@@ -2434,6 +2435,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_http_fault_filter.h",
         "src/core/ext/xds/xds_http_filters.h",
+        "src/core/ext/xds/xds_routing.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
@@ -2500,9 +2502,6 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
     ],
-    hdrs = [
-        "src/core/ext/xds/xds_server_config_fetcher.h",
-    ],
     external_deps = [
         "absl/strings",
     ],
@@ -2514,6 +2513,7 @@ grpc_cc_library(
         "grpc_server_config_selector_filter",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
+        "slice_refcount",
     ],
 )
 

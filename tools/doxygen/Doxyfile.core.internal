@@ -1506,8 +1506,9 @@ src/core/ext/xds/xds_http_fault_filter.cc \
 src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
+src/core/ext/xds/xds_routing.cc \
+src/core/ext/xds/xds_routing.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
-src/core/ext/xds/xds_server_config_fetcher.h \
 src/core/lib/README.md \
 src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \
