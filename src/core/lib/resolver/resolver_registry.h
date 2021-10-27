@@ -21,10 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/resolver_factory.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 
 namespace grpc_core {
 

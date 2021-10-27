@@ -18,12 +18,12 @@
 
 #include <random>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 namespace grpc_core {

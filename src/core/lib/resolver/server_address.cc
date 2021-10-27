@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/resolver/server_address.h"
 
 #include <memory>
 #include <string>
@@ -51,7 +51,7 @@ ServerAddress::ServerAddress(
     std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : args_(args), attributes_(std::move(attributes)) {
   memcpy(address_.addr, address, address_len);
-  address_.len = static_cast<socklen_t>(address_len);
+  address_.len = static_cast<decltype(address_.len)>(address_len);
 }
 
 ServerAddress::ServerAddress(const ServerAddress& other)

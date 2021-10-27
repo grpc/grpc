@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/resolver/server_address.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
 // LB policies is in use, each leaf of the hierarchy will need a

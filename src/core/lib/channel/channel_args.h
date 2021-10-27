@@ -23,7 +23,7 @@
 
 #include <string>
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/surface/channel_stack_type.h"
 

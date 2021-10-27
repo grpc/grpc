@@ -23,11 +23,9 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;

@@ -26,6 +26,7 @@
 #include <ifaddrs.h>
 #include <stddef.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #include <string>
 

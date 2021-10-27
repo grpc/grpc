@@ -91,6 +91,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"

@@ -28,7 +28,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/resolver/server_address.h"
 // TODO(roth): Should not need the include of subchannel.h here, since
 // that implementation should be hidden from the LB policy API.
 #include "src/core/ext/filters/client_channel/subchannel.h"

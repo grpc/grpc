@@ -29,7 +29,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 

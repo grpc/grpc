@@ -25,13 +25,16 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/uri/uri_parser.h"
 
+typedef struct grpc_pollset_set grpc_pollset_set;
+
 namespace grpc_core {
+
+class WorkSerializer;
 
 struct ResolverArgs {
   /// The parsed URI to resolve.

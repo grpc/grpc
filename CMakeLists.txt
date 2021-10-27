@@ -1529,7 +1529,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  src/core/ext/filters/client_channel/resolver.cc
+  src/core/lib/resolver/resolver.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
@@ -1545,12 +1545,12 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/lib/resolver/resolver_registry.cc
   src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_filter.cc
   src/core/ext/filters/client_channel/retry_service_config.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/server_address.cc
+  src/core/lib/resolver/server_address.cc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -2367,7 +2367,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy_registry.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  src/core/ext/filters/client_channel/resolver.cc
+  src/core/lib/resolver/resolver.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
@@ -2381,12 +2381,12 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/lib/resolver/resolver_registry.cc
   src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_filter.cc
   src/core/ext/filters/client_channel/retry_service_config.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/server_address.cc
+  src/core/lib/resolver/server_address.cc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc

@@ -37,5 +37,10 @@ grpc_resolved_address CreateGRPCResolvedAddress(
   return grpc_addr;
 }
 
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr) {
+  auto gra = CreateGRPCResolvedAddress(addr);
+  return grpc_sockaddr_to_uri(&gra);
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
