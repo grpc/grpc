@@ -2123,7 +2123,6 @@ target_link_libraries(grpc
   gpr
   ${_gRPC_SSL_LIBRARIES}
   address_sorting
-  uv
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -2684,7 +2683,6 @@ target_link_libraries(grpc_unsecure
   absl::utility
   gpr
   address_sorting
-  uv
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")
@@ -13029,6 +13027,7 @@ target_link_libraries(libuv_event_engine_test
   ${_gRPC_LIBUV_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+  uv
 )
 
 

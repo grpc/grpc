@@ -490,7 +490,6 @@
         'absl/utility:utility',
         'gpr',
         'address_sorting',
-        'uv',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1156,7 +1155,6 @@
         'absl/utility:utility',
         'gpr',
         'address_sorting',
-        'uv',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',

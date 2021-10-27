@@ -1853,7 +1853,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "madler_zlib",
-        "uv",
+        "libuv",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
