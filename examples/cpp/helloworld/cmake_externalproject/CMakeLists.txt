@@ -121,7 +121,7 @@ ExternalProject_Add(grpc
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
         -DgRPC_SSL_PROVIDER:STRING=package
         -DgRPC_LIBUV_PROVIDER:STRING=package
-        -Duv_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/uv/lib/cmake/uv
+        -Dlibuv_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/uv/lib/cmake/libuv
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
   DEPENDS c-ares libuv protobuf re2 zlib absl
@@ -142,10 +142,10 @@ ExternalProject_Add(helloworld
   CMAKE_CACHE_ARGS
         -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
-        -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/uv/lib/cmake/uv
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
+        -Dlibuv_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/uv/lib/cmake/libuv
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DgRPC_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc/lib/cmake/grpc
   DEPENDS protobuf grpc
