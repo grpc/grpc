@@ -52,7 +52,7 @@ ExternalProject_Add(c-ares
 )
 
 # Builds libuv project from the git submodule.
-ExternalProject_Add(uv
+ExternalProject_Add(libuv
   PREFIX uv
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/libuv"
   CMAKE_CACHE_ARGS
@@ -124,7 +124,7 @@ ExternalProject_Add(grpc
         -Duv_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/uv/lib/cmake/uv
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
-  DEPENDS c-ares uv protobuf re2 zlib absl
+  DEPENDS c-ares libuv protobuf re2 zlib absl
 )
 
 # Build the helloworld projects itself using a CMakeLists.txt that assumes all the dependencies
