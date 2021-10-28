@@ -13026,6 +13026,7 @@ target_include_directories(libuv_event_engine_test
 
 target_link_libraries(libuv_event_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_LIBUV_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -17768,7 +17769,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
-  "-lgrpc -laddress_sorting -llibuv -lre2 -lupb -lcares -lz"
+  "-lgrpc -laddress_sorting -luv -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
 

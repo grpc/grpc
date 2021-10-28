@@ -75,6 +75,10 @@
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    elif 'libuv' in target_dict['name']:
+      # TODO(hork): a hack around the automatic removal of uv dependencies in
+      # the generate_projects pipeline. Fix this there.
+      deps.append("${_gRPC_LIBUV_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
