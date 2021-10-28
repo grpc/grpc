@@ -1152,7 +1152,7 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, const std::string& type_url,
     const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& resource_map,
+                   std::set<absl::string_view /*name*/>>& resource_names,
     const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
@@ -1211,12 +1211,12 @@ grpc_slice XdsApi::CreateAdsRequest(
   // don't move the strings out from under the upb proto object that
   // points to them.
   size_t size = 0;
-  for (const auto& p : resource_map) {
+  for (const auto& p : resource_names) {
     size += p.second.size();
   }
   resource_name_storage.reserve(size);
   // Add resource_names.
-  for (const auto& a : resource_map) {
+  for (const auto& a : resource_names) {
     absl::string_view authority = a.first;
     for (const auto& p : a.second) {
       absl::string_view resource_id = p;
@@ -3426,7 +3426,8 @@ grpc_error_handle AdsResponseParse(
     const char* resource_type_string,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& resource_map,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_resource_names,
     UpdateMap* update_map,
     std::set<XdsApi::ResourceName>* resource_names_failed) {
   std::vector<grpc_error_handle> errors;
@@ -3466,8 +3467,8 @@ grpc_error_handle AdsResponseParse(
           "Cannot parse xDS resource name \"", resource_name, "\"")));
       continue;
     }
-    auto iter = resource_map.find(resource_name_status->authority);
-    if (iter == resource_map.end() ||
+    auto iter = subscribed_resource_names.find(resource_name_status->authority);
+    if (iter == subscribed_resource_names.end() ||
         iter->second.find(resource_name_status->id) == iter->second.end()) {
       continue;
     }
@@ -3538,13 +3539,17 @@ upb_strview EdsResourceName(
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
     const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& listener_map,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_listener_names,
     const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& route_config_map,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_route_config_names,
     const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& cluster_map,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_cluster_names,
     const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& eds_service_map) {
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
   const EncodingContext context = {client_,
@@ -3580,25 +3585,25 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     result.parse_error = AdsResponseParse(
         context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
         IsLdsInternal, IsLds, MaybeLogListener, LdsResourceParse, "LDS",
-        response, listener_map, &result.lds_update_map,
+        response, subscribed_listener_names, &result.lds_update_map,
         &result.resource_names_failed);
   } else if (IsRds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_route_v3_RouteConfiguration_parse,
         RdsResourceName, IsRdsInternal, IsRds, MaybeLogRouteConfiguration,
-        RouteConfigParse, "RDS", response, route_config_map,
+        RouteConfigParse, "RDS", response, subscribed_route_config_names,
         &result.rds_update_map, &result.resource_names_failed);
   } else if (IsCds(result.type_url)) {
-    result.parse_error =
-        AdsResponseParse(context, envoy_config_cluster_v3_Cluster_parse,
-                         CdsResourceName, IsCdsInternal, IsCds, MaybeLogCluster,
-                         CdsResourceParse, "CDS", response, cluster_map,
-                         &result.cds_update_map, &result.resource_names_failed);
+    result.parse_error = AdsResponseParse(
+        context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName,
+        IsCdsInternal, IsCds, MaybeLogCluster, CdsResourceParse, "CDS",
+        response, subscribed_cluster_names, &result.cds_update_map,
+        &result.resource_names_failed);
   } else if (IsEds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
         EdsResourceName, IsEdsInternal, IsEds, MaybeLogClusterLoadAssignment,
-        EdsResourceParse, "EDS", response, eds_service_map,
+        EdsResourceParse, "EDS", response, subscribed_eds_service_names,
         &result.eds_update_map, &result.resource_names_failed);
   }
   return result;
