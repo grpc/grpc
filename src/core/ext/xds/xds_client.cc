@@ -159,9 +159,7 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void Start(RefCountedPtr<AdsCallState> ads_calld) {
-      gpr_log(GPR_ERROR, "here for %s", name_.c_str());
       if (sent_initial_request_) return;
-      gpr_log(GPR_ERROR, "start for %s", name_.c_str());
       sent_initial_request_ = true;
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
