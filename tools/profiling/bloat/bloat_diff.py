@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+import pathlib
 
 sys.path.append(
     os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
@@ -71,9 +72,11 @@ if args.diff_base:
         subprocess.check_call(['git', 'checkout', where_am_i])
         subprocess.check_call(['git', 'submodule', 'update'])
 
+pathlib.Path('bloaty-build').mkdir(exist_ok=True)
+subprocess.check_call(['cmake', '-G', 'Unix Makefiles', '../third_party/bloaty'], cwd='bloaty-build')
 subprocess.check_call('make -j%d' % args.jobs,
                       shell=True,
-                      cwd='third_party/bloaty')
+                      cwd='bloaty-build')
 
 text = ''
 for lib in LIBS:
@@ -82,7 +85,7 @@ for lib in LIBS:
     old_version = glob.glob('bloat_diff_old/%s' % lib)
     new_version = glob.glob('bloat_diff_new/%s' % lib)
     assert len(new_version) == 1
-    cmd = 'third_party/bloaty/bloaty -d compileunits,symbols'
+    cmd = 'bloaty-build/bloaty -d compileunits,symbols'
     if old_version:
         assert len(old_version) == 1
         text += subprocess.check_output('%s %s -- %s' %
