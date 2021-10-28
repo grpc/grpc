@@ -980,7 +980,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
         xds_client()
             ->authority_state_map_[p.first.authority]
             .listener_map[p.first.id];
-    chand()->resource_type_version_map_[XdsApi::kLdsTypeUrl] = version;
     // Ignore identical update.
     if (listener_state.update.has_value() &&
         *listener_state.update == lds_update) {
@@ -1086,7 +1085,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
         xds_client()
             ->authority_state_map_[p.first.authority]
             .route_config_map[p.first.id];
-    chand()->resource_type_version_map_[XdsApi::kRdsTypeUrl] = version;
     // Ignore identical update.
     if (route_config_state.update.has_value() &&
         *route_config_state.update == rds_update) {
@@ -1140,7 +1138,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     ClusterState& cluster_state = xds_client()
                                       ->authority_state_map_[p.first.authority]
                                       .cluster_map[p.first.id];
-    chand()->resource_type_version_map_[XdsApi::kCdsTypeUrl] = version;
     // Ignore identical update.
     if (cluster_state.update.has_value() &&
         *cluster_state.update == cds_update) {
@@ -1244,7 +1241,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
         xds_client()
             ->authority_state_map_[p.first.authority]
             .endpoint_map[p.first.id];
-    chand()->resource_type_version_map_[XdsApi::kEdsTypeUrl] = version;
     // Ignore identical update.
     if (endpoint_state.update.has_value() &&
         *endpoint_state.update == eds_update) {
@@ -1443,9 +1439,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
     }
     if (have_valid_resources) {
       seen_response_ = true;
-      for (const std::string& authority : chand()->authorities_) {
-        chand()->resource_type_version_map_[result.type_url] = result.version;
-      }
+      chand()->resource_type_version_map_[result.type_url] = result.version;
       // Start load reporting if needed.
       auto& lrs_call = chand()->lrs_calld_;
       if (lrs_call != nullptr) {
@@ -1521,8 +1515,6 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
   if (it != state_map_.end()) {
     for (auto& a : it->second.subscribed_resources) {
       for (auto& p : a.second) {
-        gpr_log(GPR_INFO, "donna added %s and %s", std::string(a.first).c_str(),
-                std::string(p.first).c_str());
         std::set<absl::string_view>& resource_names = resource_map[a.first];
         resource_names.insert(p.first);
         OrphanablePtr<ResourceState>& state = p.second;
@@ -1542,8 +1534,6 @@ XdsClient::ChannelState::AdsCallState::ConstructedResourceNamesForRequest(
   if (it != state_map_.end()) {
     for (auto& a : it->second.subscribed_resources) {
       for (auto& p : a.second) {
-        gpr_log(GPR_INFO, "donna added %s and %s", std::string(a.first).c_str(),
-                std::string(p.first).c_str());
         std::set<std::string>& resource_names = resource_map[a.first];
         resource_names.insert(
             XdsApi::ConstructFullResourceName(a.first, type_url, p.first));

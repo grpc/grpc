@@ -1206,13 +1206,8 @@ grpc_slice XdsApi::CreateAdsRequest(
                  user_agent_version_, node_msg);
   }
   // Add resource_names.
-  gpr_log(GPR_INFO, "donna after add in create");
   for (const auto& a : resource_map) {
-    gpr_log(GPR_INFO, "donna for author %s", std::string(a.first).c_str());
     for (const auto& p : a.second) {
-      gpr_log(GPR_INFO, "donna resource name should be %s %s and %s",
-              std::string(a.first).c_str(), type_url.c_str(),
-              std::string(p).c_str());
       envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
           request, StdStringToUpbString(p), arena.ptr());
     }
