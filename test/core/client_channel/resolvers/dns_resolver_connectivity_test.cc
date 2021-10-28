@@ -33,6 +33,7 @@
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
+static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 static void my_resolve_address(const char* addr, const char* /*default_port*/,
                                grpc_pollset_set* /*interested_parties*/,
@@ -100,6 +101,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
+  args.work_serializer = *g_work_serializer;
   args.result_handler = std::move(result_handler);
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
@@ -160,6 +162,8 @@ int main(int argc, char** argv) {
 
   grpc_init();
   gpr_mu_init(&g_mu);
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  g_work_serializer = &work_serializer;
   grpc_set_resolver_impl(&test_resolver);
   grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
   grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;

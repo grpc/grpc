@@ -48,8 +48,7 @@ static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> combiner);
+    char** service_config_json, int query_timeout_ms);
 
 static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
 
