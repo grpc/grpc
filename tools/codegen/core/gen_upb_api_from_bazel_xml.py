@@ -14,6 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script generates upb source files (e.g. *.upb.c) from all upb targets
+# in Bazel BUILD file. These generate upb files are for non-Bazel build such
+# as makefile and python build which cannot generate them at the build time.
+#
+# As an example, for the following upb target
+#
+#   grpc_upb_proto_library(
+#     name = "grpc_health_upb",
+#     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+#   )
+#
+# this will generate these upb source files at src/core/ext/upb-generated.
+#
+#   src/proto/grpc/health/v1/health.upb.c
+#   src/proto/grpc/health/v1/health.upb.h
+
 import argparse
 import collections
 import os

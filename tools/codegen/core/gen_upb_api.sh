@@ -165,7 +165,7 @@ do
 done
 
 # generate upb files from bazel rules
-python3 tools/codegen/core/gen_upb_api_for_bazel.py \
+python3 tools/codegen/core/gen_upb_api_from_bazel_xml.py \
   --upb_out=$UPB_OUTPUT_DIR \
   --upbdefs_out=$UPBDEFS_OUTPUT_DIR \
   --verbose

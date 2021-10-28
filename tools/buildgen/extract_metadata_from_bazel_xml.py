@@ -957,7 +957,7 @@ for query in _BAZEL_DEPS_QUERIES:
         _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query)))
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
-# to expands the UPB proto library bazel rules into the generated
+# to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
 
