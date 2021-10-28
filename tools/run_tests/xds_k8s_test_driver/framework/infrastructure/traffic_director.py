@@ -35,6 +35,7 @@ _HealthCheckGRPC = HealthCheckProtocol.GRPC
 _NetworkSecurityV1Beta1 = gcp.network_security.NetworkSecurityV1Beta1
 ServerTlsPolicy = gcp.network_security.ServerTlsPolicy
 ClientTlsPolicy = gcp.network_security.ClientTlsPolicy
+AuthorizationPolicy = gcp.network_security.AuthorizationPolicy
 
 # Network Services
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
@@ -644,6 +645,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 class TrafficDirectorSecureManager(TrafficDirectorManager):
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
+    AUTHZ_POLICY_NAME = "authz-policy"
     ENDPOINT_POLICY = "endpoint-policy"
     CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
 
@@ -674,6 +676,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         # Managed resources
         self.server_tls_policy: Optional[ServerTlsPolicy] = None
         self.client_tls_policy: Optional[ClientTlsPolicy] = None
+        self.authz_policy: Optional[AuthorizationPolicy] = None
         self.endpoint_policy: Optional[EndpointPolicy] = None
 
     def setup_server_security(self,
@@ -704,6 +707,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.delete_endpoint_policy(force=force)
         self.delete_server_tls_policy(force=force)
         self.delete_client_tls_policy(force=force)
+        self.delete_authz_policy(force=force)
 
     def create_server_tls_policy(self, *, tls, mtls):
         name = self.make_resource_name(self.SERVER_TLS_POLICY_NAME)
@@ -738,6 +742,29 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.netsec.delete_server_tls_policy(name)
         self.server_tls_policy = None
 
+    def create_authz_policy(self, *, action: str, rules: list):
+        name = self.make_resource_name(self.AUTHZ_POLICY_NAME)
+        logger.info('Creating Authz Policy %s', name)
+        policy = {
+            "action": action,
+            "rules": rules,
+        }
+
+        self.netsec.create_authz_policy(name, policy)
+        self.authz_policy = self.netsec.get_authz_policy(name)
+        logger.debug('Authz Policy loaded: %r', self.authz_policy)
+
+    def delete_authz_policy(self, force=False):
+        if force:
+            name = self.make_resource_name(self.AUTHZ_POLICY_NAME)
+        elif self.authz_policy:
+            name = self.authz_policy.name
+        else:
+            return
+        logger.info('Deleting Authz Policy %s', name)
+        self.netsec.delete_authz_policy(name)
+        self.authz_policy = None
+
     def create_endpoint_policy(self, *, server_namespace: str, server_name: str,
                                server_port: int) -> None:
         name = self.make_resource_name(self.ENDPOINT_POLICY)
@@ -764,6 +791,8 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
             logger.warning(
                 'Creating Endpoint Policy %s with '
                 'no Server TLS policy attached', name)
+        if self.authz_policy:
+            config["authorizationPolicy"] = self.authz_policy.name
 
         self.netsvc.create_endpoint_policy(name, config)
         self.endpoint_policy = self.netsvc.get_endpoint_policy(name)

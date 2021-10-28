@@ -25,6 +25,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/memory.h"
+
 typedef struct filter_node {
   struct filter_node* next;
   struct filter_node* prev;
@@ -53,15 +55,13 @@ struct grpc_channel_stack_builder_iterator {
 
 grpc_channel_stack_builder* grpc_channel_stack_builder_create(void) {
   grpc_channel_stack_builder* b =
-      static_cast<grpc_channel_stack_builder*>(gpr_zalloc(sizeof(*b)));
-
+      grpc_core::Zalloc<grpc_channel_stack_builder>();
   b->begin.filter = nullptr;
   b->end.filter = nullptr;
   b->begin.next = &b->end;
   b->begin.prev = &b->end;
   b->end.next = &b->begin;
   b->end.prev = &b->begin;
-
   return b;
 }
 

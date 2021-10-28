@@ -371,7 +371,7 @@ class _StreamRequestMixin(Call):
 
     def _init_stream_request_mixin(
             self, request_iterator: Optional[RequestIterableType]):
-        self._metadata_sent = asyncio.Event(loop=self._loop)
+        self._metadata_sent = asyncio.Event()
         self._done_writing_flag = False
 
         # If user passes in an async iterator, create a consumer Task.
@@ -444,6 +444,8 @@ class _StreamRequestMixin(Call):
                                                self._request_serializer)
         try:
             await self._cython_call.send_serialized_message(serialized_request)
+        except cygrpc.InternalError:
+            await self._raise_for_status()
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()

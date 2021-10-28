@@ -265,6 +265,22 @@ class StringValue {
   VarintWriter<1> len_val_;
 };
 
+class NonBinaryStringValue {
+ public:
+  explicit NonBinaryStringValue(const grpc_slice& value)
+      : value_(value), len_val_(GRPC_SLICE_LENGTH(value)) {}
+
+  size_t prefix_length() const { return len_val_.length(); }
+
+  void WritePrefix(uint8_t* prefix_data) { len_val_.Write(0x00, prefix_data); }
+
+  const grpc_slice& data() { return value_; }
+
+ private:
+  grpc_slice value_;
+  VarintWriter<1> len_val_;
+};
+
 class StringKey {
  public:
   explicit StringKey(grpc_slice key)
@@ -315,6 +331,18 @@ void HPackCompressor::Framer::EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem) {
   StringValue emit(DefinitelyInterned(), elem, use_true_binary_metadata_);
   emit.WritePrefix(AddTiny(emit.prefix_length()));
   Add(emit.data());
+}
+
+void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyIncIdx(
+    const grpc_slice& key_slice, const grpc_slice& value_slice) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
+  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
+  StringKey key(key_slice);
+  key.WritePrefix(0x40, AddTiny(key.prefix_length()));
+  Add(grpc_slice_ref_internal(key.key()));
+  NonBinaryStringValue emit(value_slice);
+  emit.WritePrefix(AddTiny(emit.prefix_length()));
+  Add(grpc_slice_ref_internal(emit.data()));
 }
 
 void HPackCompressor::Framer::EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem) {
@@ -445,6 +473,17 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
     compressor_->AddElem(elem, decoder_space_usage, elem_hash, key_hash);
   } else if (should_add_key) {
     compressor_->AddKey(elem, decoder_space_usage, key_hash);
+  }
+}
+
+void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
+  GPR_ASSERT(value == TeMetadata::ValueType::kTrailers);
+  if (compressor_->table_.ConvertableToDynamicIndex(compressor_->te_index_)) {
+    EmitIndexed(compressor_->table_.DynamicIndex(compressor_->te_index_));
+  } else {
+    compressor_->te_index_ = compressor_->table_.AllocateIndex(
+        2 /* te */ + 8 /* trailers */ + hpack_constants::kEntryOverhead);
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(GRPC_MDSTR_TE, GRPC_MDSTR_TRAILERS);
   }
 }
 

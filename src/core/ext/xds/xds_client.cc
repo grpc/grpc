@@ -33,7 +33,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -2537,21 +2536,14 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 std::string XdsClient::DumpClientConfigBinary() {
   MutexLock lock(&mu_);
   XdsApi::ResourceTypeMetadataMap resource_type_metadata_map;
-  // Update per-xds-type version if available, this version corresponding to the
-  // last successful ADS update version.
-  for (auto& a : authority_state_map_) {
-    for (auto& p : a.second.channel_state->ResourceTypeVersionMap()) {
-      resource_type_metadata_map[p.first].version = p.second;
-    }
-  }
   auto& lds_map =
-      resource_type_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kLdsTypeUrl];
   auto& rds_map =
-      resource_type_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kRdsTypeUrl];
   auto& cds_map =
-      resource_type_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kCdsTypeUrl];
   auto& eds_map =
-      resource_type_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kEdsTypeUrl];
   for (auto& a : authority_state_map_) {
     // Collect resource metadata from listeners
     for (auto& p : a.second.listener_map) {

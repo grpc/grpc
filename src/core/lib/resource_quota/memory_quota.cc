@@ -21,7 +21,6 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -48,11 +47,14 @@ ReclamationSweep::~ReclamationSweep() {
 
 const ReclaimerQueue::Index ReclaimerQueue::kInvalidIndex;
 
-void ReclaimerQueue::Insert(RefCountedPtr<MemoryAllocator> allocator,
-                            ReclamationFunction reclaimer, Index* index) {
-  MutexLock lock(&mu_);
+void ReclaimerQueue::Insert(
+    std::shared_ptr<EventEngineMemoryAllocatorImpl> allocator,
+    ReclamationFunction reclaimer, Index* index) {
+  ReleasableMutexLock lock(&mu_);
   if (*index < entries_.size() && entries_[*index].allocator == allocator) {
     entries_[*index].reclaimer.swap(reclaimer);
+    lock.Release();
+    reclaimer({});
     return;
   }
   if (free_entries_.empty()) {
@@ -69,8 +71,8 @@ void ReclaimerQueue::Insert(RefCountedPtr<MemoryAllocator> allocator,
   queue_.push(*index);
 }
 
-ReclamationFunction ReclaimerQueue::Cancel(Index index,
-                                           MemoryAllocator* allocator) {
+ReclamationFunction ReclaimerQueue::Cancel(
+    Index index, EventEngineMemoryAllocatorImpl* allocator) {
   MutexLock lock(&mu_);
   if (index >= entries_.size()) return nullptr;
   Entry& entry = entries_[index];
@@ -98,34 +100,46 @@ Poll<ReclamationFunction> ReclaimerQueue::PollNext() {
 }
 
 //
-// MemoryAllocator
+// GrpcMemoryAllocatorImpl
 //
 
-MemoryAllocator::MemoryAllocator(RefCountedPtr<MemoryQuota> memory_quota)
-    : InternallyRefCounted("MemoryAllocator"), memory_quota_(memory_quota) {
-  Reserve(sizeof(MemoryQuota));
+GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
+    std::shared_ptr<BasicMemoryQuota> memory_quota)
+    : memory_quota_(memory_quota) {
+  memory_quota_->Take(taken_bytes_);
 }
 
-MemoryAllocator::~MemoryAllocator() {
+GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
   GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
-                 sizeof(MemoryQuota) ==
+                 sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_);
   memory_quota_->Return(taken_bytes_);
 }
 
-void MemoryAllocator::Orphan() {
-  ReclamationFunction old_reclaimers[kNumReclamationPasses];
+void GrpcMemoryAllocatorImpl::Shutdown() {
+  std::shared_ptr<BasicMemoryQuota> memory_quota;
+  ReclaimerQueue::Index reclamation_indices[kNumReclamationPasses];
   {
     MutexLock lock(&memory_quota_mu_);
+    GPR_ASSERT(!shutdown_);
+    shutdown_ = true;
+    memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
-      old_reclaimers[i] =
-          memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
+      reclamation_indices[i] = absl::exchange(reclamation_indices_[i],
+                                              ReclaimerQueue::kInvalidIndex);
     }
   }
-  InternallyRefCounted<MemoryAllocator>::Unref();
+  for (size_t i = 0; i < kNumReclamationPasses; i++) {
+    auto fn = memory_quota->CancelReclaimer(i, reclamation_indices[i], this);
+    if (fn != nullptr) fn({});
+  }
 }
 
-size_t MemoryAllocator::Reserve(MemoryRequest request) {
+size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
+  // Validate request - performed here so we don't bloat the generated code with
+  // inlined asserts.
+  GPR_ASSERT(request.min() <= request.max());
+  GPR_ASSERT(request.max() <= MemoryRequest::max_allowed_size());
   while (true) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);
@@ -135,7 +149,8 @@ size_t MemoryAllocator::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
+absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
+    MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
   // Scale the request down according to memory pressure if we have that
@@ -175,13 +190,13 @@ absl::optional<size_t> MemoryAllocator::TryReserve(MemoryRequest request) {
   }
 }
 
-void MemoryAllocator::Replenish() {
+void GrpcMemoryAllocatorImpl::Replenish() {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   // Attempt a fairly low rate exponential growth request size, bounded between
   // some reasonable limits declared at top of file.
   auto amount = Clamp(taken_bytes_ / 3, kMinReplenishBytes, kMaxReplenishBytes);
   // Take the requested amount from the quota.
-  gpr_log(GPR_DEBUG, "%p: take %" PRIdMAX " bytes from quota", this, amount);
   memory_quota_->Take(amount);
   // Record that we've taken it.
   taken_bytes_ += amount;
@@ -191,38 +206,39 @@ void MemoryAllocator::Replenish() {
   MaybeRegisterReclaimerLocked();
 }
 
-void MemoryAllocator::MaybeRegisterReclaimer() {
+void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimer() {
   MutexLock lock(&memory_quota_mu_);
   MaybeRegisterReclaimerLocked();
 }
 
-void MemoryAllocator::MaybeRegisterReclaimerLocked() {
+void GrpcMemoryAllocatorImpl::MaybeRegisterReclaimerLocked() {
   // If the reclaimer is already registered, then there's nothing to do.
   if (reclamation_indices_[0] != ReclaimerQueue::kInvalidIndex) return;
+  if (shutdown_) return;
   // Grab references to the things we'll need
-  auto self = Ref(DEBUG_LOCATION, "reclaimer");
-  gpr_log(GPR_DEBUG, "%p: register reclaimer; idx=%" PRIdMAX, this,
-          reclamation_indices_[0]);
-  memory_quota_->reclaimers_[0].Insert(
-      self,
-      [self](ReclamationSweep) {
-        MutexLock lock(&self->memory_quota_mu_);
+  auto self = shared_from_this();
+  memory_quota_->InsertReclaimer(
+      0, self,
+      [self](absl::optional<ReclamationSweep> sweep) {
+        if (!sweep.has_value()) return;
+        auto* p = static_cast<GrpcMemoryAllocatorImpl*>(self.get());
+        MutexLock lock(&p->memory_quota_mu_);
         // Figure out how many bytes we can return to the quota.
         size_t return_bytes =
-            self->free_bytes_.exchange(0, std::memory_order_acq_rel);
-        gpr_log(GPR_DEBUG, "%p: sweep reclaimer - return %" PRIdMAX, self.get(),
-                return_bytes);
+            p->free_bytes_.exchange(0, std::memory_order_acq_rel);
         if (return_bytes == 0) return;
         // Subtract that from our outstanding balance.
-        self->taken_bytes_ -= return_bytes;
+        p->taken_bytes_ -= return_bytes;
         // And return them to the quota.
-        self->memory_quota_->Return(return_bytes);
+        p->memory_quota_->Return(return_bytes);
       },
       &reclamation_indices_[0]);
 }
 
-void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
+void GrpcMemoryAllocatorImpl::Rebind(
+    std::shared_ptr<BasicMemoryQuota> memory_quota) {
   MutexLock lock(&memory_quota_mu_);
+  GPR_ASSERT(!shutdown_);
   if (memory_quota_ == memory_quota) return;
   // Return memory to the original memory quota.
   memory_quota_->Return(taken_bytes_);
@@ -230,7 +246,7 @@ void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
   ReclamationFunction reclaimers[kNumReclamationPasses];
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
     reclaimers[i] =
-        memory_quota_->reclaimers_[i].Cancel(reclamation_indices_[i], this);
+        memory_quota_->CancelReclaimer(i, reclamation_indices_[i], this);
   }
   // Switch to the new memory quota, leaving the old one in memory_quota so that
   // when we unref it, we are outside of lock.
@@ -243,73 +259,39 @@ void MemoryAllocator::Rebind(RefCountedPtr<MemoryQuota> memory_quota) {
   // Reinsert active reclaimers.
   for (size_t i = 0; i < kNumReclamationPasses; i++) {
     if (reclaimers[i] == nullptr) continue;
-    memory_quota_->reclaimers_[i].Insert(Ref(DEBUG_LOCATION, "rebind"),
-                                         std::move(reclaimers[i]),
-                                         &reclamation_indices_[i]);
+    memory_quota_->InsertReclaimer(i, shared_from_this(),
+                                   std::move(reclaimers[i]),
+                                   &reclamation_indices_[i]);
   }
 }
 
-void MemoryAllocator::PostReclaimer(ReclamationPass pass,
-                                    ReclamationFunction fn) {
+void GrpcMemoryAllocatorImpl::PostReclaimer(ReclamationPass pass,
+                                            ReclamationFunction fn) {
   MutexLock lock(&memory_quota_mu_);
-  auto pass_num = static_cast<int>(pass);
-  memory_quota_->reclaimers_[pass_num].Insert(
-      Ref(DEBUG_LOCATION, "post_reclaimer"), std::move(fn),
-      &reclamation_indices_[pass_num]);
-}
-
-namespace {
-
-// Reference count for a slice allocated by MemoryAllocator::MakeSlice.
-// Takes care of releasing memory back when the slice is destroyed.
-class SliceRefCount {
- public:
-  static void Destroy(void* p) {
-    auto* rc = static_cast<SliceRefCount*>(p);
-    rc->~SliceRefCount();
-    gpr_free(rc);
-  }
-  SliceRefCount(RefCountedPtr<MemoryAllocator> allocator, size_t size)
-      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
-              &base_),
-        allocator_(std::move(allocator)),
-        size_(size) {
-    // Nothing to do here.
-  }
-  ~SliceRefCount() { allocator_->Release(size_); }
-
-  grpc_slice_refcount* base_refcount() { return &base_; }
-
- private:
-  grpc_slice_refcount base_;
-  RefCount refs_;
-  RefCountedPtr<MemoryAllocator> allocator_;
-  size_t size_;
-};
-
-}  // namespace
-
-grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
-  auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
-  void* p = gpr_malloc(size);
-  new (p) SliceRefCount(Ref(DEBUG_LOCATION, "slice"), size);
-  grpc_slice slice;
-  slice.refcount = static_cast<SliceRefCount*>(p)->base_refcount();
-  slice.data.refcounted.bytes =
-      static_cast<uint8_t*>(p) + sizeof(SliceRefCount);
-  slice.data.refcounted.length = size - sizeof(SliceRefCount);
-  return slice;
+  GPR_ASSERT(!shutdown_);
+  auto pass_num = static_cast<size_t>(pass);
+  memory_quota_->InsertReclaimer(pass_num, shared_from_this(), std::move(fn),
+                                 &reclamation_indices_[pass_num]);
 }
 
 //
-// MemoryQuota
+// MemoryOwner
 //
 
-class MemoryQuota::WaitForSweepPromise {
+void MemoryOwner::Rebind(MemoryQuota* quota) {
+  static_cast<GrpcMemoryAllocatorImpl*>(allocator_.get_internal_impl_ptr())
+      ->Rebind(quota->memory_quota_);
+}
+
+//
+// BasicMemoryQuota
+//
+
+class BasicMemoryQuota::WaitForSweepPromise {
  public:
-  WaitForSweepPromise(WeakRefCountedPtr<MemoryQuota> memory_quota,
+  WaitForSweepPromise(std::shared_ptr<BasicMemoryQuota> memory_quota,
                       uint64_t token)
-      : memory_quota_(memory_quota), token_(token) {}
+      : memory_quota_(std::move(memory_quota)), token_(token) {}
 
   struct Empty {};
   Poll<Empty> operator()() {
@@ -322,12 +304,12 @@ class MemoryQuota::WaitForSweepPromise {
   }
 
  private:
-  WeakRefCountedPtr<MemoryQuota> memory_quota_;
+  std::shared_ptr<BasicMemoryQuota> memory_quota_;
   uint64_t token_;
 };
 
-MemoryQuota::MemoryQuota() : DualRefCounted("MemoryQuota") {
-  auto self = WeakRef();
+void BasicMemoryQuota::Start() {
+  auto self = shared_from_this();
 
   // Reclamation loop:
   // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
@@ -373,7 +355,9 @@ MemoryQuota::MemoryQuota() : DualRefCounted("MemoryQuota") {
                    });
 }
 
-void MemoryQuota::SetSize(size_t new_size) {
+void BasicMemoryQuota::Stop() { reclaimer_activity_.reset(); }
+
+void BasicMemoryQuota::SetSize(size_t new_size) {
   size_t old_size = quota_size_.exchange(new_size, std::memory_order_relaxed);
   if (old_size < new_size) {
     // We're growing the quota.
@@ -384,7 +368,7 @@ void MemoryQuota::SetSize(size_t new_size) {
   }
 }
 
-void MemoryQuota::Take(size_t amount) {
+void BasicMemoryQuota::Take(size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
   GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
@@ -392,13 +376,11 @@ void MemoryQuota::Take(size_t amount) {
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
   if (prior >= 0 && prior < static_cast<intptr_t>(amount)) {
-    reclaimer_activity_->ForceWakeup();
+    if (reclaimer_activity_ != nullptr) reclaimer_activity_->ForceWakeup();
   }
 }
 
-void MemoryQuota::Orphan() { reclaimer_activity_.reset(); }
-
-void MemoryQuota::FinishReclamation(uint64_t token) {
+void BasicMemoryQuota::FinishReclamation(uint64_t token) {
   uint64_t current = reclamation_counter_.load(std::memory_order_relaxed);
   if (current != token) return;
   if (reclamation_counter_.compare_exchange_strong(current, current + 1,
@@ -408,11 +390,11 @@ void MemoryQuota::FinishReclamation(uint64_t token) {
   }
 }
 
-void MemoryQuota::Return(size_t amount) {
+void BasicMemoryQuota::Return(size_t amount) {
   free_bytes_.fetch_add(amount, std::memory_order_relaxed);
 }
 
-size_t MemoryQuota::InstantaneousPressure() const {
+size_t BasicMemoryQuota::InstantaneousPressure() const {
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   double size = quota_size_.load();

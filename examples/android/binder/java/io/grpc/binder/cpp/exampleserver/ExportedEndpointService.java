@@ -1,28 +1,25 @@
 package io.grpc.binder.cpp.exampleserver;
 
 import android.app.Service;
-import android.os.IBinder;
 import android.content.Intent;
+import android.os.IBinder;
+import io.grpc.binder.cpp.GrpcCppServerBuilder;
 
 /** Exposes gRPC services running in the main process */
 public final class ExportedEndpointService extends Service {
-  private final IBinder binder;
-
   static {
     System.loadLibrary("app");
   }
 
   public ExportedEndpointService() {
     init_grpc_server();
-    binder = get_endpoint_binder();
   }
 
   @Override
   public IBinder onBind(Intent intent) {
-    return binder;
+    // The argument should match the URI passed into grpc::ServerBuilder::AddListeningPort
+    return GrpcCppServerBuilder.GetEndpointBinder("binder:example.service");
   }
 
   public native void init_grpc_server();
-
-  public native IBinder get_endpoint_binder();
 }

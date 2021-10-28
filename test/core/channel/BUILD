@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 grpc_package(name = "test/core/channel")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_cc_test(
     name = "channel_args_test",
@@ -45,6 +45,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "channel_stack_builder_test",
     srcs = ["channel_stack_builder_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

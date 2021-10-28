@@ -19,8 +19,9 @@ licenses(["notice"])
 android_library(
     name = "connection_helper",
     srcs = [
+        "GrpcBinderConnection.java",
+        "GrpcCppServerBuilder.java",
         "NativeConnectionHelper.java",
-        "SyncServiceConnection.java",
     ],
     visibility = ["//visibility:public"],
     deps = [],
