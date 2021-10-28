@@ -42,7 +42,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\lb_policy_registry.cc " +
     "src\\core\\ext\\filters\\client_channel\\local_subchannel_pool.cc " +
     "src\\core\\ext\\filters\\client_channel\\proxy_mapper_registry.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\binder\\binder_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\dns_resolver_ares.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_event_engine.cc " +
@@ -58,12 +57,10 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\resolver\\google_c2p\\google_c2p_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr\\sockaddr_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\xds\\xds_resolver.cc " +
-    "src\\core\\ext\\filters\\client_channel\\resolver_registry.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver_result_parsing.cc " +
     "src\\core\\ext\\filters\\client_channel\\retry_filter.cc " +
     "src\\core\\ext\\filters\\client_channel\\retry_service_config.cc " +
     "src\\core\\ext\\filters\\client_channel\\retry_throttle.cc " +
-    "src\\core\\ext\\filters\\client_channel\\server_address.cc " +
     "src\\core\\ext\\filters\\client_channel\\service_config_channel_arg_filter.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel_pool_interface.cc " +
@@ -80,8 +77,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\http\\server\\http_server_filter.cc " +
     "src\\core\\ext\\filters\\max_age\\max_age_filter.cc " +
     "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
-    "src\\core\\ext\\service_config\\service_config.cc " +
-    "src\\core\\ext\\service_config\\service_config_parser.cc " +
     "src\\core\\ext\\transport\\chttp2\\alpn\\alpn.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create.cc " +
@@ -505,6 +500,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\matchers\\matchers.cc " +
     "src\\core\\lib\\profiling\\basic_timers.cc " +
     "src\\core\\lib\\profiling\\stap_timers.cc " +
+    "src\\core\\lib\\resolver\\resolver.cc " +
+    "src\\core\\lib\\resolver\\resolver_registry.cc " +
+    "src\\core\\lib\\resolver\\server_address.cc " +
     "src\\core\\lib\\security\\authorization\\authorization_policy_provider_vtable.cc " +
     "src\\core\\lib\\security\\authorization\\evaluate_args.cc " +
     "src\\core\\lib\\security\\authorization\\sdk_server_authz_filter.cc " +
@@ -560,6 +558,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\transport\\server_auth_filter.cc " +
     "src\\core\\lib\\security\\transport\\tsi_error.cc " +
     "src\\core\\lib\\security\\util\\json_util.cc " +
+    "src\\core\\lib\\service_config\\service_config.cc " +
+    "src\\core\\lib\\service_config\\service_config_parser.cc " +
     "src\\core\\lib\\slice\\b64.cc " +
     "src\\core\\lib\\slice\\percent_encoding.cc " +
     "src\\core\\lib\\slice\\slice.cc " +
@@ -1092,7 +1092,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http\\server");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\max_age");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\message_size");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\service_config");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\alpn");
@@ -1308,6 +1307,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\context");
@@ -1335,6 +1335,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\tls");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\util");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\service_config");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\slice");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\surface");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\transport");
