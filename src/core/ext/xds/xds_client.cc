@@ -318,7 +318,11 @@ class XdsClient::ChannelState::AdsCallState
 
   bool IsCurrentCallOnChannel() const;
 
-  std::set<std::string> ResourceNamesForRequest(const std::string& type_url);
+  std::map<absl::string_view /*authority*/,
+           std::set<absl::string_view /*name*/>>
+  ResourceNamesForRequest(const std::string& type_url);
+  std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
+  ConstructedResourceNamesForRequest(const std::string& type_url);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -857,9 +861,10 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type_url];
   grpc_slice request_payload_slice;
-  std::set<std::string> resource_names = ResourceNamesForRequest(type_url);
+  std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
+      resource_map = ConstructedResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
-      chand()->server_, type_url, resource_names,
+      chand()->server_, type_url, resource_map,
       xds_client()
           ->authority_state_map_[authority]
           .resource_type_version_map[type_url],
@@ -872,14 +877,13 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
-            "error=%s resources=%s",
+            "error=%s",
             xds_client(), type_url.c_str(),
             xds_client()
                 ->authority_state_map_[authority]
                 .resource_type_version_map[type_url]
                 .c_str(),
-            state.nonce.c_str(), grpc_error_std_string(state.error).c_str(),
-            absl::StrJoin(resource_names, " ").c_str());
+            state.nonce.c_str(), grpc_error_std_string(state.error).c_str());
   }
   GRPC_ERROR_UNREF(state.error);
   state.error = GRPC_ERROR_NONE;
@@ -1522,16 +1526,40 @@ bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
   return this == chand()->ads_calld_->calld();
 }
 
-// std::set<absl::string_view>
-std::set<std::string>
+std::map<absl::string_view /*authority*/, std::set<absl::string_view /*name*/>>
 XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
     const std::string& type_url) {
-  // std::set<absl::string_view> resource_names;
-  std::set<std::string> resource_names;
+  std::map<absl::string_view /*authority*/,
+           std::set<absl::string_view /*name*/>>
+      resource_map;
   auto it = state_map_.find(type_url);
   if (it != state_map_.end()) {
     for (auto& a : it->second.subscribed_resources) {
       for (auto& p : a.second) {
+        gpr_log(GPR_INFO, "donna added %s and %s", std::string(a.first).c_str(),
+                std::string(p.first).c_str());
+        std::set<absl::string_view>& resource_names = resource_map[a.first];
+        resource_names.insert(p.first);
+        OrphanablePtr<ResourceState>& state = p.second;
+        state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
+      }
+    }
+  }
+  return resource_map;
+}
+
+std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
+XdsClient::ChannelState::AdsCallState::ConstructedResourceNamesForRequest(
+    const std::string& type_url) {
+  std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
+      resource_map;
+  auto it = state_map_.find(type_url);
+  if (it != state_map_.end()) {
+    for (auto& a : it->second.subscribed_resources) {
+      for (auto& p : a.second) {
+        gpr_log(GPR_INFO, "donna added %s and %s", std::string(a.first).c_str(),
+                std::string(p.first).c_str());
+        std::set<std::string>& resource_names = resource_map[a.first];
         resource_names.insert(
             XdsApi::ConstructFullResourceName(a.first, type_url, p.first));
         OrphanablePtr<ResourceState>& state = p.second;
@@ -1539,7 +1567,7 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
       }
     }
   }
-  return resource_names;
+  return resource_map;
 }
 
 //

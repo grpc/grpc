@@ -668,20 +668,24 @@ class XdsApi {
 
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                              const std::string& type_url,
-                              const std::set<std::string>& resource_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error_handle error,
-                              bool populate_node);
+  grpc_slice CreateAdsRequest(
+      const XdsBootstrap::XdsServer& server, const std::string& type_url,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<std::string /*name*/>>& resource_map,
+      const std::string& version, const std::string& nonce,
+      grpc_error_handle error, bool populate_node);
 
   // Parses an ADS response.
   AdsParseResult ParseAdsResponse(
       const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-      const std::set<std::string>& expected_listener_names,
-      const std::set<std::string>& expected_route_configuration_names,
-      const std::set<std::string>& expected_cluster_names,
-      const std::set<std::string>& expected_eds_service_names);
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>& listener_map,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>& route_config_map,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>& cluster_map,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>& eds_service_map);
 
   // Creates an initial LRS request.
   grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);

@@ -1151,8 +1151,10 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, const std::string& type_url,
-    const std::set<std::string>& resource_names, const std::string& version,
-    const std::string& nonce, grpc_error_handle error, bool populate_node) {
+    const std::map<absl::string_view /*authority*/,
+                   std::set<std::string /*name*/>>& resource_map,
+    const std::string& version, const std::string& nonce,
+    grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
   const EncodingContext context = {client_,
                                    tracer_,
@@ -1204,9 +1206,16 @@ grpc_slice XdsApi::CreateAdsRequest(
                  user_agent_version_, node_msg);
   }
   // Add resource_names.
-  for (const auto& resource_name : resource_names) {
-    envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
-        request, StdStringToUpbString(resource_name), arena.ptr());
+  gpr_log(GPR_INFO, "donna after add in create");
+  for (const auto& a : resource_map) {
+    gpr_log(GPR_INFO, "donna for author %s", std::string(a.first).c_str());
+    for (const auto& p : a.second) {
+      gpr_log(GPR_INFO, "donna resource name should be %s %s and %s",
+              std::string(a.first).c_str(), type_url.c_str(),
+              std::string(p).c_str());
+      envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
+          request, StdStringToUpbString(p), arena.ptr());
+    }
   }
   MaybeLogDiscoveryRequest(context, request);
   return SerializeDiscoveryRequest(context, request);
@@ -3406,7 +3415,9 @@ grpc_error_handle AdsResponseParse(
     ResourceParseFunction resource_parse_function,
     const char* resource_type_string,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
-    const std::set<std::string>& expected_resource_names, UpdateMap* update_map,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>& resource_map,
+    UpdateMap* update_map,
     std::set<XdsApi::ResourceName>* resource_names_failed) {
   std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
@@ -3445,8 +3456,9 @@ grpc_error_handle AdsResponseParse(
           "Cannot parse xDS resource name \"", resource_name, "\"")));
       continue;
     }
-    if (expected_resource_names.find(resource_name) ==
-        expected_resource_names.end()) {
+    auto iter = resource_map.find(resource_name_status->authority);
+    if (iter == resource_map.end() ||
+        iter->second.find(resource_name_status->id) == iter->second.end()) {
       continue;
     }
     // Fail on duplicate resources.
@@ -3515,10 +3527,14 @@ upb_strview EdsResourceName(
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-    const std::set<std::string>& expected_listener_names,
-    const std::set<std::string>& expected_route_configuration_names,
-    const std::set<std::string>& expected_cluster_names,
-    const std::set<std::string>& expected_eds_service_names) {
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>& listener_map,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>& route_config_map,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>& cluster_map,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>& eds_service_map) {
   AdsParseResult result;
   upb::Arena arena;
   const EncodingContext context = {client_,
@@ -3554,25 +3570,25 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     result.parse_error = AdsResponseParse(
         context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
         IsLdsInternal, IsLds, MaybeLogListener, LdsResourceParse, "LDS",
-        response, expected_listener_names, &result.lds_update_map,
+        response, listener_map, &result.lds_update_map,
         &result.resource_names_failed);
   } else if (IsRds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_route_v3_RouteConfiguration_parse,
         RdsResourceName, IsRdsInternal, IsRds, MaybeLogRouteConfiguration,
-        RouteConfigParse, "RDS", response, expected_route_configuration_names,
+        RouteConfigParse, "RDS", response, route_config_map,
         &result.rds_update_map, &result.resource_names_failed);
   } else if (IsCds(result.type_url)) {
-    result.parse_error = AdsResponseParse(
-        context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName,
-        IsCdsInternal, IsCds, MaybeLogCluster, CdsResourceParse, "CDS",
-        response, expected_cluster_names, &result.cds_update_map,
-        &result.resource_names_failed);
+    result.parse_error =
+        AdsResponseParse(context, envoy_config_cluster_v3_Cluster_parse,
+                         CdsResourceName, IsCdsInternal, IsCds, MaybeLogCluster,
+                         CdsResourceParse, "CDS", response, cluster_map,
+                         &result.cds_update_map, &result.resource_names_failed);
   } else if (IsEds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
         EdsResourceName, IsEdsInternal, IsEds, MaybeLogClusterLoadAssignment,
-        EdsResourceParse, "EDS", response, expected_eds_service_names,
+        EdsResourceParse, "EDS", response, eds_service_map,
         &result.eds_update_map, &result.resource_names_failed);
   }
   return result;
