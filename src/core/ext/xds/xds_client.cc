@@ -70,10 +70,7 @@ TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
 
 namespace {
 
-gpr_once g_once_init = GPR_ONCE_INIT;
 Mutex* g_mu = nullptr;
-
-void InitGlobalMutex() { g_mu = new Mutex(); }
 
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
@@ -1994,6 +1991,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
+  grpc_init();
 }
 
 XdsClient::~XdsClient() {
@@ -2002,6 +2000,7 @@ XdsClient::~XdsClient() {
   }
   grpc_channel_args_destroy(args_);
   grpc_pollset_set_destroy(interested_parties_);
+  grpc_shutdown();
 }
 
 void XdsClient::Orphan() {
@@ -2536,14 +2535,10 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 std::string XdsClient::DumpClientConfigBinary() {
   MutexLock lock(&mu_);
   XdsApi::ResourceTypeMetadataMap resource_type_metadata_map;
-  auto& lds_map =
-      resource_type_metadata_map[XdsApi::kLdsTypeUrl];
-  auto& rds_map =
-      resource_type_metadata_map[XdsApi::kRdsTypeUrl];
-  auto& cds_map =
-      resource_type_metadata_map[XdsApi::kCdsTypeUrl];
-  auto& eds_map =
-      resource_type_metadata_map[XdsApi::kEdsTypeUrl];
+  auto& lds_map = resource_type_metadata_map[XdsApi::kLdsTypeUrl];
+  auto& rds_map = resource_type_metadata_map[XdsApi::kRdsTypeUrl];
+  auto& cds_map = resource_type_metadata_map[XdsApi::kCdsTypeUrl];
+  auto& eds_map = resource_type_metadata_map[XdsApi::kEdsTypeUrl];
   for (auto& a : authority_state_map_) {
     // Collect resource metadata from listeners
     for (auto& p : a.second.listener_map) {
@@ -2575,7 +2570,7 @@ std::string XdsClient::DumpClientConfigBinary() {
 //
 
 void XdsClientGlobalInit() {
-  gpr_once_init(&g_once_init, InitGlobalMutex);
+  g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
 }
 
@@ -2584,6 +2579,8 @@ void XdsClientGlobalInit() {
 void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   gpr_free(g_fallback_bootstrap_config);
   g_fallback_bootstrap_config = nullptr;
+  delete g_mu;
+  g_mu = nullptr;
   XdsHttpFilterRegistry::Shutdown();
 }
 
