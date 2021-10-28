@@ -30,7 +30,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32',
     'x86_64-linux', 'x86-linux',
-    'x86_64-darwin',
+    'x86_64-darwin', 'arm64-darwin',
     'universal-darwin'
   ]
   ext.cross_compiling do |spec|
@@ -144,7 +144,7 @@ task 'gem:native' do
     # Truncate grpc_c.*.ruby files because they're for Windows only.
     File.truncate('grpc_c.32.ruby', 0)
     File.truncate('grpc_c.64.ruby', 0)
-    ['x86_64-linux', 'x86-linux', 'x86_64-darwin'].each do |plat|
+    ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin'].each do |plat|
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
