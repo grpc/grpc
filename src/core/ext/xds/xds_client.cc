@@ -1513,8 +1513,7 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
   if (it != state_map_.end()) {
     for (auto& a : it->second.subscribed_resources) {
       for (auto& p : a.second) {
-        std::set<absl::string_view>& resource_names = resource_map[a.first];
-        resource_names.insert(p.first);
+        resource_map[a.first].insert(p.first);
         OrphanablePtr<ResourceState>& state = p.second;
         state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
       }
@@ -2083,7 +2082,7 @@ void XdsClient::WatchListenerData(
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
-                                                 resource.value());
+                                                 *resource);
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
@@ -2104,7 +2103,7 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   if (!listener_state.watchers.empty()) return;
   authority_state.listener_map.erase(resource->id);
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kLdsTypeUrl, resource.value(), delay_unsubscription);
+      XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2145,7 +2144,7 @@ void XdsClient::WatchRouteConfigData(
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
-                                                 resource.value());
+                                                 *resource);
 }
 
 void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
@@ -2167,7 +2166,7 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   if (!route_config_state.watchers.empty()) return;
   authority_state.route_config_map.erase(resource->id);
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kRdsTypeUrl, resource.value(), delay_unsubscription);
+      XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2205,7 +2204,7 @@ void XdsClient::WatchClusterData(
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
-                                                 resource.value());
+                                                 *resource);
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
@@ -2226,7 +2225,7 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   if (!cluster_state.watchers.empty()) return;
   authority_state.cluster_map.erase(resource->id);
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kCdsTypeUrl, resource.value(), delay_unsubscription);
+      XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2265,7 +2264,7 @@ void XdsClient::WatchEndpointData(
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
   authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
-                                                 resource.value());
+                                                 *resource);
 }
 
 void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
@@ -2286,7 +2285,7 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   if (!endpoint_state.watchers.empty()) return;
   authority_state.endpoint_map.erase(resource->id);
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kEdsTypeUrl, resource.value(), delay_unsubscription);
+      XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
