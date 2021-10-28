@@ -23,9 +23,7 @@
 namespace grpc_core {
 
 bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {
-  return DomainPatternMatchType(domain_pattern) == XdsRouting::INVALID_MATCH
-             ? false
-             : true;
+  return DomainPatternMatchType(domain_pattern) != XdsRouting::INVALID_MATCH;
 }
 
 // Returns true if match succeeds.

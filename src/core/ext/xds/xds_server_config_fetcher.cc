@@ -518,7 +518,7 @@ class XdsServerConfigSelectorProvider : public ServerConfigSelectorProvider {
       : resource_(std::move(static_resource)),
         http_filters_(std::move(http_filters)) {}
 
-  XdsServerConfigSelectorProvider(
+  explicit XdsServerConfigSelectorProvider(
       std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>
           http_filters)
       : http_filters_(std::move(http_filters)) {}
