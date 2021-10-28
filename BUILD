@@ -1204,12 +1204,12 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/promise/activity.cc",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/activity.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
     ],
     deps = [
         "atomic_utils",
