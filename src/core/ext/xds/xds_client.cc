@@ -1043,6 +1043,28 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
       p.first->OnRouteConfigChanged(*route_config_state.update);
     }
   }
+  // For any subscribed resource that is not present in the update,
+  // remove it from the cache and notify watchers that it does not exist.
+  for (const auto& p : rds_state.subscribed_resources) {
+    const std::string& route_config_name = p.first;
+    gpr_log(GPR_ERROR, "route config name %s", route_config_name.c_str());
+    if (rds_update_map.find(route_config_name) == rds_update_map.end()) {
+      gpr_log(GPR_ERROR, "did not find in map");
+      RouteConfigState& route_config_state =
+          xds_client()->route_config_map_[route_config_name];
+      // If the resource was newly requested but has not yet been received,
+      // we don't want to generate an error for the watchers, because this LDS
+      // response may be in reaction to an earlier request that did not yet
+      // request the new resource, so its absence from the response does not
+      // necessarily indicate that the resource does not exist.
+      // For that case, we rely on the request timeout instead.
+      if (!route_config_state.update.has_value()) continue;
+      route_config_state.update.reset();
+      for (const auto& p : route_config_state.watchers) {
+        p.first->OnResourceDoesNotExist();
+      }
+    }
+  }
 }
 
 void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
