@@ -503,6 +503,39 @@ class XdsServerConfigSelectorProvider : public ServerConfigSelectorProvider {
       watcher_ ABSL_GUARDED_BY(mu_);
 };
 
+// A fire and forget class to cancel watching on Rds from XdsServerConfigFetcher
+// via ExecCtx
+class RdsWatchCanceller {
+ public:
+  RdsWatchCanceller(RefCountedPtr<XdsServerConfigFetcher> server_config_fetcher,
+                    std::vector<std::string> resource_names,
+                    XdsServerConfigFetcher::RdsUpdateWatcherInterface* watcher,
+                    bool dec_ref)
+      : server_config_fetcher_(std::move(server_config_fetcher)),
+        resource_names_(std::move(resource_names)),
+        watcher_(watcher),
+        dec_ref_(dec_ref) {
+    GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
+    ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+  }
+
+ private:
+  static void RunInExecCtx(void* arg, grpc_error_handle /* error */) {
+    auto* self = static_cast<RdsWatchCanceller*>(arg);
+    for (const auto& resource_name : self->resource_names_) {
+      self->server_config_fetcher_->CancelRdsWatch(
+          resource_name, self->watcher_, self->dec_ref_);
+    }
+    delete self;
+  }
+
+  grpc_closure closure_;
+  RefCountedPtr<XdsServerConfigFetcher> server_config_fetcher_;
+  std::vector<std::string> resource_names_;
+  XdsServerConfigFetcher::RdsUpdateWatcherInterface* watcher_;
+  bool dec_ref_;
+};
+
 // An XdsServerConfigSelectorProvider implementation for when the
 // RouteConfiguration is available inline.
 class StaticXdsServerConfigSelectorProvider
@@ -544,8 +577,8 @@ class DynamicXdsServerConfigSelectorProvider
 
   ~DynamicXdsServerConfigSelectorProvider() {
     if (!resource_name_.empty()) {
-      server_config_fetcher_->CancelRdsWatch(resource_name_, rds_watcher_,
-                                             false /* dec_ref */);
+      new RdsWatchCanceller(server_config_fetcher_, {resource_name_},
+                            rds_watcher_, /*dec_ref=*/false);
       rds_watcher_ = nullptr;
     }
   }
@@ -703,10 +736,8 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForDestinationIp(
 //
 
 XdsServerConfigFetcher::FilterChainMatchManager::~FilterChainMatchManager() {
-  for (const auto& resource_name : resource_names_) {
-    server_config_fetcher_->CancelRdsWatch(resource_name, nullptr,
-                                           /* dec_ref= */ true);
-  }
+  new RdsWatchCanceller(server_config_fetcher_, resource_names_, nullptr,
+                        /* dec_ref = */ true);
 }
 
 absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
@@ -900,8 +931,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
           route_config_name_(route_config_name),
           watcher_(watcher) {}
     ~RdsWatcherToCancel() {
-      server_config_fetcher_->CancelRdsWatch(route_config_name_, watcher_,
-                                             /* dec_ref= */ false);
+      new RdsWatchCanceller(server_config_fetcher_, {route_config_name_},
+                            watcher_, /*dec_ref=*/false);
     }
     RefCountedPtr<XdsServerConfigFetcher> server_config_fetcher_;
     std::string route_config_name_;
@@ -1132,7 +1163,7 @@ void XdsServerConfigFetcher::StartWatch(
     std::unique_ptr<grpc_server_config_fetcher::WatcherInterface> watcher) {
   grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
   auto listener_watcher = absl::make_unique<ListenerWatcher>(
-      std::move(watcher), this, serving_status_notifier_, listening_address);
+      std::move(watcher), Ref(), serving_status_notifier_, listening_address);
   auto* listener_watcher_ptr = listener_watcher.get();
   listening_address = absl::StrReplaceAll(
       xds_client_->bootstrap().server_listener_resource_name_template(),
@@ -1216,7 +1247,7 @@ XdsServerConfigFetcher::StartRdsWatchLocked(
       // Start watching route config data in an ExecCtx closure since we are
       // already running inside an XdsClient callback and starting a watch
       // inline would cause deadlocks.
-      new RouteConfigWatchStarter(this, resource_name);
+      new RouteConfigWatchStarter(Ref(), resource_name);
     }
   }
   return watcher_state.rds_update;

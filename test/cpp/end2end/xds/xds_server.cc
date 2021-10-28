@@ -55,9 +55,10 @@ void AdsServiceImpl::SetResource(google::protobuf::Any resource,
       resource_type_state.resource_type_version;
   resource_state.resource = std::move(resource);
   gpr_log(GPR_INFO,
-          "ADS[%p]: Updating %s resource %s; resource_type_version now %u",
+          "ADS[%p]: Updating %s resource %s; resource_type_version now %u %s",
           this, type_url.c_str(), name.c_str(),
-          resource_type_state.resource_type_version);
+          resource_type_state.resource_type_version,
+          resource_state.resource->DebugString().c_str());
   for (SubscriptionState* subscription : resource_state.subscriptions) {
     subscription->update_queue->emplace_back(type_url, name);
   }

@@ -159,7 +159,9 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void Start(RefCountedPtr<AdsCallState> ads_calld) {
+      gpr_log(GPR_ERROR, "here for %s", name_.c_str());
       if (sent_initial_request_) return;
+      gpr_log(GPR_ERROR, "start for %s", name_.c_str());
       sent_initial_request_ = true;
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
@@ -867,8 +869,7 @@ void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
     const std::string& type_url, const std::string& name) {
   auto& state = state_map_[type_url].subscribed_resources[name];
   if (state == nullptr) {
-    state = MakeOrphanable<ResourceState>(
-        type_url, name, !xds_client()->resource_version_map_[type_url].empty());
+    state = MakeOrphanable<ResourceState>(type_url, name, false);
     SendMessageLocked(type_url);
   }
 }
