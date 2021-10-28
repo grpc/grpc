@@ -234,12 +234,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    // remove me after merge
-    const std::map<std::string /*type*/, std::string /*version*/>&
-    ResourceTypeVersionMap() const {
-      return resource_type_version_map_;
-    }
-
    private:
     class StateWatcher;
 
