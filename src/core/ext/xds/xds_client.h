@@ -234,6 +234,22 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
+    // Stores the most recent accepted resource version for each resource type.
+    std::map<std::string /*type*/, std::string /*version*/>
+        resource_type_version_map;
+
+    void AddAuthority(const std::string& authority) {
+      authorities_.insert(authority);
+    }
+    void RemoveAuthority(const std::string& authority) {
+      authorities_.erase(authority);
+    }
+
+    const std::map<std::string /*type*/, std::string /*version*/>&
+    ResourceTypeVersionMap() const {
+      return resource_type_version_map_;
+    }
+
    private:
     class StateWatcher;
 
@@ -250,6 +266,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The retryable XDS calls.
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
+
+    // The set of authorities currently using this server.
+    std::set<std::string> authorities_;
+
+    // Stores the most recent accepted resource version for each resource type.
+    std::map<std::string /*type*/, std::string /*version*/>
+        resource_type_version_map_;
   };
 
   struct ListenerState {
@@ -295,8 +318,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<std::string /*cluster_name*/, ClusterState> cluster_map;
     std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
     // Stores the most recent accepted resource version for each resource type.
-    std::map<std::string /*type*/, std::string /*version*/>
-        resource_type_version_map;
+    // std::map<std::string /*type*/, std::string /*version*/>
+    //    resource_type_version_map;
 
     bool HasSubscribedResources() {
       return !listener_map.empty() || !route_config_map.empty() ||

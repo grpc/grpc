@@ -273,8 +273,7 @@ class XdsClient::ChannelState::AdsCallState
     // subscribed_resources;
   };
 
-  void SendMessageLocked(const std::string& type_url,
-                         const std::string& authority)
+  void SendMessageLocked(const std::string& type_url)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void AcceptLdsUpdateLocked(
@@ -351,8 +350,7 @@ class XdsClient::ChannelState::AdsCallState
   grpc_closure on_status_received_;
 
   // Resource types for which requests need to be sent.
-  std::set<std::pair<std::string /*type_url*/, std::string /*authority*/>>
-      buffered_requests_;
+  std::set<std::string /*type_url*/> buffered_requests_;
 
   // State for each resource type.
   std::map<std::string /*type_url*/, ResourceTypeState> state_map_;
@@ -852,11 +850,11 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
 }
 
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
-    const std::string& type_url, const std::string& authority)
+    const std::string& type_url)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
-    buffered_requests_.insert({type_url, authority});
+    buffered_requests_.insert(type_url);
     return;
   }
   auto& state = state_map_[type_url];
@@ -865,10 +863,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       resource_map = ConstructedResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
       chand()->server_, type_url, resource_map,
-      xds_client()
-          ->authority_state_map_[authority]
-          .resource_type_version_map[type_url],
-      state.nonce, GRPC_ERROR_REF(state.error), !sent_initial_message_);
+      chand()->resource_type_version_map_[type_url], state.nonce,
+      GRPC_ERROR_REF(state.error), !sent_initial_message_);
   if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
       type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
     state_map_.erase(type_url);
@@ -879,10 +875,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
             "[xds_client %p] sending ADS request: type=%s version=%s nonce=%s "
             "error=%s",
             xds_client(), type_url.c_str(),
-            xds_client()
-                ->authority_state_map_[authority]
-                .resource_type_version_map[type_url]
-                .c_str(),
+            chand()->resource_type_version_map_[type_url].c_str(),
             state.nonce.c_str(), grpc_error_std_string(state.error).c_str());
   }
   GRPC_ERROR_UNREF(state.error);
@@ -916,11 +909,8 @@ void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
   if (state == nullptr) {
     state = MakeOrphanable<ResourceState>(
         type_url, resource,
-        !xds_client()
-             ->authority_state_map_[resource.authority]
-             .resource_type_version_map[type_url]
-             .empty());
-    SendMessageLocked(type_url, resource.authority);
+        !chand()->resource_type_version_map_[type_url].empty());
+    SendMessageLocked(type_url);
   }
 }
 
@@ -932,7 +922,7 @@ void XdsClient::ChannelState::AdsCallState::UnsubscribeLocked(
   if (state_map_[type_url].subscribed_resources[resource.authority].empty()) {
     state_map_[type_url].subscribed_resources.erase(resource.authority);
   }
-  if (!delay_unsubscription) SendMessageLocked(type_url, resource.authority);
+  if (!delay_unsubscription) SendMessageLocked(type_url);
 }
 
 bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
@@ -990,9 +980,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
         xds_client()
             ->authority_state_map_[p.first.authority]
             .listener_map[p.first.id];
-    xds_client()
-        ->authority_state_map_[p.first.authority]
-        .resource_type_version_map[XdsApi::kLdsTypeUrl] = version;
+    chand()->resource_type_version_map_[XdsApi::kLdsTypeUrl] = version;
     // Ignore identical update.
     if (listener_state.update.has_value() &&
         *listener_state.update == lds_update) {
@@ -1098,9 +1086,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
         xds_client()
             ->authority_state_map_[p.first.authority]
             .route_config_map[p.first.id];
-    xds_client()
-        ->authority_state_map_[p.first.authority]
-        .resource_type_version_map[XdsApi::kRdsTypeUrl] = version;
+    chand()->resource_type_version_map_[XdsApi::kRdsTypeUrl] = version;
     // Ignore identical update.
     if (route_config_state.update.has_value() &&
         *route_config_state.update == rds_update) {
@@ -1154,9 +1140,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     ClusterState& cluster_state = xds_client()
                                       ->authority_state_map_[p.first.authority]
                                       .cluster_map[p.first.id];
-    xds_client()
-        ->authority_state_map_[p.first.authority]
-        .resource_type_version_map[XdsApi::kCdsTypeUrl] = version;
+    chand()->resource_type_version_map_[XdsApi::kCdsTypeUrl] = version;
     // Ignore identical update.
     if (cluster_state.update.has_value() &&
         *cluster_state.update == cds_update) {
@@ -1260,9 +1244,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
         xds_client()
             ->authority_state_map_[p.first.authority]
             .endpoint_map[p.first.id];
-    xds_client()
-        ->authority_state_map_[p.first.authority]
-        .resource_type_version_map[XdsApi::kEdsTypeUrl] = version;
+    chand()->resource_type_version_map_[XdsApi::kEdsTypeUrl] = version;
     // Ignore identical update.
     if (endpoint_state.update.has_value() &&
         *endpoint_state.update == eds_update) {
@@ -1374,7 +1356,7 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
     // type(s).
     auto it = buffered_requests_.begin();
     if (it != buffered_requests_.end()) {
-      SendMessageLocked(it->first, it->second);
+      SendMessageLocked(*it);
       buffered_requests_.erase(it);
     }
   }
@@ -1461,6 +1443,9 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
     }
     if (have_valid_resources) {
       seen_response_ = true;
+      for (const std::string& authority : chand()->authorities_) {
+        chand()->resource_type_version_map_[result.type_url] = result.version;
+      }
       // Start load reporting if needed.
       auto& lrs_call = chand()->lrs_calld_;
       if (lrs_call != nullptr) {
@@ -1469,7 +1454,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
       }
     }
     // Send ACK or NACK.
-    SendMessageLocked(result.type_url, "");
+    SendMessageLocked(result.type_url);
   }
   if (xds_client()->shutting_down_) return true;
   // Keep listening for updates.
@@ -2129,6 +2114,7 @@ void XdsClient::WatchListenerData(
     authority_state.channel_state =
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
+  authority_state.channel_state->AddAuthority(resource->authority);
   authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
                                                  resource.value());
 }
@@ -2153,6 +2139,7 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kLdsTypeUrl, resource.value(), delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state->RemoveAuthority(resource->authority);
     authority_state.channel_state.reset();
   }
 }
@@ -2191,6 +2178,7 @@ void XdsClient::WatchRouteConfigData(
     authority_state.channel_state =
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
+  authority_state.channel_state->AddAuthority(resource->authority);
   authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
                                                  resource.value());
 }
@@ -2216,6 +2204,7 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kRdsTypeUrl, resource.value(), delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state->RemoveAuthority(resource->authority);
     authority_state.channel_state.reset();
   }
 }
@@ -2251,6 +2240,7 @@ void XdsClient::WatchClusterData(
     authority_state.channel_state =
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
+  authority_state.channel_state->AddAuthority(resource->authority);
   authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
                                                  resource.value());
 }
@@ -2275,6 +2265,7 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kCdsTypeUrl, resource.value(), delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state->RemoveAuthority(resource->authority);
     authority_state.channel_state.reset();
   }
 }
@@ -2311,6 +2302,7 @@ void XdsClient::WatchEndpointData(
     authority_state.channel_state =
         GetOrCreateChannelStateLocked(bootstrap_->server());
   }
+  authority_state.channel_state->AddAuthority(resource->authority);
   authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
                                                  resource.value());
 }
@@ -2335,6 +2327,7 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
       XdsApi::kEdsTypeUrl, resource.value(), delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
+    authority_state.channel_state->RemoveAuthority(resource->authority);
     authority_state.channel_state.reset();
   }
 }
@@ -2588,7 +2581,7 @@ std::string XdsClient::DumpClientConfigBinary() {
   // Update per-xds-type version if available, this version corresponding to the
   // last successful ADS update version.
   for (auto& a : authority_state_map_) {
-    for (auto& p : a.second.resource_type_version_map) {
+    for (auto& p : a.second.channel_state->ResourceTypeVersionMap()) {
       resource_type_metadata_map[p.first].version = p.second;
     }
   }
