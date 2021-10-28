@@ -144,23 +144,20 @@ class XdsClient::ChannelState::AdsCallState
  private:
   class ResourceState : public InternallyRefCounted<ResourceState> {
    public:
-    ResourceState(const std::string& type_url, const std::string& name,
-                  bool sent_initial_request)
-        : type_url_(type_url),
-          name_(name),
-          sent_initial_request_(sent_initial_request) {
+    ResourceState(const std::string& type_url, const std::string& name)
+        : type_url_(type_url), name_(name) {
       GRPC_CLOSURE_INIT(&timer_callback_, OnTimer, this,
                         grpc_schedule_on_exec_ctx);
     }
 
     void Orphan() override {
-      Finish();
+      MaybeCancelTimer();
       Unref(DEBUG_LOCATION, "Orphan");
     }
 
-    void Start(RefCountedPtr<AdsCallState> ads_calld) {
-      if (sent_initial_request_) return;
-      sent_initial_request_ = true;
+    void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld) {
+      if (timer_started_) return;
+      timer_started_ = true;
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
@@ -170,7 +167,7 @@ class XdsClient::ChannelState::AdsCallState
           &timer_callback_);
     }
 
-    void Finish() {
+    void MaybeCancelTimer() {
       if (timer_pending_) {
         grpc_timer_cancel(&timer_);
         timer_pending_ = false;
@@ -239,7 +236,7 @@ class XdsClient::ChannelState::AdsCallState
     const std::string name_;
 
     RefCountedPtr<AdsCallState> ads_calld_;
-    bool sent_initial_request_;
+    bool timer_started_ = false;
     bool timer_pending_ = false;
     grpc_timer timer_;
     grpc_closure timer_callback_;
@@ -867,8 +864,7 @@ void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
     const std::string& type_url, const std::string& name) {
   auto& state = state_map_[type_url].subscribed_resources[name];
   if (state == nullptr) {
-    state = MakeOrphanable<ResourceState>(
-        type_url, name, !xds_client()->resource_version_map_[type_url].empty());
+    state = MakeOrphanable<ResourceState>(type_url, name);
     SendMessageLocked(type_url);
   }
 }
@@ -918,8 +914,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   for (auto& p : lds_update_map) {
     const std::string& listener_name = p.first;
     XdsApi::LdsUpdate& lds_update = p.second.resource;
-    auto& state = lds_state.subscribed_resources[listener_name];
-    if (state != nullptr) state->Finish();
+    auto it = lds_state.subscribed_resources.find(listener_name);
+    if (it != lds_state.subscribed_resources.end()) {
+      it->second->MaybeCancelTimer();
+    }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
               listener_name.c_str(), lds_update.ToString().c_str());
@@ -1016,8 +1014,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
   for (auto& p : rds_update_map) {
     const std::string& route_config_name = p.first;
     XdsApi::RdsUpdate& rds_update = p.second.resource;
-    auto& state = rds_state.subscribed_resources[route_config_name];
-    if (state != nullptr) state->Finish();
+    auto it = rds_state.subscribed_resources.find(route_config_name);
+    if (it != rds_state.subscribed_resources.end()) {
+      it->second->MaybeCancelTimer();
+    }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] RDS resource:\n%s", xds_client(),
               rds_update.ToString().c_str());
@@ -1060,8 +1060,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   for (auto& p : cds_update_map) {
     const char* cluster_name = p.first.c_str();
     XdsApi::CdsUpdate& cds_update = p.second.resource;
-    auto& state = cds_state.subscribed_resources[cluster_name];
-    if (state != nullptr) state->Finish();
+    auto it = cds_state.subscribed_resources.find(cluster_name);
+    if (it != cds_state.subscribed_resources.end()) {
+      it->second->MaybeCancelTimer();
+    }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] cluster=%s: %s", xds_client(),
               cluster_name, cds_update.ToString().c_str());
@@ -1154,8 +1156,10 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
   for (auto& p : eds_update_map) {
     const char* eds_service_name = p.first.c_str();
     XdsApi::EdsUpdate& eds_update = p.second.resource;
-    auto& state = eds_state.subscribed_resources[eds_service_name];
-    if (state != nullptr) state->Finish();
+    auto it = eds_state.subscribed_resources.find(eds_service_name);
+    if (it != eds_state.subscribed_resources.end()) {
+      it->second->MaybeCancelTimer();
+    }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] EDS resource %s: %s", xds_client(),
               eds_service_name, eds_update.ToString().c_str());
@@ -1425,7 +1429,7 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
     for (auto& p : it->second.subscribed_resources) {
       resource_names.insert(p.first);
       OrphanablePtr<ResourceState>& state = p.second;
-      state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
+      state->MaybeStartTimer(Ref(DEBUG_LOCATION, "ResourceState"));
     }
   }
   return resource_names;
