@@ -187,7 +187,7 @@ _generate_cc = rule(
             mandatory = False,
         ),
         "_protoc": attr.label(
-            default = Label("//external:protocol_compiler"),
+            default = Label("//third_party:protocol_compiler"),
             executable = True,
             cfg = "host",
         ),

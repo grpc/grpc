@@ -41,7 +41,7 @@ def _protoc_invocation(srcs, flags):
 
     Uses the given sources and flags. Suitable for use in a genrule.
     """
-    protoc_command = "$(location //external:protoc) -I . "
+    protoc_command = "$(location //third_party:protoc) -I . "
     srcs_params = ""
     for src in srcs:
         srcs_params += " $(location %s)" % (src)
@@ -69,7 +69,7 @@ def objc_proto_library(name, srcs, visibility = None):
 
     native.genrule(
         name = name + "_codegen",
-        srcs = srcs + ["//external:protoc"],
+        srcs = srcs + ["//third_party:protoc"],
         outs = h_files + m_files,
         cmd = _protoc_invocation(srcs, protoc_flags),
     )
@@ -78,7 +78,7 @@ def objc_proto_library(name, srcs, visibility = None):
         hdrs = h_files,
         includes = ["."],
         non_arc_srcs = m_files,
-        deps = ["//external:protobuf_objc"],
+        deps = ["//third_party:protobuf_objc"],
         visibility = visibility,
     )
 
@@ -103,13 +103,13 @@ def objc_grpc_library(name, services, other_messages, visibility = None):
         m_files.append(_file_with_extension(src, ".pbrpc.m"))
 
     protoc_flags = ("--grpc_out=$(GENDIR) --plugin=" +
-                    "protoc-gen-grpc=$(location //external:grpc_protoc_plugin_objc)")
+                    "protoc-gen-grpc=$(location //third_party:grpc_protoc_plugin_objc)")
 
     native.genrule(
         name = name + "_codegen",
         srcs = services + [
-            "//external:grpc_protoc_plugin_objc",
-            "//external:protoc",
+            "//third_party:grpc_protoc_plugin_objc",
+            "//third_party:protoc",
         ],
         outs = h_files + m_files,
         cmd = _protoc_invocation(services, protoc_flags),
@@ -121,7 +121,7 @@ def objc_grpc_library(name, services, other_messages, visibility = None):
         srcs = m_files,
         deps = [
             ":" + name + "_messages",
-            "//external:proto_objc_rpc",
+            "//third_party:proto_objc_rpc",
         ],
         visibility = visibility,
     )

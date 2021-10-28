@@ -191,11 +191,11 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         # special case for add dependency on one of the absl libraries (there is not just one absl library)
         prefixlen = len('@com_google_absl//')
         return bazel_dep[prefixlen:]
-    elif bazel_dep == '//external:upb_lib':
+    elif bazel_dep == '//third_party:upb_lib':
         return 'upb'
-    elif bazel_dep == '//external:benchmark':
+    elif bazel_dep == '//third_party:benchmark':
         return 'benchmark'
-    elif bazel_dep == '//external:libssl':
+    elif bazel_dep == '//third_party:libssl':
         return 'libssl'
     else:
         # all the other external deps such as protobuf, cares, zlib
@@ -372,11 +372,11 @@ def update_test_metadata_with_transitive_metadata(
 
         bazel_rule = bazel_rules[_get_bazel_label(lib_name)]
 
-        if '//external:benchmark' in bazel_rule['_TRANSITIVE_DEPS']:
+        if '//third_party:benchmark' in bazel_rule['_TRANSITIVE_DEPS']:
             lib_dict['benchmark'] = True
             lib_dict['defaults'] = 'benchmark'
 
-        if '//external:gtest' in bazel_rule['_TRANSITIVE_DEPS']:
+        if '//third_party:gtest' in bazel_rule['_TRANSITIVE_DEPS']:
             lib_dict['gtest'] = True
             lib_dict['language'] = 'c++'
 
