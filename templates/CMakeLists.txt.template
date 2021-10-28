@@ -782,7 +782,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "libuv", "re2", "upb", "cares", "z"])}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "uv", "re2", "upb", "cares", "z"])}"
     ""
     "grpc.pc")
 
