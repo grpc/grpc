@@ -44,7 +44,7 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_no_xds_define",
+    name = "grpc_no_xds",
     values = {"define": "grpc_no_xds=true"},
 )
 
@@ -58,23 +58,18 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
+selects.config_setting_group(
+    name = "grpc_mobile",
+    match_any = [
+        ":android",
+        ":ios",
+    ],
+)
+
 # Fuzzers can be built as fuzzers or as tests
 config_setting(
     name = "grpc_build_fuzzers",
     values = {"define": "grpc_build_fuzzers=true"},
-)
-
-selects.config_setting_group(
-    name = "grpc_no_xds",
-    match_any = [
-        ":grpc_no_xds_define",
-        # In addition to disabling XDS support when --define=grpc_no_xds=true is
-        # specified, we also disable it on mobile platforms where it is not
-        # likely to be needed and where reducing the binary size is more
-        # important.
-        ":android",
-        ":ios",
-    ],
 )
 
 config_setting(
@@ -368,6 +363,16 @@ grpc_cc_library(
     ],
 )
 
+GRPC_XDS_TARGETS = [
+    "grpc_lb_policy_cds",
+    "grpc_lb_policy_xds_cluster_impl",
+    "grpc_lb_policy_xds_cluster_manager",
+    "grpc_lb_policy_xds_cluster_resolver",
+    "grpc_resolver_xds",
+    "grpc_resolver_c2p",
+    "grpc_xds_server_config_fetcher",
+]
+
 grpc_cc_library(
     name = "grpc",
     srcs = [
@@ -375,22 +380,25 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
     defines = select({
+        # On mobile, don't build RLS or xDS.
+        "grpc_mobile": [
+            "GRPC_NO_XDS",
+            "GRPC_NO_RLS",
+        ],
+        # Don't build xDS if --define=grpc_no_xds=true is used.
         "grpc_no_xds": ["GRPC_NO_XDS"],
+        # By default, build both RLS and xDS.
         "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc_lb_policy_cds",
-            "grpc_lb_policy_xds_cluster_impl",
-            "grpc_lb_policy_xds_cluster_manager",
-            "grpc_lb_policy_xds_cluster_resolver",
-            "grpc_resolver_xds",
-            "grpc_resolver_c2p",
-            "grpc_xds_server_config_fetcher",
-        ],
+        # On mobile, don't build RLS or xDS.
+        "grpc_mobile": [],
+        # Don't build xDS if --define=grpc_no_xds=true is used.
+        "grpc_no_xds": ["grpc_lb_policy_rls"],
+        # By default, build both RLS and xDS.
+        "//conditions:default": ["grpc_lb_policy_rls"] + GRPC_XDS_TARGETS,
     },
     standalone = True,
     visibility = [
@@ -402,7 +410,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
@@ -497,11 +504,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_binder",
     srcs = [
+        "src/core/ext/transport/binder/client/binder_connector.cc",
         "src/core/ext/transport/binder/client/channel_create.cc",
         "src/core/ext/transport/binder/client/channel_create_impl.cc",
         "src/core/ext/transport/binder/client/connection_id_generator.cc",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.cc",
         "src/core/ext/transport/binder/client/jni_utils.cc",
+        "src/core/ext/transport/binder/client/security_policy_setting.cc",
         "src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc",
         "src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc",
         "src/core/ext/transport/binder/server/binder_server.cc",
@@ -515,11 +524,13 @@ grpc_cc_library(
         "src/core/ext/transport/binder/wire_format/wire_writer.cc",
     ],
     hdrs = [
+        "src/core/ext/transport/binder/client/binder_connector.h",
         "src/core/ext/transport/binder/client/channel_create.h",
         "src/core/ext/transport/binder/client/channel_create_impl.h",
         "src/core/ext/transport/binder/client/connection_id_generator.h",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.h",
         "src/core/ext/transport/binder/client/jni_utils.h",
+        "src/core/ext/transport/binder/client/security_policy_setting.h",
         "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h",
         "src/core/ext/transport/binder/security_policy/security_policy.h",
         "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h",
@@ -559,6 +570,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc++_internals",
         "grpc_base",
+        "grpc_client_channel",
         "grpc_codegen",
         "orphanable",
         "slice_refcount",

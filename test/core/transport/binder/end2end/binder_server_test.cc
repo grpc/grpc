@@ -74,11 +74,10 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 
   return grpc::CreateChannelInternal(
       "",
-      grpc::internal::CreateChannelFromBinderImpl(
-          std::move(endpoint_binder),
+      grpc::internal::CreateDirectBinderChannelImplForTesting(
+          std::move(endpoint_binder), nullptr,
           std::make_shared<
-              grpc::experimental::binder::UntrustedSecurityPolicy>(),
-          nullptr),
+              grpc::experimental::binder::UntrustedSecurityPolicy>()),
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>());
 }

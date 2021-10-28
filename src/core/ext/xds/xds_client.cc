@@ -2331,32 +2331,23 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 std::string XdsClient::DumpClientConfigBinary() {
   MutexLock lock(&mu_);
   XdsApi::ResourceTypeMetadataMap resource_type_metadata_map;
-  // Update per-xds-type version if available, this version corresponding to the
-  // last successful ADS update version.
-  for (auto& p : resource_version_map_) {
-    resource_type_metadata_map[p.first].version = p.second;
-  }
   // Collect resource metadata from listeners
-  auto& lds_map =
-      resource_type_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
+  auto& lds_map = resource_type_metadata_map[XdsApi::kLdsTypeUrl];
   for (auto& p : listener_map_) {
     lds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from route configs
-  auto& rds_map =
-      resource_type_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
+  auto& rds_map = resource_type_metadata_map[XdsApi::kRdsTypeUrl];
   for (auto& p : route_config_map_) {
     rds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from clusters
-  auto& cds_map =
-      resource_type_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
+  auto& cds_map = resource_type_metadata_map[XdsApi::kCdsTypeUrl];
   for (auto& p : cluster_map_) {
     cds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from endpoints
-  auto& eds_map =
-      resource_type_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
+  auto& eds_map = resource_type_metadata_map[XdsApi::kEdsTypeUrl];
   for (auto& p : endpoint_map_) {
     eds_map[p.first] = &p.second.meta;
   }
