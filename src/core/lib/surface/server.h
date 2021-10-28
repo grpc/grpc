@@ -487,8 +487,6 @@ struct grpc_server_config_fetcher
     virtual void StopServing() = 0;
   };
 
-  virtual ~grpc_server_config_fetcher() = default;
-
   virtual void StartWatch(std::string listening_address,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;

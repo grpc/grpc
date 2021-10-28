@@ -1969,7 +1969,6 @@
         'third_party/benchmark/src/counter.cc',
         'third_party/benchmark/src/csv_reporter.cc',
         'third_party/benchmark/src/json_reporter.cc',
-        'third_party/benchmark/src/perf_counters.cc',
         'third_party/benchmark/src/reporter.cc',
         'third_party/benchmark/src/sleep.cc',
         'third_party/benchmark/src/statistics.cc',

@@ -575,7 +575,7 @@ class DynamicXdsServerConfigSelectorProvider
     }
   }
 
-  ~DynamicXdsServerConfigSelectorProvider() {
+  ~DynamicXdsServerConfigSelectorProvider() override {
     if (!resource_name_.empty()) {
       new RdsWatchCanceller(server_config_fetcher_, {resource_name_},
                             rds_watcher_, /*dec_ref=*/false);
