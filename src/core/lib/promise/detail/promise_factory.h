@@ -17,6 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
+#include <utility>
+
 #include "absl/meta/type_traits.h"
 
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -65,6 +68,7 @@ struct IsVoidCallable<F, absl::void_t<decltype(std::declval<F>()())>> {
 // Given F(A,B,C,...), what's the return type?
 template <typename T, typename Ignored = void>
 struct ResultOfT;
+
 template <typename F, typename... Args>
 struct ResultOfT<F(Args...),
                  absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(

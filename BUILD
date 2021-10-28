@@ -1208,6 +1208,9 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/activity.h",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
     deps = [
         "atomic_utils",
         "construct_destruct",

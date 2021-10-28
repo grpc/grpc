@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/meta/type_traits.h"
+
 #include "src/core/lib/promise/detail/basic_join.h"
 
 namespace grpc_core {

@@ -17,9 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <new>
+#include <type_traits>
+
 #include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -36,6 +40,7 @@ namespace promise_detail {
 
 template <typename T>
 struct LoopTraits;
+
 template <typename T>
 struct LoopTraits<LoopCtl<T>> {
   using Result = T;

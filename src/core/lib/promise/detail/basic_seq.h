@@ -17,8 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <array>
 #include <cassert>
+#include <new>
+#include <tuple>
+#include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
@@ -29,6 +34,8 @@
 
 namespace grpc_core {
 namespace promise_detail {
+template <typename F>
+class PromiseLike;
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.

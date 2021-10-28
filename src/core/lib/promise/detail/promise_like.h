@@ -19,6 +19,8 @@
 
 #include <utility>
 
+#include "absl/meta/type_traits.h"
+
 #include "src/core/lib/promise/poll.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.

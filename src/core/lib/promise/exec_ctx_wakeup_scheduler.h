@@ -17,6 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
