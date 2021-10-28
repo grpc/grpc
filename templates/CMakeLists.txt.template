@@ -75,9 +75,6 @@
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
-    if 'libuv' in target_dict['name']:
-      # TODO(hork): find a better way to reliably link uv when needed.
-      deps.append("${_gRPC_LIBUV_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -86,6 +83,8 @@
         deps.append("${_gRPC_SSL_LIBRARIES}")
       elif is_absl_lib(d):
         deps.append(get_absl_dep(d))
+      elif d == 'uv':
+        deps.append("${_gRPC_LIBUV_LIBRARIES}")
       else:
         deps.append(d)
     return deps
@@ -779,7 +778,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "uv", "re2", "upb", "cares", "z"])}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "libuv", "re2", "upb", "cares", "z"])}"
     ""
     "grpc.pc")
 

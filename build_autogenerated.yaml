@@ -1542,6 +1542,7 @@ libs:
   - gpr
   - libssl
   - address_sorting
+  - uv
   baselib: true
   generate_plugin_registry: true
 - name: grpc_csharp_ext
@@ -2234,6 +2235,7 @@ libs:
   - absl/utility:utility
   - gpr
   - address_sorting
+  - uv
   baselib: true
   generate_plugin_registry: true
 - name: benchmark_helpers
@@ -6746,7 +6748,6 @@ targets:
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
-  - uv
   uses_polling: false
 - name: linux_system_roots_test
   gtest: true
