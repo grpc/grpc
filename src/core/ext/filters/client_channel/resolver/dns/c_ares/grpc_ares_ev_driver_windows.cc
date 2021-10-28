@@ -648,6 +648,7 @@ class GrpcPolledFdWindows {
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
  private:
+  grpc_core::Mutex* mu_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -802,8 +803,8 @@ class SockToPolledFdMap {
   }
 
  private:
+  grpc_core::Mutex* mu_;
   SockToPolledFdEntry* head_ = nullptr;
-  grpc_core::Mutex* mu;
 };
 
 const struct ares_socket_functions custom_ares_sock_funcs = {
