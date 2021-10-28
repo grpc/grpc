@@ -1152,7 +1152,7 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, const std::string& type_url,
     const std::map<absl::string_view /*authority*/,
-                   std::set<std::string /*name*/>>& resource_map,
+                   std::set<absl::string_view /*name*/>>& resource_map,
     const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
@@ -1205,11 +1205,26 @@ grpc_slice XdsApi::CreateAdsRequest(
     PopulateNode(context, node_, build_version_, user_agent_name_,
                  user_agent_version_, node_msg);
   }
+  // A vector for temporary local storage of resource name strings.
+  std::vector<std::string> resource_name_storage;
+  // Make sure the vector is sized right up-front, so that reallocations
+  // don't move the strings out from under the upb proto object that
+  // points to them.
+  size_t size = 0;
+  for (const auto& p : resource_map) {
+    size += p.second.size();
+  }
+  resource_name_storage.reserve(size);
   // Add resource_names.
   for (const auto& a : resource_map) {
+    absl::string_view authority = a.first;
     for (const auto& p : a.second) {
+      absl::string_view resource_id = p;
+      resource_name_storage.push_back(
+          ConstructFullResourceName(authority, type_url, resource_id));
       envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
-          request, StdStringToUpbString(p), arena.ptr());
+          request, StdStringToUpbString(resource_name_storage.back()),
+          arena.ptr());
     }
   }
   MaybeLogDiscoveryRequest(context, request);

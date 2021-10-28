@@ -269,8 +269,6 @@ class XdsClient::ChannelState::AdsCallState
     std::map<std::string /*authority*/,
              std::map<std::string /*name*/, OrphanablePtr<ResourceState>>>
         subscribed_resources;
-    // std::map<XdsApi::ResourceName, OrphanablePtr<ResourceState>>
-    // subscribed_resources;
   };
 
   void SendMessageLocked(const std::string& type_url)
@@ -320,8 +318,6 @@ class XdsClient::ChannelState::AdsCallState
   std::map<absl::string_view /*authority*/,
            std::set<absl::string_view /*name*/>>
   ResourceNamesForRequest(const std::string& type_url);
-  std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
-  ConstructedResourceNamesForRequest(const std::string& type_url);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -859,8 +855,9 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type_url];
   grpc_slice request_payload_slice;
-  std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
-      resource_map = ConstructedResourceNamesForRequest(type_url);
+  std::map<absl::string_view /*authority*/,
+           std::set<absl::string_view /*name*/>>
+      resource_map = ResourceNamesForRequest(type_url);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
       chand()->server_, type_url, resource_map,
       chand()->resource_type_version_map_[type_url], state.nonce,
@@ -1517,26 +1514,6 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
       for (auto& p : a.second) {
         std::set<absl::string_view>& resource_names = resource_map[a.first];
         resource_names.insert(p.first);
-        OrphanablePtr<ResourceState>& state = p.second;
-        state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
-      }
-    }
-  }
-  return resource_map;
-}
-
-std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
-XdsClient::ChannelState::AdsCallState::ConstructedResourceNamesForRequest(
-    const std::string& type_url) {
-  std::map<absl::string_view /*authority*/, std::set<std::string /*name*/>>
-      resource_map;
-  auto it = state_map_.find(type_url);
-  if (it != state_map_.end()) {
-    for (auto& a : it->second.subscribed_resources) {
-      for (auto& p : a.second) {
-        std::set<std::string>& resource_names = resource_map[a.first];
-        resource_names.insert(
-            XdsApi::ConstructFullResourceName(a.first, type_url, p.first));
         OrphanablePtr<ResourceState>& state = p.second;
         state->Start(Ref(DEBUG_LOCATION, "ResourceState"));
       }

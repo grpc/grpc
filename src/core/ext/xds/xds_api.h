@@ -671,7 +671,7 @@ class XdsApi {
   grpc_slice CreateAdsRequest(
       const XdsBootstrap::XdsServer& server, const std::string& type_url,
       const std::map<absl::string_view /*authority*/,
-                     std::set<std::string /*name*/>>& resource_map,
+                     std::set<absl::string_view /*name*/>>& resource_map,
       const std::string& version, const std::string& nonce,
       grpc_error_handle error, bool populate_node);
 
