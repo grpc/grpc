@@ -440,7 +440,6 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
         "grpc_no_xds": [],
-        "grpc_mobile": [],
         "//conditions:default": [
             "grpc++_xds_client",
             "grpc++_xds_server",
@@ -4037,7 +4036,6 @@ grpc_cc_library(
     hdrs = [],
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
-        "grpc_mobile": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -4049,7 +4047,6 @@ grpc_cc_library(
     ],
     select_deps = {
         "grpc_no_xds": [],
-        "grpc_mobile": [],
         "//conditions:default": ["//:grpcpp_csds"],
     },
     deps = [
