@@ -81,7 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initial metadata key-value pairs that should be included in the request.
  */
-@property(copy, readonly, nullable) NSDictionary *initialMetadata;
+@property(copy, readonly, nullable) GRPCMetadataDictionary *initialMetadata;
 
 // Channel parameters; take into account of channel signature.
 
@@ -134,7 +134,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Specify channel args to be used for this call. For a list of channel args available, see
  * grpc/grpc_types.h
  */
-@property(copy, readonly, nullable) NSDictionary *additionalChannelArgs;
+@property(copy, readonly, nullable) GRPCMetadataDictionary *additionalChannelArgs;
 
 // Parameters for SSL authentication.
 
@@ -272,7 +272,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initial metadata key-value pairs that should be included in the request.
  */
-@property(copy, readwrite, nullable) NSDictionary *initialMetadata;
+@property(copy, readwrite, nullable) GRPCMetadataDictionary *initialMetadata;
 
 // Channel parameters; take into account of channel signature.
 
@@ -327,7 +327,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Specify channel args to be used for this call. For a list of channel args available, see
  * grpc/grpc_types.h
  */
-@property(copy, readwrite, nullable) NSDictionary *additionalChannelArgs;
+@property(copy, readwrite, nullable) GRPCMetadataDictionary *additionalChannelArgs;
 
 // Parameters for SSL authentication.
 

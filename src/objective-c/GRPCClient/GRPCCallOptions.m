@@ -25,7 +25,7 @@ static NSString *const kDefaultServerAuthority = nil;
 static const NSTimeInterval kDefaultTimeout = 0;
 static const BOOL kDefaultFlowControlEnabled = NO;
 static NSArray<id<GRPCInterceptorFactory>> *const kDefaultInterceptorFactories = nil;
-static NSDictionary *const kDefaultInitialMetadata = nil;
+static GRPCMetadataDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static NSString *const kDefaultUserAgentSuffix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
@@ -36,7 +36,7 @@ static const NSTimeInterval kDefaultKeepaliveTimeout = 0;
 static const NSTimeInterval kDefaultConnectMinTimeout = 0;
 static const NSTimeInterval kDefaultConnectInitialBackoff = 0;
 static const NSTimeInterval kDefaultConnectMaxBackoff = 0;
-static NSDictionary *const kDefaultAdditionalChannelArgs = nil;
+static GRPCMetadataDictionary *const kDefaultAdditionalChannelArgs = nil;
 static NSString *const kDefaultPEMRootCertificates = nil;
 static NSString *const kDefaultPEMPrivateKey = nil;
 static NSString *const kDefaultPEMCertificateChain = nil;
@@ -68,7 +68,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSArray<id<GRPCInterceptorFactory>> *_interceptorFactories;
   NSString *_oauth2AccessToken;
   id<GRPCAuthorizationProtocol> _authTokenProvider;
-  NSDictionary *_initialMetadata;
+  GRPCMetadataDictionary *_initialMetadata;
   NSString *_userAgentPrefix;
   NSString *_userAgentSuffix;
   NSUInteger _responseSizeLimit;
@@ -79,7 +79,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSTimeInterval _connectMinTimeout;
   NSTimeInterval _connectInitialBackoff;
   NSTimeInterval _connectMaxBackoff;
-  NSDictionary *_additionalChannelArgs;
+  GRPCMetadataDictionary *_additionalChannelArgs;
   NSString *_PEMRootCertificates;
   NSString *_PEMPrivateKey;
   NSString *_PEMCertificateChain;
@@ -155,7 +155,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                    interceptorFactories:(NSArray<id<GRPCInterceptorFactory>> *)interceptorFactories
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
-                        initialMetadata:(NSDictionary *)initialMetadata
+                        initialMetadata:(GRPCMetadataDictionary *)initialMetadata
                         userAgentPrefix:(NSString *)userAgentPrefix
                         userAgentSuffix:(NSString *)userAgentSuffix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
@@ -166,7 +166,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                       connectMinTimeout:(NSTimeInterval)connectMinTimeout
                   connectInitialBackoff:(NSTimeInterval)connectInitialBackoff
                       connectMaxBackoff:(NSTimeInterval)connectMaxBackoff
-                  additionalChannelArgs:(NSDictionary *)additionalChannelArgs
+                  additionalChannelArgs:(GRPCMetadataDictionary *)additionalChannelArgs
                     PEMRootCertificates:(NSString *)PEMRootCertificates
                           PEMPrivateKey:(NSString *)PEMPrivateKey
                     PEMCertificateChain:(NSString *)PEMCertificateChain
@@ -486,7 +486,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   _authTokenProvider = authTokenProvider;
 }
 
-- (void)setInitialMetadata:(NSDictionary *)initialMetadata {
+- (void)setInitialMetadata:(GRPCMetadataDictionary *)initialMetadata {
   _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
 }
 
@@ -550,7 +550,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   }
 }
 
-- (void)setAdditionalChannelArgs:(NSDictionary *)additionalChannelArgs {
+- (void)setAdditionalChannelArgs:(GRPCMetadataDictionary *)additionalChannelArgs {
   _additionalChannelArgs = [[NSDictionary alloc] initWithDictionary:additionalChannelArgs
                                                           copyItems:YES];
 }
