@@ -28,6 +28,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gpr/string.h"
@@ -327,6 +328,8 @@ static void test_immediate_cancel(void) {
   poll_pollset_until_request_done(&args);
   args_finish(&args);
 }
+
+static int g_fake_non_responsive_dns_server_port;
 
 static void inject_non_responsive_dns_server(ares_channel channel) {
   gpr_log(GPR_DEBUG,
