@@ -124,7 +124,9 @@ cdef extern from "src/core/lib/address_utils/sockaddr_utils.h":
   int grpc_sockaddr_get_port(const grpc_resolved_address *addr);
   cppstring grpc_sockaddr_to_string(const grpc_resolved_address *addr,
                                     bool_t normalize);
-  grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address *out, char* addr, int port);
   int grpc_sockaddr_set_port(const grpc_resolved_address *resolved_addr,
                              int port)
   const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* resolved_addr)
+
+cdef extern from "src/core/lib/address_utils/parse_address.h":
+  grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address *out, char* addr, int port);
