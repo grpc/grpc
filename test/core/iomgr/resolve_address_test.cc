@@ -304,6 +304,19 @@ static void test_unparseable_hostports(void) {
   }
 }
 
+static void test_immediate_cancel_no_polling(void) {
+  grpc_core::ExecCtx exec_ctx;
+  args_struct args;
+  args_init(&args);
+  grpc_resolve_address(
+      kCases[i], "1", args.pollset_set,
+      GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
+      &args.addrs);
+  grpc_core::ExecCtx::Get()->Flush();
+  poll_pollset_until_request_done(&args);
+  args_finish(&args);
+}
+
 typedef struct mock_ipv6_disabled_source_addr_factory {
   address_sorting_source_addr_factory base;
 } mock_ipv6_disabled_source_addr_factory;
@@ -374,9 +387,13 @@ int main(int argc, char** argv) {
     test_ipv6_without_port();
     test_invalid_ip_addresses();
     test_unparseable_hostports();
+    test_immediate_cancel_no_polling();
     if (gpr_stricmp(resolver_type, "ares") == 0) {
       // This behavior expectation is specific to c-ares.
       test_localhost_result_has_ipv6_first();
+      // The native resolver doesn't support cancellation
+      // of I/O related work, so we can only test with c-ares.
+      test_cancel_during_hang();
     }
     grpc_core::Executor::ShutdownAll();
   }
