@@ -8305,11 +8305,13 @@ add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
@@ -8359,11 +8361,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(binder_transport_test
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
@@ -10011,11 +10015,13 @@ add_executable(end2end_binder_transport_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
@@ -10120,11 +10126,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(endpoint_binder_pool_test
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
@@ -10537,11 +10545,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_binder_test
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
@@ -16174,11 +16184,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(transport_stream_receiver_test
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
@@ -16490,11 +16502,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wire_reader_test
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc
@@ -16590,11 +16604,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wire_writer_test
+  src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
   src/core/ext/transport/binder/client/channel_create_impl.cc
   src/core/ext/transport/binder/client/connection_id_generator.cc
   src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
   src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   src/core/ext/transport/binder/server/binder_server.cc

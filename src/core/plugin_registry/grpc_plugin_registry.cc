@@ -54,8 +54,10 @@ void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
+#ifndef GRPC_NO_RLS
 void RlsLbPluginInit();
 void RlsLbPluginShutdown();
+#endif  // !GRPC_NO_RLS
 void ServiceConfigParserInit(void);
 void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
@@ -101,8 +103,10 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_resolver_fake_init, grpc_resolver_fake_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
+#ifndef GRPC_NO_RLS
   grpc_register_plugin(grpc_core::RlsLbPluginInit,
                        grpc_core::RlsLbPluginShutdown);
+#endif  // !GRPC_NO_RLS
   grpc_register_plugin(grpc_lb_policy_priority_init,
                        grpc_lb_policy_priority_shutdown);
   grpc_register_plugin(grpc_lb_policy_weighted_target_init,
