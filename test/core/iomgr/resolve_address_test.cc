@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 
 static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);
@@ -327,6 +328,43 @@ static void test_immediate_cancel(void) {
   args_finish(&args);
 }
 
+static void inject_non_responsive_dns_server(ares_channel channel) {
+  gpr_log(GPR_DEBUG,
+          "Injecting broken nameserver list. Bad server address:|[::1]:%d|.",
+          g_fake_non_responsive_dns_server_port);
+  // Configure a non-responsive DNS server at the front of c-ares's nameserver list.
+  struct ares_addr_port_node dns_server_addrs[1];
+  dns_server_addrs[0].family = AF_INET6;
+  (reinterpret_cast<char*>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
+  dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
+  dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
+  dns_server_addrs[0].next = nullptr;
+  GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
+}
+
+static void test_cancel_during_hang(void) {
+  // Inject an unresponsive DNS server into the resolver's DNS server config
+  FakeUdpAndTcpServer fake_dns_server(
+      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
+      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  g_fake_non_responsive_dns_server_port = fake_dns_server.port();
+  void (*prev_test_only_inject_config)(ares_channel channel) = grpc_ares_test_only_inject_config;
+  grpc_ares_test_only_inject_config = inject_non_responsive_dns_server;
+  // Run the test
+  grpc_core::ExecCtx exec_ctx;
+  args_struct args;
+  args_init(&args);
+  auto r = grpc_resolve_address(
+      "wont-resolve:1", "1", args.pollset_set,
+      GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
+      &args.addrs);
+  grpc_core::ExecCtx::Get()->Flush();
+  poll_pollset_until_request_done(&args);
+  args_finish(&args);
+  // reset altered global state
+  grpc_ares_test_only_inject_config = prev_test_only_inject_config;
+}
+
 typedef struct mock_ipv6_disabled_source_addr_factory {
   address_sorting_source_addr_factory base;
 } mock_ipv6_disabled_source_addr_factory;
@@ -403,7 +441,7 @@ int main(int argc, char** argv) {
       test_localhost_result_has_ipv6_first();
       // The native resolver doesn't support cancellation
       // of I/O related work, so we can only test with c-ares.
-      //test_cancel_during_hang();
+      test_cancel_during_hang();
     }
     grpc_core::Executor::ShutdownAll();
   }
