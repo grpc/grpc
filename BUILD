@@ -44,7 +44,7 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_no_xds",
+    name = "grpc_no_xds_define",
     values = {"define": "grpc_no_xds=true"},
 )
 
@@ -58,18 +58,23 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
-selects.config_setting_group(
-    name = "grpc_mobile",
-    match_any = [
-        ":android",
-        ":ios",
-    ],
-)
-
 # Fuzzers can be built as fuzzers or as tests
 config_setting(
     name = "grpc_build_fuzzers",
     values = {"define": "grpc_build_fuzzers=true"},
+)
+
+selects.config_setting_group(
+    name = "grpc_no_xds",
+    match_any = [
+        ":grpc_no_xds_define",
+        # In addition to disabling XDS support when --define=grpc_no_xds=true is
+        # specified, we also disable it on mobile platforms where it is not
+        # likely to be needed and where reducing the binary size is more
+        # important.
+        ":android",
+        ":ios",
+    ],
 )
 
 config_setting(
@@ -364,16 +369,6 @@ grpc_cc_library(
     ],
 )
 
-GRPC_XDS_TARGETS = [
-    "grpc_lb_policy_cds",
-    "grpc_lb_policy_xds_cluster_impl",
-    "grpc_lb_policy_xds_cluster_manager",
-    "grpc_lb_policy_xds_cluster_resolver",
-    "grpc_resolver_xds",
-    "grpc_resolver_c2p",
-    "grpc_xds_server_config_fetcher",
-]
-
 grpc_cc_library(
     name = "grpc",
     srcs = [
@@ -381,25 +376,22 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
     defines = select({
-        # On mobile, don't build RLS or xDS.
-        "grpc_mobile": [
-            "GRPC_NO_XDS",
-            "GRPC_NO_RLS",
-        ],
-        # Don't build xDS if --define=grpc_no_xds=true is used.
         "grpc_no_xds": ["GRPC_NO_XDS"],
-        # By default, build both RLS and xDS.
         "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     select_deps = {
-        # On mobile, don't build RLS or xDS.
-        "grpc_mobile": [],
-        # Don't build xDS if --define=grpc_no_xds=true is used.
-        "grpc_no_xds": ["grpc_lb_policy_rls"],
-        # By default, build both RLS and xDS.
-        "//conditions:default": ["grpc_lb_policy_rls"] + GRPC_XDS_TARGETS,
+        "grpc_no_xds": [],
+        "//conditions:default": [
+            "grpc_lb_policy_cds",
+            "grpc_lb_policy_xds_cluster_impl",
+            "grpc_lb_policy_xds_cluster_manager",
+            "grpc_lb_policy_xds_cluster_resolver",
+            "grpc_resolver_xds",
+            "grpc_resolver_c2p",
+            "grpc_xds_server_config_fetcher",
+        ],
     },
     standalone = True,
     visibility = [
@@ -411,6 +403,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
+        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
@@ -441,7 +434,6 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
         "grpc_no_xds": [],
-        "grpc_mobile": [],
         "//conditions:default": [
             "grpc++_xds_client",
             "grpc++_xds_server",
@@ -4060,7 +4052,6 @@ grpc_cc_library(
     hdrs = [],
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
-        "grpc_mobile": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -4072,7 +4063,6 @@ grpc_cc_library(
     ],
     select_deps = {
         "grpc_no_xds": [],
-        "grpc_mobile": [],
         "//conditions:default": ["//:grpcpp_csds"],
     },
     deps = [

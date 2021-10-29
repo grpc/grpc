@@ -1,0 +1,19 @@
+actions {
+  create_channel {
+    target: "unix:phttpShttp6\327\227Go" 
+    channel_args {
+      key: "grpc.default_compression_algorithm"
+      i: 4702337453602635775
+    }
+  }
+}
+actions {
+  create_server {}
+}
+actions {
+  check_connectivity: true
+} 
+actions {
+  advance_time: 6881403
+} 
+actions {}
