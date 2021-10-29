@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -59,7 +60,7 @@ RefCountedPtr<grpc_channel_credentials>
 XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
                                           const Json& /*config*/) {
   if (creds_type == "google_default") {
-    return grpc_google_default_credentials_create(nullptr);
+    return grpc_google_default_credentials_create_internal(nullptr);
   } else if (creds_type == "insecure") {
     return grpc_insecure_credentials_create();
   } else if (creds_type == "fake") {
