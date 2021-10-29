@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(
     name = "test/core/util",
@@ -88,7 +88,7 @@ grpc_cc_library(
         ":grpc_suppressions",
         ":stack_tracer",
         "//:gpr",
-        "//:grpc_base_c",
+        "//:grpc_base",
         "//:grpc_common",
     ],
 )
@@ -217,6 +217,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings:str_format",
     ],
+    hdrs = ["fake_udp_and_tcp_server.h"],
     deps = [
         "//:gpr",
     ]
