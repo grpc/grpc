@@ -344,10 +344,12 @@ static grpc_error_handle update_path_for_get(
                           true /* url_safe */, false /* multi_line */);
   gpr_free(payload_bytes);
   /* remove trailing unused memory and add trailing 0 to terminate string */
-  char* t = reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);
+  char* t =
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice) +
+      GRPC_SLICE_LENGTH(path_slice);
   /* safe to use strlen since base64_encode will always add '\0' */
-  path_with_query_slice =
-      grpc_slice_sub_no_ref(path_with_query_slice, 0, strlen(t));
+  path_with_query_slice = grpc_slice_sub_no_ref(
+      path_with_query_slice, 0, GRPC_SLICE_LENGTH(path_slice) + strlen(t));
   /* substitute previous path with the new path+query */
   grpc_mdelem mdelem_path_and_query =
       grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);

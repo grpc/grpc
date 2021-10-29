@@ -4621,11 +4621,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -4648,11 +4650,13 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
@@ -4675,11 +4679,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -4709,11 +4715,13 @@ targets:
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
@@ -5458,11 +5466,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -5486,11 +5496,13 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
@@ -5533,11 +5545,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -5567,11 +5581,13 @@ targets:
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
@@ -5765,11 +5781,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -5799,11 +5817,13 @@ targets:
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/end2end/fake_binder.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
@@ -8150,11 +8170,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -8183,11 +8205,13 @@ targets:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
@@ -8342,11 +8366,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -8376,11 +8402,13 @@ targets:
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
@@ -8450,11 +8478,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
   - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
   - src/core/ext/transport/binder/security_policy/security_policy.h
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
@@ -8484,11 +8514,13 @@ targets:
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
   - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
   - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
   - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
