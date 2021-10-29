@@ -58,8 +58,10 @@ class ChannelData {
     if (!grpc_core::GetBit(enabled_compression_algorithms_bitset_,
                            default_compression_algorithm_)) {
       const char* name;
-      GPR_ASSERT(grpc_compression_algorithm_name(default_compression_algorithm_,
-                                                 &name) == 1);
+      if (!grpc_compression_algorithm_name(default_compression_algorithm_,
+                                           &name)) {
+        name = "<unknown>";
+      }
       gpr_log(GPR_ERROR,
               "default compression algorithm %s not enabled: switching to none",
               name);
