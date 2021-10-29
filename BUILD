@@ -575,6 +575,7 @@ grpc_cc_library(
         "grpc_codegen",
         "orphanable",
         "slice_refcount",
+        "iomgr_port"
     ],
 )
 
