@@ -125,6 +125,13 @@ static void must_fail(void* argsp, grpc_error_handle err) {
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
+static void dont_care(void* argsp, grpc_error_handle err) {
+  args_struct* args = static_cast<args_struct*>(argsp);
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+}
+
 // This test assumes the environment has an ipv6 loopback
 static void must_succeed_with_ipv6_first(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
@@ -304,14 +311,17 @@ static void test_unparseable_hostports(void) {
   }
 }
 
-static void test_immediate_cancel_no_polling(void) {
+// Kick off a simple DNS resolution and then immediately cancel. This
+// test doesn't care what the result is, just that we don't crash etc.
+static void test_immediate_cancel(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
-      kCases[i], "1", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
+  auto r = grpc_resolve_address(
+      "localhost:1", "1", args.pollset_set,
+      GRPC_CLOSURE_CREATE(dont_care, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
+  r->reset(); // cancel the resolution
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -387,13 +397,13 @@ int main(int argc, char** argv) {
     test_ipv6_without_port();
     test_invalid_ip_addresses();
     test_unparseable_hostports();
-    test_immediate_cancel_no_polling();
+    test_immediate_cancel();
     if (gpr_stricmp(resolver_type, "ares") == 0) {
       // This behavior expectation is specific to c-ares.
       test_localhost_result_has_ipv6_first();
       // The native resolver doesn't support cancellation
       // of I/O related work, so we can only test with c-ares.
-      test_cancel_during_hang();
+      //test_cancel_during_hang();
     }
     grpc_core::Executor::ShutdownAll();
   }
