@@ -85,7 +85,7 @@ void grpc_free_port_using_server(int port) {
 
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/free");
-    grpc_httpcli_get(&context, &pr.pops, resource_quota, &req,
+    grpc_httpcli_get(&pr.pops, resource_quota, &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),
@@ -165,7 +165,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     pr->response = {};
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/pick_retry");
-    grpc_httpcli_get(pr->ctx, &pr->pops, resource_quota, &req,
+    grpc_httpcli_get(&pr->pops, resource_quota, &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
@@ -205,14 +205,13 @@ int grpc_pick_port_using_server(void) {
                                            grpc_schedule_on_exec_ctx);
     pr.port = -1;
     pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
-    pr.ctx = &context;
 
     req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     req.http.path = const_cast<char*>("/get");
 
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/pick");
-    grpc_httpcli_get(&context, &pr.pops, resource_quota, &req,
+    grpc_httpcli_get(&pr.pops, resource_quota, &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),

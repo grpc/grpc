@@ -393,7 +393,7 @@ class grpc_compute_engine_token_fetcher_credentials
        extreme memory pressure. */
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("oauth2_credentials");
-    grpc_httpcli_get(http_context, pollent, resource_quota, &request, deadline,
+    grpc_httpcli_get(pollent, resource_quota, &request, deadline,
                      GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
                                        metadata_req, grpc_schedule_on_exec_ctx),
                      &metadata_req->response);
@@ -583,8 +583,7 @@ class StsTokenFetcherCredentials
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("oauth2_credentials_refresh");
     grpc_httpcli_post(
-        http_context, pollent, resource_quota, &request, body, body_length,
-        deadline,
+        pollent, resource_quota, &request, body, body_length, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
