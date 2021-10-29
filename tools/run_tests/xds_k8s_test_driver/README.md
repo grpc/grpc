@@ -26,7 +26,9 @@ changes to this codebase at the moment.
 #### Requirements
 1. Python v3.6+
 2. [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
-3. Configured GKE cluster
+3. `kubectl`
+
+`kubectl` can be installed via `gcloud components install kubectl`, or system package manager: https://kubernetes.io/docs/tasks/tools/#kubectl
 
 #### Configure GKE cluster
 This is an example outlining minimal requirements to run `tests.baseline_test`.  
@@ -67,7 +69,7 @@ gcloud container clusters create "${CLUSTER_NAME}" \
  --zone="${ZONE}" \
  --enable-ip-alias \
  --workload-pool="${PROJECT_ID}.svc.id.goog" \
- --enable-workload-certificates \
+ --enable-mesh-certificates \
  --workload-metadata=GKE_METADATA \
  --tags=allow-health-checks
 ```
@@ -147,6 +149,9 @@ END
 
 ##### Configure GKE cluster access
 ```shell
+# Unless you're using GCP VM with preconfigured Application Default Credentials, acquire them for your user
+gcloud auth application-default login
+
 # Configuring GKE cluster access for kubectl
 gcloud container clusters get-credentials "your_gke_cluster_name" --zone "your_gke_cluster_zone"
 

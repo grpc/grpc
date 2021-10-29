@@ -39,7 +39,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -193,7 +193,7 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -305,7 +305,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 
 void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -313,7 +313,7 @@ void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
 void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
-  gpr_free(pending_request_);
+  delete pending_request_;
   pending_request_ = nullptr;
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
@@ -445,7 +445,13 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& /*uri*/) const override { return true; }
+  bool IsValidUri(const URI& uri) const override {
+    if (absl::StripPrefix(uri.path(), "/").empty()) {
+      gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+      return false;
+    }
+    return true;
+  }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));

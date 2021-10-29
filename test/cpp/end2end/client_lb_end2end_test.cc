@@ -49,7 +49,7 @@
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -61,7 +61,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/orca_load_report_for_test.pb.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
@@ -104,7 +104,7 @@ class MyTestServiceImpl : public TestServiceImpl {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    const udpa::data::orca::v1::OrcaLoadReport* load_report = nullptr;
+    const xds::data::orca::v3::OrcaLoadReport* load_report = nullptr;
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
@@ -135,7 +135,7 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
-  void set_load_report(udpa::data::orca::v1::OrcaLoadReport* load_report) {
+  void set_load_report(xds::data::orca::v3::OrcaLoadReport* load_report) {
     grpc::internal::MutexLock lock(&mu_);
     load_report_ = load_report;
   }
@@ -148,7 +148,7 @@ class MyTestServiceImpl : public TestServiceImpl {
 
   grpc::internal::Mutex mu_;
   int request_count_ = 0;
-  const udpa::data::orca::v1::OrcaLoadReport* load_report_ = nullptr;
+  const xds::data::orca::v3::OrcaLoadReport* load_report_ = nullptr;
   grpc::internal::Mutex clients_mu_;
   std::set<std::string> clients_;
 };
@@ -1771,7 +1771,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return trailing_metadata_;
   }
 
-  const udpa::data::orca::v1::OrcaLoadReport* backend_load_report() {
+  const xds::data::orca::v3::OrcaLoadReport* backend_load_report() {
     grpc::internal::MutexLock lock(&mu_);
     return load_report_.get();
   }
@@ -1786,7 +1786,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     self->trailing_metadata_ = args_seen.metadata;
     if (backend_metric_data != nullptr) {
       self->load_report_ =
-          absl::make_unique<udpa::data::orca::v1::OrcaLoadReport>();
+          absl::make_unique<xds::data::orca::v3::OrcaLoadReport>();
       self->load_report_->set_cpu_utilization(
           backend_metric_data->cpu_utilization);
       self->load_report_->set_mem_utilization(
@@ -1807,7 +1807,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
   grpc_core::MetadataVector trailing_metadata_;
-  std::unique_ptr<udpa::data::orca::v1::OrcaLoadReport> load_report_;
+  std::unique_ptr<xds::data::orca::v3::OrcaLoadReport> load_report_;
 };
 
 ClientLbInterceptTrailingMetadataTest*
@@ -1885,7 +1885,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
-  udpa::data::orca::v1::OrcaLoadReport load_report;
+  xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(0.5);
   load_report.set_mem_utilization(0.75);
   load_report.set_rps(25);

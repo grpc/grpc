@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -27,8 +27,8 @@
 
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -159,8 +159,8 @@ class ErrorParser : public ServiceConfigParser::Parser {
 class ServiceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(absl::make_unique<TestParser1>()),
         0);
@@ -430,8 +430,8 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
 class ErroredParsersScopingTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(absl::make_unique<ErrorParser>()),
         0);
@@ -476,8 +476,8 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(
         ServiceConfigParser::RegisterParser(
             absl::make_unique<internal::ClientChannelServiceConfigParser>()),
@@ -770,8 +770,8 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
 class RetryParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(ServiceConfigParser::RegisterParser(
                   absl::make_unique<internal::RetryServiceConfigParser>()),
               0);
@@ -1453,8 +1453,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ServiceConfigParser::Shutdown();
-    ServiceConfigParser::Init();
+    ServiceConfigParserShutdown();
+    ServiceConfigParserInit();
     EXPECT_EQ(ServiceConfigParser::RegisterParser(
                   absl::make_unique<MessageSizeParser>()),
               0);

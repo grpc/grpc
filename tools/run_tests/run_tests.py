@@ -464,24 +464,20 @@ class CLanguage(object):
             return ('jessie', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
-        elif compiler == 'gcc7.4':
-            return ('ubuntu1804', [])
         elif compiler == 'gcc8.3':
             return ('buster', [])
         elif compiler == 'gcc8.3_openssl102':
             return ('buster_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
+        elif compiler == 'gcc11':
+            return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4.0':
-            return ('ubuntu1604',
-                    self._clang_cmake_configure_extra_args(
-                        version_suffix='-4.0'))
-        elif compiler == 'clang5.0':
-            return ('ubuntu1604',
-                    self._clang_cmake_configure_extra_args(
-                        version_suffix='-5.0'))
+        elif compiler == 'clang4':
+            return ('clang_4', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang12':
+            return ('clang_12', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -594,7 +590,7 @@ class Php7Language(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_jessie_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_debian9_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -679,9 +675,7 @@ class PythonLanguage(object):
 
     def _python_manager_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in [
-                'python2.7', 'python3.5', 'python3.6', 'python3.7', 'python3.8'
-        ]:
+        if self.args.compiler in ['python3.6', 'python3.7', 'python3.8']:
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
@@ -733,16 +727,6 @@ class PythonLanguage(object):
                                         builder_prefix_arguments,
                                         venv_relative_python, toolchain, runner,
                                         test_command, args.iomgr_platform)
-        python27_config = _python_config_generator(name='py27',
-                                                   major='2',
-                                                   minor='7',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
-        python35_config = _python_config_generator(name='py35',
-                                                   major='3',
-                                                   minor='5',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
         python36_config = _python_config_generator(name='py36',
                                                    major='3',
                                                    minor='6',
@@ -772,7 +756,7 @@ class PythonLanguage(object):
 
         if args.iomgr_platform in ('asyncio', 'gevent'):
             if args.compiler not in ('default', 'python3.6', 'python3.7',
-                                     'python3.8'):
+                                     'python3.8', 'python3.9'):
                 raise Exception(
                     'Compiler %s not supported with IO Manager platform: %s' %
                     (args.compiler, args.iomgr_platform))
@@ -795,14 +779,9 @@ class PythonLanguage(object):
                     return (python38_config,)
                 else:
                     return (
-                        python35_config,
                         python37_config,
                         python38_config,
                     )
-        elif args.compiler == 'python2.7':
-            return (python27_config,)
-        elif args.compiler == 'python3.5':
-            return (python35_config,)
         elif args.compiler == 'python3.6':
             return (python36_config,)
         elif args.compiler == 'python3.7':
@@ -819,8 +798,6 @@ class PythonLanguage(object):
             return (python38_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
-                python27_config,
-                python35_config,
                 python36_config,
                 python37_config,
                 python38_config,
@@ -1417,17 +1394,18 @@ argp.add_argument(
         'default',
         'gcc4.9',
         'gcc5.3',
-        'gcc7.4',
         'gcc8.3',
         'gcc8.3_openssl102',
+        'gcc11',
         'gcc_musl',
-        'clang4.0',
-        'clang5.0',
+        'clang4',
+        'clang12',
         'python2.7',
         'python3.5',
         'python3.6',
         'python3.7',
         'python3.8',
+        'python3.9',
         'pypy',
         'pypy3',
         'python_alpine',

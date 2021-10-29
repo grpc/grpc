@@ -151,6 +151,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -493,7 +494,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
     void* arg, grpc_error_handle error) {
   ClusterChild* self = static_cast<ClusterChild*>(arg);
-  GRPC_ERROR_REF(error);  // Ref owned by the lambda
+  (void)GRPC_ERROR_REF(error);  // Ref owned by the lambda
   self->xds_cluster_manager_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
       DEBUG_LOCATION);
@@ -568,6 +569,12 @@ void XdsClusterManagerLb::ClusterChild::Helper::RequestReresolution() {
   xds_cluster_manager_child_->xds_cluster_manager_policy_
       ->channel_control_helper()
       ->RequestReresolution();
+}
+
+absl::string_view XdsClusterManagerLb::ClusterChild::Helper::GetAuthority() {
+  return xds_cluster_manager_child_->xds_cluster_manager_policy_
+      ->channel_control_helper()
+      ->GetAuthority();
 }
 
 void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(

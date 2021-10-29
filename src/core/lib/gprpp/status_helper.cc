@@ -331,7 +331,7 @@ std::string StatusToString(const absl::Status& status) {
 
 namespace internal {
 
-google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) {
+google_rpc_Status* StatusToProto(const absl::Status& status, upb_arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
   google_rpc_Status_set_message(
@@ -401,6 +401,25 @@ void StatusFreePtr(uintptr_t ptr) {
 absl::Status StatusGetFromPtr(uintptr_t ptr) {
   // Constructs Status from ptr having the address of StatusRep.
   return *reinterpret_cast<absl::Status*>(&ptr);
+}
+
+uintptr_t StatusAllocHeapPtr(absl::Status s) {
+  if (s.ok()) return kOkStatusPtr;
+  absl::Status* ptr = new absl::Status(s);
+  return reinterpret_cast<uintptr_t>(ptr);
+}
+
+void StatusFreeHeapPtr(uintptr_t ptr) {
+  absl::Status* s = reinterpret_cast<absl::Status*>(ptr);
+  delete s;
+}
+
+absl::Status StatusGetFromHeapPtr(uintptr_t ptr) {
+  if (ptr == kOkStatusPtr) {
+    return absl::OkStatus();
+  } else {
+    return *reinterpret_cast<absl::Status*>(ptr);
+  }
 }
 
 }  // namespace internal

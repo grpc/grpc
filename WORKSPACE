@@ -10,14 +10,6 @@ load("//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
 
-register_execution_platforms(
-    "//third_party/toolchains:rbe_windows",
-)
-
-register_toolchains(
-    "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
-)
-
 load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict", "custom_exec_properties")
 
 custom_exec_properties(
@@ -95,15 +87,9 @@ rbe_autoconfig(
     ),
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
+load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
 
-pip_import(
+pip_install(
     name = "grpc_python_dependencies",
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
-
-load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
-
-pip_repositories()
-
-pip_install()

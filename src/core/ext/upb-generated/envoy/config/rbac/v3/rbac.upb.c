@@ -10,6 +10,7 @@
 #include "upb/msg_internal.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/type/matcher/v3/metadata.upb.h"
 #include "envoy/type/matcher/v3/path.upb.h"
@@ -75,8 +76,9 @@ const upb_msglayout envoy_config_rbac_v3_Policy_msginit = {
   UPB_SIZE(24, 40), 4, false, 4, 255,
 };
 
-static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[8] = {
+static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[9] = {
   &envoy_config_core_v3_CidrRange_msginit,
+  &envoy_config_core_v3_TypedExtensionConfig_msginit,
   &envoy_config_rbac_v3_Permission_msginit,
   &envoy_config_rbac_v3_Permission_Set_msginit,
   &envoy_config_route_v3_HeaderMatcher_msginit,
@@ -86,24 +88,25 @@ static const upb_msglayout *const envoy_config_rbac_v3_Permission_submsgs[8] = {
   &envoy_type_v3_Int32Range_msginit,
 };
 
-static const upb_msglayout_field envoy_config_rbac_v3_Permission__fields[11] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
+static const upb_msglayout_field envoy_config_rbac_v3_Permission__fields[12] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, _UPB_MODE_SCALAR},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, _UPB_MODE_SCALAR},
   {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 8, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, _UPB_MODE_SCALAR},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, _UPB_MODE_SCALAR},
   {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
   {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 13, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, _UPB_MODE_SCALAR},
-  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, _UPB_MODE_SCALAR},
-  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, _UPB_MODE_SCALAR},
-  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, _UPB_MODE_SCALAR},
-  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 7, 11, _UPB_MODE_SCALAR},
+  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, _UPB_MODE_SCALAR},
+  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
+  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 7, 11, _UPB_MODE_SCALAR},
+  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, _UPB_MODE_SCALAR},
+  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 8, 11, _UPB_MODE_SCALAR},
+  {12, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, _UPB_MODE_SCALAR},
 };
 
 const upb_msglayout envoy_config_rbac_v3_Permission_msginit = {
   &envoy_config_rbac_v3_Permission_submsgs[0],
   &envoy_config_rbac_v3_Permission__fields[0],
-  UPB_SIZE(8, 16), 11, false, 11, 255,
+  UPB_SIZE(8, 16), 12, false, 12, 255,
 };
 
 static const upb_msglayout *const envoy_config_rbac_v3_Permission_Set_submsgs[1] = {

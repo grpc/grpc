@@ -48,7 +48,12 @@ grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
       absl::StrFormat("%s (error domain:%s, code:%ld, description:%s)",
                       custom_desc, buf_domain, code, buf_desc);
   CFRelease(desc);
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  return StatusCreate(absl::StatusCode::kUnknown, error_msg,
+                      grpc_core::DebugLocation(file, line), {});
+#else
   return grpc_error_create(
       file, line, grpc_slice_from_copied_string(error_msg.c_str()), NULL, 0);
+#endif
 }
 #endif /* GRPC_CFSTREAM */

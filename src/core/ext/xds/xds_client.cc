@@ -33,7 +33,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -55,7 +54,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -1879,12 +1877,10 @@ grpc_millis GetRequestTimeout(const grpc_channel_args* args) {
 }
 
 grpc_channel_args* ModifyChannelArgs(const grpc_channel_args* args) {
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+  absl::InlinedVector<grpc_arg, 1> args_to_add = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
           5 * 60 * GPR_MS_PER_SEC),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
   };
   return grpc_channel_args_copy_and_add(args, args_to_add.data(),
                                         args_to_add.size());
@@ -1919,26 +1915,6 @@ XdsClient::~XdsClient() {
   }
   grpc_channel_args_destroy(args_);
   grpc_pollset_set_destroy(interested_parties_);
-}
-
-void XdsClient::AddChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->AddChildChannel(xds_channelz_node->uuid());
-  }
-}
-
-void XdsClient::RemoveChannelzLinkage(
-    channelz::ChannelNode* parent_channelz_node) {
-  MutexLock lock(&mu_);
-  channelz::ChannelNode* xds_channelz_node =
-      grpc_channel_get_channelz_node(chand_->channel());
-  if (xds_channelz_node != nullptr) {
-    parent_channelz_node->RemoveChildChannel(xds_channelz_node->uuid());
-  }
 }
 
 void XdsClient::Orphan() {
@@ -2356,32 +2332,23 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 std::string XdsClient::DumpClientConfigBinary() {
   MutexLock lock(&mu_);
   XdsApi::ResourceTypeMetadataMap resource_type_metadata_map;
-  // Update per-xds-type version if available, this version corresponding to the
-  // last successful ADS update version.
-  for (auto& p : resource_version_map_) {
-    resource_type_metadata_map[p.first].version = p.second;
-  }
   // Collect resource metadata from listeners
-  auto& lds_map =
-      resource_type_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
+  auto& lds_map = resource_type_metadata_map[XdsApi::kLdsTypeUrl];
   for (auto& p : listener_map_) {
     lds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from route configs
-  auto& rds_map =
-      resource_type_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
+  auto& rds_map = resource_type_metadata_map[XdsApi::kRdsTypeUrl];
   for (auto& p : route_config_map_) {
     rds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from clusters
-  auto& cds_map =
-      resource_type_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
+  auto& cds_map = resource_type_metadata_map[XdsApi::kCdsTypeUrl];
   for (auto& p : cluster_map_) {
     cds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from endpoints
-  auto& eds_map =
-      resource_type_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
+  auto& eds_map = resource_type_metadata_map[XdsApi::kEdsTypeUrl];
   for (auto& p : endpoint_map_) {
     eds_map[p.first] = &p.second.meta;
   }

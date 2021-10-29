@@ -130,7 +130,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text)
+                    logging.info(explanatory_text.decode('utf8'))
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
@@ -240,7 +240,7 @@ class JobResult(object):
 
 def read_from_start(f):
     f.seek(0)
-    return f.read().decode("utf8")
+    return f.read()
 
 
 class Job(object):
@@ -357,7 +357,7 @@ class Job(object):
                 if measure_cpu_costs:
                     m = re.search(
                         r'real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)',
-                        stdout())
+                        (stdout()).decode("utf8", errors="replace"))
                     real = float(m.group(1))
                     user = float(m.group(2))
                     sys = float(m.group(3))

@@ -57,9 +57,6 @@ TEST(ExecCtxWakeupSchedulerTest, Works) {
 
 }  // namespace grpc_core
 
-// Hook needed to run ExecCtx outside of iomgr.
-void grpc_set_default_iomgr_platform() {}
-
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_core::ExecCtx::GlobalInit();

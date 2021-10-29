@@ -64,8 +64,7 @@ static grpc_error_handle tcp_server_create(
     grpc_closure* shutdown_complete, const grpc_channel_args* args,
     grpc_slice_allocator_factory* slice_allocator_factory,
     grpc_tcp_server** server) {
-  grpc_tcp_server* s =
-      static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
+  grpc_tcp_server* s = grpc_core::Zalloc<grpc_tcp_server>();
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
@@ -236,7 +235,7 @@ static void on_read(void* arg, grpc_error_handle err) {
       }
     }
 
-    grpc_set_socket_no_sigpipe_if_possible(fd);
+    (void)grpc_set_socket_no_sigpipe_if_possible(fd);
 
     err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_CONNECTION_USAGE,
                                             sp->server->channel_args);
@@ -595,7 +594,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
       close(fd);
       return;
     }
-    grpc_set_socket_no_sigpipe_if_possible(fd);
+    (void)grpc_set_socket_no_sigpipe_if_possible(fd);
     std::string addr_str = grpc_sockaddr_to_uri(&addr);
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",

@@ -353,12 +353,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     GPR_ASSERT(xds_client_ != nullptr);
   }
 
-  void StartWatch(std::string listening_address, grpc_channel_args* args,
+  void StartWatch(std::string listening_address,
                   std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
                       watcher) override {
     grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
     auto listener_watcher = absl::make_unique<ListenerWatcher>(
-        std::move(watcher), args, xds_client_, serving_status_notifier_,
+        std::move(watcher), xds_client_, serving_status_notifier_,
         listening_address);
     auto* listener_watcher_ptr = listener_watcher.get();
     listening_address = absl::StrReplaceAll(
@@ -396,16 +396,13 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     explicit ListenerWatcher(
         std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
             server_config_watcher,
-        grpc_channel_args* args, RefCountedPtr<XdsClient> xds_client,
+        RefCountedPtr<XdsClient> xds_client,
         grpc_server_xds_status_notifier serving_status_notifier,
         std::string listening_address)
         : server_config_watcher_(std::move(server_config_watcher)),
-          args_(args),
           xds_client_(std::move(xds_client)),
           serving_status_notifier_(serving_status_notifier),
           listening_address_(std::move(listening_address)) {}
-
-    ~ListenerWatcher() override { grpc_channel_args_destroy(args_); }
 
     // Deleted due to special handling required for args_. Copy the channel args
     // if we ever need these.
@@ -498,7 +495,6 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
    private:
     std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
         server_config_watcher_;
-    grpc_channel_args* args_;
     RefCountedPtr<XdsClient> xds_client_;
     grpc_server_xds_status_notifier serving_status_notifier_;
     std::string listening_address_;
@@ -524,10 +520,12 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_config_fetcher_xds_create()", 0, ());
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
       grpc_core::XdsClient::GetOrCreate(args, &error);
+  grpc_channel_args_destroy(args);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             grpc_error_std_string(error).c_str());

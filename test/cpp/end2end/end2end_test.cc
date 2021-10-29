@@ -1383,6 +1383,24 @@ TEST_P(End2endTest, ChannelStateTimeout) {
   }
 }
 
+TEST_P(End2endTest, ChannelStateOnLameChannel) {
+  if ((GetParam().credentials_type != kInsecureCredentialsType) ||
+      GetParam().inproc) {
+    return;
+  }
+  // Channel using invalid target URI.  This creates a lame channel.
+  auto channel = grpc::CreateChannel("dns:///", InsecureChannelCredentials());
+  // Channel should immediately report TRANSIENT_FAILURE.
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(true));
+  // And state will never change.
+  auto state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+  for (int i = 0; i < 10; ++i) {
+    channel->WaitForStateChange(
+        state, std::chrono::system_clock::now() + std::chrono::seconds(1));
+    state = channel->GetState(false);
+  }
+}
+
 // Talking to a non-existing service.
 TEST_P(End2endTest, NonExistingService) {
   ResetChannel();
@@ -1463,8 +1481,11 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
+#ifndef NDEBUG
+    // GRPC_ERROR_INT_FILE_LINE is for debug only
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
+#endif
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
     EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
   }
