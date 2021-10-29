@@ -862,7 +862,7 @@ bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
 
 absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
     absl::string_view name,
-    bool (*is_expected_type)(absl::string_view, bool*)) {
+    std::function<bool(absl::string_view, bool*)> is_expected_type) {
   // Old-style names use the empty string for authority.
   // ID is prefixed with "old:" to indicate that it's an old-style name.
   if (!absl::StartsWith(name, "xdstp:")) {
@@ -875,7 +875,7 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
   std::pair<absl::string_view, absl::string_view> path_parts =
       absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
   if (is_expected_type != nullptr) {
-    if (!((*is_expected_type)(path_parts.first, nullptr))) {
+    if (!((is_expected_type)(path_parts.first, nullptr))) {
       return absl::InvalidArgumentError(
           "xdstp URI path must indicate valid xDS resource type");
     }
@@ -965,6 +965,10 @@ bool XdsApi::IsEds(absl::string_view type_url) {
 absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
     absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
   // bool test = 1;
+  std::function<bool(absl::string_view, bool*)> f =
+      [is_expected_type](absl::string_view type, bool* is_v2 = nullptr) {
+        return is_expected_type(type);
+      };
   return ParseResourceNameInternal(
       name,
       //[is_expected_type](absl::string_view type, bool* is_v2 = nullptr) {
@@ -977,7 +981,8 @@ absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
       //  like: no viable conversion from '(lambda at
       //  src/core/ext/xds/xds_api.cc:971:7)' to 'bool (*)(absl::string_view,
       //  bool *)'
-      [](absl::string_view type, bool* is_v2) { return true; });
+      //[](absl::string_view type, bool* is_v2) { return true; }
+      f);
 }
 
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
