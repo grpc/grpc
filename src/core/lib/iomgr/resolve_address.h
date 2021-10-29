@@ -79,7 +79,7 @@ grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> grpc_resolve_address(
     const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties,
     grpc_closure* on_done,
-    grpc_resolved_addresses** addresses);
+    grpc_resolved_addresses** addresses) GRPC_MUST_USE_RESULT;
 
 /* Destroy resolved addresses */
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);

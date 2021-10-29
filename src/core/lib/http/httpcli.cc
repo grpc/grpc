@@ -72,7 +72,7 @@ class InternalRequest {
     GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
     GPR_ASSERT(pollent);
     grpc_polling_entity_add_to_pollset_set(pollent_, context->pollset_set);
-    grpc_resolve_address(
+    async_resolve_address_ = grpc_resolve_address(
         host_.c_str(), handshaker_->default_port, context_->pollset_set,
         GRPC_CLOSURE_CREATE(OnResolved, this, grpc_schedule_on_exec_ctx),
         &addresses_);
@@ -211,6 +211,7 @@ class InternalRequest {
 
   static void OnResolved(void* arg, grpc_error_handle error) {
     InternalRequest* req = static_cast<InternalRequest*>(arg);
+    req->async_resolve_address_.reset();
     if (error != GRPC_ERROR_NONE) {
       req->Finish(GRPC_ERROR_REF(error));
       return;
@@ -240,6 +241,7 @@ class InternalRequest {
   grpc_closure done_write_;
   grpc_closure connected_;
   grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
+  OrphanablePtr<AsyncResolveAddress> async_resolve_address_;
 };
 
 }  // namespace

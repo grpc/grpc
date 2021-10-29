@@ -163,7 +163,7 @@ static void test_localhost(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
+  auto r = grpc_resolve_address(
       "localhost:1", nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
@@ -176,7 +176,7 @@ static void test_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
+  auto r = grpc_resolve_address(
       "localhost", "1", args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
@@ -189,7 +189,7 @@ static void test_localhost_result_has_ipv6_first(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
+  auto r = grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
                        GRPC_CLOSURE_CREATE(must_succeed_with_ipv6_first, &args,
                                            grpc_schedule_on_exec_ctx),
                        &args.addrs);
@@ -203,7 +203,7 @@ static void test_localhost_result_has_ipv4_first_when_ipv6_isnt_available(
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
+  auto r = grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
                        GRPC_CLOSURE_CREATE(must_succeed_with_ipv4_first, &args,
                                            grpc_schedule_on_exec_ctx),
                        &args.addrs);
@@ -216,7 +216,7 @@ static void test_non_numeric_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
+  auto r = grpc_resolve_address(
       "localhost", "https", args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
@@ -229,7 +229,7 @@ static void test_missing_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
+  auto r = grpc_resolve_address(
       "localhost", nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
@@ -242,7 +242,7 @@ static void test_ipv6_with_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
+  auto r = grpc_resolve_address(
       "[2001:db8::1]:1", nullptr, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
@@ -262,7 +262,7 @@ static void test_ipv6_without_port(void) {
     grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
-    grpc_resolve_address(
+    auto r = grpc_resolve_address(
         kCases[i], "80", args.pollset_set,
         GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
         &args.addrs);
@@ -282,7 +282,7 @@ static void test_invalid_ip_addresses(void) {
     grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
-    grpc_resolve_address(
+    auto r = grpc_resolve_address(
         kCases[i], nullptr, args.pollset_set,
         GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
         &args.addrs);
@@ -301,7 +301,7 @@ static void test_unparseable_hostports(void) {
     grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
-    grpc_resolve_address(
+    auto r = grpc_resolve_address(
         kCases[i], "1", args.pollset_set,
         GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
         &args.addrs);
@@ -321,7 +321,7 @@ static void test_immediate_cancel(void) {
       "localhost:1", "1", args.pollset_set,
       GRPC_CLOSURE_CREATE(dont_care, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
-  r->reset(); // cancel the resolution
+  r.reset(); // cancel the resolution
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);

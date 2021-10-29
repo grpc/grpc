@@ -72,7 +72,7 @@ struct grpc_ares_request {
    must be called at least once before this function. \a on_done may be
    called directly in this function without being scheduled with \a exec_ctx,
    so it must not try to acquire locks that are being held by the caller. */
-grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> (*grpc_resolve_address_ares)(const char* name,
+extern grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> (*grpc_resolve_address_ares)(const char* name,
                                          const char* default_port,
                                          grpc_pollset_set* interested_parties,
                                          grpc_closure* on_done,

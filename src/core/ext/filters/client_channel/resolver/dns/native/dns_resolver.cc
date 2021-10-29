@@ -97,6 +97,8 @@ class NativeDnsResolver : public Resolver {
   BackOff backoff_;
   /// currently resolving addresses
   grpc_resolved_addresses* addresses_ = nullptr;
+  /// tracks pending resolutions
+  OrphanablePtr<AsyncResolveAddress> async_resolve_address_;
 };
 
 NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
@@ -173,6 +175,7 @@ void NativeDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
 void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
+  async_resolve_address_.reset();
   if (shutdown_) {
     Unref(DEBUG_LOCATION, "dns-resolving");
     GRPC_ERROR_UNREF(error);
@@ -275,7 +278,7 @@ void NativeDnsResolver::StartResolvingLocked() {
   addresses_ = nullptr;
   GRPC_CLOSURE_INIT(&on_resolved_, NativeDnsResolver::OnResolved, this,
                     grpc_schedule_on_exec_ctx);
-  grpc_resolve_address(name_to_resolve_.c_str(), kDefaultSecurePort,
+  async_resolve_address_ = grpc_resolve_address(name_to_resolve_.c_str(), kDefaultSecurePort,
                        interested_parties_, &on_resolved_, &addresses_);
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
 }

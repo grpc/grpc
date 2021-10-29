@@ -159,7 +159,7 @@ static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> resolve_address_
   grpc_error_handle err = try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, err);
-    return grpc_core::MakeOrphanable<CustomAsyncResolveAddress>();
+    return grpc_core::MakeOrphanable<grpc_core::CustomAsyncResolveAddress>();
   }
   grpc_custom_resolver* r = new grpc_custom_resolver();
   r->on_done = on_done;
@@ -169,7 +169,7 @@ static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> resolve_address_
 
   /* Call getaddrinfo */
   resolve_address_vtable->resolve_async(r, r->host.c_str(), r->port.c_str());
-  return grpc_core::MakeOrphanable<CustomAsyncResolveAddress>();
+  return grpc_core::MakeOrphanable<grpc_core::CustomAsyncResolveAddress>();
 }
 
 static grpc_address_resolver_vtable custom_resolver_vtable = {

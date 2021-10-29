@@ -140,7 +140,7 @@ static void resolve_address_must_succeed(const char* target) {
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
-  grpc_resolve_address(
+  auto r = grpc_resolve_address(
       target, "1" /* port number */, args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);

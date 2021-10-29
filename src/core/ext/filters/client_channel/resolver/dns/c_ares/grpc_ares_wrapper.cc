@@ -1065,6 +1065,7 @@ grpc_ares_request* (*grpc_dns_lookup_ares)(
 static void grpc_cancel_ares_request_impl(grpc_ares_request* r) {
   GPR_ASSERT(r != nullptr);
   grpc_core::MutexLock lock(&r->mu);
+  GRPC_CARES_TRACE_LOG("request:%p grpc_cancel_ares_request ev_driver:%p", r, r->ev_driver);
   if (r->ev_driver != nullptr) {
     grpc_ares_ev_driver_shutdown_locked(r->ev_driver);
   }
@@ -1110,18 +1111,21 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
     on_resolve_address_done_(on_resolve_address_done) {
     GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                       grpc_schedule_on_exec_ctx);
-    ares_request_ = grpc_dns_lookup_ares_locked(
+    ares_request_ = grpc_dns_lookup_ares(
         "" /* dns_server */, name, default_port, interested_parties,
         &on_dns_lookup_done_, &addresses_,
         nullptr /* balancer_addresses */, nullptr /* service_config_json */,
         GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS);
+    GRPC_CARES_TRACE_LOG("ResolveAddressAresRequest:%p ctor ares_request_:%p", this, ares_request_);
   }
 
   ~ResolveAddressAresRequest() {
+    GRPC_CARES_TRACE_LOG("ResolveAddressAresRequest:%p dtor ares_request_:%p", this, ares_request_);
     delete ares_request_;
   }
 
   void Orphan() override {
+    GRPC_CARES_TRACE_LOG("ResolveAddressAresRequest:%p Orphan ares_request_:%p", this, ares_request_);
     grpc_cancel_ares_request(ares_request_);
   }
 
@@ -1138,18 +1142,19 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
  private:
   static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
     ResolveAddressAresRequest *r = static_cast<ResolveAddressAresRequest*>(arg);
+    GRPC_CARES_TRACE_LOG("ResolveAddressAresRequest:%p OnDnsLookupDone error:%s", r, grpc_error_std_string(error).c_str());
     grpc_resolved_addresses** resolved_addresses = r->addrs_out_;
-    if (r->addresses == nullptr || r->addresses->empty()) {
+    if (r->addresses_ == nullptr || r->addresses_->empty()) {
       *resolved_addresses = nullptr;
     } else {
       *resolved_addresses = static_cast<grpc_resolved_addresses*>(
           gpr_zalloc(sizeof(grpc_resolved_addresses)));
-      (*resolved_addresses)->naddrs = r->addresses->size();
+      (*resolved_addresses)->naddrs = r->addresses_->size();
       (*resolved_addresses)->addrs =
           static_cast<grpc_resolved_address*>(gpr_zalloc(
               sizeof(grpc_resolved_address) * (*resolved_addresses)->naddrs));
       for (size_t i = 0; i < (*resolved_addresses)->naddrs; ++i) {
-        memcpy(&(*resolved_addresses)->addrs[i], &(*r->addresses)[i].address(),
+        memcpy(&(*resolved_addresses)->addrs[i], &(*r->addresses_)[i].address(),
                sizeof(grpc_resolved_address));
       }
     }
@@ -1164,7 +1169,7 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
   /** closure to call when the resolve_address_ares request completes */
   grpc_closure* on_resolve_address_done_;
   /** a closure wrapping on_resolve_address_done, which should be invoked when
-     the grpc_dns_lookup_ares_locked operation is done. */
+     the grpc_dns_lookup_ares operation is done. */
   grpc_closure on_dns_lookup_done_;
   /* underlying ares_request that the query is performed on */
   grpc_ares_request* ares_request_ = nullptr;
@@ -1176,3 +1181,5 @@ grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> (*grpc_resolve_address_
     const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_resolved_addresses** addrs) = grpc_core::ResolveAddressAresRequest::ResolveAddress;
+
+#endif /* GRPC_ARES == 1 */
