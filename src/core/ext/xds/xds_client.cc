@@ -955,13 +955,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
   std::set<std::string> rds_resource_names_seen;
   for (auto& p : lds_update_map) {
+    const XdsApi::ResourceName& resource = p.first;
     XdsApi::LdsUpdate& lds_update = p.second.resource;
-    auto& state = lds_state.subscribed_resources[p.first.authority][p.first.id];
+    auto& state =
+        lds_state.subscribed_resources[resource.authority][resource.id];
     if (state != nullptr) state->Finish();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
-              XdsApi::ConstructFullResourceName(p.first.authority,
-                                                XdsApi::kLdsTypeUrl, p.first.id)
+              XdsApi::ConstructFullResourceName(
+                  resource.authority, XdsApi::kLdsTypeUrl, resource.id)
                   .c_str(),
               lds_update.ToString().c_str());
     }
@@ -972,8 +974,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     }
     ListenerState& listener_state =
         xds_client()
-            ->authority_state_map_[p.first.authority]
-            .listener_map[p.first.id];
+            ->authority_state_map_[resource.authority]
+            .listener_map[resource.id];
     // Ignore identical update.
     if (listener_state.update.has_value() &&
         *listener_state.update == lds_update) {
@@ -983,7 +985,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
                 "ignoring.",
                 xds_client(),
                 XdsApi::ConstructFullResourceName(
-                    p.first.authority, XdsApi::kLdsTypeUrl, p.first.id)
+                    resource.authority, XdsApi::kLdsTypeUrl, resource.id)
                     .c_str());
       }
       continue;
@@ -1017,10 +1019,15 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // For any subscribed resource that is not present in the update,
   // remove it from the cache and notify watchers that it does not exist.
   for (const auto& a : lds_state.subscribed_resources) {
+    const std::string& authority_name = a.first;
     for (const auto& p : a.second) {
-      if (lds_update_map.find({a.first, p.first}) == lds_update_map.end()) {
+      const std::string& listener_name = p.first;
+      if (lds_update_map.find({authority_name, listener_name}) ==
+          lds_update_map.end()) {
         ListenerState& listener_state =
-            xds_client()->authority_state_map_[a.first].listener_map[p.first];
+            xds_client()
+                ->authority_state_map_[authority_name]
+                .listener_map[listener_name];
         // If the resource was newly requested but has not yet been received,
         // we don't want to generate an error for the watchers, because this LDS
         // response may be in reaction to an earlier request that did not yet
@@ -1040,14 +1047,16 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   // does not exist.
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (const auto& a : rds_state.subscribed_resources) {
+    const std::string& authority_name = a.first;
     for (const auto& p : a.second) {
+      const std::string& listener_name = p.first;
       if (rds_resource_names_seen.find(XdsApi::ConstructFullResourceName(
-              a.first, XdsApi::kRdsTypeUrl, p.first)) ==
+              authority_name, XdsApi::kRdsTypeUrl, listener_name)) ==
           rds_resource_names_seen.end()) {
         RouteConfigState& route_config_state =
             xds_client()
-                ->authority_state_map_[a.first]
-                .route_config_map[p.first];
+                ->authority_state_map_[authority_name]
+                .route_config_map[listener_name];
         route_config_state.update.reset();
         for (const auto& p : route_config_state.watchers) {
           p.first->OnResourceDoesNotExist();
