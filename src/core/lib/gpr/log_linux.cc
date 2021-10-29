@@ -28,9 +28,6 @@
 
 #ifdef GPR_LINUX_LOG
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -42,7 +39,15 @@
 #include <string>
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/examine_stack.h"
+
+int gpr_should_log_stacktrace(gpr_log_severity severity);
 
 static long sys_gettid(void) { return syscall(__NR_gettid); }
 
@@ -72,7 +77,7 @@ void gpr_default_log(gpr_log_func_args* args) {
   time_t timer;
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
-  static __thread long tid = 0;
+  static GPR_THREAD_LOCAL(long) tid(0);
   if (tid == 0) tid = sys_gettid();
 
   timer = static_cast<time_t>(now.tv_sec);
@@ -95,7 +100,7 @@ void gpr_default_log(gpr_log_func_args* args) {
       time_buffer, now.tv_nsec, tid, display_file, args->line);
 
   absl::optional<std::string> stack_trace =
-      args->severity >= GPR_LOG_SEVERITY_ERROR
+      gpr_should_log_stacktrace(args->severity)
           ? grpc_core::GetCurrentStackTrace()
           : absl::nullopt;
   if (stack_trace) {

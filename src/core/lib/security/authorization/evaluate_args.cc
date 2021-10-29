@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,24 +11,78 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
-#include "src/core/lib/iomgr/parse_address.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "absl/strings/numbers.h"
+
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/security/credentials/tls/tls_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
 
+namespace {
+
+EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
+    absl::string_view uri_text) {
+  EvaluateArgs::PerChannelArgs::Address address;
+  absl::StatusOr<URI> uri = URI::Parse(uri_text);
+  if (!uri.ok()) {
+    gpr_log(GPR_DEBUG, "Failed to parse uri.");
+    return address;
+  }
+  absl::string_view host_view;
+  absl::string_view port_view;
+  if (!SplitHostPort(uri->path(), &host_view, &port_view)) {
+    gpr_log(GPR_DEBUG, "Failed to split %s into host and port.",
+            uri->path().c_str());
+    return address;
+  }
+  if (!absl::SimpleAtoi(port_view, &address.port)) {
+    gpr_log(GPR_DEBUG, "Port %s is out of range or null.",
+            std::string(port_view).c_str());
+  }
+  address.address_str = std::string(host_view);
+  grpc_error_handle error = grpc_string_to_sockaddr(
+      &address.address, address.address_str.c_str(), address.port);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s",
+            address.address_str.c_str(), grpc_error_std_string(error).c_str());
+  }
+  GRPC_ERROR_UNREF(error);
+  return address;
+}
+
+}  // namespace
+
+EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
+                                             grpc_endpoint* endpoint) {
+  if (auth_context != nullptr) {
+    transport_security_type = GetAuthPropertyValue(
+        auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
+    spiffe_id =
+        GetAuthPropertyValue(auth_context, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+    uri_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_URI_PROPERTY_NAME);
+    dns_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_DNS_PROPERTY_NAME);
+    common_name =
+        GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
+  }
+  if (endpoint != nullptr) {
+    local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
+    peer_address = ParseEndpointUri(grpc_endpoint_get_peer(endpoint));
+  }
+}
+
 absl::string_view EvaluateArgs::GetPath() const {
   absl::string_view path;
-  if (metadata_ != nullptr && metadata_->idx.named.path != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->idx.named.path;
+  if (metadata_ != nullptr &&
+      metadata_->legacy_index()->named.path != nullptr) {
+    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.path;
     const grpc_slice& val = GRPC_MDVALUE(elem->md);
     path = StringViewFromSlice(val);
   }
@@ -39,8 +91,9 @@ absl::string_view EvaluateArgs::GetPath() const {
 
 absl::string_view EvaluateArgs::GetHost() const {
   absl::string_view host;
-  if (metadata_ != nullptr && metadata_->idx.named.host != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->idx.named.host;
+  if (metadata_ != nullptr &&
+      metadata_->legacy_index()->named.host != nullptr) {
+    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.host;
     const grpc_slice& val = GRPC_MDVALUE(elem->md);
     host = StringViewFromSlice(val);
   }
@@ -49,8 +102,9 @@ absl::string_view EvaluateArgs::GetHost() const {
 
 absl::string_view EvaluateArgs::GetMethod() const {
   absl::string_view method;
-  if (metadata_ != nullptr && metadata_->idx.named.method != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->idx.named.method;
+  if (metadata_ != nullptr &&
+      metadata_->legacy_index()->named.method != nullptr) {
+    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.method;
     const grpc_slice& val = GRPC_MDVALUE(elem->md);
     method = StringViewFromSlice(val);
   }
@@ -63,91 +117,97 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
   if (metadata_ == nullptr) {
     return headers;
   }
-  for (grpc_linked_mdelem* elem = metadata_->list.head; elem != nullptr;
-       elem = elem->next) {
-    const grpc_slice& key = GRPC_MDKEY(elem->md);
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
+  metadata_->ForEach([&](grpc_mdelem md) {
+    const grpc_slice& key = GRPC_MDKEY(md);
+    const grpc_slice& val = GRPC_MDVALUE(md);
     headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
-  }
+  });
   return headers;
 }
 
-absl::string_view EvaluateArgs::GetLocalAddress() const {
-  absl::string_view addr = grpc_endpoint_get_local_address(endpoint_);
-  size_t first_colon = addr.find(":");
-  size_t last_colon = addr.rfind(":");
-  if (first_colon == std::string::npos || last_colon == std::string::npos) {
-    return "";
-  } else {
-    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
+absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
+    absl::string_view key, std::string* concatenated_value) const {
+  if (metadata_ == nullptr) {
+    return absl::nullopt;
   }
+  return metadata_->GetValue(key, concatenated_value);
+}
+
+grpc_resolved_address EvaluateArgs::GetLocalAddress() const {
+  if (channel_args_ == nullptr) {
+    return {};
+  }
+  return channel_args_->local_address.address;
+}
+
+absl::string_view EvaluateArgs::GetLocalAddressString() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->local_address.address_str;
 }
 
 int EvaluateArgs::GetLocalPort() const {
-  if (endpoint_ == nullptr) {
+  if (channel_args_ == nullptr) {
     return 0;
   }
-  grpc_uri* uri = grpc_uri_parse(
-      std::string(grpc_endpoint_get_local_address(endpoint_)).c_str(), true);
-  grpc_resolved_address resolved_addr;
-  if (uri == nullptr || !grpc_parse_uri(uri, &resolved_addr)) {
-    grpc_uri_destroy(uri);
-    return 0;
-  }
-  grpc_uri_destroy(uri);
-  return grpc_sockaddr_get_port(&resolved_addr);
+  return channel_args_->local_address.port;
 }
 
-absl::string_view EvaluateArgs::GetPeerAddress() const {
-  absl::string_view addr = grpc_endpoint_get_peer(endpoint_);
-  size_t first_colon = addr.find(":");
-  size_t last_colon = addr.rfind(":");
-  if (first_colon == std::string::npos || last_colon == std::string::npos) {
-    return "";
-  } else {
-    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
+grpc_resolved_address EvaluateArgs::GetPeerAddress() const {
+  if (channel_args_ == nullptr) {
+    return {};
   }
+  return channel_args_->peer_address.address;
+}
+
+absl::string_view EvaluateArgs::GetPeerAddressString() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->peer_address.address_str;
 }
 
 int EvaluateArgs::GetPeerPort() const {
-  if (endpoint_ == nullptr) {
+  if (channel_args_ == nullptr) {
     return 0;
   }
-  grpc_uri* uri = grpc_uri_parse(
-      std::string(grpc_endpoint_get_peer(endpoint_)).c_str(), true);
-  grpc_resolved_address resolved_addr;
-  if (uri == nullptr || !grpc_parse_uri(uri, &resolved_addr)) {
-    grpc_uri_destroy(uri);
-    return 0;
+  return channel_args_->peer_address.port;
+}
+
+absl::string_view EvaluateArgs::GetTransportSecurityType() const {
+  if (channel_args_ == nullptr) {
+    return "";
   }
-  grpc_uri_destroy(uri);
-  return grpc_sockaddr_get_port(&resolved_addr);
+  return channel_args_->transport_security_type;
 }
 
 absl::string_view EvaluateArgs::GetSpiffeId() const {
-  if (auth_context_ == nullptr) {
+  if (channel_args_ == nullptr) {
     return "";
   }
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      auth_context_, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
-    return "";
-  }
-  return absl::string_view(prop->value, prop->value_length);
+  return channel_args_->spiffe_id;
 }
 
-absl::string_view EvaluateArgs::GetCertServerName() const {
-  if (auth_context_ == nullptr) {
+std::vector<absl::string_view> EvaluateArgs::GetUriSans() const {
+  if (channel_args_ == nullptr) {
+    return {};
+  }
+  return channel_args_->uri_sans;
+}
+
+std::vector<absl::string_view> EvaluateArgs::GetDnsSans() const {
+  if (channel_args_ == nullptr) {
+    return {};
+  }
+  return channel_args_->dns_sans;
+}
+
+absl::string_view EvaluateArgs::GetCommonName() const {
+  if (channel_args_ == nullptr) {
     return "";
   }
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      auth_context_, GRPC_X509_CN_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
-    return "";
-  }
-  return absl::string_view(prop->value, prop->value_length);
+  return channel_args_->common_name;
 }
 
 }  // namespace grpc_core

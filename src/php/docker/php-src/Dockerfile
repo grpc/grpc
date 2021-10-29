@@ -14,7 +14,7 @@
 
 FROM debian:stretch
 
-RUN apt-get -qq update && apt-get -qq install -y \
+RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf build-essential git libtool \
   libcurl4-openssl-dev libedit-dev libsodium-dev \
   libssl-dev libxml2-dev \
@@ -23,8 +23,8 @@ RUN apt-get -qq update && apt-get -qq install -y \
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
-  mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
+RUN wget https://phar.phpunit.de/phpunit-8.5.13.phar && \
+  mv phpunit-8.5.13.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
 
 

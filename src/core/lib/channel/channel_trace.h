@@ -19,9 +19,10 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -41,7 +42,7 @@ class BaseNode;
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
 class ChannelTrace {
  public:
-  ChannelTrace(size_t max_event_memory);
+  explicit ChannelTrace(size_t max_event_memory);
   ~ChannelTrace();
 
   enum Severity {

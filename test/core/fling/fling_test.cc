@@ -52,7 +52,7 @@ int main(int /*argc*/, const char** argv) {
   std::string joined = grpc_core::JoinHostPort("::", port);
   args[2] = const_cast<char*>(joined.c_str());
   args[3] = const_cast<char*>("--no-secure");
-  svr = gpr_subprocess_create(4, (const char**)args);
+  svr = gpr_subprocess_create(4, const_cast<const char**>(args));
 
   /* start the client */
   command =
@@ -64,7 +64,7 @@ int main(int /*argc*/, const char** argv) {
   args[3] = const_cast<char*>("--scenario=ping-pong-request");
   args[4] = const_cast<char*>("--no-secure");
   args[5] = nullptr;
-  cli = gpr_subprocess_create(6, (const char**)args);
+  cli = gpr_subprocess_create(6, const_cast<const char**>(args));
 
   /* wait for completion */
   printf("waiting for client\n");

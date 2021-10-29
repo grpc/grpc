@@ -18,14 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/channel.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 struct ping_result {
@@ -38,7 +37,7 @@ static void ping_destroy(void* arg, grpc_cq_completion* /*storage*/) {
   gpr_free(arg);
 }
 
-static void ping_done(void* arg, grpc_error* error) {
+static void ping_done(void* arg, grpc_error_handle error) {
   ping_result* pr = static_cast<ping_result*>(arg);
   grpc_cq_end_op(pr->cq, pr->tag, GRPC_ERROR_REF(error), ping_destroy, pr,
                  &pr->completion_storage);

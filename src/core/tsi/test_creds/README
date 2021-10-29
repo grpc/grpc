@@ -36,6 +36,32 @@ common name which is set to testclient.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client.csr \
   -out client.pem -days 3650
 
+client1 is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client1.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client1.key.rsa -out client1.key -nocrypt
+$ openssl req -new -key client1.key -out client1.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to testclient1.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client1.csr \
+  -out client1.pem -days 3650
+
+client2 is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client2.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client2.key.rsa -out client2.key -nocrypt
+$ openssl req -new -key client2.key -out client2.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to testclient2.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client2.csr \
+  -out client2.pem -days 3650
+
 server0 is issued by CA:
 ------------------------
 
@@ -62,7 +88,8 @@ common name which is set to *.test.google.com.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server1.csr \
   -out server1.pem -extensions req_ext -extfile server1-openssl.cnf -days 3650
 
-multi-domain is a self-signed certificate having multiple subject alternative names:
+multi-domain is a self-signed certificate having multiple subject alternative
+names:
 ----------------------------------------------------------------------------
 
 $ openssl genrsa -out multi-domain.key.rsa 2048
@@ -81,7 +108,7 @@ $ rm ca.srl
 Sync up with other repositories
 ===============================
 
-Copies of these keys (except for multi-domain) exist in multiple locations across all the grpc repos
+Copies of these keys exist in multiple locations across all the grpc repos
 (e.g., see the following partial list). You need to be careful when updating
 the keys.
 
@@ -97,3 +124,10 @@ src/python/grpcio_tests/tests/interop/credentials/
 src/python/grpcio_tests/tests/unit/credentials/
 src/ruby/spec/testdata/
 test/core/end2end/data/
+
+The following keys/certs are not distributed through multiple grpc repos yet,
+since they are only used in grpc core tests:
+
+multi-domain.*
+client1.*
+client2.*

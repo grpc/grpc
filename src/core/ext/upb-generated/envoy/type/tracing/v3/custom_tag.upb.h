@@ -9,8 +9,9 @@
 #ifndef ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPB_H_
 #define ENVOY_TYPE_TRACING_V3_CUSTOM_TAG_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -48,7 +49,19 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag *envoy_type_tracing_v3_CustomTag_new(
 UPB_INLINE envoy_type_tracing_v3_CustomTag *envoy_type_tracing_v3_CustomTag_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_tracing_v3_CustomTag *ret = envoy_type_tracing_v3_CustomTag_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE envoy_type_tracing_v3_CustomTag *envoy_type_tracing_v3_CustomTag_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  envoy_type_tracing_v3_CustomTag *ret = envoy_type_tracing_v3_CustomTag_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_tracing_v3_CustomTag_serialize(const envoy_type_tracing_v3_CustomTag *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_tracing_v3_CustomTag_msginit, arena, len);
@@ -133,7 +146,19 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Literal *envoy_type_tracing_v3_Custom
 UPB_INLINE envoy_type_tracing_v3_CustomTag_Literal *envoy_type_tracing_v3_CustomTag_Literal_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_tracing_v3_CustomTag_Literal *ret = envoy_type_tracing_v3_CustomTag_Literal_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Literal_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Literal_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE envoy_type_tracing_v3_CustomTag_Literal *envoy_type_tracing_v3_CustomTag_Literal_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  envoy_type_tracing_v3_CustomTag_Literal *ret = envoy_type_tracing_v3_CustomTag_Literal_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Literal_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_tracing_v3_CustomTag_Literal_serialize(const envoy_type_tracing_v3_CustomTag_Literal *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_tracing_v3_CustomTag_Literal_msginit, arena, len);
@@ -153,7 +178,19 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Environment *envoy_type_tracing_v3_Cu
 UPB_INLINE envoy_type_tracing_v3_CustomTag_Environment *envoy_type_tracing_v3_CustomTag_Environment_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_tracing_v3_CustomTag_Environment *ret = envoy_type_tracing_v3_CustomTag_Environment_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Environment_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Environment_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE envoy_type_tracing_v3_CustomTag_Environment *envoy_type_tracing_v3_CustomTag_Environment_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  envoy_type_tracing_v3_CustomTag_Environment *ret = envoy_type_tracing_v3_CustomTag_Environment_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Environment_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_tracing_v3_CustomTag_Environment_serialize(const envoy_type_tracing_v3_CustomTag_Environment *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_tracing_v3_CustomTag_Environment_msginit, arena, len);
@@ -177,7 +214,19 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Header *envoy_type_tracing_v3_CustomT
 UPB_INLINE envoy_type_tracing_v3_CustomTag_Header *envoy_type_tracing_v3_CustomTag_Header_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_tracing_v3_CustomTag_Header *ret = envoy_type_tracing_v3_CustomTag_Header_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Header_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Header_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE envoy_type_tracing_v3_CustomTag_Header *envoy_type_tracing_v3_CustomTag_Header_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  envoy_type_tracing_v3_CustomTag_Header *ret = envoy_type_tracing_v3_CustomTag_Header_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Header_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_tracing_v3_CustomTag_Header_serialize(const envoy_type_tracing_v3_CustomTag_Header *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_tracing_v3_CustomTag_Header_msginit, arena, len);
@@ -201,20 +250,33 @@ UPB_INLINE envoy_type_tracing_v3_CustomTag_Metadata *envoy_type_tracing_v3_Custo
 UPB_INLINE envoy_type_tracing_v3_CustomTag_Metadata *envoy_type_tracing_v3_CustomTag_Metadata_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_tracing_v3_CustomTag_Metadata *ret = envoy_type_tracing_v3_CustomTag_Metadata_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Metadata_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Metadata_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE envoy_type_tracing_v3_CustomTag_Metadata *envoy_type_tracing_v3_CustomTag_Metadata_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  envoy_type_tracing_v3_CustomTag_Metadata *ret = envoy_type_tracing_v3_CustomTag_Metadata_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_tracing_v3_CustomTag_Metadata_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_tracing_v3_CustomTag_Metadata_serialize(const envoy_type_tracing_v3_CustomTag_Metadata *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_tracing_v3_CustomTag_Metadata_msginit, arena, len);
 }
 
-UPB_INLINE bool envoy_type_tracing_v3_CustomTag_Metadata_has_kind(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct envoy_type_metadata_v3_MetadataKind* envoy_type_tracing_v3_CustomTag_Metadata_kind(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_type_metadata_v3_MetadataKind*); }
-UPB_INLINE bool envoy_type_tracing_v3_CustomTag_Metadata_has_metadata_key(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
-UPB_INLINE const struct envoy_type_metadata_v3_MetadataKey* envoy_type_tracing_v3_CustomTag_Metadata_metadata_key(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_type_metadata_v3_MetadataKey*); }
-UPB_INLINE upb_strview envoy_type_tracing_v3_CustomTag_Metadata_default_value(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+UPB_INLINE bool envoy_type_tracing_v3_CustomTag_Metadata_has_kind(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_type_metadata_v3_MetadataKind* envoy_type_tracing_v3_CustomTag_Metadata_kind(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_type_metadata_v3_MetadataKind*); }
+UPB_INLINE bool envoy_type_tracing_v3_CustomTag_Metadata_has_metadata_key(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE const struct envoy_type_metadata_v3_MetadataKey* envoy_type_tracing_v3_CustomTag_Metadata_metadata_key(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct envoy_type_metadata_v3_MetadataKey*); }
+UPB_INLINE upb_strview envoy_type_tracing_v3_CustomTag_Metadata_default_value(const envoy_type_tracing_v3_CustomTag_Metadata *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
 
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_Metadata_set_kind(envoy_type_tracing_v3_CustomTag_Metadata *msg, struct envoy_type_metadata_v3_MetadataKind* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_type_metadata_v3_MetadataKind*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_type_metadata_v3_MetadataKind*) = value;
 }
 UPB_INLINE struct envoy_type_metadata_v3_MetadataKind* envoy_type_tracing_v3_CustomTag_Metadata_mutable_kind(envoy_type_tracing_v3_CustomTag_Metadata *msg, upb_arena *arena) {
   struct envoy_type_metadata_v3_MetadataKind* sub = (struct envoy_type_metadata_v3_MetadataKind*)envoy_type_tracing_v3_CustomTag_Metadata_kind(msg);
@@ -226,7 +288,8 @@ UPB_INLINE struct envoy_type_metadata_v3_MetadataKind* envoy_type_tracing_v3_Cus
   return sub;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_Metadata_set_metadata_key(envoy_type_tracing_v3_CustomTag_Metadata *msg, struct envoy_type_metadata_v3_MetadataKey* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_type_metadata_v3_MetadataKey*) = value;
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct envoy_type_metadata_v3_MetadataKey*) = value;
 }
 UPB_INLINE struct envoy_type_metadata_v3_MetadataKey* envoy_type_tracing_v3_CustomTag_Metadata_mutable_metadata_key(envoy_type_tracing_v3_CustomTag_Metadata *msg, upb_arena *arena) {
   struct envoy_type_metadata_v3_MetadataKey* sub = (struct envoy_type_metadata_v3_MetadataKey*)envoy_type_tracing_v3_CustomTag_Metadata_metadata_key(msg);
@@ -238,7 +301,7 @@ UPB_INLINE struct envoy_type_metadata_v3_MetadataKey* envoy_type_tracing_v3_Cust
   return sub;
 }
 UPB_INLINE void envoy_type_tracing_v3_CustomTag_Metadata_set_default_value(envoy_type_tracing_v3_CustomTag_Metadata *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 
 #ifdef __cplusplus

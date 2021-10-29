@@ -20,90 +20,37 @@
 
 #include "src/core/lib/surface/channel_init.h"
 
-#include <grpc/support/alloc.h>
+#include <algorithm>
 
-typedef struct stage_slot {
-  grpc_channel_init_stage fn;
-  void* arg;
-  int priority;
-  size_t insertion_order;
-} stage_slot;
+namespace grpc_core {
 
-typedef struct stage_slots {
-  stage_slot* slots;
-  size_t num_slots;
-  size_t cap_slots;
-} stage_slots;
+void ChannelInit::Builder::RegisterStage(grpc_channel_stack_type type,
+                                         int priority, Stage stage) {
+  slots_[type].emplace_back(std::move(stage), priority);
+}
 
-static stage_slots g_slots[GRPC_NUM_CHANNEL_STACK_TYPES];
-static bool g_finalized;
-
-void grpc_channel_init_init(void) {
+ChannelInit ChannelInit::Builder::Build() {
+  ChannelInit result;
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    g_slots[i].slots = nullptr;
-    g_slots[i].num_slots = 0;
-    g_slots[i].cap_slots = 0;
-  }
-  g_finalized = false;
-}
-
-void grpc_channel_init_register_stage(grpc_channel_stack_type type,
-                                      int priority,
-                                      grpc_channel_init_stage stage,
-                                      void* stage_arg) {
-  GPR_ASSERT(!g_finalized);
-  if (g_slots[type].cap_slots == g_slots[type].num_slots) {
-    g_slots[type].cap_slots = GPR_MAX(8, 3 * g_slots[type].cap_slots / 2);
-    g_slots[type].slots = static_cast<stage_slot*>(
-        gpr_realloc(g_slots[type].slots,
-                    g_slots[type].cap_slots * sizeof(*g_slots[type].slots)));
-  }
-  stage_slot* s = &g_slots[type].slots[g_slots[type].num_slots++];
-  s->insertion_order = g_slots[type].num_slots;
-  s->priority = priority;
-  s->fn = stage;
-  s->arg = stage_arg;
-}
-
-static int compare_slots(const void* a, const void* b) {
-  const stage_slot* sa = static_cast<const stage_slot*>(a);
-  const stage_slot* sb = static_cast<const stage_slot*>(b);
-
-  int c = GPR_ICMP(sa->priority, sb->priority);
-  if (c != 0) return c;
-  return GPR_ICMP(sa->insertion_order, sb->insertion_order);
-}
-
-void grpc_channel_init_finalize(void) {
-  GPR_ASSERT(!g_finalized);
-  for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    qsort(g_slots[i].slots, g_slots[i].num_slots, sizeof(*g_slots[i].slots),
-          compare_slots);
-  }
-  g_finalized = true;
-}
-
-void grpc_channel_init_shutdown(void) {
-  for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    gpr_free(g_slots[i].slots);
-    g_slots[i].slots =
-        static_cast<stage_slot*>((void*)static_cast<uintptr_t>(0xdeadbeef));
-  }
-}
-
-bool grpc_channel_init_create_stack(grpc_channel_stack_builder* builder,
-                                    grpc_channel_stack_type type) {
-  GPR_ASSERT(g_finalized);
-
-  grpc_channel_stack_builder_set_name(builder,
-                                      grpc_channel_stack_type_string(type));
-
-  for (size_t i = 0; i < g_slots[type].num_slots; i++) {
-    const stage_slot* slot = &g_slots[type].slots[i];
-    if (!slot->fn(builder, slot->arg)) {
-      return false;
+    auto& slots = slots_[i];
+    std::stable_sort(
+        slots.begin(), slots.end(),
+        [](const Slot& a, const Slot& b) { return a.priority < b.priority; });
+    auto& result_slots = result.slots_[i];
+    result_slots.reserve(slots.size());
+    for (auto& slot : slots) {
+      result_slots.emplace_back(std::move(slot.stage));
     }
   }
+  return result;
+}
 
+bool ChannelInit::CreateStack(grpc_channel_stack_builder* builder,
+                              grpc_channel_stack_type type) const {
+  for (const auto& stage : slots_[type]) {
+    if (!stage(builder)) return false;
+  }
   return true;
 }
+
+}  // namespace grpc_core

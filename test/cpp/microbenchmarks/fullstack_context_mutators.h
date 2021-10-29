@@ -52,7 +52,7 @@ auto MakeVector(size_t length, F f) -> std::vector<decltype(f())> {
 class NoOpMutator {
  public:
   template <class ContextType>
-  NoOpMutator(ContextType* /*context*/) {}
+  explicit NoOpMutator(ContextType* /*context*/) {}
 };
 
 template <int length>
@@ -100,7 +100,7 @@ class RandomAsciiMetadata {
 template <class Generator, int kNumKeys>
 class Client_AddMetadata : public NoOpMutator {
  public:
-  Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
+  explicit Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
       context->AddMetadata(Generator::Key(), Generator::Value());
     }
@@ -110,7 +110,8 @@ class Client_AddMetadata : public NoOpMutator {
 template <class Generator, int kNumKeys>
 class Server_AddInitialMetadata : public NoOpMutator {
  public:
-  Server_AddInitialMetadata(ServerContext* context) : NoOpMutator(context) {
+  explicit Server_AddInitialMetadata(ServerContext* context)
+      : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
       context->AddInitialMetadata(Generator::Key(), Generator::Value());
     }

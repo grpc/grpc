@@ -14,15 +14,16 @@
 """Generate XML and HTML test reports."""
 
 try:
+    from mako import exceptions
     from mako.runtime import Context
     from mako.template import Template
-    from mako import exceptions
 except (ImportError):
     pass  # Mako not installed but it is ok.
 import datetime
 import os
 import string
 import xml.etree.cElementTree as ET
+
 import six
 
 
@@ -31,9 +32,11 @@ def _filter_msg(msg, output_format):
     if output_format in ['XML', 'HTML']:
         # keep whitespaces but remove formfeed and vertical tab characters
         # that make XML report unparsable.
+        if isinstance(msg, bytes):
+            msg = msg.decode('UTF-8', 'ignore')
         filtered_msg = ''.join(
             filter(lambda x: x in string.printable and x != '\f' and x != '\v',
-                   msg.decode('UTF-8', 'ignore')))
+                   msg))
         if output_format == 'HTML':
             filtered_msg = filtered_msg.replace('"', '&quot;')
         return filtered_msg

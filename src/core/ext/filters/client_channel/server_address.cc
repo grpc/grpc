@@ -27,9 +27,15 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
-#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 
 namespace grpc_core {
+
+//
+// ServerAddressWeightAttribute
+//
+const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
+    "server_address_weight";
 
 //
 // ServerAddress
@@ -55,6 +61,9 @@ ServerAddress::ServerAddress(const ServerAddress& other)
   }
 }
 ServerAddress& ServerAddress::operator=(const ServerAddress& other) {
+  if (&other == this) {
+    return *this;
+  }
   address_ = other.address_;
   grpc_channel_args_destroy(args_);
   args_ = grpc_channel_args_copy(other.args_);

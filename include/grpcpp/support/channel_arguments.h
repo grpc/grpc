@@ -70,13 +70,7 @@ class ChannelArguments {
   /// the resolver.
   void SetGrpclbFallbackTimeout(int fallback_timeout);
 
-  /// For client channel's, the socket mutator operates on
-  /// "channel" sockets. For server's, the socket mutator operates
-  /// only on "listen" sockets.
-  /// TODO(apolcyn): allow socket mutators to also operate
-  /// on server "channel" sockets, and adjust the socket mutator
-  /// object to be more speficic about which type of socket
-  /// it should operate on.
+  /// Set a mutator for the underlying socket.
   void SetSocketMutator(grpc_socket_mutator* mutator);
 
   /// Set the string to prepend to the user agent.
@@ -98,14 +92,18 @@ class ChannelArguments {
   /// Primarily meant for use in unit tests.
   void SetServiceConfigJSON(const std::string& service_config_json);
 
-  // Generic channel argument setters. Only for advanced use cases.
+  // Generic channel argument setter. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
   void SetInt(const std::string& key, int value);
 
   // Generic channel argument setter. Only for advanced use cases.
-  /// Set a pointer argument \a value under \a key. Owership is not transferred.
+  /// Set a pointer argument \a value under \a key. Ownership is not
+  /// transferred.
   void SetPointer(const std::string& key, void* value);
 
+  /// Set a pointer argument \a value under \a key, transferring ownership of
+  /// \a value to the \a ChannelArguments object. The \a vtable::Delete function
+  /// is responsible for \a value cleanup/destruction when called.
   void SetPointerWithVtable(const std::string& key, void* value,
                             const grpc_arg_pointer_vtable* vtable);
 
@@ -117,7 +115,7 @@ class ChannelArguments {
   grpc_channel_args c_channel_args() const {
     grpc_channel_args out;
     out.num_args = args_.size();
-    out.args = args_.empty() ? NULL : const_cast<grpc_arg*>(&args_[0]);
+    out.args = args_.empty() ? nullptr : const_cast<grpc_arg*>(&args_[0]);
     return out;
   }
 

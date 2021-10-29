@@ -42,6 +42,8 @@ class FakeResolver;
 class FakeResolverResponseGenerator
     : public RefCounted<FakeResolverResponseGenerator> {
  public:
+  static const grpc_arg_pointer_vtable kChannelArgPointerVtable;
+
   FakeResolverResponseGenerator();
   ~FakeResolverResponseGenerator() override;
 
@@ -69,6 +71,7 @@ class FakeResolverResponseGenerator
   void SetFailureOnReresolution();
 
   // Returns a channel arg containing \a generator.
+  // TODO(roth): When we have time, make this a non-static method.
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
   // Returns the response generator in \a args, or null if not found.
@@ -82,12 +85,11 @@ class FakeResolverResponseGenerator
 
   // Mutex protecting the members below.
   Mutex mu_;
-  RefCountedPtr<FakeResolver> resolver_;
-  Resolver::Result result_;
-  bool has_result_ = false;
+  RefCountedPtr<FakeResolver> resolver_ ABSL_GUARDED_BY(mu_);
+  Resolver::Result result_ ABSL_GUARDED_BY(mu_);
+  bool has_result_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
-        */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H

@@ -20,31 +20,32 @@
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
-#include <ares.h>
 #include <string.h>
 #include <sys/ioctl.h>
 
-#include "absl/strings/str_cat.h"
+#include <ares.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 namespace grpc_core {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
   GrpcPolledFdPosix(ares_socket_t as, grpc_pollset_set* driver_pollset_set)
-      : name_(absl::StrCat("c-ares fd: ", (int)as)), as_(as) {
-    fd_ = grpc_fd_create((int)as, name_.c_str(), false);
+      : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))), as_(as) {
+    fd_ = grpc_fd_create(static_cast<int>(as), name_.c_str(), false);
     driver_pollset_set_ = driver_pollset_set;
     grpc_pollset_set_add_fd(driver_pollset_set_, fd_);
   }
@@ -54,8 +55,8 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
     /* c-ares library will close the fd inside grpc_fd. This fd may be picked up
        immediately by another thread, and should not be closed by the following
        grpc_fd_orphan. */
-    int dummy_release_fd;
-    grpc_fd_orphan(fd_, nullptr, &dummy_release_fd, "c-ares query finished");
+    int phony_release_fd;
+    grpc_fd_orphan(fd_, nullptr, &phony_release_fd, "c-ares query finished");
   }
 
   void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
@@ -72,7 +73,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
            bytes_available > 0;
   }
 
-  void ShutdownLocked(grpc_error* error) override {
+  void ShutdownLocked(grpc_error_handle error) override {
     grpc_fd_shutdown(fd_, error);
   }
 

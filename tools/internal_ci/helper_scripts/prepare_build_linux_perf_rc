@@ -19,9 +19,10 @@
 ulimit -n 32768
 ulimit -c unlimited
 
-sudo pip install tabulate
+python3 -m pip install pip==19.3.1
 
 # Python dependencies for tools/run_tests/python_utils/check_on_pr.py
-time python2.7 -m pip install pyjwt cryptography requests --user
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+time python3 -m pip install --user -r $DIR/requirements.linux_perf.txt
 
 git submodule update --init

@@ -92,7 +92,7 @@ TlsCredentials::create_security_connector(
   }
   if (args != nullptr) {
     grpc_arg new_arg = grpc_channel_arg_string_create(
-        (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
+        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
     *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   }
   return sc;
@@ -106,7 +106,8 @@ TlsServerCredentials::TlsServerCredentials(
 TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-TlsServerCredentials::create_security_connector() {
+TlsServerCredentials::create_security_connector(
+    const grpc_channel_args* /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
 }

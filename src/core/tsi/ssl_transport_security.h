@@ -21,16 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security_constants.h>
 #include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security_constants.h>
+
 #include "src/core/tsi/transport_security_interface.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/x509.h>
 }
-#pragma clang diagnostic pop
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
 #define TSI_X509_CERTIFICATE_TYPE "X509"
@@ -40,14 +39,13 @@ extern "C" {
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
 #define TSI_SSL_SESSION_REUSED_PEER_PROPERTY "ssl_session_reused"
-
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
-
 #define TSI_X509_PEM_CERT_CHAIN_PROPERTY "x509_pem_cert_chain"
-
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
-
+#define TSI_X509_DNS_PEER_PROPERTY "x509_dns"
 #define TSI_X509_URI_PEER_PROPERTY "x509_uri"
+#define TSI_X509_EMAIL_PEER_PROPERTY "x509_email"
+#define TSI_X509_IP_PEER_PROPERTY "x509_ip"
 
 /* --- tsi_ssl_root_certs_store object ---
 
@@ -184,7 +182,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_client_handshaker_factory** factory);
 
 /* Creates a client handshaker.
-  - self is the factory from which the handshaker will be created.
+  - factory is the factory from which the handshaker will be created.
   - server_name_indication indicates the name of the server the client is
     trying to connect to which will be relayed to the server using the SNI
     extension.
@@ -193,8 +191,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* self, const char* server_name_indication,
-    tsi_handshaker** handshaker);
+    tsi_ssl_client_handshaker_factory* factory,
+    const char* server_name_indication, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
@@ -315,18 +313,18 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     tsi_ssl_server_handshaker_factory** factory);
 
 /* Creates a server handshaker.
-  - self is the factory from which the handshaker will be created.
+  - factory is the factory from which the handshaker will be created.
   - handshaker is the address of the handshaker pointer to be created.
 
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory* self, tsi_handshaker** handshaker);
+    tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_server_handshaker_factory_unref(
-    tsi_ssl_server_handshaker_factory* self);
+    tsi_ssl_server_handshaker_factory* factory);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):

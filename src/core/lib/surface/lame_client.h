@@ -23,6 +23,11 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+namespace grpc_core {
+// Does NOT take ownership of error.
+grpc_arg MakeLameClientErrorArg(grpc_error_handle* error);
+}  // namespace grpc_core
+
 extern const grpc_channel_filter grpc_lame_filter;
 
 #endif /* GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H */

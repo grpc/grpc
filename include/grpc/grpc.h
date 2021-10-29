@@ -21,15 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
+#include <stddef.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/time.h>
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,8 +115,7 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
     This function is experimental. */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
-    void* reserved);
+    grpc_completion_queue_functor* shutdown_callback, void* reserved);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
@@ -341,6 +340,10 @@ GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                      const char* description,
                                                      void* reserved);
 
+/* Returns whether or not the call's receive message operation failed because of
+ * an error (as opposed to a graceful end-of-stream) */
+GRPCAPI int grpc_call_failed_before_recv_message(const grpc_call* c);
+
 /** Ref a call.
     THREAD SAFETY: grpc_call_ref is thread-compatible */
 GRPCAPI void grpc_call_ref(grpc_call* call);
@@ -410,6 +413,36 @@ GRPCAPI grpc_server* grpc_server_create(const grpc_channel_args* args,
 GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
                                                    grpc_completion_queue* cq,
                                                    void* reserved);
+
+// More members might be added in later, so users should take care to memset
+// this to 0 before using it.
+typedef struct {
+  grpc_status_code code;
+  const char* error_message;
+} grpc_serving_status_update;
+
+// There might be more methods added later, so users should take care to memset
+// this to 0 before using it.
+typedef struct {
+  void (*on_serving_status_update)(void* user_data, const char* uri,
+                                   grpc_serving_status_update update);
+  void* user_data;
+} grpc_server_xds_status_notifier;
+
+typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
+
+/** EXPERIMENTAL.  Creates an xDS config fetcher. */
+GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
+
+/** EXPERIMENTAL.  Destroys a config fetcher. */
+GRPCAPI void grpc_server_config_fetcher_destroy(
+    grpc_server_config_fetcher* config_fetcher);
+
+/** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
+    Must be called before adding ports */
+GRPCAPI void grpc_server_set_config_fetcher(
+    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
@@ -481,6 +514,10 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 GRPCAPI void grpc_resource_quota_set_max_threads(
     grpc_resource_quota* resource_quota, int new_max_threads);
 
+/** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
+    The full name of the proto is envoy.service.status.v3.ClientConfig. */
+GRPCAPI grpc_slice grpc_dump_xds_configs();
+
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
@@ -526,6 +563,14 @@ GRPCAPI char* grpc_channelz_get_subchannel(intptr_t subchannel_id);
 /* Returns a single Socket, or else a NOT_FOUND code. The returned string
    is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Fetch a vtable for grpc_channel_arg that points to
+ * grpc_authorization_policy_provider.
+ */
+GRPCAPI const grpc_arg_pointer_vtable*
+grpc_authorization_policy_provider_arg_vtable(void);
 
 #ifdef __cplusplus
 }

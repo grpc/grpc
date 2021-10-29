@@ -53,13 +53,15 @@ static bool g_grpc_abort_on_leaks;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_determine_iomgr_platform();
+  if (!grpc_have_determined_iomgr_platform()) {
+    grpc_set_default_iomgr_platform();
+  }
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_core::Executor::InitAll();
   g_root_object.next = g_root_object.prev = &g_root_object;
-  g_root_object.name = (char*)"root";
+  g_root_object.name = const_cast<char*>("root");
   grpc_iomgr_platform_init();
   grpc_timer_list_init();
   grpc_core::grpc_errqueue_init();
@@ -94,7 +96,6 @@ void grpc_iomgr_shutdown() {
   {
     grpc_timer_manager_shutdown();
     grpc_iomgr_platform_flush();
-    grpc_core::Executor::ShutdownAll();
 
     gpr_mu_lock(&g_mu);
     g_shutdown = 1;
@@ -149,6 +150,7 @@ void grpc_iomgr_shutdown() {
     gpr_mu_unlock(&g_mu);
     grpc_timer_list_shutdown();
     grpc_core::ExecCtx::Get()->Flush();
+    grpc_core::Executor::ShutdownAll();
   }
 
   /* ensure all threads have left g_mu */
@@ -169,7 +171,7 @@ bool grpc_iomgr_is_any_background_poller_thread() {
 }
 
 bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
-                                                 grpc_error* error) {
+                                                 grpc_error_handle error) {
   return grpc_iomgr_platform_add_closure_to_background_poller(closure, error);
 }
 

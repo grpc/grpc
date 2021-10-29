@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <ares.h>
+
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -40,7 +42,27 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
     }                                                               \
   } while (0)
 
-typedef struct grpc_ares_request grpc_ares_request;
+typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
+
+struct grpc_ares_request {
+  /** indicates the DNS server to use, if specified */
+  struct ares_addr_port_node dns_server_addr;
+  /** following members are set in grpc_resolve_address_ares_impl */
+  /** closure to call when the request completes */
+  grpc_closure* on_done = nullptr;
+  /** the pointer to receive the resolved addresses */
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
+  /** the pointer to receive the resolved balancer addresses */
+  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
+  /** the pointer to receive the service config in JSON */
+  char** service_config_json_out = nullptr;
+  /** the evernt driver used by this request */
+  grpc_ares_ev_driver* ev_driver = nullptr;
+  /** number of ongoing queries */
+  size_t pending_queries = 0;
+  /** the errors explaining query failures, appended to in query callbacks */
+  grpc_error_handle error = GRPC_ERROR_NONE;
+};
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
    designated in \a name, otherwise use the port in \a name. grpc_ares_init()
@@ -74,7 +96,7 @@ extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
-grpc_error* grpc_ares_init(void);
+grpc_error_handle grpc_ares_init(void);
 
 /* Uninitialized gRPC ares wrapper. If there was more than one previous call to
    grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
@@ -92,6 +114,9 @@ bool grpc_ares_query_ipv6();
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
     const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
+
+/* Exposed in this header for C-core tests only */
+extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

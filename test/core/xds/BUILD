@@ -64,6 +64,22 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_google_mesh_ca_certificate_provider_factory",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_channel_stack_modifier_test",
+    srcs = ["xds_channel_stack_modifier_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = ["no_test_ios"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_opencensus_plugin",
+        "//:grpc_xds_channel_stack_modifier",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -76,6 +92,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
 )

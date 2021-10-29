@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +15,6 @@
 
 from __future__ import print_function
 
-from . import jobset
-
-import six.moves.urllib.request as request
 import logging
 import os
 import socket
@@ -24,6 +22,10 @@ import subprocess
 import sys
 import tempfile
 import time
+
+import six.moves.urllib.request as request
+
+from . import jobset
 
 # must be synchronized with test/core/util/port_server_client.h
 _PORT_SERVER_PORT = 32766

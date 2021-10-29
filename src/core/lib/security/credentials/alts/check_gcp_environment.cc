@@ -57,7 +57,7 @@ namespace internal {
 char* read_bios_file(const char* bios_file) {
   FILE* fp = fopen(bios_file, "r");
   if (!fp) {
-    gpr_log(GPR_ERROR, "BIOS data file cannot be opened.");
+    gpr_log(GPR_INFO, "BIOS data file does not exist or cannot be opened.");
     return nullptr;
   }
   char buf[kBiosDataBufferSize + 1];

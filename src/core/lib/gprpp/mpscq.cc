@@ -27,9 +27,9 @@ namespace grpc_core {
 //
 
 bool MultiProducerSingleConsumerQueue::Push(Node* node) {
-  node->next.Store(nullptr, MemoryOrder::RELAXED);
-  Node* prev = head_.Exchange(node, MemoryOrder::ACQ_REL);
-  prev->next.Store(node, MemoryOrder::RELEASE);
+  node->next.store(nullptr, std::memory_order_relaxed);
+  Node* prev = head_.exchange(node, std::memory_order_acq_rel);
+  prev->next.store(node, std::memory_order_release);
   return prev == &stub_;
 }
 
@@ -42,7 +42,7 @@ MultiProducerSingleConsumerQueue::Pop() {
 MultiProducerSingleConsumerQueue::Node*
 MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
   Node* tail = tail_;
-  Node* next = tail_->next.Load(MemoryOrder::ACQUIRE);
+  Node* next = tail_->next.load(std::memory_order_acquire);
   if (tail == &stub_) {
     // indicates the list is actually (ephemerally) empty
     if (next == nullptr) {
@@ -51,21 +51,21 @@ MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
     }
     tail_ = next;
     tail = next;
-    next = tail->next.Load(MemoryOrder::ACQUIRE);
+    next = tail->next.load(std::memory_order_acquire);
   }
   if (next != nullptr) {
     *empty = false;
     tail_ = next;
     return tail;
   }
-  Node* head = head_.Load(MemoryOrder::ACQUIRE);
+  Node* head = head_.load(std::memory_order_acquire);
   if (tail != head) {
     *empty = false;
     // indicates a retry is in order: we're still adding
     return nullptr;
   }
   Push(&stub_);
-  next = tail->next.Load(MemoryOrder::ACQUIRE);
+  next = tail->next.load(std::memory_order_acquire);
   if (next != nullptr) {
     *empty = false;
     tail_ = next;
@@ -86,9 +86,9 @@ bool LockedMultiProducerSingleConsumerQueue::Push(Node* node) {
 
 LockedMultiProducerSingleConsumerQueue::Node*
 LockedMultiProducerSingleConsumerQueue::TryPop() {
-  if (gpr_mu_trylock(mu_.get())) {
+  if (mu_.TryLock()) {
     Node* node = queue_.Pop();
-    gpr_mu_unlock(mu_.get());
+    mu_.Unlock();
     return node;
   }
   return nullptr;

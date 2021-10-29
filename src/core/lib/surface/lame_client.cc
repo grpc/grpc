@@ -18,32 +18,41 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
+#include "src/core/lib/surface/lame_client.h"
 
 #include <string.h>
 
+#include <atomic>
+
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
+
+#define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 
 namespace grpc_core {
 
 namespace {
 
 struct ChannelData {
-  ChannelData() : state_tracker("lame_channel", GRPC_CHANNEL_SHUTDOWN) {}
+  explicit ChannelData(grpc_channel_element_args* args)
+      : state_tracker("lame_channel", GRPC_CHANNEL_SHUTDOWN) {
+    grpc_error_handle* err = grpc_channel_args_find_pointer<grpc_error_handle>(
+        args->channel_args, GRPC_ARG_LAME_FILTER_ERROR);
+    if (err != nullptr) error = GRPC_ERROR_REF(*err);
+  }
+
   ~ChannelData() { GRPC_ERROR_UNREF(error); }
 
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Mutex mu;
   ConnectivityStateTracker state_tracker;
 };
@@ -90,8 +99,8 @@ static void lame_start_transport_op(grpc_channel_element* elem,
   }
 }
 
-static grpc_error* lame_init_call_elem(grpc_call_element* elem,
-                                       const grpc_call_element_args* args) {
+static grpc_error_handle lame_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
@@ -103,11 +112,9 @@ static void lame_destroy_call_elem(grpc_call_element* /*elem*/,
   ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
-static grpc_error* lame_init_channel_elem(grpc_channel_element* elem,
-                                          grpc_channel_element_args* args) {
-  GPR_ASSERT(args->is_first);
-  GPR_ASSERT(args->is_last);
-  new (elem->channel_data) ChannelData;
+static grpc_error_handle lame_init_channel_elem(
+    grpc_channel_element* elem, grpc_channel_element_args* args) {
+  new (elem->channel_data) ChannelData(args);
   return GRPC_ERROR_NONE;
 }
 
@@ -116,7 +123,34 @@ static void lame_destroy_channel_elem(grpc_channel_element* elem) {
   chand->~ChannelData();
 }
 
+// Channel arg vtable for a grpc_error_handle.
+void* ErrorCopy(void* p) {
+  grpc_error_handle* new_error = nullptr;
+  if (p != nullptr) {
+    grpc_error_handle* error = static_cast<grpc_error_handle*>(p);
+    new_error = new grpc_error_handle();
+    *new_error = GRPC_ERROR_REF(*error);
+  }
+  return new_error;
+}
+void ErrorDestroy(void* p) {
+  if (p != nullptr) {
+    grpc_error_handle* error = static_cast<grpc_error_handle*>(p);
+    GRPC_ERROR_UNREF(*error);
+    delete error;
+  }
+}
+int ErrorCompare(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
+const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
+    ErrorCopy, ErrorDestroy, ErrorCompare};
+
 }  // namespace
+
+grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_LAME_FILTER_ERROR), error,
+      &kLameFilterErrorArgVtable);
+}
 
 }  // namespace grpc_core
 
@@ -140,22 +174,19 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                                               grpc_status_code error_code,
                                               const char* error_message) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_element* elem;
-  grpc_channel* channel =
-      grpc_channel_create(target, nullptr, GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   GRPC_API_TRACE(
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "
       "error_message=%s)",
       3, (target, (int)error_code, error_message));
-  GPR_ASSERT(elem->filter == &grpc_lame_filter);
-  auto chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
-  chand->error = grpc_error_set_str(
+  grpc_error_handle error = grpc_error_set_str(
       grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
           GRPC_ERROR_INT_GRPC_STATUS, error_code),
-      GRPC_ERROR_STR_GRPC_MESSAGE,
-      grpc_slice_from_static_string(error_message));
-
+      GRPC_ERROR_STR_GRPC_MESSAGE, error_message);
+  grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(&error);
+  grpc_channel_args args = {1, &error_arg};
+  grpc_channel* channel = grpc_channel_create(
+      target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr, 0, nullptr);
+  GRPC_ERROR_UNREF(error);
   return channel;
 }

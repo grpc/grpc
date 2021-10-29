@@ -24,9 +24,9 @@
 
 #define TEST_TIMEOUT 32
 
-static NSString *kDummyHost = @"dummy.host";
-static NSString *kDummyHost2 = @"dummy.host.2";
-static NSString *kDummyPath = @"/dummy/path";
+static NSString *kPhonyHost = @"phony.host";
+static NSString *kPhonyHost2 = @"phony.host.2";
+static NSString *kPhonyPath = @"/phony/path";
 
 @interface ChannelPoolTest : XCTestCase
 
@@ -45,10 +45,10 @@ static NSString *kDummyPath = @"/dummy/path";
   GRPCMutableCallOptions *options3 = [options1 mutableCopy];
   options3.transportType = GRPCTransportTypeInsecure;
 
-  GRPCPooledChannel *channel1 = [pool channelWithHost:kDummyHost callOptions:options1];
-  GRPCPooledChannel *channel2 = [pool channelWithHost:kDummyHost callOptions:options2];
-  GRPCPooledChannel *channel3 = [pool channelWithHost:kDummyHost callOptions:options3];
-  GRPCPooledChannel *channel4 = [pool channelWithHost:kDummyHost2 callOptions:options1];
+  GRPCPooledChannel *channel1 = [pool channelWithHost:kPhonyHost callOptions:options1];
+  GRPCPooledChannel *channel2 = [pool channelWithHost:kPhonyHost callOptions:options2];
+  GRPCPooledChannel *channel3 = [pool channelWithHost:kPhonyHost callOptions:options3];
+  GRPCPooledChannel *channel4 = [pool channelWithHost:kPhonyHost2 callOptions:options1];
 
   XCTAssertNotNil(channel1);
   XCTAssertNotNil(channel2);

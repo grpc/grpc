@@ -16,19 +16,20 @@
  *
  */
 
+#include "src/core/lib/iomgr/work_serializer.h"
+
 #include <memory>
 
 #include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "absl/memory/memory.h"
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -38,7 +39,8 @@ TEST(WorkSerializerTest, ExecuteOne) {
   grpc_core::WorkSerializer lock;
   gpr_event done;
   gpr_event_init(&done);
-  lock.Run([&done]() { gpr_event_set(&done, (void*)1); }, DEBUG_LOCATION);
+  lock.Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
+           DEBUG_LOCATION);
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
 }
@@ -81,8 +83,9 @@ class TestThread {
       // sleep for a little bit, to test other threads picking up the load
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
     }
-    self->lock_->Run([self]() { gpr_event_set(&self->done_, (void*)1); },
-                     DEBUG_LOCATION);
+    self->lock_->Run(
+        [self]() { gpr_event_set(&self->done_, reinterpret_cast<void*>(1)); },
+        DEBUG_LOCATION);
   }
 
   grpc_core::WorkSerializer* lock_ = nullptr;
@@ -104,8 +107,8 @@ TEST(WorkSerializerTest, ExecuteMany) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();
   return retval;

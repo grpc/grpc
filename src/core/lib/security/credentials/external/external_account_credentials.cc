@@ -17,12 +17,18 @@
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
+#include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
+#include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
@@ -35,8 +41,173 @@
 
 namespace grpc_core {
 
+namespace {
+
+std::string UrlEncode(const absl::string_view& s) {
+  const char* hex = "0123456789ABCDEF";
+  std::string result;
+  result.reserve(s.length());
+  for (auto c : s) {
+    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z') || c == '-' || c == '_' || c == '!' ||
+        c == '\'' || c == '(' || c == ')' || c == '*' || c == '~' || c == '.') {
+      result.push_back(c);
+    } else {
+      result.push_back('%');
+      result.push_back(hex[static_cast<unsigned char>(c) >> 4]);
+      result.push_back(hex[static_cast<unsigned char>(c) & 15]);
+    }
+  }
+  return result;
+}
+
+// Expression to match:
+// //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
+bool MatchWorkforcePoolAudience(absl::string_view audience) {
+  // Match "//iam.googleapis.com/locations/"
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return false;
+  if (!absl::ConsumePrefix(&audience, "/locations/")) return false;
+  // Match "[^/]+/workforcePools/"
+  std::pair<absl::string_view, absl::string_view> workforce_pools_split_result =
+      absl::StrSplit(audience, absl::MaxSplits("/workforcePools/", 1));
+  if (absl::StrContains(workforce_pools_split_result.first, '/')) return false;
+  // Match "[^/]+/providers/.+"
+  std::pair<absl::string_view, absl::string_view> providers_split_result =
+      absl::StrSplit(workforce_pools_split_result.second,
+                     absl::MaxSplits("/providers/", 1));
+  return !absl::StrContains(providers_split_result.first, '/');
+}
+
+}  // namespace
+
+RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
+    const Json& json, std::vector<std::string> scopes,
+    grpc_error_handle* error) {
+  GPR_ASSERT(*error == GRPC_ERROR_NONE);
+  Options options;
+  options.type = GRPC_AUTH_JSON_TYPE_INVALID;
+  if (json.type() != Json::Type::OBJECT) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid json to construct credentials options.");
+    return nullptr;
+  }
+  auto it = json.object_value().find("type");
+  if (it == json.object_value().end()) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("type field not present.");
+    return nullptr;
+  }
+  if (it->second.type() != Json::Type::STRING) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("type field must be a string.");
+    return nullptr;
+  }
+  if (it->second.string_value() != GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid credentials json type.");
+    return nullptr;
+  }
+  options.type = GRPC_AUTH_JSON_TYPE_EXTERNAL_ACCOUNT;
+  it = json.object_value().find("audience");
+  if (it == json.object_value().end()) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("audience field not present.");
+    return nullptr;
+  }
+  if (it->second.type() != Json::Type::STRING) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "audience field must be a string.");
+    return nullptr;
+  }
+  options.audience = it->second.string_value();
+  it = json.object_value().find("subject_token_type");
+  if (it == json.object_value().end()) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "subject_token_type field not present.");
+    return nullptr;
+  }
+  if (it->second.type() != Json::Type::STRING) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "subject_token_type field must be a string.");
+    return nullptr;
+  }
+  options.subject_token_type = it->second.string_value();
+  it = json.object_value().find("service_account_impersonation_url");
+  if (it != json.object_value().end()) {
+    options.service_account_impersonation_url = it->second.string_value();
+  }
+  it = json.object_value().find("token_url");
+  if (it == json.object_value().end()) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("token_url field not present.");
+    return nullptr;
+  }
+  if (it->second.type() != Json::Type::STRING) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "token_url field must be a string.");
+    return nullptr;
+  }
+  options.token_url = it->second.string_value();
+  it = json.object_value().find("token_info_url");
+  if (it != json.object_value().end()) {
+    options.token_info_url = it->second.string_value();
+  }
+  it = json.object_value().find("credential_source");
+  if (it == json.object_value().end()) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "credential_source field not present.");
+    return nullptr;
+  }
+  options.credential_source = it->second;
+  it = json.object_value().find("quota_project_id");
+  if (it != json.object_value().end()) {
+    options.quota_project_id = it->second.string_value();
+  }
+  it = json.object_value().find("client_id");
+  if (it != json.object_value().end()) {
+    options.client_id = it->second.string_value();
+  }
+  it = json.object_value().find("client_secret");
+  if (it != json.object_value().end()) {
+    options.client_secret = it->second.string_value();
+  }
+  it = json.object_value().find("workforce_pool_user_project");
+  if (it != json.object_value().end()) {
+    if (MatchWorkforcePoolAudience(options.audience)) {
+      options.workforce_pool_user_project = it->second.string_value();
+    } else {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "workforce_pool_user_project should not be set for non-workforce "
+          "pool credentials");
+      return nullptr;
+    }
+  }
+  RefCountedPtr<ExternalAccountCredentials> creds;
+  if (options.credential_source.object_value().find("environment_id") !=
+      options.credential_source.object_value().end()) {
+    creds = MakeRefCounted<AwsExternalAccountCredentials>(
+        std::move(options), std::move(scopes), error);
+  } else if (options.credential_source.object_value().find("file") !=
+             options.credential_source.object_value().end()) {
+    creds = MakeRefCounted<FileExternalAccountCredentials>(
+        std::move(options), std::move(scopes), error);
+  } else if (options.credential_source.object_value().find("url") !=
+             options.credential_source.object_value().end()) {
+    creds = MakeRefCounted<UrlExternalAccountCredentials>(
+        std::move(options), std::move(scopes), error);
+  } else {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid options credential source to create "
+        "ExternalAccountCredentials.");
+  }
+  if (*error == GRPC_ERROR_NONE) {
+    return creds;
+  } else {
+    return nullptr;
+  }
+}
+
 ExternalAccountCredentials::ExternalAccountCredentials(
-    ExternalAccountCredentialsOptions options, std::vector<std::string> scopes)
+    Options options, std::vector<std::string> scopes)
     : options_(std::move(options)) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
@@ -72,14 +243,14 @@ void ExternalAccountCredentials::fetch_oauth2(
   ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
-  auto cb = [this](std::string token, grpc_error* error) {
+  auto cb = [this](std::string token, grpc_error_handle error) {
     OnRetrieveSubjectTokenInternal(token, error);
   };
   RetrieveSubjectToken(ctx_, options_, cb);
 }
 
 void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
-    absl::string_view subject_token, grpc_error* error) {
+    absl::string_view subject_token, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -89,16 +260,17 @@ void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
 
 void ExternalAccountCredentials::ExchangeToken(
     absl::string_view subject_token) {
-  grpc_uri* uri = grpc_uri_parse(options_.token_url, false);
-  if (uri == nullptr) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Invalid token url: %s.", options_.token_url).c_str()));
+  absl::StatusOr<URI> uri = URI::Parse(options_.token_url);
+  if (!uri.ok()) {
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Invalid token url: %s. Error: %s", options_.token_url,
+                        uri.status().ToString())));
     return;
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority);
-  request.http.path = gpr_strdup(uri->path);
+  request.host = const_cast<char*>(uri->authority().c_str());
+  request.http.path = gpr_strdup(uri->path().c_str());
   grpc_http_header* headers = nullptr;
   if (!options_.client_id.empty() && !options_.client_secret.empty()) {
     request.http.hdr_count = 2;
@@ -122,25 +294,34 @@ void ExternalAccountCredentials::ExchangeToken(
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
   }
   request.http.hdrs = headers;
-  request.handshaker = (strcmp(uri->scheme, "https") == 0)
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::vector<std::string> body_parts;
-  body_parts.push_back(absl::StrFormat("%s=%s", "audience", options_.audience));
+  body_parts.push_back(
+      absl::StrFormat("audience=%s", UrlEncode(options_.audience).c_str()));
   body_parts.push_back(absl::StrFormat(
-      "%s=%s", "grant_type", EXTERNAL_ACCOUNT_CREDENTIALS_GRANT_TYPE));
+      "grant_type=%s",
+      UrlEncode(EXTERNAL_ACCOUNT_CREDENTIALS_GRANT_TYPE).c_str()));
+  body_parts.push_back(absl::StrFormat(
+      "requested_token_type=%s",
+      UrlEncode(EXTERNAL_ACCOUNT_CREDENTIALS_REQUESTED_TOKEN_TYPE).c_str()));
+  body_parts.push_back(absl::StrFormat(
+      "subject_token_type=%s", UrlEncode(options_.subject_token_type).c_str()));
   body_parts.push_back(
-      absl::StrFormat("%s=%s", "requested_token_type",
-                      EXTERNAL_ACCOUNT_CREDENTIALS_REQUESTED_TOKEN_TYPE));
-  body_parts.push_back(absl::StrFormat("%s=%s", "subject_token_type",
-                                       options_.subject_token_type));
-  body_parts.push_back(
-      absl::StrFormat("%s=%s", "subject_token", subject_token));
+      absl::StrFormat("subject_token=%s", UrlEncode(subject_token).c_str()));
   std::string scope = GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE;
   if (options_.service_account_impersonation_url.empty()) {
     scope = absl::StrJoin(scopes_, " ");
   }
-  body_parts.push_back(absl::StrFormat("%s=%s", "scope", scope));
+  body_parts.push_back(absl::StrFormat("scope=%s", UrlEncode(scope).c_str()));
+  Json::Object addtional_options_json_object;
+  if (options_.client_id.empty() && options_.client_secret.empty()) {
+    addtional_options_json_object["userProject"] =
+        options_.workforce_pool_user_project;
+  }
+  Json addtional_options_json(std::move(addtional_options_json_object));
+  body_parts.push_back(absl::StrFormat(
+      "options=%s", UrlEncode(addtional_options_json.Dump()).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
@@ -150,24 +331,33 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
-  grpc_uri_destroy(uri);
 }
 
-void ExternalAccountCredentials::OnExchangeToken(void* arg, grpc_error* error) {
+void ExternalAccountCredentials::OnExchangeToken(void* arg,
+                                                 grpc_error_handle error) {
   ExternalAccountCredentials* self =
       static_cast<ExternalAccountCredentials*>(arg);
   self->OnExchangeTokenInternal(GRPC_ERROR_REF(error));
 }
 
-void ExternalAccountCredentials::OnExchangeTokenInternal(grpc_error* error) {
+void ExternalAccountCredentials::OnExchangeTokenInternal(
+    grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
     if (options_.service_account_impersonation_url.empty()) {
       metadata_req_->response = ctx_->response;
-      metadata_req_->response.body = gpr_strdup(ctx_->response.body);
+      metadata_req_->response.body = gpr_strdup(
+          std::string(ctx_->response.body, ctx_->response.body_length).c_str());
+      metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
+          gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
+      for (size_t i = 0; i < ctx_->response.hdr_count; i++) {
+        metadata_req_->response.hdrs[i].key =
+            gpr_strdup(ctx_->response.hdrs[i].key);
+        metadata_req_->response.hdrs[i].value =
+            gpr_strdup(ctx_->response.hdrs[i].value);
+      }
       FinishTokenFetch(GRPC_ERROR_NONE);
     } else {
       ImpersenateServiceAccount();
@@ -176,7 +366,7 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(grpc_error* error) {
 }
 
 void ExternalAccountCredentials::ImpersenateServiceAccount() {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
   Json json = Json::Parse(response_body, &error);
@@ -189,25 +379,23 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   auto it = json.object_value().find("access_token");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Missing or invalid access_token in %s.", response_body)
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Missing or invalid access_token in %s.", response_body)));
     return;
   }
   std::string access_token = it->second.string_value();
-  grpc_uri* uri =
-      grpc_uri_parse(options_.service_account_impersonation_url, false);
-  if (uri == nullptr) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Invalid service account impersonation url: %s.",
-                        options_.service_account_impersonation_url)
-            .c_str()));
+  absl::StatusOr<URI> uri =
+      URI::Parse(options_.service_account_impersonation_url);
+  if (!uri.ok()) {
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Invalid service account impersonation url: %s. Error: %s",
+        options_.service_account_impersonation_url, uri.status().ToString())));
     return;
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority);
-  request.http.path = gpr_strdup(uri->path);
+  request.host = const_cast<char*>(uri->authority().c_str());
+  request.http.path = gpr_strdup(uri->path().c_str());
   request.http.hdr_count = 2;
   grpc_http_header* headers = static_cast<grpc_http_header*>(
       gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
@@ -217,11 +405,10 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   headers[1].key = gpr_strdup("Authorization");
   headers[1].value = gpr_strdup(str.c_str());
   request.http.hdrs = headers;
-  request.handshaker = (strcmp(uri->scheme, "https") == 0)
-                           ? &grpc_httpcli_ssl
-                           : &grpc_httpcli_plaintext;
+  request.handshaker =
+      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
-  std::string body = absl::StrFormat("%s=%s", "scope", scope);
+  std::string body = absl::StrFormat("scope=%s", scope);
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
@@ -230,20 +417,18 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   grpc_httpcli_post(ctx_->httpcli_context, ctx_->pollent, resource_quota,
                     &request, body.c_str(), body.size(), ctx_->deadline,
                     &ctx_->closure, &ctx_->response);
-  grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
-  grpc_uri_destroy(uri);
 }
 
 void ExternalAccountCredentials::OnImpersenateServiceAccount(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   ExternalAccountCredentials* self =
       static_cast<ExternalAccountCredentials*>(arg);
   self->OnImpersenateServiceAccountInternal(GRPC_ERROR_REF(error));
 }
 
 void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
-    grpc_error* error) {
+    grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
     return;
@@ -260,18 +445,16 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   auto it = json.object_value().find("accessToken");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Missing or invalid accessToken in %s.", response_body)
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Missing or invalid accessToken in %s.", response_body)));
     return;
   }
   std::string access_token = it->second.string_value();
   it = json.object_value().find("expireTime");
   if (it == json.object_value().end() ||
       it->second.type() != Json::Type::STRING) {
-    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Missing or invalid expireTime in %s.", response_body)
-            .c_str()));
+    FinishTokenFetch(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Missing or invalid expireTime in %s.", response_body)));
     return;
   }
   std::string expire_time = it->second.string_value();
@@ -288,10 +471,18 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   metadata_req_->response = ctx_->response;
   metadata_req_->response.body = gpr_strdup(body.c_str());
   metadata_req_->response.body_length = body.length();
+  metadata_req_->response.hdrs = static_cast<grpc_http_header*>(
+      gpr_malloc(sizeof(grpc_http_header) * ctx_->response.hdr_count));
+  for (size_t i = 0; i < ctx_->response.hdr_count; i++) {
+    metadata_req_->response.hdrs[i].key =
+        gpr_strdup(ctx_->response.hdrs[i].key);
+    metadata_req_->response.hdrs[i].value =
+        gpr_strdup(ctx_->response.hdrs[i].value);
+  }
   FinishTokenFetch(GRPC_ERROR_NONE);
 }
 
-void ExternalAccountCredentials::FinishTokenFetch(grpc_error* error) {
+void ExternalAccountCredentials::FinishTokenFetch(grpc_error_handle error) {
   GRPC_LOG_IF_ERROR("Fetch external account credentials access token",
                     GRPC_ERROR_REF(error));
   // Move object state into local variables.
@@ -309,3 +500,28 @@ void ExternalAccountCredentials::FinishTokenFetch(grpc_error* error) {
 }
 
 }  // namespace grpc_core
+
+grpc_call_credentials* grpc_external_account_credentials_create(
+    const char* json_string, const char* scopes_string) {
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_core::Json json = grpc_core::Json::Parse(json_string, &error);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR,
+            "External account credentials creation failed. Error: %s.",
+            grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    return nullptr;
+  }
+  std::vector<std::string> scopes = absl::StrSplit(scopes_string, ',');
+  auto creds = grpc_core::ExternalAccountCredentials::Create(
+                   json, std::move(scopes), &error)
+                   .release();
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR,
+            "External account credentials creation failed. Error: %s.",
+            grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    return nullptr;
+  }
+  return creds;
+}

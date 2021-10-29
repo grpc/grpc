@@ -48,7 +48,7 @@ class Activation : public BaseActivation {
   Activation& operator=(const Activation&) = delete;
 
   // Insert value into Activation.
-  void InsertValue(absl::string_view name, const CelValue& value) {}
+  void InsertValue(absl::string_view /*name*/, const CelValue& /*value*/) {}
 };
 
 }  // namespace mock_cel

@@ -1895,5 +1895,83 @@
     "mode": "NULLABLE", 
     "name": "serverCpuUsage", 
     "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "testMetadata",
+    "type": "STRING"
+  },
+  {
+    "fields": [
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE", 
+            "name": "name", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "podIP", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "nodeName", 
+            "type": "STRING"
+          }
+        ],
+        "mode": "NULLABLE", 
+        "name": "driver", 
+        "type": "RECORD"
+      }, 
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE", 
+            "name": "name", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "podIP", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "nodeName", 
+            "type": "STRING"
+          }
+        ],
+        "mode": "REPEATED", 
+        "name": "servers", 
+        "type": "RECORD"
+      }, 
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE", 
+            "name": "name", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "podIP", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "nodeName", 
+            "type": "STRING"
+          }
+        ],
+        "mode": "REPEATED", 
+        "name": "clients", 
+        "type": "RECORD"
+      }
+    ], 
+    "mode": "NULLABLE", 
+    "name": "nodeMetadata", 
+    "type": "RECORD"
   }
 ]

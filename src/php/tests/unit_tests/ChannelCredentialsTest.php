@@ -56,19 +56,15 @@ class ChanellCredentialsTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(Grpc\ChannelCredentials::isDefaultRootsPemSet());
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidCreateSsl()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $channel_credentials = Grpc\ChannelCredentials::createSsl([]);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidCreateComposite()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $channel_credentials = Grpc\ChannelCredentials::createComposite(
             'something', 'something');
     }

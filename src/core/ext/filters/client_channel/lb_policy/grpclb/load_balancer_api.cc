@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
-#include "src/core/lib/gpr/useful.h"
 
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
@@ -55,8 +54,8 @@ grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_arena* arena) {
   grpc_lb_v1_LoadBalanceRequest* req = grpc_lb_v1_LoadBalanceRequest_new(arena);
   grpc_lb_v1_InitialLoadBalanceRequest* initial_request =
       grpc_lb_v1_LoadBalanceRequest_mutable_initial_request(req, arena);
-  size_t name_len =
-      GPR_MIN(strlen(lb_service_name), GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH);
+  size_t name_len = std::min(strlen(lb_service_name),
+                             size_t(GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH));
   grpc_lb_v1_InitialLoadBalanceRequest_set_name(
       initial_request, upb_strview_make(lb_service_name, name_len));
   return grpc_grpclb_request_encode(req, arena);
@@ -155,13 +154,13 @@ grpc_millis grpc_grpclb_duration_to_millis(
 
 }  // namespace
 
-bool GrpcLbResponseParse(const grpc_slice& encoded_grpc_grpclb_response,
+bool GrpcLbResponseParse(const grpc_slice& serialized_response,
                          upb_arena* arena, GrpcLbResponse* result) {
   grpc_lb_v1_LoadBalanceResponse* response =
       grpc_lb_v1_LoadBalanceResponse_parse(
           reinterpret_cast<const char*>(
-              GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response)),
-          GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response), arena);
+              GRPC_SLICE_START_PTR(serialized_response)),
+          GRPC_SLICE_LENGTH(serialized_response), arena);
   // Handle serverlist responses.
   if (ParseServerList(*response, &result->serverlist)) {
     result->type = result->SERVERLIST;

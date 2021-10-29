@@ -19,13 +19,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
-
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "test/core/util/cmdline.h"
 
 void create_jwt(const char* json_key_file_path, const char* service_url,

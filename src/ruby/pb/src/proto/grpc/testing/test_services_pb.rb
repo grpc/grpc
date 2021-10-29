@@ -29,7 +29,7 @@ module Grpc
       # performance with various types of payload.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -70,7 +70,7 @@ module Grpc
       # that case.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -86,7 +86,7 @@ module Grpc
       # A service used to control reconnect server.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -102,7 +102,7 @@ module Grpc
       # A service used to obtain stats for verifying LB behavior.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -110,6 +110,8 @@ module Grpc
 
         # Gets the backend distribution for RPCs sent by a test client.
         rpc :GetClientStats, ::Grpc::Testing::LoadBalancerStatsRequest, ::Grpc::Testing::LoadBalancerStatsResponse
+        # Gets the accumulated stats for RPCs sent by a test client.
+        rpc :GetClientAccumulatedStats, ::Grpc::Testing::LoadBalancerAccumulatedStatsRequest, ::Grpc::Testing::LoadBalancerAccumulatedStatsResponse
       end
 
       Stub = Service.rpc_stub_class
@@ -118,7 +120,7 @@ module Grpc
       # A service to remotely control health status of an xDS test server.
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
@@ -126,6 +128,22 @@ module Grpc
 
         rpc :SetServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
         rpc :SetNotServing, ::Grpc::Testing::Empty, ::Grpc::Testing::Empty
+      end
+
+      Stub = Service.rpc_stub_class
+    end
+    module XdsUpdateClientConfigureService
+      # A service to dynamically update the configuration of an xDS test client.
+      class Service
+
+        include ::GRPC::GenericService
+
+        self.marshal_class_method = :encode
+        self.unmarshal_class_method = :decode
+        self.service_name = 'grpc.testing.XdsUpdateClientConfigureService'
+
+        # Update the tes client's configuration.
+        rpc :Configure, ::Grpc::Testing::ClientConfigureRequest, ::Grpc::Testing::ClientConfigureResponse
       end
 
       Stub = Service.rpc_stub_class

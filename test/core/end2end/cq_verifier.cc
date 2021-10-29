@@ -36,6 +36,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
@@ -186,14 +187,17 @@ int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
   return byte_buffer_eq_slice(bb, grpc_slice_from_copied_string(str));
 }
 
-static bool is_probably_integer(void* p) { return ((uintptr_t)p) < 1000000; }
+static bool is_probably_integer(void* p) {
+  return reinterpret_cast<uintptr_t>(p) < 1000000;
+}
 
 namespace {
 
 std::string ExpectationString(const Expectation& e) {
   std::string out;
   if (is_probably_integer(e.tag)) {
-    out = absl::StrFormat("tag(%" PRIdPTR ") ", (intptr_t)e.tag);
+    out = absl::StrFormat("tag(%" PRIdPTR ") ",
+                          reinterpret_cast<intptr_t>(e.tag));
   } else {
     out = absl::StrFormat("%p ", e.tag);
   }
@@ -206,7 +210,6 @@ std::string ExpectationString(const Expectation& e) {
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "not implemented");
       abort();
-      break;
   }
   return out;
 }
@@ -240,11 +243,9 @@ static void verify_matches(const Expectation& e, const grpc_event& ev) {
     case GRPC_QUEUE_SHUTDOWN:
       gpr_log(GPR_ERROR, "premature queue shutdown");
       abort();
-      break;
     case GRPC_QUEUE_TIMEOUT:
       gpr_log(GPR_ERROR, "not implemented");
       abort();
-      break;
   }
 }
 
@@ -302,8 +303,8 @@ void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
 
 void cq_maybe_expect_completion(cq_verifier* v, const char* file, int line,
                                 void* tag, bool success, bool* seen) {
-  v->maybe_expectations.emplace_back(file, line, GRPC_OP_COMPLETE, tag, true,
-                                     true, seen);
+  v->maybe_expectations.emplace_back(file, line, GRPC_OP_COMPLETE, tag,
+                                     true /* check_success */, success, seen);
 }
 
 static void add(cq_verifier* v, const char* file, int line,

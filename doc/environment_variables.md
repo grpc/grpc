@@ -57,7 +57,6 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
-  - eds_lb - traces eds LB policy
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
@@ -76,8 +75,11 @@ some configuration as environment variables that can be set.
     in DEBUG)
   - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals
+  - ring_hash_lb - traces the ring hash load balancing policy
+  - rls_lb - traces the RLS load balancing policy
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
+  - sdk_authz - traces sdk authorization
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - subchannel - traces the connectivity state of subchannel
@@ -91,11 +93,11 @@ some configuration as environment variables that can be set.
   - xds_client - traces xds client
   - xds_cluster_manager_lb - traces cluster manager LB policy
   - xds_cluster_impl_lb - traces cluster impl LB policy
+  - xds_cluster_resolver_lb - traces xds cluster resolver LB policy
   - xds_resolver - traces xds resolver
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`
-  - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
   - combiner - traces combiner lock state
   - call_combiner - traces call combiner state
@@ -134,7 +136,12 @@ some configuration as environment variables that can be set.
   Default gRPC logging verbosity - one of:
   - DEBUG - log all gRPC messages
   - INFO - log INFO and ERROR message
-  - ERROR - log only errors
+  - ERROR - log only errors (default)
+  - NONE - won't log any
+
+* GRPC_STACKTRACE_MINLOGLEVEL
+  Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.
+  NONE is a default value.
 
 * GRPC_TRACE_FUZZER
   if set, the fuzzers will output trace (it is usually suppressed).

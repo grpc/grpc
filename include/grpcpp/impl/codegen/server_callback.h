@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_H
 
+// IWYU pragma: private, include <grpcpp/support/server_callback.h>
+
 #include <atomic>
 #include <functional>
 #include <type_traits>
@@ -29,6 +31,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/impl/codegen/sync.h>
 
 namespace grpc {
 
@@ -157,8 +160,7 @@ class ServerCallbackCall {
 };
 
 template <class Request, class Response>
-class DefaultMessageHolder
-    : public ::grpc::experimental::MessageHolder<Request, Response> {
+class DefaultMessageHolder : public MessageHolder<Request, Response> {
  public:
   DefaultMessageHolder() {
     this->set_request(&request_obj_);
@@ -190,7 +192,7 @@ class ServerBidiReactor;
 // the API.
 class ServerCallbackUnary : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackUnary() {}
+  ~ServerCallbackUnary() override {}
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
 
@@ -206,7 +208,7 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
 template <class Request>
 class ServerCallbackReader : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackReader() {}
+  ~ServerCallbackReader() override {}
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
   virtual void Read(Request* msg) = 0;
@@ -220,7 +222,7 @@ class ServerCallbackReader : public internal::ServerCallbackCall {
 template <class Response>
 class ServerCallbackWriter : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackWriter() {}
+  ~ServerCallbackWriter() override {}
 
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
@@ -237,7 +239,7 @@ class ServerCallbackWriter : public internal::ServerCallbackCall {
 template <class Request, class Response>
 class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
  public:
-  virtual ~ServerCallbackReaderWriter() {}
+  ~ServerCallbackReaderWriter() override {}
 
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
@@ -256,7 +258,12 @@ class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
 // by the user, returned as the output parameter of the method handler for a
 // callback method. Note that none of the classes are pure; all reactions have a
 // default empty reaction so that the user class only needs to override those
-// classes that it cares about.
+// reactions that it cares about. The reaction methods will be invoked by the
+// library in response to the completion of various operations. Reactions must
+// not include blocking operations (such as blocking I/O, starting synchronous
+// RPCs, or waiting on condition variables). Reactions may be invoked
+// concurrently, except that OnDone is called after all others (assuming proper
+// API usage). The reactor may not be deleted until OnDone is called.
 
 /// \a ServerBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
@@ -268,12 +275,12 @@ class ServerBidiReactor : public internal::ServerReactor {
   // TODO(vjpai): Switch to default constructor and default initializer when
   //              gcc-4.x is no longer supported
   ServerBidiReactor() : stream_(nullptr) {}
-  ~ServerBidiReactor() = default;
+  ~ServerBidiReactor() override = default;
 
   /// Send any initial metadata stored in the RPC context. If not invoked,
   /// any initial metadata will be passed along with the first Write or the
   /// Finish (if there are no writes).
-  void StartSendInitialMetadata() {
+  void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
@@ -291,7 +298,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///
   /// \param[out] req Where to eventually store the read message. Valid when
   ///                 the library calls OnReadDone
-  void StartRead(Request* req) {
+  void StartRead(Request* req) ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
@@ -320,7 +327,8 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 ownership but the caller must ensure that the message is
   ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
-  void StartWrite(const Response* resp, ::grpc::WriteOptions options) {
+  void StartWrite(const Response* resp, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
@@ -328,11 +336,11 @@ class ServerBidiReactor : public internal::ServerReactor {
       stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         return;
       }
     }
-    stream->Write(resp, std::move(options));
+    stream->Write(resp, options);
   }
 
   /// Initiate a write operation with specified options and final RPC Status,
@@ -349,7 +357,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[in] options The WriteOptions to use for writing this message
   /// \param[in] s The status outcome of this RPC
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
-                           ::grpc::Status s) {
+                           ::grpc::Status s) ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
@@ -358,12 +366,12 @@ class ServerBidiReactor : public internal::ServerReactor {
       if (stream == nullptr) {
         backlog_.write_and_finish_wanted = true;
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         backlog_.status_wanted = std::move(s);
         return;
       }
     }
-    stream->WriteAndFinish(resp, std::move(options), std::move(s));
+    stream->WriteAndFinish(resp, options, std::move(s));
   }
 
   /// Inform system of a planned write operation with specified options, but
@@ -375,7 +383,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
-    StartWrite(resp, std::move(options.set_last_message()));
+    StartWrite(resp, options.set_last_message());
   }
 
   /// Indicate that the stream is to be finished and the trailing metadata and
@@ -384,7 +392,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// cancelled.
   ///
   /// \param[in] s The status outcome of this RPC
-  void Finish(::grpc::Status s) {
+  void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
@@ -476,7 +484,7 @@ class ServerBidiReactor : public internal::ServerReactor {
     ::grpc::WriteOptions write_options_wanted;
     ::grpc::Status status_wanted;
   };
-  PreBindBacklog backlog_ /* GUARDED_BY(stream_mu_) */;
+  PreBindBacklog backlog_ ABSL_GUARDED_BY(stream_mu_);
 };
 
 /// \a ServerReadReactor is the interface for a client-streaming RPC.
@@ -484,10 +492,10 @@ template <class Request>
 class ServerReadReactor : public internal::ServerReactor {
  public:
   ServerReadReactor() : reader_(nullptr) {}
-  ~ServerReadReactor() = default;
+  ~ServerReadReactor() override = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
-  void StartSendInitialMetadata() {
+  void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(reader_mu_) {
     ServerCallbackReader<Request>* reader =
         reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
@@ -500,7 +508,7 @@ class ServerReadReactor : public internal::ServerReactor {
     }
     reader->SendInitialMetadata();
   }
-  void StartRead(Request* req) {
+  void StartRead(Request* req) ABSL_LOCKS_EXCLUDED(reader_mu_) {
     ServerCallbackReader<Request>* reader =
         reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
@@ -513,7 +521,7 @@ class ServerReadReactor : public internal::ServerReactor {
     }
     reader->Read(req);
   }
-  void Finish(::grpc::Status s) {
+  void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(reader_mu_) {
     ServerCallbackReader<Request>* reader =
         reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
@@ -539,7 +547,8 @@ class ServerReadReactor : public internal::ServerReactor {
 
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindReader(ServerCallbackReader<Request>* reader) {
+  virtual void InternalBindReader(ServerCallbackReader<Request>* reader)
+      ABSL_LOCKS_EXCLUDED(reader_mu_) {
     grpc::internal::MutexLock l(&reader_mu_);
 
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
@@ -563,7 +572,7 @@ class ServerReadReactor : public internal::ServerReactor {
     Request* read_wanted = nullptr;
     ::grpc::Status status_wanted;
   };
-  PreBindBacklog backlog_ /* GUARDED_BY(reader_mu_) */;
+  PreBindBacklog backlog_ ABSL_GUARDED_BY(reader_mu_);
 };
 
 /// \a ServerWriteReactor is the interface for a server-streaming RPC.
@@ -571,10 +580,10 @@ template <class Response>
 class ServerWriteReactor : public internal::ServerReactor {
  public:
   ServerWriteReactor() : writer_(nullptr) {}
-  ~ServerWriteReactor() = default;
+  ~ServerWriteReactor() override = default;
 
   /// The following operation initiations are exactly like ServerBidiReactor.
-  void StartSendInitialMetadata() {
+  void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(writer_mu_) {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
@@ -590,7 +599,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   void StartWrite(const Response* resp) {
     StartWrite(resp, ::grpc::WriteOptions());
   }
-  void StartWrite(const Response* resp, ::grpc::WriteOptions options) {
+  void StartWrite(const Response* resp, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(writer_mu_) {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
@@ -598,14 +608,14 @@ class ServerWriteReactor : public internal::ServerReactor {
       writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         return;
       }
     }
-    writer->Write(resp, std::move(options));
+    writer->Write(resp, options);
   }
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
-                           ::grpc::Status s) {
+                           ::grpc::Status s) ABSL_LOCKS_EXCLUDED(writer_mu_) {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
@@ -614,17 +624,17 @@ class ServerWriteReactor : public internal::ServerReactor {
       if (writer == nullptr) {
         backlog_.write_and_finish_wanted = true;
         backlog_.write_wanted = resp;
-        backlog_.write_options_wanted = std::move(options);
+        backlog_.write_options_wanted = options;
         backlog_.status_wanted = std::move(s);
         return;
       }
     }
-    writer->WriteAndFinish(resp, std::move(options), std::move(s));
+    writer->WriteAndFinish(resp, options, std::move(s));
   }
   void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
-    StartWrite(resp, std::move(options.set_last_message()));
+    StartWrite(resp, options.set_last_message());
   }
-  void Finish(::grpc::Status s) {
+  void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(writer_mu_) {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
@@ -649,7 +659,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   friend class ServerCallbackWriter<Response>;
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer) {
+  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer)
+      ABSL_LOCKS_EXCLUDED(writer_mu_) {
     grpc::internal::MutexLock l(&writer_mu_);
 
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
@@ -682,16 +693,16 @@ class ServerWriteReactor : public internal::ServerReactor {
     ::grpc::WriteOptions write_options_wanted;
     ::grpc::Status status_wanted;
   };
-  PreBindBacklog backlog_ /* GUARDED_BY(writer_mu_) */;
+  PreBindBacklog backlog_ ABSL_GUARDED_BY(writer_mu_);
 };
 
 class ServerUnaryReactor : public internal::ServerReactor {
  public:
   ServerUnaryReactor() : call_(nullptr) {}
-  ~ServerUnaryReactor() = default;
+  ~ServerUnaryReactor() override = default;
 
   /// StartSendInitialMetadata is exactly like ServerBidiReactor.
-  void StartSendInitialMetadata() {
+  void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(call_mu_) {
     ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
@@ -706,7 +717,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
   /// Finish is similar to ServerBidiReactor except for one detail.
   /// If the status is non-OK, any message will not be sent. Instead,
   /// the client will only receive the status and any trailing metadata.
-  void Finish(::grpc::Status s) {
+  void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(call_mu_) {
     ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
@@ -729,7 +740,8 @@ class ServerUnaryReactor : public internal::ServerReactor {
   friend class ServerCallbackUnary;
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindCall(ServerCallbackUnary* call) {
+  virtual void InternalBindCall(ServerCallbackUnary* call)
+      ABSL_LOCKS_EXCLUDED(call_mu_) {
     grpc::internal::MutexLock l(&call_mu_);
 
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
@@ -749,7 +761,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
     bool finish_wanted = false;
     ::grpc::Status status_wanted;
   };
-  PreBindBacklog backlog_ /* GUARDED_BY(call_mu_) */;
+  PreBindBacklog backlog_ ABSL_GUARDED_BY(call_mu_);
 };
 
 namespace internal {
@@ -773,19 +785,12 @@ using UnimplementedBidiReactor =
 
 }  // namespace internal
 
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
+// TODO(vjpai): Remove namespace experimental when last known users are migrated
+// off.
 namespace experimental {
-
-template <class Request>
-using ServerReadReactor = ::grpc::ServerReadReactor<Request>;
-
-template <class Response>
-using ServerWriteReactor = ::grpc::ServerWriteReactor<Response>;
 
 template <class Request, class Response>
 using ServerBidiReactor = ::grpc::ServerBidiReactor<Request, Response>;
-
-using ServerUnaryReactor = ::grpc::ServerUnaryReactor;
 
 }  // namespace experimental
 

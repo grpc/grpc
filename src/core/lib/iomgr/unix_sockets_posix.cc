@@ -21,8 +21,6 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -30,36 +28,36 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/iomgr/parse_address.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-grpc_error* grpc_resolve_unix_domain_address(const char* name,
-                                             grpc_resolved_addresses** addrs) {
-  *addrs = static_cast<grpc_resolved_addresses*>(
+grpc_error_handle grpc_resolve_unix_domain_address(
+    const char* name, grpc_resolved_addresses** addresses) {
+  *addresses = static_cast<grpc_resolved_addresses*>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
-  (*addrs)->naddrs = 1;
-  (*addrs)->addrs = static_cast<grpc_resolved_address*>(
+  (*addresses)->naddrs = 1;
+  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
       gpr_malloc(sizeof(grpc_resolved_address)));
-  return grpc_core::UnixSockaddrPopulate(name, (*addrs)->addrs);
+  return grpc_core::UnixSockaddrPopulate(name, (*addresses)->addrs);
 }
 
-grpc_error* grpc_resolve_unix_abstract_domain_address(
-    const absl::string_view name, grpc_resolved_addresses** addrs) {
-  *addrs = static_cast<grpc_resolved_addresses*>(
+grpc_error_handle grpc_resolve_unix_abstract_domain_address(
+    const absl::string_view name, grpc_resolved_addresses** addresses) {
+  *addresses = static_cast<grpc_resolved_addresses*>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
-  (*addrs)->naddrs = 1;
-  (*addrs)->addrs = static_cast<grpc_resolved_address*>(
+  (*addresses)->naddrs = 1;
+  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
       gpr_malloc(sizeof(grpc_resolved_address)));
-  return grpc_core::UnixAbstractSockaddrPopulate(name, (*addrs)->addrs);
+  return grpc_core::UnixAbstractSockaddrPopulate(name, (*addresses)->addrs);
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {
@@ -96,16 +94,15 @@ std::string grpc_sockaddr_to_uri_unix_if_possible(
   if (addr->sa_family != AF_UNIX) {
     return "";
   }
-  if (((struct sockaddr_un*)addr)->sun_path[0] == '\0' &&
-      ((struct sockaddr_un*)addr)->sun_path[1] != '\0') {
-    const struct sockaddr_un* un =
-        reinterpret_cast<const struct sockaddr_un*>(resolved_addr->addr);
+  const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
+  if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
     return absl::StrCat(
         "unix-abstract:",
-        absl::string_view(un->sun_path + 1,
-                          resolved_addr->len - sizeof(un->sun_family) - 1));
+        absl::string_view(
+            unix_addr->sun_path + 1,
+            resolved_addr->len - sizeof(unix_addr->sun_family) - 1));
   }
-  return absl::StrCat("unix:", ((struct sockaddr_un*)addr)->sun_path);
+  return absl::StrCat("unix:", unix_addr->sun_path);
 }
 
 #endif

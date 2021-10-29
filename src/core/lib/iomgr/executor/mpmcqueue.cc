@@ -29,7 +29,8 @@ inline void* InfLenFIFOQueue::PopFront() {
   // mutex. This function will assume that there is at least one element in the
   // queue (i.e. queue_head_->content is valid).
   void* result = queue_head_->content;
-  count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
+  count_.store(count_.load(std::memory_order_relaxed) - 1,
+               std::memory_order_relaxed);
 
   // Updates Stats when trace flag turned on.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
@@ -40,7 +41,7 @@ inline void* InfLenFIFOQueue::PopFront() {
     stats_.max_queue_time = gpr_time_max(
         gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN), wait_time);
 
-    if (count_.Load(MemoryOrder::RELAXED) == 0) {
+    if (count_.load(std::memory_order_relaxed) == 0) {
       stats_.busy_queue_time =
           gpr_time_add(stats_.busy_queue_time,
                        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), busy_time));
@@ -57,7 +58,7 @@ inline void* InfLenFIFOQueue::PopFront() {
 
   queue_head_ = queue_head_->next;
   // Signal waiting thread
-  if (count_.Load(MemoryOrder::RELAXED) > 0) {
+  if (count_.load(std::memory_order_relaxed) > 0) {
     TopWaiter()->cv.Signal();
   }
 
@@ -66,7 +67,7 @@ inline void* InfLenFIFOQueue::PopFront() {
 
 InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
   num_nodes_ = num_nodes_ + num;
-  Node* new_chunk = static_cast<Node*>(gpr_zalloc(sizeof(Node) * num));
+  Node* new_chunk = new Node[num];
   new_chunk[0].next = &new_chunk[1];
   new_chunk[num - 1].prev = &new_chunk[num - 2];
   for (int i = 1; i < num - 1; ++i) {
@@ -78,8 +79,7 @@ InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
 
 InfLenFIFOQueue::InfLenFIFOQueue() {
   delete_list_size_ = kDeleteListInitSize;
-  delete_list_ =
-      static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
+  delete_list_ = new Node*[delete_list_size_];
 
   Node* new_chunk = AllocateNodes(kQueueInitNumNodes);
   delete_list_[delete_list_count_++] = new_chunk;
@@ -92,17 +92,17 @@ InfLenFIFOQueue::InfLenFIFOQueue() {
 }
 
 InfLenFIFOQueue::~InfLenFIFOQueue() {
-  GPR_ASSERT(count_.Load(MemoryOrder::RELAXED) == 0);
+  GPR_ASSERT(count_.load(std::memory_order_relaxed) == 0);
   for (size_t i = 0; i < delete_list_count_; ++i) {
-    gpr_free(delete_list_[i]);
+    delete[] delete_list_[i];
   }
-  gpr_free(delete_list_);
+  delete[] delete_list_;
 }
 
 void InfLenFIFOQueue::Put(void* elem) {
   MutexLock l(&mu_);
 
-  int curr_count = count_.Load(MemoryOrder::RELAXED);
+  int curr_count = count_.load(std::memory_order_relaxed);
 
   if (queue_tail_ == queue_head_ && curr_count != 0) {
     // List is full. Expands list to double size by inserting new chunk of nodes
@@ -111,8 +111,7 @@ void InfLenFIFOQueue::Put(void* elem) {
     // Expands delete list on full.
     if (delete_list_count_ == delete_list_size_) {
       delete_list_size_ = delete_list_size_ * 2;
-      delete_list_ = static_cast<Node**>(
-          gpr_realloc(delete_list_, sizeof(Node*) * delete_list_size_));
+      delete_list_ = new Node*[delete_list_size_];
     }
     new_chunk[0].prev = queue_tail_->prev;
     new_chunk[curr_count - 1].next = queue_head_;
@@ -134,7 +133,7 @@ void InfLenFIFOQueue::Put(void* elem) {
     queue_tail_->insert_time = current_time;
   }
 
-  count_.Store(curr_count + 1, MemoryOrder::RELAXED);
+  count_.store(curr_count + 1, std::memory_order_relaxed);
   queue_tail_ = queue_tail_->next;
 
   TopWaiter()->cv.Signal();
@@ -143,7 +142,7 @@ void InfLenFIFOQueue::Put(void* elem) {
 void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
   MutexLock l(&mu_);
 
-  if (count_.Load(MemoryOrder::RELAXED) == 0) {
+  if (count_.load(std::memory_order_relaxed) == 0) {
     gpr_timespec start_time;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
@@ -154,14 +153,14 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
     PushWaiter(&self);
     do {
       self.cv.Wait(&mu_);
-    } while (count_.Load(MemoryOrder::RELAXED) == 0);
+    } while (count_.load(std::memory_order_relaxed) == 0);
     RemoveWaiter(&self);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
       *wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time);
     }
   }
-  GPR_DEBUG_ASSERT(count_.Load(MemoryOrder::RELAXED) > 0);
+  GPR_DEBUG_ASSERT(count_.load(std::memory_order_relaxed) > 0);
   return PopFront();
 }
 

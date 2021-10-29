@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,13 +24,14 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
-static bool g_enable_filter = false;
-
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -195,7 +194,7 @@ typedef struct {
   uint8_t unused;
 } channel_data;
 
-static void recv_im_ready(void* arg, grpc_error* error) {
+static void recv_im_ready(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_core::Closure::Run(
@@ -218,8 +217,8 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
-static grpc_error* init_call_elem(grpc_call_element* /*elem*/,
-                                  const grpc_call_element_args* /*args*/) {
+static grpc_error_handle init_call_elem(
+    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -227,8 +226,8 @@ static void destroy_call_elem(grpc_call_element* /*elem*/,
                               const grpc_call_final_info* /*final_info*/,
                               grpc_closure* /*ignored*/) {}
 
-static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
-                                     grpc_channel_element_args* /*args*/) {
+static grpc_error_handle init_channel_elem(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -251,29 +250,17 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder,
-                             void* /*arg*/) {
-  if (g_enable_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
-                                                     nullptr, nullptr);
-  } else {
-    return true;
-  }
-}
-
-static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   nullptr);
-}
-
-static void destroy_plugin(void) {}
-
 void filter_causes_close(grpc_end2end_test_config config) {
-  g_enable_filter = true;
-  test_request(config);
-  g_enable_filter = false;
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
+        builder->channel_init()->RegisterStage(
+            GRPC_SERVER_CHANNEL, 0, [](grpc_channel_stack_builder* builder) {
+              return grpc_channel_stack_builder_prepend_filter(
+                  builder, &test_filter, nullptr, nullptr);
+            });
+      },
+      [config] { test_request(config); });
 }
 
-void filter_causes_close_pre_init(void) {
-  grpc_register_plugin(init_plugin, destroy_plugin);
-}
+void filter_causes_close_pre_init(void) {}

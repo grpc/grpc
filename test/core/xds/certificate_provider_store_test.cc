@@ -16,13 +16,13 @@
 //
 //
 
+#include "src/core/ext/xds/certificate_provider_store.h"
+
 #include <thread>
 
 #include <gmock/gmock.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
-#include "src/core/ext/xds/certificate_provider_store.h"
-
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -57,13 +57,13 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
   const char* name() const override { return "fake1"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) override {
+  CreateCertificateProviderConfig(const Json& /*config_json*/,
+                                  grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> config) override {
+      RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
     return MakeRefCounted<FakeCertificateProvider>();
   }
 };
@@ -80,13 +80,13 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
   const char* name() const override { return "fake2"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error** error) override {
+  CreateCertificateProviderConfig(const Json& /*config_json*/,
+                                  grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> config) override {
+      RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
     return MakeRefCounted<FakeCertificateProvider>();
   }
 };
@@ -109,21 +109,21 @@ TEST_F(CertificateProviderStoreTest, Basic) {
        {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
                                                                  nullptr)}},
   };
-  CertificateProviderStore store(std::move(map));
+  auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
   // Test for creating certificate providers with known plugin configuration.
-  auto cert_provider_1 = store.CreateOrGetCertificateProvider("fake_plugin_1");
+  auto cert_provider_1 = store->CreateOrGetCertificateProvider("fake_plugin_1");
   ASSERT_NE(cert_provider_1, nullptr);
-  auto cert_provider_3 = store.CreateOrGetCertificateProvider("fake_plugin_3");
+  auto cert_provider_3 = store->CreateOrGetCertificateProvider("fake_plugin_3");
   ASSERT_NE(cert_provider_3, nullptr);
   // Test for creating certificate provider with known plugin configuration but
   // unregistered factory.
-  ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_2"), nullptr);
+  ASSERT_EQ(store->CreateOrGetCertificateProvider("fake_plugin_2"), nullptr);
   // Test for creating certificate provider with unknown plugin configuration.
-  ASSERT_EQ(store.CreateOrGetCertificateProvider("unknown"), nullptr);
+  ASSERT_EQ(store->CreateOrGetCertificateProvider("unknown"), nullptr);
   // Test for getting previously created certificate providers.
-  ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_1"),
+  ASSERT_EQ(store->CreateOrGetCertificateProvider("fake_plugin_1"),
             cert_provider_1);
-  ASSERT_EQ(store.CreateOrGetCertificateProvider("fake_plugin_3"),
+  ASSERT_EQ(store->CreateOrGetCertificateProvider("fake_plugin_3"),
             cert_provider_3);
   // Release previously created certificate providers so that the store outlasts
   // the certificate providers.
@@ -139,14 +139,14 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
       {"fake_plugin_1",
        {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
                                                                  nullptr)}}};
-  CertificateProviderStore store(std::move(map));
+  auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
   // Test concurrent `CreateOrGetCertificateProvider()` with the same key.
   std::vector<std::thread> threads;
   threads.reserve(1000);
   for (auto i = 0; i < 1000; i++) {
     threads.emplace_back([&store]() {
       for (auto i = 0; i < 10; ++i) {
-        ASSERT_NE(store.CreateOrGetCertificateProvider("fake_plugin_1"),
+        ASSERT_NE(store->CreateOrGetCertificateProvider("fake_plugin_1"),
                   nullptr);
       }
     });

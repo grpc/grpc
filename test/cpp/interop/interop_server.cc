@@ -16,6 +16,13 @@
  *
  */
 
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -24,12 +31,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
-#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -149,7 +150,7 @@ class TestServiceImpl : public TestService::Service {
                             const SimpleRequest* /*request*/,
                             SimpleResponse* response) override {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
-    std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+    std::string timestamp = std::to_string(ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
     context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;

@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "upb/text_encode.h"
 
@@ -17,6 +43,7 @@ typedef struct {
   int indent_depth;
   int options;
   const upb_symtab *ext_pool;
+  _upb_mapsorter sorter;
 } txtenc;
 
 static void txtenc_msg(txtenc *e, const upb_msg *msg, const upb_msgdef *m);
@@ -27,8 +54,10 @@ static void txtenc_putbytes(txtenc *e, const void *data, size_t len) {
     memcpy(e->ptr, data, len);
     e->ptr += len;
   } else {
-    if (have) memcpy(e->ptr, data, have);
-    e->ptr += have;
+    if (have) {
+      memcpy(e->ptr, data, have);
+      e->ptr += have;
+    }
     e->overflow += (len - have);
   }
 }
@@ -43,13 +72,13 @@ static void txtenc_printf(txtenc *e, const char *fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
-  n = _upb_vsnprintf(e->ptr, have, fmt, args);
+  n = vsnprintf(e->ptr, have, fmt, args);
   va_end(args);
 
   if (UPB_LIKELY(have > n)) {
     e->ptr += n;
   } else {
-    e->ptr += have;
+    e->ptr = UPB_PTRADD(e->ptr, have);
     e->overflow += (n - have);
   }
 }
@@ -187,6 +216,25 @@ static void txtenc_array(txtenc *e, const upb_array *arr,
   }
 }
 
+static void txtenc_mapentry(txtenc *e, upb_msgval key, upb_msgval val,
+                            const upb_fielddef *f) {
+  const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
+  const upb_fielddef *key_f = upb_msgdef_field(entry, 0);
+  const upb_fielddef *val_f = upb_msgdef_field(entry, 1);
+  txtenc_indent(e);
+  txtenc_printf(e, "%s: {", upb_fielddef_name(f));
+  txtenc_endfield(e);
+  e->indent_depth++;
+
+  txtenc_field(e, key, key_f);
+  txtenc_field(e, val, val_f);
+
+  e->indent_depth--;
+  txtenc_indent(e);
+  txtenc_putstr(e, "}");
+  txtenc_endfield(e);
+}
+
 /*
  * Maps print as messages of key/value, etc.
  *
@@ -200,27 +248,28 @@ static void txtenc_array(txtenc *e, const upb_array *arr,
  *    }
  */
 static void txtenc_map(txtenc *e, const upb_map *map, const upb_fielddef *f) {
-  const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
-  const upb_fielddef *key_f = upb_msgdef_itof(entry, 1);
-  const upb_fielddef *val_f = upb_msgdef_itof(entry, 2);
-  size_t iter = UPB_MAP_BEGIN;
+  if (e->options & UPB_TXTENC_NOSORT) {
+    size_t iter = UPB_MAP_BEGIN;
+    while (upb_mapiter_next(map, &iter)) {
+      upb_msgval key = upb_mapiter_key(map, iter);
+      upb_msgval val = upb_mapiter_value(map, iter);
+      txtenc_mapentry(e, key, val, f);
+    }
+  } else {
+    const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
+    const upb_fielddef *key_f = upb_msgdef_field(entry, 0);
+    _upb_sortedmap sorted;
+    upb_map_entry ent;
 
-  while (upb_mapiter_next(map, &iter)) {
-    upb_msgval key = upb_mapiter_key(map, iter);
-    upb_msgval val = upb_mapiter_value(map, iter);
-
-    txtenc_indent(e);
-    txtenc_printf(e, "%s: {", upb_fielddef_name(f));
-    txtenc_endfield(e);
-    e->indent_depth++;
-
-    txtenc_field(e, key, key_f);
-    txtenc_field(e, val, val_f);
-
-    e->indent_depth--;
-    txtenc_indent(e);
-    txtenc_putstr(e, "}");
-    txtenc_endfield(e);
+    _upb_mapsorter_pushmap(&e->sorter, upb_fielddef_descriptortype(key_f), map,
+                           &sorted);
+    while (_upb_sortedmap_next(&e->sorter, map, &sorted, &ent)) {
+      upb_msgval key, val;
+      memcpy(&key, &ent.k, sizeof(key));
+      memcpy(&val, &ent.v, sizeof(val));
+      txtenc_mapentry(e, key, val, f);
+    }
+    _upb_mapsorter_popmap(&e->sorter, &sorted);
   }
 }
 
@@ -387,12 +436,14 @@ size_t upb_text_encode(const upb_msg *msg, const upb_msgdef *m,
 
   e.buf = buf;
   e.ptr = buf;
-  e.end = buf + size;
+  e.end = UPB_PTRADD(buf, size);
   e.overflow = 0;
   e.indent_depth = 0;
   e.options = options;
   e.ext_pool = ext_pool;
+  _upb_mapsorter_init(&e.sorter);
 
   txtenc_msg(&e, msg, m);
+  _upb_mapsorter_destroy(&e.sorter);
   return txtenc_nullz(&e, size);
 }

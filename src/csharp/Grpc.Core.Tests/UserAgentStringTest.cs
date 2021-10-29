@@ -50,10 +50,10 @@ namespace Grpc.Core.Tests
             helper = new MockServiceHelper(Host);
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                var userAgentString = context.RequestHeaders.First(m => (m.Key == "user-agent")).Value;
+                var userAgentString = context.RequestHeaders.GetValue("user-agent");
                 var parts = userAgentString.Split(new [] {' '}, 2);
-                Assert.AreEqual(string.Format("grpc-csharp/{0}", VersionInfo.CurrentVersion), parts[0]);
-                Assert.IsTrue(parts[1].StartsWith("grpc-c/"));
+                Assert.AreEqual($"grpc-csharp/{VersionInfo.CurrentVersion}", parts[0]);
+                Assert.That(parts[1], Does.Match(@"\(.*\) grpc-c/.*"));
                 return Task.FromResult("PASS");
             });
 
@@ -71,9 +71,10 @@ namespace Grpc.Core.Tests
                 channelOptions: new[] { new ChannelOption(ChannelOptions.PrimaryUserAgentString, "XYZ") });
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                var userAgentString = context.RequestHeaders.First(m => (m.Key == "user-agent")).Value;
+                var userAgentString = context.RequestHeaders.GetValue("user-agent");
                 var parts = userAgentString.Split(new[] { ' ' }, 3);
                 Assert.AreEqual("XYZ", parts[0]);
+                Assert.AreEqual($"grpc-csharp/{VersionInfo.CurrentVersion}", parts[1]);
                 return Task.FromResult("PASS");
             });
 

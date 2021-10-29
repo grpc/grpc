@@ -1,3 +1,30 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* This is a upb implementation of the upb conformance tests, see:
  *   https://github.com/google/protobuf/tree/master/conformance
  */
@@ -201,6 +228,16 @@ void DoTest(const ctx* c) {
   upb_msg *msg;
   upb_strview name = conformance_ConformanceRequest_message_type(c->request);
   const upb_msgdef *m = upb_symtab_lookupmsg2(c->symtab, name.data, name.size);
+#if 0
+  // Handy code for limiting conformance tests to a single input payload.
+  // This is a hack since the conformance runner doesn't give an easy way to
+  // specify what test should be run.
+  const char skip[] = "\343>\010\301\002\344>\230?\001\230?\002\230?\003";
+  upb_strview skip_str = upb_strview_make(skip, sizeof(skip) - 1);
+  upb_strview pb_payload =
+      conformance_ConformanceRequest_protobuf_payload(c->request);
+  if (!upb_strview_eql(pb_payload, skip_str)) m = NULL;
+#endif
 
   if (!m) {
     static const char msg[] = "Unknown message type.";
@@ -286,6 +323,7 @@ int main(void) {
     if (!DoTestIo(symtab)) {
       fprintf(stderr, "conformance_upb: received EOF from test runner "
                       "after %d tests, exiting\n", test_count);
+      upb_symtab_free(symtab);
       return 0;
     }
   }

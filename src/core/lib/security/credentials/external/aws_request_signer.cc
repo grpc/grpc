@@ -17,6 +17,9 @@
 
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_format.h"
@@ -24,9 +27,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
 
 namespace grpc_core {
 
@@ -55,7 +55,8 @@ std::string HMAC(const std::string& key, const std::string& msg) {
   unsigned int len;
   unsigned char digest[EVP_MAX_MD_SIZE];
   HMAC(EVP_sha256(), key.c_str(), key.length(),
-       (const unsigned char*)msg.c_str(), msg.length(), digest, &len);
+       reinterpret_cast<const unsigned char*>(msg.c_str()), msg.length(),
+       digest, &len);
   return std::string(digest, digest + len);
 }
 
@@ -65,7 +66,8 @@ AwsRequestSigner::AwsRequestSigner(
     std::string access_key_id, std::string secret_access_key, std::string token,
     std::string method, std::string url, std::string region,
     std::string request_payload,
-    std::map<std::string, std::string> additional_headers, grpc_error** error)
+    std::map<std::string, std::string> additional_headers,
+    grpc_error_handle* error)
     : access_key_id_(std::move(access_key_id)),
       secret_access_key_(std::move(secret_access_key)),
       token_(std::move(token)),
@@ -94,14 +96,13 @@ AwsRequestSigner::AwsRequestSigner(
     static_request_date_ =
         absl::FormatTime(kXAmzDateFormat, request_date, absl::UTCTimeZone());
   }
-  url_ = grpc_uri_parse(url, false);
-  if (url_ == nullptr) {
+  absl::StatusOr<URI> tmp_url = URI::Parse(url);
+  if (!tmp_url.ok()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Aws request url.");
     return;
   }
+  url_ = tmp_url.value();
 }
-
-AwsRequestSigner::~AwsRequestSigner() { grpc_uri_destroy(url_); }
 
 std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   std::string request_date_full;
@@ -123,15 +124,20 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back(method_);
   canonical_request_vector.emplace_back("\n");
   // 2. CanonicalURI
-
-  canonical_request_vector.emplace_back(*url_->path == '\0' ? "/" : url_->path);
+  canonical_request_vector.emplace_back(
+      url_.path().empty() ? "/" : absl::string_view(url_.path()));
   canonical_request_vector.emplace_back("\n");
   // 3. CanonicalQueryString
-  canonical_request_vector.emplace_back(url_->query);
+  std::vector<std::string> query_vector;
+  for (const URI::QueryParam& query_kv : url_.query_parameter_pairs()) {
+    query_vector.emplace_back(absl::StrCat(query_kv.key, "=", query_kv.value));
+  }
+  std::string query = absl::StrJoin(query_vector, "&");
+  canonical_request_vector.emplace_back(query);
   canonical_request_vector.emplace_back("\n");
   // 4. CanonicalHeaders
   if (request_headers_.empty()) {
-    request_headers_.insert({"host", url_->authority});
+    request_headers_.insert({"host", url_.authority()});
     if (!token_.empty()) {
       request_headers_.insert({"x-amz-security-token", token_});
     }
@@ -176,7 +182,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   string_to_sign_vector.emplace_back("\n");
   // 3. CredentialScope
   std::pair<absl::string_view, absl::string_view> host_parts =
-      absl::StrSplit(url_->authority, absl::MaxSplits('.', 1));
+      absl::StrSplit(url_.authority(), absl::MaxSplits('.', 1));
   std::string service_name(host_parts.first);
   std::string credential_scope = absl::StrFormat(
       "%s/%s/%s/aws4_request", request_date_short, region_, service_name);

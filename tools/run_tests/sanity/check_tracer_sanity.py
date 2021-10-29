@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017 gRPC authors.
 #
@@ -14,11 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import os
-import sys
 import re
+import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
@@ -28,7 +26,8 @@ pattern = re.compile("GRPC_TRACER_INITIALIZER\((true|false), \"(.*)\"\)")
 for root, dirs, files in os.walk('src/core'):
     for filename in files:
         path = os.path.join(root, filename)
-        if os.path.splitext(path)[1] != '.c': continue
+        if os.path.splitext(path)[1] != '.c':
+            continue
         with open(path) as f:
             text = f.read()
         for o in pattern.findall(text):

@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/transport/auth_filters.h"
-
 #include <string.h>
 
 #include <string>
@@ -37,6 +35,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
@@ -146,7 +145,7 @@ void grpc_auth_metadata_context_reset(
   }
 }
 
-static void add_error(grpc_error** combined, grpc_error* error) {
+static void add_error(grpc_error_handle* combined, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE) return;
   if (*combined == GRPC_ERROR_NONE) {
     *combined = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -155,14 +154,14 @@ static void add_error(grpc_error** combined, grpc_error* error) {
   *combined = grpc_error_add_child(*combined, error);
 }
 
-static void on_credentials_metadata(void* arg, grpc_error* input_error) {
+static void on_credentials_metadata(void* arg, grpc_error_handle input_error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call_element* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_auth_metadata_context_reset(&calld->auth_md_context);
-  grpc_error* error = GRPC_ERROR_REF(input_error);
+  grpc_error_handle error = GRPC_ERROR_REF(input_error);
   if (error == GRPC_ERROR_NONE) {
     GPR_ASSERT(calld->md_array.size <= MAX_CREDENTIALS_METADATA_COUNT);
     GPR_ASSERT(batch->send_initial_metadata);
@@ -225,13 +224,14 @@ void grpc_auth_metadata_context_build(
   gpr_free(host_and_port);
 }
 
-static void cancel_get_request_metadata(void* arg, grpc_error* error) {
+static void cancel_get_request_metadata(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
     calld->creds->cancel_get_request_metadata(&calld->md_array,
                                               GRPC_ERROR_REF(error));
   }
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_get_request_metadata");
 }
 
 static void send_security_metadata(grpc_call_element* elem,
@@ -311,7 +311,7 @@ static void send_security_metadata(grpc_call_element* elem,
   GRPC_CALL_STACK_REF(calld->owning_call, "get_request_metadata");
   GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
                     batch, grpc_schedule_on_exec_ctx);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (calld->creds->get_request_metadata(
           calld->pollent, calld->auth_md_context, &calld->md_array,
           &calld->async_result_closure, &error)) {
@@ -320,13 +320,16 @@ static void send_security_metadata(grpc_call_element* elem,
     GRPC_ERROR_UNREF(error);
   } else {
     // Async return; register cancellation closure with call combiner.
+    // TODO(yashykt): We would not need this ref if call combiners used
+    // Closure::Run() instead of ExecCtx::Run()
+    GRPC_CALL_STACK_REF(calld->owning_call, "cancel_get_request_metadata");
     calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
         &calld->get_request_metadata_cancel_closure,
         cancel_get_request_metadata, elem, grpc_schedule_on_exec_ctx));
   }
 }
 
-static void on_host_checked(void* arg, grpc_error* error) {
+static void on_host_checked(void* arg, grpc_error_handle error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call_element* elem =
@@ -335,20 +338,19 @@ static void on_host_checked(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     send_security_metadata(elem, batch);
   } else {
-    std::string error_msg = absl::StrCat(
-        "Invalid host ", grpc_core::StringViewFromSlice(calld->host),
-        " set in :authority metadata.");
     grpc_transport_stream_op_batch_finish_with_failure(
         batch,
         grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str()),
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                "Invalid host ", grpc_core::StringViewFromSlice(calld->host),
+                " set in :authority metadata.")),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
         calld->call_combiner);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
 }
 
-static void cancel_check_call_host(void* arg, grpc_error* error) {
+static void cancel_check_call_host(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -356,6 +358,7 @@ static void cancel_check_call_host(void* arg, grpc_error* error) {
     chand->security_connector->cancel_check_call_host(
         &calld->async_result_closure, GRPC_ERROR_REF(error));
   }
+  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_check_call_host");
 }
 
 static void client_auth_start_transport_stream_op_batch(
@@ -369,19 +372,19 @@ static void client_auth_start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     grpc_metadata_batch* metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    if (metadata->idx.named.path != nullptr) {
-      calld->method =
-          grpc_slice_ref_internal(GRPC_MDVALUE(metadata->idx.named.path->md));
+    if (metadata->legacy_index()->named.path != nullptr) {
+      calld->method = grpc_slice_ref_internal(
+          GRPC_MDVALUE(metadata->legacy_index()->named.path->md));
     }
-    if (metadata->idx.named.authority != nullptr) {
+    if (metadata->legacy_index()->named.authority != nullptr) {
       calld->host = grpc_slice_ref_internal(
-          GRPC_MDVALUE(metadata->idx.named.authority->md));
+          GRPC_MDVALUE(metadata->legacy_index()->named.authority->md));
       batch->handler_private.extra_arg = elem;
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
       absl::string_view call_host(grpc_core::StringViewFromSlice(calld->host));
-      grpc_error* error = GRPC_ERROR_NONE;
+      grpc_error_handle error = GRPC_ERROR_NONE;
       if (chand->security_connector->check_call_host(
               call_host, chand->auth_context.get(),
               &calld->async_result_closure, &error)) {
@@ -390,6 +393,9 @@ static void client_auth_start_transport_stream_op_batch(
         GRPC_ERROR_UNREF(error);
       } else {
         // Async return; register cancellation closure with call combiner.
+        // TODO(yashykt): We would not need this ref if call combiners used
+        // Closure::Run() instead of ExecCtx::Run()
+        GRPC_CALL_STACK_REF(calld->owning_call, "cancel_check_call_host");
         calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
             &calld->check_call_host_cancel_closure, cancel_check_call_host,
             elem, grpc_schedule_on_exec_ctx));
@@ -403,7 +409,7 @@ static void client_auth_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-static grpc_error* client_auth_init_call_elem(
+static grpc_error_handle client_auth_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
@@ -424,7 +430,7 @@ static void client_auth_destroy_call_elem(
 }
 
 /* Constructor for channel_data */
-static grpc_error* client_auth_init_channel_elem(
+static grpc_error_handle client_auth_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down

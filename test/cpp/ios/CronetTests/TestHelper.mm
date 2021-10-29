@@ -28,8 +28,8 @@ using grpc::testing::EchoTestService;
 using grpc::ServerContext;
 using grpc::Status;
 
-std::atomic<int> DummyInterceptor::num_times_run_;
-std::atomic<int> DummyInterceptor::num_times_run_reverse_;
+std::atomic<int> PhonyInterceptor::num_times_run_;
+std::atomic<int> PhonyInterceptor::num_times_run_reverse_;
 
 std::string ToString(const grpc::string_ref& r) { return std::string(r.data(), r.size()); }
 
@@ -175,7 +175,7 @@ Status TestServiceImpl::BidiStream(ServerContext* context,
   return Status::OK;
 }
 
-void DummyInterceptor::Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
+void PhonyInterceptor::Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
   if (methods->QueryInterceptionHookPoint(
           grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
     num_times_run_++;
@@ -186,12 +186,12 @@ void DummyInterceptor::Intercept(grpc::experimental::InterceptorBatchMethods* me
   methods->Proceed();
 }
 
-void DummyInterceptor::Reset() {
+void PhonyInterceptor::Reset() {
   num_times_run_.store(0);
   num_times_run_reverse_.store(0);
 }
 
-int DummyInterceptor::GetNumTimesRun() {
+int PhonyInterceptor::GetNumTimesRun() {
   NSCAssert(num_times_run_.load() == num_times_run_reverse_.load(),
             @"Interceptor must run same number of times in both directions");
   return num_times_run_.load();

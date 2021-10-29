@@ -20,7 +20,7 @@ package(
     ],
 )
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_py_binary")
 load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
@@ -38,7 +38,6 @@ grpc_cc_test(
     name = "cancel_ares_query_test",
     srcs = ["cancel_ares_query_test.cc"],
     external_deps = ["gtest"],
-    flaky = True,  # TODO(b/157516105)
     deps = [
         ":dns_test_util",
         "//:gpr",

@@ -68,7 +68,7 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              '/abc/dummy_method',
+                              '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -89,7 +89,7 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($metadata['k1'], ['v1']);
         $this->assertSame($metadata['k2'], ['v2']);
 
-        $this->assertSame('/abc/dummy_method', $event->method);
+        $this->assertSame('/abc/phony_method', $event->method);
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
@@ -138,21 +138,17 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
                           get_class($call_credentials3));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testCreateFromPluginInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $call_credentials = Grpc\CallCredentials::createFromPlugin(
             'callbackFunc'
         );
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testCreateCompositeInvalidParam()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $call_credentials3 = Grpc\CallCredentials::createComposite(
             $this->call_credentials,
             $this->credentials

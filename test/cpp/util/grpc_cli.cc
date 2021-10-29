@@ -60,13 +60,14 @@
        address of the connection that each RPC is made on to stderr.
 */
 
-#include <grpcpp/support/config.h>
-
 #include <fstream>
 #include <functional>
 #include <iostream>
 
 #include "absl/flags/flag.h"
+
+#include <grpcpp/support/config.h>
+
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/grpc_tool.h"
 #include "test/cpp/util/test_config.h"
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   return grpc::testing::GrpcToolMainLib(
-      argc, (const char**)argv, grpc::testing::CliCredentials(),
+      argc, const_cast<const char**>(argv), grpc::testing::CliCredentials(),
       std::bind(SimplePrint, absl::GetFlag(FLAGS_outfile),
                 std::placeholders::_1));
 }

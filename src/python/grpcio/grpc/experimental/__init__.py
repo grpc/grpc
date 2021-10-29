@@ -22,6 +22,7 @@ import sys
 import warnings
 
 import grpc
+from grpc._cython import cygrpc as _cygrpc
 
 _EXPERIMENTAL_APIS_USED = set()
 
@@ -41,19 +42,16 @@ class UsageError(Exception):
     """Raised by the gRPC library to indicate usage not allowed by the API."""
 
 
-_insecure_channel_credentials_sentinel = object()
+# It's important that there be a single insecure credentials object so that its
+# hash is deterministic and can be used for indexing in the simple stubs cache.
 _insecure_channel_credentials = grpc.ChannelCredentials(
-    _insecure_channel_credentials_sentinel)
+    _cygrpc.channel_credentials_insecure())
 
 
 def insecure_channel_credentials():
     """Creates a ChannelCredentials for use with an insecure channel.
 
     THIS IS AN EXPERIMENTAL API.
-
-    This is not for use with secure_channel function. Intead, this should be
-    used with grpc.unary_unary, grpc.unary_stream, grpc.stream_unary, or
-    grpc.stream_stream.
     """
     return _insecure_channel_credentials
 
@@ -123,5 +121,8 @@ __all__ = (
 )
 
 if sys.version_info > (3, 6):
-    from grpc._simple_stubs import unary_unary, unary_stream, stream_unary, stream_stream
+    from grpc._simple_stubs import stream_stream
+    from grpc._simple_stubs import stream_unary
+    from grpc._simple_stubs import unary_stream
+    from grpc._simple_stubs import unary_unary
     __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)

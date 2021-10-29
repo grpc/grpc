@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/cpp/qps/driver.h"
+
 #include <cinttypes>
 #include <deque>
 #include <list>
@@ -37,7 +39,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/client.h"
-#include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
@@ -147,7 +148,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   // all clients
   double qps = 0;
   double client_system_cpu_load = 0, client_user_cpu_load = 0;
-  for (size_t i = 0; i < result->client_stats_size(); i++) {
+  for (int i = 0; i < result->client_stats_size(); i++) {
     auto client_stat = result->client_stats(i);
     qps += client_stat.latencies().count() / client_stat.time_elapsed();
     client_system_cpu_load +=
@@ -158,7 +159,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   // Calculate cpu load for each server and then aggregate results for all
   // servers
   double server_system_cpu_load = 0, server_user_cpu_load = 0;
-  for (size_t i = 0; i < result->server_stats_size(); i++) {
+  for (int i = 0; i < result->server_stats_size(); i++) {
     auto server_stat = result->server_stats(i);
     server_system_cpu_load +=
         server_stat.time_system() / server_stat.time_elapsed();
@@ -269,7 +270,12 @@ static void ReceiveFinalStatusFromClients(
             stats.request_results(i).count();
       }
       result.add_client_stats()->CopyFrom(stats);
-      // That final status should be the last message on the client stream
+      // Check that final status was should be the last message on the client
+      // stream.
+      // TODO(jtattermusch): note that that waiting for Read to return can take
+      // long on some scenarios (e.g. unconstrained streaming_from_server). See
+      // https://github.com/grpc/grpc/blob/3bd0cd208ea549760a2daf595f79b91b247fe240/test/cpp/qps/server_async.cc#L176
+      // where the shutdown delay pretty much determines the wait here.
       GPR_ASSERT(!client->stream->Read(&client_status));
     } else {
       gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
@@ -634,9 +640,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ReceiveFinalStatusFromServer(servers, *result);
   ShutdownServers(servers, *result);
 
-  if (g_inproc_servers != nullptr) {
-    delete g_inproc_servers;
-  }
+  delete g_inproc_servers;
 
   merged_latencies.FillProto(result->mutable_latencies());
   for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
@@ -664,10 +668,10 @@ bool RunQuit(
         workers[i],
         GetCredType(workers[i], per_worker_credential_types, credential_type),
         nullptr /* call creds */, {} /* interceptor creators */));
-    Void dummy;
+    Void phony;
     grpc::ClientContext ctx;
     ctx.set_wait_for_ready(true);
-    Status s = stub->QuitWorker(&ctx, dummy, &dummy);
+    Status s = stub->QuitWorker(&ctx, phony, &phony);
     if (!s.ok()) {
       gpr_log(GPR_ERROR, "Worker %zu could not be properly quit because %s", i,
               s.error_message().c_str());

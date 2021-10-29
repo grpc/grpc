@@ -33,3 +33,6 @@ build --project_id=grpc-testing
 
 # print output for tests that fail (default is "summary")
 build --test_output=errors
+
+# Enable strict warnings to keep it warning-free.
+build --define=use_strict_warning=true

@@ -13,20 +13,18 @@
 # limitations under the License.
 """Tests of grpc_reflection.v1alpha.reflection."""
 
+import sys
 import unittest
 
+from google.protobuf import descriptor_pb2
+from google.protobuf import descriptor_pool
 import grpc
-
 from grpc_reflection.v1alpha import reflection
 from grpc_reflection.v1alpha import reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc
 
-from google.protobuf import descriptor_pool
-from google.protobuf import descriptor_pb2
-
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
-
 from tests.unit import test_common
 
 _EMPTY_PROTO_FILE_NAME = 'src/proto/grpc/testing/empty.proto'
@@ -49,6 +47,8 @@ def _file_descriptor_to_proto(descriptor):
     return proto.SerializeToString()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class ReflectionServicerTest(unittest.TestCase):
 
     # TODO(https://github.com/grpc/grpc/issues/17844)

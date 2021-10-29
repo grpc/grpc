@@ -13,17 +13,19 @@
 # limitations under the License.
 """Client-side fork interop tests as a unit test."""
 
-import six
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
+
 from grpc._cython import cygrpc
+import six
+
 from tests.fork import methods
 
 # New instance of multiprocessing.Process using fork without exec can and will
-# hang if the Python process has any other threads running. This includes the
+# freeze if the Python process has any other threads running. This includes the
 # additional thread spawned by our _runner.py class. So in order to test our
 # compatibility with multiprocessing, we first fork+exec a new process to ensure
 # we don't have any conflicting background threads.

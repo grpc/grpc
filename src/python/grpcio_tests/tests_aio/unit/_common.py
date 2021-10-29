@@ -13,13 +13,18 @@
 # limitations under the License.
 
 import asyncio
-import grpc
 from typing import AsyncIterable
-from grpc.experimental import aio
-from grpc.aio._typing import MetadatumType, MetadataKey, MetadataValue
+
+import grpc
 from grpc.aio._metadata import Metadata
+from grpc.aio._typing import MetadataKey
+from grpc.aio._typing import MetadataValue
+from grpc.aio._typing import MetadatumType
+from grpc.experimental import aio
 
 from tests.unit.framework.common import test_constants
+
+ADHOC_METHOD = '/test/AdHoc'
 
 
 def seen_metadata(expected: Metadata, actual: Metadata):
@@ -97,3 +102,20 @@ class CountingResponseIterator:
 
     def __aiter__(self):
         return self._forward_responses()
+
+
+class AdhocGenericHandler(grpc.GenericRpcHandler):
+    """A generic handler to plugin testing server methods on the fly."""
+    _handler: grpc.RpcMethodHandler
+
+    def __init__(self):
+        self._handler = None
+
+    def set_adhoc_handler(self, handler: grpc.RpcMethodHandler):
+        self._handler = handler
+
+    def service(self, handler_call_details):
+        if handler_call_details.method == ADHOC_METHOD:
+            return self._handler
+        else:
+            return None

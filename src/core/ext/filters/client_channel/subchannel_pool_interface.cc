@@ -20,10 +20,11 @@
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/useful.h"
 
 // The subchannel pool to reuse subchannels.
-#define GRPC_ARG_SUBCHANNEL_POOL "grpc.subchannel_pool"
+#define GRPC_ARG_SUBCHANNEL_POOL "grpc.internal.subchannel_pool"
 // The subchannel key ID that is only used in test to make each key unique.
 #define GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID "grpc.subchannel_key_test_only_id"
 
@@ -31,8 +32,9 @@ namespace grpc_core {
 
 TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
-SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
-  Init(args, grpc_channel_args_normalize);
+SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
+                             const grpc_channel_args* args) {
+  Init(address, args, grpc_channel_args_normalize);
 }
 
 SubchannelKey::~SubchannelKey() {
@@ -40,23 +42,50 @@ SubchannelKey::~SubchannelKey() {
 }
 
 SubchannelKey::SubchannelKey(const SubchannelKey& other) {
-  Init(other.args_, grpc_channel_args_copy);
+  Init(other.address_, other.args_, grpc_channel_args_copy);
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
+  if (&other == this) {
+    return *this;
+  }
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
-  Init(other.args_, grpc_channel_args_copy);
+  Init(other.address_, other.args_, grpc_channel_args_copy);
   return *this;
 }
 
-int SubchannelKey::Cmp(const SubchannelKey& other) const {
-  return grpc_channel_args_compare(args_, other.args_);
+SubchannelKey::SubchannelKey(SubchannelKey&& other) noexcept {
+  address_ = other.address_;
+  args_ = other.args_;
+  other.args_ = nullptr;
+}
+
+SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) noexcept {
+  address_ = other.address_;
+  args_ = other.args_;
+  other.args_ = nullptr;
+  return *this;
+}
+
+bool SubchannelKey::operator<(const SubchannelKey& other) const {
+  if (address_.len < other.address_.len) return true;
+  if (address_.len > other.address_.len) return false;
+  int r = memcmp(address_.addr, other.address_.addr, address_.len);
+  if (r < 0) return true;
+  if (r > 0) return false;
+  return grpc_channel_args_compare(args_, other.args_) < 0;
 }
 
 void SubchannelKey::Init(
-    const grpc_channel_args* args,
+    const grpc_resolved_address& address, const grpc_channel_args* args,
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
+  address_ = address;
   args_ = copy_channel_args(args);
+}
+
+std::string SubchannelKey::ToString() const {
+  return absl::StrCat("{address=", grpc_sockaddr_to_uri(&address_),
+                      ", args=", grpc_channel_args_string(args_), "}");
 }
 
 namespace {
@@ -72,7 +101,7 @@ void arg_destroy(void* p) {
   subchannel_pool->Unref();
 }
 
-int arg_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int arg_cmp(void* a, void* b) { return QsortCompare(a, b); }
 
 const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
     arg_copy, arg_destroy, arg_cmp};

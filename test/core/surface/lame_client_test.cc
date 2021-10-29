@@ -21,6 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/surface/channel.h"
@@ -36,11 +37,11 @@ class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
   }
 };
 
-static void* tag(intptr_t x) { return (void*)x; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_closure transport_op_cb;
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void test_transport_op(grpc_channel* channel) {
   grpc_core::ExecCtx exec_ctx;
@@ -84,7 +85,7 @@ int main(int argc, char** argv) {
 
   test_transport_op(chan);
 
-  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
+  GPR_ASSERT(GRPC_CHANNEL_TRANSIENT_FAILURE ==
              grpc_channel_check_connectivity_state(chan, 0));
 
   cq = grpc_completion_queue_create_for_next(nullptr);

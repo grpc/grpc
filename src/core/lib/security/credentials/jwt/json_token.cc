@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
 #include <string.h>
@@ -30,17 +29,15 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmodule-import-in-extern-c"
 extern "C" {
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 }
-#pragma clang diagnostic pop
 
 using grpc_core::Json;
 
@@ -75,7 +72,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   BIO* bio = nullptr;
   const char* prop_value;
   int success = 0;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -112,7 +109,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
     goto end;
   }
   result.private_key =
-      PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, (void*)"");
+      PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, const_cast<char*>(""));
   if (result.private_key == nullptr) {
     gpr_log(GPR_ERROR, "Could not deserialize private key.");
     goto end;
@@ -127,7 +124,7 @@ end:
 
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_string, &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
   return grpc_auth_json_key_create_from_json(json);

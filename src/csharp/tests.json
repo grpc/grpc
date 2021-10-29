@@ -17,6 +17,7 @@
     "Grpc.Core.Internal.Tests.SliceBufferSafeHandleTest",
     "Grpc.Core.Internal.Tests.SliceTest",
     "Grpc.Core.Internal.Tests.TimespecTest",
+    "Grpc.Core.Internal.Tests.UserAgentStringProviderTest",
     "Grpc.Core.Internal.Tests.WellKnownStringsTest",
     "Grpc.Core.Tests.AppDomainUnloadTest",
     "Grpc.Core.Tests.AuthContextTest",

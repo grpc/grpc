@@ -38,7 +38,7 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   Alarm();
 
   /// Destroy the given completion queue alarm, cancelling it in the process.
-  ~Alarm();
+  ~Alarm() override;
 
   /// DEPRECATED: Create and set a completion queue alarm instance associated to
   /// \a cq.
@@ -56,6 +56,10 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// Once the alarm expires (at \a deadline) or it's cancelled (see \a Cancel),
   /// an event with tag \a tag will be added to \a cq. If the alarm expired, the
   /// event's success bit will be true, false otherwise (ie, upon cancellation).
+  //
+  // USAGE NOTE: This is frequently used to inject arbitrary tags into \a cq by
+  // setting an immediate deadline. Such usage allows synchronizing an external
+  // event with an application's \a grpc::CompletionQueue::Next loop.
   template <typename T>
   void Set(::grpc::CompletionQueue* cq, const T& deadline, void* tag) {
     SetInternal(cq, ::grpc::TimePoint<T>(deadline).raw_time(), tag);
@@ -66,8 +70,8 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   Alarm& operator=(const Alarm&) = delete;
 
   /// Alarms are movable.
-  Alarm(Alarm&& rhs) : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
-  Alarm& operator=(Alarm&& rhs) {
+  Alarm(Alarm&& rhs) noexcept : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
+  Alarm& operator=(Alarm&& rhs) noexcept {
     alarm_ = rhs.alarm_;
     rhs.alarm_ = nullptr;
     return *this;
@@ -77,7 +81,6 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// has already fired has no effect.
   void Cancel();
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   /// Set an alarm to invoke callback \a f. The argument to the callback
   /// states whether the alarm expired at \a deadline (true) or was cancelled
   /// (false)
@@ -85,32 +88,6 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   void Set(const T& deadline, std::function<void(bool)> f) {
     SetInternal(::grpc::TimePoint<T>(deadline).raw_time(), std::move(f));
   }
-#endif
-
-  /// NOTE: class experimental_type is not part of the public API of this class
-  /// TODO(vjpai): Move these contents to the public API of Alarm when
-  ///              they are no longer experimental
-  class experimental_type {
-   public:
-    explicit experimental_type(Alarm* alarm) : alarm_(alarm) {}
-
-    /// Set an alarm to invoke callback \a f. The argument to the callback
-    /// states whether the alarm expired at \a deadline (true) or was cancelled
-    /// (false)
-    template <typename T>
-    void Set(const T& deadline, std::function<void(bool)> f) {
-      alarm_->SetInternal(::grpc::TimePoint<T>(deadline).raw_time(),
-                          std::move(f));
-    }
-
-   private:
-    Alarm* alarm_;
-  };
-
-  /// NOTE: The function experimental() is not stable public API. It is a view
-  /// to the experimental components of this class. It may be changed or removed
-  /// at any time.
-  experimental_type experimental() { return experimental_type(this); }
 
  private:
   void SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,

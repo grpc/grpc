@@ -27,13 +27,15 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
+
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
+
 # It's ok to not import because this is only necessary to upload results to BQ.
 try:
     from python_utils.upload_test_results import upload_interop_results_to_bq
@@ -331,7 +333,7 @@ class GoLanguage:
         return ['go', 'run', 'server.go'] + args
 
     def global_env(self):
-        return {}
+        return {'GO111MODULE': 'on'}
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION
@@ -487,6 +489,7 @@ class PHP7Language:
 
     def __init__(self):
         self.client_cwd = None
+        self.server_cwd = None
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -494,6 +497,9 @@ class PHP7Language:
 
     def cloud_to_prod_env(self):
         return {}
+
+    def server_cmd(self, args):
+        return ['src/php/bin/interop_server.sh'] + args
 
     def global_env(self):
         return {}
@@ -505,7 +511,7 @@ class PHP7Language:
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _SKIP_COMPRESSION
 
     def __str__(self):
         return 'php7'
@@ -590,6 +596,9 @@ class RubyLanguage:
         return 'ruby'
 
 
+_PYTHON_BINARY = 'py39_native/bin/python'
+
+
 class PythonLanguage:
 
     def __init__(self):
@@ -600,13 +609,13 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--client', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py37_native/bin/python',
+            _PYTHON_BINARY,
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -615,8 +624,8 @@ class PythonLanguage:
 
     def server_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--server', '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--server', '--args="{}"'.format(' '.join(args))
         ]
 
     def global_env(self):
@@ -648,14 +657,13 @@ class PythonAsyncIOLanguage:
 
     def client_cmd(self, args):
         return [
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use-asyncio', '--client',
-            '--args="{}"'.format(' '.join(args))
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py', 'run_interop',
+            '--use-asyncio', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py37_native/bin/python',
+            _PYTHON_BINARY,
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -664,8 +672,8 @@ class PythonAsyncIOLanguage:
 
     def server_cmd(self, args):
         return [
+            _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
             'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
-            'run_interop', '--use-asyncio', '--server',
             '--args="{}"'.format(' '.join(args))
         ]
 
@@ -714,7 +722,7 @@ _LANGUAGES = {
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
     'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
-    'ruby', 'python', 'dart', 'pythonasyncio'
+    'ruby', 'python', 'dart', 'pythonasyncio', 'php7'
 ]
 
 _TEST_CASES = [

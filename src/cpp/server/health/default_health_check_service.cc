@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/cpp/server/health/default_health_check_service.h"
+
 #include <memory>
 
 #include "absl/memory/memory.h"
@@ -26,9 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/method_handler.h>
 
-#include "src/cpp/server/health/default_health_check_service.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
-#include "upb/upb.hpp"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 
@@ -243,10 +243,9 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
       grpc_health_v1_HealthCheckResponse_new(arena.ptr());
   grpc_health_v1_HealthCheckResponse_set_status(
       response_struct,
-      status == NOT_FOUND
-          ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
-          : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
-                              : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
+      status == NOT_FOUND ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
+      : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
+                          : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckResponse_serialize(
       response_struct, arena.ptr(), &buf_length);

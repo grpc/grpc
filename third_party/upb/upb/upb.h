@@ -1,6 +1,33 @@
 /*
-** This file contains shared definitions that are widely used across upb.
-*/
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * This file contains shared definitions that are widely used across upb.
+ */
 
 #ifndef UPB_H_
 #define UPB_H_
@@ -33,9 +60,12 @@ bool upb_ok(const upb_status *status);
 /* These are no-op if |status| is NULL. */
 void upb_status_clear(upb_status *status);
 void upb_status_seterrmsg(upb_status *status, const char *msg);
-void upb_status_seterrf(upb_status *status, const char *fmt, ...);
-void upb_status_vseterrf(upb_status *status, const char *fmt, va_list args);
-void upb_status_vappenderrf(upb_status *status, const char *fmt, va_list args);
+void upb_status_seterrf(upb_status *status, const char *fmt, ...)
+    UPB_PRINTF(2, 3);
+void upb_status_vseterrf(upb_status *status, const char *fmt, va_list args)
+    UPB_PRINTF(2, 0);
+void upb_status_vappenderrf(upb_status *status, const char *fmt, va_list args)
+    UPB_PRINTF(2, 0);
 
 /** upb_strview ************************************************************/
 
@@ -156,22 +186,40 @@ typedef struct {
 upb_arena *upb_arena_init(void *mem, size_t n, upb_alloc *alloc);
 void upb_arena_free(upb_arena *a);
 bool upb_arena_addcleanup(upb_arena *a, void *ud, upb_cleanup_func *func);
-void upb_arena_fuse(upb_arena *a, upb_arena *b);
+bool upb_arena_fuse(upb_arena *a, upb_arena *b);
 void *_upb_arena_slowmalloc(upb_arena *a, size_t size);
 
 UPB_INLINE upb_alloc *upb_arena_alloc(upb_arena *a) { return (upb_alloc*)a; }
+
+UPB_INLINE size_t _upb_arenahas(upb_arena *a) {
+  _upb_arena_head *h = (_upb_arena_head*)a;
+  return (size_t)(h->end - h->ptr);
+}
 
 UPB_INLINE void *upb_arena_malloc(upb_arena *a, size_t size) {
   _upb_arena_head *h = (_upb_arena_head*)a;
   void* ret;
   size = UPB_ALIGN_MALLOC(size);
 
-  if (UPB_UNLIKELY((size_t)(h->end - h->ptr) < size)) {
+  if (UPB_UNLIKELY(_upb_arenahas(a) < size)) {
     return _upb_arena_slowmalloc(a, size);
   }
 
   ret = h->ptr;
   h->ptr += size;
+  UPB_UNPOISON_MEMORY_REGION(ret, size);
+
+#if UPB_ASAN
+  {
+    size_t guard_size = 32;
+    if (_upb_arenahas(a) >= guard_size) {
+      h->ptr += guard_size;
+    } else {
+      h->ptr = h->end;
+    }
+  }
+#endif
+
   return ret;
 }
 
@@ -283,7 +331,7 @@ UPB_INLINE uint32_t _upb_be_swap32(uint32_t val) {
     return val;
   } else {
     return ((val & 0xff) << 24) | ((val & 0xff00) << 8) |
-           ((val & 0xff0000ULL) >> 8) | ((val & 0xff000000ULL) >> 24);
+           ((val & 0xff0000) >> 8) | ((val & 0xff000000) >> 24);
   }
 }
 
@@ -291,12 +339,23 @@ UPB_INLINE uint64_t _upb_be_swap64(uint64_t val) {
   if (_upb_isle()) {
     return val;
   } else {
-    return ((val & 0xff) << 56) | ((val & 0xff00) << 40) |
-           ((val & 0xff0000) << 24) | ((val & 0xff000000) << 8) |
-           ((val & 0xff00000000ULL) >> 8) | ((val & 0xff0000000000ULL) >> 24) |
-           ((val & 0xff000000000000ULL) >> 40) |
-           ((val & 0xff00000000000000ULL) >> 56);
+    return ((uint64_t)_upb_be_swap32(val) << 32) | _upb_be_swap32(val >> 32);
   }
+}
+
+UPB_INLINE int _upb_lg2ceil(int x) {
+  if (x <= 1) return 0;
+#ifdef __GNUC__
+  return 32 - __builtin_clz(x - 1);
+#else
+  int lg2 = 0;
+  while (1 << lg2 < x) lg2++;
+  return lg2;
+#endif
+}
+
+UPB_INLINE int _upb_lg2ceilsize(int x) {
+  return 1 << _upb_lg2ceil(x);
 }
 
 #include "upb/port_undef.inc"

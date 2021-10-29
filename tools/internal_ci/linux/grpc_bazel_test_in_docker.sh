@@ -26,3 +26,4 @@ ${name}')
 cd /var/local/git/grpc
 
 bazel test //test/...
+bazel test //test/cpp/end2end:admin_services_end2end_test --define=grpc_no_xds=true

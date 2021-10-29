@@ -102,7 +102,7 @@
     s.preserve_paths = plugin
 
     # Restrict the protoc version to the one supported by this plugin.
-    s.dependency '!ProtoCompiler', '3.13.0'
+    s.dependency '!ProtoCompiler', '${settings.protobuf_version}'
     # For the Protobuf dependency not to complain:
     s.ios.deployment_target = '9.0'
     s.osx.deployment_target = '10.10'
@@ -114,6 +114,7 @@
     # present in this pod's directory. We use that knowledge to check for the existence of the file
     # and, if absent, compile the plugin from the local sources.
     s.prepare_command = <<-CMD
+      set -e
       #{bazel} build //src/compiler:grpc_cpp_plugin
     CMD
   end

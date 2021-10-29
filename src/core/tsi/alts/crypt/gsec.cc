@@ -43,8 +43,9 @@ grpc_status_code gsec_aead_crypter_encrypt(
     char** error_details) {
   if (crypter != nullptr && crypter->vtable != nullptr &&
       crypter->vtable->encrypt_iovec != nullptr) {
-    struct iovec aad_vec = {(void*)aad, aad_length};
-    struct iovec plaintext_vec = {(void*)plaintext, plaintext_length};
+    struct iovec aad_vec = {const_cast<uint8_t*>(aad), aad_length};
+    struct iovec plaintext_vec = {const_cast<uint8_t*>(plaintext),
+                                  plaintext_length};
     struct iovec ciphertext_vec = {ciphertext_and_tag,
                                    ciphertext_and_tag_length};
     return crypter->vtable->encrypt_iovec(
@@ -81,8 +82,8 @@ grpc_status_code gsec_aead_crypter_decrypt(
     size_t plaintext_length, size_t* bytes_written, char** error_details) {
   if (crypter != nullptr && crypter->vtable != nullptr &&
       crypter->vtable->decrypt_iovec != nullptr) {
-    struct iovec aad_vec = {(void*)aad, aad_length};
-    struct iovec ciphertext_vec = {(void*)ciphertext_and_tag,
+    struct iovec aad_vec = {const_cast<uint8_t*>(aad), aad_length};
+    struct iovec ciphertext_vec = {const_cast<uint8_t*>(ciphertext_and_tag),
                                    ciphertext_and_tag_length};
     struct iovec plaintext_vec = {plaintext, plaintext_length};
     return crypter->vtable->decrypt_iovec(

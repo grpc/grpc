@@ -23,13 +23,13 @@
 
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
-#import "src/core/lib/iomgr/cfstream_handle.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
+#import "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/ev_apple.h"
@@ -62,7 +62,7 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   void* client_callback_info) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error* error;
+  grpc_error_handle error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
   if (grpc_tcp_trace.enabled()) {
@@ -97,7 +97,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    void* clientCallBackInfo) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error* error;
+  grpc_error_handle error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
   if (grpc_tcp_trace.enabled()) {
@@ -171,7 +171,7 @@ void CFStreamHandle::NotifyOnWrite(grpc_closure* closure) {
   write_event_.NotifyOn(closure);
 }
 
-void CFStreamHandle::Shutdown(grpc_error* error) {
+void CFStreamHandle::Shutdown(grpc_error_handle error) {
   open_event_.SetShutdown(GRPC_ERROR_REF(error));
   read_event_.SetShutdown(GRPC_ERROR_REF(error));
   write_event_.SetShutdown(GRPC_ERROR_REF(error));
@@ -202,9 +202,9 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
 
 #else
 
-/* Creating a dummy function so that the grpc_cfstream library will be
+/* Creating a phony function so that the grpc_cfstream library will be
  * non-empty.
  */
-void CFStreamDummy() {}
+void CFStreamPhony() {}
 
 #endif

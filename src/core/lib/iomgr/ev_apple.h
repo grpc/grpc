@@ -40,4 +40,4 @@ extern grpc_pollset_set_vtable grpc_apple_pollset_set_vtable;
 
 #endif
 
-#endif
+#endif  // GRPC_CORE_LIB_IOMGR_EV_APPLE_H

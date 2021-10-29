@@ -72,7 +72,7 @@ TEST(ExamineStackTest, AbseilStackProvider) {
   EXPECT_NE(stack_trace, absl::nullopt);
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace->c_str());
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
-  EXPECT_TRUE(stack_trace->find("GetCurrentStackTrace") != -1);
+  EXPECT_TRUE(stack_trace->find("GetCurrentStackTrace") != std::string::npos);
 #endif
 }
 

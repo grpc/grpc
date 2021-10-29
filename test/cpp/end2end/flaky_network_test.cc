@@ -16,20 +16,7 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <condition_variable>
@@ -38,12 +25,26 @@
 #include <random>
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/debugger_macros.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -226,19 +227,10 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     }
     Status status = stub->Echo(&context, request, response.get());
     auto ok = status.ok();
-    int stream_id = 0;
-    grpc_call* call = context.c_call();
-    if (call) {
-      grpc_chttp2_stream* stream = grpc_chttp2_stream_from_call(call);
-      if (stream) {
-        stream_id = stream->id;
-      }
-    }
     if (ok) {
-      gpr_log(GPR_DEBUG, "RPC with stream_id %d succeeded", stream_id);
+      gpr_log(GPR_DEBUG, "RPC succeeded");
     } else {
-      gpr_log(GPR_DEBUG, "RPC with stream_id %d failed: %s", stream_id,
-              status.error_message().c_str());
+      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
     }
     return ok;
   }

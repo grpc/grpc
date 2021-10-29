@@ -16,6 +16,14 @@
  *
  */
 
+#include <sys/time.h>
+
+#include <thread>
+
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -26,18 +34,12 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "absl/memory/memory.h"
-
 #include "src/core/lib/iomgr/timer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/subprocess.h"
-
-#include <gtest/gtest.h>
-#include <sys/time.h>
-#include <thread>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -97,7 +99,7 @@ namespace {
 // gpr_now() is called with invalid clock_type
 TEST(TimespecTest, GprNowInvalidClockType) {
   // initialize to some junk value
-  gpr_clock_type invalid_clock_type = (gpr_clock_type)32641;
+  gpr_clock_type invalid_clock_type = static_cast<gpr_clock_type>(32641);
   EXPECT_DEATH(gpr_now(invalid_clock_type), ".*");
 }
 

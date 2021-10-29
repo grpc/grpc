@@ -47,9 +47,15 @@ static constexpr uint32_t kDefaultWindow = 65535;
 static constexpr int64_t kMaxWindow = static_cast<int64_t>((1u << 31) - 1);
 // TODO(ncteisen): Tune this
 static constexpr uint32_t kFrameSize = 1024 * 1024;
+static constexpr const uint32_t kMinInitialWindowSize = 128;
+static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
+// The maximum per-stream flow control window delta to advertise.
+static constexpr const uint32_t kMaxWindowDelta = (1u << 20);
 
 class TransportFlowControl;
 class StreamFlowControl;
+
+extern bool g_test_only_transport_flow_control_window_check;
 
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
@@ -168,7 +174,7 @@ class TransportFlowControlBase {
 
   // Called to do bookkeeping when a stream owned by this transport receives
   // data from the wire. Also does error checking for frame size.
-  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) = 0;
+  virtual grpc_error_handle RecvData(int64_t /* incoming_frame_size */) = 0;
 
   // Called to do bookkeeping when we receive a WINDOW_UPDATE frame.
   virtual void RecvUpdate(uint32_t /* size */) = 0;
@@ -201,7 +207,7 @@ class TransportFlowControlBase {
 class TransportFlowControlDisabled final : public TransportFlowControlBase {
  public:
   // Maxes out all values
-  TransportFlowControlDisabled(grpc_chttp2_transport* t);
+  explicit TransportFlowControlDisabled(grpc_chttp2_transport* t);
 
   bool flow_control_enabled() const override { return false; }
 
@@ -210,7 +216,7 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
   FlowControlAction MakeAction() override { return FlowControlAction(); }
   FlowControlAction PeriodicUpdate() override { return FlowControlAction(); }
   void StreamSentData(int64_t /* size */) override {}
-  grpc_error* RecvData(int64_t /* incoming_frame_size */) override {
+  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override {
     return GRPC_ERROR_NONE;
   }
   void RecvUpdate(uint32_t /* size */) override {}
@@ -246,14 +252,14 @@ class TransportFlowControl final : public TransportFlowControlBase {
 
   void StreamSentData(int64_t size) override { remote_window_ -= size; }
 
-  grpc_error* ValidateRecvData(int64_t incoming_frame_size);
+  grpc_error_handle ValidateRecvData(int64_t incoming_frame_size);
   void CommitRecvData(int64_t incoming_frame_size) {
     announced_window_ -= incoming_frame_size;
   }
 
-  grpc_error* RecvData(int64_t incoming_frame_size) override {
+  grpc_error_handle RecvData(int64_t incoming_frame_size) override {
     FlowControlTrace trace("  data recv", this, nullptr);
-    grpc_error* error = ValidateRecvData(incoming_frame_size);
+    grpc_error_handle error = ValidateRecvData(incoming_frame_size);
     if (error != GRPC_ERROR_NONE) return error;
     CommitRecvData(incoming_frame_size);
     return GRPC_ERROR_NONE;
@@ -268,10 +274,10 @@ class TransportFlowControl final : public TransportFlowControlBase {
   // See comment above announced_stream_total_over_incoming_window_ for the
   // logic behind this decision.
   int64_t target_window() const override {
-    return static_cast<uint32_t> GPR_MIN(
-        (int64_t)((1u << 31) - 1),
-        announced_stream_total_over_incoming_window_ +
-            target_initial_window_size_);
+    return static_cast<uint32_t>(
+        std::min(static_cast<int64_t>((1u << 31) - 1),
+                 announced_stream_total_over_incoming_window_ +
+                     target_initial_window_size_));
   }
 
   const grpc_chttp2_transport* transport() const { return t_; }
@@ -352,7 +358,7 @@ class StreamFlowControlBase {
   virtual void SentData(int64_t /* outgoing_frame_size */) = 0;
 
   // Bookkeeping and error checking for when data is received by this stream.
-  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) = 0;
+  virtual grpc_error_handle RecvData(int64_t /* incoming_frame_size */) = 0;
 
   // Called to check if this stream needs to send a WINDOW_UPDATE frame.
   virtual uint32_t MaybeSendUpdate() = 0;
@@ -373,9 +379,9 @@ class StreamFlowControlBase {
   virtual void TestOnlyForceHugeWindow() {}
 
   // Getters
-  int64_t remote_window_delta() { return remote_window_delta_; }
-  int64_t local_window_delta() { return local_window_delta_; }
-  int64_t announced_window_delta() { return announced_window_delta_; }
+  int64_t remote_window_delta() const { return remote_window_delta_; }
+  int64_t local_window_delta() const { return local_window_delta_; }
+  int64_t announced_window_delta() const { return announced_window_delta_; }
 
  protected:
   friend class ::grpc::testing::TrickledCHTTP2;
@@ -395,7 +401,7 @@ class StreamFlowControlDisabled : public StreamFlowControlBase {
   }
   FlowControlAction MakeAction() override { return FlowControlAction(); }
   void SentData(int64_t /* outgoing_frame_size */) override {}
-  grpc_error* RecvData(int64_t /* incoming_frame_size */) override {
+  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override {
     return GRPC_ERROR_NONE;
   }
   uint32_t MaybeSendUpdate() override { return 0; }
@@ -427,7 +433,7 @@ class StreamFlowControl final : public StreamFlowControlBase {
   }
 
   // we have received data from the wire
-  grpc_error* RecvData(int64_t incoming_frame_size) override;
+  grpc_error_handle RecvData(int64_t incoming_frame_size) override;
 
   // returns an announce if we should send a stream update to our peer, else
   // returns zero
@@ -479,4 +485,4 @@ extern TestOnlyTransportTargetWindowEstimatesMocker*
 }  // namespace chttp2
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H

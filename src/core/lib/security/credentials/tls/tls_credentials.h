@@ -51,7 +51,7 @@ class TlsServerCredentials final : public grpc_server_credentials {
   ~TlsServerCredentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override;
+  create_security_connector(const grpc_channel_args* /* args */) override;
 
   grpc_tls_credentials_options* options() const { return options_.get(); }
 

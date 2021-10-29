@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/http/httpcli.h"
-
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -30,9 +28,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -43,7 +42,7 @@
 class grpc_httpcli_ssl_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
-  grpc_httpcli_ssl_channel_security_connector(char* secure_peer_name)
+  explicit grpc_httpcli_ssl_channel_security_connector(char* secure_peer_name)
       : grpc_channel_security_connector(
             /*url_scheme=*/nullptr,
             /*channel_creds=*/nullptr,
@@ -91,18 +90,21 @@ class grpc_httpcli_ssl_channel_security_connector final
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
 
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&
         !tsi_ssl_peer_matches_name(&peer, secure_peer_name_)) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Peer name ", secure_peer_name_,
-                       " is not in peer certificate")
-              .c_str());
+      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Peer name ", secure_peer_name_, " is not in peer certificate"));
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
+  }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other_sc) const override {
@@ -115,13 +117,13 @@ class grpc_httpcli_ssl_channel_security_connector final
   bool check_call_host(absl::string_view /*host*/,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
-                       grpc_error** error) override {
+                       grpc_error_handle* error) override {
     *error = GRPC_ERROR_NONE;
     return true;
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error* error) override {
+                              grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -160,13 +162,12 @@ struct on_done_closure {
   void* arg;
   grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
 };
-static void on_handshake_done(void* arg, grpc_error* error) {
+static void on_handshake_done(void* arg, grpc_error_handle error) {
   auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   on_done_closure* c = static_cast<on_done_closure*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(error);
-    gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
-
+    gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
+            grpc_error_std_string(error).c_str());
     c->func(c->arg, nullptr);
   } else {
     grpc_channel_args_destroy(args->args);
@@ -202,9 +203,9 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
   grpc_channel_args args = {1, &channel_arg};
   c->handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-  grpc_core::HandshakerRegistry::AddHandshakers(
-      grpc_core::HANDSHAKER_CLIENT, &args, /*interested_parties=*/nullptr,
-      c->handshake_mgr.get());
+  grpc_core::CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      grpc_core::HANDSHAKER_CLIENT, &args,
+      /*interested_parties=*/nullptr, c->handshake_mgr.get());
   c->handshake_mgr->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,
                                 /*acceptor=*/nullptr, on_handshake_done,
                                 /*user_data=*/c);

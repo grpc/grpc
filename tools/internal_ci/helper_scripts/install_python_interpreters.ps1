@@ -85,7 +85,7 @@ $Python39x86Config = @{
     PythonInstallPath = "C:\Python39_32bit"
     PythonInstallerHash = "4a2812db8ab9f2e522c96c7728cfcccb"
 }
-# Install-Python @Python39x86Config
+Install-Python @Python39x86Config
 
 $Python39x64Config = @{
     PythonVersion = "3.9.0"
@@ -93,4 +93,21 @@ $Python39x64Config = @{
     PythonInstallPath = "C:\Python39"
     PythonInstallerHash = "b61a33dc28f13b561452f3089c87eb63"
 }
-# Install-Python @Python39x64Config
+Install-Python @Python39x64Config
+
+# Python 3.10
+$Python310x86Config = @{
+    PythonVersion = "3.10.0"
+    PythonInstaller = "python-3.10.0rc1"
+    PythonInstallPath = "C:\Python310_32bit"
+    PythonInstallerHash = "6de353f2f7422aa030d4ccc788ffa75e"
+}
+Install-Python @Python310x86Config
+
+$Python310x64Config = @{
+    PythonVersion = "3.10.0"
+    PythonInstaller = "python-3.10.0rc1-amd64"
+    PythonInstallPath = "C:\Python310"
+    PythonInstallerHash = "39135519b044757f0a3b09d63612b0da"
+}
+Install-Python @Python310x64Config

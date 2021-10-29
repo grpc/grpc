@@ -125,9 +125,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (g_driver != nullptr) {
-    delete g_driver;
-  }
+  delete g_driver;
+
   g_driver = nullptr;
   for (int i = 0; i < kNumWorkers; ++i) {
     if (g_workers[i] != nullptr) {

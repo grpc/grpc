@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 
 extern const grpc_channel_filter grpc_message_size_filter;
@@ -51,7 +51,7 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
  public:
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* /*args*/, const Json& json,
-      grpc_error** error) override;
+      grpc_error_handle* error) override;
 
   static void Register();
 

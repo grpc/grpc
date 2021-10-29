@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 
@@ -103,9 +104,9 @@ TEST(OutOfBounds, WindowUpdate) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();
   return retval;

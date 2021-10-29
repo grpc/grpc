@@ -16,10 +16,11 @@
 
 import collections
 import ctypes
+import json
 import math
 import sys
+
 import yaml
-import json
 
 with open('src/core/lib/debug/stats_data.yaml') as f:
     attrs = yaml.load(f.read())
@@ -82,10 +83,13 @@ def find_ideal_shift(mapped_bounds, max_size):
     best = None
     for shift_bits in reversed(range(0, 64)):
         n = shift_works_until(mapped_bounds, shift_bits)
-        if n == 0: continue
+        if n == 0:
+            continue
         table_size = mapped_bounds[n - 1] >> shift_bits
-        if table_size > max_size: continue
-        if table_size > 65535: continue
+        if table_size > max_size:
+            continue
+        if table_size > 65535:
+            continue
         if best is None:
             best = (shift_bits, n, table_size)
         elif best[1] < n:
@@ -114,7 +118,8 @@ def decl_static_table(values, type):
     global static_tables
     v = (type, values)
     for i, vp in enumerate(static_tables):
-        if v == vp: return i
+        if v == vp:
+            return i
     print "ADD TABLE: %s %r" % (type, values)
     r = len(static_tables)
     static_tables.append(v)
@@ -161,7 +166,7 @@ def gen_bucket_code(histogram):
                                       256 * histogram.buckets)
     #print first_nontrivial, shift_data, bounds
     #if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
-    code = 'value = GPR_CLAMP(value, 0, %d);\n' % histogram.max
+    code = 'value = grpc_core::Clamp(value, 0, %d);\n' % histogram.max
     map_table = gen_map_table(code_bounds[first_nontrivial:], shift_data)
     if first_nontrivial is None:
         code += ('GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, value);\n' %
@@ -212,7 +217,8 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     with open(sys.argv[0]) as my_source:
         copyright = []
         for line in my_source:
-            if line[0] != '#': break
+            if line[0] != '#':
+                break
         for line in my_source:
             if line[0] == '#':
                 copyright.append(line)
@@ -304,7 +310,8 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     with open(sys.argv[0]) as my_source:
         copyright = []
         for line in my_source:
-            if line[0] != '#': break
+            if line[0] != '#':
+                break
         for line in my_source:
             if line[0] == '#':
                 copyright.append(line)
@@ -427,7 +434,8 @@ with open('tools/run_tests/performance/scenario_result_schema.json', 'w') as f:
 with open('tools/run_tests/performance/massage_qps_stats.py', 'w') as P:
     with open(sys.argv[0]) as my_source:
         for line in my_source:
-            if line[0] != '#': break
+            if line[0] != '#':
+                break
         for line in my_source:
             if line[0] == '#':
                 print >> P, line.rstrip()

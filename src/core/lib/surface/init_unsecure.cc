@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/surface/init.h"
 
 void grpc_security_pre_init(void) {}
 
 void grpc_register_security_filters(void) {}
-
-void grpc_security_init(void) {}

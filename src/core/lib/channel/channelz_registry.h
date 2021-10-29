@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
@@ -28,7 +28,6 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {

@@ -35,7 +35,7 @@ class ExternalAccountCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
   // External account credentials json interface.
-  struct ExternalAccountCredentialsOptions {
+  struct Options {
     std::string type;
     std::string audience;
     std::string subject_token_type;
@@ -46,10 +46,14 @@ class ExternalAccountCredentials
     std::string quota_project_id;
     std::string client_id;
     std::string client_secret;
+    std::string workforce_pool_user_project;
   };
 
-  ExternalAccountCredentials(ExternalAccountCredentialsOptions options,
-                             std::vector<std::string> scopes);
+  static RefCountedPtr<ExternalAccountCredentials> Create(
+      const Json& json, std::vector<std::string> scopes,
+      grpc_error_handle* error);
+
+  ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
   std::string debug_string() override;
 
@@ -81,8 +85,8 @@ class ExternalAccountCredentials
   // the callback function (cb) to pass the subject token (or error)
   // back.
   virtual void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
-      std::function<void(std::string, grpc_error*)> cb) = 0;
+      HTTPRequestContext* ctx, const Options& options,
+      std::function<void(std::string, grpc_error_handle)> cb) = 0;
 
  private:
   // This method implements the common token fetch logic and it will be called
@@ -93,19 +97,19 @@ class ExternalAccountCredentials
                     grpc_millis deadline) override;
 
   void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
-                                      grpc_error* error);
+                                      grpc_error_handle error);
 
   void ExchangeToken(absl::string_view subject_token);
-  static void OnExchangeToken(void* arg, grpc_error* error);
-  void OnExchangeTokenInternal(grpc_error* error);
+  static void OnExchangeToken(void* arg, grpc_error_handle error);
+  void OnExchangeTokenInternal(grpc_error_handle error);
 
   void ImpersenateServiceAccount();
-  static void OnImpersenateServiceAccount(void* arg, grpc_error* error);
-  void OnImpersenateServiceAccountInternal(grpc_error* error);
+  static void OnImpersenateServiceAccount(void* arg, grpc_error_handle error);
+  void OnImpersenateServiceAccountInternal(grpc_error_handle error);
 
-  void FinishTokenFetch(grpc_error* error);
+  void FinishTokenFetch(grpc_error_handle error);
 
-  ExternalAccountCredentialsOptions options_;
+  Options options_;
   std::vector<std::string> scopes_;
 
   HTTPRequestContext* ctx_ = nullptr;

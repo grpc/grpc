@@ -23,6 +23,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/json/json_util.h"
 
 namespace grpc_core {
@@ -63,14 +64,14 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
 
 RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
-                                                     grpc_error** error) {
+                                                     grpc_error_handle* error) {
   auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "error:config type should be OBJECT.");
     return nullptr;
   }
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   ParseJsonObjectField(config_json.object_value(), "certificate_file",
                        &config->identity_cert_file_, &error_list, false);
   ParseJsonObjectField(config_json.object_value(), "private_key_file",
@@ -111,9 +112,33 @@ const char* FileWatcherCertificateProviderFactory::name() const {
 
 RefCountedPtr<CertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::CreateCertificateProviderConfig(
-    const Json& config_json, grpc_error** error) {
+    const Json& config_json, grpc_error_handle* error) {
   return FileWatcherCertificateProviderFactory::Config::Parse(config_json,
                                                               error);
 }
+
+RefCountedPtr<grpc_tls_certificate_provider>
+FileWatcherCertificateProviderFactory::CreateCertificateProvider(
+    RefCountedPtr<CertificateProviderFactory::Config> config) {
+  if (config->name() != name()) {
+    gpr_log(GPR_ERROR, "Wrong config type Actual:%s vs Expected:%s",
+            config->name(), name());
+    return nullptr;
+  }
+  auto* file_watcher_config =
+      static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
+  return MakeRefCounted<FileWatcherCertificateProvider>(
+      file_watcher_config->private_key_file(),
+      file_watcher_config->identity_cert_file(),
+      file_watcher_config->root_cert_file(),
+      file_watcher_config->refresh_interval_ms() / GPR_MS_PER_SEC);
+}
+
+void FileWatcherCertificateProviderInit() {
+  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+      absl::make_unique<FileWatcherCertificateProviderFactory>());
+}
+
+void FileWatcherCertificateProviderShutdown() {}
 
 }  // namespace grpc_core

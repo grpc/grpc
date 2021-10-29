@@ -15,8 +15,9 @@
 # limitations under the License.
 
 import collections
-import perfection
 import sys
+
+import perfection
 
 _MAX_HEADER_LIST_SIZE = 16 * 1024 * 1024
 
@@ -67,7 +68,8 @@ def put_banner(files, banner):
 with open(sys.argv[0]) as my_source:
     copyright = []
     for line in my_source:
-        if line[0] != '#': break
+        if line[0] != '#':
+            break
     for line in my_source:
         if line[0] == '#':
             copyright.append(line)
@@ -141,9 +143,12 @@ bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out) {
   switch (y) {
 """ % cgargs
 for i, r in enumerate(p.r):
-    if not r: continue
-    if r < 0: print >> C, 'case %d: h -= %d; break;' % (i, -r)
-    else: print >> C, 'case %d: h += %d; break;' % (i, r)
+    if not r:
+        continue
+    if r < 0:
+        print >> C, 'case %d: h -= %d; break;' % (i, -r)
+    else:
+        print >> C, 'case %d: h += %d; break;' % (i, r)
 print >> C, """
   }
   *out = (grpc_chttp2_setting_id)h;

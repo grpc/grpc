@@ -45,7 +45,10 @@ namespace Grpc.Core.Internal
         static readonly bool isMacOSX;
         static readonly bool isWindows;
         static readonly bool isMono;
+        static readonly bool isNet5OrHigher;
         static readonly bool isNetCore;
+        static readonly string frameworkDescription;
+        static readonly string clrVersion;
         static readonly string unityApplicationPlatform;
         static readonly bool isXamarin;
         static readonly bool isXamarinIOS;
@@ -53,24 +56,28 @@ namespace Grpc.Core.Internal
 
         static PlatformApis()
         {
-#if NETSTANDARD
-            isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-            isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-            isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            isNetCore =
-#if NETSTANDARD2_0
-                Environment.Version.Major >= 5 ||
-#endif
-                RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
-#else
-            var platform = Environment.OSVersion.Platform;
+            // Detect OS
+            var osKind = CommonPlatformDetection.GetOSKind();
+            isLinux = osKind == CommonPlatformDetection.OSKind.Linux;
+            isMacOSX = osKind == CommonPlatformDetection.OSKind.MacOSX;
+            isWindows = osKind == CommonPlatformDetection.OSKind.Windows;
 
-            // PlatformID.MacOSX is never returned, commonly used trick is to identify Mac is by using uname.
-            isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
-            isLinux = (platform == PlatformID.Unix && !isMacOSX);
-            isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
+#if NETSTANDARD1_5
+            // assume that on .NET 5+, the netstandard2.0 or newer TFM is always going to be selected
+            // so for netstandard1.5 we assume we are never on .NET5+
+            isNet5OrHigher = false;
+            isNetCore = isNet5OrHigher || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+#elif NETSTANDARD
+            isNet5OrHigher = Environment.Version.Major >= 5;
+            isNetCore = isNet5OrHigher || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+#else
+            isNet5OrHigher = false;
             isNetCore = false;
 #endif
+            frameworkDescription = TryGetFrameworkDescription();
+            clrVersion = TryGetClrVersion();
+
+            // Detect mono runtime
             isMono = Type.GetType("Mono.Runtime") != null;
 
             // Unity
@@ -117,11 +124,30 @@ namespace Grpc.Core.Internal
         public static bool IsXamarinAndroid => isXamarinAndroid;
 
         /// <summary>
-        /// true if running on .NET Core (CoreCLR), false otherwise.
+        /// true if running on .NET 5+, false otherwise.
+        /// </summary>
+        public static bool IsNet5OrHigher => isNet5OrHigher;
+
+        /// <summary>
+        /// Contains <c>RuntimeInformation.FrameworkDescription</c> if the property is available on current TFM.
+        /// <c>null</c> otherwise.
+        /// </summary>
+        public static string FrameworkDescription => frameworkDescription;
+
+        /// <summary>
+        /// Contains the version of common language runtime obtained from <c>Environment.Version</c>
+        /// if the property is available on current TFM. <c>null</c> otherwise.
+        /// </summary>
+        public static string ClrVersion => clrVersion;
+
+        /// <summary>
+        /// true if running on .NET Core (CoreCLR) or NET 5+, false otherwise.
         /// </summary>
         public static bool IsNetCore => isNetCore;
 
         public static bool Is64Bit => IntPtr.Size == 8;
+
+        public static CommonPlatformDetection.CpuArchitecture ProcessArchitecture => CommonPlatformDetection.GetProcessArchitecture();
 
         /// <summary>
         /// Returns <c>UnityEngine.Application.platform</c> as a string.
@@ -174,31 +200,54 @@ namespace Grpc.Core.Internal
             }
         }
 
-        [DllImport("libc")]
-        static extern int uname(IntPtr buf);
-
-        static string GetUname()
+        /// <summary>
+        /// Returns description of the framework this process is running on.
+        /// Value is based on <c>RuntimeInformation.FrameworkDescription</c>.
+        /// </summary>
+        static string TryGetFrameworkDescription()
         {
-            var buffer = Marshal.AllocHGlobal(8192);
-            try
-            {
-                if (uname(buffer) == 0)
-                {
-                    return Marshal.PtrToStringAnsi(buffer);
-                }
-                return string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-            finally
-            {
-                if (buffer != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
-            }
+#if NETSTANDARD
+            return RuntimeInformation.FrameworkDescription;
+#else
+            // on full .NET framework we are targeting net45, and the property is only available starting from .NET Framework 4.7.1+
+            // try obtaining the value by reflection since we might be running on a newer framework even though we're targeting
+            // an older one.
+            var runtimeInformationClass = Type.GetType("System.Runtime.InteropServices.RuntimeInformation");
+            var frameworkDescriptionProperty = runtimeInformationClass?.GetTypeInfo().GetProperty("FrameworkDescription", BindingFlags.Static | BindingFlags.Public);
+            return frameworkDescriptionProperty?.GetValue(null)?.ToString();
+#endif
+        }
+
+        /// <summary>
+        /// Returns version of the common language runtime this process is running on.
+        /// Value is based on <c>Environment.Version</c>.
+        /// </summary>
+        static string TryGetClrVersion()
+        {
+#if NETSTANDARD1_5
+            return null;
+#else
+            return Environment.Version.ToString();
+#endif
+        }
+
+        /// <summary>
+        /// Returns the TFM of the Grpc.Core assembly.
+        /// </summary>
+        public static string GetGrpcCoreTargetFrameworkMoniker()
+        {
+#if NETSTANDARD1_5
+            return "netstandard1.5";
+#elif NETSTANDARD2_0
+            return "netstandard2.0";
+#elif NET45
+            return "net45";
+#else
+            // The TFM is determined at compile time.
+            // The is intentionally no "default" return clause here so that
+            // if the set of TFMs we build for changes and this method is not updated accordingly,
+            // it will result in compilation error.
+#endif
         }
     }
 }

@@ -21,6 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <vector>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/handshaker_factory.h"
@@ -35,18 +38,32 @@ typedef enum {
 
 class HandshakerRegistry {
  public:
-  /// Registers a new handshaker factory.  Takes ownership.
-  /// If \a at_start is true, the new handshaker will be at the beginning of
-  /// the list.  Otherwise, it will be added to the end.
-  static void RegisterHandshakerFactory(
-      bool at_start, HandshakerType handshaker_type,
-      std::unique_ptr<HandshakerFactory> factory);
-  static void AddHandshakers(HandshakerType handshaker_type,
-                             const grpc_channel_args* args,
-                             grpc_pollset_set* interested_parties,
-                             HandshakeManager* handshake_mgr);
-  static void Init();
-  static void Shutdown();
+  class Builder {
+   public:
+    /// Registers a new handshaker factory.  Takes ownership.
+    /// If \a at_start is true, the new handshaker will be at the beginning of
+    /// the list.  Otherwise, it will be added to the end.
+    void RegisterHandshakerFactory(bool at_start,
+                                   HandshakerType handshaker_type,
+                                   std::unique_ptr<HandshakerFactory> factory);
+
+    HandshakerRegistry Build();
+
+   private:
+    std::vector<std::unique_ptr<HandshakerFactory>>
+        factories_[NUM_HANDSHAKER_TYPES];
+  };
+
+  void AddHandshakers(HandshakerType handshaker_type,
+                      const grpc_channel_args* args,
+                      grpc_pollset_set* interested_parties,
+                      HandshakeManager* handshake_mgr) const;
+
+ private:
+  HandshakerRegistry() = default;
+
+  std::vector<std::unique_ptr<HandshakerFactory>>
+      factories_[NUM_HANDSHAKER_TYPES];
 };
 
 }  // namespace grpc_core

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "test/core/util/histogram.h"
 
 #include <math.h>
@@ -24,7 +26,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 
@@ -62,7 +63,8 @@ static size_t bucket_for_unchecked(grpc_histogram* h, double x) {
 
 /* bounds checked version of the above */
 static size_t bucket_for(grpc_histogram* h, double x) {
-  size_t bucket = bucket_for_unchecked(h, GPR_CLAMP(x, 1.0, h->max_possible));
+  size_t bucket =
+      bucket_for_unchecked(h, grpc_core::Clamp(x, 1.0, h->max_possible));
   GPR_ASSERT(bucket < h->num_buckets);
   return bucket;
 }
@@ -124,23 +126,23 @@ int grpc_histogram_merge(grpc_histogram* dst, const grpc_histogram* src) {
   return 1;
 }
 
-void grpc_histogram_merge_contents(grpc_histogram* dst, const uint32_t* data,
-                                   size_t data_count, double min_seen,
-                                   double max_seen, double sum,
+void grpc_histogram_merge_contents(grpc_histogram* histogram,
+                                   const uint32_t* data, size_t data_count,
+                                   double min_seen, double max_seen, double sum,
                                    double sum_of_squares, double count) {
   size_t i;
-  GPR_ASSERT(dst->num_buckets == data_count);
-  dst->sum += sum;
-  dst->sum_of_squares += sum_of_squares;
-  dst->count += count;
-  if (min_seen < dst->min_seen) {
-    dst->min_seen = min_seen;
+  GPR_ASSERT(histogram->num_buckets == data_count);
+  histogram->sum += sum;
+  histogram->sum_of_squares += sum_of_squares;
+  histogram->count += count;
+  if (min_seen < histogram->min_seen) {
+    histogram->min_seen = min_seen;
   }
-  if (max_seen > dst->max_seen) {
-    dst->max_seen = max_seen;
+  if (max_seen > histogram->max_seen) {
+    histogram->max_seen = max_seen;
   }
-  for (i = 0; i < dst->num_buckets; i++) {
-    dst->buckets[i] += data[i];
+  for (i = 0; i < histogram->num_buckets; i++) {
+    histogram->buckets[i] += data[i];
   }
 }
 
@@ -186,10 +188,10 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
        should lie */
     lower_bound = bucket_start(h, static_cast<double>(lower_idx));
     upper_bound = bucket_start(h, static_cast<double>(lower_idx + 1));
-    return GPR_CLAMP(upper_bound - (upper_bound - lower_bound) *
-                                       (count_so_far - count_below) /
-                                       h->buckets[lower_idx],
-                     h->min_seen, h->max_seen);
+    return grpc_core::Clamp(upper_bound - (upper_bound - lower_bound) *
+                                              (count_so_far - count_below) /
+                                              h->buckets[lower_idx],
+                            h->min_seen, h->max_seen);
   }
 }
 
@@ -224,7 +226,8 @@ double grpc_histogram_sum_of_squares(grpc_histogram* h) {
   return h->sum_of_squares;
 }
 
-const uint32_t* grpc_histogram_get_contents(grpc_histogram* h, size_t* size) {
-  *size = h->num_buckets;
-  return h->buckets;
+const uint32_t* grpc_histogram_get_contents(grpc_histogram* histogram,
+                                            size_t* count) {
+  *count = histogram->num_buckets;
+  return histogram->buckets;
 }

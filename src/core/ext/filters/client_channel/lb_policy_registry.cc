@@ -109,7 +109,7 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
     return false;
   }
   if (requires_config != nullptr) {
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     // Check if the load balancing policy allows an empty config
     *requires_config =
         factory->ParseLoadBalancingConfig(Json(), &error) == nullptr;
@@ -122,7 +122,7 @@ namespace {
 
 // Returns the JSON node of policy (with both policy name and config content)
 // given the JSON node of a LoadBalancingConfig array.
-grpc_error* ParseLoadBalancingConfigHelper(
+grpc_error_handle ParseLoadBalancingConfigHelper(
     const Json& lb_config_array, Json::Object::const_iterator* result) {
   if (lb_config_array.type() != Json::Type::ARRAY) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("type should be array");
@@ -154,17 +154,15 @@ grpc_error* ParseLoadBalancingConfigHelper(
     }
     policies_tried.push_back(it->first);
   }
-  return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      absl::StrCat("No known policies in list: ",
-                   absl::StrJoin(policies_tried, " "))
-          .c_str());
+  return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      "No known policies in list: ", absl::StrJoin(policies_tried, " ")));
 }
 
 }  // namespace
 
 RefCountedPtr<LoadBalancingPolicy::Config>
-LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const Json& json,
-                                                      grpc_error** error) {
+LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+    const Json& json, grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   GPR_ASSERT(g_state != nullptr);
   Json::Object::const_iterator policy;
@@ -176,9 +174,8 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(const Json& json,
   LoadBalancingPolicyFactory* factory =
       g_state->GetLoadBalancingPolicyFactory(policy->first.c_str());
   if (factory == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Factory not found for policy \"%s\"", policy->first)
-            .c_str());
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Factory not found for policy \"%s\"", policy->first));
     return nullptr;
   }
   // Parse load balancing config via factory.

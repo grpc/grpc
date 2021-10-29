@@ -20,7 +20,7 @@
 /// is enabled (see iomgr_posix_cfstream.cc), a global thread is started to
 /// handle and trigger all the CFStream events. The CFStream streams register
 /// themselves with the run loop with functions grpc_apple_register_read_stream
-/// and grpc_apple_register_read_stream. Pollsets are dummy and block on a
+/// and grpc_apple_register_read_stream. Pollsets are phony and block on a
 /// condition variable in pollset_work().
 
 #include <grpc/support/port_platform.h>
@@ -33,7 +33,10 @@
 
 #include <list>
 
+#include "absl/time/time.h"
+
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_apple_polling_trace(false, "apple_polling");
@@ -161,7 +164,7 @@ void grpc_apple_register_write_stream(CFWriteStreamRef write_stream,
 /// Drive the run loop in a global singleton thread until the global run loop is
 /// shutdown.
 static void GlobalRunLoopFunc(void* arg) {
-  grpc_core::ReleasableMutexLock lock(&gGlobalRunLoopContext->mu);
+  grpc_core::LockableAndReleasableMutexLock lock(&gGlobalRunLoopContext->mu);
   gGlobalRunLoopContext->run_loop = CFRunLoopGetCurrent();
   gGlobalRunLoopContext->init_cv.Signal();
 
@@ -173,11 +176,11 @@ static void GlobalRunLoopFunc(void* arg) {
       gGlobalRunLoopContext->input_source_cv.Wait(&gGlobalRunLoopContext->mu);
     }
     gGlobalRunLoopContext->input_source_registered = false;
-    lock.Unlock();
+    lock.Release();
     CFRunLoopRun();
     lock.Lock();
   }
-  lock.Unlock();
+  lock.Release();
 }
 
 // pollset implementation
@@ -216,9 +219,9 @@ static void pollset_global_shutdown(void) {
 /// The Apple pollset simply waits on a condition variable until it is kicked.
 /// The network events are handled in the global run loop thread. Processing of
 /// these events will eventually trigger the kick.
-static grpc_error* pollset_work(grpc_pollset* pollset,
-                                grpc_pollset_worker** worker,
-                                grpc_millis deadline) {
+static grpc_error_handle pollset_work(grpc_pollset* pollset,
+                                      grpc_pollset_worker** worker,
+                                      grpc_millis deadline) {
   GRPC_POLLING_TRACE("pollset work: %p, worker: %p, deadline: %" PRIu64,
                      pollset, worker, deadline);
   GrpcApplePollset* apple_pollset =
@@ -237,9 +240,9 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     auto it = apple_pollset->workers.begin();
 
     while (!actual_worker.kicked && !apple_pollset->is_shutdown) {
-      if (actual_worker.cv.Wait(
-              &apple_pollset->mu,
-              grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
+      if (actual_worker.cv.WaitWithDeadline(
+              &apple_pollset->mu, grpc_core::ToAbslTime(grpc_millis_to_timespec(
+                                      deadline, GPR_CLOCK_REALTIME)))) {
         // timed out
         break;
       }
@@ -269,8 +272,8 @@ static void kick_worker(GrpcAppleWorker* worker) {
 /// The caller must acquire the lock GrpcApplePollset.mu before calling this
 /// function. The kick action simply signals the condition variable of the
 /// worker.
-static grpc_error* pollset_kick(grpc_pollset* pollset,
-                                grpc_pollset_worker* specific_worker) {
+static grpc_error_handle pollset_kick(grpc_pollset* pollset,
+                                      grpc_pollset_worker* specific_worker) {
   GrpcApplePollset* apple_pollset =
       reinterpret_cast<GrpcApplePollset*>(pollset);
 
@@ -299,7 +302,7 @@ static grpc_error* pollset_kick(grpc_pollset* pollset,
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   GRPC_POLLING_TRACE("pollset init: %p", pollset);
   GrpcApplePollset* apple_pollset = new (pollset) GrpcApplePollset();
-  *mu = apple_pollset->mu.get();
+  *mu = grpc_core::GetUnderlyingGprMu(&apple_pollset->mu);
 }
 
 /// The caller must acquire the lock GrpcApplePollset.mu before calling this

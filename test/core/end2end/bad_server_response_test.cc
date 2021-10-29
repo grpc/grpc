@@ -16,12 +16,6 @@
  *
  */
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -93,14 +87,15 @@ static grpc_closure on_read;
 static grpc_closure on_writing_settings_frame;
 static grpc_closure on_write;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void done_write(void* /*arg*/, grpc_error* error) {
+static void done_write(void* /*arg*/, grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   gpr_atm_rel_store(&state.done_atm, 1);
 }
 
-static void done_writing_settings_frame(void* /* arg */, grpc_error* error) {
+static void done_writing_settings_frame(void* /* arg */,
+                                        grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                      /*urgent=*/false);
@@ -115,9 +110,10 @@ static void handle_write() {
   grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr);
 }
 
-static void handle_read(void* /*arg*/, grpc_error* error) {
+static void handle_read(void* /*arg*/, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "handle_read error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "handle_read error: %s",
+            grpc_error_std_string(error).c_str());
     return;
   }
   state.incoming_data_length += state.temp_incoming_buffer.length;
@@ -286,7 +282,7 @@ static void actually_poll_server(void* arg) {
     }
     test_tcp_server_poll(pa->server, 1000);
   }
-  gpr_event_set(pa->signal_when_done, (void*)1);
+  gpr_event_set(pa->signal_when_done, reinterpret_cast<void*>(1));
   gpr_free(pa);
 }
 

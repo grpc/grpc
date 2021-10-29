@@ -59,6 +59,7 @@ cdef class RPCState:
         self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
         self.compression_algorithm = None
         self.disable_next_compression = False
+        self.callbacks = []
 
     cdef bytes method(self):
         return _slice_bytes(self.details.method)
@@ -173,11 +174,16 @@ cdef class _ServicerContext:
 
             if trailing_metadata == _IMMUTABLE_EMPTY_METADATA and self._rpc_state.trailing_metadata:
                 trailing_metadata = self._rpc_state.trailing_metadata
+            else:
+                self._rpc_state.trailing_metadata = trailing_metadata
 
             if details == '' and self._rpc_state.status_details:
                 details = self._rpc_state.status_details
+            else:
+                self._rpc_state.status_details = details
 
             actual_code = get_status_code(code)
+            self._rpc_state.status_code = actual_code
 
             self._rpc_state.status_sent = True
             await _send_error_status_from_server(
@@ -197,14 +203,23 @@ cdef class _ServicerContext:
     def set_trailing_metadata(self, object metadata):
         self._rpc_state.trailing_metadata = tuple(metadata)
 
+    def trailing_metadata(self):
+        return self._rpc_state.trailing_metadata
+
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
 
+    def code(self):
+        return self._rpc_state.status_code
+
     def set_details(self, str details):
         self._rpc_state.status_details = details
+
+    def details(self):
+        return self._rpc_state.status_details
 
     def set_compression(self, object compression):
         if self._rpc_state.metadata_sent:
@@ -251,6 +266,22 @@ cdef class _ServicerContext:
             return ctx
         else:
             return {}
+
+    def time_remaining(self):
+        if self._rpc_state.details.deadline.seconds == _GPR_INF_FUTURE.seconds:
+            return None
+        else:
+            return max(_time_from_timespec(self._rpc_state.details.deadline) - time.time(), 0)
+
+    def add_done_callback(self, callback):
+        cb = functools.partial(callback, self)
+        self._rpc_state.callbacks.append(cb)
+
+    def done(self):
+        return self._rpc_state.status_sent
+
+    def cancelled(self):
+        return self._rpc_state.status_code == StatusCode.cancelled
 
 
 cdef class _SyncServicerContext:
@@ -310,6 +341,9 @@ cdef class _SyncServicerContext:
 
     def auth_context(self):
         return self._context.auth_context()
+
+    def time_remaining(self):
+        return self._context.time_remaining()
 
 
 async def _run_interceptor(object interceptors, object query_handler,
@@ -679,6 +713,7 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
             else:
                 status_code = rpc_state.status_code
 
+            rpc_state.status_sent = True
             await _send_error_status_from_server(
                 rpc_state,
                 status_code,
@@ -687,6 +722,19 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
                 rpc_state.create_send_initial_metadata_op_if_not_sent(),
                 loop
             )
+
+
+cdef _add_callback_handler(object rpc_task, RPCState rpc_state):
+
+    def handle_callbacks(object unused_task):
+        try:
+            for callback in rpc_state.callbacks:
+                # The _ServicerContext object is bound in add_done_callback.
+                callback()
+        except:
+            _LOGGER.exception('Error in callback for method [%s]', _decode(rpc_state.method()))
+
+    rpc_task.add_done_callback(handle_callbacks)
 
 
 async def _handle_cancellation_from_core(object rpc_task,
@@ -715,6 +763,7 @@ async def _schedule_rpc_coro(object rpc_coro,
         rpc_coro,
         loop,
     ))
+    _add_callback_handler(rpc_task, rpc_state)
     await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
 
@@ -781,6 +830,40 @@ cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHan
     InternalError)
 
 
+cdef class _ConcurrentRpcLimiter:
+
+    def __cinit__(self, int maximum_concurrent_rpcs, object loop):
+        if maximum_concurrent_rpcs <= 0:
+            raise ValueError("maximum_concurrent_rpcs should be a postive integer")
+        self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
+        self._active_rpcs = 0
+        self._active_rpcs_condition = asyncio.Condition()
+        self._loop = loop
+
+    async def check_before_request_call(self):
+        await self._active_rpcs_condition.acquire()
+        try:
+            predicate = lambda: self._active_rpcs < self._maximum_concurrent_rpcs
+            await self._active_rpcs_condition.wait_for(predicate)
+            self._active_rpcs += 1
+        finally:
+            self._active_rpcs_condition.release()
+
+    async def _decrease_active_rpcs_count_with_lock(self):
+        await self._active_rpcs_condition.acquire()
+        try:
+            self._active_rpcs -= 1
+            self._active_rpcs_condition.notify()
+        finally:
+            self._active_rpcs_condition.release()
+
+    def _decrease_active_rpcs_count(self, unused_future):
+        self._loop.create_task(self._decrease_active_rpcs_count_with_lock())
+
+    def decrease_once_finished(self, object rpc_task):
+        rpc_task.add_done_callback(self._decrease_active_rpcs_count)
+
+
 cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
@@ -788,7 +871,8 @@ cdef class AioServer:
         init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
-        self._server = Server(options)
+        # TODO(rbellevi): Support xDS in aio server.
+        self._server = Server(options, False)
         grpc_server_register_completion_queue(
             self._server.c_server,
             global_completion_queue(),
@@ -801,7 +885,7 @@ cdef class AioServer:
         self.add_generic_rpc_handlers(generic_handlers)
         self._serving_task = None
 
-        self._shutdown_lock = asyncio.Lock(loop=self._loop)
+        self._shutdown_lock = asyncio.Lock()
         self._shutdown_completed = self._loop.create_future()
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
@@ -810,14 +894,14 @@ cdef class AioServer:
         self._crash_exception = None
 
         if interceptors:
-            self._interceptors = interceptors
+            self._interceptors = tuple(interceptors)
         else:
             self._interceptors = ()
 
         self._thread_pool = thread_pool
-
-        if maximum_concurrent_rpcs:
-            raise NotImplementedError()
+        if maximum_concurrent_rpcs is not None:
+            self._limiter = _ConcurrentRpcLimiter(maximum_concurrent_rpcs,
+                                                  loop)
 
     def add_generic_rpc_handlers(self, object generic_rpc_handlers):
         self._generic_handlers.extend(generic_rpc_handlers)
@@ -860,6 +944,9 @@ cdef class AioServer:
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
 
+            if self._limiter is not None:
+                await self._limiter.check_before_request_call()
+
             # Accepts new request from Core
             rpc_state = await self._request_call()
 
@@ -874,13 +961,16 @@ cdef class AioServer:
                                    self._loop)
 
             # Fires off a task that listens on the cancellation from client.
-            self._loop.create_task(
+            rpc_task = self._loop.create_task(
                 _schedule_rpc_coro(
                     rpc_coro,
                     rpc_state,
                     self._loop
                 )
             )
+
+            if self._limiter is not None:
+                self._limiter.decrease_once_finished(rpc_task)
 
     def _serving_task_crash_handler(self, object task):
         """Shutdown the server immediately if unexpectedly exited."""
@@ -949,12 +1039,8 @@ cdef class AioServer:
         else:
             try:
                 await asyncio.wait_for(
-                    asyncio.shield(
-                        self._shutdown_completed,
-                        loop=self._loop
-                    ),
+                    asyncio.shield(self._shutdown_completed),
                     grace,
-                    loop=self._loop,
                 )
             except asyncio.TimeoutError:
                 # Cancels all ongoing calls by the end of grace period.
@@ -974,12 +1060,8 @@ cdef class AioServer:
         else:
             try:
                 await asyncio.wait_for(
-                    asyncio.shield(
-                        self._shutdown_completed,
-                        loop=self._loop,
-                    ),
+                    asyncio.shield(self._shutdown_completed),
                     timeout,
-                    loop=self._loop,
                 )
             except asyncio.TimeoutError:
                 if self._crash_exception is not None:

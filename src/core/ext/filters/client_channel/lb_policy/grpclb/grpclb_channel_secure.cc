@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
-
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
@@ -30,17 +28,17 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 
-grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
-    const ServerAddressList& addresses, grpc_channel_args* args) {
+grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
   absl::InlinedVector<const char*, 1> args_to_remove;
   absl::InlinedVector<grpc_arg, 1> args_to_add;
   // Substitute the channel credentials with a version without call

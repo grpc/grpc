@@ -16,9 +16,8 @@
  *
  */
 
-#include <grpcpp/impl/codegen/server_context.h>
-
 #include <algorithm>
+#include <atomic>
 #include <utility>
 
 #include <grpc/compression.h>
@@ -28,6 +27,8 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/time.h>
 
@@ -36,6 +37,8 @@
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // CompletionOp
 
@@ -121,11 +124,12 @@ class ServerContextBase::CompletionOp final
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
     if (!has_tag_) {
-      /* We don't have a tag to return. */
+      // We don't have a tag to return.
       Unref();
+      // Unref can delete this, so do not access anything from this afterward.
       return;
     }
-    /* Start a dummy op so that we can return the tag */
+    /* Start a phony op so that we can return the tag */
     GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_,
                                      nullptr) == GRPC_CALL_OK);
   }
@@ -174,33 +178,41 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
 }
 
 bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  // Decide whether to call the cancel callback within the lock
-  bool call_cancel;
+  // Decide whether to do the unref or call the cancel callback within the lock
+  bool do_unref = false;
+  bool has_tag = false;
+  bool call_cancel = false;
 
   {
     grpc_core::MutexLock lock(&mu_);
     if (done_intercepting_) {
       // We are done intercepting.
-      bool has_tag = has_tag_;
+      has_tag = has_tag_;
       if (has_tag) {
         *tag = tag_;
       }
-      Unref();
-      return has_tag;
-    }
-    finalized_ = true;
+      // Release the lock before unreffing as Unref may delete this object
+      do_unref = true;
+    } else {
+      finalized_ = true;
 
-    // If for some reason the incoming status is false, mark that as a
-    // cancellation.
-    // TODO(vjpai): does this ever happen?
-    if (!*status) {
-      cancelled_ = 1;
-    }
+      // If for some reason the incoming status is false, mark that as a
+      // cancellation.
+      // TODO(vjpai): does this ever happen?
+      if (!*status) {
+        cancelled_ = 1;
+      }
 
-    call_cancel = (cancelled_ != 0);
-    // Release the lock since we may call a callback and interceptors.
+      call_cancel = (cancelled_ != 0);
+      // Release the lock since we may call a callback and interceptors.
+    }
   }
 
+  if (do_unref) {
+    Unref();
+    // Unref can delete this, so do not access anything from this afterward.
+    return has_tag;
+  }
   if (call_cancel && callback_controller_ != nullptr) {
     callback_controller_->MaybeCallOnCancel();
   }
@@ -214,6 +226,7 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
       *tag = tag_;
     }
     Unref();
+    // Unref can delete this, so do not access anything from this afterward.
     return has_tag;
   }
   // There are interceptors to be run. Return false for now.
@@ -223,7 +236,9 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 // ServerContextBase body
 
 ServerContextBase::ServerContextBase()
-    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
+  g_gli_initializer.summon();
+}
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
                                      grpc_metadata_array* arr)
@@ -240,6 +255,7 @@ void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline,
 ServerContextBase::~ServerContextBase() {
   if (completion_op_) {
     completion_op_->Unref();
+    // Unref can delete completion_op_, so do not access it afterward.
   }
   if (rpc_info_) {
     rpc_info_->Unref();
@@ -311,14 +327,16 @@ void ServerContextBase::TryCancel() const {
 bool ServerContextBase::IsCancelled() const {
   if (completion_tag_) {
     // When using callback API, this result is always valid.
-    return completion_op_->CheckCancelledAsync();
+    return marked_cancelled_.load(std::memory_order_acquire) ||
+           completion_op_->CheckCancelledAsync();
   } else if (has_notify_when_done_tag_) {
     // When using async API, the result is only valid
     // if the tag has already been delivered at the completion queue
     return completion_op_ && completion_op_->CheckCancelledAsync();
   } else {
     // when using sync API, the result is always valid
-    return completion_op_ && completion_op_->CheckCancelled(cq_);
+    return marked_cancelled_.load(std::memory_order_acquire) ||
+           (completion_op_ && completion_op_->CheckCancelled(cq_));
   }
 }
 

@@ -16,10 +16,9 @@
  *
  */
 
-#include <grpcpp/security/server_credentials.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/security/server_credentials.h>
 
 namespace grpc {
 namespace {
@@ -33,6 +32,9 @@ class InsecureServerCredentialsImpl final : public ServerCredentials {
     (void)processor;
     GPR_ASSERT(0);  // Should not be called on InsecureServerCredentials.
   }
+
+ private:
+  bool IsInsecure() const override { return true; }
 };
 }  // namespace
 

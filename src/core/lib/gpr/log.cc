@@ -18,6 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdio.h>
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
@@ -25,15 +28,24 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config.h"
 
-#include <stdio.h>
-#include <string.h>
+#ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
+#define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
+#endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_verbosity, "ERROR",
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_verbosity,
+                                GPR_DEFAULT_LOG_VERBOSITY_STRING,
                                 "Default gRPC logging verbosity")
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_stacktrace_minloglevel, "",
+                                "Messages logged at the same or higher level "
+                                "than this will print stacktrace")
+
+static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
+static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
 void gpr_default_log(gpr_log_func_args* args);
-static gpr_atm g_log_func = (gpr_atm)gpr_default_log;
-static gpr_atm g_min_severity_to_print = GPR_LOG_VERBOSITY_UNSET;
+static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
+static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
+static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
 
 const char* gpr_log_severity_string(gpr_log_severity severity) {
   switch (severity) {
@@ -54,6 +66,13 @@ int gpr_should_log(gpr_log_severity severity) {
              : 0;
 }
 
+int gpr_should_log_stacktrace(gpr_log_severity severity) {
+  return static_cast<gpr_atm>(severity) >=
+                 gpr_atm_no_barrier_load(&g_min_severity_to_print_stacktrace)
+             ? 1
+             : 0;
+}
+
 void gpr_log_message(const char* file, int line, gpr_log_severity severity,
                      const char* message) {
   if (gpr_should_log(severity) == 0) {
@@ -66,7 +85,7 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
   lfargs.line = line;
   lfargs.severity = severity;
   lfargs.message = message;
-  ((gpr_log_func)gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
+  reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
 }
 
 void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
@@ -74,22 +93,45 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
                            (gpr_atm)min_severity_to_print);
 }
 
-void gpr_log_verbosity_init() {
-  grpc_core::UniquePtr<char> verbosity = GPR_GLOBAL_CONFIG_GET(grpc_verbosity);
-
-  gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
-  if (strlen(verbosity.get()) > 0) {
-    if (gpr_stricmp(verbosity.get(), "DEBUG") == 0) {
-      min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_DEBUG);
-    } else if (gpr_stricmp(verbosity.get(), "INFO") == 0) {
-      min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_INFO);
-    } else if (gpr_stricmp(verbosity.get(), "ERROR") == 0) {
-      min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_ERROR);
-    }
+static gpr_atm parse_log_severity(const char* str, gpr_atm error_value) {
+  if (gpr_stricmp(str, "DEBUG") == 0) {
+    return GPR_LOG_SEVERITY_DEBUG;
+  } else if (gpr_stricmp(str, "INFO") == 0) {
+    return GPR_LOG_SEVERITY_INFO;
+  } else if (gpr_stricmp(str, "ERROR") == 0) {
+    return GPR_LOG_SEVERITY_ERROR;
+  } else if (gpr_stricmp(str, "NONE") == 0) {
+    return GPR_LOG_SEVERITY_NONE;
+  } else {
+    return error_value;
   }
+}
+
+void gpr_log_verbosity_init() {
+  // init verbosity when it hasn't been set
   if ((gpr_atm_no_barrier_load(&g_min_severity_to_print)) ==
-      GPR_LOG_VERBOSITY_UNSET) {
+      GPR_LOG_SEVERITY_UNSET) {
+    grpc_core::UniquePtr<char> verbosity =
+        GPR_GLOBAL_CONFIG_GET(grpc_verbosity);
+    gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
+    if (strlen(verbosity.get()) > 0) {
+      min_severity_to_print =
+          parse_log_severity(verbosity.get(), min_severity_to_print);
+    }
     gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);
+  }
+  // init stacktrace_minloglevel when it hasn't been set
+  if ((gpr_atm_no_barrier_load(&g_min_severity_to_print_stacktrace)) ==
+      GPR_LOG_SEVERITY_UNSET) {
+    grpc_core::UniquePtr<char> stacktrace_minloglevel =
+        GPR_GLOBAL_CONFIG_GET(grpc_stacktrace_minloglevel);
+    gpr_atm min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_NONE;
+    if (strlen(stacktrace_minloglevel.get()) > 0) {
+      min_severity_to_print_stacktrace = parse_log_severity(
+          stacktrace_minloglevel.get(), min_severity_to_print_stacktrace);
+    }
+    gpr_atm_no_barrier_store(&g_min_severity_to_print_stacktrace,
+                             min_severity_to_print_stacktrace);
   }
 }
 

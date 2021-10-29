@@ -20,7 +20,7 @@ If you plan to build using CMake
 If you are a contributor and plan to build and run tests, install the following as well:
 ```sh
  $ # clang and LLVM C++ lib is only required for sanitizer builds
- $ [sudo] apt-get install clang-5.0 libc++-dev
+ $ [sudo] apt-get install clang libc++-dev
 ```
 
 ## MacOS
@@ -144,7 +144,7 @@ you will be able to browse and build the code.
 > cmake --build . --config Release
 ```
 
-If you want to build DLLs, run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
 
 ### Windows, Using Ninja (faster build).
 
@@ -160,7 +160,16 @@ installed to be able to compile the C/C++ sources.
 > cmake --build .
 ```
 
-If you want to build DLLs, run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+
+### Windows: A note on building shared libs (DLLs)
+
+Windows DLL build is supported at a "best effort" basis and we don't recommend using gRPC C++ as a DLL as there are some known drawbacks around how C++ DLLs work on Windows. For example, there is no stable C++ ABI and you can't safely allocate memory in one DLL, and free it in another etc.
+
+That said, we don't actively prohibit building DLLs on windows (it can be enabled in cmake with `-DBUILD_SHARED_LIBS=ON`), and are free to use the DLL builds
+at your own risk.
+- you've been warned that there are some important drawbacks and some things might not work at all or will be broken in interesting ways.
+- we don't have extensive testing for DLL builds in place (to avoid maintenance costs, increased test duration etc.) so regressions / build breakages might occur
 
 ### Dependency management
 
@@ -234,7 +243,13 @@ $ cmake ../.. -DCMAKE_TOOLCHAIN_FILE=path/to/file
 $ make
 ```
 
-[Cross-compile example](test/distrib/cpp/run_distrib_test_raspberry_pi.sh)
+[Cross-compile example](test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh)
+
+### A note on SONAME and its ABI compatibility implications in the cmake build
+
+Best efforts are made to bump the SONAME revision during ABI breaches. While a
+change in the SONAME clearly indicates an ABI incompatibility, no hard guarantees
+can be made about any sort of ABI stability across the same SONAME version.
 
 ## Building with make on UNIX systems (deprecated)
 
@@ -254,10 +269,10 @@ $ make
 
 ### A note on `protoc`
 
-By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
+By default gRPC uses [protocol buffers](https://github.com/protocolbuffers/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
 
-If you compile gRPC from source, as described below, the Makefile will
+If you compile gRPC from source, as described above, the Makefile will
 automatically try compiling the `protoc` in third_party if you cloned the
 repository recursively and it detects that you do not already have 'protoc' compiler
 installed.

@@ -16,13 +16,15 @@
  *
  */
 
+#include "test/cpp/naming/dns_test_util.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "test/cpp/naming/dns_test_util.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -51,8 +53,9 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
   addr.sin6_port = htons(port);
-  ((char*)&addr.sin6_addr)[15] = 1;
-  if (bind(udp_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
+  (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
+  if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
+           sizeof(addr)) != 0) {
     gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port);
     abort();
   }
@@ -73,7 +76,8 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
     abort();
   }
 #endif
-  if (bind(tcp_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
+  if (bind(tcp_socket_, reinterpret_cast<const sockaddr*>(&addr),
+           sizeof(addr)) != 0) {
     gpr_log(GPR_DEBUG, "Failed to bind TCP ipv6 socket to [::1]:%d", port);
     abort();
   }

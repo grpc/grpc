@@ -25,12 +25,17 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <grpc/event_engine/port.h>
 #include <grpc/grpc.h>
 
+#ifndef _STRUCT_IOVEC
+#if !defined(GRPC_EVENT_ENGINE_POSIX)
 struct iovec {
   void* iov_base;
   size_t iov_len;
 };
+#endif  // GRPC_EVENT_ENGINE_POSIX
+#endif  // _STRUCT_IOVEC
 
 /**
  * A gsec interface for AEAD encryption schemes. The API is thread-compatible.

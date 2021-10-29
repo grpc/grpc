@@ -18,6 +18,8 @@
 
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -34,8 +36,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#include <gtest/gtest.h>
-
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
@@ -48,7 +48,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   Status Echo(ServerContext* context, const EchoRequest* /*request*/,
               EchoResponse* /*response*/) override {
-    gpr_event_set(ev_, (void*)1);
+    gpr_event_set(ev_, reinterpret_cast<void*>(1));
     while (!context->IsCancelled()) {
     }
     return Status::OK;

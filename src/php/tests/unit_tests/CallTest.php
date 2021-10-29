@@ -107,81 +107,65 @@ class CallTest extends \PHPUnit\Framework\TestCase
         $this->assertNull($this->call->cancel());
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidStartBatchKey()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $batch = [
             'invalid' => ['key1' => 'value1'],
         ];
         $result = $this->call->startBatch($batch);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMetadataStrKey()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['Key' => ['value1', 'value2']],
         ];
         $result = $this->call->startBatch($batch);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMetadataIntKey()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => [1 => ['value1', 'value2']],
         ];
         $result = $this->call->startBatch($batch);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMetadataInnerValue()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key1' => 'value1'],
         ];
         $result = $this->call->startBatch($batch);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidConstuctor()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->call = new Grpc\Call();
         $this->assertNull($this->call);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidConstuctor2()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->call = new Grpc\Call('hi', 'hi', 'hi');
         $this->assertNull($this->call);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidSetCredentials()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->call->setCredentials('hi');
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidSetCredentials2()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $this->call->setCredentials([]);
     }
 }

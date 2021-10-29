@@ -24,30 +24,32 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 
 /* Use little endian to interpret a string of bytes as uint32_t. */
 static uint32_t load_32_le(const unsigned char* buffer) {
-  return (((uint32_t)buffer[3]) << 24) | (((uint32_t)buffer[2]) << 16) |
-         (((uint32_t)buffer[1]) << 8) | ((uint32_t)buffer[0]);
+  return (static_cast<uint32_t>(buffer[3]) << 24) |
+         (static_cast<uint32_t>(buffer[2]) << 16) |
+         (static_cast<uint32_t>(buffer[1]) << 8) |
+         static_cast<uint32_t>(buffer[0]);
 }
 
 /* Store uint32_t as a string of little endian bytes. */
 static void store_32_le(uint32_t value, unsigned char* buffer) {
-  buffer[3] = (unsigned char)(value >> 24) & 0xFF;
-  buffer[2] = (unsigned char)(value >> 16) & 0xFF;
-  buffer[1] = (unsigned char)(value >> 8) & 0xFF;
-  buffer[0] = (unsigned char)(value)&0xFF;
+  buffer[3] = static_cast<unsigned char>(value >> 24) & 0xFF;
+  buffer[2] = static_cast<unsigned char>(value >> 16) & 0xFF;
+  buffer[1] = static_cast<unsigned char>(value >> 8) & 0xFF;
+  buffer[0] = static_cast<unsigned char>(value) & 0xFF;
 }
 
 /* Frame writer implementation. */
 alts_frame_writer* alts_create_frame_writer() {
-  alts_frame_writer* writer =
-      static_cast<alts_frame_writer*>(gpr_zalloc(sizeof(*writer)));
-  return writer;
+  return grpc_core::Zalloc<alts_frame_writer>();
 }
 
 bool alts_reset_frame_writer(alts_frame_writer* writer,
@@ -80,8 +82,8 @@ bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
   /* Write some header bytes, if needed. */
   if (writer->header_bytes_written != sizeof(writer->header_buffer)) {
     size_t bytes_to_write =
-        GPR_MIN(*bytes_size,
-                sizeof(writer->header_buffer) - writer->header_bytes_written);
+        std::min(*bytes_size,
+                 sizeof(writer->header_buffer) - writer->header_bytes_written);
     memcpy(output, writer->header_buffer + writer->header_bytes_written,
            bytes_to_write);
     bytes_written += bytes_to_write;
@@ -95,7 +97,7 @@ bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
   }
   /* Write some non-header bytes. */
   size_t bytes_to_write =
-      GPR_MIN(writer->input_size - writer->input_bytes_written, *bytes_size);
+      std::min(writer->input_size - writer->input_bytes_written, *bytes_size);
   memcpy(output, writer->input_buffer, bytes_to_write);
   writer->input_buffer += bytes_to_write;
   bytes_written += bytes_to_write;
@@ -118,8 +120,7 @@ void alts_destroy_frame_writer(alts_frame_writer* writer) { gpr_free(writer); }
 
 /* Frame reader implementation. */
 alts_frame_reader* alts_create_frame_reader() {
-  alts_frame_reader* reader =
-      static_cast<alts_frame_reader*>(gpr_zalloc(sizeof(*reader)));
+  alts_frame_reader* reader = grpc_core::Zalloc<alts_frame_reader>();
   return reader;
 }
 
@@ -165,7 +166,7 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
   size_t bytes_processed = 0;
   /* Process the header, if needed. */
   if (reader->header_bytes_read != sizeof(reader->header_buffer)) {
-    size_t bytes_to_write = GPR_MIN(
+    size_t bytes_to_write = std::min(
         *bytes_size, sizeof(reader->header_buffer) - reader->header_bytes_read);
     memcpy(reader->header_buffer + reader->header_bytes_read, bytes,
            bytes_to_write);
@@ -197,7 +198,7 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
     reader->bytes_remaining = frame_length - kFrameMessageTypeFieldSize;
   }
   /* Process the non-header bytes. */
-  size_t bytes_to_write = GPR_MIN(*bytes_size, reader->bytes_remaining);
+  size_t bytes_to_write = std::min(*bytes_size, reader->bytes_remaining);
   memcpy(reader->output_buffer, bytes, bytes_to_write);
   reader->output_buffer += bytes_to_write;
   bytes_processed += bytes_to_write;

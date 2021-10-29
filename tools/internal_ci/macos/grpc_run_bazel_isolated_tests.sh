@@ -38,6 +38,6 @@ sudo sntp -sS pool.ntp.org
 # The "local" execution strategy is required because the test runs sudo and that doesn't work in a sandboxed environment (the default on mac)
 tools/bazel test $RUN_TESTS_FLAGS --genrule_strategy=local --test_output=all //test/cpp/common:time_jump_test
 
-# kill port_server.py to prevent the build from hanging
+# kill port_server.py to prevent the build from freezing
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 

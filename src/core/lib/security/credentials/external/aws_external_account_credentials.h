@@ -19,41 +19,43 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/external/external_account_credentials.h"
-
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
+#include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
 namespace grpc_core {
 
 class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<AwsExternalAccountCredentials> Create(
-      ExternalAccountCredentialsOptions options,
-      std::vector<std::string> scopes, grpc_error** error);
+      Options options, std::vector<std::string> scopes,
+      grpc_error_handle* error);
 
-  AwsExternalAccountCredentials(ExternalAccountCredentialsOptions options,
+  AwsExternalAccountCredentials(Options options,
                                 std::vector<std::string> scopes,
-                                grpc_error** error);
+                                grpc_error_handle* error);
 
  private:
   void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const ExternalAccountCredentialsOptions& options,
-      std::function<void(std::string, grpc_error*)> cb) override;
+      HTTPRequestContext* ctx, const Options& options,
+      std::function<void(std::string, grpc_error_handle)> cb) override;
 
   void RetrieveRegion();
-  static void OnRetrieveRegion(void* arg, grpc_error* error);
-  void OnRetrieveRegionInternal(grpc_error* error);
+  static void OnRetrieveRegion(void* arg, grpc_error_handle error);
+  void OnRetrieveRegionInternal(grpc_error_handle error);
 
   void RetrieveRoleName();
-  static void OnRetrieveRoleName(void* arg, grpc_error* error);
-  void OnRetrieveRoleNameInternal(grpc_error* error);
+  static void OnRetrieveRoleName(void* arg, grpc_error_handle error);
+  void OnRetrieveRoleNameInternal(grpc_error_handle error);
 
   void RetrieveSigningKeys();
-  static void OnRetrieveSigningKeys(void* arg, grpc_error* error);
-  void OnRetrieveSigningKeysInternal(grpc_error* error);
+  static void OnRetrieveSigningKeys(void* arg, grpc_error_handle error);
+  void OnRetrieveSigningKeysInternal(grpc_error_handle error);
 
   void BuildSubjectToken();
-  void FinishRetrieveSubjectToken(std::string subject_token, grpc_error* error);
+  void FinishRetrieveSubjectToken(std::string subject_token,
+                                  grpc_error_handle error);
+
+  std::string audience_;
 
   // Fields of credential source
   std::string region_url_;
@@ -71,7 +73,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string cred_verification_url_;
 
   HTTPRequestContext* ctx_ = nullptr;
-  std::function<void(std::string, grpc_error*)> cb_ = nullptr;
+  std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
 };
 
 }  // namespace grpc_core

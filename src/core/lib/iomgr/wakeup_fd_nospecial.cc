@@ -17,7 +17,7 @@
  */
 
 /*
- * This is a dummy file to provide an invalid specialized_wakeup_fd_vtable on
+ * This is a phony file to provide an invalid specialized_wakeup_fd_vtable on
  * systems without anything better than pipe.
  */
 
@@ -28,6 +28,7 @@
 #ifdef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
 
 #include <stddef.h>
+
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 static int check_availability_invalid(void) { return 0; }

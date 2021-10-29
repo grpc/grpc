@@ -1,0 +1,86 @@
+actions {
+  create_server {}
+}
+actions {
+  create_channel {
+    target: "dns:server"
+  }
+}
+actions {
+  create_call {
+    method: { value: "/foo" }
+    host: { value: "bob" }
+    timeout: 1000000000
+  }
+}
+actions {
+  request_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {}
+    }
+    operations {
+      send_message {}
+    }
+    operations {
+      send_close_from_client {}
+    }
+    operations {
+      receive_initial_metadata {}
+    }
+    operations {
+      receive_message {}
+    }
+    operations {
+      receive_status_on_client {}
+    }
+  }
+}
+actions {
+  change_active_call {}
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  advance_time: 1000
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  advance_time: 100000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {}
+    }
+    operations {
+      send_message {}
+    }
+    operations {
+      send_status_from_server {}
+    }
+    operations {
+      receive_message {}
+    }
+    operations {
+      receive_close_on_server {}
+    }
+  }
+}
+actions {
+  advance_time: 100000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 100000
+}

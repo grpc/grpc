@@ -25,25 +25,22 @@ def main
   server_runner = ServerRunner.new(echo_service)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  _, client_pid = start_client('sig_int_during_channel_watch_client.rb',
-                               server_port)
-  # use receipt of one RPC to indicate that the child process is
-  # ready for a SIGINT
-  echo_service.wait_for_first_rpc_received(20)
+  client_controller = ClientController.new(
+    'sig_int_during_channel_watch_client.rb', server_port)
   # give time for the client to get into the middle
   # of a channel state watch call
   sleep 1
-  Process.kill('SIGINT', client_pid)
+  Process.kill('SIGINT', client_controller.client_pid)
   begin
     Timeout.timeout(10) do
-      Process.wait(client_pid)
+      Process.wait(client_controller.client_pid)
     end
   rescue Timeout::Error
-    STDERR.puts "timeout wait for client pid #{client_pid}"
-    Process.kill('SIGKILL', client_pid)
-    Process.wait(client_pid)
+    STDERR.puts "timeout wait for client pid #{client_controller.client_pid}"
+    Process.kill('SIGKILL', client_controller.client_pid)
+    Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
-    raise 'Timed out waiting for client process. It likely hangs when a ' \
+    raise 'Timed out waiting for client process. It likely freezes when a ' \
       'SIGINT is sent while there is an active connectivity_state call'
   end
   client_exit_code = $CHILD_STATUS

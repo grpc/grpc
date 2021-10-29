@@ -39,13 +39,26 @@
   def get_absl_dep(lib_name):
       return lib_map[lib_name].cmake_target
 
-  def list_absl_lib_files_for(lib_name):
-    ret = []
-    lib = lib_map[lib_name]
-    for dep in lib.transitive_deps:
-      if is_absl_lib(dep) and len(lib_map[dep].src) > 0:
-        ret.append(get_absl_dep(dep).replace("::", "_"))
-    return ret
+  def lib_and_transitive_deps(lib):
+    return list(sorted(set({lib} | set(lib_map[lib].transitive_deps))))
+
+  def list_abseil_pkg_targets(lib):
+    # This returns a list of abseil pkg targets which the given lib and
+    # its non-abseil transitive dependencies depend on.
+    # As a result, internal abseil libraries are excluded from the result.
+    absl_specs = set()
+    for lib_name in lib_and_transitive_deps(lib):
+      if is_absl_lib(lib_name): continue
+      for dep in lib_map[lib_name].deps:
+        if is_absl_lib(dep):
+          absl_specs.add(get_absl_dep(dep).replace("::", "_"))
+    return list(sorted(absl_specs))
+
+  def is_shared_only_lib(lib_name):
+    """Returns True if only shared library should be generated."""
+    # grpc_csharp_ext is loaded by C# runtime and it
+    # only makes sense as a shared lib.
+    return lib_name in ['grpc_csharp_ext']
 
   def get_deps(target_dict):
     deps = []
@@ -53,8 +66,6 @@
       deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
-    if target_dict.get('secure', False):
-      deps.append("${_gRPC_SSL_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
@@ -67,6 +78,8 @@
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
+      elif d == 'libssl':
+        deps.append("${_gRPC_SSL_LIBRARIES}")
       elif is_absl_lib(d):
         deps.append(get_absl_dep(d))
       else:
@@ -138,9 +151,9 @@
   set(gRPC_CORE_VERSION     "${settings.core_version}")
   set(gRPC_CORE_SOVERSION   "${settings.core_version.major}")
   set(gRPC_CPP_VERSION      "${settings.cpp_version}")
-  set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}")
+  set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}.${settings.cpp_version.minor}")
   set(gRPC_CSHARP_VERSION   "${settings.csharp_version}")
-  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}")
+  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}.${settings.csharp_version.minor}")
   set(PACKAGE_STRING        "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -305,6 +318,12 @@
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
   endif()
 
+  if (gRPC_XDS_USER_AGENT_IS_CSHARP)
+    # The value of the defines needs to contain quotes.
+    # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
+    add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
+  endif()
+
   include(cmake/abseil-cpp.cmake)
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
@@ -313,6 +332,7 @@
   include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
+  include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
 
   if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
@@ -324,7 +344,7 @@
   endif()
 
   if(WIN32)
-    set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
+    set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
   endif()
 
   # Create directory for generated .proto files
@@ -375,7 +395,7 @@
              --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
              <%text>${_protobuf_include_path}</%text>
              <%text>${REL_FIL}</%text>
-        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
+        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
         WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)
@@ -453,7 +473,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
@@ -516,7 +536,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
+  add_library(${lib.name}${' SHARED' if is_shared_only_lib(lib.name) else ''}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
@@ -566,6 +586,7 @@
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
       third_party/googletest/googletest/include
@@ -646,6 +667,7 @@
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
       third_party/googletest/googletest/include
@@ -669,7 +691,13 @@
   </%def>
 
   <%def name="cc_install(tgt)">
+  % if tgt.name == 'grpcpp_channelz':
+  # grpcpp_channelz doesn't build with protobuf-lite, so no install required
+  # See https://github.com/grpc/grpc/issues/22826
+  if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
+  % else:
   if(gRPC_INSTALL)
+  % endif
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
       RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
       LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
@@ -729,8 +757,8 @@
     "gpr"
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    ""
-    "${" ".join(("-l" + l) for l in ["gpr",] + list_absl_lib_files_for("gpr"))}"
+    "${" ".join(list_abseil_pkg_targets("gpr"))}"
+    "${" ".join(("-l" + l) for l in ["gpr"])}"
     ""
     "gpr.pc")
 
@@ -739,8 +767,8 @@
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "gpr openssl"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
+    "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
     ""
     "grpc.pc")
 
@@ -749,8 +777,8 @@
     "gRPC unsecure"
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "gpr"
-    "${" ".join(("-l" + l) for l in ["grpc_unsecure",] + list_absl_lib_files_for("grpc_unsecure"))}"
+    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
+    "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
     ""
     "grpc_unsecure.pc")
 
@@ -759,8 +787,8 @@
     "gRPC++"
     "C++ wrapper for gRPC"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "grpc"
-    "${" ".join(("-l" + l) for l in ["grpc++",] + list_absl_lib_files_for("grpc++"))}"
+    "${" ".join(["grpc"] + list_abseil_pkg_targets("grpc++"))}"
+    "${" ".join(("-l" + l) for l in ["grpc++"])}"
     ""
     "grpc++.pc")
 
@@ -769,7 +797,7 @@
     "gRPC++ unsecure"
     "C++ wrapper for gRPC without SSL"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "grpc_unsecure"
-    "${" ".join(("-l" + l) for l in ["grpc++_unsecure",] + list_absl_lib_files_for("grpc++_unsecure"))}"
+    "${" ".join(["grpc_unsecure"] + list_abseil_pkg_targets("grpc++_unsecure"))}"
+    "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
     ""
     "grpc++_unsecure.pc")

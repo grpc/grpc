@@ -32,6 +32,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 #define GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 
+// IWYU pragma: private, include <grpcpp/completion_queue.h>
+
 #include <list>
 
 #include <grpc/impl/codegen/atm.h>
@@ -114,7 +116,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   explicit CompletionQueue(grpc_completion_queue* take);
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
-  ~CompletionQueue() {
+  ~CompletionQueue() override {
     ::grpc::g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
   }
 
@@ -175,9 +177,14 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// \return true if got an event, false if the queue is fully drained and
   ///         shut down.
   bool Next(void** tag, bool* ok) {
+    // Check return type == GOT_EVENT... cases:
+    // SHUTDOWN  - queue has been shutdown, return false.
+    // TIMEOUT   - we passed infinity time => queue has been shutdown, return
+    //             false.
+    // GOT_EVENT - we actually got an event, return true.
     return (AsyncNextInternal(tag, ok,
                               ::grpc::g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
+                                  GPR_CLOCK_REALTIME)) == GOT_EVENT);
   }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
@@ -243,11 +250,11 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
 
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
-  CompletionQueue(const grpc_completion_queue_attributes& attributes) {
+  explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
     cq_ = ::grpc::g_core_codegen_interface->grpc_completion_queue_create(
         ::grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
             &attributes),
-        &attributes, NULL);
+        &attributes, nullptr);
     InitialAvalanching();  // reserve this for the future shutdown
   }
 
@@ -301,7 +308,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// initialized, it must be flushed on the same thread.
   class CompletionQueueTLSCache {
    public:
-    CompletionQueueTLSCache(CompletionQueue* cq);
+    explicit CompletionQueueTLSCache(CompletionQueue* cq);
     ~CompletionQueueTLSCache();
     bool Flush(void** tag, bool* ok);
 
@@ -409,6 +416,9 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     return true;
   }
 
+  static CompletionQueue* CallbackAlternativeCQ();
+  static void ReleaseCallbackAlternativeCQ(CompletionQueue* cq);
+
   grpc_completion_queue* cq_;  // owned
 
   gpr_atm avalanches_in_flight_;
@@ -440,7 +450,7 @@ class ServerCompletionQueue : public CompletionQueue {
   /// \param shutdown_cb is the shutdown callback used for CALLBACK api queues
   ServerCompletionQueue(grpc_cq_completion_type completion_type,
                         grpc_cq_polling_type polling_type,
-                        grpc_experimental_completion_queue_functor* shutdown_cb)
+                        grpc_completion_queue_functor* shutdown_cb)
       : CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, completion_type, polling_type,
             shutdown_cb}),

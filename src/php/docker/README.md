@@ -168,7 +168,7 @@ NOTE: PHP 5.x has reached the end-of-life state and is no longer supported.
 ### `fork-support`
 
 This image tests `pcntl_fork()` support and makes sure scripts using
-`pcntl_fork()` don't hang or crash.
+`pcntl_fork()` don't freeze or crash.
 
 Build `grpc-ext` docker image:
 ```sh

@@ -95,6 +95,9 @@ message StartClientHandshakeReq {
 
   // (Optional) RPC protocol versions supported by the client.
   RpcProtocolVersions rpc_versions = 9;
+
+  // (Optional) Maximum frame size supported by the client.
+  uint32 max_frame_size = 10;
 }
 
 message ServerHandshakeParameters {
@@ -133,6 +136,9 @@ message StartServerHandshakeReq {
 
   // (Optional) RPC protocol versions supported by the server.
   RpcProtocolVersions rpc_versions = 6;
+
+  // (Optional) Maximum frame size supported by the server.
+  uint32 max_frame_size = 7;
 }
 
 message NextHandshakeMessageReq {
@@ -180,6 +186,9 @@ message HandshakerResult {
 
   // The RPC protocol versions supported by the peer.
   RpcProtocolVersions peer_rpc_versions = 7;
+
+  // The maximum frame size of the peer.
+  uint32 max_frame_size = 8;
 }
 
 message HandshakerStatus {

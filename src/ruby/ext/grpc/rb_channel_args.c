@@ -19,11 +19,11 @@
 #include <ruby/ruby.h>
 
 #include "rb_channel_args.h"
+
+#include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/grpc.h>
-
-#include "rb_grpc.h"
 
 static rb_data_type_t grpc_rb_channel_args_data_type = {
     "grpc_channel_args",

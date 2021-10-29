@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
 #define GRPCPP_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
 
+// IWYU pragma: private, include <grpcpp/support/async_unary_call.h>
+
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
@@ -250,7 +252,7 @@ class ClientAsyncResponseReader final
     initial_metadata_read_ = true;
   }
 
-  /// See \a ClientAysncResponseReaderInterface::Finish for semantics.
+  /// See \a ClientAsyncResponseReaderInterface::Finish for semantics.
   ///
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with

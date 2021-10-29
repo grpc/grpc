@@ -24,7 +24,6 @@
 
 #include <grpc/compression.h>
 #include <grpc/impl/codegen/atm.h>
-
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -37,7 +36,7 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
 
 class InteropServerContextInspector {
  public:
-  InteropServerContextInspector(const ::grpc::ServerContext& context);
+  explicit InteropServerContextInspector(const ::grpc::ServerContext& context);
 
   // Inspector methods, able to peek inside ServerContext, follow.
   std::shared_ptr<const AuthContext> GetAuthContext() const;

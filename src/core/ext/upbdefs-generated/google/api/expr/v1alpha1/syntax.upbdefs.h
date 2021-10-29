@@ -81,6 +81,11 @@ UPB_INLINE const upb_msgdef *google_api_expr_v1alpha1_SourceInfo_PositionsEntry_
   return upb_symtab_lookupmsg(s, "google.api.expr.v1alpha1.SourceInfo.PositionsEntry");
 }
 
+UPB_INLINE const upb_msgdef *google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &google_api_expr_v1alpha1_syntax_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "google.api.expr.v1alpha1.SourceInfo.MacroCallsEntry");
+}
+
 UPB_INLINE const upb_msgdef *google_api_expr_v1alpha1_SourcePosition_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &google_api_expr_v1alpha1_syntax_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "google.api.expr.v1alpha1.SourcePosition");

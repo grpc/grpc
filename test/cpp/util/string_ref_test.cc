@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpcpp/support/string_ref.h>
-
 #include <string.h>
 
 #include <gtest/gtest.h>
+
+#include <grpcpp/support/string_ref.h>
 
 #include "test/core/util/test_config.h"
 

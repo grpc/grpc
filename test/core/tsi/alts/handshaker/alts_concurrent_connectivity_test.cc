@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <fcntl.h>
-#include <gmock/gmock.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,9 +26,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <functional>
 #include <set>
 #include <thread>
+
+#include <gmock/gmock.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -41,7 +43,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/server_builder.h>
 
@@ -53,13 +54,11 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "test/core/end2end/cq_verifier.h"
 
 namespace {
 
@@ -104,7 +103,7 @@ grpc_channel* create_secure_channel_for_test(
 
 class FakeHandshakeServer {
  public:
-  FakeHandshakeServer(bool check_num_concurrent_rpcs) {
+  explicit FakeHandshakeServer(bool check_num_concurrent_rpcs) {
     int port = grpc_pick_unused_port_or_die();
     address_ = grpc_core::JoinHostPort("localhost", port);
     if (check_num_concurrent_rpcs) {
@@ -368,8 +367,9 @@ class FakeTcpServer {
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(port_);
-    ((char*)&addr.sin6_addr)[15] = 1;
-    if (bind(accept_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
+    (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
+    if (bind(accept_socket_, reinterpret_cast<const sockaddr*>(&addr),
+             sizeof(addr)) != 0) {
       gpr_log(GPR_ERROR, "Failed to bind socket to [::1]:%d : %d", port_,
               errno);
       abort();
@@ -387,7 +387,7 @@ class FakeTcpServer {
     gpr_log(GPR_DEBUG,
             "FakeTcpServer stop and "
             "join server thread");
-    gpr_event_set(&stop_ev_, (void*)1);
+    gpr_event_set(&stop_ev_, reinterpret_cast<void*>(1));
     run_server_loop_thd_->join();
     gpr_log(GPR_DEBUG,
             "FakeTcpServer join server "
@@ -449,7 +449,7 @@ class FakeTcpServer {
           0x00,                   // flags
           0x00, 0x00, 0x00, 0x00  // stream identifier
       };
-      if (total_bytes_sent_ < kEmptyHttp2SettingsFrame.size()) {
+      if (total_bytes_sent_ < int(kEmptyHttp2SettingsFrame.size())) {
         int bytes_to_send = kEmptyHttp2SettingsFrame.size() - total_bytes_sent_;
         int bytes_sent =
             send(fd_, kEmptyHttp2SettingsFrame.data() + total_bytes_sent_,
@@ -462,7 +462,7 @@ class FakeTcpServer {
           GPR_ASSERT(0);
         } else if (bytes_sent > 0) {
           total_bytes_sent_ += bytes_sent;
-          GPR_ASSERT(total_bytes_sent_ <= kEmptyHttp2SettingsFrame.size());
+          GPR_ASSERT(total_bytes_sent_ <= int(kEmptyHttp2SettingsFrame.size()));
         }
       }
     }

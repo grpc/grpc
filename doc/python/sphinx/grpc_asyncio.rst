@@ -76,6 +76,11 @@ gRPC Exceptions
 .. autoexception:: InternalError
 .. autoexception:: AioRpcError
 
+gRPC Metadata
+^^^^^^^^^^^^^
+
+.. autoclass:: Metadata
+
 
 Shared Context
 ^^^^^^^^^^^^^^^^^^^^
@@ -100,11 +105,20 @@ Server-Side Context
 
 
 Client-Side Interceptor
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: ClientCallDetails
 .. autoclass:: InterceptedUnaryUnaryCall
+.. autoclass:: ClientInterceptor
 .. autoclass:: UnaryUnaryClientInterceptor
+.. autoclass:: UnaryStreamClientInterceptor
+.. autoclass:: StreamUnaryClientInterceptor
+.. autoclass:: StreamStreamClientInterceptor
+
+Server-Side Interceptor
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: ServerInterceptor
 
 
 Multi-Callable Interfaces

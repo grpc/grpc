@@ -18,7 +18,6 @@
 
 #include "test/core/util/test_config.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -26,7 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/debugging/failure_signal_handler.h"
+#include "absl/debugging/symbolize.h"
+
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -35,9 +38,6 @@
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/util/stack_tracer.h"
-
-#include "absl/debugging/failure_signal_handler.h"
-#include "absl/debugging/symbolize.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -153,10 +153,11 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
           GPR_TIMESPAN));
 }
 
-void grpc_test_init(int argc, char** argv) {
+void grpc_test_init(int /*argc*/, char** argv) {
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
+  gpr_log_verbosity_init();
   gpr_log(GPR_DEBUG,
           "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
           ", poller=%" PRId64 ", total=%" PRId64,

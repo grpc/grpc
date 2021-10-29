@@ -90,7 +90,7 @@ static void test_mt(void) {
   }
   size_t num_done = 0;
   size_t spins = 0;
-  gpr_event_set(&start, (void*)1);
+  gpr_event_set(&start, reinterpret_cast<void*>(1));
   while (num_done != GPR_ARRAY_SIZE(thds)) {
     MultiProducerSingleConsumerQueue::Node* n;
     while ((n = q.Pop()) == nullptr) {
@@ -168,7 +168,7 @@ static void test_mt_multipop(void) {
     pull_thds[i] = grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
     pull_thds[i].Start();
   }
-  gpr_event_set(&start, (void*)1);
+  gpr_event_set(&start, reinterpret_cast<void*>(1));
   for (auto& pth : pull_thds) {
     pth.Join();
   }

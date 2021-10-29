@@ -48,8 +48,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
 
 @interface GRPCCall () <GRXWriteable>
 // Make them read-write.
-@property(atomic, strong) NSDictionary *responseHeaders;
-@property(atomic, strong) NSDictionary *responseTrailers;
+@property(atomic, copy) NSDictionary *responseHeaders;
+@property(atomic, copy) NSDictionary *responseTrailers;
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
@@ -271,10 +271,14 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 - (void)dealloc {
-  __block GRPCWrappedCall *wrappedCall = _wrappedCall;
-  dispatch_async(_callQueue, ^{
-    wrappedCall = nil;
-  });
+  if (_callQueue) {
+    __block GRPCWrappedCall *wrappedCall = _wrappedCall;
+    dispatch_async(_callQueue, ^{
+      wrappedCall = nil;
+    });
+  } else {
+    _wrappedCall = nil;
+  }
 }
 
 #pragma mark Read messages

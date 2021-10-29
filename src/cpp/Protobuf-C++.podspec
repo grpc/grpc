@@ -1,13 +1,13 @@
 Pod::Spec.new do |s|
   s.name     = 'Protobuf-C++'
-  s.version  = '3.13.0'
+  s.version  = '3.18.1'
   s.summary  = 'Protocol Buffers v3 runtime library for C++.'
-  s.homepage = 'https://github.com/google/protobuf'
+  s.homepage = 'https://github.com/protocolbuffers/protobuf'
   s.license  = '3-Clause BSD License'
   s.authors  = { 'The Protocol Buffers contributors' => 'protobuf@googlegroups.com' }
   s.cocoapods_version = '>= 1.0'
 
-  s.source = { :git => 'https://github.com/google/protobuf.git',
+  s.source = { :git => 'https://github.com/protocolbuffers/protobuf.git',
                :tag => "v#{s.version}" }
 
   s.source_files = 'src/google/protobuf/*.{h,cc,inc}',
@@ -21,7 +21,8 @@ Pod::Spec.new do |s|
                     'src/google/**/*_unittest.{h,cc}',
                     'src/google/protobuf/test_util*.{h,cc}',
                     'src/google/protobuf/map_lite_test_util.{h,cc}',
-                    'src/google/protobuf/map_test_util*.{h,cc,inc}'
+                    'src/google/protobuf/map_test_util*.{h,cc,inc}',
+                    'src/google/protobuf/reflection_tester.{h,cc}'
 
   s.header_mappings_dir = 'src'
 

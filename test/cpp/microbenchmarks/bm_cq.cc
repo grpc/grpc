@@ -20,6 +20,7 @@
  * working */
 
 #include <benchmark/benchmark.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
@@ -57,7 +58,7 @@ BENCHMARK(BM_CreateDestroyCpp2);
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;
   for (auto _ : state) {
-    // TODO: sreek Templatize this benchmark and pass completion type and
+    // TODO(sreek): Templatize this benchmark and pass completion type and
     // polling type as parameters
     grpc_completion_queue_destroy(
         grpc_completion_queue_create_for_next(nullptr));
@@ -74,7 +75,7 @@ static void DoneWithCompletionOnHeap(void* /*arg*/,
   delete completion;
 }
 
-class DummyTag final : public internal::CompletionQueueTag {
+class PhonyTag final : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
     return true;
@@ -87,10 +88,10 @@ static void BM_Pass1Cpp(benchmark::State& state) {
   grpc_completion_queue* c_cq = cq.cq();
   for (auto _ : state) {
     grpc_cq_completion completion;
-    DummyTag dummy_tag;
+    PhonyTag phony_tag;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
-    grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+    GPR_ASSERT(grpc_cq_begin_op(c_cq, &phony_tag));
+    grpc_cq_end_op(c_cq, &phony_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
                    nullptr, &completion);
 
     void* tag;
@@ -103,7 +104,7 @@ BENCHMARK(BM_Pass1Cpp);
 
 static void BM_Pass1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   for (auto _ : state) {
@@ -122,7 +123,7 @@ BENCHMARK(BM_Pass1Core);
 
 static void BM_Pluck1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   for (auto _ : state) {
@@ -141,7 +142,7 @@ BENCHMARK(BM_Pluck1Core);
 
 static void BM_EmptyCore(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   for (auto _ : state) {
@@ -162,14 +163,14 @@ static gpr_mu shutdown_mu, mu;
 static gpr_cv shutdown_cv, cv;
 
 // Tag completion queue iterate times
-class TagCallback : public grpc_experimental_completion_queue_functor {
+class TagCallback : public grpc_completion_queue_functor {
  public:
   explicit TagCallback(int* iter) : iter_(iter) {
     functor_run = &TagCallback::Run;
     inlineable = false;
   }
   ~TagCallback() {}
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_completion_queue_functor* cb, int ok) {
     gpr_mu_lock(&mu);
     GPR_ASSERT(static_cast<bool>(ok));
     *static_cast<TagCallback*>(cb)->iter_ += 1;
@@ -182,14 +183,14 @@ class TagCallback : public grpc_experimental_completion_queue_functor {
 };
 
 // Check if completion queue is shut down
-class ShutdownCallback : public grpc_experimental_completion_queue_functor {
+class ShutdownCallback : public grpc_completion_queue_functor {
  public:
   explicit ShutdownCallback(bool* done) : done_(done) {
     functor_run = &ShutdownCallback::Run;
     inlineable = false;
   }
   ~ShutdownCallback() {}
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_completion_queue_functor* cb, int ok) {
     gpr_mu_lock(&shutdown_mu);
     *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
     gpr_cv_signal(&shutdown_cv);

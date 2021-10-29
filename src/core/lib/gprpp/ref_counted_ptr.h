@@ -35,10 +35,12 @@ template <typename T>
 class RefCountedPtr {
  public:
   RefCountedPtr() {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(std::nullptr_t) {}
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(Y* value) : value_(value) {}
 
   // Move ctors.
@@ -47,6 +49,7 @@ class RefCountedPtr {
     other.value_ = nullptr;
   }
   template <typename Y>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(RefCountedPtr<Y>&& other) noexcept {
     value_ = static_cast<T*>(other.value_);
     other.value_ = nullptr;
@@ -71,6 +74,7 @@ class RefCountedPtr {
     value_ = other.value_;
   }
   template <typename Y>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(const RefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
@@ -79,6 +83,7 @@ class RefCountedPtr {
   }
 
   // Copy assignment.
+  // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   RefCountedPtr& operator=(const RefCountedPtr& other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
@@ -181,11 +186,13 @@ template <typename T>
 class WeakRefCountedPtr {
  public:
   WeakRefCountedPtr() {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
   WeakRefCountedPtr(std::nullptr_t) {}
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
-  explicit WeakRefCountedPtr(Y* value) {
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  WeakRefCountedPtr(Y* value) {
     value_ = value;
   }
 
@@ -195,6 +202,7 @@ class WeakRefCountedPtr {
     other.value_ = nullptr;
   }
   template <typename Y>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   WeakRefCountedPtr(WeakRefCountedPtr<Y>&& other) noexcept {
     value_ = static_cast<T*>(other.value_);
     other.value_ = nullptr;
@@ -219,6 +227,7 @@ class WeakRefCountedPtr {
     value_ = other.value_;
   }
   template <typename Y>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   WeakRefCountedPtr(const WeakRefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
@@ -227,6 +236,7 @@ class WeakRefCountedPtr {
   }
 
   // Copy assignment.
+  // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   WeakRefCountedPtr& operator=(const WeakRefCountedPtr& other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.

@@ -18,14 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
+
+#include <grpc/grpc.h>
 
 namespace grpc_core {
 
-grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
-    const ServerAddressList& /*addresses*/, grpc_channel_args* args) {
+grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
   return args;
 }
 

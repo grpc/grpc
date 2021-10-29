@@ -25,6 +25,8 @@
 #include <thread>
 #include <vector>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -33,8 +35,6 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
@@ -67,7 +67,6 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
@@ -86,7 +85,6 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
     default:
       abort();
   }
-  abort();
 }
 
 class ScopedProfile final {
@@ -157,7 +155,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   // Protect against multiple clients using this worker at once.
   class InstanceGuard {
    public:
-    InstanceGuard(WorkerServiceImpl* impl)
+    explicit InstanceGuard(WorkerServiceImpl* impl)
         : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
     ~InstanceGuard() {
       if (acquired_) {

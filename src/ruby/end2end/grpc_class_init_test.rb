@@ -20,6 +20,9 @@ def main
   native_grpc_classes = %w( channel
                             server
                             channel_credentials
+                            xds_channel_credentials
+                            server_credentials
+                            xds_server_credentials
                             call_credentials
                             compression_options )
 
@@ -45,7 +48,7 @@ def main
           Process.wait(client_pid)
           STDERR.puts 'killed client child'
           raise 'Timed out waiting for client process. ' \
-            'It likely hangs when the first constructed gRPC object has ' \
+            'It likely freezes when the first constructed gRPC object has ' \
             "type: #{grpc_class}"
         end
 

@@ -17,9 +17,11 @@ import contextlib
 import logging
 import os
 import sys
+import threading
 import unittest
 
 import grpc
+from six.moves import queue
 
 from tests.unit import test_common
 
@@ -95,6 +97,8 @@ else:
 
 # TODO(https://github.com/grpc/grpc/issues/22257)
 @unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "ThreadLocals do not work under gevent.")
 class ContextVarsPropagationTest(unittest.TestCase):
 
     def test_propagation_to_auth_plugin(self):
@@ -111,6 +115,47 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 stub = channel.unary_unary(_UNARY_UNARY)
                 response = stub(_REQUEST, wait_for_ready=True)
                 self.assertEqual(_REQUEST, response)
+
+    def test_concurrent_propagation(self):
+        _THREAD_COUNT = 32
+        _RPC_COUNT = 32
+
+        set_up_expected_context()
+        with _server() as port:
+            target = "localhost:{}".format(port)
+            local_credentials = grpc.local_channel_credentials()
+            test_call_credentials = TestCallCredentials()
+            call_credentials = grpc.metadata_call_credentials(
+                test_call_credentials, "test call credentials")
+            composite_credentials = grpc.composite_channel_credentials(
+                local_credentials, call_credentials)
+            wait_group = test_common.WaitGroup(_THREAD_COUNT)
+
+            def _run_on_thread(exception_queue):
+                try:
+                    with grpc.secure_channel(target,
+                                             composite_credentials) as channel:
+                        stub = channel.unary_unary(_UNARY_UNARY)
+                        wait_group.done()
+                        wait_group.wait()
+                        for i in range(_RPC_COUNT):
+                            response = stub(_REQUEST, wait_for_ready=True)
+                            self.assertEqual(_REQUEST, response)
+                except Exception as e:  # pylint: disable=broad-except
+                    exception_queue.put(e)
+
+            threads = []
+            for _ in range(_RPC_COUNT):
+                q = queue.Queue()
+                thread = threading.Thread(target=_run_on_thread, args=(q,))
+                thread.setDaemon(True)
+                thread.start()
+                threads.append((thread, q))
+
+            for thread, q in threads:
+                thread.join()
+                if not q.empty():
+                    raise q.get()
 
 
 if __name__ == '__main__':

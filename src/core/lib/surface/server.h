@@ -19,9 +19,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <list>
 #include <vector>
 
+#include "absl/status/statusor.h"
+#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -30,7 +33,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -49,21 +52,23 @@ class Server : public InternallyRefCounted<Server> {
   // An object to represent the most relevant characteristics of a
   // newly-allocated call object when using an AllocatingRequestMatcherBatch.
   struct BatchCallAllocation {
-    grpc_experimental_completion_queue_functor* tag;
+    void* tag;
     grpc_call** call;
     grpc_metadata_array* initial_metadata;
     grpc_call_details* details;
+    grpc_completion_queue* cq;
   };
 
   // An object to represent the most relevant characteristics of a
   // newly-allocated call object when using an
   // AllocatingRequestMatcherRegistered.
   struct RegisteredCallAllocation {
-    grpc_experimental_completion_queue_functor* tag;
+    void* tag;
     grpc_call** call;
     grpc_metadata_array* initial_metadata;
     gpr_timespec* deadline;
     grpc_byte_buffer** optional_payload;
+    grpc_completion_queue* cq;
   };
 
   /// Interface for listeners.
@@ -90,12 +95,9 @@ class Server : public InternallyRefCounted<Server> {
   explicit Server(const grpc_channel_args* args);
   ~Server() override;
 
-  void Orphan() override;
+  void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
   const grpc_channel_args* channel_args() const { return channel_args_; }
-  grpc_resource_user* default_resource_user() const {
-    return default_resource_user_;
-  }
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The
@@ -103,7 +105,16 @@ class Server : public InternallyRefCounted<Server> {
   // result is valid for the lifetime of the server.
   const std::vector<grpc_pollset*>& pollsets() const { return pollsets_; }
 
-  bool HasOpenConnections();
+  grpc_server_config_fetcher* config_fetcher() const {
+    return config_fetcher_.get();
+  }
+
+  void set_config_fetcher(
+      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
+    config_fetcher_ = std::move(config_fetcher);
+  }
+
+  bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
@@ -111,15 +122,17 @@ class Server : public InternallyRefCounted<Server> {
   void AddListener(OrphanablePtr<ListenerInterface> listener);
 
   // Starts listening for connections.
-  void Start();
+  void Start() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
-  grpc_error* SetupTransport(
+  // Takes ownership of a ref on resource_user from the caller.
+  grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
       const grpc_channel_args* args,
       const RefCountedPtr<channelz::SocketNode>& socket_node,
-      grpc_resource_user* resource_user = nullptr);
+      grpc_resource_user* resource_user = nullptr,
+      size_t preallocated_bytes = 0);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -149,9 +162,10 @@ class Server : public InternallyRefCounted<Server> {
       grpc_completion_queue* cq_bound_to_call,
       grpc_completion_queue* cq_for_notification, void* tag_new);
 
-  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag);
+  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag)
+      ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
-  void CancelAllCalls();
+  void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
  private:
   struct RequestedCall;
@@ -188,8 +202,8 @@ class Server : public InternallyRefCounted<Server> {
                                                  bool is_idempotent);
 
     // Filter vtable functions.
-    static grpc_error* InitChannelElement(grpc_channel_element* elem,
-                                          grpc_channel_element_args* args);
+    static grpc_error_handle InitChannelElement(
+        grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
 
    private:
@@ -198,9 +212,9 @@ class Server : public InternallyRefCounted<Server> {
     static void AcceptStream(void* arg, grpc_transport* /*transport*/,
                              const void* transport_server_data);
 
-    void Destroy();
+    void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
-    static void FinishDestroy(void* arg, grpc_error* error);
+    static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
     grpc_channel* channel_;
@@ -250,8 +264,8 @@ class Server : public InternallyRefCounted<Server> {
     void FailCallCreation();
 
     // Filter vtable functions.
-    static grpc_error* InitCallElement(grpc_call_element* elem,
-                                       const grpc_call_element_args* args);
+    static grpc_error_handle InitCallElement(
+        grpc_call_element* elem, const grpc_call_element_args* args);
     static void DestroyCallElement(grpc_call_element* elem,
                                    const grpc_call_final_info* /*final_info*/,
                                    grpc_closure* /*ignored*/);
@@ -260,21 +274,22 @@ class Server : public InternallyRefCounted<Server> {
 
    private:
     // Helper functions for handling calls at the top of the call stack.
-    static void RecvInitialMetadataBatchComplete(void* arg, grpc_error* error);
+    static void RecvInitialMetadataBatchComplete(void* arg,
+                                                 grpc_error_handle error);
     void StartNewRpc(grpc_call_element* elem);
-    static void PublishNewRpc(void* arg, grpc_error* error);
+    static void PublishNewRpc(void* arg, grpc_error_handle error);
 
     // Functions used inside the call stack.
     void StartTransportStreamOpBatchImpl(grpc_call_element* elem,
                                          grpc_transport_stream_op_batch* batch);
-    static void RecvInitialMetadataReady(void* arg, grpc_error* error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
+    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
 
     grpc_call* call_;
 
-    Atomic<CallState> state_{CallState::NOT_STARTED};
+    std::atomic<CallState> state_{CallState::NOT_STARTED};
 
     absl::optional<grpc_slice> path_;
     absl::optional<grpc_slice> host_;
@@ -295,12 +310,12 @@ class Server : public InternallyRefCounted<Server> {
     uint32_t recv_initial_metadata_flags_ = 0;
     grpc_closure recv_initial_metadata_ready_;
     grpc_closure* original_recv_initial_metadata_ready_;
-    grpc_error* recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_initial_metadata_error_ = GRPC_ERROR_NONE;
 
     bool seen_recv_trailing_metadata_ready_ = false;
     grpc_closure recv_trailing_metadata_ready_;
     grpc_closure* original_recv_trailing_metadata_ready_;
-    grpc_error* recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
 
     grpc_closure publish_;
 
@@ -322,7 +337,7 @@ class Server : public InternallyRefCounted<Server> {
     grpc_cq_completion completion;
   };
 
-  static void ListenerDestroyDone(void* arg, grpc_error* error);
+  static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
                                 grpc_cq_completion* /*completion*/) {
@@ -331,12 +346,14 @@ class Server : public InternallyRefCounted<Server> {
 
   static void DoneRequestEvent(void* req, grpc_cq_completion* completion);
 
-  void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error* error);
+  void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error_handle error);
   grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
 
-  void MaybeFinishShutdown();
+  void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
+      ABSL_LOCKS_EXCLUDED(mu_call_);
 
-  void KillPendingWorkLocked(grpc_error* error);
+  void KillPendingWorkLocked(grpc_error_handle error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_call_);
 
   static grpc_call_error ValidateServerRequest(
       grpc_completion_queue* cq_for_notification, void* tag,
@@ -347,9 +364,54 @@ class Server : public InternallyRefCounted<Server> {
 
   std::vector<grpc_channel*> GetChannelsLocked() const;
 
+  // Take a shutdown ref for a request (increment by 2) and return if shutdown
+  // has not been called.
+  bool ShutdownRefOnRequest() {
+    int old_value = shutdown_refs_.fetch_add(2, std::memory_order_acq_rel);
+    return (old_value & 1) != 0;
+  }
+
+  // Decrement the shutdown ref counter by either 1 (for shutdown call) or 2
+  // (for in-flight request) and possibly call MaybeFinishShutdown if
+  // appropriate.
+  void ShutdownUnrefOnRequest() ABSL_LOCKS_EXCLUDED(mu_global_) {
+    if (shutdown_refs_.fetch_sub(2, std::memory_order_acq_rel) == 2) {
+      MutexLock lock(&mu_global_);
+      MaybeFinishShutdown();
+      // The last request in-flight during shutdown is now complete.
+      if (requests_complete_ != nullptr) {
+        GPR_ASSERT(!requests_complete_->HasBeenNotified());
+        requests_complete_->Notify();
+      }
+    }
+  }
+  // Returns a notification pointer to wait on if there are requests in-flight,
+  // or null.
+  absl::Notification* ShutdownUnrefOnShutdownCall()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) GRPC_MUST_USE_RESULT {
+    if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      // There is no request in-flight.
+      MaybeFinishShutdown();
+      return nullptr;
+    }
+    requests_complete_ = absl::make_unique<absl::Notification>();
+    return requests_complete_.get();
+  }
+
+  bool ShutdownCalled() const {
+    return (shutdown_refs_.load(std::memory_order_acquire) & 1) == 0;
+  }
+
+  // Returns whether there are no more shutdown refs, which means that shutdown
+  // has been called and all accepted requests have been published if using an
+  // AllocatingRequestMatcher.
+  bool ShutdownReady() const {
+    return shutdown_refs_.load(std::memory_order_acquire) == 0;
+  }
+
   grpc_channel_args* const channel_args_;
-  grpc_resource_user* default_resource_user_ = nullptr;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
+  std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
@@ -365,9 +427,9 @@ class Server : public InternallyRefCounted<Server> {
   Mutex mu_global_;  // mutex for server and channel state
   Mutex mu_call_;    // mutex for call-specific state
 
-  // startup synchronization: flag is protected by mu_global_, signals whether
-  // we are doing the listener start routine or not.
-  bool starting_ = false;
+  // startup synchronization: flag, signals whether we are doing the listener
+  // start routine or not.
+  bool starting_ ABSL_GUARDED_BY(mu_global_) = false;
   CondVar starting_cv_;
 
   std::vector<std::unique_ptr<RegisteredMethod>> registered_methods_;
@@ -375,9 +437,17 @@ class Server : public InternallyRefCounted<Server> {
   // Request matcher for unregistered methods.
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;
 
-  std::atomic_bool shutdown_flag_{false};
-  bool shutdown_published_ = false;
-  std::vector<ShutdownTag> shutdown_tags_;
+  // The shutdown refs counter tracks whether or not shutdown has been called
+  // and whether there are any AllocatingRequestMatcher requests that have been
+  // accepted but not yet started (+2 on each one). If shutdown has been called,
+  // the lowest bit will be 0 (defaults to 1) and the counter will be even. The
+  // server should not notify on shutdown until the counter is 0 (shutdown is
+  // called and there are no requests that are accepted but not started).
+  std::atomic<int> shutdown_refs_{1};
+  bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
+  std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
+  std::unique_ptr<absl::Notification> requests_complete_
+      ABSL_GUARDED_BY(mu_global_);
 
   std::list<ChannelData*> channels_;
 
@@ -392,6 +462,36 @@ class Server : public InternallyRefCounted<Server> {
 
 struct grpc_server {
   grpc_core::OrphanablePtr<grpc_core::Server> core_server;
+};
+
+struct grpc_server_config_fetcher {
+ public:
+  class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
+   public:
+    // Ownership of \a args is transfered.
+    virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
+        grpc_channel_args* args, grpc_endpoint* tcp) = 0;
+  };
+
+  class WatcherInterface {
+   public:
+    virtual ~WatcherInterface() = default;
+    // UpdateConnectionManager() is invoked by the config fetcher when a new
+    // config is available. Implementations should update the connection manager
+    // and start serving if not already serving.
+    virtual void UpdateConnectionManager(
+        grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
+    // Implementations should stop serving when this is called. Serving should
+    // only resume when UpdateConfig() is invoked.
+    virtual void StopServing() = 0;
+  };
+
+  virtual ~grpc_server_config_fetcher() = default;
+
+  virtual void StartWatch(std::string listening_address,
+                          std::unique_ptr<WatcherInterface> watcher) = 0;
+  virtual void CancelWatch(WatcherInterface* watcher) = 0;
+  virtual grpc_pollset_set* interested_parties() = 0;
 };
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

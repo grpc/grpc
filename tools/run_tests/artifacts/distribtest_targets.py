@@ -81,7 +81,10 @@ def create_jobspec(name,
 class CSharpDistribTest(object):
     """Tests C# NuGet package"""
 
-    def __init__(self, platform, arch, docker_suffix=None,
+    def __init__(self,
+                 platform,
+                 arch,
+                 docker_suffix=None,
                  use_dotnet_cli=False):
         self.name = 'csharp_%s_%s' % (platform, arch)
         self.platform = platform
@@ -235,7 +238,7 @@ class PHP7DistribTest(object):
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php7', platform, arch]
+        self.labels = ['distribtest', 'php', 'php7', platform, arch]
         if docker_suffix:
             self.labels.append(docker_suffix)
 
@@ -323,7 +326,8 @@ def targets():
         CppDistribTest('linux', 'x64', 'stretch',
                        'cmake_module_install_pkgconfig'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake_pkgconfig'),
-        CppDistribTest('linux', 'x64', 'stretch', 'raspberry_pi'),
+        CppDistribTest('linux', 'x64', 'stretch_aarch64_cross',
+                       'cmake_aarch64_cross'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         # C#
@@ -340,35 +344,32 @@ def targets():
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
         # Python
-        PythonDistribTest('linux', 'x64', 'jessie'),
-        PythonDistribTest('linux', 'x86', 'jessie'),
-        PythonDistribTest('linux', 'x64', 'centos6'),
+        PythonDistribTest('linux', 'x64', 'buster'),
+        PythonDistribTest('linux', 'x86', 'buster'),
         PythonDistribTest('linux', 'x64', 'centos7'),
-        PythonDistribTest('linux', 'x64', 'fedora23'),
+        PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
+        PythonDistribTest('linux', 'aarch64', 'python38_buster'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
-        PythonDistribTest('linux', 'x64', 'jessie', source=True),
-        PythonDistribTest('linux', 'x86', 'jessie', source=True),
+        PythonDistribTest('linux', 'x64', 'buster', source=True),
+        PythonDistribTest('linux', 'x86', 'buster', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
-        PythonDistribTest('linux', 'x64', 'fedora23', source=True),
+        PythonDistribTest('linux', 'x64', 'fedora34', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
         # Ruby
-        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_3'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_7'),
+        # TODO(apolcyn): add a ruby 3.0 test once protobuf adds support
         RubyDistribTest('linux',
                         'x64',
                         'jessie',
-                        ruby_version='ruby_2_3',
+                        ruby_version='ruby_2_4',
                         source=True),
-        RubyDistribTest('linux', 'x64', 'centos6'),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora23'),
         RubyDistribTest('linux', 'x64', 'opensuse'),

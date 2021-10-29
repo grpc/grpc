@@ -26,6 +26,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -41,14 +42,14 @@ grpc_chttp2_data_parser::~grpc_chttp2_data_parser() {
   GRPC_ERROR_UNREF(error);
 }
 
-grpc_error* grpc_chttp2_data_parser_begin_frame(
+grpc_error_handle grpc_chttp2_data_parser_begin_frame(
     grpc_chttp2_data_parser* /*parser*/, uint8_t flags, uint32_t stream_id,
     grpc_chttp2_stream* s) {
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
-    return grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("unsupported data flags: 0x%02x", flags).c_str()),
-        GRPC_ERROR_INT_STREAM_ID, static_cast<intptr_t>(stream_id));
+    return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                                  "unsupported data flags: 0x%02x", flags)),
+                              GRPC_ERROR_INT_STREAM_ID,
+                              static_cast<intptr_t>(stream_id));
   }
 
   if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
@@ -89,11 +90,11 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
   stats->data_bytes += write_bytes;
 }
 
-grpc_error* grpc_deframe_unprocessed_incoming_frames(
+grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
     grpc_slice_buffer* slices, grpc_slice* slice_out,
     grpc_core::OrphanablePtr<grpc_core::ByteStream>* stream_out) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_chttp2_transport* t = s->t;
 
   while (slices->count > 0) {
@@ -128,15 +129,14 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
             p->is_frame_compressed = true; /* GPR_TRUE */
             break;
           default:
-            p->error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Bad GRPC frame type 0x%02x", p->frame_type)
-                    .c_str());
+            p->error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                absl::StrFormat("Bad GRPC frame type 0x%02x", p->frame_type));
             p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                           static_cast<intptr_t>(s->id));
-            p->error = grpc_error_set_str(
-                p->error, GRPC_ERROR_STR_RAW_BYTES,
-                grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(
-                    grpc_dump_slice(*slice, GPR_DUMP_HEX | GPR_DUMP_ASCII))));
+            grpc_core::UniquePtr<char> dmp(
+                grpc_dump_slice(*slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+            p->error = grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES,
+                                          dmp.get());
             p->error =
                 grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);
             p->state = GRPC_CHTTP2_DATA_ERROR;
@@ -148,7 +148,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_1:
         s->stats.incoming.framing_bytes++;
         p->frame_size = (static_cast<uint32_t>(*cur)) << 24;
@@ -157,7 +157,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_2:
         s->stats.incoming.framing_bytes++;
         p->frame_size |= (static_cast<uint32_t>(*cur)) << 16;
@@ -166,7 +166,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_3:
         s->stats.incoming.framing_bytes++;
         p->frame_size |= (static_cast<uint32_t>(*cur)) << 8;
@@ -175,7 +175,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           grpc_slice_buffer_remove_first(slices);
           continue;
         }
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FH_4:
         s->stats.incoming.framing_bytes++;
         GPR_ASSERT(stream_out != nullptr);
@@ -275,11 +275,11 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_data_parser_parse(void* /*parser*/,
-                                          grpc_chttp2_transport* t,
-                                          grpc_chttp2_stream* s,
-                                          const grpc_slice& slice,
-                                          int is_last) {
+grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
+                                                grpc_chttp2_transport* t,
+                                                grpc_chttp2_stream* s,
+                                                const grpc_slice& slice,
+                                                int is_last) {
   if (!s->pending_byte_stream) {
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->frame_storage, slice);
@@ -297,7 +297,11 @@ grpc_error* grpc_chttp2_data_parser_parse(void* /*parser*/,
   }
 
   if (is_last && s->received_last_frame) {
-    grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+    grpc_chttp2_mark_stream_closed(
+        t, s, true, false,
+        t->is_client ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                           "Data frame with END_STREAM flag received")
+                     : GRPC_ERROR_NONE);
   }
 
   return GRPC_ERROR_NONE;

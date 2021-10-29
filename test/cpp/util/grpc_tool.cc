@@ -16,15 +16,9 @@
  *
  */
 
-#include "test/cpp/util/grpc_tool.h"
-
-#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/string_ref.h>
+
+#include "test/cpp/util/grpc_tool.h"
 
 #include <cstdio>
 #include <fstream>
@@ -36,6 +30,14 @@
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+
+#include <grpc/grpc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/string_ref.h>
+
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
@@ -52,7 +54,9 @@ ABSL_FLAG(bool, remotedb, true,
           "Use server types to parse and format messages");
 ABSL_FLAG(std::string, metadata, "",
           "Metadata to send to server, in the form of key1:val1:key2:val2");
-ABSL_FLAG(std::string, proto_path, ".", "Path to look for the proto file.");
+ABSL_FLAG(std::string, proto_path, ".",
+          "Path to look for the proto file. "
+          "Multiple paths can be separated by " GRPC_CLI_PATH_SEPARATOR);
 ABSL_FLAG(std::string, protofiles, "", "Name of the proto file.");
 ABSL_FLAG(bool, binary_input, false, "Input in binary format");
 ABSL_FLAG(bool, binary_output, false, "Output in binary format");
@@ -280,7 +284,7 @@ void Usage(const std::string& msg) {
 }
 
 const Command* FindCommand(const std::string& name) {
-  for (int i = 0; i < (int)ArraySize(ops); i++) {
+  for (int i = 0; i < static_cast<int>(ArraySize(ops)); i++) {
     if (name == ops[i].command) {
       return &ops[i];
     }
@@ -489,8 +493,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    <request>                ; Text protobuffer (overrides infile)\n"
       "    --protofiles             ; Comma separated proto files used as a"
       " fallback when parsing request/response\n"
-      "    --proto_path             ; The search path of proto files, valid"
-      " only when --protofiles is given\n"
+      "    --proto_path             ; The search paths of proto files"
+      " (" GRPC_CLI_PATH_SEPARATOR
+      " separated), valid only when --protofiles is given\n"
       "    --noremotedb             ; Don't attempt to use reflection service"
       " at all\n"
       "    --metadata               ; The metadata to be sent to the server\n"
@@ -856,8 +861,9 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
       "    <message>                ; Text protobuffer (overrides --infile)\n"
       "    --protofiles             ; Comma separated proto files used as a"
       " fallback when parsing request/response\n"
-      "    --proto_path             ; The search path of proto files, valid"
-      " only when --protofiles is given\n"
+      "    --proto_path             ; The search paths of proto files"
+      " (" GRPC_CLI_PATH_SEPARATOR
+      " separated), valid  only when --protofiles is given\n"
       "    --noremotedb             ; Don't attempt to use reflection service"
       " at all\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
@@ -946,7 +952,9 @@ bool GrpcTool::ToText(int argc, const char** argv, const CliCredentials& cred,
       "  grpc_cli totext <protofiles> <type>\n"
       "    <protofiles>             ; Comma separated list of proto files\n"
       "    <type>                   ; Protocol buffer type name\n"
-      "    --proto_path             ; The search path of proto files\n"
+      "    --proto_path             ; The search paths of proto files"
+      " (" GRPC_CLI_PATH_SEPARATOR
+      " separated)\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n");
 
@@ -964,7 +972,9 @@ bool GrpcTool::ToJson(int argc, const char** argv, const CliCredentials& cred,
       "  grpc_cli tojson <protofiles> <type>\n"
       "    <protofiles>             ; Comma separated list of proto files\n"
       "    <type>                   ; Protocol buffer type name\n"
-      "    --proto_path             ; The search path of proto files\n"
+      "    --proto_path             ; The search paths of proto files"
+      " (" GRPC_CLI_PATH_SEPARATOR
+      " separated)\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n");
 
@@ -983,7 +993,9 @@ bool GrpcTool::ToBinary(int argc, const char** argv, const CliCredentials& cred,
       "  grpc_cli tobinary <protofiles> <type> [<message>]\n"
       "    <protofiles>             ; Comma separated list of proto files\n"
       "    <type>                   ; Protocol buffer type name\n"
-      "    --proto_path             ; The search path of proto files\n"
+      "    --proto_path             ; The search paths of proto files"
+      " (" GRPC_CLI_PATH_SEPARATOR
+      " separated)\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n");
 

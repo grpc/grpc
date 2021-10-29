@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:8.0.0RC3-cli-buster
+FROM php:8.0.0-zts-buster
 
-RUN apt-get -qq update && apt-get -qq install -y \
+RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
   valgrind wget zlib1g-dev
 
@@ -29,6 +29,11 @@ RUN apt-get install expect -y && \
   expect -c 'spawn php ./go-pear.phar; expect "or Enter to continue:"; send "\n"; expect "Currently used php.ini"; send "\n"; expect eof' && \
   rm go-pear.phar
 
+RUN wget https://phar.phpunit.de/phpunit-8.5.13.phar && \
+  mv phpunit-8.5.13.phar /usr/local/bin/phpunit && \
+  chmod +x /usr/local/bin/phpunit
+
+
 WORKDIR /github/grpc
 
 COPY . .
@@ -37,4 +42,4 @@ RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD php -d extension=grpc.so -r '$a = new \Grpc\Channel("dummy", []); echo get_class($a)."\n";'
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", "--ignore-valgrind-undef-errors"]

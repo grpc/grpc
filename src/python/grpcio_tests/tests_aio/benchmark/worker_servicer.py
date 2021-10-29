@@ -24,12 +24,15 @@ from typing import Tuple
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import (benchmark_service_pb2_grpc, control_pb2,
-                                    stats_pb2, worker_service_pb2_grpc)
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import control_pb2
+from src.proto.grpc.testing import stats_pb2
+from src.proto.grpc.testing import worker_service_pb2_grpc
 from tests.qps import histogram
 from tests.unit import resources
 from tests.unit.framework.common import get_socket
-from tests_aio.benchmark import benchmark_client, benchmark_servicer
+from tests_aio.benchmark import benchmark_client
+from tests_aio.benchmark import benchmark_servicer
 
 _NUM_CORES = multiprocessing.cpu_count()
 _WORKER_ENTRY_FILE = os.path.join(
@@ -105,9 +108,9 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
     return server, port
 
 
-def _get_client_status(start_time: float, end_time: float,
-                       qps_data: histogram.Histogram
-                      ) -> control_pb2.ClientStatus:
+def _get_client_status(
+        start_time: float, end_time: float,
+        qps_data: histogram.Histogram) -> control_pb2.ClientStatus:
     """Creates ClientStatus proto message."""
     latencies = qps_data.get_data()
     end_time = time.monotonic()
@@ -120,9 +123,9 @@ def _get_client_status(start_time: float, end_time: float,
     return control_pb2.ClientStatus(stats=stats)
 
 
-def _create_client(server: str, config: control_pb2.ClientConfig,
-                   qps_data: histogram.Histogram
-                  ) -> benchmark_client.BenchmarkClient:
+def _create_client(
+        server: str, config: control_pb2.ClientConfig,
+        qps_data: histogram.Histogram) -> benchmark_client.BenchmarkClient:
     """Creates a client object according to the ClientConfig."""
     if config.load_params.WhichOneof('load') != 'closed_loop':
         raise NotImplementedError(
@@ -215,8 +218,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             await self._run_single_server(config, request_iterator, context)
         else:
             # If server_processes > 1, offload to other processes.
-            sub_workers = await asyncio.gather(*(
-                _create_sub_worker() for _ in range(config.server_processes)))
+            sub_workers = await asyncio.gather(
+                *[_create_sub_worker() for _ in range(config.server_processes)])
 
             calls = [worker.stub.RunServer() for worker in sub_workers]
 
@@ -308,8 +311,8 @@ class WorkerServicer(worker_service_pb2_grpc.WorkerServiceServicer):
             await self._run_single_client(config, request_iterator, context)
         else:
             # If client_processes > 1, offload the work to other processes.
-            sub_workers = await asyncio.gather(*(
-                _create_sub_worker() for _ in range(config.client_processes)))
+            sub_workers = await asyncio.gather(
+                *[_create_sub_worker() for _ in range(config.client_processes)])
 
             calls = [worker.stub.RunClient() for worker in sub_workers]
 

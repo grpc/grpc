@@ -20,11 +20,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <assert.h>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-
-#include <assert.h>
 
 /* Number of mutexes to allocate for events, to avoid lock contention.
    Should be a prime. */
@@ -48,7 +48,7 @@ static void event_initialize(void) {
 
 /* Hash ev into an element of sync_array[]. */
 static struct sync_array_s* hash(gpr_event* ev) {
-  return &sync_array[((uintptr_t)ev) % event_sync_partitions];
+  return &sync_array[reinterpret_cast<uintptr_t>(ev) % event_sync_partitions];
 }
 
 void gpr_event_init(gpr_event* ev) {
@@ -67,16 +67,16 @@ void gpr_event_set(gpr_event* ev, void* value) {
 }
 
 void* gpr_event_get(gpr_event* ev) {
-  return (void*)gpr_atm_acq_load(&ev->state);
+  return reinterpret_cast<void*>(gpr_atm_acq_load(&ev->state));
 }
 
 void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline) {
-  void* result = (void*)gpr_atm_acq_load(&ev->state);
+  void* result = reinterpret_cast<void*>(gpr_atm_acq_load(&ev->state));
   if (result == nullptr) {
     struct sync_array_s* s = hash(ev);
     gpr_mu_lock(&s->mu);
     do {
-      result = (void*)gpr_atm_acq_load(&ev->state);
+      result = reinterpret_cast<void*>(gpr_atm_acq_load(&ev->state));
     } while (result == nullptr && !gpr_cv_wait(&s->cv, &s->mu, abs_deadline));
     gpr_mu_unlock(&s->mu);
   }

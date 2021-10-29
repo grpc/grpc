@@ -17,6 +17,7 @@ import threading
 import unittest
 
 from grpc._cython import cygrpc
+
 from tests.unit._cython import test_utilities
 
 _EMPTY_FLAGS = 0
@@ -115,7 +116,7 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
         server = cygrpc.Server([(
             b'grpc.so_reuseport',
             0,
-        )])
+        )], False)
         server.register_completion_queue(server_completion_queue)
         port = server.add_http2_port(b'[::]:0')
         server.start()

@@ -16,15 +16,14 @@
  *
  */
 
-#include <grpcpp/server_builder.h>
+#include <utility>
 
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
-
-#include <utility>
+#include <grpcpp/server_builder.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -83,9 +82,9 @@ ServerBuilder& ServerBuilder::RegisterService(Service* service) {
   return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterService(const std::string& addr,
+ServerBuilder& ServerBuilder::RegisterService(const std::string& host,
                                               Service* service) {
-  services_.emplace_back(new NamedService(addr, service));
+  services_.emplace_back(new NamedService(host, service));
   return *this;
 }
 
@@ -95,40 +94,31 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            service);
   } else {
     generic_service_ = service;
   }
   return *this;
 }
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
 ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
     CallbackGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            service);
   } else {
     callback_generic_service_ = service;
   }
   return *this;
 }
-#else
-ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
-    experimental::CallbackGenericService* service) {
-  if (builder_->generic_service_ || builder_->callback_generic_service_) {
-    gpr_log(GPR_ERROR,
-            "Adding multiple generic services is unsupported for now. "
-            "Dropping the service %p",
-            (void*)service);
-  } else {
-    builder_->callback_generic_service_ = service;
-  }
-  return *builder_;
+
+ServerBuilder& ServerBuilder::SetContextAllocator(
+    std::unique_ptr<grpc::ContextAllocator> context_allocator) {
+  context_allocator_ = std::move(context_allocator);
+  return *this;
 }
-#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
@@ -141,6 +131,12 @@ ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
       std::make_shared<grpc::internal::ExternalConnectionAcceptorImpl>(
           name_prefix.append(count_str), type, creds));
   return builder_->acceptors_.back()->GetAcceptor();
+}
+
+void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
+    std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+        provider) {
+  builder_->authorization_provider_ = std::move(provider);
 }
 
 ServerBuilder& ServerBuilder::SetOption(
@@ -171,9 +167,9 @@ ServerBuilder& ServerBuilder::SetSyncServerOption(
 ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
     grpc_compression_algorithm algorithm, bool enabled) {
   if (enabled) {
-    GPR_BITSET(&enabled_compression_algorithms_bitset_, algorithm);
+    grpc_core::SetBit(&enabled_compression_algorithms_bitset_, algorithm);
   } else {
-    GPR_BITCLEAR(&enabled_compression_algorithms_bitset_, algorithm);
+    grpc_core::ClearBit(&enabled_compression_algorithms_bitset_, algorithm);
   }
   return *this;
 }
@@ -217,8 +213,8 @@ ServerBuilder& ServerBuilder::AddListeningPort(
   return *this;
 }
 
-std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
-  grpc::ChannelArguments args;
+ChannelArguments ServerBuilder::BuildChannelArgs() {
+  ChannelArguments args;
   if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
@@ -239,16 +235,24 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
   }
-
   if (resource_quota_ != nullptr) {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
   }
-
   for (const auto& plugin : plugins_) {
     plugin->UpdateServerBuilder(this);
     plugin->UpdateChannelArguments(&args);
   }
+  if (authorization_provider_ != nullptr) {
+    args.SetPointerWithVtable(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+                              authorization_provider_->c_provider(),
+                              grpc_authorization_policy_provider_arg_vtable());
+  }
+  return args;
+}
+
+std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
+  ChannelArguments args = BuildChannelArgs();
 
   // == Determine if the server has any syncrhonous methods ==
   bool has_sync_methods = false;
@@ -298,6 +302,10 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     }
   }
 
+  if (callback_generic_service_ != nullptr) {
+    has_frequently_polled_cqs = true;
+  }
+
   const bool is_hybrid_server = has_sync_methods && has_frequently_polled_cqs;
 
   if (has_sync_methods) {
@@ -331,7 +339,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
-      std::move(acceptors_), resource_quota_,
+      std::move(acceptors_), server_config_fetcher_, resource_quota_,
       std::move(interceptor_creators_)));
 
   ServerInitializer* initializer = server->initializer();
@@ -368,6 +376,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
             "At least one of the completion queues must be frequently polled");
     return nullptr;
   }
+
+  server->RegisterContextAllocator(std::move(context_allocator_));
 
   for (const auto& value : services_) {
     if (!server->RegisterService(value->host.get(), value->service)) {

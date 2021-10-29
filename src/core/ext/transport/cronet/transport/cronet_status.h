@@ -19,7 +19,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
 #define GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <grpc/status.h>
 
 enum cronet_net_error_code {
   //
@@ -290,9 +292,8 @@ enum cronet_net_error_code {
   // received a 302 (temporary redirect, response.  The response body might
   // include a description of why the request failed.
   //
-  // TODO(https:  //crbug.com/928551,: This is deprecated and should not be used
-  // by
-  // new code.
+  // TODO(crbug.com/928551): This is deprecated and should not be used
+  // by new code.
   CRONET_NET_ERROR_HTTPS_PROXY_TUNNEL_RESPONSE_REDIRECT = -140,
 
   // We were unable to sign the CertificateVerify data of an SSL client auth
@@ -1038,5 +1039,7 @@ enum cronet_net_error_code {
 };
 
 const char* cronet_net_error_as_string(cronet_net_error_code net_error);
+grpc_status_code cronet_net_error_to_grpc_error(
+    cronet_net_error_code net_error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H */

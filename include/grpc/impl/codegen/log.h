@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_LOG_H
 #define GRPC_IMPL_CODEGEN_LOG_H
 
+// IWYU pragma: private, include <grpc/support/log.h>
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <stdarg.h>
@@ -45,8 +47,6 @@ typedef enum gpr_log_severity {
   GPR_LOG_SEVERITY_INFO,
   GPR_LOG_SEVERITY_ERROR
 } gpr_log_severity;
-
-#define GPR_LOG_VERBOSITY_UNSET -1
 
 /** Returns a string representation of the log severity */
 GPRAPI const char* gpr_log_severity_string(gpr_log_severity severity);

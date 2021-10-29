@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# make sure that the client doesn't hang when channel is closed
+# make sure that the client doesn't freeze when channel is closed
 # explicitly while it's used
 
 require_relative './end2end_common'
@@ -24,8 +24,8 @@ def main
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  control_stub, client_pid = start_client('channel_closing_client.rb',
-                                          server_port)
+  client_controller = ClientController.new(
+    'channel_closing_client.rb', server_port)
   # sleep to allow time for the client to get into
   # the middle of a "watch connectivity state" call
   sleep 3
@@ -34,7 +34,7 @@ def main
     Timeout.timeout(20) do
       loop do
         begin
-          control_stub.shutdown(ClientControl::Void.new)
+          client_controller.stub.shutdown(ClientControl::Void.new)
           break
         rescue GRPC::BadStatus => e
           STDERR.puts "control_stub.shutdown RPC received error:|#{e}|. " \
@@ -42,14 +42,14 @@ def main
           "so we'll retry the RPC"
         end
       end
-      Process.wait(client_pid)
+      Process.wait(client_controller.client_pid)
     end
   rescue Timeout::Error
-    STDERR.puts "timeout wait for client pid #{client_pid}"
-    Process.kill('SIGKILL', client_pid)
-    Process.wait(client_pid)
+    STDERR.puts "timeout wait for client pid #{client_controller.client_pid}"
+    Process.kill('SIGKILL', client_controller.client_pid)
+    Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
-    raise 'Timed out waiting for client process. It likely hangs when a ' \
+    raise 'Timed out waiting for client process. It likely freezes when a ' \
       'channel is closed while connectivity is watched'
   end
 

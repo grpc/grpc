@@ -16,13 +16,14 @@
  *
  */
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
+#include "src/core/lib/channel/channel_args.h"
+
 #include <string.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -71,7 +72,9 @@ static void fake_pointer_arg_destroy(void* arg) {
   gpr_free(fc);
 }
 
-static int fake_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+static int fake_pointer_cmp(void* a, void* b) {
+  return grpc_core::QsortCompare(a, b);
+}
 
 static const grpc_arg_pointer_vtable fake_pointer_arg_vtable = {
     fake_pointer_arg_copy, fake_pointer_arg_destroy, fake_pointer_cmp};

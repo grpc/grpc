@@ -15,23 +15,34 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, Optional, Sequence, List
+from typing import Any, Iterable, List, Optional, Sequence
 
 import grpc
-from grpc import _common, _compression, _grpcio_metadata
+from grpc import _common
+from grpc import _compression
+from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 
-from . import _base_call, _base_channel
-from ._call import (StreamStreamCall, StreamUnaryCall, UnaryStreamCall,
-                    UnaryUnaryCall)
-from ._interceptor import (
-    InterceptedUnaryUnaryCall, InterceptedUnaryStreamCall,
-    InterceptedStreamUnaryCall, InterceptedStreamStreamCall, ClientInterceptor,
-    UnaryUnaryClientInterceptor, UnaryStreamClientInterceptor,
-    StreamUnaryClientInterceptor, StreamStreamClientInterceptor)
+from . import _base_call
+from . import _base_channel
+from ._call import StreamStreamCall
+from ._call import StreamUnaryCall
+from ._call import UnaryStreamCall
+from ._call import UnaryUnaryCall
+from ._interceptor import ClientInterceptor
+from ._interceptor import InterceptedStreamStreamCall
+from ._interceptor import InterceptedStreamUnaryCall
+from ._interceptor import InterceptedUnaryStreamCall
+from ._interceptor import InterceptedUnaryUnaryCall
+from ._interceptor import StreamStreamClientInterceptor
+from ._interceptor import StreamUnaryClientInterceptor
+from ._interceptor import UnaryStreamClientInterceptor
+from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
-from ._typing import (ChannelArgumentType, DeserializingFunction,
-                      SerializingFunction, RequestIterableType)
+from ._typing import ChannelArgumentType
+from ._typing import DeserializingFunction
+from ._typing import RequestIterableType
+from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
 _USER_AGENT = 'grpc-python-asyncio/{}'.format(_grpcio_metadata.__version__)
@@ -73,13 +84,13 @@ class _BaseMultiCallable:
 
     # pylint: disable=too-many-arguments
     def __init__(
-            self,
-            channel: cygrpc.AioChannel,
-            method: bytes,
-            request_serializer: SerializingFunction,
-            response_deserializer: DeserializingFunction,
-            interceptors: Optional[Sequence[ClientInterceptor]],
-            loop: asyncio.AbstractEventLoop,
+        self,
+        channel: cygrpc.AioChannel,
+        method: bytes,
+        request_serializer: SerializingFunction,
+        response_deserializer: DeserializingFunction,
+        interceptors: Optional[Sequence[ClientInterceptor]],
+        loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
         self._channel = channel
@@ -89,9 +100,9 @@ class _BaseMultiCallable:
         self._interceptors = interceptors
 
     @staticmethod
-    def _init_metadata(metadata: Optional[Metadata] = None,
-                       compression: Optional[grpc.Compression] = None
-                      ) -> Metadata:
+    def _init_metadata(
+            metadata: Optional[Metadata] = None,
+            compression: Optional[grpc.Compression] = None) -> Metadata:
         """Based on the provided values for <metadata> or <compression> initialise the final
         metadata, as it should be used for the current call.
         """
@@ -105,15 +116,16 @@ class _BaseMultiCallable:
 class UnaryUnaryMultiCallable(_BaseMultiCallable,
                               _base_channel.UnaryUnaryMultiCallable):
 
-    def __call__(self,
-                 request: Any,
-                 *,
-                 timeout: Optional[float] = None,
-                 metadata: Optional[Metadata] = None,
-                 credentials: Optional[grpc.CallCredentials] = None,
-                 wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None
-                ) -> _base_call.UnaryUnaryCall:
+    def __call__(
+        self,
+        request: Any,
+        *,
+        timeout: Optional[float] = None,
+        metadata: Optional[Metadata] = None,
+        credentials: Optional[grpc.CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[grpc.Compression] = None
+    ) -> _base_call.UnaryUnaryCall:
 
         metadata = self._init_metadata(metadata, compression)
         if not self._interceptors:
@@ -135,15 +147,16 @@ class UnaryUnaryMultiCallable(_BaseMultiCallable,
 class UnaryStreamMultiCallable(_BaseMultiCallable,
                                _base_channel.UnaryStreamMultiCallable):
 
-    def __call__(self,
-                 request: Any,
-                 *,
-                 timeout: Optional[float] = None,
-                 metadata: Optional[Metadata] = None,
-                 credentials: Optional[grpc.CallCredentials] = None,
-                 wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None
-                ) -> _base_call.UnaryStreamCall:
+    def __call__(
+        self,
+        request: Any,
+        *,
+        timeout: Optional[float] = None,
+        metadata: Optional[Metadata] = None,
+        credentials: Optional[grpc.CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[grpc.Compression] = None
+    ) -> _base_call.UnaryStreamCall:
 
         metadata = self._init_metadata(metadata, compression)
         deadline = _timeout_to_deadline(timeout)
@@ -166,14 +179,15 @@ class UnaryStreamMultiCallable(_BaseMultiCallable,
 class StreamUnaryMultiCallable(_BaseMultiCallable,
                                _base_channel.StreamUnaryMultiCallable):
 
-    def __call__(self,
-                 request_iterator: Optional[RequestIterableType] = None,
-                 timeout: Optional[float] = None,
-                 metadata: Optional[Metadata] = None,
-                 credentials: Optional[grpc.CallCredentials] = None,
-                 wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None
-                ) -> _base_call.StreamUnaryCall:
+    def __call__(
+        self,
+        request_iterator: Optional[RequestIterableType] = None,
+        timeout: Optional[float] = None,
+        metadata: Optional[Metadata] = None,
+        credentials: Optional[grpc.CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[grpc.Compression] = None
+    ) -> _base_call.StreamUnaryCall:
 
         metadata = self._init_metadata(metadata, compression)
         deadline = _timeout_to_deadline(timeout)
@@ -196,14 +210,15 @@ class StreamUnaryMultiCallable(_BaseMultiCallable,
 class StreamStreamMultiCallable(_BaseMultiCallable,
                                 _base_channel.StreamStreamMultiCallable):
 
-    def __call__(self,
-                 request_iterator: Optional[RequestIterableType] = None,
-                 timeout: Optional[float] = None,
-                 metadata: Optional[Metadata] = None,
-                 credentials: Optional[grpc.CallCredentials] = None,
-                 wait_for_ready: Optional[bool] = None,
-                 compression: Optional[grpc.Compression] = None
-                ) -> _base_call.StreamStreamCall:
+    def __call__(
+        self,
+        request_iterator: Optional[RequestIterableType] = None,
+        timeout: Optional[float] = None,
+        metadata: Optional[Metadata] = None,
+        credentials: Optional[grpc.CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[grpc.Compression] = None
+    ) -> _base_call.StreamStreamCall:
 
         metadata = self._init_metadata(metadata, compression)
         deadline = _timeout_to_deadline(timeout)
@@ -343,7 +358,7 @@ class Channel(_base_channel.Channel):
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
         if grace and call_tasks:
-            await asyncio.wait(call_tasks, timeout=grace, loop=self._loop)
+            await asyncio.wait(call_tasks, timeout=grace)
 
         # Time to cancel existing calls.
         for call in calls:
@@ -361,8 +376,8 @@ class Channel(_base_channel.Channel):
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
 
     async def wait_for_state_change(
-            self,
-            last_observed_state: grpc.ChannelConnectivity,
+        self,
+        last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
         assert await self._channel.watch_connectivity_state(
             last_observed_state.value[0], None)
@@ -374,10 +389,10 @@ class Channel(_base_channel.Channel):
             state = self.get_state(try_to_connect=True)
 
     def unary_unary(
-            self,
-            method: str,
-            request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None
+        self,
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None
     ) -> UnaryUnaryMultiCallable:
         return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
                                        request_serializer,
@@ -386,10 +401,10 @@ class Channel(_base_channel.Channel):
                                        self._loop)
 
     def unary_stream(
-            self,
-            method: str,
-            request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None
+        self,
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
@@ -398,10 +413,10 @@ class Channel(_base_channel.Channel):
                                         self._loop)
 
     def stream_unary(
-            self,
-            method: str,
-            request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None
+        self,
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamUnaryMultiCallable:
         return StreamUnaryMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
@@ -410,10 +425,10 @@ class Channel(_base_channel.Channel):
                                         self._loop)
 
     def stream_stream(
-            self,
-            method: str,
-            request_serializer: Optional[SerializingFunction] = None,
-            response_deserializer: Optional[DeserializingFunction] = None
+        self,
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None
     ) -> StreamStreamMultiCallable:
         return StreamStreamMultiCallable(self._channel, _common.encode(method),
                                          request_serializer,

@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/cpp/interop/interop_client.h"
+
 #include <cinttypes>
 #include <fstream>
 #include <memory>
@@ -23,6 +25,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -39,7 +42,6 @@
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/histogram.h"
 #include "test/cpp/interop/client_helper.h"
-#include "test/cpp/interop/interop_client.h"
 
 namespace grpc {
 namespace testing {
@@ -225,7 +227,7 @@ bool InteropClient::DoComputeEngineCreds(
   GPR_ASSERT(response.username().c_str() == default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != std::string::npos);
+  GPR_ASSERT(absl::StrContains(oauth_scope, oauth_scope_str));
   gpr_log(GPR_DEBUG, "Large unary with compute engine creds done.");
   return true;
 }
@@ -251,7 +253,7 @@ bool InteropClient::DoOauth2AuthToken(const std::string& username,
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(username == response.username());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != std::string::npos);
+  GPR_ASSERT(absl::StrContains(oauth_scope, oauth_scope_str));
   gpr_log(GPR_DEBUG, "Unary with oauth2 access token credentials done.");
   return true;
 }
@@ -536,11 +538,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   GPR_ASSERT(stream->WritesDone());
 
   s = stream->Finish();
-  if (!AssertStatusOk(s, context.debug_error_string())) {
-    return false;
-  }
-
-  return true;
+  return AssertStatusOk(s, context.debug_error_string());
 }
 
 bool InteropClient::DoServerCompressedStreaming() {
@@ -597,10 +595,7 @@ bool InteropClient::DoServerCompressedStreaming() {
   }
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s, context.debug_error_string())) {
-    return false;
-  }
-  return true;
+  return AssertStatusOk(s, context.debug_error_string());
 }
 
 bool InteropClient::DoResponseStreamingWithSlowConsumer() {
@@ -1114,9 +1109,9 @@ InteropClient::PerformOneSoakTestIteration(
   if (!s.ok()) {
     return std::make_tuple(false, elapsed_ms, context.debug_error_string());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
-    std::string debug_string =
-        absl::StrFormat("%d ms exceeds max acceptable latency: %d ms.",
-                        elapsed_ms, max_acceptable_per_iteration_latency_ms);
+    std::string debug_string = absl::StrFormat(
+        "%d ms exceeds max acceptable latency: %d ms, peer: %s", elapsed_ms,
+        max_acceptable_per_iteration_latency_ms, context.peer());
     return std::make_tuple(false, elapsed_ms, std::move(debug_string));
   } else {
     return std::make_tuple(true, elapsed_ms, "");

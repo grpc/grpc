@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(name = "test/core/surface")
 
@@ -67,7 +67,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "concurrent_connectivity_test",
     srcs = ["concurrent_connectivity_test.cc"],
-    flaky = True,  # TODO(b/157516542)
     language = "C++",
     deps = [
         "//:gpr",
@@ -124,6 +123,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -83,7 +83,7 @@
 
     <Error Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' and '$(PROTOBUF_PROTOC)' == ''
                         and ( '$(Protobuf_ToolsOs)' == '' or '$(Protobuf_ToolsCpu)' == '' ) "
-      Text="Google.Protobuf.Tools cannot determine host OS and CPU.&#10;Use environment variables PROTOBUF_TOOLS_OS={linux|macosx|windows} and PROTOBUF_TOOLS_CPU={x86|x64} to try the closest match to your system.&#10;You may also set PROTOBUF_PROTOC to specify full path to the host-provided compiler (v3.5+ is required)." />
+      Text="Google.Protobuf.Tools cannot determine host OS and CPU.&#10;Use environment variables PROTOBUF_TOOLS_OS={linux|macosx|windows} and PROTOBUF_TOOLS_CPU={x86|x64|arm64} to try the closest match to your system.&#10;You may also set PROTOBUF_PROTOC to specify full path to the host-provided compiler (v3.5+ is required)." />
   </Target>
 
   <!--================================================================================
@@ -288,6 +288,7 @@
       GrpcPluginExe="%(_Protobuf_OutOfDateProto.GrpcPluginExe)"
       GrpcOutputDir="%(_Protobuf_OutOfDateProto.GrpcOutputDir)"
       GrpcOutputOptions="%(_Protobuf_OutOfDateProto._GrpcOutputOptions)"
+      AdditionalProtocArguments="%(_Protobuf_OutOfDateProto.AdditionalProtocArguments)"
     >
       <Output TaskParameter="GeneratedFiles" ItemName="_Protobuf_GeneratedFiles"/>
     </ProtoCompile>

@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/client_channel")
+grpc_package(name = "test/core/uri")
 
 licenses(["notice"])
 
@@ -36,9 +36,9 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "uri_parser_test",
     srcs = ["uri_parser_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

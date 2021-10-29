@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  */
+#include <grpc/support/port_platform.h>
+
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -24,20 +26,21 @@
 #include <string>
 #include <thread>
 
-#include "grpc/grpc.h"
-#include "grpc/support/alloc.h"
-#include "grpc/support/port_platform.h"
-#include "grpcpp/channel.h"
-#include "grpcpp/client_context.h"
-#include "grpcpp/create_channel.h"
-#include "grpcpp/ext/channelz_service_plugin.h"
-#include "grpcpp/grpcpp.h"
-#include "grpcpp/security/credentials.h"
-#include "grpcpp/security/server_credentials.h"
-#include "grpcpp/server.h"
-#include "grpcpp/server_builder.h"
-#include "grpcpp/server_context.h"
 #include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/ext/channelz_service_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -64,9 +67,9 @@ std::string output_json("output.json");
 
 // Creata an echo server
 class EchoServerImpl final : public grpc::testing::TestService::Service {
-  Status EmptyCall(::grpc::ServerContext* context,
-                   const grpc::testing::Empty* request,
-                   grpc::testing::Empty* response) override {
+  Status EmptyCall(::grpc::ServerContext* /*context*/,
+                   const grpc::testing::Empty* /*request*/,
+                   grpc::testing::Empty* /*response*/) override {
     return Status::OK;
   }
 };
@@ -155,8 +158,8 @@ TEST(ChannelzSamplerTest, SimpleTest) {
     GPR_ASSERT(0);
   }
   delete test_driver;
-  gpr_event_set(&done_ev1, (void*)1);
-  gpr_event_set(&done_ev2, (void*)1);
+  gpr_event_set(&done_ev1, reinterpret_cast<void*>(1));
+  gpr_event_set(&done_ev2, reinterpret_cast<void*>(1));
   client_thread_1.join();
   client_thread_2.join();
 }

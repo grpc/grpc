@@ -17,15 +17,18 @@
  */
 
 #include <dirent.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <gtest/gtest.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 
+#include <gtest/gtest.h>
+
 #include "absl/flags/flag.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
@@ -46,7 +49,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   // implementations of that function will initialize and shutdown gRPC
   // internally.
   grpc_init();
-  gpr_log(GPR_DEBUG, "Example file: %s", GetParam().c_str());
+  gpr_log(GPR_INFO, "Example file: %s", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
   leak_check = false;

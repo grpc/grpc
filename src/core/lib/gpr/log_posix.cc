@@ -20,19 +20,24 @@
 
 #ifdef GPR_POSIX_LOG
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
 #include <string>
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gprpp/examine_stack.h"
+
+int gpr_should_log_stacktrace(gpr_log_severity severity);
 
 static intptr_t sys_gettid(void) { return (intptr_t)pthread_self(); }
 
@@ -91,7 +96,7 @@ void gpr_default_log(gpr_log_func_args* args) {
       time_buffer, (int)(now.tv_nsec), sys_gettid(), display_file, args->line);
 
   absl::optional<std::string> stack_trace =
-      args->severity >= GPR_LOG_SEVERITY_ERROR
+      gpr_should_log_stacktrace(args->severity)
           ? grpc_core::GetCurrentStackTrace()
           : absl::nullopt;
   if (stack_trace) {

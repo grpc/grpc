@@ -19,10 +19,25 @@
 #ifndef GRPCPP_IMPL_CODEGEN_STUB_OPTIONS_H
 #define GRPCPP_IMPL_CODEGEN_STUB_OPTIONS_H
 
+// IWYU pragma: private, include <grpcpp/support/stub_options.h>
+
 namespace grpc {
 
 /// Useful interface for generated stubs
-class StubOptions {};
+class StubOptions {
+ public:
+  StubOptions() = default;
+  explicit StubOptions(const char* suffix_for_stats)
+      : suffix_for_stats_(suffix_for_stats) {}
+
+  void set_suffix_for_stats(const char* suffix_for_stats) {
+    suffix_for_stats_ = suffix_for_stats;
+  }
+  const char* suffix_for_stats() const { return suffix_for_stats_; }
+
+ private:
+  const char* suffix_for_stats_ = nullptr;
+};
 
 }  // namespace grpc
 

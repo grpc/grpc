@@ -18,14 +18,16 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security.h"
@@ -35,6 +37,7 @@
 
 extern "C" {
 #include <openssl/crypto.h>
+#include <openssl/err.h>
 #include <openssl/pem.h>
 }
 
@@ -253,13 +256,13 @@ void check_server0_peer(tsi_peer* peer) {
   tsi_peer_destruct(peer);
 }
 
-static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
+static bool check_property(tsi_peer* peer, const char* property_name,
+                           const char* property_value) {
   for (size_t i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
-    if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
-        0) {
-      if (strlen(name) == prop->value.length &&
-          memcmp(prop->value.data, name, prop->value.length) == 0) {
+    if (strcmp(prop->name, property_name) == 0) {
+      if (strlen(property_value) == prop->value.length &&
+          memcmp(prop->value.data, property_value, prop->value.length) == 0) {
         return true;
       }
     }
@@ -267,17 +270,25 @@ static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
   return false;
 }
 
+static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                        name);
+}
+
+static bool check_dns(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_DNS_PEER_PROPERTY, name);
+}
+
 static bool check_uri(tsi_peer* peer, const char* name) {
-  for (size_t i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property* prop = &peer->properties[i];
-    if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
-      if (strlen(name) == prop->value.length &&
-          memcmp(prop->value.data, name, prop->value.length) == 0) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return check_property(peer, TSI_X509_URI_PEER_PROPERTY, name);
+}
+
+static bool check_email(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_EMAIL_PEER_PROPERTY, name);
+}
+
+static bool check_ip(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_IP_PEER_PROPERTY, name);
 }
 
 void check_server1_peer(tsi_peer* peer) {
@@ -329,12 +340,20 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   // and send an alert to the client as the first application data message. In
   // TLS 1.2, the client-side handshake will fail if the client sends a bad
   // certificate.
+  //
+  // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the client-side
+  // handshake should succeed precisely when the server-side handshake
+  // succeeds.
   bool expect_server_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   bool expect_client_success = test_tls_version == tsi_tls_version::TSI_TLS1_2
                                    ? expect_server_success
                                    : !key_cert_lib->use_bad_server_cert;
+#else
+  bool expect_client_success = expect_server_success;
+#endif
   if (expect_client_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
@@ -366,8 +385,8 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
 }
 
 static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair kp) {
-  gpr_free((void*)kp.private_key);
-  gpr_free((void*)kp.cert_chain);
+  gpr_free(const_cast<char*>(kp.private_key));
+  gpr_free(const_cast<char*>(kp.cert_chain));
 }
 
 static void ssl_test_destruct(tsi_test_fixture* fixture) {
@@ -433,14 +452,12 @@ static char* load_file(const char* dir_path, const char* file_name) {
 }
 
 static tsi_test_fixture* ssl_tsi_test_fixture_create() {
-  ssl_tsi_test_fixture* ssl_fixture =
-      static_cast<ssl_tsi_test_fixture*>(gpr_zalloc(sizeof(*ssl_fixture)));
+  ssl_tsi_test_fixture* ssl_fixture = grpc_core::Zalloc<ssl_tsi_test_fixture>();
   tsi_test_fixture_init(&ssl_fixture->base);
   ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
   /* Create ssl_key_cert_lib. */
-  ssl_key_cert_lib* key_cert_lib =
-      static_cast<ssl_key_cert_lib*>(gpr_zalloc(sizeof(*key_cert_lib)));
+  ssl_key_cert_lib* key_cert_lib = grpc_core::Zalloc<ssl_key_cert_lib>();
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
   key_cert_lib->use_root_store = false;
@@ -482,8 +499,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   GPR_ASSERT(key_cert_lib->root_store != nullptr);
   ssl_fixture->key_cert_lib = key_cert_lib;
   /* Create ssl_alpn_lib. */
-  ssl_alpn_lib* alpn_lib =
-      static_cast<ssl_alpn_lib*>(gpr_zalloc(sizeof(*alpn_lib)));
+  ssl_alpn_lib* alpn_lib = grpc_core::Zalloc<ssl_alpn_lib>();
   alpn_lib->server_alpn_protocols = static_cast<const char**>(
       gpr_zalloc(sizeof(char*) * SSL_TSI_TEST_ALPN_NUM));
   alpn_lib->client_alpn_protocols = static_cast<const char**>(
@@ -689,11 +705,22 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
   gpr_free(bit_array);
 }
 
+void ssl_tsi_test_do_round_trip_with_error_on_stack() {
+  gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_with_error_on_stack");
+  // Invoke an SSL function that causes an error, and ensure the error
+  // makes it to the stack.
+  GPR_ASSERT(!EC_KEY_new_by_curve_name(NID_rsa));
+  GPR_ASSERT(ERR_peek_error() != 0);
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  tsi_test_do_round_trip(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
 static bool is_slow_build() {
 #if defined(GPR_ARCH_32) || defined(__APPLE__)
   return true;
 #else
-  return BuiltUnderMsan();
+  return BuiltUnderMsan() || BuiltUnderTsan();
 #endif
 }
 
@@ -701,11 +728,11 @@ void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
   size_t size = sizeof(odd_sizes) / sizeof(size_t);
-  // 1. avoid test being extremely slow under MSAN
-  // 2. on 32-bit, the test is much slower (probably due to lack of boringssl
-  // asm optimizations) so we only run a subset of tests to avoid timeout
-  // 3. on Mac OS, we have slower testing machines so we only run a subset
-  // of tests to avoid timeout
+  // 1. This test is extremely slow under MSAN and TSAN.
+  // 2. On 32-bit, the test is much slower (probably due to lack of boringssl
+  // asm optimizations) so we only run a subset of tests to avoid timeout.
+  // 3. On Mac OS, we have slower testing machines so we only run a subset
+  // of tests to avoid timeout.
   if (is_slow_build()) {
     size = 1;
   }
@@ -902,8 +929,9 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
   // tsi_peer should include one common name, one certificate, one security
-  // level, seven SAN fields, three URI fields.
-  size_t expected_property_count = 12;
+  // level, ten SAN fields, two DNS SAN fields, three URI fields, two email
+  // addresses and two IP addresses.
+  size_t expected_property_count = 21;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
   const char* expected_cn = "xpigors";
@@ -919,6 +947,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   // Check DNS
   GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
+  GPR_ASSERT(check_dns(&peer, "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_dns(&peer, "bar.test.domain.com") == 1);
   // Check URI
   // Note that a valid SPIFFE certificate should only have one URI.
   GPR_ASSERT(check_subject_alt_name(&peer, "spiffe://foo.com/bar/baz") == 1);
@@ -932,6 +962,15 @@ void ssl_tsi_test_extract_x509_subject_names() {
   // Check email address
   GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
+  GPR_ASSERT(check_email(&peer, "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_email(&peer, "bar@test.domain.com") == 1);
+  // Check ip address
+  GPR_ASSERT(check_subject_alt_name(&peer, "192.168.7.1") == 1);
+  GPR_ASSERT(check_subject_alt_name(&peer, "13::17") == 1);
+  GPR_ASSERT(check_ip(&peer, "192.168.7.1") == 1);
+  GPR_ASSERT(check_ip(&peer, "13::17") == 1);
+  // Check other fields
+  GPR_ASSERT(check_subject_alt_name(&peer, "other types of SAN") == 1);
   // Free memory
   gpr_free(cert);
   tsi_peer_destruct(&peer);
@@ -952,11 +991,15 @@ void ssl_tsi_test_extract_cert_chain() {
   STACK_OF(X509_INFO)* certInfos =
       PEM_X509_INFO_read_bio(bio, nullptr, nullptr, nullptr);
   GPR_ASSERT(certInfos != nullptr);
-  for (int i = 0; i < sk_X509_INFO_num(certInfos); i++) {
+  for (size_t i = 0; i < sk_X509_INFO_num(certInfos); i++) {
     X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
     if (certInfo->x509 != nullptr) {
       GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_up_ref(certInfo->x509);
+#else
+      certInfo->x509->references += 1;
+#endif
     }
   }
   tsi_peer_property chain_property;
@@ -1003,6 +1046,7 @@ int main(int argc, char** argv) {
     ssl_tsi_test_do_handshake_alpn_client_server_ok();
     ssl_tsi_test_do_handshake_session_cache();
     ssl_tsi_test_do_round_trip_for_all_configs();
+    ssl_tsi_test_do_round_trip_with_error_on_stack();
     ssl_tsi_test_do_round_trip_odd_buffer_size();
     ssl_tsi_test_handshaker_factory_internals();
     ssl_tsi_test_duplicate_root_certificates();

@@ -16,12 +16,12 @@
  *
  */
 
+#include "src/cpp/ext/proto_server_reflection.h"
+
 #include <unordered_set>
 #include <vector>
 
 #include <grpcpp/grpcpp.h>
-
-#include "src/cpp/ext/proto_server_reflection.h"
 
 using grpc::Status;
 using grpc::StatusCode;
@@ -109,14 +109,14 @@ Status ProtoServerReflection::ListService(ServerContext* /*context*/,
 }
 
 Status ProtoServerReflection::GetFileByName(
-    ServerContext* /*context*/, const std::string& filename,
+    ServerContext* /*context*/, const std::string& file_name,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
   const protobuf::FileDescriptor* file_desc =
-      descriptor_pool_->FindFileByName(filename);
+      descriptor_pool_->FindFileByName(file_name);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
   }

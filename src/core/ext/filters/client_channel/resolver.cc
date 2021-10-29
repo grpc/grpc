@@ -29,13 +29,10 @@ namespace grpc_core {
 // Resolver
 //
 
-Resolver::Resolver(std::shared_ptr<WorkSerializer> work_serializer,
-                   std::unique_ptr<ResultHandler> result_handler)
+Resolver::Resolver()
     : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_resolver_refcount)
                                ? "Resolver"
-                               : nullptr),
-      work_serializer_(std::move(work_serializer)),
-      result_handler_(std::move(result_handler)) {}
+                               : nullptr) {}
 
 //
 // Resolver::Result
@@ -63,6 +60,9 @@ Resolver::Result::Result(Result&& other) noexcept {
 }
 
 Resolver::Result& Resolver::Result::operator=(const Result& other) {
+  if (&other == this) {
+    return *this;
+  }
   addresses = other.addresses;
   service_config = other.service_config;
   GRPC_ERROR_UNREF(service_config_error);

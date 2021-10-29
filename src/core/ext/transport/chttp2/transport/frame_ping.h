@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 struct grpc_chttp2_ping_parser {
@@ -31,12 +32,13 @@ struct grpc_chttp2_ping_parser {
 };
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes);
 
-grpc_error* grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,
-                                                uint32_t length, uint8_t flags);
-grpc_error* grpc_chttp2_ping_parser_parse(void* parser,
-                                          grpc_chttp2_transport* t,
-                                          grpc_chttp2_stream* s,
-                                          const grpc_slice& slice, int is_last);
+grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
+    grpc_chttp2_ping_parser* parser, uint32_t length, uint8_t flags);
+grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
+                                                grpc_chttp2_transport* t,
+                                                grpc_chttp2_stream* s,
+                                                const grpc_slice& slice,
+                                                int is_last);
 
 /* Test-only function for disabling ping ack */
 void grpc_set_disable_ping_ack(bool disable_ping_ack);

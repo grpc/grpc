@@ -24,7 +24,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "include/grpc/grpc_security.h"
+
+#include <grpc/grpc_security.h>
+
 #include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 
@@ -54,8 +56,8 @@ class CensusServerCallData : public CallData {
     memset(&on_done_recv_message_, 0, sizeof(grpc_closure));
   }
 
-  grpc_error* Init(grpc_call_element* elem,
-                   const grpc_call_element_args* args) override;
+  grpc_error_handle Init(grpc_call_element* elem,
+                         const grpc_call_element_args* args) override;
 
   void Destroy(grpc_call_element* elem, const grpc_call_final_info* final_info,
                grpc_closure* then_call_closure) override;
@@ -63,9 +65,10 @@ class CensusServerCallData : public CallData {
   void StartTransportStreamOpBatch(grpc_call_element* elem,
                                    TransportStreamOpBatch* op) override;
 
-  static void OnDoneRecvInitialMetadataCb(void* user_data, grpc_error* error);
+  static void OnDoneRecvInitialMetadataCb(void* user_data,
+                                          grpc_error_handle error);
 
-  static void OnDoneRecvMessageCb(void* user_data, grpc_error* error);
+  static void OnDoneRecvMessageCb(void* user_data, grpc_error_handle error);
 
  private:
   CensusContext context_;

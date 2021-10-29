@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/resolve_address.h"
-
 #include <net/if.h>
 #include <string.h>
 #include <sys/un.h>
@@ -39,6 +37,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
@@ -50,13 +49,13 @@ typedef struct args_struct {
   grpc_core::Thread thd;
   gpr_event ev;
   grpc_resolved_addresses* addrs;
-  gpr_atm done_atm;
   gpr_mu* mu;
-  grpc_pollset* pollset;
+  bool done;              // guarded by mu
+  grpc_pollset* pollset;  // guarded by mu
   grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void args_init(args_struct* args) {
   gpr_event_init(&args->ev);
@@ -65,6 +64,7 @@ void args_init(args_struct* args) {
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->addrs = nullptr;
+  args->done = false;
 }
 
 void args_finish(args_struct* args) {
@@ -95,47 +95,44 @@ static void actually_poll(void* argsp) {
   grpc_millis deadline = n_sec_deadline(10);
   while (true) {
     grpc_core::ExecCtx exec_ctx;
-    bool done = gpr_atm_acq_load(&args->done_atm) != 0;
-    if (done) {
-      break;
+    {
+      grpc_core::MutexLockForGprMu lock(args->mu);
+      if (args->done) {
+        break;
+      }
+      grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
+      GPR_ASSERT(time_left >= 0);
+      grpc_pollset_worker* worker = nullptr;
+      GRPC_LOG_IF_ERROR(
+          "pollset_work",
+          grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
     }
-    grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left);
-    GPR_ASSERT(time_left >= 0);
-    grpc_pollset_worker* worker = nullptr;
-    gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
-                                                        n_sec_deadline(1)));
-    gpr_mu_unlock(args->mu);
-    grpc_core::ExecCtx::Get()->Flush();
   }
-  gpr_event_set(&args->ev, (void*)1);
+  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
-  gpr_atm_rel_store(&args->done_atm, 0);
   args->thd = grpc_core::Thread("grpc_poll_pollset", actually_poll, args);
   args->thd.Start();
 }
 
-static void must_succeed(void* argsp, grpc_error* err) {
+static void must_succeed(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
 }
 
-static void must_fail(void* argsp, grpc_error* err) {
+static void must_fail(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err != GRPC_ERROR_NONE);
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
 }
 
 static void resolve_address_must_succeed(const char* target) {
@@ -158,11 +155,11 @@ static void test_named_and_numeric_scope_ids(void) {
   // system recognizes, and then use that for the test.
   for (size_t i = 1; i < 65536; i++) {
     if (if_indextoname(i, arbitrary_interface_name) != nullptr) {
-      gpr_log(
-          GPR_DEBUG,
-          "Found interface at index %d named %s. Will use this for the test",
-          (int)i, arbitrary_interface_name);
-      interface_index = (int)i;
+      gpr_log(GPR_DEBUG,
+              "Found interface at index %" PRIuPTR
+              " named %s. Will use this for the test",
+              i, arbitrary_interface_name);
+      interface_index = static_cast<int>(i);
       break;
     }
   }

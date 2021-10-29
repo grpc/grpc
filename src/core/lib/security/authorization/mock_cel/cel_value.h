@@ -61,23 +61,25 @@ class CelValue {
   // We rely on copy elision to avoid extra copying.
   static CelValue CreateNull() { return CelValue(nullptr); }
 
-  static CelValue CreateInt64(int64_t value) { return CreateNull(); }
+  static CelValue CreateInt64(int64_t /*value*/) { return CreateNull(); }
 
-  static CelValue CreateUint64(uint64_t value) { return CreateNull(); }
+  static CelValue CreateUint64(uint64_t /*value*/) { return CreateNull(); }
 
-  static CelValue CreateStringView(absl::string_view value) {
+  static CelValue CreateStringView(absl::string_view /*value*/) {
     return CreateNull();
   }
 
-  static CelValue CreateString(const std::string* str) { return CreateNull(); }
+  static CelValue CreateString(const std::string* /*str*/) {
+    return CreateNull();
+  }
 
-  static CelValue CreateMap(const CelMap* value) { return CreateNull(); }
+  static CelValue CreateMap(const CelMap* /*value*/) { return CreateNull(); }
 
  private:
   // Constructs CelValue wrapping value supplied as argument.
   // Value type T should be supported by specification of ValueHolder.
   template <class T>
-  explicit CelValue(T value) {}
+  explicit CelValue(T /*value*/) {}
 };
 
 // CelMap implementation that uses STL map container as backing storage.
@@ -86,7 +88,7 @@ class ContainerBackedMapImpl : public CelMap {
   ContainerBackedMapImpl() = default;
 
   static std::unique_ptr<CelMap> Create(
-      absl::Span<std::pair<CelValue, CelValue>> key_values) {
+      absl::Span<std::pair<CelValue, CelValue>> /*key_values*/) {
     return absl::make_unique<ContainerBackedMapImpl>();
   }
 };

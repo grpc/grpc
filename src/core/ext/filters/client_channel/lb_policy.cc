@@ -70,6 +70,9 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
 
 LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
     const UpdateArgs& other) {
+  if (&other == this) {
+    return *this;
+  }
   addresses = other.addresses;
   config = other.config;
   grpc_channel_args_destroy(args);
@@ -105,12 +108,12 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
   // 2. We are currently running in the data plane mutex, but we
   //    need to bounce into the control plane work_serializer to call
   //    ExitIdleLocked().
-  if (!exit_idle_called_) {
+  if (!exit_idle_called_ && parent_ != nullptr) {
     exit_idle_called_ = true;
     auto* parent = parent_->Ref().release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
-                     [](void* arg, grpc_error* /*error*/) {
+                     [](void* arg, grpc_error_handle /*error*/) {
                        auto* parent = static_cast<LoadBalancingPolicy*>(arg);
                        parent->work_serializer()->Run(
                            [parent]() {
@@ -122,21 +125,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                      parent, nullptr),
                  GRPC_ERROR_NONE);
   }
-  PickResult result;
-  result.type = PickResult::PICK_QUEUE;
-  return result;
-}
-
-//
-// LoadBalancingPolicy::TransientFailurePicker
-//
-
-LoadBalancingPolicy::PickResult
-LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs /*args*/) {
-  PickResult result;
-  result.type = PickResult::PICK_FAILED;
-  result.error = GRPC_ERROR_REF(error_);
-  return result;
+  return PickResult::Queue();
 }
 
 }  // namespace grpc_core

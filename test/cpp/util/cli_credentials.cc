@@ -18,11 +18,12 @@
 
 #include "test/cpp/util/cli_credentials.h"
 
+#include "absl/flags/flag.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/slice.h>
 
-#include "absl/flags/flag.h"
 #include "src/core/lib/iomgr/load_file.h"
 
 ABSL_RETIRED_FLAG(bool, enable_ssl, false,
@@ -169,7 +170,7 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
              : grpc::CompositeChannelCredentials(channel_creds, call_creds);
 }
 
-const std::string CliCredentials::GetCredentialUsage() const {
+std::string CliCredentials::GetCredentialUsage() const {
   return "    --ssl_target             ; Set server host for ssl validation\n"
          "    --ssl_client_cert        ; Client cert for ssl\n"
          "    --ssl_client_key         ; Client private key for ssl\n"
@@ -180,7 +181,7 @@ const std::string CliCredentials::GetCredentialUsage() const {
          " access_token=<token>\n";
 }
 
-const std::string CliCredentials::GetSslTargetNameOverride() const {
+std::string CliCredentials::GetSslTargetNameOverride() const {
   bool use_ssl = absl::GetFlag(FLAGS_channel_creds_type) == "ssl" ||
                  absl::GetFlag(FLAGS_channel_creds_type) == "gdc";
   return use_ssl ? absl::GetFlag(FLAGS_ssl_target) : "";

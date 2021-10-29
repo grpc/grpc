@@ -16,12 +16,13 @@
 //
 //
 
+#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
@@ -31,9 +32,12 @@ namespace testing {
 namespace {
 
 TEST(InsecureSecurityConnector, MakeAuthContextTest) {
-  auto auth_context = InsecureChannelSecurityConnector::MakeAuthContext();
-  // Verify that peer identity is set
-  auto it = grpc_auth_context_peer_identity(auth_context.get());
+  auto auth_context = TestOnlyMakeInsecureAuthContext();
+  // Verify that peer is not authenticated
+  EXPECT_EQ(auth_context->is_authenticated(), false);
+  // Verify that GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME is set
+  auto it = grpc_auth_context_find_properties_by_name(
+      auth_context.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   ASSERT_NE(prop, nullptr);
   EXPECT_STREQ(prop->name, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);

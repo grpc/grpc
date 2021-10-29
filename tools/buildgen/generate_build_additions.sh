@@ -25,14 +25,13 @@ gen_build_yaml_dirs="  \
   src/zlib             \
   src/c-ares           \
   test/core/end2end    \
-  test/cpp/naming      \
-  tools/run_tests/lb_interop_tests"
+  test/cpp/naming"
 
 
 gen_build_files=""
 for gen_build_yaml in $gen_build_yaml_dirs
 do
-  output_file=`mktemp /tmp/genXXXXXX`
+  output_file=$(mktemp /tmp/gen_$(echo $gen_build_yaml | tr '/' '_').yaml.XXXXX)
   python3 $gen_build_yaml/gen_build_yaml.py > $output_file
   gen_build_files="$gen_build_files $output_file"
 done

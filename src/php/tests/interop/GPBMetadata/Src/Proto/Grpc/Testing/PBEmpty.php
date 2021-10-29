@@ -14,9 +14,12 @@ class PBEmpty
         if (static::$is_initialized == true) {
           return;
         }
-        $pool->internalAddGeneratedFile(hex2bin(
-            "0a4a0a227372632f70726f746f2f677270632f74657374696e672f656d7074792e70726f746f120c677270632e74657374696e67220e0a0c456d7074794d657373616765620670726f746f33"
-        ), true);
+        $pool->internalAddGeneratedFile(
+            '
+J
+"src/proto/grpc/testing/empty.protogrpc.testing"
+EmptyMessagebproto3'
+        , true);
 
         static::$is_initialized = true;
     }

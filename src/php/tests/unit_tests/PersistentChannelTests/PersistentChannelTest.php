@@ -167,13 +167,11 @@ class PersistentListTest extends \PHPUnit\Framework\TestCase
       $this->channel2->close();
   }
 
-  /**
-   * @expectedException RuntimeException
-   * @expectedExceptionMessage startBatch Error. Channel is closed
-   */
   public function testPersistentChannelSharedChannelClose()
   {
-      // same underlying channel
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage("startBatch Error. Channel is closed");
+    // same underlying channel
       $this->channel1 = new Grpc\Channel('localhost:10001', [
           "grpc_target_persist_bound" => 2,
       ]);

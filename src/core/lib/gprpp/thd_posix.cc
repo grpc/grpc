@@ -22,20 +22,20 @@
 
 #ifdef GPR_POSIX_SYNC
 
-#include "src/core/lib/gprpp/thd.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd_id.h>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_core {
 namespace {
@@ -199,6 +199,11 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
 }  // namespace grpc_core
 
 // The following is in the external namespace as it is exposed as C89 API
-gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
+gpr_thd_id gpr_thd_currentid(void) {
+  // Use C-style casting because Linux and OSX have different definitions
+  // of pthread_t so that a single C++ cast doesn't handle it.
+  // NOLINTNEXTLINE(google-readability-casting)
+  return (gpr_thd_id)pthread_self();
+}
 
 #endif /* GPR_POSIX_SYNC */

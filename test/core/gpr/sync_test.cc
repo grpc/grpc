@@ -18,13 +18,12 @@
 
 /* Test of gpr synchronization support. */
 
-#include <grpc/support/sync.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"
@@ -431,7 +430,7 @@ static void refinc(void* v /*=m*/) {
     }
   }
   if (gpr_unref(&m->thread_refcount)) {
-    gpr_event_set(&m->event, (void*)1);
+    gpr_event_set(&m->event, reinterpret_cast<void*>(1));
   }
   mark_thread_done(m);
 }

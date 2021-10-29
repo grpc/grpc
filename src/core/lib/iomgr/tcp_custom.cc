@@ -18,23 +18,22 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/tcp_custom.h"
 
 #include <limits.h>
 #include <string.h>
 
 #include <grpc/slice_buffer.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resource_quota.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -64,8 +63,7 @@ struct custom_tcp_endpoint {
   grpc_slice_buffer* read_slices = nullptr;
   grpc_slice_buffer* write_slices = nullptr;
 
-  grpc_resource_user* resource_user;
-  grpc_resource_user_slice_allocator slice_allocator;
+  grpc_slice_allocator* slice_allocator;
 
   bool shutting_down;
 
@@ -73,8 +71,9 @@ struct custom_tcp_endpoint {
   std::string local_address;
 };
 static void tcp_free(grpc_custom_socket* s) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)s->endpoint;
-  grpc_resource_user_unref(tcp->resource_user);
+  custom_tcp_endpoint* tcp =
+      reinterpret_cast<custom_tcp_endpoint*>(s->endpoint);
+  grpc_slice_allocator_destroy(tcp->slice_allocator);
   delete tcp;
   s->refs--;
   if (s->refs == 0) {
@@ -121,15 +120,13 @@ static void tcp_unref(custom_tcp_endpoint* tcp) {
 static void tcp_ref(custom_tcp_endpoint* tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
-static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
+static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error_handle error) {
   grpc_closure* cb = tcp->read_cb;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp->socket, cb, cb->cb,
             cb->cb_arg);
     size_t i;
-    const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "read: error=%s", str);
-
+    gpr_log(GPR_INFO, "read: error=%s", grpc_error_std_string(error).c_str());
     for (i = 0; i < tcp->read_slices->count; i++) {
       char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -145,22 +142,23 @@ static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
 }
 
 static void custom_read_callback(grpc_custom_socket* socket, size_t nread,
-                                 grpc_error* error) {
+                                 grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_slice_buffer garbage;
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)socket->endpoint;
+  custom_tcp_endpoint* tcp =
+      reinterpret_cast<custom_tcp_endpoint*>(socket->endpoint);
   if (error == GRPC_ERROR_NONE && nread == 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF");
   }
   if (error == GRPC_ERROR_NONE) {
     // Successful read
-    if ((size_t)nread < tcp->read_slices->length) {
+    if (nread < tcp->read_slices->length) {
       /* TODO(murgatroid99): Instead of discarding the unused part of the read
        * buffer, reuse it as the next read buffer. */
       grpc_slice_buffer_init(&garbage);
-      grpc_slice_buffer_trim_end(
-          tcp->read_slices, tcp->read_slices->length - (size_t)nread, &garbage);
+      grpc_slice_buffer_trim_end(tcp->read_slices,
+                                 tcp->read_slices->length - nread, &garbage);
       grpc_slice_buffer_reset_and_unref_internal(&garbage);
     }
   } else {
@@ -169,17 +167,18 @@ static void custom_read_callback(grpc_custom_socket* socket, size_t nread,
   call_read_cb(tcp, error);
 }
 
-static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)tcpp;
+static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
+  custom_tcp_endpoint* tcp = static_cast<custom_tcp_endpoint*>(tcpp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp->socket,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   if (error == GRPC_ERROR_NONE) {
     /* Before calling read, we allocate a buffer with exactly one slice
      * to tcp->read_slices and wait for the callback indicating that the
      * allocation was successful. So slices[0] should always exist here */
-    char* buffer = (char*)GRPC_SLICE_START_PTR(tcp->read_slices->slices[0]);
+    char* buffer = reinterpret_cast<char*>(
+        GRPC_SLICE_START_PTR(tcp->read_slices->slices[0]));
     size_t len = GRPC_SLICE_LENGTH(tcp->read_slices->slices[0]);
     grpc_custom_socket_vtable->read(tcp->socket, buffer, len,
                                     custom_read_callback);
@@ -188,37 +187,39 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
     call_read_cb(tcp, GRPC_ERROR_REF(error));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Initiating read on %p: error=%s", tcp->socket, str);
+    gpr_log(GPR_INFO, "Initiating read on %p: error=%s", tcp->socket,
+            grpc_error_std_string(error).c_str());
   }
 }
 
 static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
                           grpc_closure* cb, bool /*urgent*/) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
+  custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
   grpc_slice_buffer_reset_and_unref_internal(read_slices);
   TCP_REF(tcp, "read");
-  if (grpc_resource_user_alloc_slices(&tcp->slice_allocator,
-                                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
-                                      tcp->read_slices)) {
+  if (grpc_slice_allocator_allocate(
+          tcp->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+          grpc_slice_allocator_intent::kReadBuffer, tcp->read_slices,
+          tcp_read_allocation_done, tcp)) {
     tcp_read_allocation_done(tcp, GRPC_ERROR_NONE);
   }
 }
 
 static void custom_write_callback(grpc_custom_socket* socket,
-                                  grpc_error* error) {
+                                  grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)socket->endpoint;
+  custom_tcp_endpoint* tcp =
+      reinterpret_cast<custom_tcp_endpoint*>(socket->endpoint);
   grpc_closure* cb = tcp->write_cb;
   tcp->write_cb = nullptr;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "write complete on %p: error=%s", tcp->socket, str);
+    gpr_log(GPR_INFO, "write complete on %p: error=%s", tcp->socket,
+            grpc_error_std_string(error).c_str());
   }
   TCP_UNREF(tcp, "write");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
@@ -226,7 +227,7 @@ static void custom_write_callback(grpc_custom_socket* socket,
 
 static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
                            grpc_closure* cb, void* /*arg*/) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
+  custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -252,8 +253,7 @@ static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
   tcp->write_slices = write_slices;
   GPR_ASSERT(tcp->write_slices->count <= UINT_MAX);
   if (tcp->write_slices->count == 0) {
-    // No slices means we don't have to do anything,
-    // and libuv doesn't like empty writes
+    // No slices means we don't have to do anything
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
     return;
   }
@@ -283,19 +283,18 @@ static void endpoint_delete_from_pollset_set(grpc_endpoint* ep,
   (void)pollset;
 }
 
-static void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
+static void endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+  custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   if (!tcp->shutting_down) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      const char* str = grpc_error_string(why);
-      gpr_log(GPR_INFO, "TCP %p shutdown why=%s", tcp->socket, str);
+      gpr_log(GPR_INFO, "TCP %p shutdown why=%s", tcp->socket,
+              grpc_error_std_string(why).c_str());
     }
     tcp->shutting_down = true;
     // grpc_core::ExecCtx::Run(DEBUG_LOCATION,tcp->read_cb,
     // GRPC_ERROR_REF(why));
     // grpc_core::ExecCtx::Run(DEBUG_LOCATION,tcp->write_cb,
     // GRPC_ERROR_REF(why)); tcp->read_cb = nullptr; tcp->write_cb = nullptr;
-    grpc_resource_user_shutdown(tcp->resource_user);
     grpc_custom_socket_vtable->shutdown(tcp->socket);
   }
   GRPC_ERROR_UNREF(why);
@@ -309,29 +308,25 @@ static void custom_close_callback(grpc_custom_socket* socket) {
   } else if (socket->endpoint) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
-    custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)socket->endpoint;
+    custom_tcp_endpoint* tcp =
+        reinterpret_cast<custom_tcp_endpoint*>(socket->endpoint);
     TCP_UNREF(tcp, "destroy");
   }
 }
 
 static void endpoint_destroy(grpc_endpoint* ep) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
+  custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   grpc_custom_socket_vtable->close(tcp->socket, custom_close_callback);
 }
 
 static absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
+  custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   return tcp->peer_string;
 }
 
 static absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
+  custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   return tcp->local_address;
-}
-
-static grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
-  custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
-  return tcp->resource_user;
 }
 
 static int endpoint_get_fd(grpc_endpoint* /*ep*/) { return -1; }
@@ -345,14 +340,13 @@ static grpc_endpoint_vtable vtable = {endpoint_read,
                                       endpoint_delete_from_pollset_set,
                                       endpoint_shutdown,
                                       endpoint_destroy,
-                                      endpoint_get_resource_user,
                                       endpoint_get_peer,
                                       endpoint_get_local_address,
                                       endpoint_get_fd,
                                       endpoint_can_track_err};
 
 grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
-                                          grpc_resource_quota* resource_quota,
+                                          grpc_slice_allocator* slice_allocator,
                                           const char* peer_string) {
   custom_tcp_endpoint* tcp = new custom_tcp_endpoint;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -362,7 +356,7 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
     gpr_log(GPR_INFO, "Creating TCP endpoint %p", socket);
   }
   socket->refs++;
-  socket->endpoint = (grpc_endpoint*)tcp;
+  socket->endpoint = reinterpret_cast<grpc_endpoint*>(tcp);
   tcp->socket = socket;
   tcp->base.vtable = &vtable;
   gpr_ref_init(&tcp->refcount, 1);
@@ -378,9 +372,6 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->shutting_down = false;
-  tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
-  grpc_resource_user_slice_allocator_init(
-      &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
-
+  tcp->slice_allocator = slice_allocator;
   return &tcp->base;
 }

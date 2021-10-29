@@ -17,14 +17,18 @@
  */
 
 #include <spawn.h>
+
 #include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include <gtest/gtest.h>
+
+#include "absl/time/time.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -88,7 +92,7 @@ TEST_P(TimeJumpTest, TimerRunning) {
   grpc_timer timer;
   grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 3000,
                   GRPC_CLOSURE_CREATE(
-                      [](void*, grpc_error* error) {
+                      [](void*, grpc_error_handle error) {
                         GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
                       },
                       nullptr, grpc_schedule_on_exec_ctx));
@@ -116,8 +120,7 @@ TEST_P(TimeJumpTest, TimedWait) {
       run_cmd(cmd.str().c_str());
     });
     gpr_timespec before = gpr_now(GPR_CLOCK_MONOTONIC);
-    int timedout = cond.Wait(
-        &mu, grpc_millis_to_timespec(kWaitTimeMs, GPR_CLOCK_REALTIME));
+    bool timedout = cond.WaitWithTimeout(&mu, absl::Milliseconds(kWaitTimeMs));
     gpr_timespec after = gpr_now(GPR_CLOCK_MONOTONIC);
     int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(after, before));
     gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout,

@@ -19,8 +19,6 @@
 /** \file Verify that status ordering rules are obeyed.
     \ref doc/status_ordering.md */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -28,9 +26,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+#include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
+
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,

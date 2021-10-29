@@ -44,11 +44,11 @@
 #define GRPC_SSL_URL_SCHEME "https"
 
 /* Check ALPN information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer);
+grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
 
 /* Check peer name information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_peer_name(absl::string_view peer_name,
-                                     const tsi_peer* peer);
+grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
+                                           const tsi_peer* peer);
 /* Compare targer_name information extracted from SSL security connectors. */
 int grpc_ssl_cmp_target_name(absl::string_view target_name,
                              absl::string_view other_target_name,
@@ -59,7 +59,7 @@ bool grpc_ssl_check_call_host(absl::string_view host,
                               absl::string_view target_name,
                               absl::string_view overridden_target_name,
                               grpc_auth_context* auth_context,
-                              grpc_error** error);
+                              grpc_error_handle* error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
 
@@ -145,13 +145,8 @@ class DefaultSslRootStore {
 
 class PemKeyCertPair {
  public:
-  // Construct from the C struct.  We steal its members and then immediately
-  // free it.
-  explicit PemKeyCertPair(grpc_ssl_pem_key_cert_pair* pair)
-      : private_key_(const_cast<char*>(pair->private_key)),
-        cert_chain_(const_cast<char*>(pair->cert_chain)) {
-    gpr_free(pair);
-  }
+  PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
+      : private_key_(private_key), cert_chain_(cert_chain) {}
 
   // Movable.
   PemKeyCertPair(PemKeyCertPair&& other) noexcept {
@@ -166,30 +161,28 @@ class PemKeyCertPair {
 
   // Copyable.
   PemKeyCertPair(const PemKeyCertPair& other)
-      : private_key_(gpr_strdup(other.private_key())),
-        cert_chain_(gpr_strdup(other.cert_chain())) {}
+      : private_key_(other.private_key()), cert_chain_(other.cert_chain()) {}
   PemKeyCertPair& operator=(const PemKeyCertPair& other) {
-    private_key_ = grpc_core::UniquePtr<char>(gpr_strdup(other.private_key()));
-    cert_chain_ = grpc_core::UniquePtr<char>(gpr_strdup(other.cert_chain()));
+    private_key_ = other.private_key();
+    cert_chain_ = other.cert_chain();
     return *this;
   }
 
   bool operator==(const PemKeyCertPair& other) const {
-    return std::strcmp(this->private_key(), other.private_key()) == 0 &&
-           std::strcmp(this->cert_chain(), other.cert_chain()) == 0;
+    return this->private_key() == other.private_key() &&
+           this->cert_chain() == other.cert_chain();
   }
 
-  char* private_key() const { return private_key_.get(); }
-  char* cert_chain() const { return cert_chain_.get(); }
+  const std::string& private_key() const { return private_key_; }
+  const std::string& cert_chain() const { return cert_chain_; }
 
  private:
-  grpc_core::UniquePtr<char> private_key_;
-  grpc_core::UniquePtr<char> cert_chain_;
+  std::string private_key_;
+  std::string cert_chain_;
 };
 
 typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H \
-        */
+#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H

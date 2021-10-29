@@ -40,11 +40,10 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -55,24 +54,23 @@ void TryConnectAndDestroy() {
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   // Return a grpclb address with an IP address on the IPv6 discard prefix
   // (https://tools.ietf.org/html/rfc6666). This is important because
-  // the behavior we want in this test is for a TCP connect attempt to "hang",
+  // the behavior we want in this test is for a TCP connect attempt to "freeze",
   // i.e. we want to send SYN, and then *not* receive SYN-ACK or RST.
   // The precise behavior is dependant on the test runtime environment though,
   // since connect() attempts on this address may unfortunately result in
   // "network unreachable" errors in some test runtime environments.
-  const char* uri_str = "ipv6:[0100::1234]:443";
-  grpc_uri* lb_uri = grpc_uri_parse(uri_str, true);
-  ASSERT_NE(lb_uri, nullptr);
+  absl::StatusOr<grpc_core::URI> lb_uri =
+      grpc_core::URI::Parse("ipv6:[0100::1234]:443");
+  ASSERT_TRUE(lb_uri.ok());
   grpc_resolved_address address;
-  ASSERT_TRUE(grpc_parse_uri(lb_uri, &address));
-  grpc_uri_destroy(lb_uri);
+  ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
   grpc_core::ServerAddressList addresses;
   addresses.emplace_back(address.addr, address.len, nullptr);
   grpc_core::Resolver::Result lb_address_result;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   lb_address_result.service_config = grpc_core::ServiceConfig::Create(
       nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
   lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   response_generator->SetResponse(lb_address_result);
@@ -111,7 +109,7 @@ TEST(DestroyGrpclbChannelWithActiveConnectStressTest,
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(new std::thread(TryConnectAndDestroy));
   }
-  for (int i = 0; i < threads.size(); i++) {
+  for (size_t i = 0; i < threads.size(); i++) {
     threads[i]->join();
   }
   grpc_shutdown();

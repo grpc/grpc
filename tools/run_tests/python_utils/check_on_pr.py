@@ -13,15 +13,16 @@
 # limitations under the License.
 
 from __future__ import print_function
+
+import datetime
+import json
 import os
 import sys
-import json
 import time
-import datetime
 import traceback
 
-import requests
 import jwt
+import requests
 
 _GITHUB_API_PREFIX = 'https://api.github.com'
 _GITHUB_REPO = 'grpc/grpc'
@@ -55,7 +56,7 @@ def _access_token():
                 url='https://api.github.com/app/installations/%s/access_tokens'
                 % _INSTALLATION_ID,
                 headers={
-                    'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
+                    'Authorization': 'Bearer %s' % _jwt_token(),
                     'Accept': 'application/vnd.github.machine-man-preview+json',
                 })
 
@@ -65,8 +66,8 @@ def _access_token():
                     'exp': time.time() + 60
                 }
                 break
-            except (KeyError, ValueError) as e:
-                traceback.print_exc(e)
+            except (KeyError, ValueError):
+                traceback.print_exc()
                 print('HTTP Status %d %s' % (resp.status_code, resp.reason))
                 print("Fetch access token from Github API failed:")
                 print(resp.text)

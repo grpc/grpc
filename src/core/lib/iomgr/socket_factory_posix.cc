@@ -22,12 +22,12 @@
 
 #ifdef GRPC_POSIX_SOCKET_SOCKET_FACTORY
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
-
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/sync.h>
 
 void grpc_socket_factory_init(grpc_socket_factory* factory,
                               const grpc_socket_factory_vtable* vtable) {
@@ -47,11 +47,11 @@ int grpc_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
 
 int grpc_socket_factory_compare(grpc_socket_factory* a,
                                 grpc_socket_factory* b) {
-  int c = GPR_ICMP(a, b);
+  int c = grpc_core::QsortCompare(a, b);
   if (c != 0) {
     grpc_socket_factory* sma = a;
     grpc_socket_factory* smb = b;
-    c = GPR_ICMP(sma->vtable, smb->vtable);
+    c = grpc_core::QsortCompare(sma->vtable, smb->vtable);
     if (c == 0) {
       c = sma->vtable->compare(sma, smb);
     }
@@ -87,8 +87,9 @@ static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {
     socket_factory_arg_copy, socket_factory_arg_destroy, socket_factory_cmp};
 
 grpc_arg grpc_socket_factory_to_arg(grpc_socket_factory* factory) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_ARG_SOCKET_FACTORY,
-                                         factory, &socket_factory_arg_vtable);
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_SOCKET_FACTORY), factory,
+      &socket_factory_arg_vtable);
 }
 
 #endif

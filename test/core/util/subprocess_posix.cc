@@ -34,6 +34,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "test/core/util/subprocess.h"
 
 struct gpr_subprocess {
@@ -60,9 +61,8 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     /* if we reach here, an error has occurred */
     gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
     _exit(1);
-    return nullptr;
   } else {
-    r = static_cast<gpr_subprocess*>(gpr_zalloc(sizeof(gpr_subprocess)));
+    r = grpc_core::Zalloc<gpr_subprocess>();
     r->pid = pid;
     return r;
   }

@@ -1,0 +1,49 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.extensions.filters.common.fault.v3;
+
+import "src/proto/grpc/testing/xds/v3/percent.proto";
+
+import "google/protobuf/duration.proto";
+
+// Delay specification is used to inject latency into the
+// HTTP/gRPC/Mongo/Redis operation or delay proxying of TCP connections.
+message FaultDelay {
+  // Fault delays are controlled via an HTTP header (if applicable). See the
+  // :ref:`HTTP fault filter <config_http_filters_fault_injection_http_header>`
+  // documentation for more information.
+  message HeaderDelay {}
+
+  oneof fault_delay_secifier {
+    // Add a fixed delay before forwarding the operation upstream. See
+    // https://developers.google.com/protocol-buffers/docs/proto3#json for
+    // the JSON/YAML Duration mapping. For HTTP/Mongo/Redis, the specified
+    // delay will be injected before a new request/operation. For TCP
+    // connections, the proxying of the connection upstream will be delayed
+    // for the specified period. This is required if type is FIXED.
+    google.protobuf.Duration fixed_delay = 3;
+
+    // Fault delays are controlled via an HTTP header (if applicable).
+    HeaderDelay header_delay = 5;
+  }
+
+  // The percentage of operations/connections/requests on which the delay will
+  // be injected.
+  type.v3.FractionalPercent percentage = 4;
+}

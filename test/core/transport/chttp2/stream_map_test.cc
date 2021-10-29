@@ -17,7 +17,9 @@
  */
 
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+
 #include <grpc/support/log.h>
+
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -55,13 +57,13 @@ static void test_basic_add_find(uint32_t n) {
   grpc_chttp2_stream_map_init(&map, 8);
   GPR_ASSERT(0 == grpc_chttp2_stream_map_size(&map));
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void*)static_cast<uintptr_t>(i));
+    grpc_chttp2_stream_map_add(&map, i, reinterpret_cast<void*>(i));
   }
   GPR_ASSERT(n == grpc_chttp2_stream_map_size(&map));
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, 0));
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, n + 1));
   for (i = 1; i <= n; i++) {
-    got = (uintptr_t)grpc_chttp2_stream_map_find(&map, i);
+    got = reinterpret_cast<uintptr_t>(grpc_chttp2_stream_map_find(&map, i));
     GPR_ASSERT(i == got);
   }
   grpc_chttp2_stream_map_destroy(&map);
@@ -84,7 +86,7 @@ static void check_delete_evens(grpc_chttp2_stream_map* map, uint32_t n) {
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(map, n + 1));
   for (i = 1; i <= n; i++) {
     if (i & 1) {
-      got = (uintptr_t)grpc_chttp2_stream_map_find(map, i);
+      got = reinterpret_cast<uintptr_t>(grpc_chttp2_stream_map_find(map, i));
       GPR_ASSERT(i == got);
     } else {
       GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(map, i));
@@ -110,7 +112,7 @@ static void test_delete_evens_sweep(uint32_t n) {
 
   grpc_chttp2_stream_map_init(&map, 8);
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void*)static_cast<uintptr_t>(i));
+    grpc_chttp2_stream_map_add(&map, i, reinterpret_cast<void*>(i));
   }
   for (i = 1; i <= n; i++) {
     if ((i & 1) == 0) {
@@ -132,7 +134,7 @@ static void test_delete_evens_incremental(uint32_t n) {
 
   grpc_chttp2_stream_map_init(&map, 8);
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void*)static_cast<uintptr_t>(i));
+    grpc_chttp2_stream_map_add(&map, i, reinterpret_cast<void*>(i));
     if ((i & 1) == 0) {
       grpc_chttp2_stream_map_delete(&map, i);
     }
@@ -154,7 +156,7 @@ static void test_periodic_compaction(uint32_t n) {
   grpc_chttp2_stream_map_init(&map, 16);
   GPR_ASSERT(map.capacity == 16);
   for (i = 1; i <= n; i++) {
-    grpc_chttp2_stream_map_add(&map, i, (void*)static_cast<uintptr_t>(i));
+    grpc_chttp2_stream_map_add(&map, i, reinterpret_cast<void*>(i));
     if (i > 8) {
       del = i - 8;
       GPR_ASSERT((void*)(uintptr_t)del ==
