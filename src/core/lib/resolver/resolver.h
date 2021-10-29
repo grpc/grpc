@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
+#ifndef GRPC_CORE_LIB_RESOLVER_RESOLVER_H
+#define GRPC_CORE_LIB_RESOLVER_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -131,4 +131,4 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */
+#endif /* GRPC_CORE_LIB_RESOLVER_RESOLVER_H */

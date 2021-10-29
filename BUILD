@@ -1547,52 +1547,52 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-        "resolved_address",
         "grpc_sockaddr",
-    ]
+        "resolved_address",
+    ],
 )
 
 grpc_cc_library(
     name = "iomgr_port",
     hdrs = [
-        "src/core/lib/iomgr/port.h"
-    ]
+        "src/core/lib/iomgr/port.h",
+    ],
 )
 
 grpc_cc_library(
     name = "grpc_sockaddr",
-    hdrs = [
-        "src/core/lib/iomgr/sockaddr.h",
-        "src/core/lib/iomgr/sockaddr_posix.h",
-        "src/core/lib/iomgr/sockaddr_windows.h",
-        "src/core/lib/event_engine/sockaddr.h",
-        "src/core/lib/iomgr/socket_utils.h",
-    ],
     srcs = [
         "src/core/lib/event_engine/sockaddr.cc",
     ],
+    hdrs = [
+        "src/core/lib/event_engine/sockaddr.h",
+        "src/core/lib/iomgr/sockaddr.h",
+        "src/core/lib/iomgr/sockaddr_posix.h",
+        "src/core/lib/iomgr/sockaddr_windows.h",
+        "src/core/lib/iomgr/socket_utils.h",
+    ],
     deps = [
-        "iomgr_port", 
         "gpr_platform",
-    ]
+        "iomgr_port",
+    ],
 )
 
 grpc_cc_library(
     name = "uri_parser",
-    hdrs = [
-        "src/core/lib/uri/uri_parser.h",
-    ],
     srcs = [
         "src/core/lib/uri/uri_parser.cc",
     ],
-    deps = [
-        "gpr_base",
+    hdrs = [
+        "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-    ]
+    ],
+    deps = [
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
@@ -1907,6 +1907,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "bitset",
+        "channel_args",
         "channel_stack_type",
         "chunked_vector",
         "closure",
@@ -1918,21 +1919,20 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
+        "grpc_sockaddr",
         "grpc_trace",
+        "iomgr_port",
         "json",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "resolved_address",
         "slice",
         "slice_refcount",
-        "table",
-        "useful",
-        "iomgr_port",
-        "channel_args",
         "sockaddr_utils",
-        "resolved_address",
+        "table",
         "uri_parser",
-        "grpc_sockaddr",
+        "useful",
     ],
 )
 
@@ -2020,23 +2020,23 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "server_address",
-    hdrs = [
-        "src/core/lib/resolver/server_address.h",
-    ],
     srcs = [
         "src/core/lib/resolver/server_address.cc",
     ],
-    language = "c++",
+    hdrs = [
+        "src/core/lib/resolver/server_address.h",
+    ],
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
     ],
+    language = "c++",
     deps = [
-        "resolved_address",
-        "sockaddr_utils",
         "channel_args",
         "gpr_platform",
-    ]
+        "resolved_address",
+        "sockaddr_utils",
+    ],
 )
 
 grpc_cc_library(
@@ -2050,18 +2050,18 @@ grpc_cc_library(
         "src/core/lib/resolver/resolver_factory.h",
         "src/core/lib/resolver/resolver_registry.h",
     ],
-    language = "c++",
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
     ],
+    language = "c++",
     deps = [
-        "grpc_service_config",
         "gpr_base",
+        "grpc_service_config",
         "orphanable",
+        "server_address",
         "uri_parser",
-        "server_address"
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -2072,26 +2072,26 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/channel/channel_args.h",
     ],
-    language = "c++",
-    deps = [
-        "gpr_base",
-        "channel_stack_type",
-        "grpc_codegen",
-        "useful",
-    ],
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
-    ]
+    ],
+    language = "c++",
+    deps = [
+        "channel_stack_type",
+        "gpr_base",
+        "grpc_codegen",
+        "useful",
+    ],
 )
 
 grpc_cc_library(
     name = "resolved_address",
-    hdrs = [ "src/core/lib/iomgr/resolved_address.h" ],
+    hdrs = ["src/core/lib/iomgr/resolved_address.h"],
     language = "c++",
     deps = [
-        "gpr_platform"
-    ]
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -2170,6 +2170,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "grpc_health_upb",
+        "grpc_resolver",
         "grpc_service_config",
         "grpc_trace",
         "handshaker_registry",
@@ -2178,13 +2179,12 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "server_address",
         "slice",
+        "sockaddr_utils",
+        "uri_parser",
         "useful",
         "xds_orca_upb",
-        "server_address",
-        "grpc_resolver",
-        "uri_parser",
-        "sockaddr_utils",
     ],
 )
 
@@ -2441,11 +2441,13 @@ grpc_cc_library(
         "grpc_grpclb_balancer_addresses",
         "grpc_lb_upb",
         "grpc_resolver_fake",
+        "grpc_sockaddr",
         "grpc_transport_chttp2_client_insecure",
         "orphanable",
         "ref_counted_ptr",
+        "server_address",
         "slice",
-        "sockaddr_utils", "grpc_sockaddr", "server_address",
+        "sockaddr_utils",
     ],
 )
 
@@ -2484,13 +2486,13 @@ grpc_cc_library(
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpc_sockaddr",
         "grpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
-        "slice",
-        "grpc_sockaddr",
-        "sockaddr_utils",
         "server_address",
+        "slice",
+        "sockaddr_utils",
     ],
 )
 
@@ -2530,6 +2532,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
+        "grpc_resolver",
         "grpc_secure",
         "json",
         "json_util",
@@ -2537,7 +2540,6 @@ grpc_cc_library(
         "ref_counted",
         "rls_upb",
         "uri_parser",
-        "grpc_resolver",
     ],
 )
 
@@ -2601,6 +2603,7 @@ grpc_cc_library(
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_secure",
+        "grpc_sockaddr",
         "grpc_transport_chttp2_client_secure",
         "json",
         "json_util",
@@ -2608,11 +2611,10 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "sockaddr_utils",
+        "uri_parser",
         "xds_type_upb",
         "xds_type_upbdefs",
-        "grpc_sockaddr",
-        "uri_parser",
-        "sockaddr_utils"
     ],
 )
 
@@ -2645,10 +2647,10 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_sockaddr",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
         "sockaddr_utils",
-        "grpc_sockaddr",
         "uri_parser",
     ],
 )
@@ -2734,11 +2736,11 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
+        "grpc_resolver",
         "grpc_resolver_fake",
         "grpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
-        "grpc_resolver",
         "server_address",
         "uri_parser",
     ],
@@ -2829,8 +2831,8 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_subchannel_list",
-        "sockaddr_utils",
         "server_address",
+        "sockaddr_utils",
     ],
 )
 
@@ -2938,8 +2940,8 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_secure",
-        "slice",
         "grpc_sockaddr",
+        "slice",
         "uri_parser",
     ],
     alwayslink = 1,
@@ -3084,8 +3086,8 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_resolver_dns_selection",
         "grpc_resolver",
+        "grpc_resolver_dns_selection",
         "server_address",
     ],
 )
@@ -3120,14 +3122,14 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_grpclb_balancer_addresses",
+        "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_service_config",
-        "json",
-        "grpc_resolver",
-        "server_address",
         "grpc_sockaddr",
+        "iomgr_port",
+        "json",
+        "server_address",
         "sockaddr_utils",
-        "iomgr_port"
     ],
 )
 
@@ -3144,9 +3146,9 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "slice",
         "grpc_resolver",
         "server_address",
+        "slice",
     ],
 )
 
@@ -3163,10 +3165,10 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "slice",
-        "iomgr_port",
         "grpc_resolver",
+        "iomgr_port",
         "server_address",
+        "slice",
     ],
 )
 
@@ -3183,10 +3185,10 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "slice",
-        "useful",
         "grpc_resolver",
         "server_address",
+        "slice",
+        "useful",
     ],
 )
 
@@ -3214,8 +3216,8 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_policy_ring_hash",
+        "grpc_resolver",
         "grpc_xds_client",
-        "grpc_resolver"
     ],
 )
 
@@ -3230,8 +3232,8 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_xds_client",
         "grpc_resolver",
+        "grpc_xds_client",
     ],
 )
 
@@ -3356,6 +3358,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_lb_xds_channel_args",
+        "grpc_sockaddr",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "json",
@@ -3363,12 +3366,11 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "sockaddr_utils",
         "tsi",
         "tsi_interface",
-        "useful",
         "uri_parser",
-        "grpc_sockaddr",
-        "sockaddr_utils",
+        "useful",
     ],
 )
 
@@ -3634,8 +3636,8 @@ grpc_cc_library(
         "popularity_count",
         "slice",
         "slice_refcount",
+        "uri_parser",
         "useful",
-        "uri_parser"
     ],
 )
 
@@ -3682,11 +3684,13 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver",
         "grpc_transport_chttp2",
-        "grpc_transport_chttp2_client_connector","channel_args","grpc_resolver"
+        "grpc_transport_chttp2_client_connector",
     ],
 )
 
@@ -3701,13 +3705,13 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver",
         "grpc_secure",
         "grpc_transport_chttp2",
         "grpc_transport_chttp2_client_connector",
         "slice",
-        "grpc_resolver",
-        "uri_parser",
         "sockaddr_utils",
+        "uri_parser",
     ],
 )
 
