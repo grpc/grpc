@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_proto//proto:defs.bzl", "proto_library")

@@ -142,7 +142,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_closure* closure = ac->closure;
   grpc_fd* fd;
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
@@ -160,8 +160,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   gpr_mu_lock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                           grpc_slice_from_static_string("Timeout occurred"));
+        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
     goto finish;
   }
 
@@ -220,23 +219,16 @@ finish:
     fd = nullptr;
   }
   done = (--ac->refs == 0);
-  // Create a copy of the data from "ac" to be accessed after the unlock, as
-  // "ac" and its contents may be deallocated by the time they are read.
-  const grpc_slice addr_str_slice = grpc_slice_from_cpp_string(ac->addr_str);
   gpr_mu_unlock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
-    grpc_slice str;
+    std::string str;
     bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
     GPR_ASSERT(ret);
-    std::string description = absl::StrCat("Failed to connect to remote host: ",
-                                           grpc_core::StringViewFromSlice(str));
+    std::string description =
+        absl::StrCat("Failed to connect to remote host: ", str);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, description);
     error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                           grpc_slice_from_cpp_string(std::move(description)));
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               addr_str_slice /* takes ownership */);
-  } else {
-    grpc_slice_unref_internal(addr_str_slice);
+        grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -309,9 +301,8 @@ void grpc_tcp_client_create_from_prepared_fd(
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_slice_allocator_destroy(slice_allocator);
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
-    error = grpc_error_set_str(
-        error, GRPC_ERROR_STR_TARGET_ADDRESS,
-        grpc_slice_from_cpp_string(grpc_sockaddr_to_uri(addr)));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                               grpc_sockaddr_to_uri(addr));
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;

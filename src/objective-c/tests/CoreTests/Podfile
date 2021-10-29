@@ -1,0 +1,25 @@
+source 'https://github.com/CocoaPods/Specs.git'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+GRPC_LOCAL_SRC = '../../../..'
+
+def grpc_deps
+  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
+end
+
+target 'CoreTests' do
+  platform :ios, '9.0'
+  grpc_deps
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    if target.name == "CoreTests"
+      target.build_configurations.each do |config|
+        config.build_settings['USER_HEADER_SEARCH_PATHS'] = "$(inherited) $(PODS_ROOT)/../#{GRPC_LOCAL_SRC}"
+      end
+    end
+  end
+end

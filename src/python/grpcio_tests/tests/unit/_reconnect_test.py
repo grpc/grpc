@@ -21,6 +21,7 @@ import unittest
 import grpc
 from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_common
 from tests.unit.framework.common import bound_socket
 from tests.unit.framework.common import test_constants
 
@@ -34,6 +35,8 @@ def _handle_unary_unary(unused_request, unused_servicer_context):
     return _RESPONSE
 
 
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "Test is nondeterministic under gevent.")
 class ReconnectTest(unittest.TestCase):
 
     def test_reconnect(self):

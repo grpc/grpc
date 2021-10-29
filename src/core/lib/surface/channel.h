@@ -82,21 +82,12 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 namespace grpc_core {
 
 struct RegisteredCall {
-  // The method and host are kept as part of this struct just to manage their
-  // lifetime since they must outlive the mdelem contents.
-  std::string method;
-  std::string host;
-
   grpc_mdelem path;
   grpc_mdelem authority;
 
   explicit RegisteredCall(const char* method_arg, const char* host_arg);
-  // TODO(vjpai): delete copy constructor once all supported compilers allow
-  //              std::map value_type to be MoveConstructible.
   RegisteredCall(const RegisteredCall& other);
-  RegisteredCall(RegisteredCall&& other) noexcept;
   RegisteredCall& operator=(const RegisteredCall&) = delete;
-  RegisteredCall& operator=(RegisteredCall&&) = delete;
 
   ~RegisteredCall();
 };

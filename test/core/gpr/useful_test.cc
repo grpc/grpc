@@ -59,6 +59,7 @@ TEST(UsefulTest, BitOps) {
   EXPECT_EQ(grpc_core::ClearBit(&bitset, 3), 2);
   EXPECT_EQ(grpc_core::BitCount(bitset), 1);
   EXPECT_EQ(grpc_core::GetBit(bitset, 3), 0);
+  EXPECT_EQ(grpc_core::BitCount(std::numeric_limits<uint64_t>::max()), 64);
 }
 
 }  // namespace grpc_core

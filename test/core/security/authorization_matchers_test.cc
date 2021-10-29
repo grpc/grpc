@@ -19,6 +19,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security_constants.h>
+
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/matchers.h"
 #include "test/core/util/evaluate_args_test_util.h"
@@ -341,7 +343,7 @@ TEST_F(AuthorizationMatchersTest,
 
 TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherSuccessfulUriSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                 GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+                                 GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://foo.abc");
   args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
@@ -357,7 +359,7 @@ TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherSuccessfulUriSanMatches) {
 
 TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedUriSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                 GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+                                 GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
                                  "spiffe://bar.abc");
   EvaluateArgs args = args_.MakeEvaluateArgs();

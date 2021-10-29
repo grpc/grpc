@@ -74,6 +74,9 @@ CONFIG = [
     'deflate',
     'gzip',
     'stream/gzip',
+    # te: trailers strings
+    'te',
+    'trailers',
     # metadata elements
     # begin hpack static elements
     (':authority', ''),
@@ -144,7 +147,6 @@ CONFIG = [
     ('grpc-encoding', 'identity'),
     ('grpc-encoding', 'gzip'),
     ('grpc-encoding', 'deflate'),
-    ('te', 'trailers'),
     ('content-type', 'application/grpc'),
     (':scheme', 'grpc'),
     (':method', 'PUT'),
@@ -162,7 +164,6 @@ METADATA_BATCH_CALLOUTS = [
     ':status',
     ':authority',
     ':scheme',
-    'te',
     'grpc-message',
     'grpc-status',
     'grpc-payload-bin',

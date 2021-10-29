@@ -2414,18 +2414,22 @@ UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_per_try_timeout(const envo
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_route_v3_RetryPolicy_per_try_timeout(const envoy_config_route_v3_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 40), const struct google_protobuf_Duration*); }
 UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retry_priority(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_hasbit(msg, 3); }
 UPB_INLINE const envoy_config_route_v3_RetryPolicy_RetryPriority* envoy_config_route_v3_RetryPolicy_retry_priority(const envoy_config_route_v3_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 48), const envoy_config_route_v3_RetryPolicy_RetryPriority*); }
-UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retry_host_predicate(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(44, 72)); }
-UPB_INLINE const envoy_config_route_v3_RetryPolicy_RetryHostPredicate* const* envoy_config_route_v3_RetryPolicy_retry_host_predicate(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (const envoy_config_route_v3_RetryPolicy_RetryHostPredicate* const*)_upb_array_accessor(msg, UPB_SIZE(44, 72), len); }
+UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retry_host_predicate(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(48, 80)); }
+UPB_INLINE const envoy_config_route_v3_RetryPolicy_RetryHostPredicate* const* envoy_config_route_v3_RetryPolicy_retry_host_predicate(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (const envoy_config_route_v3_RetryPolicy_RetryHostPredicate* const*)_upb_array_accessor(msg, UPB_SIZE(48, 80), len); }
 UPB_INLINE int64_t envoy_config_route_v3_RetryPolicy_host_selection_retry_max_attempts(const envoy_config_route_v3_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t); }
-UPB_INLINE uint32_t const* envoy_config_route_v3_RetryPolicy_retriable_status_codes(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(48, 80), len); }
+UPB_INLINE uint32_t const* envoy_config_route_v3_RetryPolicy_retriable_status_codes(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 88), len); }
 UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retry_back_off(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_hasbit(msg, 4); }
 UPB_INLINE const envoy_config_route_v3_RetryPolicy_RetryBackOff* envoy_config_route_v3_RetryPolicy_retry_back_off(const envoy_config_route_v3_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(36, 56), const envoy_config_route_v3_RetryPolicy_RetryBackOff*); }
-UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retriable_headers(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(52, 88)); }
-UPB_INLINE const envoy_config_route_v3_HeaderMatcher* const* envoy_config_route_v3_RetryPolicy_retriable_headers(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (const envoy_config_route_v3_HeaderMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(52, 88), len); }
-UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retriable_request_headers(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(56, 96)); }
-UPB_INLINE const envoy_config_route_v3_HeaderMatcher* const* envoy_config_route_v3_RetryPolicy_retriable_request_headers(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (const envoy_config_route_v3_HeaderMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(56, 96), len); }
+UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retriable_headers(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(56, 96)); }
+UPB_INLINE const envoy_config_route_v3_HeaderMatcher* const* envoy_config_route_v3_RetryPolicy_retriable_headers(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (const envoy_config_route_v3_HeaderMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(56, 96), len); }
+UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retriable_request_headers(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(60, 104)); }
+UPB_INLINE const envoy_config_route_v3_HeaderMatcher* const* envoy_config_route_v3_RetryPolicy_retriable_request_headers(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (const envoy_config_route_v3_HeaderMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(60, 104), len); }
 UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_rate_limited_retry_back_off(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE const envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff* envoy_config_route_v3_RetryPolicy_rate_limited_retry_back_off(const envoy_config_route_v3_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 64), const envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff*); }
+UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_retry_options_predicates(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(64, 112)); }
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* const* envoy_config_route_v3_RetryPolicy_retry_options_predicates(const envoy_config_route_v3_RetryPolicy *msg, size_t *len) { return (const struct envoy_config_core_v3_TypedExtensionConfig* const*)_upb_array_accessor(msg, UPB_SIZE(64, 112), len); }
+UPB_INLINE bool envoy_config_route_v3_RetryPolicy_has_per_try_idle_timeout(const envoy_config_route_v3_RetryPolicy *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_config_route_v3_RetryPolicy_per_try_idle_timeout(const envoy_config_route_v3_RetryPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(44, 72), const struct google_protobuf_Duration*); }
 
 UPB_INLINE void envoy_config_route_v3_RetryPolicy_set_retry_on(envoy_config_route_v3_RetryPolicy *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_strview) = value;
@@ -2470,15 +2474,15 @@ UPB_INLINE struct envoy_config_route_v3_RetryPolicy_RetryPriority* envoy_config_
   return sub;
 }
 UPB_INLINE envoy_config_route_v3_RetryPolicy_RetryHostPredicate** envoy_config_route_v3_RetryPolicy_mutable_retry_host_predicate(envoy_config_route_v3_RetryPolicy *msg, size_t *len) {
-  return (envoy_config_route_v3_RetryPolicy_RetryHostPredicate**)_upb_array_mutable_accessor(msg, UPB_SIZE(44, 72), len);
+  return (envoy_config_route_v3_RetryPolicy_RetryHostPredicate**)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 80), len);
 }
 UPB_INLINE envoy_config_route_v3_RetryPolicy_RetryHostPredicate** envoy_config_route_v3_RetryPolicy_resize_retry_host_predicate(envoy_config_route_v3_RetryPolicy *msg, size_t len, upb_arena *arena) {
-  return (envoy_config_route_v3_RetryPolicy_RetryHostPredicate**)_upb_array_resize_accessor2(msg, UPB_SIZE(44, 72), len, UPB_SIZE(2, 3), arena);
+  return (envoy_config_route_v3_RetryPolicy_RetryHostPredicate**)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 80), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct envoy_config_route_v3_RetryPolicy_RetryHostPredicate* envoy_config_route_v3_RetryPolicy_add_retry_host_predicate(envoy_config_route_v3_RetryPolicy *msg, upb_arena *arena) {
   struct envoy_config_route_v3_RetryPolicy_RetryHostPredicate* sub = (struct envoy_config_route_v3_RetryPolicy_RetryHostPredicate*)_upb_msg_new(&envoy_config_route_v3_RetryPolicy_RetryHostPredicate_msginit, arena);
   bool ok = _upb_array_append_accessor2(
-      msg, UPB_SIZE(44, 72), UPB_SIZE(2, 3), &sub, arena);
+      msg, UPB_SIZE(48, 80), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -2486,13 +2490,13 @@ UPB_INLINE void envoy_config_route_v3_RetryPolicy_set_host_selection_retry_max_a
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = value;
 }
 UPB_INLINE uint32_t* envoy_config_route_v3_RetryPolicy_mutable_retriable_status_codes(envoy_config_route_v3_RetryPolicy *msg, size_t *len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 80), len);
+  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 88), len);
 }
 UPB_INLINE uint32_t* envoy_config_route_v3_RetryPolicy_resize_retriable_status_codes(envoy_config_route_v3_RetryPolicy *msg, size_t len, upb_arena *arena) {
-  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 80), len, 2, arena);
+  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 88), len, 2, arena);
 }
 UPB_INLINE bool envoy_config_route_v3_RetryPolicy_add_retriable_status_codes(envoy_config_route_v3_RetryPolicy *msg, uint32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(48, 80), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 88), 2, &val,
       arena);
 }
 UPB_INLINE void envoy_config_route_v3_RetryPolicy_set_retry_back_off(envoy_config_route_v3_RetryPolicy *msg, envoy_config_route_v3_RetryPolicy_RetryBackOff* value) {
@@ -2509,28 +2513,28 @@ UPB_INLINE struct envoy_config_route_v3_RetryPolicy_RetryBackOff* envoy_config_r
   return sub;
 }
 UPB_INLINE envoy_config_route_v3_HeaderMatcher** envoy_config_route_v3_RetryPolicy_mutable_retriable_headers(envoy_config_route_v3_RetryPolicy *msg, size_t *len) {
-  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 88), len);
+  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 96), len);
 }
 UPB_INLINE envoy_config_route_v3_HeaderMatcher** envoy_config_route_v3_RetryPolicy_resize_retriable_headers(envoy_config_route_v3_RetryPolicy *msg, size_t len, upb_arena *arena) {
-  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 88), len, UPB_SIZE(2, 3), arena);
+  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 96), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct envoy_config_route_v3_HeaderMatcher* envoy_config_route_v3_RetryPolicy_add_retriable_headers(envoy_config_route_v3_RetryPolicy *msg, upb_arena *arena) {
   struct envoy_config_route_v3_HeaderMatcher* sub = (struct envoy_config_route_v3_HeaderMatcher*)_upb_msg_new(&envoy_config_route_v3_HeaderMatcher_msginit, arena);
   bool ok = _upb_array_append_accessor2(
-      msg, UPB_SIZE(52, 88), UPB_SIZE(2, 3), &sub, arena);
+      msg, UPB_SIZE(56, 96), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE envoy_config_route_v3_HeaderMatcher** envoy_config_route_v3_RetryPolicy_mutable_retriable_request_headers(envoy_config_route_v3_RetryPolicy *msg, size_t *len) {
-  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 96), len);
+  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(60, 104), len);
 }
 UPB_INLINE envoy_config_route_v3_HeaderMatcher** envoy_config_route_v3_RetryPolicy_resize_retriable_request_headers(envoy_config_route_v3_RetryPolicy *msg, size_t len, upb_arena *arena) {
-  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 96), len, UPB_SIZE(2, 3), arena);
+  return (envoy_config_route_v3_HeaderMatcher**)_upb_array_resize_accessor2(msg, UPB_SIZE(60, 104), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct envoy_config_route_v3_HeaderMatcher* envoy_config_route_v3_RetryPolicy_add_retriable_request_headers(envoy_config_route_v3_RetryPolicy *msg, upb_arena *arena) {
   struct envoy_config_route_v3_HeaderMatcher* sub = (struct envoy_config_route_v3_HeaderMatcher*)_upb_msg_new(&envoy_config_route_v3_HeaderMatcher_msginit, arena);
   bool ok = _upb_array_append_accessor2(
-      msg, UPB_SIZE(56, 96), UPB_SIZE(2, 3), &sub, arena);
+      msg, UPB_SIZE(60, 104), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -2544,6 +2548,32 @@ UPB_INLINE struct envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff* env
     sub = (struct envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff*)_upb_msg_new(&envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_msginit, arena);
     if (!sub) return NULL;
     envoy_config_route_v3_RetryPolicy_set_rate_limited_retry_back_off(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig** envoy_config_route_v3_RetryPolicy_mutable_retry_options_predicates(envoy_config_route_v3_RetryPolicy *msg, size_t *len) {
+  return (struct envoy_config_core_v3_TypedExtensionConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(64, 112), len);
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig** envoy_config_route_v3_RetryPolicy_resize_retry_options_predicates(envoy_config_route_v3_RetryPolicy *msg, size_t len, upb_arena *arena) {
+  return (struct envoy_config_core_v3_TypedExtensionConfig**)_upb_array_resize_accessor2(msg, UPB_SIZE(64, 112), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_route_v3_RetryPolicy_add_retry_options_predicates(envoy_config_route_v3_RetryPolicy *msg, upb_arena *arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_msg_new(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(64, 112), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RetryPolicy_set_per_try_idle_timeout(envoy_config_route_v3_RetryPolicy *msg, struct google_protobuf_Duration* value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(44, 72), struct google_protobuf_Duration*) = value;
+}
+UPB_INLINE struct google_protobuf_Duration* envoy_config_route_v3_RetryPolicy_mutable_per_try_idle_timeout(envoy_config_route_v3_RetryPolicy *msg, upb_arena *arena) {
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_route_v3_RetryPolicy_per_try_idle_timeout(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_route_v3_RetryPolicy_set_per_try_idle_timeout(msg, sub);
   }
   return sub;
 }

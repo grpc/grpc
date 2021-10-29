@@ -15,7 +15,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/transport/binder/security_policy/security_policy.h"
 
 #ifdef GPR_ANDROID
 
@@ -30,25 +32,22 @@
 namespace grpc {
 namespace experimental {
 
-// This need be called before calling CreateBinderChannel, and the thread need
-// to be free before invoking CreateBinderChannel.
-// TODO(mingcl): Add more explanation on this after we determine the interfaces.
-void BindToOnDeviceServerService(void* jni_env_void, jobject application,
-                                 absl::string_view /*package_name*/,
-                                 absl::string_view /*class_name*/);
-
 // Need to be invoked after BindToOnDeviceServerService
 // Create a new Channel from server package name and service class name
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     void* jni_env_void, jobject application, absl::string_view package_name,
-    absl::string_view class_name);
+    absl::string_view class_name,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy);
 
 // Need to be invoked after BindToOnDeviceServerService
 // Create a new Channel from server package name and service class name and with
 // custom channel arguments.
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void* jni_env_void, jobject application, absl::string_view package_name,
-    absl::string_view class_name, const ChannelArguments& args);
+    absl::string_view class_name,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
+    const ChannelArguments& args);
 
 }  // namespace experimental
 }  // namespace grpc

@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
