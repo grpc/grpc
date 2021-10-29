@@ -139,3 +139,29 @@ def check_on_pr(name, summary, success=True):
                  })
     print('Result of Creating/Updating Check on PR:',
           json.dumps(resp.json(), indent=2))
+
+def label_significance_on_pr(name, value):
+    """Add a label to the PR indicating the significance of the check.
+
+    Requires environment variable 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' to indicate which pull request
+    should be updated.
+
+    Args:
+      name: The name of the label.
+      value: A str in Markdown to be used as the detail information of the label.
+    """
+    if 'KOKORO_GIT_COMMIT' not in os.environ:
+        print('Missing KOKORO_GIT_COMMIT env var: not checking')
+        return
+    if 'KOKORO_KEYSTORE_DIR' not in os.environ:
+        print('Missing KOKORO_KEYSTORE_DIR env var: not checking')
+        return
+    if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
+        print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
+        return
+    resp = _call('/repos/%s/issues/%s/labels' % (_GITHUB_REPO,
+                                                 os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
+                 method='POST',
+                 json=["%s/%s" % (name, value)])
+    print('Result of Adding Label on PR:',
+          json.dumps(resp.json(), indent=2))

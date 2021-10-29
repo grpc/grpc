@@ -95,3 +95,4 @@ for lib in LIBS:
 
 print(text)
 check_on_pr.check_on_pr('Bloat Difference', '```\n%s\n```' % text)
+check_on_pr.label_significance_on_pr('bloat', 'none')
