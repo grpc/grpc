@@ -1013,7 +1013,7 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
-static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+static grpc_ares_request* grpc_dns_lookup_ares_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
@@ -1027,7 +1027,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   r->service_config_json_out = service_config_json;
   grpc_core::MutexLock lock(&r->mu);
   GRPC_CARES_TRACE_LOG(
-      "request:%p c-ares grpc_dns_lookup_ares_locked_impl name=%s, "
+      "request:%p c-ares grpc_dns_lookup_ares_impl name=%s, "
       "default_port=%s",
       r, name, default_port);
   // Early out if the target is an ipv4 or ipv6 literal.
@@ -1054,15 +1054,15 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   return r;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+grpc_ares_request* (*grpc_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json,
-    int query_timeout_ms) = grpc_dns_lookup_ares_locked_impl;
+    int query_timeout_ms) = grpc_dns_lookup_ares_impl;
 
-static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
+static void grpc_cancel_ares_request_impl(grpc_ares_request* r) {
   GPR_ASSERT(r != nullptr);
   grpc_core::MutexLock lock(&r->mu);
   if (r->ev_driver != nullptr) {
@@ -1070,8 +1070,8 @@ static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
   }
 }
 
-void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
-    grpc_cancel_ares_request_locked_impl;
+void (*grpc_cancel_ares_request)(grpc_ares_request* r) =
+    grpc_cancel_ares_request_impl;
 
 // ares_library_init and ares_library_cleanup are currently no-op except under
 // Windows. Calling them may cause race conditions when other parts of the
@@ -1104,7 +1104,7 @@ typedef struct grpc_resolve_address_ares_request {
   /** closure to call when the resolve_address_ares request completes */
   grpc_closure* on_resolve_address_done;
   /** a closure wrapping on_resolve_address_done, which should be invoked when
-     the grpc_dns_lookup_ares_locked operation is done. */
+     the grpc_dns_lookup_ares operation is done. */
   grpc_closure on_dns_lookup_done;
   /* target name */
   const char* name;
@@ -1154,7 +1154,7 @@ static void grpc_resolve_address_ares_impl(const char* name,
   r->interested_parties = interested_parties;
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done, r,
                     grpc_schedule_on_exec_ctx);
-  r->ares_request = grpc_dns_lookup_ares_locked(
+  r->ares_request = grpc_dns_lookup_ares(
       nullptr /* dns_server */, name, default_port, interested_parties,
       &r->on_dns_lookup_done, &r->addresses, nullptr /* balancer_addresses */,
       nullptr /* service_config_json */,

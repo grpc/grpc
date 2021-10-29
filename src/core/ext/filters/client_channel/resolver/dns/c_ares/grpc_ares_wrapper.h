@@ -86,7 +86,7 @@ extern void (*grpc_resolve_address_ares)(const char* name,
   scheduled with \a exec_ctx, so it must not try to acquire locks that are
   being held by the caller. The returned grpc_ares_request object is owned
   by the caller and it is safe to free after on_done is called back. */
-extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+extern grpc_ares_request* (*grpc_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
@@ -94,7 +94,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     char** service_config_json, int query_timeout_ms);
 
 /* Cancel the pending grpc_ares_request \a request */
-extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
+extern void (*grpc_cancel_ares_request)(grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
