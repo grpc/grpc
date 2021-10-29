@@ -366,6 +366,7 @@ static void test_cancel_during_hang(void) {
   args_finish(&args);
   // reset altered global state
   grpc_ares_test_only_inject_config = prev_test_only_inject_config;
+  GPR_ASSERT(0);
 }
 
 typedef struct mock_ipv6_disabled_source_addr_factory {
@@ -430,18 +431,18 @@ int main(int argc, char** argv) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
-    test_localhost();
-    test_default_port();
-    test_non_numeric_default_port();
-    test_missing_default_port();
-    test_ipv6_with_port();
-    test_ipv6_without_port();
-    test_invalid_ip_addresses();
-    test_unparseable_hostports();
-    test_immediate_cancel();
+    //test_localhost();
+    //test_default_port();
+    //test_non_numeric_default_port();
+    //test_missing_default_port();
+    //test_ipv6_with_port();
+    //test_ipv6_without_port();
+    //test_invalid_ip_addresses();
+    //test_unparseable_hostports();
+    //test_immediate_cancel();
     if (gpr_stricmp(resolver_type, "ares") == 0) {
       // This behavior expectation is specific to c-ares.
-      test_localhost_result_has_ipv6_first();
+      //test_localhost_result_has_ipv6_first();
       // The native resolver doesn't support cancellation
       // of I/O related work, so we can only test with c-ares.
       test_cancel_during_hang();

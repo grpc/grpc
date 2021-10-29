@@ -15,5 +15,7 @@
 
 set -ex
 export GRPC_POLL_STRATEGY=$1
+export GRPC_TRACE=cares_resolver
+export GRPC_VERBOSITY=DEBUG
 shift
 "$@"
