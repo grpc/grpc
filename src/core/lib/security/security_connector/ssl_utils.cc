@@ -526,15 +526,20 @@ static int grpc_ssl_session_cache_arg_cmp(void* p, void* q) {
   return grpc_core::QsortCompare(p, q);
 }
 
-grpc_arg grpc_ssl_session_cache_create_channel_arg(
-    grpc_ssl_session_cache* cache) {
+const grpc_arg_pointer_vtable* grpc_ssl_session_cache_arg_vtable() {
   static const grpc_arg_pointer_vtable vtable = {
       grpc_ssl_session_cache_arg_copy,
       grpc_ssl_session_cache_arg_destroy,
       grpc_ssl_session_cache_arg_cmp,
   };
+  return &vtable;
+}
+
+grpc_arg grpc_ssl_session_cache_create_channel_arg(
+    grpc_ssl_session_cache* cache) {
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
+      const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache,
+      grpc_ssl_session_cache_arg_vtable());
 }
 
 /* --- Default SSL root store implementation. --- */

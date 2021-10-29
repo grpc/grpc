@@ -119,6 +119,9 @@ GRPCAPI void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache);
 GRPCAPI grpc_arg
 grpc_ssl_session_cache_create_channel_arg(grpc_ssl_session_cache* cache);
 
+/** Return a vtable pointer usable with a grpc_ssl_session_cache* */
+const grpc_arg_pointer_vtable* grpc_ssl_session_cache_arg_vtable();
+
 /** --- grpc_call_credentials object.
 
    A call credentials object represents a way to authenticate on a particular
