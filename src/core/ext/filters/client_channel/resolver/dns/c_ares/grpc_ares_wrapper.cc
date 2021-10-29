@@ -1142,7 +1142,6 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
     grpc_cancel_ares_request(ares_request_);
   }
 
- private:
   static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> ResolveAddress(
       const char* name,
       const char* default_port,
@@ -1153,6 +1152,7 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
         name, default_port, interested_parties, on_done, addrs);
   }
 
+ private:
   static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
     ResolveAddressAresRequest *r = static_cast<ResolveAddressAresRequest*>(arg);
     grpc_resolved_addresses** resolved_addresses = r->addrs_out_;
