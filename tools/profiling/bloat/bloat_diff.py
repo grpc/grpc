@@ -15,7 +15,9 @@
 # limitations under the License.
 
 import argparse
+import csv
 import glob
+import math
 import multiprocessing
 import os
 import shutil
@@ -79,6 +81,7 @@ subprocess.check_call('make -j%d' % args.jobs,
                       cwd='bloaty-build')
 
 text = ''
+diff_size = 0
 for lib in LIBS:
     text += '****************************************************************\n\n'
     text += lib + '\n\n'
@@ -91,11 +94,21 @@ for lib in LIBS:
         text += subprocess.check_output('%s %s -- %s' %
                                         (cmd, new_version[0], old_version[0]),
                                         shell=True).decode()
+        for filename in [old_version, new_version]:
+            subprocess.check_call('strip %s' % filename[0], shell=True)
+        sections = csv.reader(subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' % 
+            (old_version[0], new_version[0]), shell=True).decode().splitlines())
+        for section in sections:
+            diff_size += int(section[2])
     else:
         text += subprocess.check_output('%s %s' % (cmd, new_version[0]),
                                         shell=True).decode()
     text += '\n\n'
+ 
+severity = int(math.copysign(max(0, math.log(abs(diff_size)/1000, 10), diff_size))) if diff_size != 0 else 0
+
+print("SEVERITY: %d" % severity)
 
 print(text)
 check_on_pr.check_on_pr('Bloat Difference', '```\n%s\n```' % text)
-check_on_pr.label_significance_on_pr('bloat', 0)
+check_on_pr.label_significance_on_pr('bloat', severity)
