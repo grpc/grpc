@@ -32,7 +32,6 @@
 #include "test/core/util/test_config.h"
 
 static int g_done = 0;
-static grpc_httpcli_context g_context;
 static gpr_mu* g_mu;
 static grpc_polling_entity g_pops;
 
@@ -80,7 +79,7 @@ static void test_get(int port) {
   response = {};
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
   grpc_httpcli_get(
-      &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
+      &g_pops, resource_quota, &req, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
   gpr_mu_lock(g_mu);
@@ -118,7 +117,7 @@ static void test_post(int port) {
   response = {};
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
   grpc_httpcli_post(
-      &g_context, &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
+      &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
   gpr_mu_lock(g_mu);
@@ -193,7 +192,6 @@ int main(int argc, char** argv) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_seconds(5, GPR_TIMESPAN)));
 
-    grpc_httpcli_context_init(&g_context);
     grpc_pollset* pollset =
         static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &g_mu);
@@ -202,7 +200,6 @@ int main(int argc, char** argv) {
     test_get(port);
     test_post(port);
 
-    grpc_httpcli_context_destroy(&g_context);
     GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
                       grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops), &destroyed);

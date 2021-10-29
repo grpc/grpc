@@ -52,8 +52,8 @@ class InternalRequest {
                   grpc_resource_quota* resource_quota, absl::string_view host,
                   absl::string_view ssl_host_override, grpc_millis deadline,
                   const grpc_httpcli_handshaker* handshaker,
-                  grpc_closure* on_done,
-                  grpc_polling_entity* pollent, const char* name)
+                  grpc_closure* on_done, grpc_polling_entity* pollent,
+                  const char* name)
       : request_text_(request_text),
         resource_quota_(resource_quota),
         host_(host),
@@ -280,8 +280,8 @@ void grpc_httpcli_get(grpc_polling_entity* pollent,
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(pollent, resource_quota, request, deadline,
-                         on_done, response, name.c_str(),
+  internal_request_begin(pollent, resource_quota, request, deadline, on_done,
+                         response, name.c_str(),
                          grpc_httpcli_format_get_request(request));
 }
 
