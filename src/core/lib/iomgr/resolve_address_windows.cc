@@ -133,7 +133,18 @@ static void do_request_thread(void* rp, grpc_error_handle error) {
   gpr_free(r);
 }
 
-static void windows_resolve_address(const char* name, const char* default_port,
+namespace grpc_core {
+
+class NativeAsyncResolveAddress : public AsyncResolveAddress {
+ public:
+  // Force caller to wait for the callback's completion. Note
+  // that no I/O polling is required for the resolution to finish.
+  void Orphan() override {}
+};
+
+} // namespace grpc_core
+
+static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> windows_resolve_address(const char* name, const char* default_port,
                                     grpc_pollset_set* interested_parties,
                                     grpc_closure* on_done,
                                     grpc_resolved_addresses** addresses) {
@@ -145,6 +156,7 @@ static void windows_resolve_address(const char* name, const char* default_port,
   r->addresses = addresses;
   grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
                            grpc_core::ExecutorType::RESOLVER);
+  return grpc_core::MakeOrphanable<grpc_core::NativeAsyncResolveAddress>();
 }
 
 grpc_address_resolver_vtable grpc_windows_resolver_vtable = {

@@ -57,7 +57,7 @@ static grpc_error_handle posix_blocking_resolve_address(
   if (host.empty()) {
     err = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
 
@@ -65,7 +65,7 @@ static grpc_error_handle posix_blocking_resolve_address(
     if (default_port == nullptr) {
       err = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, name);
+          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
       goto done;
     }
     port = default_port;
@@ -101,9 +101,11 @@ static grpc_error_handle posix_blocking_resolve_address(
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
                     GRPC_ERROR_INT_ERRNO, s),
-                GRPC_ERROR_STR_OS_ERROR, gai_strerror(s)),
-            GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+                GRPC_ERROR_STR_OS_ERROR,
+                grpc_slice_from_static_string(gai_strerror(s))),
+            GRPC_ERROR_STR_SYSCALL,
+            grpc_slice_from_static_string("getaddrinfo")),
+        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
 
@@ -151,7 +153,18 @@ static void do_request_thread(void* rp, grpc_error_handle /*error*/) {
   gpr_free(r);
 }
 
-static void posix_resolve_address(const char* name, const char* default_port,
+namespace grpc_core {
+
+class NativeAsyncResolveAddress : public AsyncResolveAddress {
+ public:
+  // Force caller to wait for the callback's completion. Note
+  // that no I/O polling is required for the resolution to finish.
+  void Orphan() override {}
+};
+
+} // namespace grpc_core
+
+static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> posix_resolve_address(const char* name, const char* default_port,
                                   grpc_pollset_set* /*interested_parties*/,
                                   grpc_closure* on_done,
                                   grpc_resolved_addresses** addrs) {
@@ -163,6 +176,7 @@ static void posix_resolve_address(const char* name, const char* default_port,
   r->addrs_out = addrs;
   grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
                            grpc_core::ExecutorType::RESOLVER);
+  return grpc_core::MakeOrphanable<grpc_core::NativeAsyncResolveAddress>();
 }
 
 grpc_address_resolver_vtable grpc_posix_resolver_vtable = {
