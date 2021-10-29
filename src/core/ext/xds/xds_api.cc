@@ -860,6 +860,36 @@ bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
   return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
 }
 
+absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
+    absl::string_view name,
+    bool (*is_expected_type)(absl::string_view, bool*)) {
+  // Old-style names use the empty string for authority.
+  // ID is prefixed with "old:" to indicate that it's an old-style name.
+  if (!absl::StartsWith(name, "xdstp:")) {
+    return XdsApi::ResourceName{"", absl::StrCat("old:", name)};
+  }
+  // New style name.  Parse URI.
+  auto uri = URI::Parse(name);
+  if (!uri.ok()) return uri.status();
+  // Split the resource type off of the path to get the id.
+  std::pair<absl::string_view, absl::string_view> path_parts =
+      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
+  if (is_expected_type != nullptr) {
+    if (!((*is_expected_type)(path_parts.first, nullptr))) {
+      return absl::InvalidArgumentError(
+          "xdstp URI path must indicate valid xDS resource type");
+    }
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
+      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
+  std::sort(query_parameters.begin(), query_parameters.end());
+  return XdsApi::ResourceName{
+      uri->authority(),
+      absl::StrCat(
+          "xdstp:", path_parts.second, (query_parameters.empty() ? "?" : ""),
+          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
+}
+
 }  // namespace
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
@@ -934,31 +964,20 @@ bool XdsApi::IsEds(absl::string_view type_url) {
 
 absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
     absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
-  // Old-style names use the empty string for authority.
-  // ID is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
-    return ResourceName{"", absl::StrCat("old:", name)};
-  }
-  // New style name.  Parse URI.
-  auto uri = URI::Parse(name);
-  if (!uri.ok()) return uri.status();
-  // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (is_expected_type != nullptr) {
-    if (!((*is_expected_type)(path_parts.first))) {
-      return absl::InvalidArgumentError(
-          "xdstp URI path must indicate valid xDS resource type");
-    }
-  }
-  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
-      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
-  std::sort(query_parameters.begin(), query_parameters.end());
-  return ResourceName{
-      uri->authority(),
-      absl::StrCat(
-          "xdstp:", path_parts.second, (query_parameters.empty() ? "?" : ""),
-          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
+  // bool test = 1;
+  return ParseResourceNameInternal(
+      name,
+      //[is_expected_type](absl::string_view type, bool* is_v2 = nullptr) {
+      //  return is_expected_type(type);
+      //[test](absl::string_view type, bool* is_v2 = nullptr) {
+      //  return test;
+      //
+      //  lambda without captures can be converted to function pointer
+      //  implicitly, as soon as I added a capture, i get compilation errors
+      //  like: no viable conversion from '(lambda at
+      //  src/core/ext/xds/xds_api.cc:971:7)' to 'bool (*)(absl::string_view,
+      //  bool *)'
+      [](absl::string_view type, bool* is_v2) { return true; });
 }
 
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
@@ -3474,14 +3493,12 @@ grpc_error_handle EdsResourceParse(
 }
 
 template <typename ProtoParseFunction, typename ProtoResourceNameFunction,
-          typename ResourceTypeSelectorFunction,
-          typename ResourceNameValidationFunction, typename ProtoLogFunction,
+          typename ResourceTypeSelectorFunction, typename ProtoLogFunction,
           typename ResourceParseFunction, typename UpdateMap>
 grpc_error_handle AdsResponseParse(
     const EncodingContext& context, ProtoParseFunction proto_parse_function,
     ProtoResourceNameFunction proto_resource_name_function,
     ResourceTypeSelectorFunction resource_type_selector_function,
-    ResourceNameValidationFunction resource_name_validation_function,
     ProtoLogFunction proto_log_function,
     ResourceParseFunction resource_parse_function,
     const char* resource_type_string,
@@ -3521,8 +3538,8 @@ grpc_error_handle AdsResponseParse(
     // Check the resource name.  Ignore unexpected names.
     std::string resource_name =
         UpbStringToStdString(proto_resource_name_function(resource));
-    auto resource_name_status = XdsApi::ParseResourceName(
-        resource_name, resource_name_validation_function);
+    auto resource_name_status = ParseResourceNameInternal(
+        resource_name, resource_type_selector_function);
     if (!resource_name_status.ok()) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "Cannot parse xDS resource name \"", resource_name, "\"")));
@@ -3645,25 +3662,25 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   if (IsLds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
-        IsLdsInternal, IsLds, MaybeLogListener, LdsResourceParse, "LDS",
-        response, subscribed_listener_names, &result.lds_update_map,
+        IsLdsInternal, MaybeLogListener, LdsResourceParse, "LDS", response,
+        subscribed_listener_names, &result.lds_update_map,
         &result.resource_names_failed);
   } else if (IsRds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_route_v3_RouteConfiguration_parse,
-        RdsResourceName, IsRdsInternal, IsRds, MaybeLogRouteConfiguration,
+        RdsResourceName, IsRdsInternal, MaybeLogRouteConfiguration,
         RouteConfigParse, "RDS", response, subscribed_route_config_names,
         &result.rds_update_map, &result.resource_names_failed);
   } else if (IsCds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName,
-        IsCdsInternal, IsCds, MaybeLogCluster, CdsResourceParse, "CDS",
-        response, subscribed_cluster_names, &result.cds_update_map,
+        IsCdsInternal, MaybeLogCluster, CdsResourceParse, "CDS", response,
+        subscribed_cluster_names, &result.cds_update_map,
         &result.resource_names_failed);
   } else if (IsEds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
-        EdsResourceName, IsEdsInternal, IsEds, MaybeLogClusterLoadAssignment,
+        EdsResourceName, IsEdsInternal, MaybeLogClusterLoadAssignment,
         EdsResourceParse, "EDS", response, subscribed_eds_service_names,
         &result.eds_update_map, &result.resource_names_failed);
   }
