@@ -79,7 +79,7 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
 
   grpc_channel* channel =
       grpc_channel_create("binder_channel_target_placeholder", new_args,
-                          GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, &error);
+                          GRPC_CLIENT_CHANNEL, nullptr, &error);
 
   // Clean up.
   grpc_channel_args_destroy(new_args);
