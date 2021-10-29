@@ -567,6 +567,7 @@ class GrpcPolledFdWindows {
 
   static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
+    (void)GRPC_ERROR_REF(error);
     grpc_core::MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpReadableLocked(error);
   }
@@ -605,12 +606,12 @@ class GrpcPolledFdWindows {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| OnIocpReadable finishing. read buf length now:|%d|", GetName(),
         GRPC_SLICE_LENGTH(read_buf_));
-    (void)GRPC_ERROR_REF(error);
     ScheduleAndNullReadClosure(error);
   }
 
   static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
+    (void)GRPC_ERROR_REF(error);
     grpc_core::MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpWriteableLocked(error);
   }
@@ -640,7 +641,6 @@ class GrpcPolledFdWindows {
       grpc_slice_unref_internal(write_buf_);
       write_buf_ = grpc_empty_slice();
     }
-    (void)GRPC_ERROR_REF(error);
     ScheduleAndNullWriteClosure(error);
   }
 
