@@ -929,7 +929,7 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
   // Sleep long enough for backoff to elapse, then try another RPC.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(3));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
@@ -1125,14 +1125,14 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
                       RouteLookupRequest::REASON_STALE),
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
   // Wait longer than stale age.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   // Send another RPC.  This should use the stale value but should
   // dispatch a second RLS request.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
   // Wait for RLS server to receive the second request.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
   EXPECT_EQ(rls_server_->service_.response_count(), 2);
 }
@@ -1177,14 +1177,14 @@ TEST_F(RlsEnd2endTest, StaleCacheEntryWithHeaderData) {
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)},
                        kHeaderData));
   // Wait longer than stale age.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   // Send another RPC.  This should use the stale value but should
   // dispatch a second RLS request.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
   // Wait for RLS server to receive the second request.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
   EXPECT_EQ(rls_server_->service_.response_count(), 2);
 }
@@ -1222,7 +1222,7 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
   rls_server_->service_.RemoveResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}));
   // Wait for cache to be expired.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   // Send another RPC.  This should trigger a second RLS request, but
   // that fails, so the RPC fails.
   CheckRpcSendFailure(DEBUG_LOCATION,
@@ -1277,7 +1277,7 @@ TEST_F(RlsEnd2endTest, CacheSizeLimit) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 2);
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
   // Wait for min_eviction_time to elapse.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(5));
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(6));
   // Send a request for kTestValue2.
   // RLS server gets a request, and RPC goes to backend.
   // This causes the entry for kTestValue to be evicted.

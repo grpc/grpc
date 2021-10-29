@@ -16,6 +16,7 @@ import datetime
 import enum
 import hashlib
 import logging
+import re
 import time
 from typing import List, Optional, Tuple
 
@@ -327,6 +328,17 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         ])
         for xds_config in config.xds_config:
             seen.add(xds_config.WhichOneof('per_xds_config'))
+        for generic_xds_config in config.generic_xds_configs:
+            if re.search(r'\.Listener$', generic_xds_config.type_url):
+                seen.add('listener_config')
+            elif re.search(r'\.RouteConfiguration$',
+                           generic_xds_config.type_url):
+                seen.add('route_config')
+            elif re.search(r'\.Cluster$', generic_xds_config.type_url):
+                seen.add('cluster_config')
+            elif re.search(r'\.ClusterLoadAssignment$',
+                           generic_xds_config.type_url):
+                seen.add('endpoint_config')
         logger.debug('Received xDS config dump: %s',
                      json_format.MessageToJson(config, indent=2))
         self.assertSameElements(want, seen)

@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.17'
+  s.add_dependency 'google-protobuf', '~> 3.18'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -723,6 +723,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_certificate_provider.cc )
   s.files += %w( src/core/ext/xds/xds_certificate_provider.h )
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.cc )
+  s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.h )
   s.files += %w( src/core/ext/xds/xds_client.cc )
   s.files += %w( src/core/ext/xds/xds_client.h )
   s.files += %w( src/core/ext/xds/xds_client_stats.cc )
