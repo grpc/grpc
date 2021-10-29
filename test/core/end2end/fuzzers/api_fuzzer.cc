@@ -535,7 +535,6 @@ template <typename ChannelArgContainer>
 grpc_channel_args* ReadArgs(const ChannelArgContainer& args) {
   grpc_channel_args* res =
       static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  res->num_args = args.size();
   res->args =
       static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * args.size()));
   int j = 0;
@@ -564,6 +563,7 @@ grpc_channel_args* ReadArgs(const ChannelArgContainer& args) {
     res->args[j].key = gpr_strdup(args[i].key().c_str());
     ++j;
   }
+  res->num_args = j;
   return res;
 }
 
