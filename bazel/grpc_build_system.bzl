@@ -131,7 +131,8 @@ def grpc_cc_library(
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
     if select_deps:
-        deps += select(select_deps)
+        for select_deps_entry in select_deps:
+            deps += select(select_deps_entry)
 
     native.cc_library(
         name = name,

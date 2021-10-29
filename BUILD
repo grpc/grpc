@@ -44,7 +44,7 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_no_xds",
+    name = "grpc_no_xds_define",
     values = {"define": "grpc_no_xds=true"},
 )
 
@@ -59,8 +59,23 @@ config_setting(
 )
 
 selects.config_setting_group(
-    name = "grpc_mobile",
+    name = "grpc_no_xds",
     match_any = [
+        ":grpc_no_xds_define",
+        # In addition to disabling XDS support when --define=grpc_no_xds=true is
+        # specified, we also disable it on mobile platforms where it is not
+        # likely to be needed and where reducing the binary size is more
+        # important.
+        ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_rls",
+    match_any = [
+        # Disable RLS support on mobile platforms where it is not likely to be
+        # needed and where reducing the binary size is more important.
         ":android",
         ":ios",
     ],
@@ -380,26 +395,24 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
     defines = select({
-        # On mobile, don't build RLS or xDS.
-        "grpc_mobile": [
-            "GRPC_NO_XDS",
-            "GRPC_NO_RLS",
-        ],
-        # Don't build xDS if --define=grpc_no_xds=true is used.
         "grpc_no_xds": ["GRPC_NO_XDS"],
-        # By default, build both RLS and xDS.
+        "//conditions:default": [],
+    }) + select({
+        "grpc_no_rls": ["GRPC_NO_RLS"],
         "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
-    select_deps = {
-        # On mobile, don't build RLS or xDS.
-        "grpc_mobile": [],
-        # Don't build xDS if --define=grpc_no_xds=true is used.
-        "grpc_no_xds": ["grpc_lb_policy_rls"],
-        # By default, build both RLS and xDS.
-        "//conditions:default": ["grpc_lb_policy_rls"] + GRPC_XDS_TARGETS,
-    },
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": GRPC_XDS_TARGETS,
+        },
+        {
+            "grpc_no_rls": [],
+            "//conditions:default": ["grpc_lb_policy_rls"],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -438,14 +451,13 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = {
+    select_deps = [{
         "grpc_no_xds": [],
-        "grpc_mobile": [],
         "//conditions:default": [
             "grpc++_xds_client",
             "grpc++_xds_server",
         ],
-    },
+    }],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -4037,7 +4049,6 @@ grpc_cc_library(
     hdrs = [],
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
-        "grpc_mobile": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -4047,11 +4058,10 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/admin_services.h",
     ],
-    select_deps = {
+    select_deps = [{
         "grpc_no_xds": [],
-        "grpc_mobile": [],
         "//conditions:default": ["//:grpcpp_csds"],
-    },
+    }],
     deps = [
         "gpr",
         "grpc++",
