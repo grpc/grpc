@@ -440,6 +440,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
         "grpc_no_xds": [],
+        "grpc_mobile": [],
         "//conditions:default": [
             "grpc++_xds_client",
             "grpc++_xds_server",
@@ -504,11 +505,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_binder",
     srcs = [
+        "src/core/ext/transport/binder/client/binder_connector.cc",
         "src/core/ext/transport/binder/client/channel_create.cc",
         "src/core/ext/transport/binder/client/channel_create_impl.cc",
         "src/core/ext/transport/binder/client/connection_id_generator.cc",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.cc",
         "src/core/ext/transport/binder/client/jni_utils.cc",
+        "src/core/ext/transport/binder/client/security_policy_setting.cc",
         "src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc",
         "src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc",
         "src/core/ext/transport/binder/server/binder_server.cc",
@@ -522,11 +525,13 @@ grpc_cc_library(
         "src/core/ext/transport/binder/wire_format/wire_writer.cc",
     ],
     hdrs = [
+        "src/core/ext/transport/binder/client/binder_connector.h",
         "src/core/ext/transport/binder/client/channel_create.h",
         "src/core/ext/transport/binder/client/channel_create_impl.h",
         "src/core/ext/transport/binder/client/connection_id_generator.h",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.h",
         "src/core/ext/transport/binder/client/jni_utils.h",
+        "src/core/ext/transport/binder/client/security_policy_setting.h",
         "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h",
         "src/core/ext/transport/binder/security_policy/security_policy.h",
         "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h",
@@ -566,6 +571,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc++_internals",
         "grpc_base",
+        "grpc_client_channel",
         "grpc_codegen",
         "orphanable",
         "slice_refcount",
@@ -4032,6 +4038,7 @@ grpc_cc_library(
     hdrs = [],
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
+        "grpc_mobile": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -4043,6 +4050,7 @@ grpc_cc_library(
     ],
     select_deps = {
         "grpc_no_xds": [],
+        "grpc_mobile": [],
         "//conditions:default": ["//:grpcpp_csds"],
     },
     deps = [
