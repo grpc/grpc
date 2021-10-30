@@ -874,11 +874,9 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
   // Split the resource type off of the path to get the id.
   std::pair<absl::string_view, absl::string_view> path_parts =
       absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (is_expected_type != nullptr) {
-    if (!((is_expected_type)(path_parts.first, nullptr))) {
-      return absl::InvalidArgumentError(
-          "xdstp URI path must indicate valid xDS resource type");
-    }
+  if (!((is_expected_type)(path_parts.first, nullptr))) {
+    return absl::InvalidArgumentError(
+        "xdstp URI path must indicate valid xDS resource type");
   }
   std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
       uri->query_parameter_map().begin(), uri->query_parameter_map().end());
@@ -965,24 +963,14 @@ bool XdsApi::IsEds(absl::string_view type_url) {
 absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
     absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
   // bool test = 1;
-  std::function<bool(absl::string_view, bool*)> f =
-      [is_expected_type](absl::string_view type, bool* is_v2 = nullptr) {
-        return is_expected_type(type);
-      };
+  // std::function<bool(absl::string_view, bool*)> f =
+  //    [is_expected_type](absl::string_view type, bool*) {
+  //      return is_expected_type(type);
+  //    };
   return ParseResourceNameInternal(
       name,
-      //[is_expected_type](absl::string_view type, bool* is_v2 = nullptr) {
-      //  return is_expected_type(type);
-      //[test](absl::string_view type, bool* is_v2 = nullptr) {
-      //  return test;
-      //
-      //  lambda without captures can be converted to function pointer
-      //  implicitly, as soon as I added a capture, i get compilation errors
-      //  like: no viable conversion from '(lambda at
-      //  src/core/ext/xds/xds_api.cc:971:7)' to 'bool (*)(absl::string_view,
-      //  bool *)'
-      //[](absl::string_view type, bool* is_v2) { return true; }
-      f);
+      (std::function<bool(absl::string_view, bool*)>)[is_expected_type](
+          absl::string_view type, bool*) { return is_expected_type(type); });
 }
 
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
