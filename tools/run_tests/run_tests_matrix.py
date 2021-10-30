@@ -320,6 +320,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
+                                inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C and C++ with no-exceptions on Linux
@@ -328,6 +329,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 platforms=['linux'],
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
+                                inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     test_jobs += _generate_jobs(languages=['python'],
