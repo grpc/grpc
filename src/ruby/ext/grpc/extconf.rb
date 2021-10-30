@@ -45,7 +45,8 @@ if darwin && !cross_compiling
   ENV['ARFLAGS'] = '-o'
 end
 
-ENV['EMBED_OPENSSL'] = 'true'
+use_system_ssl = ENV['EMBED_OPENSSL'] == 'false' || ENV['HAS_SYSTEM_OPENSSL_ALPN'] == 'true'
+ENV['HAS_SYSTEM_OPENSSL_ALPN'] = 'true' if use_system_ssl
 ENV['EMBED_ZLIB'] = 'true'
 ENV['EMBED_CARES'] = 'true'
 
@@ -94,6 +95,7 @@ end
 $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
 $LDFLAGS << ' -static-libgcc -static-libstdc++' if linux
 $LDFLAGS << ' -static' if windows
+$LDFLAGS << ' -lssl' if use_system_ssl
 
 $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
