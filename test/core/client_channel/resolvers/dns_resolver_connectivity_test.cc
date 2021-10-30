@@ -35,10 +35,20 @@ static gpr_mu g_mu;
 static bool g_fail_resolution = true;
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
-static void my_resolve_address(const char* addr, const char* /*default_port*/,
-                               grpc_pollset_set* /*interested_parties*/,
-                               grpc_closure* on_done,
-                               grpc_resolved_addresses** addrs) {
+namespace grpc_core {
+
+class MyAsyncResolveAddress {
+ public:
+  // cancellation not implemented
+  void Orphan() override {}
+};
+
+}  // namespace grpc_core
+
+static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress>
+my_resolve_address(const char* addr, const char* /*default_port*/,
+                   grpc_pollset_set* /*interested_parties*/,
+                   grpc_closure* on_done, grpc_resolved_addresses** addrs) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -55,6 +65,7 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
     (*addrs)->addrs[0].len = 123;
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
+  return grpc_core::MakeOrphanable<grpc_core::MyAsyncResolveAddress>();
 }
 
 static grpc_address_resolver_vtable test_resolver = {my_resolve_address,

@@ -210,8 +210,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
         "//test/core/util:fake_udp_and_tcp_server",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -225,8 +225,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
         "//test/core/util:fake_udp_and_tcp_server",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

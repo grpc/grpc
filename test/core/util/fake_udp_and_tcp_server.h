@@ -51,7 +51,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-
 class FakeUdpAndTcpServer {
  public:
   enum ProcessReadResult {

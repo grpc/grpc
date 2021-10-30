@@ -278,8 +278,9 @@ void NativeDnsResolver::StartResolvingLocked() {
   addresses_ = nullptr;
   GRPC_CLOSURE_INIT(&on_resolved_, NativeDnsResolver::OnResolved, this,
                     grpc_schedule_on_exec_ctx);
-  async_resolve_address_ = grpc_resolve_address(name_to_resolve_.c_str(), kDefaultSecurePort,
-                       interested_parties_, &on_resolved_, &addresses_);
+  async_resolve_address_ =
+      grpc_resolve_address(name_to_resolve_.c_str(), kDefaultSecurePort,
+                           interested_parties_, &on_resolved_, &addresses_);
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
 }
 

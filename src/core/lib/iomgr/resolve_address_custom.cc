@@ -147,12 +147,12 @@ class CustomAsyncResolveAddress : public AsyncResolveAddress {
   void Orphan() override {}
 };
 
-} // namespace grpc_core
+}  // namespace grpc_core
 
-static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> resolve_address_impl(const char* name, const char* default_port,
-                                 grpc_pollset_set* /*interested_parties*/,
-                                 grpc_closure* on_done,
-                                 grpc_resolved_addresses** addrs) {
+static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress>
+resolve_address_impl(const char* name, const char* default_port,
+                     grpc_pollset_set* /*interested_parties*/,
+                     grpc_closure* on_done, grpc_resolved_addresses** addrs) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   std::string host;
   std::string port;

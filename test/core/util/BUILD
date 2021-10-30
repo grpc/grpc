@@ -213,12 +213,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fake_udp_and_tcp_server",
-    language = "C++",
+    hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
         "absl/strings:str_format",
     ],
-    hdrs = ["fake_udp_and_tcp_server.h"],
+    language = "C++",
     deps = [
         "//:gpr",
-    ]
+    ],
 )

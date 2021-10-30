@@ -56,13 +56,23 @@ static struct iomgr_args {
   grpc_pollset_set* pollset_set;
 } g_iomgr_args;
 
+namespace grpc_core {
+
+class TestAsyncResolveAddress {
+ public:
+  // cancellation not implemented
+  void Orphan() override {}
+};
+
+}  // namespace grpc_core
+
 // Wrapper around default resolve_address in order to count the number of
 // times we incur in a system-level name resolution.
-static void test_resolve_address_impl(const char* name,
-                                      const char* default_port,
-                                      grpc_pollset_set* /*interested_parties*/,
-                                      grpc_closure* on_done,
-                                      grpc_resolved_addresses** addrs) {
+static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress>
+test_resolve_address_impl(const char* name, const char* default_port,
+                          grpc_pollset_set* /*interested_parties*/,
+                          grpc_closure* on_done,
+                          grpc_resolved_addresses** addrs) {
   default_resolve_address->resolve_address(
       name, default_port, g_iomgr_args.pollset_set, on_done, addrs);
   ++g_resolution_count;
@@ -83,6 +93,7 @@ static void test_resolve_address_impl(const char* name,
   // because the resolver's last_resolution_timestamp_ will be taken from
   // grpc_core::ExecCtx::Get()->Now() right after this returns.
   grpc_core::ExecCtx::Get()->InvalidateNow();
+  return grpc_core::MakeOrphanable<grpc_core::TestAsyncResolveAddress>();
 }
 
 static grpc_error_handle test_blocking_resolve_address_impl(
