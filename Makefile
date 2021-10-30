@@ -486,6 +486,22 @@ HOST_LDLIBS += $(LDLIBS)
 
 CACHE_MK =
 
+HAS_PKG_CONFIG ?= $(shell command -v $(PKG_CONFIG) >/dev/null 2>&1 && echo true || echo false)
+
+ifeq ($(HAS_PKG_CONFIG), true)
+CACHE_MK += HAS_PKG_CONFIG = true,
+else # HAS_PKG_CONFIG
+ifeq ($(SYSTEM),MINGW32)
+OPENSSL_LIBS = ssl32 eay32
+else
+OPENSSL_LIBS = ssl crypto
+endif
+endif # HAS_PKG_CONFIG
+
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true
+endif
+
 ifeq ($(SYSTEM),MINGW32)
 EXECUTABLE_SUFFIX = .exe
 SHARED_EXT_CORE = dll
@@ -596,35 +612,60 @@ UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
 UPB_MERGE_OBJS = $(LIBUPB_OBJS)
 UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
-# Setup boringssl dependency
-
 ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
-HAS_EMBEDDED_OPENSSL = false
+HAS_EMBEDDED_OPENSSL_ALPN = false
 else
-HAS_EMBEDDED_OPENSSL = true
+HAS_EMBEDDED_OPENSSL_ALPN = true
 endif
 
-ifeq ($(HAS_EMBEDDED_OPENSSL),true)
+OPENSSL_PKG_CONFIG = false
+
+ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
+EMBED_OPENSSL ?= false
+NO_SECURE ?= false
+else # HAS_SYSTEM_OPENSSL_ALPN=false
+ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 EMBED_OPENSSL ?= true
-else
-# only support building boringssl from submodule
-DEP_MISSING += openssl
-EMBED_OPENSSL ?= broken
-endif
+NO_SECURE ?= false
+else # HAS_EMBEDDED_OPENSSL_ALPN=false
+NO_SECURE ?= true
+endif # HAS_EMBEDDED_OPENSSL_ALPN=false
+endif # HAS_SYSTEM_OPENSSL_ALPN
 
+ifeq ($(NO_SECURE),false)
 ifeq ($(EMBED_OPENSSL),true)
+# Setup boringssl dependency
 OPENSSL_DEP += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
 OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
 # need to prefix these to ensure overriding system libraries
-CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)  
+CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)
+else # EMBED_OPENSSL=false
+ifeq ($(HAS_PKG_CONFIG),true)
+OPENSSL_PKG_CONFIG = true
+CPPFLAGS := $(shell $(PKG_CONFIG) --cflags openssl) $(CPPFLAGS)
+LDFLAGS_OPENSSL_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L openssl)
+ifeq ($(SYSTEM),Linux)
+ifneq ($(LDFLAGS_OPENSSL_PKG_CONFIG),)
+LDFLAGS_OPENSSL_PKG_CONFIG += $(shell $(PKG_CONFIG) --libs-only-L openssl | sed s/L/Wl,-rpath,/)
+endif # LDFLAGS_OPENSSL_PKG_CONFIG=''
+endif # System=Linux
+LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
+else # HAS_PKG_CONFIG=false
+LIBS_SECURE = $(OPENSSL_LIBS)
+endif # HAS_PKG_CONFIG
 ifeq ($(DISABLE_ALPN),true)
 CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
 LIBS_SECURE = $(OPENSSL_LIBS)
 endif # DISABLE_ALPN
 endif # EMBED_OPENSSL
+endif # NO_SECURE
 
+ifeq ($(OPENSSL_PKG_CONFIG),true)
+LDLIBS_SECURE += $(shell $(PKG_CONFIG) --libs-only-l openssl)
+else
 LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
+endif
 
 ifeq ($(MAKECMDGOALS),clean)
 NO_DEPS = true
