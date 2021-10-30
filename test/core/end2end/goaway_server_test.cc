@@ -58,10 +58,20 @@ static void set_resolve_port(int port) {
   gpr_mu_unlock(&g_mu);
 }
 
-static void my_resolve_address(const char* addr, const char* default_port,
-                               grpc_pollset_set* interested_parties,
-                               grpc_closure* on_done,
-                               grpc_resolved_addresses** addrs) {
+namespace grpc_core {
+
+class MyResolveAddress : public AsyncResolveAddress {
+ public:
+  // cancellation not implemented
+  void Orphan() override {}
+};
+
+}  // namespace grpc_core
+
+static grpc_core::OrphanablePtr<grpc_core::MyResolveAddress> my_resolve_address(
+    const char* addr, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_resolved_addresses** addrs) {
   if (0 != strcmp(addr, "test")) {
     default_resolver->resolve_address(addr, default_port, interested_parties,
                                       on_done, addrs);
