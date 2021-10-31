@@ -51,7 +51,7 @@ namespace Grpc.Core
         /// <param name="statusCode">Status code.</param>
         /// <param name="detail">Detail.</param>
         /// <param name="debugException">Optional internal error details.</param>
-        public Status(StatusCode statusCode, string detail, Exception debugException)
+        public Status(StatusCode statusCode, string detail, Exception? debugException)
         {
             StatusCode = statusCode;
             Detail = detail;
@@ -78,7 +78,7 @@ namespace Grpc.Core
         /// why the connection to the server has failed.
         /// Note: experimental API that can change or be removed without any prior notice.
         /// </summary>
-        public Exception DebugException { get; }
+        public Exception? DebugException { get; }
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Status"/>.

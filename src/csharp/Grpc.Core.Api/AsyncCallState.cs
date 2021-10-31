@@ -32,7 +32,7 @@ namespace Grpc.Core
         readonly object getStatusFunc; // Func<Status> or Func<object, Status>
         readonly object getTrailersFunc; // Func<Metadata> or Func<object, Metadata>
         readonly object disposeAction; // Action or Action<object>
-        readonly object callbackState; // arg0 for the callbacks above, if needed
+        readonly object? callbackState; // arg0 for the callbacks above, if needed
 
         internal AsyncCallState(
             Func<object, Task<Metadata>> responseHeadersAsync,
@@ -64,21 +64,21 @@ namespace Grpc.Core
         internal Task<Metadata> ResponseHeadersAsync()
         {
             var withState = responseHeadersAsync as Func<object, Task<Metadata>>;
-            return withState != null ? withState(callbackState)
+            return withState != null ? withState(callbackState!)
                 : (Task<Metadata>)responseHeadersAsync;
         }
 
         internal Status GetStatus()
         {
             var withState = getStatusFunc as Func<object, Status>;
-            return withState != null ? withState(callbackState)
+            return withState != null ? withState(callbackState!)
                 : ((Func<Status>)getStatusFunc)();
         }
 
         internal Metadata GetTrailers()
         {
             var withState = getTrailersFunc as Func<object, Metadata>;
-            return withState != null ? withState(callbackState)
+            return withState != null ? withState(callbackState!)
                 : ((Func<Metadata>)getTrailersFunc)();
         }
 
@@ -87,7 +87,7 @@ namespace Grpc.Core
             var withState = disposeAction as Action<object>;
             if (withState != null)
             {
-                withState(callbackState);
+                withState(callbackState!);
             }
             else
             {
