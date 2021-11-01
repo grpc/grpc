@@ -41,6 +41,7 @@ _CHANGE_LABELS = {
     3: 'high',
 }
 
+
 def _jwt_token():
     github_app_key = open(
         os.path.join(os.environ['KOKORO_KEYSTORE_DIR'],
@@ -147,6 +148,7 @@ def check_on_pr(name, summary, success=True):
     print('Result of Creating/Updating Check on PR:',
           json.dumps(resp.json(), indent=2))
 
+
 def label_significance_on_pr(name, change):
     """Add a label to the PR indicating the significance of the check.
 
@@ -171,15 +173,17 @@ def label_significance_on_pr(name, change):
     if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
         print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
         return
-    resp = _call('/repos/%s/issues/%s/labels' % (_GITHUB_REPO,
-                                                 os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
-                 method='DELETE',
-                 json=["%s/%s" % (name, v) for v in _CHANGE_LABELS.values() if v != value])
-    print('Result of Deleting Labels on PR:',
-          json.dumps(resp.json(), indent=2))
-    resp = _call('/repos/%s/issues/%s/labels' % (_GITHUB_REPO,
-                                                 os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
-                 method='POST',
-                 json=["%s/%s" % (name, value)])
-    print('Result of Adding Label on PR:',
-          json.dumps(resp.json(), indent=2))
+    resp = _call(
+        '/repos/%s/issues/%s/labels' %
+        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
+        method='DELETE',
+        json=[
+            "%s/%s" % (name, v) for v in _CHANGE_LABELS.values() if v != value
+        ])
+    print('Result of Deleting Labels on PR:', json.dumps(resp.json(), indent=2))
+    resp = _call(
+        '/repos/%s/issues/%s/labels' %
+        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
+        method='POST',
+        json=["%s/%s" % (name, value)])
+    print('Result of Adding Label on PR:', json.dumps(resp.json(), indent=2))
