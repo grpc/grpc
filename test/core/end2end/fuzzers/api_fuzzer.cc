@@ -43,13 +43,13 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
-#define MAX_ADVANCE_TIME_MICROS 100000 // 100ms
+#define MAX_ADVANCE_TIME_MICROS 24 * 3600 * 365 * 1000000 // 1year
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_WAIT_MS 1000
+#define MAX_WAIT_MS 24 * 3600 * 365 * 1000000
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_READABLE_BYTES 1024
+#define MAX_ADD_N_READABLE_BYTES 2 * 1024 * 1024 * 1024 // 2GB
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_WRITABLE_BYTES 1024
+#define MAX_ADD_N_WRITABLE_BYTES 2 * 1024 * 1024 * 1024 // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -148,7 +148,7 @@ grpc_ares_request* my_dns_lookup_ares_locked(
   r->addrs = nullptr;
   r->addresses = addresses;
   grpc_timer_init(
-      &r->timer, MAX_ADVANCE_TIME_MICROS/1000 + grpc_core::ExecCtx::Get()->Now(),
+      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return nullptr;
 }

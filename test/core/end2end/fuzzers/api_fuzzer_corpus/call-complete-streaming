@@ -6,342 +6,342 @@ actions {
   create_channel {
     target: "dns:server"
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 20
       add_n_bytes_readable: 20
     }
     channel_actions {
-      wait_ms: 100
+      wait_ms: 1000
       add_n_bytes_writable: 10
       add_n_bytes_readable: 10
     }
@@ -367,79 +367,79 @@ actions {
   request_call {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
@@ -482,25 +482,25 @@ actions {
   }
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
@@ -530,25 +530,25 @@ actions {
   }
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
@@ -582,19 +582,19 @@ actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   queue_batch {
@@ -607,12 +607,12 @@ actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 actions {
   poll_cq: {}
 }
 actions {
-  advance_time: 100000
+  advance_time: 1000000
 }
 
