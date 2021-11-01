@@ -50,6 +50,11 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_no_binder",
+    values = {"define": "grpc_no_binder=true"},
+)
+
+config_setting(
     name = "android",
     values = {"crosstool_top": "//external:android/crosstool"},
 )
@@ -452,13 +457,21 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = [{
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc++_xds_client",
-            "grpc++_xds_server",
-        ],
-    }],
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": [
+                "grpc++_xds_client",
+                "grpc++_xds_server",
+            ],
+        },
+        {
+            "grpc_no_binder": [],
+            "//conditions:default": [
+                "grpc++_binder",
+            ],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -572,7 +585,6 @@ grpc_cc_library(
         "include/grpcpp/create_channel_binder.h",
         "include/grpcpp/security/binder_credentials.h",
     ],
-    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "gpr_base",
