@@ -727,6 +727,7 @@ libs:
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
+  - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
   - src/core/ext/xds/xds_http_fault_filter.h
@@ -1005,6 +1006,7 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
+  - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1265,6 +1267,7 @@ libs:
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_certificate_provider.cc
+  - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
@@ -1994,6 +1997,7 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
+  - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -3189,14 +3193,6 @@ targets:
   headers: []
   src:
   - test/core/surface/channel_create_test.cc
-  deps:
-  - grpc_test_util
-- name: channel_stack_builder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
 - name: channel_stack_test
@@ -4660,20 +4656,27 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/binder_resolver_test.cc
+  deps:
+  - grpc_test_util
 - name: binder_server_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -4691,12 +4694,14 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -4717,15 +4722,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -4738,24 +4741,22 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
-  - src/cpp/common/secure_auth_context.h
-  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -4773,23 +4774,14 @@ targets:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/client/secure_credentials.cc
   - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
-  - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
-  - src/cpp/common/secure_create_auth_context.cc
-  - src/cpp/common/tls_certificate_provider.cc
-  - src/cpp/common/tls_credentials_options.cc
-  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -4800,8 +4792,6 @@ targets:
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
@@ -4953,6 +4943,15 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: channel_stack_builder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_builder_test.cc
+  deps:
+  - grpc_test_util
 - name: channel_trace_test
   gtest: true
   build: test
@@ -5489,15 +5488,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -5516,12 +5513,14 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -5562,15 +5561,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -5583,24 +5580,22 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
-  - src/cpp/common/secure_auth_context.h
-  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -5618,23 +5613,14 @@ targets:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/client/secure_credentials.cc
   - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
-  - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
-  - src/cpp/common/secure_create_auth_context.cc
-  - src/cpp/common/tls_certificate_provider.cc
-  - src/cpp/common/tls_credentials_options.cc
-  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -5645,8 +5631,6 @@ targets:
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
@@ -5792,15 +5776,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -5813,24 +5795,22 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
-  - src/cpp/common/secure_auth_context.h
-  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/end2end/fake_binder.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -5848,23 +5828,14 @@ targets:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/client/secure_credentials.cc
   - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
-  - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
-  - src/cpp/common/secure_create_auth_context.cc
-  - src/cpp/common/tls_certificate_provider.cc
-  - src/cpp/common/tls_credentials_options.cc
-  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -5875,8 +5846,6 @@ targets:
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
@@ -8175,15 +8144,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -8196,23 +8163,21 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
-  - src/cpp/common/secure_auth_context.h
-  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -8230,23 +8195,14 @@ targets:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/client/secure_credentials.cc
   - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
-  - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
-  - src/cpp/common/secure_create_auth_context.cc
-  - src/cpp/common/tls_certificate_provider.cc
-  - src/cpp/common/tls_credentials_options.cc
-  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -8257,8 +8213,6 @@ targets:
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
@@ -8365,15 +8319,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -8386,24 +8338,22 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
-  - src/cpp/common/secure_auth_context.h
-  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -8421,23 +8371,14 @@ targets:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/client/secure_credentials.cc
   - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
-  - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
-  - src/cpp/common/secure_create_auth_context.cc
-  - src/cpp/common/tls_certificate_provider.cc
-  - src/cpp/common/tls_credentials_options.cc
-  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -8448,8 +8389,6 @@ targets:
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
@@ -8471,15 +8410,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create.h
+  - src/core/ext/transport/binder/client/binder_connector.h
   - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
   - src/core/ext/transport/binder/client/endpoint_binder_pool.h
   - src/core/ext/transport/binder/client/jni_utils.h
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
   - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
@@ -8492,24 +8429,22 @@ targets:
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
-  - src/cpp/common/secure_auth_context.h
-  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
   - src/core/ext/transport/binder/client/channel_create.cc
   - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
   - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
   - src/core/ext/transport/binder/client/jni_utils.cc
-  - src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
   - src/core/ext/transport/binder/server/binder_server.cc
   - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
@@ -8527,23 +8462,14 @@ targets:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/client/secure_credentials.cc
   - src/cpp/codegen/codegen_init.cc
   - src/cpp/common/alarm.cc
-  - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
   - src/cpp/common/core_codegen.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
-  - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
-  - src/cpp/common/secure_create_auth_context.cc
-  - src/cpp/common/tls_certificate_provider.cc
-  - src/cpp/common/tls_credentials_options.cc
-  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -8554,8 +8480,6 @@ targets:
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc

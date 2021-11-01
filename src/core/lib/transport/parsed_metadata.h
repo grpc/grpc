@@ -80,7 +80,7 @@ class ParsedMetadata {
                     : MdelemVtable<false>()),
         value_(static_cast<intptr_t>(elem.payload)),
         transport_size_(GRPC_MDELEM_LENGTH(elem)) {}
-  ParsedMetadata() : vtable_(EmptyVTable()) {}
+  ParsedMetadata() : vtable_(EmptyVTable()), value_(0), transport_size_(0) {}
   ~ParsedMetadata() { vtable_->destroy(value_); }
 
   // Non copyable, but movable.
@@ -184,7 +184,10 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       },
       // debug_string
       [](intptr_t value) {
-        return absl::StrCat(Which::key(), ": ", Which::DisplayValue(value));
+        return absl::StrCat(
+            Which::key(), ": ",
+            Which::DisplayValue(
+                static_cast<typename Which::MementoType>(value)));
       }};
   return &vtable;
 }

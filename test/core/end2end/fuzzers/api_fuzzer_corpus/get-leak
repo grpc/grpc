@@ -1,0 +1,32 @@
+actions {
+  create_server {}
+}
+actions {
+  create_channel {
+  target:
+    "unix:\360\32367\227Go\254"
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations{
+      send_initial_metadata {} 
+      flags: 64
+    } 
+    operations {
+      send_message {}
+    }
+  }
+}
+actions {
+  advance_time : 10000000
+}
+actions {}

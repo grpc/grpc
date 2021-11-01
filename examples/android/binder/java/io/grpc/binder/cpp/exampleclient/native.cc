@@ -18,27 +18,24 @@
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
 
-#include "src/core/ext/transport/binder/client/channel_create.h"
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
+#include <grpcpp/create_channel_binder.h>
+#include <grpcpp/security/binder_security_policy.h>
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
     JNIEnv* env, jobject /*this*/, jobject application) {
   static bool first = true;
-  __android_log_print(ANDROID_LOG_INFO, "DemoClient", "Line number %d",
-                      __LINE__);
+  static std::shared_ptr<grpc::Channel> channel;
   if (first) {
     first = false;
-    grpc::experimental::BindToOnDeviceServerService(
-        env, application, "io.grpc.binder.cpp.exampleserver",
-        "io.grpc.binder.cpp.exampleserver.ExportedEndpointService");
-    return env->NewStringUTF("Clicked 1 time");
-  } else {
     // TODO(mingcl): Use same signature security after it become available
-    auto channel = grpc::experimental::CreateBinderChannel(
-        env, application, "", "",
+    channel = grpc::experimental::CreateBinderChannel(
+        env, application, "io.grpc.binder.cpp.exampleserver",
+        "io.grpc.binder.cpp.exampleserver.ExportedEndpointService",
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
+    return env->NewStringUTF("Clicked 1 time");
+  } else {
     auto stub = helloworld::Greeter::NewStub(channel);
     grpc::ClientContext context;
     helloworld::HelloRequest request;

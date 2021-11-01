@@ -1,0 +1,67 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "/foo"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      send_message {
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_close_from_client {
+      }
+    }
+    operations {
+      receive_close_on_server {
+      }
+    }
+  }
+}

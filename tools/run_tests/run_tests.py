@@ -756,7 +756,7 @@ class PythonLanguage(object):
 
         if args.iomgr_platform in ('asyncio', 'gevent'):
             if args.compiler not in ('default', 'python3.6', 'python3.7',
-                                     'python3.8'):
+                                     'python3.8', 'python3.9'):
                 raise Exception(
                     'Compiler %s not supported with IO Manager platform: %s' %
                     (args.compiler, args.iomgr_platform))
@@ -1077,6 +1077,13 @@ class ObjCLanguage(object):
                 ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
                 timeout_seconds=60 * 60,
                 shortname='ios-test-cfstream-tests',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-core-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable

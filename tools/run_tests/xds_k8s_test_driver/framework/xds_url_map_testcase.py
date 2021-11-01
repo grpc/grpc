@@ -88,7 +88,7 @@ class DumpedXdsConfig(dict):
         self.cds = []
         self.eds = []
         self.endpoints = []
-        for xds_config in self['xdsConfig']:
+        for xds_config in self.get('xdsConfig', []):
             try:
                 if 'listenerConfig' in xds_config:
                     self.lds = xds_config['listenerConfig']['dynamicListeners'][
@@ -105,7 +105,22 @@ class DumpedXdsConfig(dict):
                             'dynamicEndpointConfigs']:
                         self.eds.append(endpoint['endpointConfig'])
             except Exception as e:
-                logging.debug('Parse dumped xDS config failed with %s: %s',
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
+                              type(e), e)
+        for generic_xds_config in self.get('genericXdsConfigs', []):
+            try:
+                if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
+                    self.lds = generic_xds_config["xdsConfig"]
+                elif re.search(r'\.RouteConfiguration$',
+                               generic_xds_config['typeUrl']):
+                    self.rds = generic_xds_config["xdsConfig"]
+                elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
+                    self.cds.append(generic_xds_config["xdsConfig"])
+                elif re.search(r'\.ClusterLoadAssignment$',
+                               generic_xds_config['typeUrl']):
+                    self.eds.append(generic_xds_config["xdsConfig"])
+            except Exception as e:
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for endpoint_config in self.eds:
             for endpoint in endpoint_config.get('endpoints', {}):

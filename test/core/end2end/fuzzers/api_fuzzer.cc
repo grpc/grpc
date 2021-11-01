@@ -444,9 +444,6 @@ class Call : public std::enable_shared_from_this<Call> {
     auto self = shared_from_this();
     return MakeValidator([self, has_ops](bool) {
       --self->pending_ops_;
-      if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE)) && self->call_closed_) {
-        GPR_ASSERT(self->recv_message_ == nullptr);
-      }
       if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE) &&
            self->recv_message_ != nullptr)) {
         grpc_byte_buffer_destroy(self->recv_message_);
@@ -538,32 +535,35 @@ template <typename ChannelArgContainer>
 grpc_channel_args* ReadArgs(const ChannelArgContainer& args) {
   grpc_channel_args* res =
       static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  res->num_args = args.size();
   res->args =
       static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * args.size()));
+  int j = 0;
   for (int i = 0; i < args.size(); i++) {
-    res->args[i].key = gpr_strdup(args[i].key().c_str());
     switch (args[i].value_case()) {
       case api_fuzzer::ChannelArg::kStr:
-        res->args[i].type = GRPC_ARG_STRING;
-        res->args[i].value.string = gpr_strdup(args[i].str().c_str());
+        res->args[j].type = GRPC_ARG_STRING;
+        res->args[j].value.string = gpr_strdup(args[i].str().c_str());
         break;
       case api_fuzzer::ChannelArg::kI:
-        res->args[i].type = GRPC_ARG_INTEGER;
-        res->args[i].value.integer = args[i].i();
+        res->args[j].type = GRPC_ARG_INTEGER;
+        res->args[j].value.integer = args[i].i();
         break;
       case api_fuzzer::ChannelArg::kResourceQuota:
+        if (args[i].key() != GRPC_ARG_RESOURCE_QUOTA) continue;
         grpc_resource_quota_ref(g_resource_quota);
-        res->args[i].type = GRPC_ARG_POINTER;
-        res->args[i].value.pointer.p = g_resource_quota;
-        res->args[i].value.pointer.vtable = grpc_resource_quota_arg_vtable();
+        res->args[j].type = GRPC_ARG_POINTER;
+        res->args[j].value.pointer.p = g_resource_quota;
+        res->args[j].value.pointer.vtable = grpc_resource_quota_arg_vtable();
         break;
       case api_fuzzer::ChannelArg::VALUE_NOT_SET:
-        res->args[i].type = GRPC_ARG_INTEGER;
-        res->args[i].value.integer = 0;
+        res->args[j].type = GRPC_ARG_INTEGER;
+        res->args[j].value.integer = 0;
         break;
     }
+    res->args[j].key = gpr_strdup(args[i].key().c_str());
+    ++j;
   }
+  res->num_args = j;
   return res;
 }
 

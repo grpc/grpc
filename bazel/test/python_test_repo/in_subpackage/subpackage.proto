@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2021 The gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
+syntax = "proto3";
 
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.subpackage";
+option java_outer_classname = "SubpackageProto";
+option objc_class_prefix = "SP";
 
-namespace grpc {
-namespace experimental {
-namespace binder {
+package subpackage;
 
-UntrustedSecurityPolicy::UntrustedSecurityPolicy() = default;
+message Subpackaged {
+  string name = 1;
+}
 
-UntrustedSecurityPolicy::~UntrustedSecurityPolicy() = default;
-
-bool UntrustedSecurityPolicy::IsAuthorized(int) { return true; };
-
-}  // namespace binder
-}  // namespace experimental
-}  // namespace grpc

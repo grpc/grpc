@@ -495,12 +495,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_binder",
     srcs = [
+        "src/core/ext/transport/binder/client/binder_connector.cc",
         "src/core/ext/transport/binder/client/channel_create.cc",
         "src/core/ext/transport/binder/client/channel_create_impl.cc",
+        "src/core/ext/transport/binder/client/connection_id_generator.cc",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.cc",
         "src/core/ext/transport/binder/client/jni_utils.cc",
-        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc",
-        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc",
+        "src/core/ext/transport/binder/client/security_policy_setting.cc",
+        "src/core/ext/transport/binder/security_policy/binder_security_policy.cc",
         "src/core/ext/transport/binder/server/binder_server.cc",
         "src/core/ext/transport/binder/server/binder_server_credentials.cc",
         "src/core/ext/transport/binder/transport/binder_transport.cc",
@@ -512,15 +514,13 @@ grpc_cc_library(
         "src/core/ext/transport/binder/wire_format/wire_writer.cc",
     ],
     hdrs = [
-        "src/core/ext/transport/binder/client/channel_create.h",
+        "src/core/ext/transport/binder/client/binder_connector.h",
         "src/core/ext/transport/binder/client/channel_create_impl.h",
+        "src/core/ext/transport/binder/client/connection_id_generator.h",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.h",
         "src/core/ext/transport/binder/client/jni_utils.h",
-        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h",
-        "src/core/ext/transport/binder/security_policy/security_policy.h",
-        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h",
+        "src/core/ext/transport/binder/client/security_policy_setting.h",
         "src/core/ext/transport/binder/server/binder_server.h",
-        "src/core/ext/transport/binder/server/binder_server_credentials.h",
         "src/core/ext/transport/binder/transport/binder_stream.h",
         "src/core/ext/transport/binder/transport/binder_transport.h",
         "src/core/ext/transport/binder/utils/transport_stream_receiver.h",
@@ -544,17 +544,20 @@ grpc_cc_library(
         "absl/time",
     ],
     language = "c++",
-    # TODO(mingcl): Move public headers under include/ and put them here
     public_hdrs = [
+        "include/grpcpp/security/binder_security_policy.h",
+        "include/grpcpp/create_channel_binder.h",
+        "include/grpcpp/security/binder_credentials.h",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "gpr_base",
         "gpr_platform",
         "grpc",
         "grpc++_base",
-        "grpc++_internals",
         "grpc_base",
+        "grpc_client_channel",
         "grpc_codegen",
         "orphanable",
         "slice_refcount",
@@ -1925,6 +1928,7 @@ grpc_cc_library(
         "grpc_client_idle_filter",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
+        "grpc_resolver_binder",
         "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
@@ -2439,6 +2443,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_xds_channel_stack_modifier",
+    srcs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.h",
+    ],
+    language = "c++",
+    deps = [
+        "channel_init",
+        "config",
+        "gpr_base",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
@@ -2450,6 +2471,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
     ],
 )
@@ -2919,6 +2941,23 @@ grpc_cc_library(
     name = "grpc_resolver_sockaddr",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_client_channel",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_binder",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc",
     ],
     external_deps = [
         "absl/strings",

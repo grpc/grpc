@@ -254,6 +254,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
                       'src/core/ext/filters/client_channel/resolver.cc',
                       'src/core/ext/filters/client_channel/resolver.h',
+                      'src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc',
@@ -793,6 +794,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_certificate_provider.cc',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
+                      'src/core/ext/xds/xds_channel_stack_modifier.cc',
+                      'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.cc',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.cc',
@@ -1743,6 +1746,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
+                              'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
@@ -2264,8 +2268,7 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-END_OF_COMMAND
     set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
-    find src/core -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <uv.h>;#if COCOAPODS==1\\\n  #include <uv/uv.h>\\\n#else\\\n  #include  <uv.h>\\\n#endif;g'
     find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
-    find src/core/ third_party/xxhash/ third_party/uv/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end
