@@ -2018,6 +2018,8 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
+  // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
+  // destroyed.
   grpc_init();
 }
 
@@ -2027,6 +2029,8 @@ XdsClient::~XdsClient() {
   }
   grpc_channel_args_destroy(args_);
   grpc_pollset_set_destroy(interested_parties_);
+  // Calling grpc_shutdown to ensure gRPC does not shut down until the XdsClient
+  // is destroyed.
   grpc_shutdown();
 }
 

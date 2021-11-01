@@ -874,7 +874,7 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
   // Split the resource type off of the path to get the id.
   std::pair<absl::string_view, absl::string_view> path_parts =
       absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (!((is_expected_type)(path_parts.first, nullptr))) {
+  if (!is_expected_type(path_parts.first, nullptr)) {
     return absl::InvalidArgumentError(
         "xdstp URI path must indicate valid xDS resource type");
   }
