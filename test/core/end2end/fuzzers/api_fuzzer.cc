@@ -117,7 +117,7 @@ class NoOpAsyncResolveAddress : public AsyncResolveAddress {
   void Orphan() override {}
 };
 
-}
+}  // namespace grpc_core
 
 void my_resolve_address(const char* addr, const char* /*default_port*/,
                         grpc_pollset_set* /*interested_parties*/,

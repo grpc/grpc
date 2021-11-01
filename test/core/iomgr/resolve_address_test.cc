@@ -127,6 +127,17 @@ static void must_fail(void* argsp, grpc_error_handle err) {
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
+static void must_fail_expect_cancelled_error_message(void* argsp,
+                                                     grpc_error_handle err) {
+  args_struct* args = static_cast<args_struct*>(argsp);
+  GPR_ASSERT(err != GRPC_ERROR_NONE);
+  std::string error_msg = grpc_error_std_string(err);
+  GPR_ASSERT(absl::StrContains(error_msg, "DNS query cancelled"));
+  grpc_core::MutexLockForGprMu lock(args->mu);
+  args->done = true;
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+}
+
 static void dont_care(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   grpc_core::MutexLockForGprMu lock(args->mu);
@@ -362,10 +373,13 @@ static void test_cancel_with_non_responsive_dns_server(void) {
   args_struct args;
   args_init(&args);
   auto r = grpc_resolve_address(
-      "wont-resolve:1", "1", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
+      "foo.bar.com:1", "1", args.pollset_set,
+      GRPC_CLOSURE_CREATE(must_fail_expect_cancelled_error_message, &args,
+                          grpc_schedule_on_exec_ctx),
       &args.addrs);
-  grpc_core::ExecCtx::Get()->Flush();
+  grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
+  r.reset();                           // cancel the request
+  grpc_core::ExecCtx::Get()->Flush();  // let cancellation work finish
   poll_pollset_until_request_done(&args);
   args_finish(&args);
   // reset altered global state

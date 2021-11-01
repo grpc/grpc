@@ -73,8 +73,8 @@ static grpc_core::OrphanablePtr<grpc_core::MyResolveAddress> my_resolve_address(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_resolved_addresses** addrs) {
   if (0 != strcmp(addr, "test")) {
-    return default_resolver->resolve_address(addr, default_port, interested_parties,
-                                             on_done, addrs);
+    return default_resolver->resolve_address(
+        addr, default_port, interested_parties, on_done, addrs);
   }
 
   grpc_error_handle error = GRPC_ERROR_NONE;
