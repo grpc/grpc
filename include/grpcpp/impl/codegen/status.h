@@ -21,6 +21,8 @@
 
 // IWYU pragma: private, include <grpcpp/support/status.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/status_code_enum.h>
@@ -33,7 +35,7 @@ namespace grpc {
 class Status {
  public:
   /// Construct an OK instance.
-  Status() : code_(StatusCode::OK) {
+  Status() : status_(absl::OkStatus()) {
     // Static assertions to make sure that the C++ API value correctly
     // maps to the core surface API value
     static_assert(StatusCode::OK == static_cast<StatusCode>(GRPC_STATUS_OK),
@@ -91,16 +93,13 @@ class Status {
   /// Construct an instance with associated \a code and \a error_message.
   /// It is an error to construct an OK status with non-empty \a error_message.
   Status(StatusCode code, const std::string& error_message)
-      : code_(code), error_message_(error_message) {}
+      : status_(static_cast<absl::StatusCode>(code), error_message) {}
 
   /// Construct an instance with \a code,  \a error_message and
   /// \a error_details. It is an error to construct an OK status with non-empty
   /// \a error_message and/or \a error_details.
   Status(StatusCode code, const std::string& error_message,
-         const std::string& error_details)
-      : code_(code),
-        error_message_(error_message),
-        binary_error_details_(error_details) {}
+         const std::string& error_details);
 
   // Pre-defined special status objects.
   /// An OK pre-defined instance.
@@ -109,25 +108,31 @@ class Status {
   static const Status& CANCELLED;
 
   /// Return the instance's error code.
-  StatusCode error_code() const { return code_; }
+  StatusCode error_code() const {
+    return static_cast<StatusCode>(status_.raw_code());
+  }
   /// Return the instance's error message.
-  std::string error_message() const { return error_message_; }
+  std::string error_message() const {
+    absl::string_view message = status_.message();
+    return std::string(message.data(), message.length());
+  }
   /// Return the (binary) error details.
   // Usually it contains a serialized google.rpc.Status proto.
-  std::string error_details() const { return binary_error_details_; }
+  std::string error_details() const;
 
   /// Is the status OK?
-  bool ok() const { return code_ == StatusCode::OK; }
+  bool ok() const { return status_.ok(); }
 
   // Ignores any errors. This method does nothing except potentially suppress
   // complaints from any tools that are checking that errors are not dropped on
   // the floor.
   void IgnoreError() const {}
 
+  operator const absl::Status&() { return status_; }
+  operator absl::Status&&() { return std::move(status_); }
+
  private:
-  StatusCode code_;
-  std::string error_message_;
-  std::string binary_error_details_;
+  absl::Status status_;
 };
 
 }  // namespace grpc
