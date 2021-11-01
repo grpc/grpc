@@ -81,7 +81,7 @@ _BM_SPECS = {
         'dyn': ['end_of_stream', 'request_size'],
     },
     'BM_HpackParserParseHeader': {
-        'tpl': ['fixture', 'on_header'],
+        'tpl': ['fixture'],
         'dyn': [],
     },
     'BM_CallCreateDestroy': {
@@ -166,8 +166,6 @@ def parse_name(name):
         rest = s[0]
         dyn_args = s[1:]
     name = rest
-    print("Locals: {}".format(locals()))
-    print("Globals: {}".format(globals()))
     assert name in _BM_SPECS, '_BM_SPECS needs to be expanded for %s' % name
     assert len(dyn_args) == len(_BM_SPECS[name]['dyn'])
     assert len(tpl_args) == len(_BM_SPECS[name]['tpl'])
@@ -176,7 +174,7 @@ def parse_name(name):
     out.update(
         dict((k, numericalize(v))
              for k, v in zip(_BM_SPECS[name]['dyn'], dyn_args)))
-    out.update(dict(list(zip(_BM_SPECS[name]['tpl'], tpl_args))))
+    out.update(dict(zip(_BM_SPECS[name]['tpl'], tpl_args)))
     return out
 
 
