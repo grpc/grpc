@@ -1546,6 +1546,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "exec_ctx_work_serializer",
+    srcs = [
+        "src/core/lib/iomgr/exec_ctx_work_serializer.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/exec_ctx_work_serializer.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr_base",
+        "orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",

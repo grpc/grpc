@@ -369,3 +369,22 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "exec_ctx_work_serializer_test",
+    srcs = ["exec_ctx_work_serializer_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",  # LARGE_MACHINE is not configured for windows RBE
+    ],
+    deps = [
+        "//:exec_ctx_work_serializer",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
