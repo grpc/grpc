@@ -51,10 +51,7 @@ namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
 
-class AsyncResolveAddress : public InternallyRefCounted<AsyncResolveAddress> {
- public:
-  virtual ~AsyncResolveAddress() {}
-};
+class AsyncResolveAddress : public InternallyRefCounted<AsyncResolveAddress> {};
 
 }  // namespace grpc_core
 

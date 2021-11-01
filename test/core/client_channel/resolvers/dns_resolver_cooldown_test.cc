@@ -58,7 +58,7 @@ static struct iomgr_args {
 
 namespace grpc_core {
 
-class TestAsyncResolveAddress {
+class NoOpAsyncResolveAddress : public AsyncResolveAddress {
  public:
   // cancellation not implemented
   void Orphan() override {}
@@ -93,7 +93,7 @@ test_resolve_address_impl(const char* name, const char* default_port,
   // because the resolver's last_resolution_timestamp_ will be taken from
   // grpc_core::ExecCtx::Get()->Now() right after this returns.
   grpc_core::ExecCtx::Get()->InvalidateNow();
-  return grpc_core::MakeOrphanable<grpc_core::TestAsyncResolveAddress>();
+  return grpc_core::MakeOrphanable<grpc_core::NoOpAsyncResolveAddress>();
 }
 
 static grpc_error_handle test_blocking_resolve_address_impl(

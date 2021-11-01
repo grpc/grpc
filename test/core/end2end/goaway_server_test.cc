@@ -60,7 +60,7 @@ static void set_resolve_port(int port) {
 
 namespace grpc_core {
 
-class MyResolveAddress : public AsyncResolveAddress {
+class NoOpAsyncResolveAddress : public AsyncResolveAddress {
  public:
   // cancellation not implemented
   void Orphan() override {}
@@ -73,9 +73,8 @@ static grpc_core::OrphanablePtr<grpc_core::MyResolveAddress> my_resolve_address(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_resolved_addresses** addrs) {
   if (0 != strcmp(addr, "test")) {
-    default_resolver->resolve_address(addr, default_port, interested_parties,
-                                      on_done, addrs);
-    return;
+    return default_resolver->resolve_address(addr, default_port, interested_parties,
+                                             on_done, addrs);
   }
 
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -98,6 +97,7 @@ static grpc_core::OrphanablePtr<grpc_core::MyResolveAddress> my_resolve_address(
     gpr_mu_unlock(&g_mu);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
+  return grpc_core::MakeOrphanable<grpc_core::MyResolveAddress>();
 }
 
 static grpc_error_handle my_blocking_resolve_address(

@@ -37,7 +37,7 @@ static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 namespace grpc_core {
 
-class MyAsyncResolveAddress {
+class NoOpAsyncResolveAddress : public AsyncResolveAddress {
  public:
   // cancellation not implemented
   void Orphan() override {}
@@ -65,7 +65,7 @@ my_resolve_address(const char* addr, const char* /*default_port*/,
     (*addrs)->addrs[0].len = 123;
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
-  return grpc_core::MakeOrphanable<grpc_core::MyAsyncResolveAddress>();
+  return grpc_core::MakeOrphanable<grpc_core::NoOpAsyncResolveAddress>();
 }
 
 static grpc_address_resolver_vtable test_resolver = {my_resolve_address,

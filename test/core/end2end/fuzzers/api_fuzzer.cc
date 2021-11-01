@@ -109,6 +109,16 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
   delete r;
 }
 
+namespace grpc_core {
+
+class NoOpAsyncResolveAddress : public AsyncResolveAddress {
+ public:
+  // cancellation not implemented
+  void Orphan() override {}
+};
+
+}
+
 void my_resolve_address(const char* addr, const char* /*default_port*/,
                         grpc_pollset_set* /*interested_parties*/,
                         grpc_closure* on_done,
@@ -120,6 +130,7 @@ void my_resolve_address(const char* addr, const char* /*default_port*/,
   grpc_timer_init(
       &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
+  return grpc_core::MakeOrphanable<grpc_core::MyResolveAddress>();
 }
 
 static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
