@@ -465,7 +465,7 @@ class Call : public std::enable_shared_from_this<Call> {
     return MakeValidator([self, has_ops](bool success) {
       --self->pending_ops_;
       if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE) &&
-           self->recv_message_ != nullptr)) {
+           self->recv_message_ != nullptr && success)) {
         grpc_byte_buffer_destroy(self->recv_message_);
         self->recv_message_ = nullptr;
       }
