@@ -100,7 +100,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
       if (size_.load() == 1) {
         // There is nothing to drain.
         draining_.store(false);
-        // Check once before returning in case a callback was scheduled between
+        // Check again before returning in case a callback was scheduled between
         // the load and the store.
         if (size_.load() == 1) {
           return;
