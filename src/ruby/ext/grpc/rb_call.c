@@ -739,7 +739,6 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
             &st->recv_cancelled;
         break;
       default:
-        grpc_run_batch_stack_cleanup(st);
         rb_raise(rb_eTypeError, "invalid operation : bad value %d",
                  NUM2INT(this_op));
     };
@@ -801,24 +800,26 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
   return result;
 }
 
-/* call-seq:
-   ops = {
-     GRPC::Core::CallOps::SEND_INITIAL_METADATA => <op_value>,
-     GRPC::Core::CallOps::SEND_MESSAGE => <op_value>,
-     ...
-   }
-   tag = Object.new
-   timeout = 10
-   call.start_batch(tag, timeout, ops)
+typedef struct grpc_rb_call_run_batch_data {
+  VALUE self;
+  VALUE ops_hash;
+  run_batch_stack* st;
+} grpc_rb_call_run_batch_data;
 
-   Start a batch of operations defined in the array ops; when complete, post a
-   completion of type 'tag' to the completion queue bound to the call.
+static VALUE grpc_rb_call_run_batch_ensure(VALUE vdata) {
+  grpc_rb_call_run_batch_data* data = (grpc_rb_call_run_batch_data*)vdata;
+  run_batch_stack* st = data->st;
+  if (st != NULL) {
+    grpc_run_batch_stack_cleanup(st);
+    gpr_free(st);
+  }
+  return Qnil;
+}
 
-   Also waits for the batch to complete, until timeout is reached.
-   The order of ops specified in the batch has no significance.
-   Only one operation of each type can be active at once in any given
-   batch */
-static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
+static VALUE grpc_rb_call_run_batch_try(VALUE vdata) {
+  grpc_rb_call_run_batch_data* data = (grpc_rb_call_run_batch_data*)vdata;
+  VALUE self = data->self;
+  VALUE ops_hash = data->ops_hash;
   run_batch_stack* st = NULL;
   grpc_rb_call* call = NULL;
   grpc_event ev;
@@ -843,7 +844,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   if (rb_write_flag != Qnil) {
     write_flag = NUM2UINT(rb_write_flag);
   }
-  st = gpr_malloc(sizeof(run_batch_stack));
+  data->st = st = gpr_malloc(sizeof(run_batch_stack));
   grpc_run_batch_stack_init(st, write_flag);
   grpc_run_batch_stack_fill_ops(st, ops_hash);
 
@@ -851,8 +852,6 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
    * pluck_event */
   err = grpc_call_start_batch(call->wrapped, st->ops, st->op_num, tag, NULL);
   if (err != GRPC_CALL_OK) {
-    grpc_run_batch_stack_cleanup(st);
-    gpr_free(st);
     rb_raise(grpc_rb_eCallError,
              "grpc_call_start_batch failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -866,9 +865,32 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   /* Build and return the BatchResult struct result,
      if there is an error, it's reflected in the status */
   result = grpc_run_batch_stack_build_result(st);
-  grpc_run_batch_stack_cleanup(st);
-  gpr_free(st);
   return result;
+}
+
+/* call-seq:
+   ops = {
+     GRPC::Core::CallOps::SEND_INITIAL_METADATA => <op_value>,
+     GRPC::Core::CallOps::SEND_MESSAGE => <op_value>,
+     ...
+   }
+   tag = Object.new
+   timeout = 10
+   call.start_batch(tag, timeout, ops)
+
+   Start a batch of operations defined in the array ops; when complete, post a
+   completion of type 'tag' to the completion queue bound to the call.
+
+   Also waits for the batch to complete, until timeout is reached.
+   The order of ops specified in the batch has no significance.
+   Only one operation of each type can be active at once in any given
+   batch */
+static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
+  grpc_rb_call_run_batch_data data = {
+      .self = self, .ops_hash = ops_hash, .st = NULL};
+
+  return rb_ensure(grpc_rb_call_run_batch_try, (VALUE)&data,
+                   grpc_rb_call_run_batch_ensure, (VALUE)&data);
 }
 
 static void Init_grpc_write_flags() {
