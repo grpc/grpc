@@ -1,4 +1,5 @@
-# Copyright 2020 gRPC authors.
+#!/bin/bash
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
+#!/bin/bash
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
-
-grpc_package(
-    name = "src/proto/grpc/lookup/v1",
-    visibility = "public",
-)
-
-grpc_proto_library(
-    name = "rls_proto",
-    srcs = ["rls.proto"],
-    well_known_protos = True,
-)
-
-proto_library(
-    name = "rls_proto_descriptor",
-    srcs = ["rls.proto"],
-)
+while IFS= read -r line; do
+  echo "$(date) - $line"
+done
