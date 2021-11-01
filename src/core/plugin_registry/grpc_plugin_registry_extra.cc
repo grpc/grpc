@@ -68,3 +68,16 @@ void grpc_register_extra_plugins() {
                        grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
 }
+
+namespace grpc_core {
+#ifndef GRPC_NO_XDS
+extern void RegisterXdsChannelStackModifier(
+    CoreConfiguration::Builder* builder);
+#endif
+void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
+  #ifndef GRPC_NO_XDS
+  RegisterXdsChannelStackModifier(builder);
+  #endif
+}
+}  // namespace grpc_core
+

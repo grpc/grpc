@@ -25,6 +25,10 @@
 
 extern void grpc_register_extra_plugins(void);
 
+namespace grpc_core {
+extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
+}  // namespace grpc_core
+
 void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
 void grpc_client_channel_init(void);
@@ -122,10 +126,6 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
-#ifndef GRPC_NO_XDS
-extern void RegisterXdsChannelStackModifier(
-    CoreConfiguration::Builder* builder);
-#endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -138,12 +138,10 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
-  #ifndef GRPC_NO_XDS
-  RegisterXdsChannelStackModifier(builder);
-  #endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);
+  RegisterExtraFilters(builder);
   RegisterBuiltins(builder);
 }
 
