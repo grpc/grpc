@@ -75,6 +75,8 @@ extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
+  // Use builder to avoid unused-parameter warning.
+  (void)builder;
   #ifndef GRPC_NO_XDS
   RegisterXdsChannelStackModifier(builder);
   #endif
