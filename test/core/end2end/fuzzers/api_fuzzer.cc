@@ -128,7 +128,7 @@ void my_resolve_address(const char* addr, const char* /*default_port*/,
   r->on_done = on_done;
   r->addrs = addrs;
   grpc_timer_init(
-      &r->timer, MAX_ADVANCE_TIME_MICROS/1000 + grpc_core::ExecCtx::Get()->Now(),
+      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
 }
 
@@ -221,7 +221,7 @@ static void sched_connect(grpc_closure* closure,
   fc->deadline = deadline;
   fc->slice_allocator = slice_allocator;
   grpc_timer_init(
-      &fc->timer, MAX_ADVANCE_TIME_MICROS/1000 + grpc_core::ExecCtx::Get()->Now(),
+      &fc->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
