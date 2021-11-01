@@ -673,7 +673,7 @@ class PythonAsyncIOLanguage:
     def server_cmd(self, args):
         return [
             _PYTHON_BINARY, 'src/python/grpcio_tests/setup.py',
-            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            'py39_native/bin/python', 'src/python/grpcio_tests/setup.py',
             '--args="{}"'.format(' '.join(args))
         ]
 
