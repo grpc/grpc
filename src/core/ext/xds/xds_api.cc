@@ -963,9 +963,9 @@ bool XdsApi::IsEds(absl::string_view type_url) {
 absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
     absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
   return ParseResourceNameInternal(
-      name,
-      (std::function<bool(absl::string_view, bool*)>)[is_expected_type](
-          absl::string_view type, bool*) { return is_expected_type(type); });
+      name, [is_expected_type](absl::string_view type, bool*) {
+        return is_expected_type(type);
+      });
 }
 
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
