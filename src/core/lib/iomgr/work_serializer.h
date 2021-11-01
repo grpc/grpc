@@ -39,19 +39,21 @@ namespace grpc_core {
 // All callbacks scheduled on a WorkSerializer instance will be executed
 // serially in a borrowed thread. The API provides a FIFO guarantee to the
 // execution of callbacks scheduled on the thread.
-// When a thread calls Run() with a callback, the thread is considered borrowed.
-// The callback might run inline, or it might run asynchronously in a different
-// thread that is already inside of Run(). If the callback runs directly inline,
-// other callbacks from other threads might also be executed before Run()
-// returns. Since an arbitrary set of callbacks might be executed when Run() is
-// called, generally no locks should be held while calling Run().
+// When a thread calls Schedule() with a callback, the callback is added to the
+// queue The callback might run inline, or it might run asynchronously in a
+// different thread that is already inside of Run(). If the callback runs
+// directly inline, other callbacks from other threads might also be executed
+// before Run() returns. Since an arbitrary set of callbacks might be executed
+// when Run() is called, generally no locks should be held while calling Run().
 class ABSL_LOCKABLE WorkSerializer {
  public:
   WorkSerializer();
 
   ~WorkSerializer();
 
-  // Runs a given callback.
+  // Runs a given callback on the work serializer. Equivalent to -
+  //   work_serializer.Schedule(callback, location);
+  //   work_serializer.DrainQueue();
   //
   // If you want to use clang thread annotation to make sure that callback is
   // called by WorkSerializer only, you need to add the annotation to both the
@@ -69,6 +71,13 @@ class ABSL_LOCKABLE WorkSerializer {
   // once we can start using it directly.
   void Run(std::function<void()> callback,
            const grpc_core::DebugLocation& location);
+
+  // Schedule \a callback to be run later when the queue of callbacks is
+  // drained.
+  void Schedule(std::function<void()> callback,
+                const grpc_core::DebugLocation& location);
+  // Drains the queue of callbacks.
+  void DrainQueue();
 
  private:
   class WorkSerializerImpl;

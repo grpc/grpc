@@ -103,6 +103,68 @@ TEST(WorkSerializerTest, ExecuteMany) {
     }
   }
 }
+
+class TestThreadScheduleAndDrain {
+ public:
+  explicit TestThreadScheduleAndDrain(grpc_core::WorkSerializer* lock)
+      : lock_(lock), thread_("grpc_execute_many", ExecuteManyLoop, this) {
+    gpr_event_init(&done_);
+    thread_.Start();
+  }
+
+  ~TestThreadScheduleAndDrain() {
+    EXPECT_NE(gpr_event_wait(&done_, gpr_inf_future(GPR_CLOCK_REALTIME)),
+              nullptr);
+    thread_.Join();
+  }
+
+ private:
+  static void ExecuteManyLoop(void* arg) {
+    TestThreadScheduleAndDrain* self =
+        static_cast<TestThreadScheduleAndDrain*>(arg);
+    size_t n = 1;
+    for (size_t i = 0; i < 10; i++) {
+      for (size_t j = 0; j < 10000; j++) {
+        struct ExecutionArgs {
+          size_t* counter;
+          size_t value;
+        };
+        ExecutionArgs* c = new ExecutionArgs;
+        c->counter = &self->counter_;
+        c->value = n++;
+        self->lock_->Schedule(
+            [c]() {
+              EXPECT_TRUE(*c->counter == c->value - 1);
+              *c->counter = c->value;
+              delete c;
+            },
+            DEBUG_LOCATION);
+      }
+      self->lock_->DrainQueue();
+      // sleep for a little bit, to test other threads picking up the load
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+    }
+    self->lock_->Run(
+        [self]() { gpr_event_set(&self->done_, reinterpret_cast<void*>(1)); },
+        DEBUG_LOCATION);
+  }
+
+  grpc_core::WorkSerializer* lock_ = nullptr;
+  grpc_core::Thread thread_;
+  size_t counter_ = 0;
+  gpr_event done_;
+};
+
+TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
+  grpc_core::WorkSerializer lock;
+  {
+    std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> threads;
+    for (size_t i = 0; i < 100; ++i) {
+      threads.push_back(absl::make_unique<TestThreadScheduleAndDrain>(&lock));
+    }
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
