@@ -58,12 +58,6 @@ config_setting(
     values = {"apple_platform_type": "ios"},
 )
 
-# Fuzzers can be built as fuzzers or as tests
-config_setting(
-    name = "grpc_build_fuzzers",
-    values = {"define": "grpc_build_fuzzers=true"},
-)
-
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
@@ -75,6 +69,22 @@ selects.config_setting_group(
         ":android",
         ":ios",
     ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_rls",
+    match_any = [
+        # Disable RLS support on mobile platforms where it is not likely to be
+        # needed and where reducing the binary size is more important.
+        ":android",
+        ":ios",
+    ],
+)
+
+# Fuzzers can be built as fuzzers or as tests
+config_setting(
+    name = "grpc_build_fuzzers",
+    values = {"define": "grpc_build_fuzzers=true"},
 )
 
 config_setting(
@@ -368,6 +378,16 @@ grpc_cc_library(
     ],
 )
 
+GRPC_XDS_TARGETS = [
+    "grpc_lb_policy_cds",
+    "grpc_lb_policy_xds_cluster_impl",
+    "grpc_lb_policy_xds_cluster_manager",
+    "grpc_lb_policy_xds_cluster_resolver",
+    "grpc_resolver_xds",
+    "grpc_resolver_c2p",
+    "grpc_xds_server_config_fetcher",
+]
+
 grpc_cc_library(
     name = "grpc",
     srcs = [
@@ -377,21 +397,22 @@ grpc_cc_library(
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
+    }) + select({
+        "grpc_no_rls": ["GRPC_NO_RLS"],
+        "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc_lb_policy_cds",
-            "grpc_lb_policy_xds_cluster_impl",
-            "grpc_lb_policy_xds_cluster_manager",
-            "grpc_lb_policy_xds_cluster_resolver",
-            "grpc_resolver_xds",
-            "grpc_resolver_c2p",
-            "grpc_xds_server_config_fetcher",
-        ],
-    },
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": GRPC_XDS_TARGETS,
+        },
+        {
+            "grpc_no_rls": [],
+            "//conditions:default": ["grpc_lb_policy_rls"],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -402,7 +423,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
@@ -431,13 +451,13 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = {
+    select_deps = [{
         "grpc_no_xds": [],
         "//conditions:default": [
             "grpc++_xds_client",
             "grpc++_xds_server",
         ],
-    },
+    }],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -4034,10 +4054,10 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/admin_services.h",
     ],
-    select_deps = {
+    select_deps = [{
         "grpc_no_xds": [],
         "//conditions:default": ["//:grpcpp_csds"],
-    },
+    }],
     deps = [
         "gpr",
         "grpc++",
