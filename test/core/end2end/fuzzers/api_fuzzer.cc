@@ -586,6 +586,7 @@ grpc_channel_args* ReadArgs(const ChannelArgContainer& args) {
     res->args[j].key = gpr_strdup(args[i].key().c_str());
     ++j;
   }
+  res->num_args = j;
   return res;
 }
 
