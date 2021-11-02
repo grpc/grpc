@@ -858,7 +858,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   *port_num = -1;
   grpc_resolved_addresses* resolved = nullptr;
   std::vector<grpc_error_handle> error_list;
-  std::string parsed_addr = URI::PercentDecode(addr);
+  std::string parsed_addr = URI::PercentDecode(absl::NullSafeStringView(addr));
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
