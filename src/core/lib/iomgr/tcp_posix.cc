@@ -1669,7 +1669,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_channel_args* channel_args,
-                               const char* peer_string,
+                               absl::string_view peer_string,
                                grpc_slice_allocator* slice_allocator) {
   static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
@@ -1727,7 +1727,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
                                tcp_tx_zerocopy_send_bytes_thresh);
   tcp->base.vtable = &vtable;
-  tcp->peer_string = peer_string;
+  tcp->peer_string = std::string(peer_string.data(), peer_string.size());
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->slice_allocator = slice_allocator;
   grpc_resolved_address resolved_local_addr;

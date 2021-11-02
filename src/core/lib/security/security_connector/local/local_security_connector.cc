@@ -44,6 +44,7 @@
 #include "src/core/tsi/local_transport_security.h"
 
 #define GRPC_UDS_URI_PATTERN "unix:"
+#define GRPC_ABSTRACT_UDS_URI_PATTERN "unix-abstract:"
 #define GRPC_LOCAL_TRANSPORT_SECURITY_TYPE "local"
 
 namespace {
@@ -270,7 +271,9 @@ grpc_local_channel_security_connector_create(
   const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
   if (creds->connect_type() == UDS &&
       strncmp(GRPC_UDS_URI_PATTERN, server_uri_str,
-              strlen(GRPC_UDS_URI_PATTERN)) != 0) {
+              strlen(GRPC_UDS_URI_PATTERN)) != 0 &&
+      strncmp(GRPC_ABSTRACT_UDS_URI_PATTERN, server_uri_str,
+              strlen(GRPC_ABSTRACT_UDS_URI_PATTERN)) != 0) {
     gpr_log(GPR_ERROR,
             "Invalid UDS target name to "
             "grpc_local_channel_security_connector_create()");

@@ -360,7 +360,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
       ep = grpc_tcp_create(
           grpc_winsocket_create(sock, fd_name.c_str()),
-          sp->server->channel_args, peer_name_string.c_str(),
+          sp->server->channel_args, peer_name_string,
           grpc_slice_allocator_factory_create_slice_allocator(
               sp->server->slice_allocator_factory, peer_name_string));
     } else {
