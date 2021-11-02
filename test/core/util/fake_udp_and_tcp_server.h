@@ -32,8 +32,8 @@
 #include <thread>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -91,26 +91,29 @@ class FakeUdpAndTcpServer {
     if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
         SOCKET_ERROR) {
       gpr_log(GPR_DEBUG,
-              "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+              "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d",
+              port);
       GPR_ASSERT(0);
     }
     grpc_error_handle non_block_error;
     non_block_error = grpc_tcp_set_non_block(udp_socket_);
     if (non_block_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d", grpc_error_std_string(non_block_error).c_str());
+      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
+              grpc_error_std_string(non_block_error).c_str());
       GPR_ASSERT(0);
     }
     non_block_error = grpc_tcp_set_non_block(accept_socket_);
     if (non_block_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d", grpc_error_std_string(non_block_error).c_str());
+      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
+              grpc_error_std_string(non_block_error).c_str());
       GPR_ASSERT(0);
     }
 #else
     int val = 1;
-    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
-        0) {
-      gpr_log(GPR_DEBUG,
-              "Failed to set SO_REUSEADDR on socket [::1]:%d", port_);
+    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
+                   sizeof(val)) != 0) {
+      gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on socket [::1]:%d",
+              port_);
       GPR_ASSERT(0);
     }
     if (fcntl(udp_socket_, F_SETFL, O_NONBLOCK) != 0) {

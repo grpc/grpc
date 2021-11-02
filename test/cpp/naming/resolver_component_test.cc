@@ -59,8 +59,8 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/fake_udp_and_tcp_server.h"
+#include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
 // TODO(unknown): pull in different headers when enabling this
@@ -591,7 +591,8 @@ void RunResolvesRelevantRecordsTest(
         absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
             FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
             FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
-    g_fake_non_responsive_dns_server_port = fake_non_responsive_dns_server.port();
+    g_fake_non_responsive_dns_server_port =
+        fake_non_responsive_dns_server.port();
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {

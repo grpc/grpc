@@ -45,9 +45,9 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
