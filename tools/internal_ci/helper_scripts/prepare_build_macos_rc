@@ -177,12 +177,18 @@ then
   # Install PHP 7.3 explictly to address missing php header files and
   # to work well with the pre-installed phpunit 8.4
   brew install php@7.3 || true
-  export LDFLAGS="-L/usr/local/opt/php@7.3/lib $(LDFLAGS)"
-  export CPPFLAGS="-I/usr/local/opt/php@7.3/include $(CPPFLAGS)"
+  export LDFLAGS="-L/usr/local/opt/php@7.3/lib $LDFLAGS"
+  export CPPFLAGS="-I/usr/local/opt/php@7.3/include $CPPFLAGS"
   export PATH="/usr/local/opt/php@7.3/bin:/usr/local/opt/php@7.3/sbin:$PATH"
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
   mkdir -p /usr/local/lib/php/pecl
+
+  # If pyenv exists, pyenv may need an update due to pyenv 1 -> 2 upgrade
+  if command -v pyenv &> /dev/null
+  then
+    pyenv rehash
+  fi
 fi
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
