@@ -130,7 +130,12 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text.decode('utf8'))
+                    et = explanatory_text if isinstance(
+                        explanatory_text,
+                        str) else explanatory_text.decode('utf8')
+                    logging.info(et)
+                else:
+                    logging.info("")
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
