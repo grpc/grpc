@@ -68,10 +68,10 @@ class NoOpAsyncResolveAddress : public AsyncResolveAddress {
 
 }  // namespace grpc_core
 
-static grpc_core::OrphanablePtr<grpc_core::MyResolveAddress> my_resolve_address(
-    const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_resolved_addresses** addrs) {
+static grpc_core::OrphanablePtr<grpc_core::AsnycResolveAddress>
+my_resolve_address(const char* addr, const char* default_port,
+                   grpc_pollset_set* interested_parties, grpc_closure* on_done,
+                   grpc_resolved_addresses** addrs) {
   if (0 != strcmp(addr, "test")) {
     return default_resolver->resolve_address(
         addr, default_port, interested_parties, on_done, addrs);
@@ -97,7 +97,7 @@ static grpc_core::OrphanablePtr<grpc_core::MyResolveAddress> my_resolve_address(
     gpr_mu_unlock(&g_mu);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
-  return grpc_core::MakeOrphanable<grpc_core::MyResolveAddress>();
+  return grpc_core::MakeOrphanable<grpc_core::NoOpResolveAddress>();
 }
 
 static grpc_error_handle my_blocking_resolve_address(

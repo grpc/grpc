@@ -119,10 +119,10 @@ class NoOpAsyncResolveAddress : public AsyncResolveAddress {
 
 }  // namespace grpc_core
 
-void my_resolve_address(const char* addr, const char* /*default_port*/,
-                        grpc_pollset_set* /*interested_parties*/,
-                        grpc_closure* on_done,
-                        grpc_resolved_addresses** addrs) {
+grpc_core::OrphanablePtr<grpc_core::AsnycResolveAddress> my_resolve_address(
+    const char* addr, const char* /*default_port*/,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
+    grpc_resolved_addresses** addrs) {
   addr_req* r = new addr_req();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -130,7 +130,7 @@ void my_resolve_address(const char* addr, const char* /*default_port*/,
   grpc_timer_init(
       &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
-  return grpc_core::MakeOrphanable<grpc_core::MyResolveAddress>();
+  return grpc_core::MakeOrphanable<grpc_core::NoOpResolveAddress>();
 }
 
 static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
