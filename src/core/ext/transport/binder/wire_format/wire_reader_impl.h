@@ -23,7 +23,8 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/notification.h"
 
-#include "src/core/ext/transport/binder/security_policy/security_policy.h"
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"

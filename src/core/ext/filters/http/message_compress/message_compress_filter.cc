@@ -55,7 +55,8 @@ class ChannelData {
         grpc_channel_args_get_channel_default_compression_algorithm(
             args->channel_args);
     // Make sure the default is enabled.
-    if (!grpc_core::GetBit(enabled_compression_algorithms_bitset_,
+    if (size_t(default_compression_algorithm_) >= 32 ||
+        !grpc_core::GetBit(enabled_compression_algorithms_bitset_,
                            default_compression_algorithm_)) {
       const char* name;
       if (!grpc_compression_algorithm_name(default_compression_algorithm_,
