@@ -18,15 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
 #include <functional>
 #include <set>
 #include <thread>
@@ -51,6 +42,7 @@
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #define CLOSE_SOCKET closesocket
 #else
+#include <fcntl.h>
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #define CLOSE_SOCKET close
@@ -95,17 +87,17 @@ class FakeUdpAndTcpServer {
               port);
       GPR_ASSERT(0);
     }
-    grpc_error_handle non_block_error;
-    non_block_error = grpc_tcp_set_non_block(udp_socket_);
-    if (non_block_error != GRPC_ERROR_NONE) {
+    grpc_error_handle set_non_block_error;
+    set_non_block_error = grpc_tcp_set_non_block(udp_socket_);
+    if (set_non_block_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
-              grpc_error_std_string(non_block_error).c_str());
+              grpc_error_std_string(set_non_block_error).c_str());
       GPR_ASSERT(0);
     }
-    non_block_error = grpc_tcp_set_non_block(accept_socket_);
-    if (non_block_error != GRPC_ERROR_NONE) {
+    set_non_block_error = grpc_tcp_set_non_block(accept_socket_);
+    if (set_non_block_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
-              grpc_error_std_string(non_block_error).c_str());
+              grpc_error_std_string(set_non_block_error).c_str());
       GPR_ASSERT(0);
     }
 #else
@@ -265,12 +257,22 @@ class FakeUdpAndTcpServer {
       }
       if (p != -1) {
         gpr_log(GPR_DEBUG, "accepted peer socket: %d", p);
+#ifdef GPR_WINDOWS
+        grpc_error_handle set_non_block_error;
+        set_non_block_error = grpc_tcp_set_non_block(p);
+        if (set_non_block_error != GRPC_ERROR_NONE) {
+          gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
+                  grpc_error_std_string(set_non_block_error).c_str());
+          GPR_ASSERT(0);
+        }
+#else
         if (fcntl(p, F_SETFL, O_NONBLOCK) != 0) {
           gpr_log(GPR_ERROR,
                   "Failed to set O_NONBLOCK on peer socket:%d errno:%d", p,
                   errno);
           GPR_ASSERT(0);
         }
+#endif
         peers.insert(absl::make_unique<FakeUdpAndTcpServerPeer>(p));
       }
       auto it = peers.begin();
