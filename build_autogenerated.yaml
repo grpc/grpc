@@ -7810,6 +7810,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: status_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/util/status_test.cc
+  deps:
+  - grpc++
+  - grpc_test_util
 - name: status_util_test
   gtest: true
   build: test
