@@ -45,7 +45,8 @@ namespace testing {
 
 FakeUdpAndTcpServer::FakeUdpAndTcpServer(
     AcceptMode accept_mode,
-    const std::function<FakeUdpAndTcpServer::ProcessReadResult(int, int, int)>& process_read_cb)
+    const std::function<FakeUdpAndTcpServer::ProcessReadResult(int, int, int)>&
+        process_read_cb)
     : accept_mode_(accept_mode), process_read_cb_(process_read_cb) {
   port_ = grpc_pick_unused_port_or_die();
   udp_socket_ = socket(AF_INET6, SOCK_DGRAM, 0);
@@ -61,8 +62,8 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   }
 #ifdef GPR_WINDOWS
   char val = 1;
-  if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
-                 sizeof(val)) == SOCKET_ERROR) {
+  if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
+      SOCKET_ERROR) {
     gpr_log(GPR_DEBUG,
             "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d, "
             "errno: %d",
@@ -84,10 +85,9 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   }
 #else
   int val = 1;
-  if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
-                 sizeof(val)) != 0) {
-    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on socket [::1]:%d",
-            port_);
+  if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
+      0) {
+    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on socket [::1]:%d", port_);
     GPR_ASSERT(0);
   }
   if (fcntl(udp_socket_, F_SETFL, O_NONBLOCK) != 0) {
@@ -137,7 +137,8 @@ FakeUdpAndTcpServer::~FakeUdpAndTcpServer() {
   CLOSE_SOCKET(udp_socket_);
 }
 
-FakeUdpAndTcpServer::ProcessReadResult FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer(
+FakeUdpAndTcpServer::ProcessReadResult
+FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer(
     int bytes_received_size, int read_error, int s) {
   if (bytes_received_size < 0 && read_error != EAGAIN &&
       read_error != EWOULDBLOCK) {
@@ -156,8 +157,9 @@ FakeUdpAndTcpServer::ProcessReadResult FakeUdpAndTcpServer::CloseSocketUponRecei
   return FakeUdpAndTcpServer::ProcessReadResult::kContinueReading;
 }
 
-FakeUdpAndTcpServer::ProcessReadResult FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer(int bytes_received_size,
-                                                      int read_error, int s) {
+FakeUdpAndTcpServer::ProcessReadResult
+FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer(int bytes_received_size,
+                                                  int read_error, int s) {
   if (bytes_received_size < 0 && read_error != EAGAIN &&
       read_error != EWOULDBLOCK) {
     gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
@@ -176,11 +178,15 @@ FakeUdpAndTcpServer::ProcessReadResult FakeUdpAndTcpServer::CloseSocketUponClose
   return FakeUdpAndTcpServer::ProcessReadResult::kContinueReading;
 }
 
-FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::FakeUdpAndTcpServerPeer(int fd) : fd_(fd) {}
+FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::FakeUdpAndTcpServerPeer(int fd)
+    : fd_(fd) {}
 
-FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::~FakeUdpAndTcpServerPeer() { CLOSE_SOCKET(fd_); }
+FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::~FakeUdpAndTcpServerPeer() {
+  CLOSE_SOCKET(fd_);
+}
 
-void FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::MaybeContinueSendingSettings() {
+void FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::
+    MaybeContinueSendingSettings() {
   // https://tools.ietf.org/html/rfc7540#section-4.1
   const std::vector<char> kEmptyHttp2SettingsFrame = {
       0x00, 0x00, 0x00,       // length
@@ -228,8 +234,8 @@ void FakeUdpAndTcpServer::RunServerLoop(FakeUdpAndTcpServer* self) {
       }
 #else
       if (fcntl(p, F_SETFL, O_NONBLOCK) != 0) {
-        gpr_log(GPR_ERROR,
-                "Failed to configure non-blocking socket, errno: %d", errno);
+        gpr_log(GPR_ERROR, "Failed to configure non-blocking socket, errno: %d",
+                errno);
         GPR_ASSERT(0);
       }
 #endif
@@ -248,7 +254,8 @@ void FakeUdpAndTcpServer::RunServerLoop(FakeUdpAndTcpServer* self) {
       if (r == FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket) {
         it = peers.erase(it);
       } else {
-        GPR_ASSERT(r == FakeUdpAndTcpServer::ProcessReadResult::kContinueReading);
+        GPR_ASSERT(r ==
+                   FakeUdpAndTcpServer::ProcessReadResult::kContinueReading);
         it++;
       }
     }

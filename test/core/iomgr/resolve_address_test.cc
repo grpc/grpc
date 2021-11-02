@@ -20,9 +20,9 @@
 
 #include <string.h>
 
-#include "absl/strings/match.h"
-
 #include <address_sorting/address_sorting.h>
+
+#include "absl/strings/match.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
