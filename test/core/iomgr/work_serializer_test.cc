@@ -35,12 +35,24 @@
 namespace {
 TEST(WorkSerializerTest, NoOp) { grpc_core::WorkSerializer lock; }
 
-TEST(WorkSerializerTest, ExecuteOne) {
+TEST(WorkSerializerTest, ExecuteOneRun) {
   grpc_core::WorkSerializer lock;
   gpr_event done;
   gpr_event_init(&done);
   lock.Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
            DEBUG_LOCATION);
+  EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
+              nullptr);
+}
+
+TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
+  grpc_core::WorkSerializer lock;
+  gpr_event done;
+  gpr_event_init(&done);
+  lock.Schedule([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
+                DEBUG_LOCATION);
+  EXPECT_EQ(gpr_event_get(&done), nullptr);
+  lock.DrainQueue();
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
 }
