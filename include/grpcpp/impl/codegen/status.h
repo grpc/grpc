@@ -93,6 +93,9 @@ class Status {
         "Mismatched status code");
   }
 
+  explicit Status(absl::Status&& status)
+      : status_(std::forward<absl::Status>(status)) {}
+
   /// Construct an instance with associated \a code and \a error_message.
   /// It is an error to construct an OK status with non-empty \a error_message.
   Status(StatusCode code, const std::string& error_message)

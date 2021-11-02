@@ -111,8 +111,10 @@ TEST(SetTest, ValidScopeErrorCode) {
     Status s = SetErrorDetails(expected, &to);
     EXPECT_TRUE(s.ok());
     EXPECT_EQ(c, to.error_code());
-    EXPECT_EQ(expected.message(), to.error_message());
-    EXPECT_EQ(expected.SerializeAsString(), to.error_details());
+    if (!s.ok()) {
+      EXPECT_EQ(expected.message(), to.error_message());
+      EXPECT_EQ(expected.SerializeAsString(), to.error_details());
+    }
   }
 }
 
