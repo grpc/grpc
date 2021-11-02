@@ -351,6 +351,7 @@ static void inject_non_responsive_dns_server(ares_channel channel) {
   // Configure a non-responsive DNS server at the front of c-ares's nameserver
   // list.
   struct ares_addr_port_node dns_server_addrs[1];
+  memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
   dns_server_addrs[0].family = AF_INET6;
   (reinterpret_cast<char*>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
@@ -378,13 +379,12 @@ static void test_cancel_with_non_responsive_dns_server(void) {
                           grpc_schedule_on_exec_ctx),
       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
-  r.reset();                           // cancel the request
+  r.reset();                           // cancel the resolution
   grpc_core::ExecCtx::Get()->Flush();  // let cancellation work finish
   poll_pollset_until_request_done(&args);
   args_finish(&args);
   // reset altered global state
   grpc_ares_test_only_inject_config = prev_test_only_inject_config;
-  GPR_ASSERT(0);
 }
 
 typedef struct mock_ipv6_disabled_source_addr_factory {

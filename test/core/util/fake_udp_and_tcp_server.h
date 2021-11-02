@@ -90,6 +90,10 @@ class FakeUdpAndTcpServer {
               port_, errno);
       abort();
     }
+    if (fcntl(udp_socket_, F_SETFL, O_NONBLOCK) != 0) {
+      gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on socket: %d", errno);
+      abort();
+    }
     if (fcntl(accept_socket_, F_SETFL, O_NONBLOCK) != 0) {
       gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on socket: %d", errno);
       abort();
@@ -214,6 +218,11 @@ class FakeUdpAndTcpServer {
     int total_bytes_sent_ = 0;
   };
 
+  void ReadFromUdpSocket() {
+    char buf[100];
+    recvfrom(udp_socket_, buf, sizeof(buf), 0, nullptr, nullptr);
+  }
+
   // Run a loop that periodically, every 10 ms:
   //   1) Checks if there are any new TCP connections to accept.
   //   2) Checks if any data has arrived yet on established connections,
@@ -221,6 +230,7 @@ class FakeUdpAndTcpServer {
   static void RunServerLoop(FakeUdpAndTcpServer* self) {
     std::set<std::unique_ptr<FakeUdpAndTcpServerPeer>> peers;
     while (!gpr_event_get(&self->stop_ev_)) {
+      // handle TCP connections
       int p = accept(self->accept_socket_, nullptr, nullptr);
       if (p == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
         gpr_log(GPR_ERROR, "Failed to accept connection: %d", errno);
@@ -253,6 +263,8 @@ class FakeUdpAndTcpServer {
           it++;
         }
       }
+      // read from the UDP socket
+      self->ReadFromUdpSocket();
       gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_millis(10, GPR_TIMESPAN)));
     }
