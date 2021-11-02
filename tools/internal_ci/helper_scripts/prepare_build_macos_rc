@@ -168,7 +168,7 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  find /usr/local -name php* || true
+  find /usr/include -name php* || true
   export LDFLAGS="-L/usr/local/opt/php@7.1/lib $LDFLAGS"
   export CPPFLAGS="-I/usr/local/opt/php@7.1/include $CPPFLAGS"
   export PATH="/usr/local/opt/php@7.1/bin:/usr/local/opt/php@7.1/sbin:$PATH"
