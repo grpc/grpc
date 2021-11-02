@@ -101,10 +101,10 @@ class Status {
   /// Construct an instance with \a code,  \a error_message and
   /// \a error_details. It is an error to construct an OK status with non-empty
   /// \a error_message and/or \a error_details.
-  template <typename T>
-  Status(StatusCode code, const std::string& error_message, T error_details) {
-    Nope<T>::DoTheRightThing();
-  }
+  Status(StatusCode code, const std::string& error_message,
+         const std::string& error_details)
+      : status_(static_cast<absl::StatusCode>(code), error_message),
+        error_details_(error_details) {}
 
   // Pre-defined special status objects.
   /// An OK pre-defined instance.
@@ -123,7 +123,7 @@ class Status {
   }
   /// Return the (binary) error details.
   // Usually it contains a serialized google.rpc.Status proto.
-  std::string error_details() const;
+  std::string error_details() const { return error_details_; }
 
   /// Is the status OK?
   bool ok() const { return status_.ok(); }
@@ -138,6 +138,7 @@ class Status {
 
  private:
   absl::Status status_;
+  std::string error_details_;
 };
 
 }  // namespace grpc
