@@ -33,29 +33,34 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/match.h"
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
-#include "test/core/util/memory_counters.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 #include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+
+#ifdef GPR_WINDOWS
+#include "src/core/lib/iomgr/sockaddr_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
+#define CLOSE_SOCKET closesocket
+#else
+#include "src/core/lib/iomgr/sockaddr_posix.h"
+#define BAD_SOCKET_RETURN_VAL (-1)
+#define CLOSE_SOCKET close
+#endif
 
 class FakeUdpAndTcpServer {
  public:
-  enum ProcessReadResult {
-    CONTINUE_READING,
-    CLOSE_SOCKET,
+  enum class ProcessReadResult {
+    kContinueReading = 0,
+    kCloseSocket,
   };
 
   enum class AcceptMode {
@@ -71,33 +76,52 @@ class FakeUdpAndTcpServer {
       : accept_mode_(accept_mode), process_read_cb_(process_read_cb) {
     port_ = grpc_pick_unused_port_or_die();
     udp_socket_ = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (udp_socket_ == -1) {
+    if (udp_socket_ == BAD_SOCKET_RETURN_VAL) {
       gpr_log(GPR_DEBUG, "Failed to create UDP ipv6 socket: %d", errno);
-      abort();
+      GPR_ASSERT(0);
     }
     accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
     address_ = absl::StrCat("[::]:", port_);
-    GPR_ASSERT(accept_socket_ != -1);
-    if (accept_socket_ == -1) {
+    if (accept_socket_ == BAD_SOCKET_RETURN_VAL) {
       gpr_log(GPR_ERROR, "Failed to create TCP IPv6 socket: %d", errno);
-      abort();
+      GPR_ASSERT(0);
     }
+#ifdef GPR_WINDOWS
+    char val = 1;
+    if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
+        SOCKET_ERROR) {
+      gpr_log(GPR_DEBUG,
+              "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+      GPR_ASSERT(0);
+    }
+    grpc_error_handle non_block_error;
+    non_block_error = grpc_tcp_set_non_block(udp_socket_);
+    if (non_block_error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d", grpc_error_std_string(non_block_error).c_str());
+      GPR_ASSERT(0);
+    }
+    non_block_error = grpc_tcp_set_non_block(accept_socket_);
+    if (non_block_error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d", grpc_error_std_string(non_block_error).c_str());
+      GPR_ASSERT(0);
+    }
+#else
     int val = 1;
-    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
-                   sizeof(val)) != 0) {
-      gpr_log(GPR_ERROR,
-              "Failed to set SO_REUSEADDR on socket bound to [::1]:%d : %d",
-              port_, errno);
-      abort();
+    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
+        0) {
+      gpr_log(GPR_DEBUG,
+              "Failed to set SO_REUSEADDR on socket [::1]:%d", port_);
+      GPR_ASSERT(0);
     }
     if (fcntl(udp_socket_, F_SETFL, O_NONBLOCK) != 0) {
       gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on socket: %d", errno);
-      abort();
+      GPR_ASSERT(0);
     }
     if (fcntl(accept_socket_, F_SETFL, O_NONBLOCK) != 0) {
       gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on socket: %d", errno);
-      abort();
+      GPR_ASSERT(0);
     }
+#endif
     sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
@@ -105,19 +129,19 @@ class FakeUdpAndTcpServer {
     (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
     if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
              sizeof(addr)) != 0) {
-      gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port_);
-      abort();
+      gpr_log(GPR_DEBUG, "Failed to bind UDP socket to [::1]:%d", port_);
+      GPR_ASSERT(0);
     }
     if (bind(accept_socket_, reinterpret_cast<const sockaddr*>(&addr),
              sizeof(addr)) != 0) {
       gpr_log(GPR_ERROR, "Failed to bind TCP socket to [::1]:%d : %d", port_,
               errno);
-      abort();
+      GPR_ASSERT(0);
     }
     if (listen(accept_socket_, 100)) {
       gpr_log(GPR_ERROR, "Failed to listen on socket bound to [::1]:%d : %d",
               port_, errno);
-      abort();
+      GPR_ASSERT(0);
     }
     gpr_event_init(&stop_ev_);
     run_server_loop_thd_ = absl::make_unique<std::thread>(RunServerLoop, this);
@@ -132,8 +156,8 @@ class FakeUdpAndTcpServer {
     gpr_log(GPR_DEBUG,
             "FakeUdpAndTcpServer join server "
             "thread complete");
-    close(accept_socket_);
-    close(udp_socket_);
+    CLOSE_SOCKET(accept_socket_);
+    CLOSE_SOCKET(udp_socket_);
   }
 
   const char* address() { return address_.c_str(); }
@@ -146,7 +170,7 @@ class FakeUdpAndTcpServer {
         read_error != EWOULDBLOCK) {
       gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
               errno);
-      abort();
+      GPR_ASSERT(0);
     }
     if (bytes_received_size >= 0) {
       gpr_log(GPR_DEBUG,
@@ -154,9 +178,9 @@ class FakeUdpAndTcpServer {
               "the "
               "connection.",
               bytes_received_size, s);
-      return CLOSE_SOCKET;
+      return ProcessReadResult::kCloseSocket;
     }
-    return CONTINUE_READING;
+    return ProcessReadResult::kContinueReading;
   }
 
   static ProcessReadResult CloseSocketUponCloseFromPeer(int bytes_received_size,
@@ -165,7 +189,7 @@ class FakeUdpAndTcpServer {
         read_error != EWOULDBLOCK) {
       gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
               errno);
-      abort();
+      GPR_ASSERT(0);
     }
     if (bytes_received_size == 0) {
       // The peer has shut down the connection.
@@ -174,16 +198,16 @@ class FakeUdpAndTcpServer {
               "the "
               "connection.",
               s);
-      return CLOSE_SOCKET;
+      return ProcessReadResult::kCloseSocket;
     }
-    return CONTINUE_READING;
+    return ProcessReadResult::kContinueReading;
   }
 
   class FakeUdpAndTcpServerPeer {
    public:
     explicit FakeUdpAndTcpServerPeer(int fd) : fd_(fd) {}
 
-    ~FakeUdpAndTcpServerPeer() { close(fd_); }
+    ~FakeUdpAndTcpServerPeer() { CLOSE_SOCKET(fd_); }
 
     void MaybeContinueSendingSettings() {
       // https://tools.ietf.org/html/rfc7540#section-4.1
@@ -234,7 +258,7 @@ class FakeUdpAndTcpServer {
       int p = accept(self->accept_socket_, nullptr, nullptr);
       if (p == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
         gpr_log(GPR_ERROR, "Failed to accept connection: %d", errno);
-        abort();
+        GPR_ASSERT(0);
       }
       if (p != -1) {
         gpr_log(GPR_DEBUG, "accepted peer socket: %d", p);
@@ -242,7 +266,7 @@ class FakeUdpAndTcpServer {
           gpr_log(GPR_ERROR,
                   "Failed to set O_NONBLOCK on peer socket:%d errno:%d", p,
                   errno);
-          abort();
+          GPR_ASSERT(0);
         }
         peers.insert(absl::make_unique<FakeUdpAndTcpServerPeer>(p));
       }
@@ -256,10 +280,10 @@ class FakeUdpAndTcpServer {
         int bytes_received_size = recv(peer->fd(), buf, 100, 0);
         ProcessReadResult r =
             self->process_read_cb_(bytes_received_size, errno, peer->fd());
-        if (r == CLOSE_SOCKET) {
+        if (r == ProcessReadResult::kCloseSocket) {
           it = peers.erase(it);
         } else {
-          GPR_ASSERT(r == CONTINUE_READING);
+          GPR_ASSERT(r == ProcessReadResult::kContinueReading);
           it++;
         }
       }
