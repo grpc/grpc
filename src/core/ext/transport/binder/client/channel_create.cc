@@ -33,11 +33,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <android/binder_auto_utils.h>
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
-#include <android/binder_interface_utils.h>
-
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
