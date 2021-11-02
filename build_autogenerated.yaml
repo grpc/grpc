@@ -3850,6 +3850,7 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.h
   src:
   - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc_test_util
   args:
@@ -3875,6 +3876,7 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.h
   src:
   - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc_test_util
   args:
@@ -4473,6 +4475,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc++
   - grpc_test_util
@@ -4827,6 +4830,7 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
   - grpc++_test_config
