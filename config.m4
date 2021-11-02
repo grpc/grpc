@@ -685,7 +685,6 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
-    third_party/abseil-cpp/absl/base/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
@@ -706,8 +705,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
-    third_party/abseil-cpp/absl/hash/internal/wyhash.cc \
+    third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
+    third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -718,7 +718,14 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_internal.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_btree.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
+    third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
+    third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
+    third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \
     third_party/abseil-cpp/absl/strings/internal/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/memutil.cc \
     third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
@@ -1257,6 +1264,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/profiling/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)

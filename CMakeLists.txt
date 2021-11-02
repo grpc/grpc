@@ -114,6 +114,13 @@ set(gRPC_ABSL_USED_TARGETS
   absl_container_common
   absl_container_memory
   absl_cord
+  absl_cord_internal
+  absl_cordz_functions
+  absl_cordz_handle
+  absl_cordz_info
+  absl_cordz_statistics
+  absl_cordz_update_scope
+  absl_cordz_update_tracker
   absl_core_headers
   absl_debugging_internal
   absl_demangle_internal
@@ -137,6 +144,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_kernel_timeout_internal
   absl_layout
   absl_log_severity
+  absl_low_level_hash
   absl_malloc_internal
   absl_memory
   absl_numeric_representation
@@ -144,6 +152,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_raw_hash_map
   absl_raw_hash_set
   absl_raw_logging_internal
+  absl_sample_recorder
   absl_span
   absl_spinlock_wait
   absl_stacktrace
@@ -161,7 +170,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_type_traits
   absl_utility
   absl_variant
-  absl_wyhash
   absl_meta
 )
 
