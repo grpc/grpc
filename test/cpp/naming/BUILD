@@ -44,9 +44,9 @@ grpc_cc_test(
         "//:grpc++",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
-        "//test/cpp/util:fake_udp_and_tcp_server",
     ],
 )
 
