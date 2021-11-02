@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+#!/bin/bash
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 180
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f portability linux c++ --inner_jobs 8 -j 4 --internal_ci --build_only --extra_args -r xds_end2end_test"
-}
+while IFS= read -r line; do
+  echo "$(date) - $line"
+done
