@@ -1110,7 +1110,7 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
         on_resolve_address_done_(on_resolve_address_done) {
     GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                       grpc_schedule_on_exec_ctx);
-    Ref().release(); // ref held by resolution
+    Ref().release();  // ref held by resolution
     ares_request_ = grpc_dns_lookup_ares(
         "" /* dns_server */, name, default_port, interested_parties,
         &on_dns_lookup_done_, &addresses_, nullptr /* balancer_addresses */,
