@@ -39,6 +39,7 @@
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/tcp_windows.h"
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #define CLOSE_SOCKET closesocket
 #else
@@ -84,23 +85,23 @@ class FakeUdpAndTcpServer {
     }
 #ifdef GPR_WINDOWS
     char val = 1;
-    if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
+    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
         SOCKET_ERROR) {
       gpr_log(GPR_DEBUG,
-              "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d",
-              port);
+              "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d, errno: %d",
+              port_, errno);
       GPR_ASSERT(0);
     }
     grpc_error_handle set_non_block_error;
     set_non_block_error = grpc_tcp_set_non_block(udp_socket_);
     if (set_non_block_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
+      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
               grpc_error_std_string(set_non_block_error).c_str());
       GPR_ASSERT(0);
     }
     set_non_block_error = grpc_tcp_set_non_block(accept_socket_);
     if (set_non_block_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
+      gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
               grpc_error_std_string(set_non_block_error).c_str());
       GPR_ASSERT(0);
     }
@@ -210,7 +211,7 @@ class FakeUdpAndTcpServer {
 
     void MaybeContinueSendingSettings() {
       // https://tools.ietf.org/html/rfc7540#section-4.1
-      const std::vector<uint8_t> kEmptyHttp2SettingsFrame = {
+      const std::vector<char> kEmptyHttp2SettingsFrame = {
           0x00, 0x00, 0x00,       // length
           0x04,                   // settings type
           0x00,                   // flags
