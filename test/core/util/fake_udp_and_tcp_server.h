@@ -85,10 +85,11 @@ class FakeUdpAndTcpServer {
     }
 #ifdef GPR_WINDOWS
     char val = 1;
-    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
-        SOCKET_ERROR) {
+    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
+                   sizeof(val)) == SOCKET_ERROR) {
       gpr_log(GPR_DEBUG,
-              "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d, errno: %d",
+              "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d, "
+              "errno: %d",
               port_, errno);
       GPR_ASSERT(0);
     }
