@@ -38,8 +38,7 @@ try:
             "third_party/upb/upb/table.c",
             "third_party/upb/upb/text_encode.c",
             "third_party/upb/upb/upb.c",
-            "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
-            "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c",
+            "third_party/upb/cmake/google/protobuf/descriptor.upb.c",
         ],
         'headers': [
             "third_party/upb/upb/decode_fast.h",
@@ -59,8 +58,7 @@ try:
             "third_party/upb/upb/upb_internal.h",
             "third_party/upb/upb/upb.h",
             "third_party/upb/upb/upb.hpp",
-            "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
-            "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h",
+            "third_party/upb/cmake/google/protobuf/descriptor.upb.h",
         ],
         'secure': False,
     }]

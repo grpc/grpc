@@ -120,7 +120,6 @@ proto_files=( \
   "google/api/expr/v1alpha1/checked.proto" \
   "google/api/expr/v1alpha1/syntax.proto" \
   "google/api/http.proto" \
-  "google/protobuf/descriptor.proto" \
   "google/rpc/status.proto" \
   "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/annotations/migrate.proto" \

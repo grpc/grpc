@@ -443,8 +443,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/empty.upb.c" role="src" />
@@ -647,8 +645,6 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/http.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c" role="src" />
@@ -2082,6 +2078,8 @@
     <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/cmake/google/protobuf/descriptor.upb.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/cmake/google/protobuf/descriptor.upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.c" role="src" />

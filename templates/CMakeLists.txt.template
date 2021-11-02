@@ -583,9 +583,9 @@
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_UPB_CMAKE_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
@@ -664,9 +664,9 @@
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_UPB_CMAKE_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':

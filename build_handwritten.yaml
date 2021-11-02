@@ -184,7 +184,7 @@ defaults:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
-      -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
+      -Ithird_party/upb -Ithird_party/upb/cmake -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
       -Ithird_party/xxhash
     LDFLAGS: -g
   zlib:
