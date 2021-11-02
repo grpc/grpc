@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include "absl/strings/match.h"
+
 #include <address_sorting/address_sorting.h>
 
 #include <grpc/grpc.h>

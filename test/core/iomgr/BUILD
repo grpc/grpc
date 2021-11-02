@@ -178,6 +178,9 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -193,6 +196,9 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
