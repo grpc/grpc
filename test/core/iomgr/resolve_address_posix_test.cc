@@ -127,14 +127,6 @@ static void must_succeed(void* argsp, grpc_error_handle err) {
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-static void must_fail(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
-
 static void resolve_address_must_succeed(const char* target) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;

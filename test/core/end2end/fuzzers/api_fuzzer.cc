@@ -114,7 +114,7 @@ namespace grpc_core {
 class NoOpAsyncResolveAddress : public AsyncResolveAddress {
  public:
   // cancellation not implemented
-  void Orphan() override {}
+  void Orphan() override { Unref(); }
 };
 
 }  // namespace grpc_core

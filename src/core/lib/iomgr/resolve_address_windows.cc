@@ -139,7 +139,7 @@ class NativeAsyncResolveAddress : public AsyncResolveAddress {
  public:
   // Force caller to wait for the callback's completion. Note
   // that no I/O polling is required for the resolution to finish.
-  void Orphan() override {}
+  void Orphan() override { Unref(); }
 };
 
 }  // namespace grpc_core
