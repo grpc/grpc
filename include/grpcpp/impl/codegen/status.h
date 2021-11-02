@@ -29,6 +29,9 @@
 
 namespace grpc {
 
+template <typename T>
+struct Nope;
+
 /// Did it work? If it didn't, why?
 ///
 /// See \a grpc::StatusCode for details on the available code and their meaning.
@@ -98,8 +101,10 @@ class Status {
   /// Construct an instance with \a code,  \a error_message and
   /// \a error_details. It is an error to construct an OK status with non-empty
   /// \a error_message and/or \a error_details.
-  Status(StatusCode code, const std::string& error_message,
-         const std::string& error_details);
+  template <typename T>
+  Status(StatusCode code, const std::string& error_message, T error_details) {
+    Nope<T>::DoTheRightThing();
+  }
 
   // Pre-defined special status objects.
   /// An OK pre-defined instance.

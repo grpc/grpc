@@ -3927,6 +3927,9 @@ grpc_cc_library(
         "grpc++_internal_hdrs_only",
         "grpc_codegen",
     ],
+    external_deps = [
+        "absl/status"
+    ]
 )
 
 grpc_cc_library(
