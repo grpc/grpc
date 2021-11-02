@@ -257,25 +257,20 @@ class FakeUdpAndTcpServer {
     while (!gpr_event_get(&self->stop_ev_)) {
       // handle TCP connections
       int p = accept(self->accept_socket_, nullptr, nullptr);
-      if (p == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-        gpr_log(GPR_ERROR, "Failed to accept connection: %d", errno);
-        GPR_ASSERT(0);
-      }
-      if (p != -1) {
+      if (p != BAD_SOCKET_RETURN_VAL) {
         gpr_log(GPR_DEBUG, "accepted peer socket: %d", p);
 #ifdef GPR_WINDOWS
         grpc_error_handle set_non_block_error;
         set_non_block_error = grpc_tcp_set_non_block(p);
         if (set_non_block_error != GRPC_ERROR_NONE) {
-          gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %d",
+          gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
                   grpc_error_std_string(set_non_block_error).c_str());
           GPR_ASSERT(0);
         }
 #else
         if (fcntl(p, F_SETFL, O_NONBLOCK) != 0) {
           gpr_log(GPR_ERROR,
-                  "Failed to set O_NONBLOCK on peer socket:%d errno:%d", p,
-                  errno);
+                  "Failed to configure non-blocking socket, errno: %d", errno);
           GPR_ASSERT(0);
         }
 #endif

@@ -138,7 +138,7 @@ static void must_fail_expect_cancelled_error_message(void* argsp,
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-static void dont_care(void* argsp, grpc_error_handle err) {
+static void dont_care(void* argsp, grpc_error_handle /* err */) {
   args_struct* args = static_cast<args_struct*>(argsp);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
