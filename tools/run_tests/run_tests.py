@@ -1079,13 +1079,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-core-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
