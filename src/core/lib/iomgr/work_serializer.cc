@@ -56,7 +56,7 @@ void WorkSerializer::WorkSerializerImpl::Run(
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
   }
-  const size_t prev_size = size_.fetch_add(1);
+  const size_t prev_size = size_.fetch_add(1, std::memory_order_acq_rel);
   // The work serializer should not have been orphaned.
   GPR_DEBUG_ASSERT(prev_size > 0);
   // If there is no other callback executing right now on this work serializer,
@@ -67,8 +67,8 @@ void WorkSerializer::WorkSerializerImpl::Run(
       gpr_log(GPR_INFO, "  Executing immediately");
     }
     callback();
-    size_.fetch_sub(1);
-    draining_.store(false);
+    size_.fetch_sub(1, std::memory_order_acq_rel);
+    draining_.store(false, std::memory_order_release);
     // Other callbacks might have been added while this callback was executing.
     DrainQueue();
   } else {
@@ -91,7 +91,7 @@ void WorkSerializer::WorkSerializerImpl::Schedule(
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback %p [%s:%d]",
             this, cb_wrapper, location.file(), location.line());
   }
-  size_.fetch_add(1);
+  size_.fetch_add(1, std::memory_order_acq_rel);
   queue_.Push(&cb_wrapper->mpscq_node);
 }
 
@@ -99,7 +99,7 @@ void WorkSerializer::WorkSerializerImpl::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   }
-  size_t prev_size = size_.fetch_sub(1);
+  size_t prev_size = size_.fetch_sub(1, std::memory_order_acq_rel);
   if (prev_size == 1) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Destroying");
@@ -119,17 +119,19 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
     // callback.
     while (true) {
       bool expected = false;
-      if (!draining_.compare_exchange_strong(expected, true)) {
+      if (!draining_.compare_exchange_strong(expected, true,
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_relaxed)) {
         // Another thread is currently draining the queue. No need to do
         // anything.
         return;
       }
-      if (size_.load() == 1) {
+      if (size_.load(std::memory_order_acquire) == 1) {
         // There is nothing to drain.
-        draining_.store(false);
+        draining_.store(false, std::memory_order_release);
         // Check again before returning in case a callback was scheduled between
         // the load and the store.
-        if (size_.load() == 1) {
+        if (size_.load(std::memory_order_acquire) == 1) {
           return;
         } else {
           continue;
@@ -159,7 +161,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
       }
       cb_wrapper->callback();
       delete cb_wrapper;
-      size_t prev_size = size_.fetch_sub(1);
+      size_t prev_size = size_.fetch_sub(1, std::memory_order_acq_rel);
       GPR_DEBUG_ASSERT(prev_size >= 1);
       // It is possible that while draining the queue, the last callback ended
       // up orphaning the work serializer. In that case, delete the object.
@@ -177,7 +179,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
         break;
       }
     }
-    draining_.store(false);
+    draining_.store(false, std::memory_order_release);
   }
 }
 
