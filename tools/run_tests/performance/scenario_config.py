@@ -566,8 +566,8 @@ class CXXLanguage(Language):
                         unconstrained_client=synchronicity,
                         secure=secure,
                         minimal_stack=not secure,
-                        server_threads_per_cq=3,
-                        client_threads_per_cq=3,
+                        server_threads_per_cq=2,
+                        client_threads_per_cq=2,
                         categories=inproc_categories + maybe_scalable)
 
                     # TODO(vjpai): Re-enable this test. It has a lot of timeouts
