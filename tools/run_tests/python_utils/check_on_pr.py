@@ -180,10 +180,10 @@ def label_significance_on_pr(name, change):
         json=[
             "%s/%s" % (name, v) for v in _CHANGE_LABELS.values() if v != value
         ])
-    print('Result of Deleting Labels on PR:', json.dumps(resp.json(), indent=2))
+    print('Result of Deleting Labels on PR:', resp.text)
     resp = _call(
         '/repos/%s/issues/%s/labels' %
         (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
         method='POST',
         json=["%s/%s" % (name, value)])
-    print('Result of Adding Label on PR:', json.dumps(resp.json(), indent=2))
+    print('Result of Adding Label on PR:', resp.text)
