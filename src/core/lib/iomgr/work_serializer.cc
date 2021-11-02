@@ -141,7 +141,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
     DrainQueueOwned();
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership
-    // count we just added and queue a dummy callback.
+    // count we just added and queue a no-op callback.
     refs_.fetch_sub(MakeRefPair(1, 0), std::memory_order_acq_rel);
     CallbackWrapper* cb_wrapper = new CallbackWrapper([]() {}, DEBUG_LOCATION);
     queue_.Push(&cb_wrapper->mpscq_node);
