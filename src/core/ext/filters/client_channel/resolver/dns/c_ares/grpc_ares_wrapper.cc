@@ -1110,6 +1110,7 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
         on_resolve_address_done_(on_resolve_address_done) {
     GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                       grpc_schedule_on_exec_ctx);
+    Ref().release(); // ref held by resolution
     ares_request_ = grpc_dns_lookup_ares(
         "" /* dns_server */, name, default_port, interested_parties,
         &on_dns_lookup_done_, &addresses_, nullptr /* balancer_addresses */,
@@ -1129,6 +1130,7 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
     GRPC_CARES_TRACE_LOG("ResolveAddressAresRequest:%p Orphan ares_request_:%p",
                          this, ares_request_);
     grpc_cancel_ares_request(ares_request_);
+    Unref();
   }
 
   static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress>
@@ -1162,6 +1164,7 @@ class ResolveAddressAresRequest : public grpc_core::AsyncResolveAddress {
     }
     GRPC_ERROR_REF(error);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done_, error);
+    r->Unref();
   }
 
   /** the pointer to receive the resolved addresses */
