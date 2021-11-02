@@ -78,7 +78,6 @@ struct call_data {
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
-  grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
   // State for handling recv_initial_metadata ops.
@@ -197,7 +196,7 @@ static void recv_initial_metadata_ready(void* user_data,
     error = client_filter_incoming_metadata(calld->recv_initial_metadata);
     calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready;
   calld->original_recv_initial_metadata_ready = nullptr;
@@ -224,7 +223,7 @@ static void recv_trailing_metadata_ready(void* user_data,
   if (error == GRPC_ERROR_NONE) {
     error = client_filter_incoming_metadata(calld->recv_trailing_metadata);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   error = grpc_error_add_child(
       error, GRPC_ERROR_REF(calld->recv_initial_metadata_error));
@@ -345,10 +344,12 @@ static grpc_error_handle update_path_for_get(
                           true /* url_safe */, false /* multi_line */);
   gpr_free(payload_bytes);
   /* remove trailing unused memory and add trailing 0 to terminate string */
-  char* t = reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);
+  char* t =
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice) +
+      GRPC_SLICE_LENGTH(path_slice);
   /* safe to use strlen since base64_encode will always add '\0' */
-  path_with_query_slice =
-      grpc_slice_sub_no_ref(path_with_query_slice, 0, strlen(t));
+  path_with_query_slice = grpc_slice_sub_no_ref(
+      path_with_query_slice, 0, GRPC_SLICE_LENGTH(path_slice) + strlen(t));
   /* substitute previous path with the new path+query */
   grpc_mdelem mdelem_path_and_query =
       grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);
@@ -443,9 +444,6 @@ static void http_client_start_transport_stream_op_batch(
         GRPC_BATCH_SCHEME);
     remove_if_present(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_TE);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
         GRPC_BATCH_CONTENT_TYPE);
     remove_if_present(
         batch->payload->send_initial_metadata.send_initial_metadata,
@@ -461,10 +459,8 @@ static void http_client_start_transport_stream_op_batch(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->scheme, channeld->static_scheme, GRPC_BATCH_SCHEME);
     if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS, GRPC_BATCH_TE);
-    if (error != GRPC_ERROR_NONE) goto done;
+    batch->payload->send_initial_metadata.send_initial_metadata->Set(
+        grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,

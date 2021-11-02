@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {
@@ -58,8 +59,7 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
                                                bool is_client) {
   GPR_ASSERT(fixture != nullptr);
   GPR_ASSERT(fixture->config != nullptr);
-  handshaker_args* args =
-      static_cast<handshaker_args*>(gpr_zalloc(sizeof(*args)));
+  handshaker_args* args = new handshaker_args();
   args->fixture = fixture;
   args->handshake_buffer_size = fixture->handshake_buffer_size;
   args->handshake_buffer =
@@ -72,7 +72,7 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
 static void handshaker_args_destroy(handshaker_args* args) {
   gpr_free(args->handshake_buffer);
   GRPC_ERROR_UNREF(args->error);
-  gpr_free(args);
+  delete args;
 }
 
 static void do_handshaker_next(handshaker_args* args);
@@ -583,8 +583,7 @@ void tsi_test_frame_protector_config_destroy(
 }
 
 static tsi_test_channel* tsi_test_channel_create() {
-  tsi_test_channel* channel =
-      static_cast<tsi_test_channel*>(gpr_zalloc(sizeof(*channel)));
+  tsi_test_channel* channel = grpc_core::Zalloc<tsi_test_channel>();
   channel->client_channel =
       static_cast<uint8_t*>(gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE));
   channel->server_channel =

@@ -45,6 +45,7 @@ _COPYRIGHT = """# Copyright 2021 The gRPC Authors
 
 
 def _mutate_scenario(scenario_json):
+    """Modifies vanilla benchmark scenario config to make it more suitable for running as a unit test."""
     # tweak parameters to get fast test times
     scenario_json = dict(scenario_json)
     scenario_json['warmup_seconds'] = 0
@@ -53,11 +54,23 @@ def _mutate_scenario(scenario_json):
     if scenario_json['client_config'][
             'client_type'] == 'SYNC_CLIENT' or scenario_json['server_config'][
                 'server_type'] == 'SYNC_SERVER':
+        # reduce the number of threads needed for scenarios that use synchronous API
         outstanding_rpcs_divisor = 10
     scenario_json['client_config']['outstanding_rpcs_per_channel'] = max(
-        1,
-        int(scenario_json['client_config']['outstanding_rpcs_per_channel'] /
-            outstanding_rpcs_divisor))
+        1, scenario_json['client_config']['outstanding_rpcs_per_channel'] //
+        outstanding_rpcs_divisor)
+    # Some scenarios use high channel count since when actually
+    # benchmarking, we want to saturate the machine that runs the benchmark.
+    # For unit test, this is an overkill.
+    max_client_channels = 16
+    if scenario_json['client_config']['rpc_type'] == 'STREAMING_FROM_SERVER':
+        # streaming from server scenarios tend to have trouble shutting down
+        # quickly if there are too many channels.
+        max_client_channels = 4
+
+    scenario_json['client_config']['client_channels'] = min(
+        max_client_channels, scenario_json['client_config']['client_channels'])
+
     return scenario_config.remove_nonproto_fields(scenario_json)
 
 

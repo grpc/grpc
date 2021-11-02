@@ -794,6 +794,7 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //       connection is NOT closed until the server is done with all those calls.
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
+  absl::Notification* await_requests = nullptr;
   ChannelBroadcaster broadcaster;
   {
     // Wait for startup to be finished.  Locks mu_global.
@@ -820,7 +821,12 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       KillPendingWorkLocked(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
     }
-    ShutdownUnrefOnShutdownCall();
+    await_requests = ShutdownUnrefOnShutdownCall();
+  }
+  // We expect no new requests but there can still be requests in-flight.
+  // Wait for them to complete before proceeding.
+  if (await_requests != nullptr) {
+    await_requests->WaitForNotification();
   }
   // Shutdown listeners.
   for (auto& listener : listeners_) {
@@ -1392,7 +1398,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     calld->recv_initial_metadata_->Remove(GRPC_BATCH_PATH);
     calld->recv_initial_metadata_->Remove(GRPC_BATCH_AUTHORITY);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {
@@ -1469,9 +1475,11 @@ void Server::CallData::StartTransportStreamOpBatch(
 
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
   grpc_server* c_server = new grpc_server;
   c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
+  grpc_channel_args_destroy(args);
   return c_server;
 }
 

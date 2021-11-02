@@ -62,8 +62,9 @@ class EvaluateArgsTestUtil {
   }
 
  private:
+  ScopedArenaPtr arena_ = MakeScopedArena(1024);
   std::list<grpc_linked_mdelem> metadata_storage_;
-  grpc_metadata_batch metadata_;
+  grpc_metadata_batch metadata_{arena_.get()};
   MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
   grpc_auth_context auth_context_{nullptr};
   EvaluateArgs::PerChannelArgs* channel_args_ = nullptr;

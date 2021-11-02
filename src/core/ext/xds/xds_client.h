@@ -198,12 +198,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
-  //
-  // Currently, there is only one ChannelState object per XdsClient
-  // object, and it has essentially the same lifetime.  But in the
-  // future, when we add federation support, a single XdsClient may have
-  // multiple underlying channels to talk to different xDS servers.
-  class ChannelState : public InternallyRefCounted<ChannelState> {
+  class ChannelState : public DualRefCounted<ChannelState> {
    public:
     template <typename T>
     class RetryableCall;
@@ -231,9 +226,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
-    void SubscribeLocked(const std::string& type_url, const std::string& name)
+    void SubscribeLocked(const std::string& type_url,
+                         const XdsApi::ResourceName& resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-    void UnsubscribeLocked(const std::string& type_url, const std::string& name,
+    void UnsubscribeLocked(const std::string& type_url,
+                           const XdsApi::ResourceName& resource,
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -248,11 +245,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The channel and its status.
     grpc_channel* channel_;
     bool shutting_down_ = false;
-    StateWatcher* watcher_ = nullptr;
+    StateWatcher* watcher_;
 
     // The retryable XDS calls.
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
+
+    // Stores the most recent accepted resource version for each resource type.
+    std::map<std::string /*type*/, std::string /*version*/>
+        resource_type_version_map_;
   };
 
   struct ListenerState {
@@ -290,6 +291,20 @@ class XdsClient : public DualRefCounted<XdsClient> {
     XdsApi::ResourceMetadata meta;
   };
 
+  struct AuthorityState {
+    RefCountedPtr<ChannelState> channel_state;
+    std::map<std::string /*listener_name*/, ListenerState> listener_map;
+    std::map<std::string /*route_config_name*/, RouteConfigState>
+        route_config_map;
+    std::map<std::string /*cluster_name*/, ClusterState> cluster_map;
+    std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map;
+
+    bool HasSubscribedResources() {
+      return !listener_map.empty() || !route_config_map.empty() ||
+             !cluster_map.empty() || !endpoint_map.empty();
+    }
+  };
+
   struct LoadReportState {
     struct LocalityState {
       XdsClusterLocalityStats* locality_stats = nullptr;
@@ -312,6 +327,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
       bool send_all_clusters, const std::set<std::string>& clusters)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  RefCountedPtr<ChannelState> GetOrCreateChannelStateLocked(
+      const XdsBootstrap::XdsServer& server) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
   const grpc_millis request_timeout_;
@@ -321,20 +339,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   Mutex mu_;
 
-  // The channel for communicating with the xds server.
-  OrphanablePtr<ChannelState> chand_ ABSL_GUARDED_BY(mu_);
+  //  Map of existing xDS server channels.
+  std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_
+      ABSL_GUARDED_BY(mu_);
 
-  // One entry for each watched LDS resource.
-  std::map<std::string /*listener_name*/, ListenerState> listener_map_
-      ABSL_GUARDED_BY(mu_);
-  // One entry for each watched RDS resource.
-  std::map<std::string /*route_config_name*/, RouteConfigState>
-      route_config_map_ ABSL_GUARDED_BY(mu_);
-  // One entry for each watched CDS resource.
-  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_
-      ABSL_GUARDED_BY(mu_);
-  // One entry for each watched EDS resource.
-  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_
+  std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
   // Load report data.
@@ -343,9 +352,17 @@ class XdsClient : public DualRefCounted<XdsClient> {
       LoadReportState>
       load_report_map_ ABSL_GUARDED_BY(mu_);
 
-  // Stores the most recent accepted resource version for each resource type.
-  std::map<std::string /*type*/, std::string /*version*/> resource_version_map_
-      ABSL_GUARDED_BY(mu_);
+  // Stores started watchers whose resource name was not parsed successfully,
+  // waiting to be cancelled or reset in Orphan().
+  std::map<ListenerWatcherInterface*, std::unique_ptr<ListenerWatcherInterface>>
+      invalid_listener_watchers_ ABSL_GUARDED_BY(mu_);
+  std::map<RouteConfigWatcherInterface*,
+           std::unique_ptr<RouteConfigWatcherInterface>>
+      invalid_route_config_watchers_ ABSL_GUARDED_BY(mu_);
+  std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
+      invalid_cluster_watchers_ ABSL_GUARDED_BY(mu_);
+  std::map<EndpointWatcherInterface*, std::unique_ptr<EndpointWatcherInterface>>
+      invalid_endpoint_watchers_ ABSL_GUARDED_BY(mu_);
 
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 };

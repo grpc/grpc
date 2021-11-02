@@ -9,7 +9,7 @@
 #include "upb/def.h"
 #include "xds/core/v3/authority.upbdefs.h"
 
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
+extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
 extern const upb_msglayout xds_core_v3_Authority_msginit;
 
@@ -17,19 +17,20 @@ static const upb_msglayout *layouts[1] = {
   &xds_core_v3_Authority_msginit,
 };
 
-static const char descriptor[205] = {'\n', '\033', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'a', 'u', 't', 'h', 'o', 'r', 'i', 't', 'y', '.', 'p', 
-'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 
-'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '\027', 
-'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\"', '(', 
-'\n', '\t', 'A', 'u', 't', 'h', 'o', 'r', 'i', 't', 'y', '\022', '\033', '\n', '\004', 'n', 'a', 'm', 'e', '\030', '\001', ' ', '\001', '(', '\t', 
-'B', '\007', '\372', 'B', '\004', 'r', '\002', '\020', '\001', 'R', '\004', 'n', 'a', 'm', 'e', 'B', '7', '\n', '\033', 'c', 'o', 'm', '.', 'g', 'i', 
-'t', 'h', 'u', 'b', '.', 'u', 'd', 'p', 'a', '.', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\016', 'A', 'u', 
-'t', 'h', 'o', 'r', 'i', 't', 'y', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\010', '\001', 'b', '\006', 'p', 
-'r', 'o', 't', 'o', '3', 
+static const char descriptor[238] = {'\n', '\033', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'a', 'u', 't', 'h', 'o', 'r', 'i', 't', 'y', '.', 'p', 
+'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\037', 'x', 'd', 's', '/', 'a', 'n', 
+'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', 
+'\032', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', 
+'\"', '(', '\n', '\t', 'A', 'u', 't', 'h', 'o', 'r', 'i', 't', 'y', '\022', '\033', '\n', '\004', 'n', 'a', 'm', 'e', '\030', '\001', ' ', '\001', 
+'(', '\t', 'B', '\007', '\372', 'B', '\004', 'r', '\002', '\020', '\001', 'R', '\004', 'n', 'a', 'm', 'e', 'B', 'V', '\n', '\026', 'c', 'o', 'm', '.', 
+'g', 'i', 't', 'h', 'u', 'b', '.', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\016', 'A', 'u', 't', 'h', 'o', 
+'r', 'i', 't', 'y', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', '\"', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'c', 
+'n', 'c', 'f', '/', 'x', 'd', 's', '/', 'g', 'o', '/', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '\322', '\306', '\244', 
+'\341', '\006', '\002', '\010', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[3] = {
-  &udpa_annotations_status_proto_upbdefinit,
+  &xds_annotations_v3_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
@@ -38,5 +39,5 @@ upb_def_init xds_core_v3_authority_proto_upbdefinit = {
   deps,
   layouts,
   "xds/core/v3/authority.proto",
-  UPB_STRVIEW_INIT(descriptor, 205)
+  UPB_STRVIEW_INIT(descriptor, 238)
 };
