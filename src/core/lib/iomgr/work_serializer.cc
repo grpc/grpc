@@ -52,8 +52,35 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
 
 void WorkSerializer::WorkSerializerImpl::Run(
     std::function<void()> callback, const grpc_core::DebugLocation& location) {
-  Schedule(std::move(callback), location);
-  DrainQueue();
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
+            this, location.file(), location.line());
+  }
+  const size_t prev_size = size_.fetch_add(1);
+  // The work serializer should not have been orphaned.
+  GPR_DEBUG_ASSERT(prev_size > 0);
+  // If there is no other callback executing right now on this work serializer,
+  // try to grab the lock and execute the callback immediately.
+  bool expected = false;
+  if (prev_size == 1 && draining_.compare_exchange_strong(expected, true)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+      gpr_log(GPR_INFO, "  Executing immediately");
+    }
+    callback();
+    size_.fetch_sub(1);
+    draining_.store(false);
+    // Other callbacks might have been added while this callback was executing.
+    DrainQueue();
+  } else {
+    CallbackWrapper* cb_wrapper =
+        new CallbackWrapper(std::move(callback), location);
+    // There already are closures executing on this work serializer. Simply add
+    // this closure to the queue.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+      gpr_log(GPR_INFO, "  Scheduling on queue : item %p", cb_wrapper);
+    }
+    queue_.Push(&cb_wrapper->mpscq_node);
+  }
 }
 
 void WorkSerializer::WorkSerializerImpl::Schedule(
@@ -64,8 +91,8 @@ void WorkSerializer::WorkSerializerImpl::Schedule(
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback %p [%s:%d]",
             this, cb_wrapper, location.file(), location.line());
   }
-  queue_.Push(&cb_wrapper->mpscq_node);
   size_.fetch_add(1);
+  queue_.Push(&cb_wrapper->mpscq_node);
 }
 
 void WorkSerializer::WorkSerializerImpl::Orphan() {
@@ -120,7 +147,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
       while ((cb_wrapper = reinterpret_cast<CallbackWrapper*>(
                   queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
         // This can happen due to a race condition within the mpscq
-        // implementation
+        // implementation or because of a race with Run()/Schedule().
         if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
           gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
         }

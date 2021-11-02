@@ -51,9 +51,10 @@ class ABSL_LOCKABLE WorkSerializer {
 
   ~WorkSerializer();
 
-  // Runs a given callback on the work serializer. Equivalent to -
-  //   work_serializer.Schedule(callback, location);
-  //   work_serializer.DrainQueue();
+  // Runs a given callback on the work serializer. If there is no other thread
+  // currently executing the WorkSerializer, the callback is run immediately. In
+  // this case, the current thread is also borrowed for draining the queue for
+  // any callbacks that get added in the meantime.
   //
   // If you want to use clang thread annotation to make sure that callback is
   // called by WorkSerializer only, you need to add the annotation to both the

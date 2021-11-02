@@ -165,6 +165,19 @@ TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
   }
 }
 
+TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
+  grpc_core::WorkSerializer lock;
+  {
+    std::vector<std::unique_ptr<TestThread>> run_threads;
+    std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> schedule_threads;
+    for (size_t i = 0; i < 50; ++i) {
+      run_threads.push_back(absl::make_unique<TestThread>(&lock));
+      schedule_threads.push_back(
+          absl::make_unique<TestThreadScheduleAndDrain>(&lock));
+    }
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
