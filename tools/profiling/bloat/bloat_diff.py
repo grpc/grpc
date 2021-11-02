@@ -96,10 +96,10 @@ for lib in LIBS:
                                         shell=True).decode()
         for filename in [old_version, new_version]:
             subprocess.check_call('strip %s' % filename[0], shell=True)
-        sections = csv.reader(
+        sections = [x for x in csv.reader(
             subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' %
                                     (old_version[0], new_version[0]),
-                                    shell=True).decode().splitlines())
+                                    shell=True).decode().splitlines())]
         print(sections)
         for section in sections[1:]:
             diff_size += int(section[2])
