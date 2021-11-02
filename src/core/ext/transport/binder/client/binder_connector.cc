@@ -65,6 +65,7 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 
     args_ = args;
     GPR_ASSERT(notify_ == nullptr);
+    GPR_ASSERT(notify != nullptr);
     notify_ = notify;
     result_ = result;
 
@@ -84,7 +85,15 @@ class BinderConnector : public grpc_core::SubchannelConnector {
     result_->channel_args = grpc_channel_args_copy(args_.channel_args);
     result_->transport = transport;
 
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+    GPR_ASSERT(notify_ != nullptr);
+    // ExecCtx is required here for running grpc_closure because this callback
+    // might be invoked from non-gRPC code
+    if (grpc_core::ExecCtx::Get() == nullptr) {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+    } else {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+    }
 
     Unref();  // Was referenced in BinderConnector::Connect
   }
