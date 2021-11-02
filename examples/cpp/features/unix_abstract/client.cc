@@ -52,12 +52,13 @@ class GreeterClient {
 };
 
 int main(int argc, char** argv) {
-  std::string target_str("unix-abstract:my%00abstract%00socket");
+  std::string target_str("unix-abstract:grpc%00abstract");
   GreeterClient greeter(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  std::string user("Abstract Unix Domain Socket");
+  std::string user("arst");
+  std::cout << "Sending '" << user << "' to " << target_str << " ... ";
   std::string reply = greeter.SayHello(user);
-  std::cout << "Greeter received: " << reply << std::endl;
+  std::cout << "Received: " << reply << std::endl;
 
   return 0;
 }

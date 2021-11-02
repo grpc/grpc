@@ -34,23 +34,22 @@ using helloworld::HelloRequest;
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
-    std::string prefix("Hello ");
-    reply->set_message(prefix + request->name());
+    reply->set_message(request->name());
+    std::cout << "Echoing: " << request->name() << std::endl;
     return Status::OK;
   }
 };
 
 void RunServer() {
-  std::string server_address("unix-abstract:my%00abstract%00socket");
+  std::string server_address("unix-abstract:grpc%00abstract");
   GreeterServiceImpl service;
-
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  std::cout << "Server listening on " << server_address << " ... ";
   server->Wait();
 }
 
