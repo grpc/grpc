@@ -168,18 +168,10 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  # It's required to update the brew because it won't work with the default version Kokoro has.
-  # This can be fragile, though because the future version of brew can break. In that case,
-  # please consider to fix the certain version like https://github.com/grpc/grpc/pull/24837.
-  brew update || true
-  brew config
-
-  # Install PHP 7.3 explictly to address missing php header files and
-  # to work well with the pre-installed phpunit 8.4
-  brew install php@7.3 || true
-  export LDFLAGS="-L/usr/local/opt/php@7.3/lib $(LDFLAGS)"
-  export CPPFLAGS="-I/usr/local/opt/php@7.3/include $(CPPFLAGS)"
-  export PATH="/usr/local/opt/php@7.3/bin:/usr/local/opt/php@7.3/sbin:$PATH"
+  brew install php
+  export LDFLAGS="-L/usr/local/opt/php@7.1/lib $LDFLAGS"
+  export CPPFLAGS="-I/usr/local/opt/php@7.1/include $CPPFLAGS"
+  export PATH="/usr/local/opt/php@7.1/bin:/usr/local/opt/php@7.1/sbin:$PATH"
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
   mkdir -p /usr/local/lib/php/pecl
