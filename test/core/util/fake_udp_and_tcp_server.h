@@ -43,10 +43,14 @@
 #define CLOSE_SOCKET closesocket
 #else
 #include <fcntl.h>
+
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #define CLOSE_SOCKET close
 #endif
+
+namespace grpc_core {
+namespace testing {
 
 class FakeUdpAndTcpServer {
  public:
@@ -309,3 +313,6 @@ class FakeUdpAndTcpServer {
   const AcceptMode accept_mode_;
   std::function<ProcessReadResult(int, int, int)> process_read_cb_;
 };
+
+}  // namespace testing
+}  // namespace grpc_core

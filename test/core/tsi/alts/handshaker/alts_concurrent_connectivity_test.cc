@@ -344,9 +344,11 @@ TEST(AltsConcurrentConnectivityTest,
       false /* check num concurrent rpcs */);
   // The fake_backend_server emulates a secure (ALTS based) gRPC backend. So
   // it waits for the client to send the first bytes.
-  FakeUdpAndTcpServer fake_backend_server(
-      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_backend_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::
+          CloseSocketUponReceivingBytesFromPeer);
   {
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
@@ -376,14 +378,16 @@ TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerClosesConnectionAfterAccepting) {
   // The fake_handshake_server emulates a broken ALTS handshaker, which
   // is an insecure server. So send settings to the client eagerly.
-  FakeUdpAndTcpServer fake_handshake_server(
-      FakeUdpAndTcpServer::AcceptMode::kEagerlySendSettings,
-      FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_handshake_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::kEagerlySendSettings,
+      grpc_core::testing::FakeUdpAndTcpServer::
+          CloseSocketUponReceivingBytesFromPeer);
   // The fake_backend_server emulates a secure (ALTS based) server, so wait
   // for the client to send the first bytes.
-  FakeUdpAndTcpServer fake_backend_server(
-      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_backend_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   {
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
@@ -414,14 +418,15 @@ TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerHangsAfterAccepting) {
   // fake_handshake_server emulates an insecure server, so send settings first.
   // It will be unresponsive for the rest of the connection, though.
-  FakeUdpAndTcpServer fake_handshake_server(
-      FakeUdpAndTcpServer::AcceptMode::kEagerlySendSettings,
-      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_handshake_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::kEagerlySendSettings,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   // fake_backend_server emulates an ALTS based server, so wait for the client
   // to send the first bytes.
-  FakeUdpAndTcpServer fake_backend_server(
-      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_backend_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   {
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;

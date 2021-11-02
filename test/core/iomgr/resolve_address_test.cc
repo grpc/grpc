@@ -362,9 +362,10 @@ static void inject_non_responsive_dns_server(ares_channel channel) {
 
 static void test_cancel_with_non_responsive_dns_server(void) {
   // Inject an unresponsive DNS server into the resolver's DNS server config
-  FakeUdpAndTcpServer fake_dns_server(
-      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   g_fake_non_responsive_dns_server_port = fake_dns_server.port();
   void (*prev_test_only_inject_config)(ares_channel channel) =
       grpc_ares_test_only_inject_config;

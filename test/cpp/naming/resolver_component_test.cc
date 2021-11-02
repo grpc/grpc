@@ -581,16 +581,14 @@ void RunResolvesRelevantRecordsTest(
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           absl::GetFlag(FLAGS_inject_broken_nameserver_list).c_str());
-  FakeUdpAndTcpServer fake_dns_server(
-      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
-  std::unique_ptr<grpc::testing::FakeUdpAndTcpServer>
+  std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer>
       fake_non_responsive_dns_server;
   if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "True") {
-    fake_non_responsive_dns_server =
-        absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
-            FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-            FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+    fake_non_responsive_dns_server = absl::make_unique<
+        grpc_core::testing::FakeUdpAndTcpServer>(
+        grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+            kWaitForClientToSendFirstBytes,
+        grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
     g_fake_non_responsive_dns_server_port =
         fake_non_responsive_dns_server.port();
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;

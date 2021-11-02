@@ -156,9 +156,10 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
 };
 
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
-  FakeUdpAndTcpServer fake_dns_server(
-      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::string client_target = absl::StrFormat(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
       fake_dns_server.port());
@@ -277,9 +278,10 @@ typedef enum {
 void TestCancelDuringActiveQuery(
     cancellation_test_query_timeout_setting query_timeout_setting) {
   // Start up fake non responsive DNS server
-  FakeUdpAndTcpServer fake_dns_server(
-      FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   // Create a call that will try to use the fake DNS server
   std::string client_target = absl::StrFormat(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
