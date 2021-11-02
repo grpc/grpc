@@ -101,7 +101,7 @@ for lib in LIBS:
                                     (old_version[0], new_version[0]),
                                     shell=True).decode().splitlines())
         print(sections)
-        for section in sections:
+        for section in sections[1:]:
             diff_size += int(section[2])
     else:
         text += subprocess.check_output('%s %s' % (cmd, new_version[0]),
