@@ -39,12 +39,16 @@ namespace grpc_core {
 // All callbacks scheduled on a WorkSerializer instance will be executed
 // serially in a borrowed thread. The API provides a FIFO guarantee to the
 // execution of callbacks scheduled on the thread.
-// When a thread calls Schedule() with a callback, the callback is added to the
-// queue. The callback is finally executed when DrainQueue() is invoked. It is
-// possible that multiple threads invoke DrainQueue(), in which case only thread
-// will be used to drain the queue. Since an arbitrary set of callbacks might be
-// executed when DrainQueue() is called, generally no locks should be held while
-// calling DrainQueue().
+// When a thread calls Run() with a callback, the thread is considered borrowed.
+// The callback might run inline, or it might run asynchronously in a different
+// thread that is already inside of Run(). If the callback runs directly inline,
+// other callbacks from other threads might also be executed before Run()
+// returns. Since an arbitrary set of callbacks might be executed when Run() is
+// called, generally no locks should be held while calling Run().
+// If a thread wants to preclude the possibility of the callback being invoked
+// inline in Run() (for example, if a mutex lock is held and executing callbacks
+// inline would cause a deadlock), it should use Schedule() instead and then
+// invoke DrainQueue() when it is safe to invoke the callback.
 class ABSL_LOCKABLE WorkSerializer {
  public:
   WorkSerializer();

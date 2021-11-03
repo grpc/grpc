@@ -35,16 +35,17 @@ struct CallbackWrapper {
   const DebugLocation location;
 };
 
-// First 32 bits indicate ownership of the WorkSerializer, next 32 bits are
+// First 16 bits indicate ownership of the WorkSerializer, next 48 bits are
 // queue size (i.e., refs).
-static uint64_t MakeRefPair(uint32_t owners, uint32_t size) {
+uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
+  GPR_ASSERT(size >> 48 == 0);
   return (static_cast<uint64_t>(owners) << 32) + static_cast<int64_t>(size);
 }
-static uint32_t GetOwners(uint64_t ref_pair) {
-  return static_cast<uint32_t>(ref_pair >> 32);
+uint32_t GetOwners(uint64_t ref_pair) {
+  return static_cast<uint32_t>(ref_pair >> 48);
 }
-static uint32_t GetSize(uint64_t ref_pair) {
-  return static_cast<uint32_t>(ref_pair & 0xffffffffu);
+uint32_t GetSize(uint64_t ref_pair) {
+  return static_cast<uint32_t>(ref_pair & 0xffffffffffffu);
 }
 
 }  // namespace
@@ -59,11 +60,19 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   void Orphan() override;
 
  private:
+  // Callers of DrainQueueOwned should make sure to grab the lock on the
+  // workserializer with
+  //   prev_ref_pair = refs_.fetch_add(MakeRefPair(1, 1),
+  //   std::memory_order_acq_rel);
+  // and only invoke DrainQueueOwned() if there was previously no owner. Note
+  // that the queue size is also incremented as part of the fetch_add to allow
+  // the callers to add a callback to the queue if another thread already holds
+  // the lock to the work serializer.
   void DrainQueueOwned();
 
   // An initial size of 1 keeps track of whether the work serializer has been
   // orphaned.
-  std::atomic<size_t> refs_{MakeRefPair(0, 1)};
+  std::atomic<uint64_t> refs_{MakeRefPair(0, 1)};
   MultiProducerSingleConsumerQueue queue_;
 };
 
@@ -73,12 +82,12 @@ void WorkSerializer::WorkSerializerImpl::Run(
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
   }
+  // Increment queue size for the new callback and owner count to attempt to
+  // take ownership of the WorkSerializer.
   const uint64_t prev_ref_pair =
       refs_.fetch_add(MakeRefPair(1, 1), std::memory_order_acq_rel);
   // The work serializer should not have been orphaned.
   GPR_DEBUG_ASSERT(GetSize(prev_ref_pair) > 0);
-  // If there is no other callback executing right now on this work serializer,
-  // try to grab the lock and execute the callback immediately.
   if (GetOwners(prev_ref_pair) == 0) {
     // We took ownership of the WorkSerializer. Invoke callback and drain queue.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
@@ -133,7 +142,8 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);
   }
-  // Attempt to take ownership of the WorkSerializer.
+  // Attempt to take ownership of the WorkSerializer. Also increment the queue
+  // size as required by `DrainQueueOwned()`.
   const uint64_t prev_ref_pair =
       refs_.fetch_add(MakeRefPair(1, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0) {
