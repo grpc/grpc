@@ -42,8 +42,7 @@
 	url = https://github.com/envoyproxy/protoc-gen-validate.git
 [submodule "third_party/libuv"]
 	path = third_party/libuv
-	url = https://github.com/drfloob/libuv.git
-	branch = fixes-for-libuv
+	url = https://github.com/libuv/libuv.git
 [submodule "third_party/opencensus-proto"]
 	path = third_party/opencensus-proto
 	url = https://github.com/census-instrumentation/opencensus-proto.git
