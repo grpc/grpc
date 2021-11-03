@@ -573,9 +573,9 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
+        "iomgr_port",
         "orphanable",
         "slice_refcount",
-        "iomgr_port"
     ],
 )
 
