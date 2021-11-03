@@ -173,17 +173,16 @@ def label_significance_on_pr(name, change):
     if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
         print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
         return
-    resp = _call(
+    existing = _call(
         '/repos/%s/issues/%s/labels' %
         (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
-        method='DELETE',
-        json=[
-            "%s/%s" % (name, v) for v in _CHANGE_LABELS.values() if v != value
-        ])
-    print('Result of Deleting Labels on PR:', resp.text)
+        method='GET').json()
+    print('Result of Deleting Labels on PR:', existing)
+    new = [x['name'] for x in existing if not x['name'].startswith(name + '/')]
+    new.append(name + '/' + value)
     resp = _call(
         '/repos/%s/issues/%s/labels' %
         (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
         method='POST',
-        json=["%s/%s" % (name, value)])
+        json=new)
     print('Result of Adding Label on PR:', resp.text)
