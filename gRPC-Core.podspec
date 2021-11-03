@@ -2226,6 +2226,8 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/trailing_metadata.cc',
                       'test/core/end2end/tests/write_buffering.cc',
                       'test/core/end2end/tests/write_buffering_at_end.cc',
+                      'test/core/util/build.cc',
+                      'test/core/util/build.h',
                       'test/core/util/cmdline.cc',
                       'test/core/util/cmdline.h',
                       'test/core/util/evaluate_args_test_util.h',

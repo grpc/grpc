@@ -1077,6 +1077,7 @@
         'grpc',
       ],
       'sources': [
+        'test/core/util/build.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
@@ -1112,6 +1113,7 @@
         'grpc_unsecure',
       ],
       'sources': [
+        'test/core/util/build.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
