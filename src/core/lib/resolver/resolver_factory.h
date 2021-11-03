@@ -34,6 +34,8 @@ typedef struct grpc_pollset_set grpc_pollset_set;
 
 namespace grpc_core {
 
+// TODO(yashkt): Move WorkSerializer to its own Bazel target, depend on that
+// target from this one, and remove this forward declaration.
 class WorkSerializer;
 
 struct ResolverArgs {
