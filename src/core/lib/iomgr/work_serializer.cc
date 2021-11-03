@@ -58,14 +58,14 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
 
   // First 16 bits indicate ownership of the WorkSerializer, next 48 bits are
   // queue size (i.e., refs).
-  uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
+  static uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
     GPR_ASSERT(size >> 48 == 0);
     return (static_cast<uint64_t>(owners) << 48) + static_cast<int64_t>(size);
   }
-  uint32_t GetOwners(uint64_t ref_pair) {
+  static uint32_t GetOwners(uint64_t ref_pair) {
     return static_cast<uint32_t>(ref_pair >> 48);
   }
-  uint32_t GetSize(uint64_t ref_pair) {
+  static uint32_t GetSize(uint64_t ref_pair) {
     return static_cast<uint32_t>(ref_pair & 0xffffffffffffu);
   }
 
