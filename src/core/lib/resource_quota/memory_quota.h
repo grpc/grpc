@@ -353,8 +353,6 @@ class MemoryOwner final : public MemoryAllocator {
     return impl()->InstantaneousPressure();
   }
 
-  // TODO(ctiller): if this continues to live here, we should rename this class.
-  // Otherwise we should subclass MemoryAllocator.
   template <typename T, typename... Args>
   OrphanablePtr<T> MakeOrphanable(Args&&... args) {
     return OrphanablePtr<T>(New<T>(std::forward<Args>(args)...));
@@ -363,7 +361,7 @@ class MemoryOwner final : public MemoryAllocator {
   // Name of this object
   absl::string_view name() const { return impl()->name(); }
 
- protected:
+ private:
   const GrpcMemoryAllocatorImpl* impl() const {
     return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
   }
