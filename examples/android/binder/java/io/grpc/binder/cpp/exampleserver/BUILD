@@ -26,7 +26,6 @@ cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//:grpc++_binder",
         "//examples/protos:helloworld_cc_grpc",
     ],
     alwayslink = True,
