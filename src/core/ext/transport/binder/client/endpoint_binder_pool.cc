@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
@@ -106,3 +108,4 @@ EndpointBinderPool* GetEndpointBinderPool() {
   return p;
 }
 }  // namespace grpc_binder
+#endif

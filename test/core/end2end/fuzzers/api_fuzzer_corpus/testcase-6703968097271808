@@ -1,0 +1,62 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "/foo"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 9541248
+}
+actions {
+  queue_batch {
+    operations {
+      send_close_from_client {
+      }
+    }
+    operations {
+      send_message {
+      }
+    }
+    operations {
+      receive_initial_metadata {
+      }
+      flags: 1895825408
+    }
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "grp[.default_authority"
+          intern: true
+        }
+      }
+    }
+  }
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+}

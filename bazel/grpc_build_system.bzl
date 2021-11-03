@@ -29,7 +29,7 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
+load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
 # The set of pollers to test against if a test exercises polling
@@ -156,7 +156,8 @@ def grpc_cc_library(
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
     if select_deps:
-        deps += select(select_deps)
+        for select_deps_entry in select_deps:
+            deps += select(select_deps_entry)
 
     native.cc_library(
         name = name,
@@ -476,6 +477,9 @@ def grpc_objc_library(
 
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
+
+def grpc_upb_proto_reflection_library(name, deps):
+    upb_proto_reflection_library(name = name, deps = deps)
 
 # buildifier: disable=unnamed-macro
 def python_config_settings():

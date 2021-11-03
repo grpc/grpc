@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20210324.0'
+  abseil_version = '1.20210324.2'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -803,6 +803,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_certificate_provider.cc',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
+                      'src/core/ext/xds/xds_channel_stack_modifier.cc',
+                      'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.cc',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.cc',
@@ -1754,6 +1756,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
+                              'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',

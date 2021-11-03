@@ -34,6 +34,9 @@ def well_known_proto_libs():
         "@com_google_protobuf//:wrappers_proto",
     ]
 
+def is_well_known(label):
+    return label in well_known_proto_libs()
+
 def get_proto_root(workspace_root):
     """Gets the root protobuf directory.
 
@@ -142,8 +145,18 @@ def get_plugin_args(
         ),
     ]
 
-def _get_staged_proto_file(context, source_file):
-    if source_file.dirname == context.label.package or \
+def get_staged_proto_file(label, context, source_file):
+    """Copies a proto file to the appropriate location if necessary.
+
+    Args:
+      label: The label of the rule using the .proto file.
+      context: The ctx object for the rule or aspect.
+      source_file: The original .proto file.
+
+    Returns:
+      The original proto file OR a new file in the staged location.
+    """
+    if source_file.dirname == label.package or \
        is_in_virtual_imports(source_file):
         # Current target and source_file are in same package
         return source_file
@@ -171,7 +184,7 @@ def protos_from_context(context):
     protos = []
     for src in context.attr.deps:
         for file in src[ProtoInfo].direct_sources:
-            protos.append(_get_staged_proto_file(context, file))
+            protos.append(get_staged_proto_file(context.label, context, file))
     return protos
 
 def includes_from_deps(deps):

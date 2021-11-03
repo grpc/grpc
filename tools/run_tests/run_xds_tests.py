@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import random
+import re
 import shlex
 import socket
 import subprocess
@@ -2264,7 +2265,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                 args.zone)
                     ok = False
                 seen = set()
-                for xds_config in client_config['xds_config']:
+                for xds_config in client_config.get('xds_config', []):
                     if 'listener_config' in xds_config:
                         listener_name = xds_config['listener_config'][
                             'dynamic_listeners'][0]['active_state']['listener'][
@@ -2304,6 +2305,41 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                             ok = False
                         else:
                             seen.add('eds')
+                for generic_xds_config in client_config.get(
+                        'generic_xds_configs', []):
+                    if re.search(r'\.Listener$',
+                                 generic_xds_config['type_url']):
+                        seen.add('lds')
+                        listener = generic_xds_config["xds_config"]
+                        if listener['name'] != server_uri:
+                            logger.info('Invalid Listener name %s != %s',
+                                        listener_name, server_uri)
+                            ok = False
+                    elif re.search(r'\.RouteConfiguration$',
+                                   generic_xds_config['type_url']):
+                        seen.add('rds')
+                        route_config = generic_xds_config["xds_config"]
+                        if not len(route_config['virtual_hosts']):
+                            logger.info('Invalid number of VirtualHosts %s',
+                                        num_vh)
+                            ok = False
+                    elif re.search(r'\.Cluster$',
+                                   generic_xds_config['type_url']):
+                        seen.add('cds')
+                        cluster = generic_xds_config["xds_config"]
+                        if cluster['type'] != 'EDS':
+                            logger.info('Invalid cluster type %s != EDS',
+                                        cluster_type)
+                            ok = False
+                    elif re.search(r'\.ClusterLoadAssignment$',
+                                   generic_xds_config['type_url']):
+                        seen.add('eds')
+                        endpoint = generic_xds_config["xds_config"]
+                        if args.zone not in endpoint["endpoints"][0][
+                                "locality"]["sub_zone"]:
+                            logger.info('Invalid endpoint sub_zone %s',
+                                        sub_zone)
+                            ok = False
                 want = {'lds', 'rds', 'cds', 'eds'}
                 if seen != want:
                     logger.info('Incomplete xDS config dump, seen=%s', seen)

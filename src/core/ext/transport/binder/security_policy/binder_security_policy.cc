@@ -12,27 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_SECURITY_POLICY_UNTRUSTED_SECURITY_POLICY_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_SECURITY_POLICY_UNTRUSTED_SECURITY_POLICY_H
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/binder/security_policy/security_policy.h"
+#ifndef GRPC_NO_BINDER
+
+#include <grpcpp/security/binder_security_policy.h>
+
+#ifdef GPR_ANDROID
+
+#include <unistd.h>
+
+#endif
 
 namespace grpc {
 namespace experimental {
 namespace binder {
 
-// Allows all connection
-class UntrustedSecurityPolicy : public SecurityPolicy {
- public:
-  UntrustedSecurityPolicy();
-  ~UntrustedSecurityPolicy() override;
-  bool IsAuthorized(int uid) override;
-};
+UntrustedSecurityPolicy::UntrustedSecurityPolicy() = default;
+
+UntrustedSecurityPolicy::~UntrustedSecurityPolicy() = default;
+
+bool UntrustedSecurityPolicy::IsAuthorized(int) { return true; };
+
+InternalOnlySecurityPolicy::InternalOnlySecurityPolicy() = default;
+
+InternalOnlySecurityPolicy::~InternalOnlySecurityPolicy() = default;
+
+#ifdef GPR_ANDROID
+bool InternalOnlySecurityPolicy::IsAuthorized(int uid) {
+  return static_cast<uid_t>(uid) == getuid();
+}
+#else
+bool InternalOnlySecurityPolicy::IsAuthorized(int) { return false; }
+#endif
 
 }  // namespace binder
 }  // namespace experimental
 }  // namespace grpc
-
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_SECURITY_POLICY_UNTRUSTED_SECURITY_POLICY_H
+#endif

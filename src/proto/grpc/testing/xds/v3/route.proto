@@ -103,12 +103,21 @@ message Route {
   // Route matching parameters.
   RouteMatch match = 1;
 
+  message NonForwardingAction {
+  }  
+
   oneof action {
     // Route request to some upstream cluster.
     RouteAction route = 2;
 
     // Return a redirect.
     RedirectAction redirect = 3;
+
+    // An action used when the route will generate a response directly,
+    // without forwarding to an upstream host. This will be used in non-proxy
+    // xDS clients like the gRPC server. It could also be used in the future
+    // in Envoy for a filter that directly generates responses for requests.
+    NonForwardingAction non_forwarding_action = 18;
   }
 
   // The typed_per_filter_config field can be used to provide route-specific
