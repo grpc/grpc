@@ -24,32 +24,6 @@ namespace grpc_core {
 
 DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 
-namespace {
-
-struct CallbackWrapper {
-  CallbackWrapper(std::function<void()> cb, const grpc_core::DebugLocation& loc)
-      : callback(std::move(cb)), location(loc) {}
-
-  MultiProducerSingleConsumerQueue::Node mpscq_node;
-  const std::function<void()> callback;
-  const DebugLocation location;
-};
-
-// First 16 bits indicate ownership of the WorkSerializer, next 48 bits are
-// queue size (i.e., refs).
-uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
-  GPR_ASSERT(size >> 48 == 0);
-  return (static_cast<uint64_t>(owners) << 48) + static_cast<int64_t>(size);
-}
-uint32_t GetOwners(uint64_t ref_pair) {
-  return static_cast<uint32_t>(ref_pair >> 48);
-}
-uint32_t GetSize(uint64_t ref_pair) {
-  return static_cast<uint32_t>(ref_pair & 0xffffffffffffu);
-}
-
-}  // namespace
-
 class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
   void Run(std::function<void()> callback,
@@ -60,6 +34,16 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   void Orphan() override;
 
  private:
+  struct CallbackWrapper {
+    CallbackWrapper(std::function<void()> cb,
+                    const grpc_core::DebugLocation& loc)
+        : callback(std::move(cb)), location(loc) {}
+
+    MultiProducerSingleConsumerQueue::Node mpscq_node;
+    const std::function<void()> callback;
+    const DebugLocation location;
+  };
+
   // Callers of DrainQueueOwned should make sure to grab the lock on the
   // workserializer with
   //
@@ -71,6 +55,19 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   // the callers to add a callback to the queue if another thread already holds
   // the lock to the work serializer.
   void DrainQueueOwned();
+
+  // First 16 bits indicate ownership of the WorkSerializer, next 48 bits are
+  // queue size (i.e., refs).
+  uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
+    GPR_ASSERT(size >> 48 == 0);
+    return (static_cast<uint64_t>(owners) << 48) + static_cast<int64_t>(size);
+  }
+  uint32_t GetOwners(uint64_t ref_pair) {
+    return static_cast<uint32_t>(ref_pair >> 48);
+  }
+  uint32_t GetSize(uint64_t ref_pair) {
+    return static_cast<uint32_t>(ref_pair & 0xffffffffffffu);
+  }
 
   // An initial size of 1 keeps track of whether the work serializer has been
   // orphaned.
