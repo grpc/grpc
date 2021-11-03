@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
+#ifndef GRPC_NO_BINDER
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
@@ -329,3 +330,4 @@ absl::Status ReadableParcelAndroid::ReadString(std::string* str) {
 }  // namespace grpc_binder
 
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
+#endif
