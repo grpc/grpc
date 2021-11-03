@@ -107,19 +107,20 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                     },
                 },
             },
-            {
-                "sources": {
-                    "principals": ["*"],
-                },
-                "destinations": {
-                    "hosts": [f"*:{self.server_xds_port}"],
-                    "ports": [self.server_port],
-                    "httpHeaderMatch": {
-                        "headerName": "test",
-                        "regexMatch": "principal-present",
-                    },
-                },
-            },
+            # b/202058316. The wildcard principal is generating invalid config
+            # {
+            #     "sources": {
+            #         "principals": ["*"],
+            #     },
+            #     "destinations": {
+            #         "hosts": [f"*:{self.server_xds_port}"],
+            #         "ports": [self.server_port],
+            #         "httpHeaderMatch": {
+            #             "headerName": "test",
+            #             "regexMatch": "principal-present",
+            #         },
+            #     },
+            # },
             {
                 "sources": [{
                     "principals": [
@@ -229,9 +230,10 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             self.configure_and_assert(test_client, 'never-match-port',
                                       grpc.StatusCode.PERMISSION_DENIED)
 
-        with self.subTest('07_principal_present'):
-            self.configure_and_assert(test_client, 'principal-present',
-                                      grpc.StatusCode.PERMISSION_DENIED)
+        # b/202058316
+        # with self.subTest('07_principal_present'):
+        #     self.configure_and_assert(test_client, 'principal-present',
+        #                               grpc.StatusCode.PERMISSION_DENIED)
 
     def test_tls_allow(self) -> None:
         self.setupTrafficDirectorGrpc()
@@ -278,9 +280,10 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             self.configure_and_assert(test_client, None,
                                       grpc.StatusCode.PERMISSION_DENIED)
 
-        with self.subTest('03_principal_present'):
-            self.configure_and_assert(test_client, 'principal-present',
-                                      grpc.StatusCode.OK)
+        # b/202058316
+        # with self.subTest('03_principal_present'):
+        #     self.configure_and_assert(test_client, 'principal-present',
+        #                               grpc.StatusCode.OK)
 
         with self.subTest('04_match_principal'):
             self.configure_and_assert(test_client, 'match-principal',
