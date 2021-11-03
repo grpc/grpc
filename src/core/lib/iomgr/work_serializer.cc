@@ -39,7 +39,7 @@ struct CallbackWrapper {
 // queue size (i.e., refs).
 uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
   GPR_ASSERT(size >> 48 == 0);
-  return (static_cast<uint64_t>(owners) << 32) + static_cast<int64_t>(size);
+  return (static_cast<uint64_t>(owners) << 48) + static_cast<int64_t>(size);
 }
 uint32_t GetOwners(uint64_t ref_pair) {
   return static_cast<uint32_t>(ref_pair >> 48);
@@ -62,8 +62,10 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
  private:
   // Callers of DrainQueueOwned should make sure to grab the lock on the
   // workserializer with
-  //   prev_ref_pair = refs_.fetch_add(MakeRefPair(1, 1),
-  //   std::memory_order_acq_rel);
+  //
+  //   prev_ref_pair =
+  //     refs_.fetch_add(MakeRefPair(1, 1), std::memory_order_acq_rel);
+  //
   // and only invoke DrainQueueOwned() if there was previously no owner. Note
   // that the queue size is also incremented as part of the fetch_add to allow
   // the callers to add a callback to the queue if another thread already holds
