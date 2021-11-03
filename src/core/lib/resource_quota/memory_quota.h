@@ -333,25 +333,16 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 // MemoryOwner's lifetime, and are not queryable, so passing a MemoryOwner to a
 // new owning module means that module cannot reason about which reclaimers are
 // active, nor what they might do.
-class MemoryOwner final {
+class MemoryOwner final : public MemoryAllocator {
  public:
   MemoryOwner() = default;
 
   explicit MemoryOwner(std::shared_ptr<GrpcMemoryAllocatorImpl> allocator)
-      : allocator_(std::move(allocator)) {}
-
-  MemoryAllocator* allocator() { return &allocator_; }
-
-  /// Drop the underlying allocator and make this an empty object.
-  /// The object will not be usable after this call unless it's a valid
-  /// allocator is moved into it.
-  /// Also resets the MemoryAllocator instance.
-  void Reset() { allocator_.Reset(); }
+      : MemoryAllocator(std::move(allocator)) {}
 
   // Post a reclaimer for some reclamation pass.
   void PostReclaimer(ReclamationPass pass, ReclamationFunction fn) {
-    static_cast<GrpcMemoryAllocatorImpl*>(allocator_.get_internal_impl_ptr())
-        ->PostReclaimer(pass, std::move(fn));
+    impl()->PostReclaimer(pass, std::move(fn));
   }
 
   // Rebind to a different quota.
@@ -359,27 +350,27 @@ class MemoryOwner final {
 
   // Instantaneous memory pressure in the underlying quota.
   double InstantaneousPressure() const {
-    return static_cast<const GrpcMemoryAllocatorImpl*>(
-               allocator_.get_internal_impl_ptr())
-        ->InstantaneousPressure();
+    return impl()->InstantaneousPressure();
   }
 
   // TODO(ctiller): if this continues to live here, we should rename this class.
   // Otherwise we should subclass MemoryAllocator.
   template <typename T, typename... Args>
   OrphanablePtr<T> MakeOrphanable(Args&&... args) {
-    return OrphanablePtr<T>(allocator_.New<T>(std::forward<Args>(args)...));
+    return OrphanablePtr<T>(New<T>(std::forward<Args>(args)...));
   }
 
   // Name of this object
-  absl::string_view name() const {
-    return static_cast<const GrpcMemoryAllocatorImpl*>(
-               allocator_.get_internal_impl_ptr())
-        ->name();
+  absl::string_view name() const { return impl()->name(); }
+
+ protected:
+  const GrpcMemoryAllocatorImpl* impl() const {
+    return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
   }
 
- private:
-  MemoryAllocator allocator_;
+  GrpcMemoryAllocatorImpl* impl() {
+    return static_cast<GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
+  }
 };
 
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.

@@ -47,7 +47,7 @@ class SliceBuffer {
 // Tracks memory allocated by one system.
 // Is effectively a thin wrapper/smart pointer for a MemoryAllocatorImpl,
 // providing a convenient and stable API.
-class MemoryAllocator final {
+class MemoryAllocator {
  public:
   /// Construct a MemoryAllocator given an internal::MemoryAllocatorImpl
   /// implementation. The constructed MemoryAllocator will call
@@ -83,15 +83,6 @@ class MemoryAllocator final {
   /// Release some bytes that were previously reserved.
   void Release(size_t n) { return allocator_->Release(n); }
 
-  /// Return a pointer to the underlying implementation.
-  /// Note that the interface of said implementatoin is unstable and likely to
-  /// change at any time.
-  internal::MemoryAllocatorImpl* get_internal_impl_ptr() {
-    return allocator_.get();
-  }
-  const internal::MemoryAllocatorImpl* get_internal_impl_ptr() const {
-    return allocator_.get();
-  }
   //
   // The remainder of this type are helper functions implemented in terms of
   // Reserve/Release.
@@ -192,8 +183,15 @@ class MemoryAllocator final {
   };
 
  protected:
-  const std::shared_ptr<internal::MemoryAllocatorImpl>& allocator() {
-    return allocator_;
+  /// Return a pointer to the underlying implementation.
+  /// Note that the interface of said implementation is unstable and likely to
+  /// change at any time.
+  internal::MemoryAllocatorImpl* get_internal_impl_ptr() {
+    return allocator_.get();
+  }
+
+  const internal::MemoryAllocatorImpl* get_internal_impl_ptr() const {
+    return allocator_.get();
   }
 
  private:

@@ -55,8 +55,8 @@ class StressTest {
            {ReclamationPass::kBenign, ReclamationPass::kIdle,
             ReclamationPass::kDestructive}) {
         threads.push_back(Run([allocator, pass](StatePtr st) mutable {
-          if (st->RememberReservation(allocator->allocator()->MakeReservation(
-                  st->RandomRequest()))) {
+          if (st->RememberReservation(
+                  allocator->MakeReservation(st->RandomRequest()))) {
             allocator->PostReclaimer(
                 pass, [st](absl::optional<ReclamationSweep> sweep) {
                   if (!sweep.has_value()) return;

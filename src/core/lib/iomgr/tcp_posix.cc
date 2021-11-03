@@ -837,7 +837,7 @@ static void tcp_continue_read(grpc_tcp* tcp) {
     }
     grpc_slice_buffer_add_indexed(
         tcp->incoming_buffer,
-        tcp->memory_owner.allocator()->MakeSlice(grpc_core::MemoryRequest(
+        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
             tcp->min_read_chunk_size, tcp->max_read_chunk_size)));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -1713,8 +1713,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
                           ->memory_quota()
                           ->CreateMemoryOwner(peer_string);
-  tcp->self_reservation =
-      tcp->memory_owner.allocator()->MakeReservation(sizeof(grpc_tcp));
+  tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);

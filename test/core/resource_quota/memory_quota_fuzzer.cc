@@ -99,7 +99,7 @@ class Fuzzer {
           MemoryRequest req(min, max);
           WithAllocator(
               action.allocator(), [this, action, req](MemoryOwner* a) {
-                auto alloc = a->allocator()->MakeReservation(req);
+                auto alloc = a->MakeReservation(req);
                 allocations_.emplace(action.allocation(), std::move(alloc));
               });
         } break;

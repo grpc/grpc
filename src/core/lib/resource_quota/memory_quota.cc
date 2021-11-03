@@ -281,8 +281,7 @@ void GrpcMemoryAllocatorImpl::PostReclaimer(ReclamationPass pass,
 //
 
 void MemoryOwner::Rebind(MemoryQuota* quota) {
-  static_cast<GrpcMemoryAllocatorImpl*>(allocator_.get_internal_impl_ptr())
-      ->Rebind(quota->memory_quota_);
+  impl()->Rebind(quota->memory_quota_);
 }
 
 //

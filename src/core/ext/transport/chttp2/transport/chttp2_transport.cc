@@ -452,8 +452,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                        ->memory_quota()
                        ->CreateMemoryOwner(absl::StrCat(
                            grpc_endpoint_get_peer(ep), ":client_transport"))),
-      self_reservation(memory_owner.allocator()->MakeReservation(
-          sizeof(grpc_chttp2_transport))),
+      self_reservation(
+          memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
       combiner(grpc_combiner_create()),
       state_tracker(is_client ? "client_transport" : "server_transport",
                     GRPC_CHANNEL_READY),
@@ -649,7 +649,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
     : t(t),
       refcount(refcount),
       reffer(this),
-      stream_reservation(t->memory_owner.allocator()->MakeReservation(
+      stream_reservation(t->memory_owner.MakeReservation(
           grpc_core::kResourceQuotaCallSize)),  // TODO(ctiller): sizeof(*this),
                                                 // or better, move allocation to
                                                 // memory quota.
