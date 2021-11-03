@@ -59,19 +59,19 @@ class BaseSlice {
   BaseSlice& operator=(BaseSlice&& other) = delete;
 
   // Iterator access to the underlying bytes
-  const uint8_t* begin() const { return GRPC_SLICE_START_PTR(this->slice_); }
-  const uint8_t* end() const { return GRPC_SLICE_END_PTR(this->slice_); }
-  const uint8_t* cbegin() const { return GRPC_SLICE_START_PTR(this->slice_); }
-  const uint8_t* cend() const { return GRPC_SLICE_END_PTR(this->slice_); }
+  const uint8_t* begin() const { return GRPC_SLICE_START_PTR(c_slice()); }
+  const uint8_t* end() const { return GRPC_SLICE_END_PTR(c_slice()); }
+  const uint8_t* cbegin() const { return GRPC_SLICE_START_PTR(c_slice()); }
+  const uint8_t* cend() const { return GRPC_SLICE_END_PTR(c_slice()); }
 
   // Retrieve a borrowed reference to the underlying grpc_slice.
-  const grpc_slice& c_slice() const { return this->slice_; }
+  const grpc_slice& c_slice() const { return slice_; }
 
   // Retrieve the underlying grpc_slice, and replace the one in this object with
   // EmptySlice().
   grpc_slice TakeCSlice() {
-    grpc_slice out = this->slice_;
-    this->slice_ = EmptySlice();
+    grpc_slice out = slice_;
+    slice_ = EmptySlice();
     return out;
   }
 
@@ -82,14 +82,14 @@ class BaseSlice {
 
   // Array access
   uint8_t operator[](size_t i) const {
-    return GRPC_SLICE_START_PTR(this->slice_)[i];
+    return GRPC_SLICE_START_PTR(c_slice())[i];
   }
 
   // Access underlying data
-  const uint8_t* data() const { return GRPC_SLICE_START_PTR(this->slice_); }
+  const uint8_t* data() const { return GRPC_SLICE_START_PTR(c_slice()); }
 
   // Size of the slice
-  size_t size() const { return GRPC_SLICE_LENGTH(this->slice_); }
+  size_t size() const { return GRPC_SLICE_LENGTH(c_slice()); }
   size_t length() const { return size(); }
   bool empty() const { return size() == 0; }
 
@@ -104,6 +104,13 @@ class BaseSlice {
   BaseSlice() : slice_(EmptySlice()) {}
   explicit BaseSlice(const grpc_slice& slice) : slice_(slice) {}
   ~BaseSlice() = default;
+
+  void Swap(BaseSlice* other) { std::swap(slice_, other->slice_); }
+  void SetCSlice(const grpc_slice& slice) { slice_ = slice; }
+
+  uint8_t* mutable_data() { return GRPC_SLICE_START_PTR(slice_); }
+
+ private:
   grpc_slice slice_;
 };
 
@@ -176,15 +183,15 @@ class StaticSlice : public slice_detail::BaseSlice {
   }
 
   StaticSlice(const StaticSlice& other)
-      : slice_detail::BaseSlice(other.slice_) {}
+      : slice_detail::BaseSlice(other.c_slice()) {}
   StaticSlice& operator=(const StaticSlice& other) {
-    slice_ = other.slice_;
+    SetCSlice(other.c_slice());
     return *this;
   }
   StaticSlice(StaticSlice&& other) noexcept
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
   StaticSlice& operator=(StaticSlice&& other) noexcept {
-    std::swap(slice_, other.slice_);
+    Swap(&other);
     return *this;
   }
 };
@@ -198,32 +205,30 @@ class MutableSlice : public slice_detail::BaseSlice,
     GPR_DEBUG_ASSERT(slice.refcount == nullptr ||
                      slice.refcount->IsRegularUnique());
   }
-  ~MutableSlice() { grpc_slice_unref_internal(slice_); }
+  ~MutableSlice() { grpc_slice_unref_internal(c_slice()); }
 
   MutableSlice(const MutableSlice&) = delete;
   MutableSlice& operator=(const MutableSlice&) = delete;
   MutableSlice(MutableSlice&& other) noexcept
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
   MutableSlice& operator=(MutableSlice&& other) noexcept {
-    std::swap(slice_, other.slice_);
+    Swap(&other);
     return *this;
   }
 
   // Iterator access to the underlying bytes
-  uint8_t* begin() { return GRPC_SLICE_START_PTR(this->slice_); }
-  uint8_t* end() { return GRPC_SLICE_END_PTR(this->slice_); }
+  uint8_t* begin() { return mutable_data(); }
+  uint8_t* end() { return mutable_data() + size(); }
 
   // Array access
-  uint8_t& operator[](size_t i) {
-    return GRPC_SLICE_START_PTR(this->slice_)[i];
-  }
+  uint8_t& operator[](size_t i) { return mutable_data()[i]; }
 };
 
 class Slice : public slice_detail::BaseSlice,
               public slice_detail::CopyConstructors<Slice> {
  public:
   Slice() = default;
-  ~Slice() { grpc_slice_unref_internal(slice_); }
+  ~Slice() { grpc_slice_unref_internal(c_slice()); }
   explicit Slice(const grpc_slice& slice) : slice_detail::BaseSlice(slice) {}
   template <class SliceType>
   explicit Slice(absl::enable_if_t<
@@ -235,7 +240,7 @@ class Slice : public slice_detail::BaseSlice,
   Slice& operator=(const Slice&) = delete;
   Slice(Slice&& other) noexcept : slice_detail::BaseSlice(other.TakeCSlice()) {}
   Slice& operator=(Slice&& other) noexcept {
-    std::swap(slice_, other.slice_);
+    Swap(&other);
     return *this;
   }
 
@@ -250,11 +255,11 @@ class Slice : public slice_detail::BaseSlice,
   // leaves the current slice empty - in doing so it can avoid adding a ref to
   // the underlying slice.
   Slice IntoOwned() {
-    if (this->slice_.refcount == nullptr) {
-      return Slice(this->slice_);
+    if (c_slice().refcount == nullptr) {
+      return Slice(c_slice());
     }
-    if (this->slice_.refcount->GetType() == grpc_slice_refcount::Type::NOP) {
-      return Slice(grpc_slice_copy(this->slice_));
+    if (c_slice().refcount->GetType() == grpc_slice_refcount::Type::NOP) {
+      return Slice(grpc_slice_copy(c_slice()));
     }
     return Slice(TakeCSlice());
   }
@@ -262,13 +267,13 @@ class Slice : public slice_detail::BaseSlice,
   // AsOwned returns an owned slice but does not mutate the current slice,
   // meaning that it may add a reference to the underlying slice.
   Slice AsOwned() const {
-    if (this->slice_.refcount == nullptr) {
-      return Slice(this->slice_);
+    if (c_slice().refcount == nullptr) {
+      return Slice(c_slice());
     }
-    if (this->slice_.refcount->GetType() == grpc_slice_refcount::Type::NOP) {
-      return Slice(grpc_slice_copy(this->slice_));
+    if (c_slice().refcount->GetType() == grpc_slice_refcount::Type::NOP) {
+      return Slice(grpc_slice_copy(c_slice()));
     }
-    return Slice(grpc_slice_ref_internal(this->slice_));
+    return Slice(grpc_slice_ref_internal(c_slice()));
   }
 
   // IntoMutable returns a MutableSlice, and leaves the current slice empty.
@@ -279,18 +284,17 @@ class Slice : public slice_detail::BaseSlice,
   // to that slice, then the slice is copied in order to achieve a mutable
   // version.
   MutableSlice IntoMutable() {
-    if (this->slice_.refcount == nullptr) {
-      return MutableSlice(this->slice_);
+    if (c_slice().refcount == nullptr) {
+      return MutableSlice(c_slice());
     }
-    if (this->slice_.refcount->GetType() ==
-            grpc_slice_refcount::Type::REGULAR &&
-        this->slice_.refcount->IsRegularUnique()) {
+    if (c_slice().refcount->GetType() == grpc_slice_refcount::Type::REGULAR &&
+        c_slice().refcount->IsRegularUnique()) {
       return MutableSlice(TakeCSlice());
     }
-    return MutableSlice(grpc_slice_copy(this->slice_));
+    return MutableSlice(grpc_slice_copy(c_slice()));
   }
 
-  Slice Ref() const { return Slice(grpc_slice_ref_internal(this->slice_)); }
+  Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }
 
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
                                     const uint8_t* begin, const uint8_t* end) {

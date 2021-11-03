@@ -283,7 +283,7 @@ TEST(GrpcSliceTest, StringViewFromSlice) {
   constexpr char kStr[] = "foo";
   absl::string_view sv(
       grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
-  EXPECT_EQ(std::string(sv), kStr);
+  EXPECT_EQ(sv, kStr);
 }
 
 namespace grpc_core {
@@ -356,8 +356,7 @@ size_t SumSlice(const Slice& slice) {
 }
 
 TEST(SliceTest, ExternalAsOwned) {
-  std::unique_ptr<std::string> external_string(
-      new std::string(RandomString(1024)));
+  auto external_string = absl::make_unique<std::string>(RandomString(1024));
   Slice slice(ExternallyManagedSlice(external_string->data(),
                                      external_string->length()));
   const auto initial_sum = SumSlice(slice);
