@@ -71,22 +71,22 @@ typedef struct tsi_test_fixture_vtable {
 } tsi_test_fixture_vtable;
 
 struct tsi_test_fixture {
-  const tsi_test_fixture_vtable* vtable;
+  const tsi_test_fixture_vtable* vtable = nullptr;
   /* client/server TSI handshaker used to perform TSI handshakes, and will get
      instantiated during the call to setup_handshakers. */
-  tsi_handshaker* client_handshaker;
-  tsi_handshaker* server_handshaker;
+  tsi_handshaker* client_handshaker = nullptr;
+  tsi_handshaker* server_handshaker = nullptr;
   /* client/server TSI handshaker results used to store the result of TSI
      handshake. If the handshake fails, the result will store NULL upon
      finishing the handshake. */
-  tsi_handshaker_result* client_result;
-  tsi_handshaker_result* server_result;
+  tsi_handshaker_result* client_result = nullptr;
+  tsi_handshaker_result* server_result = nullptr;
   /* size of buffer used to store data received from the peer. */
   size_t handshake_buffer_size;
   /* tsi_test_channel instance. */
-  tsi_test_channel* channel;
+  tsi_test_channel* channel = nullptr;
   /* tsi_test_frame_protector_config instance */
-  tsi_test_frame_protector_config* config;
+  tsi_test_frame_protector_config* config = nullptr;
   /* a flag indicating if client has finished TSI handshake first (i.e., before
      server).
      The flag should be referred if and only if TSI handshake finishes

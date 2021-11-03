@@ -50,16 +50,31 @@ class CrlSslTransportSecurityTest
    public:
     static SslTsiTestFixture* Create(bool use_revoked_server_cert,
                                      bool use_revoked_client_cert) {
-      auto* fixture = static_cast<SslTsiTestFixture*>(
-          gpr_malloc(sizeof(SslTsiTestFixture)));
-      new (fixture)
-          SslTsiTestFixture(use_revoked_server_cert, use_revoked_client_cert);
-      return fixture;
+      return new SslTsiTestFixture(use_revoked_server_cert,
+                                   use_revoked_client_cert);
     }
 
     void Run() {
       tsi_test_do_handshake(&base_);
       tsi_test_fixture_destroy(&base_);
+    }
+    tsi_test_fixture base_;
+
+    ~SslTsiTestFixture() {
+      for (size_t i = 0; i < kSslTsiTestValidKeyCertPairsNum; i++) {
+        PemKeyCertPairDestroy(valid_pem_key_cert_pairs_[i]);
+      }
+      gpr_free(valid_pem_key_cert_pairs_);
+      for (size_t i = 0; i < kSslTsiTestRevokedKeyCertPairsNum; i++) {
+        PemKeyCertPairDestroy(revoked_pem_key_cert_pairs_[i]);
+      }
+
+      gpr_free(revoked_pem_key_cert_pairs_);
+
+      gpr_free(root_cert_);
+      tsi_ssl_root_certs_store_destroy(root_store_);
+      tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
+      tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
     }
 
    private:
@@ -67,7 +82,6 @@ class CrlSslTransportSecurityTest
                       bool use_revoked_client_cert)
         : use_revoked_server_cert_(use_revoked_server_cert),
           use_revoked_client_cert_(use_revoked_client_cert) {
-      tsi_test_fixture_init(&base_);
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
       // Load cert data.
@@ -89,21 +103,6 @@ class CrlSslTransportSecurityTest
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "ca.pem"));
       root_store_ = tsi_ssl_root_certs_store_create(root_cert_);
       GPR_ASSERT(root_store_ != nullptr);
-    }
-
-    ~SslTsiTestFixture() {
-      for (size_t i = 0; i < kSslTsiTestValidKeyCertPairsNum; i++) {
-        PemKeyCertPairDestroy(valid_pem_key_cert_pairs_[i]);
-      }
-      gpr_free(valid_pem_key_cert_pairs_);
-      for (size_t i = 0; i < kSslTsiTestRevokedKeyCertPairsNum; i++) {
-        PemKeyCertPairDestroy(revoked_pem_key_cert_pairs_[i]);
-      }
-      gpr_free(revoked_pem_key_cert_pairs_);
-      gpr_free(root_cert_);
-      tsi_ssl_root_certs_store_destroy(root_store_);
-      tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
-      tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
     }
 
     static void SetupHandshakers(tsi_test_fixture* fixture) {
@@ -165,24 +164,23 @@ class CrlSslTransportSecurityTest
     }
 
     void CheckHandshakerPeers() {
-      // In TLS 1.3, the client-side handshake succeeds even if the client
-      // sends a revoked certificate. In such a case, the server would fail
-      // the TLS handshake and send an alert to the client as the first
-      // application data message. In TLS 1.2, the client-side handshake will
-      // fail if the client sends a revoked certificate.
+      // For OpenSSL versions >= 1.1, revocation enforcement is enabled and
+      // revoked certs should be denied.
       //
       // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
       // client-side handshake should succeed precisely when the server-side
       // handshake succeeds.
-      bool expect_server_success =
-          !(use_revoked_server_cert_ || use_revoked_client_cert_);
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-      bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                       ? expect_server_success
-                                       : !use_revoked_server_cert_;
-#else
-      bool expect_client_success = expect_server_success;
-#endif
+      bool expect_server_success;
+      bool expect_client_success;
+      if (OPENSSL_VERSION_NUMBER >= 0x10100000) {
+        expect_server_success =
+            !(use_revoked_server_cert_ || use_revoked_client_cert_);
+        expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
+                                    ? expect_server_success
+                                    : !use_revoked_server_cert_;
+      } else {
+        expect_client_success = expect_server_success;
+      }
       tsi_peer peer;
       if (expect_client_success) {
         EXPECT_EQ(
@@ -209,7 +207,8 @@ class CrlSslTransportSecurityTest
 
     static void Destruct(tsi_test_fixture* fixture) {
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
-      self->~SslTsiTestFixture();
+      // self->~SslTsiTestFixture();
+      delete self;
     }
 
     static char* LoadFile(absl::string_view file_path) {
@@ -223,15 +222,14 @@ class CrlSslTransportSecurityTest
 
     static struct tsi_test_fixture_vtable kVtable;
 
-    tsi_test_fixture base_;
     bool use_revoked_server_cert_;
     bool use_revoked_client_cert_;
-    char* root_cert_;
-    tsi_ssl_root_certs_store* root_store_;
-    tsi_ssl_pem_key_cert_pair* revoked_pem_key_cert_pairs_;
-    tsi_ssl_pem_key_cert_pair* valid_pem_key_cert_pairs_;
-    tsi_ssl_server_handshaker_factory* server_handshaker_factory_;
-    tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
+    char* root_cert_ = nullptr;
+    tsi_ssl_root_certs_store* root_store_ = nullptr;
+    tsi_ssl_pem_key_cert_pair* revoked_pem_key_cert_pairs_ = nullptr;
+    tsi_ssl_pem_key_cert_pair* valid_pem_key_cert_pairs_ = nullptr;
+    tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
+    tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   };
 };
 
