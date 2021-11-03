@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Any modifications to this file must be accompanied with corresponding changes
+# to `generate_libuv_source_wrappers.py`.
+
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
 config_setting(
@@ -228,7 +231,6 @@ ANDROID_LIBUV_SOURCES = [
 ]
 
 DARWIN_LIBUV_SOURCES = [
-    "src/unix/bsd-ifaddrs.c",
     "src/unix/darwin.c",
     "src/unix/fsevents.c",
     "src/unix/kqueue.c",
@@ -237,7 +239,6 @@ DARWIN_LIBUV_SOURCES = [
 ]
 
 BSD_LIBUV_SOURCES = [
-    "src/unix/bsd-ifaddrs.c",
     "src/unix/bsd-proctitle.c",
 ]
 
@@ -272,12 +273,19 @@ WINDOWS_LIBUV_SOURCES = [
     "src/win/winsock.c",
 ]
 
+###############################################################################
+## SPECIAL CASES
+#
 # Used in both Darwin and Unix builds.
 #
 # This BUILD file is source of truth for platform configurations. This file
 # needs to be handled separately for our build. See
 # tools/buildgen/generate_libuv_source_wrappers.py
 UNIX_PROCTITLE = ["src/unix/proctitle.c"]
+
+# Used in both Darwin and BSD builds. Requires special templating
+BSD_IFADDRS = ["src/unix/bsd-ifaddrs.c"]
+###############################################################################
 
 GCC_COPTS = [
     "-D_LARGEFILE_SOURCE",
@@ -304,8 +312,8 @@ cc_library(
     name = "libuv",
     srcs = COMMON_LIBUV_SOURCES + select({
         ":android": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES + UNIX_PROCTITLE,
-        ":apple": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
-	":freebsd": UNIX_LIBUV_SOURCES + BSD_LIBUV_SOURCES + FREEBSD_LIBUV_SOURCES,
+        ":apple": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE + BSD_IFADDRS,
+    	  ":freebsd": UNIX_LIBUV_SOURCES + BSD_LIBUV_SOURCES + FREEBSD_LIBUV_SOURCES + BSD_IFADDRS,
         ":windows": WINDOWS_LIBUV_SOURCES,
         "//conditions:default": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + UNIX_PROCTITLE,
     }),

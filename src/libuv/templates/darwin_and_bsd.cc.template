@@ -15,5 +15,5 @@
 #include <grpc/support/port_platform.h>
 
 #if defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_APPLE)
-#include "third_party/libuv/src/unix/bsd-ifaddrs.c"
+#include "${filename}"
 #endif

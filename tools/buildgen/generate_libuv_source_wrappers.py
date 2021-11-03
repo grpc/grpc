@@ -105,7 +105,16 @@ for src_filename in DARWIN_LIBUV_SOURCES:
     render_template(TEMPLATES['darwin.cc.template'], src_filename)
 for src_filename in DARWIN_LIBUV_HEADERS:
     render_template(TEMPLATES['darwin.h.template'], src_filename)
+for src_filename in BSD_LIBUV_HEADERS:
+    render_template(TEMPLATES['bsd.h.template'], src_filename)
+for src_filename in BSD_LIBUV_SOURCES:
+    render_template(TEMPLATES['bsd.cc.template'], src_filename)
+for src_filename in FREEBSD_LIBUV_SOURCES:
+    render_template(TEMPLATES['freebsd.cc.template'], src_filename)
+
 
 # Files that require special handling
 for src_filename in UNIX_PROCTITLE:
     render_template(TEMPLATES['unix.cc.template'], src_filename)
+for src_filename in BSD_IFADDRS:
+    render_template(TEMPLATES['darwin_and_bsd.cc.template'], src_filename)
