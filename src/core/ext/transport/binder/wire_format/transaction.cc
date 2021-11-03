@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
+
 #ifndef GRPC_NO_BINDER
 
 #include "src/core/ext/transport/binder/wire_format/transaction.h"

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
+
 #ifndef GRPC_NO_BINDER
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
