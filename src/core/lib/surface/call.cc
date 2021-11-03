@@ -1961,6 +1961,7 @@ done_with_error:
   if (stream_op->send_message) {
     call->sending_message = false;
     call->sending_stream->Orphan();
+    stream_op_payload->send_message.send_message.reset();
   }
   if (stream_op->send_trailing_metadata) {
     call->sent_final_op = false;

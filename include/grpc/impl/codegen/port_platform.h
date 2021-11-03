@@ -186,7 +186,14 @@
 #endif /* _LP64 */
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
+#ifdef __GLIBC_PREREQ
+#if __GLIBC_PREREQ(2, 12)
 #define GPR_LINUX_PTHREAD_NAME 1
+#endif
+#else
+// musl libc & others
+#define GPR_LINUX_PTHREAD_NAME 1
+#endif
 #include <linux/version.h>
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
