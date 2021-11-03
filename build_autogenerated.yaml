@@ -1557,6 +1557,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -1581,6 +1582,7 @@ libs:
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
+  - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -1614,6 +1616,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -1637,6 +1640,7 @@ libs:
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
+  - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -7937,6 +7941,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
   - src/core/lib/slice/static_slice.h
+  - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
@@ -7944,6 +7949,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/slice/static_slice.cc
   - test/core/slice/slice_test.cc
+  - test/core/util/build.cc
   deps:
   - gpr
   uses_polling: false
@@ -8472,6 +8478,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -8498,6 +8505,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
