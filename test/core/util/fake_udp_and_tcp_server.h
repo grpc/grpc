@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <set>
+#include <string>
 #include <thread>
 
 #include "absl/memory/memory.h"

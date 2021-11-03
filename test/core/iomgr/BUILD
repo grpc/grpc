@@ -176,11 +176,11 @@ grpc_cc_test(
     args = [
         "--resolver=ares",
     ],
-    language = "C++",
-    tags = ["no_windows"],
     external_deps = [
         "absl/strings",
     ],
+    language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -194,11 +194,11 @@ grpc_cc_test(
     args = [
         "--resolver=native",
     ],
-    language = "C++",
-    tags = ["no_windows"],
     external_deps = [
         "absl/strings",
     ],
+    language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
