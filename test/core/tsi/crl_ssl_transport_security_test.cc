@@ -50,15 +50,17 @@ class CrlSslTransportSecurityTest
    public:
     static SslTsiTestFixture* Create(bool use_revoked_server_cert,
                                      bool use_revoked_client_cert) {
-      return new SslTsiTestFixture(use_revoked_server_cert,
-                                   use_revoked_client_cert);
+      auto* fixture = static_cast<SslTsiTestFixture*>(
+          gpr_malloc(sizeof(SslTsiTestFixture)));
+      new (fixture)
+          SslTsiTestFixture(use_revoked_server_cert, use_revoked_client_cert);
+      return fixture;
     }
 
     void Run() {
       tsi_test_do_handshake(&base_);
       tsi_test_fixture_destroy(&base_);
     }
-    tsi_test_fixture base_;
 
     ~SslTsiTestFixture() {
       for (size_t i = 0; i < kSslTsiTestValidKeyCertPairsNum; i++) {
@@ -82,6 +84,7 @@ class CrlSslTransportSecurityTest
                       bool use_revoked_client_cert)
         : use_revoked_server_cert_(use_revoked_server_cert),
           use_revoked_client_cert_(use_revoked_client_cert) {
+      tsi_test_fixture_init(&base_);
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
       // Load cert data.
@@ -222,6 +225,7 @@ class CrlSslTransportSecurityTest
 
     static struct tsi_test_fixture_vtable kVtable;
 
+    tsi_test_fixture base_;
     bool use_revoked_server_cert_;
     bool use_revoked_client_cert_;
     char* root_cert_ = nullptr;

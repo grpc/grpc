@@ -631,6 +631,7 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   fixture->vtable->destruct(fixture);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
+  gpr_free(fixture);
 }
 
 tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create() {
