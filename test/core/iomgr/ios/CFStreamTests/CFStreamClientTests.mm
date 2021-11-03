@@ -24,6 +24,7 @@
 
 #include <netinet/in.h>
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
@@ -101,8 +102,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, nullptr, &resolved_addr,
+  grpc_channel_args* args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args_destroy(args);
 
   /* await the connection */
   do {
@@ -156,8 +159,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, nullptr, &resolved_addr,
+  grpc_channel_args* args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args_destroy(args);
 
   grpc_core::ExecCtx::Get()->Flush();
 
