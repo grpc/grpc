@@ -644,11 +644,13 @@ if (PHP_GRPC != "no") {
     "src\\libuv\\src\\unix\\android-ifaddrs-wrapper.c " +
     "src\\libuv\\src\\unix\\async-wrapper.c " +
     "src\\libuv\\src\\unix\\bsd-ifaddrs-wrapper.c " +
+    "src\\libuv\\src\\unix\\bsd-proctitle-wrapper.c " +
     "src\\libuv\\src\\unix\\core-wrapper.c " +
     "src\\libuv\\src\\unix\\darwin-proctitle-wrapper.c " +
     "src\\libuv\\src\\unix\\darwin-wrapper.c " +
     "src\\libuv\\src\\unix\\dl-wrapper.c " +
     "src\\libuv\\src\\unix\\epoll-wrapper.c " +
+    "src\\libuv\\src\\unix\\freebsd-wrapper.c " +
     "src\\libuv\\src\\unix\\fs-wrapper.c " +
     "src\\libuv\\src\\unix\\fsevents-wrapper.c " +
     "src\\libuv\\src\\unix\\getaddrinfo-wrapper.c " +

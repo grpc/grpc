@@ -112,7 +112,6 @@ for src_filename in BSD_LIBUV_SOURCES:
 for src_filename in FREEBSD_LIBUV_SOURCES:
     render_template(TEMPLATES['freebsd.cc.template'], src_filename)
 
-
 # Files that require special handling
 for src_filename in UNIX_PROCTITLE:
     render_template(TEMPLATES['unix.cc.template'], src_filename)

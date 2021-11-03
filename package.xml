@@ -1287,6 +1287,7 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv/android-ifaddrs-wrapper.h" role="src" />
+    <file baseinstalldir="/" name="src/libuv/include/uv/bsd-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv/darwin-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv/errno-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv/linux-wrapper.h" role="src" />
@@ -1310,12 +1311,14 @@
     <file baseinstalldir="/" name="src/libuv/src/unix/async-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/atomic-ops-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/bsd-ifaddrs-wrapper.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/bsd-proctitle-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/core-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/darwin-proctitle-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/darwin-stub-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/darwin-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/dl-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/epoll-wrapper.c" role="src" />
+    <file baseinstalldir="/" name="src/libuv/src/unix/freebsd-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/fs-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/fsevents-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/getaddrinfo-wrapper.c" role="src" />
