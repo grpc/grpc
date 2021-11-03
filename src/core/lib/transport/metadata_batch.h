@@ -143,7 +143,7 @@ struct UserAgentMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
   static const char* key() { return "user-agent"; }
-  static MementoType ParseMemento(Slice value) { return value.IntoOwned(); }
+  static MementoType ParseMemento(Slice value) { return value.TakeOwned(); }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(const ValueType& x) { return x.Ref(); }
   static absl::string_view DisplayValue(const MementoType& value) {
@@ -168,7 +168,7 @@ struct ParseHelper<Container, Trait, Traits...> {
                                          NotFound not_found) {
     if (key == Trait::key()) {
       return ParsedMetadata<Container>(
-          Trait(), Trait::ParseMemento(value.IntoOwned()), transport_size);
+          Trait(), Trait::ParseMemento(value.TakeOwned()), transport_size);
     }
     return ParseHelper<Container, Traits...>::Parse(key, std::move(value),
                                                     transport_size, not_found);
@@ -198,7 +198,7 @@ struct AppendHelper<Container, Trait, Traits...> {
                      NotFound not_found) {
     if (key == Trait::key()) {
       container->Set(Trait(), Trait::MementoToValue(
-                                  Trait::ParseMemento(value.IntoOwned())));
+                                  Trait::ParseMemento(value.TakeOwned())));
       return;
     }
     AppendHelper<Container, Traits...>::Append(container, key, std::move(value),

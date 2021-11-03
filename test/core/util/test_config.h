@@ -21,6 +21,8 @@
 
 #include <grpc/support/time.h>
 
+#include "test/core/util/build.h"
+
 extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;
 

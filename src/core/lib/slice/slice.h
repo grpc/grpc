@@ -251,10 +251,10 @@ class Slice : public slice_detail::BaseSlice,
   // that we need to keep that slice text for longer than our API's guarantee us
   // access, we need to take a copy and turn this into something that we do own.
 
-  // IntoOwned returns an owned slice regardless of current ownership, and
-  // leaves the current slice empty - in doing so it can avoid adding a ref to
-  // the underlying slice.
-  Slice IntoOwned() {
+  // TakeOwned returns an owned slice regardless of current ownership, and
+  // leaves the current slice in a valid but externally unpredictable state - in
+  // doing so it can avoid adding a ref to the underlying slice.
+  Slice TakeOwned() {
     if (c_slice().refcount == nullptr) {
       return Slice(c_slice());
     }
@@ -276,14 +276,14 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(grpc_slice_ref_internal(c_slice()));
   }
 
-  // IntoMutable returns a MutableSlice, and leaves the current slice empty.
+  // TakeMutable returns a MutableSlice, and leaves the current slice empty.
   // A mutable slice requires only one reference to the bytes of the slice -
   // this can be achieved either with inlined storage or with a single
   // reference.
   // If the current slice is refcounted and there are more than one references
   // to that slice, then the slice is copied in order to achieve a mutable
   // version.
-  MutableSlice IntoMutable() {
+  MutableSlice TakeMutable() {
     if (c_slice().refcount == nullptr) {
       return MutableSlice(c_slice());
     }
