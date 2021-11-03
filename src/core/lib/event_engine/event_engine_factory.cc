@@ -15,27 +15,31 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/gprpp/sync.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine* g_event_engine = nullptr;
+namespace {
 std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory = nullptr;
+grpc_core::Mutex* g_mu = new grpc_core::Mutex();
+}  // namespace
 
 EventEngine* GetDefaultEventEngine() {
-  if (g_event_engine == nullptr) {
-    g_event_engine = CreateEventEngine().release();
-  }
-  return g_event_engine;
+  static EventEngine* default_event_engine = CreateEventEngine().release();
+  return default_event_engine;
 }
 
 void SetDefaultEventEngineFactory(
     std::function<std::unique_ptr<EventEngine>()>* factory) {
+  grpc_core::MutexLock lock(g_mu);
   g_event_engine_factory = factory;
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {
+  grpc_core::MutexLock lock(g_mu);
   if (g_event_engine_factory == nullptr) {
-    // TODO(hork): replace with LibuvEventEngineFactory
+    // TODO(hork): call LibuvEventEngineFactory
     abort();
   }
   return (*g_event_engine_factory)();
