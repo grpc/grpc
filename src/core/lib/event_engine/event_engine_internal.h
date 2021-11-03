@@ -15,8 +15,14 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+namespace grpc_event_engine {
+namespace experimental {
+
 /// Access the shared global EventEngine instance.
 ///
 /// The concept of a global EventEngine may go away in a post-iomgr world.
 /// Strongly consider whether you could use \a CreateEventEngine instead.
-grpc_event_engine::experimental::EventEngine* GetDefaultEventEngine();
+EventEngine* GetDefaultEventEngine();
+
+}  // namespace experimental
+}  // namespace grpc_event_engine

@@ -371,8 +371,9 @@ class EventEngine {
 /// the default factory used within gRPC. EventEngines will be created when
 /// necessary, when they are otherwise not provided by the application.
 ///
-/// To be certain that no default EventEngines are created, applications must
-/// set a custom EventEngine factory method before grpc is initialized.
+/// To be certain that none of the gRPC-provided built-in EventEngines are
+/// created, applications must set a custom EventEngine factory method *before*
+/// grpc is initialized.
 void SetDefaultEventEngineFactory(
     const std::function<std::unique_ptr<EventEngine>()>* factory);
 
