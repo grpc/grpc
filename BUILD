@@ -1,4 +1,4 @@
-# gRPC Bazel BUILD file. 
+# gRPC Bazel BUILD file.
 #
 # Copyright 2016 gRPC authors.
 #
