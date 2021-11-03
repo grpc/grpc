@@ -442,8 +442,14 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.c" role="src" />
