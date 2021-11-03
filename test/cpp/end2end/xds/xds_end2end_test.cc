@@ -679,11 +679,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // balancers that it needs, so that we aren't wasting resources.
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds = 100,
+                 int xds_resource_does_not_exist_timeout_ms = 0,
                  bool use_xds_enabled_server = false)
       : num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
+        xds_resource_does_not_exist_timeout_ms_(
+            xds_resource_does_not_exist_timeout_ms),
         use_xds_enabled_server_(use_xds_enabled_server) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
@@ -2112,6 +2115,7 @@ TEST_P(BasicTest, BackendsRestart) {
   // yet having noticed that the backends were all down.
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(num_backends_));
   // Restart all backends.  RPCs should start succeeding again.
+  StartAllBackends();
   CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
 }
 
@@ -2574,7 +2578,9 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
-  XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {}
+  XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {
+    StartAllBackends();
+  }
 };
 
 // Tests load reporting when switching over from one cluster to another.
@@ -8233,7 +8239,7 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   XdsEnabledServerTest()
-      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {
+      : XdsEnd2endTest(1, 1, 100, 0, true /* use_xds_enabled_server */) {
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
@@ -8424,7 +8430,7 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   XdsServerSecurityTest()
-      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {
+      : XdsEnd2endTest(1, 1, 100, 0, true /* use_xds_enabled_server */) {
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
@@ -9871,9 +9877,13 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   CheckRpcSendOk();
 }
 
-class TimeoutTest : public BasicTest {
+class TimeoutTest : public XdsEnd2endTest {
  protected:
-  TimeoutTest() { xds_resource_does_not_exist_timeout_ms_ = 500; }
+  TimeoutTest()
+      : XdsEnd2endTest(/* num_backends= */ 4, /* num_balancers= */ 1,
+                       /*client_load_reporting_interval_seconds= */ 100,
+                       /* xds_resource_does_not_exist_timeout_ms */ 500,
+                       /* use_xds_enabled_server= */ false) {}
 };
 
 // Tests that LDS client times out when no response received.
