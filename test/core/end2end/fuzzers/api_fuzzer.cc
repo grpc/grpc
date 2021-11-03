@@ -455,6 +455,11 @@ class Call : public std::enable_shared_from_this<Call> {
         }
         break;
       case api_fuzzer::BatchOp::kReceiveMessage:
+        // Allow only one active pending_recv_message_op to exist. Otherwise if
+        // the previous enqueued recv_message_op is not complete by the time
+        // we get here, then under certain conditions, enqueing this op will
+        // over-write the internal call->receiving_buffer maintained by grpc
+        // leading to a memory leak.
         if (call_closed_ || pending_recv_message_op_) {
           *batch_is_ok = false;
         } else {
@@ -484,27 +489,6 @@ class Call : public std::enable_shared_from_this<Call> {
     op.reserved = nullptr;
     op.flags = batch_op.flags();
     return op;
-  }
-
-  std::string GetDebugStr(uint8_t has_ops) {
-    std::string debug_str;
-    if (has_ops & (1u << GRPC_OP_SEND_INITIAL_METADATA))
-      debug_str += "S-IM + ";
-    if (has_ops & (1u << GRPC_OP_SEND_MESSAGE))
-      debug_str += "S-ME + ";
-    if (has_ops & (1u << GRPC_OP_SEND_CLOSE_FROM_CLIENT))
-      debug_str += "S-CLOSE-CLIENT + ";
-    if (has_ops & (1u << GRPC_OP_RECV_MESSAGE))
-      debug_str += "R-ME + ";
-    if (has_ops & (1u << GRPC_OP_RECV_INITIAL_METADATA))
-      debug_str += "R-IM + ";
-    if (has_ops & (1u << GRPC_OP_RECV_STATUS_ON_CLIENT))
-      debug_str += "R-STAT-CLIENT + ";
-    if (has_ops & (1u << GRPC_OP_RECV_CLOSE_ON_SERVER))
-      debug_str += "R-CLOSE-SERVER + ";
-    if (has_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER))
-      debug_str += "S-STATUS-SERVER + ";
-    return debug_str;
   }
 
   Validator* FinishedBatchValidator(uint8_t has_ops) {
