@@ -18,11 +18,28 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-/// Access the shared global EventEngine instance.
-///
-/// The concept of a global EventEngine may go away in a post-iomgr world.
-/// Strongly consider whether you could use \a CreateEventEngine instead.
-EventEngine* GetDefaultEventEngine();
+EventEngine* g_event_engine = nullptr;
+std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory = nullptr;
+
+EventEngine* GetDefaultEventEngine() {
+  if (g_event_engine == nullptr) {
+    g_event_engine = CreateEventEngine().release();
+  }
+  return g_event_engine;
+}
+
+void SetDefaultEventEngineFactory(
+    std::function<std::unique_ptr<EventEngine>()>* factory) {
+  g_event_engine_factory = factory;
+}
+
+std::unique_ptr<EventEngine> CreateEventEngine() {
+  if (g_event_engine_factory == nullptr) {
+    // TODO(hork): replace with LibuvEventEngineFactory
+    abort();
+  }
+  return (*g_event_engine_factory)();
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

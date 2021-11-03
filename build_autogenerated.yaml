@@ -751,7 +751,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
-  - src/core/lib/event_engine/event_engine_internal.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -1805,7 +1805,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
-  - src/core/lib/event_engine/event_engine_internal.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h

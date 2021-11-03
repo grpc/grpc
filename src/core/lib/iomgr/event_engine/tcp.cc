@@ -18,7 +18,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/endpoint_config_internal.h"
-#include "src/core/lib/event_engine/event_engine_internal.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"

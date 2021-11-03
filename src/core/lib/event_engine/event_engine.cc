@@ -22,14 +22,11 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/event_engine_internal.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 
 namespace grpc_event_engine {
 namespace experimental {
-
-EventEngine* g_event_engine = nullptr;
-std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory = nullptr;
 
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
@@ -43,26 +40,6 @@ const struct sockaddr* EventEngine::ResolvedAddress::address() const {
 }
 
 socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
-
-void SetDefaultEventEngineFactory(
-    std::function<std::unique_ptr<EventEngine>()>* factory) {
-  g_event_engine_factory = factory;
-}
-
-std::unique_ptr<EventEngine> CreateEventEngine() {
-  if (g_event_engine_factory == nullptr) {
-    // TODO(hork): replace with LibuvEventEngineFactory
-    abort();
-  }
-  return (*g_event_engine_factory)();
-}
-
-EventEngine* GetDefaultEventEngine() {
-  if (g_event_engine == nullptr) {
-    g_event_engine = CreateEventEngine().release();
-  }
-  return g_event_engine;
-}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

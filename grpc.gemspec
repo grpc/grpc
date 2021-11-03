@@ -790,7 +790,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/endpoint_config.cc )
   s.files += %w( src/core/lib/event_engine/endpoint_config_internal.h )
   s.files += %w( src/core/lib/event_engine/event_engine.cc )
-  s.files += %w( src/core/lib/event_engine/event_engine_internal.h )
+  s.files += %w( src/core/lib/event_engine/event_engine_factory.h )
   s.files += %w( src/core/lib/event_engine/sockaddr.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
