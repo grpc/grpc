@@ -75,28 +75,27 @@ extern "C" grpc_resource_quota* grpc_resource_quota_create(const char* name) {
       name == nullptr
           ? absl::StrCat("anonymous-quota-", anonymous_counter.fetch_add(1))
           : name;
-  return reinterpret_cast<grpc_resource_quota*>(
-      new grpc_core::ResourceQuota(std::move(quota_name)));
+  return (new grpc_core::ResourceQuota(std::move(quota_name)))->c_ptr();
 }
 
 extern "C" void grpc_resource_quota_ref(grpc_resource_quota* resource_quota) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)->Ref().release();
+  grpc_core::ResourceQuota::FromC(resource_quota)->Ref().release();
 }
 
 extern "C" void grpc_resource_quota_unref(grpc_resource_quota* resource_quota) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)->Unref();
+  grpc_core::ResourceQuota::FromC(resource_quota)->Unref();
 }
 
 extern "C" void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                            size_t new_size) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)
+  grpc_core::ResourceQuota::FromC(resource_quota)
       ->memory_quota()
       ->SetSize(new_size);
 }
 
 extern "C" void grpc_resource_quota_set_max_threads(
     grpc_resource_quota* resource_quota, int new_max_threads) {
-  reinterpret_cast<grpc_core::ResourceQuota*>(resource_quota)
+  grpc_core::ResourceQuota::FromC(resource_quota)
       ->thread_quota()
       ->SetMax(new_max_threads);
 }

@@ -872,6 +872,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cpp_impl_of",
+    language = "c++",
+    hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
+)
+
+grpc_cc_library(
     name = "gpr_codegen",
     language = "c++",
     public_hdrs = [
@@ -1480,6 +1486,7 @@ grpc_cc_library(
         "memory_quota",
         "ref_counted",
         "thread_quota",
+        "cpp_impl_of"
     ],
 )
 

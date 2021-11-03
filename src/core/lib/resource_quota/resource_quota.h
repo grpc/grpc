@@ -17,6 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
 
@@ -25,7 +28,8 @@ namespace grpc_core {
 class ResourceQuota;
 using ResourceQuotaPtr = RefCountedPtr<ResourceQuota>;
 
-class ResourceQuota : public RefCounted<ResourceQuota> {
+class ResourceQuota : public RefCounted<ResourceQuota>,
+                      public CppImplOf<ResourceQuota, grpc_resource_quota> {
  public:
   explicit ResourceQuota(std::string name);
   ~ResourceQuota() override;
