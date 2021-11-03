@@ -84,7 +84,7 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
    'on_response' is a callback to report results to */
 void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_polling_entity* pollent,
-                      grpc_core::ResourceQuotaPtr resource_quota,
+                      grpc_core::ResourceQuotaRefPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response);
 
@@ -106,7 +106,7 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
    Does not support ?var1=val1&var2=val2 in the path. */
 void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_polling_entity* pollent,
-                       grpc_core::ResourceQuotaPtr resource_quota,
+                       grpc_core::ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
                        grpc_millis deadline, grpc_closure* on_done,

@@ -236,7 +236,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   grpc_closure tcp_server_shutdown_complete_ ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
   RefCountedPtr<channelz::ListenSocketNode> channelz_listen_socket_;
-  MemoryQuotaPtr memory_quota_;
+  MemoryQuotaRefPtr memory_quota_;
 };
 
 //

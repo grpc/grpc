@@ -417,8 +417,8 @@ class MemoryQuota final
   std::shared_ptr<BasicMemoryQuota> memory_quota_;
 };
 
-using MemoryQuotaPtr = std::shared_ptr<MemoryQuota>;
-inline MemoryQuotaPtr MakeMemoryQuota(std::string name) {
+using MemoryQuotaRefPtr = std::shared_ptr<MemoryQuota>;
+inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
   return std::make_shared<MemoryQuota>(std::move(name));
 }
 

@@ -31,7 +31,7 @@ constexpr size_t kResourceQuotaChannelSize = 50 * 1024;
 
 // Retrieve the resource quota from the channel args.
 // UB if not set.
-ResourceQuotaPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args);
+ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args);
 
 // Take some channel args:
 // If there is a resource quota set, copy args and return that.
@@ -41,7 +41,7 @@ grpc_channel_args* EnsureResourceQuotaInChannelArgs(
     const grpc_channel_args* args);
 
 // Create channel args with just the passed in resource quota
-grpc_channel_args* ChannelArgsWrappingResourceQuota(ResourceQuotaPtr);
+grpc_channel_args* ChannelArgsWrappingResourceQuota(ResourceQuotaRefPtr);
 
 inline ResourceQuota* ResourceQuotaFromC(grpc_resource_quota* quota) {
   return reinterpret_cast<ResourceQuota*>(quota);

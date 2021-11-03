@@ -22,7 +22,8 @@
 
 namespace grpc_core {
 
-ResourceQuotaPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args) {
+ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(
+    const grpc_channel_args* args) {
   return grpc_channel_args_find_pointer<ResourceQuota>(args,
                                                        GRPC_ARG_RESOURCE_QUOTA)
       ->Ref();
@@ -49,7 +50,7 @@ grpc_channel_args* EnsureResourceQuotaInChannelArgs(
 }
 
 grpc_channel_args* ChannelArgsWrappingResourceQuota(
-    ResourceQuotaPtr resource_quota) {
+    ResourceQuotaRefPtr resource_quota) {
   auto new_arg = MakeArg(resource_quota.get());
   return grpc_channel_args_copy_and_add(nullptr, &new_arg, 1);
 }

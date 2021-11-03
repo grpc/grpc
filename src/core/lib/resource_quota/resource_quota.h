@@ -26,7 +26,7 @@
 namespace grpc_core {
 
 class ResourceQuota;
-using ResourceQuotaPtr = RefCountedPtr<ResourceQuota>;
+using ResourceQuotaRefPtr = RefCountedPtr<ResourceQuota>;
 
 class ResourceQuota : public RefCounted<ResourceQuota>,
                       public CppImplOf<ResourceQuota, grpc_resource_quota> {
@@ -37,19 +37,19 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
   ResourceQuota(const ResourceQuota&) = delete;
   ResourceQuota& operator=(const ResourceQuota&) = delete;
 
-  MemoryQuotaPtr memory_quota() { return memory_quota_; }
+  MemoryQuotaRefPtr memory_quota() { return memory_quota_; }
 
   const RefCountedPtr<ThreadQuota>& thread_quota() { return thread_quota_; }
 
   // The default global resource quota
-  static ResourceQuotaPtr Default();
+  static ResourceQuotaRefPtr Default();
 
  private:
-  MemoryQuotaPtr memory_quota_;
+  MemoryQuotaRefPtr memory_quota_;
   RefCountedPtr<ThreadQuota> thread_quota_;
 };
 
-inline ResourceQuotaPtr MakeResourceQuota(std::string name) {
+inline ResourceQuotaRefPtr MakeResourceQuota(std::string name) {
   return MakeRefCounted<ResourceQuota>(std::move(name));
 }
 

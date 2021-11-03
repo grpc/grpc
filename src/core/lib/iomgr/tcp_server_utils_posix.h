@@ -97,7 +97,7 @@ struct grpc_tcp_server {
   grpc_core::TcpServerFdHandler* fd_handler = nullptr;
 
   /* used to create slice allocators for endpoints, owned */
-  grpc_core::MemoryQuotaPtr memory_quota;
+  grpc_core::MemoryQuotaRefPtr memory_quota;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the

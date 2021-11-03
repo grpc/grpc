@@ -24,7 +24,7 @@ ResourceQuota::ResourceQuota(std::string name)
 
 ResourceQuota::~ResourceQuota() = default;
 
-ResourceQuotaPtr ResourceQuota::Default() {
+ResourceQuotaRefPtr ResourceQuota::Default() {
   static auto default_resource_quota =
       MakeResourceQuota("default_resource_quota").release();
   return default_resource_quota->Ref();
