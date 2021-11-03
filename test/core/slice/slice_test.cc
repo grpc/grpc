@@ -34,6 +34,7 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/util/build.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
   /* Calls grpc_slice_create for various lengths and verifies the internals for
@@ -365,11 +366,9 @@ TEST(SliceTest, ExternalAsOwned) {
   external_string.reset();
   // In ASAN (where we can be sure that it'll crash), go ahead and read the
   // bytes we just deleted.
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-  ASSERT_DEATH({ SumSlice(slice); }, "");
-#endif
-#endif
+  if (BuiltUnderAsan()) {
+    ASSERT_DEATH({ SumSlice(slice); }, "");
+  }
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }
 

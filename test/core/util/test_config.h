@@ -37,18 +37,6 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #define GRPC_TEST_PICK_PORT
 #endif
 
-// Returns whether this is built under ThreadSanitizer
-bool BuiltUnderTsan();
-
-// Returns whether this is built under AddressSanitizer
-bool BuiltUnderAsan();
-
-// Returns whether this is built under MemorySanitizer
-bool BuiltUnderMsan();
-
-// Returns whether this is built under UndefinedBehaviorSanitizer
-bool BuiltUnderUbsan();
-
 // Prefer TestEnvironment below.
 void grpc_test_init(int argc, char** argv);
 

@@ -85,6 +85,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        ":build",
         ":grpc_suppressions",
         ":stack_tracer",
         "//:gpr",
@@ -209,4 +210,11 @@ grpc_cc_library(
     deps = [
         "//:grpc",
     ],
+)
+
+grpc_cc_library(
+    name = "build",
+    testonly = 1,
+    srcs = ["build.cc"],
+    hdrs = ["build.h"],
 )

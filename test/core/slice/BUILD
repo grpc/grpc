@@ -91,6 +91,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:slice",
+        "//test/core/util:build",
         "//test/core/util:grpc_suppressions",
     ],
 )
