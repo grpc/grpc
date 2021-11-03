@@ -168,9 +168,11 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  brew link --overwrite php || true
-  find /usr/local -name php* || true
-  find /Library/Developer/CommandLineTools/Packages -name "*.pkg"
+  xcode-select --install
+  #brew link --overwrite php || true
+  #find /usr/local -name php* || true
+  find /Library/Developer/CommandLineTools/Packages -name "*.pkg" || true
+  sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
   export LDFLAGS="-L/usr/local/opt/php@7.1/lib $LDFLAGS"
   export CPPFLAGS="-I/usr/local/opt/php@7.1/include $CPPFLAGS"
   export PATH="/usr/local/opt/php@7.1/bin:/usr/local/opt/php@7.1/sbin:$PATH"
