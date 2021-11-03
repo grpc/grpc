@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_NO_BINDER
+
 #include <grpcpp/security/binder_security_policy.h>
 #include <grpcpp/security/server_credentials.h>
 
@@ -71,3 +73,4 @@ std::shared_ptr<ServerCredentials> BinderServerCredentials(
 
 }  // namespace experimental
 }  // namespace grpc
+#endif

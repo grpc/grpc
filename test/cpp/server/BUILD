@@ -90,6 +90,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    # Test seems to be failing on iOS, but shouldn't be needed there anyway,
+    # since we don't support servers on iOS.
+    tags = ["no_test_ios"],
     deps = [
         "//:gpr",
         "//:grpc",

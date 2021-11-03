@@ -49,6 +49,17 @@ config_setting(
     values = {"define": "grpc_no_xds=true"},
 )
 
+# When gRPC is build as shared library, binder transport code might still
+# get included even when user's code does not depend on it. In that case
+# --define=grpc_no_binder=true can be used to disable binder transport
+# related code to reduce binary size.
+# For users using build system other than bazel, they can define
+# GRPC_NO_BINDER to achieve the same effect.
+config_setting(
+    name = "grpc_no_binder_define",
+    values = {"define": "grpc_no_binder=true"},
+)
+
 config_setting(
     name = "android",
     values = {"crosstool_top": "//external:android/crosstool"},
@@ -68,6 +79,15 @@ selects.config_setting_group(
         # likely to be needed and where reducing the binary size is more
         # important.
         ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_binder",
+    match_any = [
+        ":grpc_no_binder_define",
+        # We do not need binder on ios.
         ":ios",
     ],
 )
@@ -448,13 +468,21 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = [{
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc++_xds_client",
-            "grpc++_xds_server",
-        ],
-    }],
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": [
+                "grpc++_xds_client",
+                "grpc++_xds_server",
+            ],
+        },
+        {
+            "grpc_no_binder": [],
+            "//conditions:default": [
+                "grpc++_binder",
+            ],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -554,6 +582,10 @@ grpc_cc_library(
         "src/core/ext/transport/binder/wire_format/wire_reader_impl.h",
         "src/core/ext/transport/binder/wire_format/wire_writer.h",
     ],
+    defines = select({
+        "grpc_no_binder": ["GRPC_NO_BINDER"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
@@ -570,7 +602,6 @@ grpc_cc_library(
         "include/grpcpp/create_channel_binder.h",
         "include/grpcpp/security/binder_credentials.h",
     ],
-    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "gpr_base",

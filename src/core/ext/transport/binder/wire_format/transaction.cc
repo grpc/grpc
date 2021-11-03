@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_NO_BINDER
+
 #include "src/core/ext/transport/binder/wire_format/transaction.h"
 
 namespace grpc_binder {
@@ -28,3 +30,4 @@ const int kFlagMessageDataIsParcelable = 0x40;
 const int kFlagMessageDataIsPartial = 0x80;
 
 }  // namespace grpc_binder
+#endif
