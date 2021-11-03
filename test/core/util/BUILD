@@ -214,7 +214,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "build",
-    testonly = 1,
     srcs = ["build.cc"],
     hdrs = ["build.h"],
 )
