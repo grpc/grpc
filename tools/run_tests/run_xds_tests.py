@@ -2306,8 +2306,9 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                         else:
                             seen.add('eds')
                 for generic_xds_config in client_config.get(
-                        'genericXdsConfigs', []):
-                    if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
+                        'generic_xds_configs', []):
+                    if re.search(r'\.Listener$',
+                                 generic_xds_config['type_url']):
                         seen.add('lds')
                         listener = generic_xds_config["xds_config"]
                         if listener['name'] != server_uri:
@@ -2315,7 +2316,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                         listener_name, server_uri)
                             ok = False
                     elif re.search(r'\.RouteConfiguration$',
-                                   generic_xds_config['typeUrl']):
+                                   generic_xds_config['type_url']):
                         seen.add('rds')
                         route_config = generic_xds_config["xds_config"]
                         if not len(route_config['virtual_hosts']):
@@ -2323,7 +2324,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                         num_vh)
                             ok = False
                     elif re.search(r'\.Cluster$',
-                                   generic_xds_config['typeUrl']):
+                                   generic_xds_config['type_url']):
                         seen.add('cds')
                         cluster = generic_xds_config["xds_config"]
                         if cluster['type'] != 'EDS':
@@ -2331,7 +2332,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                         cluster_type)
                             ok = False
                     elif re.search(r'\.ClusterLoadAssignment$',
-                                   generic_xds_config['typeUrl']):
+                                   generic_xds_config['type_url']):
                         seen.add('eds')
                         endpoint = generic_xds_config["xds_config"]
                         if args.zone not in endpoint["endpoints"][0][

@@ -35,6 +35,8 @@ spec:
   - build:
       args:
       - build
+      - --config
+      - opt
       - //test/cpp/qps:qps_worker
       command:
       - bazel
@@ -148,6 +150,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests/qps:qps_worker
       command:
       - bazel
@@ -168,6 +172,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests_aio/benchmark:worker
       command:
       - bazel
@@ -229,6 +235,8 @@ spec:
   - build:
       args:
       - build
+      - --config
+      - opt
       - //test/cpp/qps:qps_worker
       command:
       - bazel
@@ -309,6 +317,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests/qps:qps_worker
       command:
       - bazel
@@ -329,6 +339,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests_aio/benchmark:worker
       command:
       - bazel

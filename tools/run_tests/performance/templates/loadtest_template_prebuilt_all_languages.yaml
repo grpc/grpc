@@ -56,7 +56,7 @@ spec:
       args:
       - -c
       - |
-        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+        ${java_worker_command_prefix} timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
             /execute/bin/benchmark_worker \
             --driver_port="${DRIVER_PORT}"
       command:
@@ -182,7 +182,7 @@ spec:
       args:
       - -c
       - |
-        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+        ${java_worker_command_prefix} timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
             /execute/bin/benchmark_worker \
             --driver_port="${DRIVER_PORT}"
       command:

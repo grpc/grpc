@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/server/binder_server.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -246,3 +248,4 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
 }
 
 }  // namespace grpc_core
+#endif
