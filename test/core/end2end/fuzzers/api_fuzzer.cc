@@ -43,13 +43,13 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
-#define MAX_ADVANCE_TIME_MICROS 24 * 3600 * 365 * 1000000 // 1year
+#define MAX_ADVANCE_TIME_MICROS 24 * 3600 * 365 * 1000000 // 1 year
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_WAIT_MS 24 * 3600 * 365 * 1000000
+#define MAX_WAIT_MS 24 * 3600 * 365 * 1000 // 1 year
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_READABLE_BYTES 2 * 1024 * 1024 * 1024 // 2GB
+#define MAX_ADD_N_READABLE_BYTES 2* 1024 * 1024 // 2GB
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_WRITABLE_BYTES 2 * 1024 * 1024 * 1024 // 2GB
+#define MAX_ADD_N_WRITABLE_BYTES 2* 1024 * 1024 // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -371,6 +371,24 @@ class Call : public std::enable_shared_from_this<Call> {
                                static_cast<size_t>(metadata.size()), m};
   }
 
+  // For call type client, we need to ensure that a GRPC_OP_RECV_INTIAL_METADATA
+  // op is always enqueued. Otherwise, the input may timeout.
+  // grpc/include/grpc/impl/codegen/grpc_types.h states that one such op
+  // "must" be enqueued at the client.
+  absl::optional<grpc_op> MaybeAdjustBatchOps(uint8_t* batch_ops) {
+    if (type_ != CallType::CLIENT || enqueued_recv_initial_metadata_) {
+      return {};
+    }
+    grpc_op op;
+    memset(&op, 0, sizeof(op));
+    enqueued_recv_initial_metadata_ = true;
+    op.op = GRPC_OP_RECV_INITIAL_METADATA;
+    *batch_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
+    op.data.recv_initial_metadata.recv_initial_metadata =
+        &recv_initial_metadata_;
+    return op;
+  }
+
   absl::optional<grpc_op> ReadOp(
       const api_fuzzer::BatchOp& batch_op, bool* batch_is_ok,
       uint8_t* batch_ops, std::vector<std::function<void()>>* unwinders) {
@@ -426,18 +444,27 @@ class Call : public std::enable_shared_from_this<Call> {
                 : nullptr;
       } break;
       case api_fuzzer::BatchOp::kReceiveInitialMetadata:
-        op.op = GRPC_OP_RECV_INITIAL_METADATA;
-        *batch_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
-        op.data.recv_initial_metadata.recv_initial_metadata =
-            &recv_initial_metadata_;
+        if (enqueued_recv_initial_metadata_) {
+          *batch_is_ok = false;
+        } else {
+          enqueued_recv_initial_metadata_ = true;
+          op.op = GRPC_OP_RECV_INITIAL_METADATA;
+          *batch_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
+          op.data.recv_initial_metadata.recv_initial_metadata =
+              &recv_initial_metadata_;
+        }
         break;
       case api_fuzzer::BatchOp::kReceiveMessage:
-        if (call_closed_) {
+        if (call_closed_ || pending_recv_message_op_) {
           *batch_is_ok = false;
         } else {
           op.op = GRPC_OP_RECV_MESSAGE;
           *batch_ops |= 1 << GRPC_OP_RECV_MESSAGE;
+          pending_recv_message_op_ = true;
           op.data.recv_message.recv_message = &recv_message_;
+          unwinders->push_back([this]() {
+            pending_recv_message_op_ = false;
+          });
         }
         break;
       case api_fuzzer::BatchOp::kReceiveStatusOnClient:
@@ -459,15 +486,38 @@ class Call : public std::enable_shared_from_this<Call> {
     return op;
   }
 
+  std::string GetDebugStr(uint8_t has_ops) {
+    std::string debug_str;
+    if (has_ops & (1u << GRPC_OP_SEND_INITIAL_METADATA))
+      debug_str += "S-IM + ";
+    if (has_ops & (1u << GRPC_OP_SEND_MESSAGE))
+      debug_str += "S-ME + ";
+    if (has_ops & (1u << GRPC_OP_SEND_CLOSE_FROM_CLIENT))
+      debug_str += "S-CLOSE-CLIENT + ";
+    if (has_ops & (1u << GRPC_OP_RECV_MESSAGE))
+      debug_str += "R-ME + ";
+    if (has_ops & (1u << GRPC_OP_RECV_INITIAL_METADATA))
+      debug_str += "R-IM + ";
+    if (has_ops & (1u << GRPC_OP_RECV_STATUS_ON_CLIENT))
+      debug_str += "R-STAT-CLIENT + ";
+    if (has_ops & (1u << GRPC_OP_RECV_CLOSE_ON_SERVER))
+      debug_str += "R-CLOSE-SERVER + ";
+    if (has_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER))
+      debug_str += "S-STATUS-SERVER + ";
+    return debug_str;
+  }
+
   Validator* FinishedBatchValidator(uint8_t has_ops) {
     ++pending_ops_;
     auto self = shared_from_this();
     return MakeValidator([self, has_ops](bool success) {
       --self->pending_ops_;
-      if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE) &&
-           self->recv_message_ != nullptr && success)) {
-        grpc_byte_buffer_destroy(self->recv_message_);
-        self->recv_message_ = nullptr;
+      if (has_ops & (1u << GRPC_OP_RECV_MESSAGE)) {
+        self->pending_recv_message_op_ = false;
+        if (self->recv_message_ != nullptr) {
+          grpc_byte_buffer_destroy(self->recv_message_);
+          self->recv_message_ = nullptr;
+        }
       }
       if ((has_ops & (1u << GRPC_OP_SEND_MESSAGE))) {
         grpc_byte_buffer_destroy(self->send_message_);
@@ -508,9 +558,11 @@ class Call : public std::enable_shared_from_this<Call> {
   int cancelled_;
   int pending_ops_ = 0;
   bool sent_initial_metadata_ = false;
+  bool enqueued_recv_initial_metadata_ = false;
   grpc_call_details call_details_{};
   grpc_byte_buffer* send_message_ = nullptr;
   bool call_closed_ = false;
+  bool pending_recv_message_op_ = false;
 
   std::vector<void*> free_pointers_;
   std::vector<grpc_slice> unref_slices_;
@@ -538,7 +590,6 @@ Call::~Call() {
   if (call_ != nullptr) {
     grpc_call_unref(call_);
   }
-
   grpc_slice_unref(recv_status_details_);
   grpc_call_details_destroy(&call_details_);
 
@@ -547,6 +598,11 @@ Call::~Call() {
   }
   for (auto s : unref_slices_) {
     grpc_slice_unref(s);
+  }
+
+  if (recv_message_ != nullptr) {
+    grpc_byte_buffer_destroy(recv_message_);
+    recv_message_ = nullptr;
   }
 
   grpc_metadata_array_destroy(&recv_initial_metadata_);
@@ -733,9 +789,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   int action_index = 0;
-  auto no_more_actions = [&]() {
-    action_index = msg.actions_size();
-  };
+  auto no_more_actions = [&]() { action_index = msg.actions_size(); };
   auto poll_cq = [&]() -> bool {
     grpc_event ev = grpc_completion_queue_next(
         cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
@@ -778,7 +832,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         call->Shutdown();
       }
 
-      g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
+      g_now = gpr_time_add(g_now, gpr_time_from_seconds(
+        std::max(1, MAX_WAIT_MS/1000), GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
       continue;
@@ -807,8 +862,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       case api_fuzzer::Action::kAdvanceTime: {
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(
-              std::min(action.advance_time(),
-              (uint32_t)MAX_ADVANCE_TIME_MICROS),
+              std::min((uint64_t)action.advance_time(),
+              (uint64_t)MAX_ADVANCE_TIME_MICROS),
               GPR_TIMESPAN));
         break;
       }
@@ -1010,6 +1065,12 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
           if (!op.has_value()) continue;
           ops.push_back(*op);
         }
+
+        auto op = active_call->MaybeAdjustBatchOps(&has_ops);
+        if (op.has_value()) {
+          ops.push_back(*op);
+        }
+
         if (g_channel == nullptr) ok = false;
         if (ok) {
           auto* v = active_call->FinishedBatchValidator(has_ops);

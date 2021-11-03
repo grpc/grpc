@@ -83,6 +83,7 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->pending_read_op.cb,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_slice_buffer_reset_and_unref(&m->read_buffer);
     m->pending_read_op.is_armed = false;
     return;
   }
@@ -114,6 +115,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     GPR_ASSERT(!m->pending_read_op.is_armed);
+    GPR_ASSERT(!m->on_read);
     m->pending_read_op.is_armed = true;
     m->pending_read_op.cb = cb;
     m->pending_read_op.ep = ep;
