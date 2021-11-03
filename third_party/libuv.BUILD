@@ -39,6 +39,11 @@ config_setting(
     values = {"cpu": "x64_windows"},
 )
 
+config_setting(
+    name = "freebsd",
+    constraint_values = ["@platforms//os:freebsd"],
+)
+
 # Android is not officially supported through C++.
 # This just helps with the build for now.
 config_setting(
@@ -168,6 +173,10 @@ WINDOWS_LIBUV_HEADERS = [
     "src/win/winsock.h",
 ]
 
+BSD_LIBUV_HEADERS = [
+    "include/uv/bsd.h",
+]
+
 COMMON_LIBUV_SOURCES = [
     "src/fs-poll.c",
     "src/idna.c",
@@ -225,6 +234,15 @@ DARWIN_LIBUV_SOURCES = [
     "src/unix/kqueue.c",
     "src/unix/darwin-proctitle.c",
     "src/unix/random-getentropy.c",  # darwin. TODO(hork): ALSO NEEDED FOR OpenBSD
+]
+
+BSD_LIBUV_SOURCES = [
+    "src/unix/bsd-ifaddrs.c",
+    "src/unix/bsd-proctitle.c",
+]
+
+FREEBSD_LIBUV_SOURCES = [
+    "src/unix/freebsd.c",
 ]
 
 WINDOWS_LIBUV_SOURCES = [
@@ -287,12 +305,14 @@ cc_library(
     srcs = COMMON_LIBUV_SOURCES + select({
         ":android": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES + UNIX_PROCTITLE,
         ":apple": UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES + UNIX_PROCTITLE,
+	":freebsd": UNIX_LIBUV_SOURCES + BSD_LIBUV_SOURCES + FREEBSD_LIBUV_SOURCES,
         ":windows": WINDOWS_LIBUV_SOURCES,
         "//conditions:default": UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + UNIX_PROCTITLE,
     }),
     hdrs = COMMON_LIBUV_HEADERS + select({
         ":android": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,
         ":apple": UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":freebsd": UNIX_LIBUV_HEADERS + BSD_LIBUV_HEADERS,
         ":windows": WINDOWS_LIBUV_HEADERS,
         "//conditions:default": UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS,
     }),

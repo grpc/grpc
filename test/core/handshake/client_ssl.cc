@@ -22,6 +22,7 @@
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>

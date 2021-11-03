@@ -17,6 +17,7 @@
  */
 
 #include <spawn.h>
+#include <sys/wait.h>
 
 #include <sstream>
 #include <string>
