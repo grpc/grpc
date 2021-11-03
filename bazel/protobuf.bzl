@@ -76,9 +76,10 @@ def proto_path_to_generated_filename(proto_path, fmt_str):
     return fmt_str.format(_strip_proto_extension(proto_path))
 
 def get_include_directory(source_file):
-    """Returns the include directory path for the source_file. I.e. all of the
-    include statements within the given source_file are calculated relative to
-    the directory returned by this method.
+    """Returns the include directory path for the source_file.
+
+    All of the include statements within the given source_file are calculated
+    relative to the directory returned by this method.
 
     The returned directory path can be used as the "--proto_path=" argument
     value.
@@ -195,7 +196,15 @@ def includes_from_deps(deps):
     ]
 
 def get_proto_arguments(protos, genfiles_dir_path):
-    """Get the protoc arguments specifying which protos to compile."""
+    """Get the protoc arguments specifying which protos to compile.
+
+    Args:
+      protos: The protob files to supply.
+      genfiles_dir_path: The path to the genfiles directory.
+
+    Returns:
+      The arguments to supply to protoc.
+    """
     arguments = []
     for proto in protos:
         strip_prefix_len = 0
@@ -211,7 +220,18 @@ def get_proto_arguments(protos, genfiles_dir_path):
     return arguments
 
 def declare_out_files(protos, context, generated_file_format):
-    """Declares and returns the files to be generated."""
+    """Declares and returns the files to be generated.
+
+    Args:
+      protos: A list of files. The protos to declare.
+      context: The context object.
+      generated_file_format: A format string. Will be passed to
+        proto_path_to_generated_filename to generate the filename of each
+        generated file.
+
+    Returns:
+      A list of file providers.
+    """
 
     out_file_paths = []
     for proto in protos:
@@ -232,8 +252,9 @@ def declare_out_files(protos, context, generated_file_format):
     ]
 
 def get_out_dir(protos, context):
-    """ Returns the calculated value for --<lang>_out= protoc argument based on
-    the input source proto files and current context.
+    """Returns the value to supply to the --<lang>_out= protoc flag.
+
+    The result is based on the input source proto files and current context.
 
     Args:
         protos: A list of protos to be used as source files in protoc command
@@ -264,10 +285,11 @@ def get_out_dir(protos, context):
     return struct(path = out_dir, import_path = None)
 
 def is_in_virtual_imports(source_file, virtual_folder = _VIRTUAL_IMPORTS):
-    """Determines if source_file is virtual (is placed in _virtual_imports
-    subdirectory). The output of all proto_library targets which use
-    import_prefix  and/or strip_import_prefix arguments is placed under
-    _virtual_imports directory.
+    """Determines if source_file is virtual.
+
+    A file is virtual if placed in the _virtual_imports subdirectory. The
+    output of all proto_library targets which use import_prefix and/or
+    strip_import_prefix arguments is placed under _virtual_imports directory.
 
     Args:
         source_file: A proto file.
