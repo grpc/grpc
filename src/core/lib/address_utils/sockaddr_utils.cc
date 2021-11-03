@@ -41,7 +41,7 @@
 #include <sys/un.h>
 #endif
 
-std::string grpc_sockaddr_to_uri_unix_if_possible(
+static std::string grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr);
 
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
@@ -387,7 +387,7 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
 }
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-std::string grpc_sockaddr_to_uri_unix_if_possible(
+static std::string grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr) {
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
@@ -405,7 +405,7 @@ std::string grpc_sockaddr_to_uri_unix_if_possible(
   return absl::StrCat("unix:", unix_addr->sun_path);
 }
 #else
-std::string grpc_sockaddr_to_uri_unix_if_possible(
+static std::string grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* /* addr */) {
   return "";
 }

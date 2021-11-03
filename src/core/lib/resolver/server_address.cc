@@ -51,7 +51,7 @@ ServerAddress::ServerAddress(
     std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : args_(args), attributes_(std::move(attributes)) {
   memcpy(address_.addr, address, address_len);
-  address_.len = static_cast<decltype(address_.len)>(address_len);
+  address_.len = static_cast<socklen_t>(address_len);
 }
 
 ServerAddress::ServerAddress(const ServerAddress& other)
