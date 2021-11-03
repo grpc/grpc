@@ -23,7 +23,7 @@
  * Note that a few of these are never produced by the gRPC libraries, but are of
  * general utility for server applications to produce.
  */
-typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
+typedef NS_ENUM(int32_t, GRPCErrorCode) {
   /** The operation was cancelled (typically by the caller). */
   GRPCErrorCodeCancelled = 1,
 
