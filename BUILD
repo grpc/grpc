@@ -873,8 +873,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "cpp_impl_of",
-    language = "c++",
     hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -1482,11 +1482,11 @@ grpc_cc_library(
         "src/core/lib/resource_quota/resource_quota.h",
     ],
     deps = [
+        "cpp_impl_of",
         "gpr_base",
         "memory_quota",
         "ref_counted",
         "thread_quota",
-        "cpp_impl_of"
     ],
 )
 

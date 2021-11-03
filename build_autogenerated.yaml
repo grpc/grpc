@@ -756,6 +756,7 @@ libs:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -1830,6 +1831,7 @@ libs:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -5426,6 +5428,16 @@ targets:
   - absl/types:optional
   - upb
   uses_polling: false
+- name: cpp_impl_of_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/cpp_impl_of.h
+  src:
+  - test/core/gprpp/cpp_impl_of_test.cc
+  deps: []
+  uses_polling: false
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -7499,6 +7511,7 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
