@@ -25,7 +25,7 @@ static NSString *const kDefaultServerAuthority = nil;
 static const NSTimeInterval kDefaultTimeout = 0;
 static const BOOL kDefaultFlowControlEnabled = NO;
 static NSArray<id<GRPCInterceptorFactory>> *const kDefaultInterceptorFactories = nil;
-static NSDictionary *const kDefaultInitialMetadata = nil;
+static NSDictionary<NSString *, id> *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static NSString *const kDefaultUserAgentSuffix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
@@ -68,7 +68,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSArray<id<GRPCInterceptorFactory>> *_interceptorFactories;
   NSString *_oauth2AccessToken;
   id<GRPCAuthorizationProtocol> _authTokenProvider;
-  NSDictionary *_initialMetadata;
+  NSDictionary<NSString *, id> *_initialMetadata;
   NSString *_userAgentPrefix;
   NSString *_userAgentSuffix;
   NSUInteger _responseSizeLimit;
@@ -155,7 +155,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                    interceptorFactories:(NSArray<id<GRPCInterceptorFactory>> *)interceptorFactories
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
-                        initialMetadata:(NSDictionary *)initialMetadata
+                        initialMetadata:(NSDictionary<NSString *, id> *)initialMetadata
                         userAgentPrefix:(NSString *)userAgentPrefix
                         userAgentSuffix:(NSString *)userAgentSuffix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
@@ -486,7 +486,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   _authTokenProvider = authTokenProvider;
 }
 
-- (void)setInitialMetadata:(NSDictionary *)initialMetadata {
+- (void)setInitialMetadata:(NSDictionary<NSString *, id> *)initialMetadata {
   _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
 }
 
