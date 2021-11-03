@@ -107,6 +107,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                     },
                 },
             },
+            # b/202058316. The wildcard principal is generating invalid config
             # {
             #     "sources": {
             #         "principals": ["*"],
