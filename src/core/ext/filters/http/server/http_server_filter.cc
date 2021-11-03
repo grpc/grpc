@@ -193,20 +193,17 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                      GRPC_ERROR_STR_KEY, ":method"));
   }
 
-  if (b->legacy_index()->named.te != nullptr) {
-    if (!grpc_mdelem_static_value_eq(b->legacy_index()->named.te->md,
-                                     GRPC_MDELEM_TE_TRAILERS)) {
-      hs_add_error(error_name, &error,
-                   grpc_attach_md_to_error(
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->legacy_index()->named.te->md));
-    }
-    b->Remove(GRPC_BATCH_TE);
-  } else {
+  auto te = b->Take(grpc_core::TeMetadata());
+  if (te == grpc_core::TeMetadata::kTrailers) {
+    // Do nothing, ok.
+  } else if (!te.has_value()) {
     hs_add_error(error_name, &error,
                  grpc_error_set_str(
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
                      GRPC_ERROR_STR_KEY, "te"));
+  } else {
+    hs_add_error(error_name, &error,
+                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad te header"));
   }
 
   if (b->legacy_index()->named.scheme != nullptr) {
@@ -288,7 +285,8 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
           GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-      b->Substitute(b->legacy_index()->named.path, mdelem_path_without_query);
+      (void)b->Substitute(b->legacy_index()->named.path,
+                          mdelem_path_without_query);
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
@@ -364,7 +362,7 @@ static void hs_recv_initial_metadata_ready(void* user_data,
           "resuming recv_message_ready from recv_initial_metadata_ready");
     }
   } else {
-    GRPC_ERROR_REF(err);
+    (void)GRPC_ERROR_REF(err);
   }
   if (calld->seen_recv_trailing_metadata_ready) {
     GRPC_CALL_COMBINER_START(calld->call_combiner,

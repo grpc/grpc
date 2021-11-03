@@ -32,9 +32,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "//src/core/ext/transport/binder/wire_format:binder",
-        "//src/core/ext/transport/binder/wire_format:wire_reader",
-        "//src/core/ext/transport/binder/wire_format:wire_writer",
+        "//:grpc++_binder",
     ],
 )
 
@@ -49,7 +47,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":mock_objects",
-        "//src/core/ext/transport/binder/wire_format:wire_writer",
+        "//:grpc++_binder",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -65,8 +63,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":mock_objects",
-        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
-        "//src/core/ext/transport/binder/wire_format:wire_reader",
+        "//:grpc++_binder",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -81,7 +78,7 @@ grpc_cc_test(
     language = "C++",
     uses_polling = False,
     deps = [
-        "//src/core/ext/transport/binder/utils:transport_stream_receiver",
+        "//:grpc++_binder",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -99,8 +96,24 @@ grpc_cc_test(
     deps = [
         ":mock_objects",
         "//:grpc",
-        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
-        "//src/core/ext/transport/binder/transport:binder_transport",
+        "//:grpc++_binder",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "endpoint_binder_pool_test",
+    srcs = ["endpoint_binder_pool_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":mock_objects",
+        "//:grpc",
+        "//:grpc++_binder",
         "//test/core/util:grpc_test_util",
     ],
 )

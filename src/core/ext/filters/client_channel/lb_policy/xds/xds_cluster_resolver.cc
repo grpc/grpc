@@ -458,7 +458,7 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
     RunInExecCtx(void* arg, grpc_error_handle error) {
   Notifier* self = static_cast<Notifier*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   self->discovery_mechanism_->parent()->work_serializer()->Run(
       [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
 }

@@ -1067,7 +1067,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   if (cqd->queue.num_items() > 0 &&
       cqd->pending_events.load(std::memory_order_acquire) > 0) {
     gpr_mu_lock(cq->mu);
-    cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
+    (void)cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
     gpr_mu_unlock(cq->mu);
   }
 

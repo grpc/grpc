@@ -254,7 +254,11 @@ HealthCheckClient::CallState::CallState(
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(Arena::Create(health_check_client_->connected_subchannel_
                                ->GetInitialCallSizeEstimate())),
-      payload_(context_) {}
+      payload_(context_),
+      send_initial_metadata_(arena_),
+      send_trailing_metadata_(arena_),
+      recv_initial_metadata_(arena_),
+      recv_trailing_metadata_(arena_) {}
 
 HealthCheckClient::CallState::~CallState() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {

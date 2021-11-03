@@ -88,11 +88,13 @@ int grpc_server_security_connector::server_security_connector_cmp(
 }
 
 static void connector_arg_destroy(void* p) {
+  if (p == nullptr) return;
   static_cast<grpc_security_connector*>(p)->Unref(DEBUG_LOCATION,
                                                   "connector_arg_destroy");
 }
 
 static void* connector_arg_copy(void* p) {
+  if (p == nullptr) return nullptr;
   return static_cast<grpc_security_connector*>(p)
       ->Ref(DEBUG_LOCATION, "connector_arg_copy")
       .release();

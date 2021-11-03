@@ -144,7 +144,6 @@ message BatchOp {
         ReceiveMessage receive_message = 6;
         ReceiveStatusOnClient receive_status_on_client = 7;
         ReceiveCloseOnServer receive_close_on_server = 8;
-        int32 illegal_op = 9;
     }
     uint32 flags = 100;
 }

@@ -142,7 +142,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_closure* closure = ac->closure;
   grpc_fd* fd;
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",

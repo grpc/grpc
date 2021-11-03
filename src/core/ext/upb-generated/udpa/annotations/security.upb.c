@@ -10,9 +10,7 @@
 #include "upb/msg_internal.h"
 #include "udpa/annotations/security.upb.h"
 #include "udpa/annotations/status.upb.h"
-#include "google/protobuf/any.upb.h"
 #include "google/protobuf/descriptor.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 

@@ -30,9 +30,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "test/core/util/test_config.h"
@@ -69,7 +69,8 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
-  grpc_metadata_batch b;
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
   grpc_core::HPackCompressor c;
@@ -110,13 +111,9 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  std::vector<grpc_mdelem> elems = Fixture::GetElems();
-  std::vector<grpc_linked_mdelem> storage(elems.size());
-  grpc_metadata_batch b;
-  for (size_t i = 0; i < elems.size(); i++) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
-  }
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
+  Fixture::Prepare(&b);
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
@@ -163,24 +160,28 @@ namespace hpack_encoder_fixtures {
 class EmptyBatch {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static std::vector<grpc_mdelem> GetElems() { return {}; }
+  static void Prepare(grpc_metadata_batch*) {}
 };
 
 class SingleStaticElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE)));
   }
 };
 
 class SingleInternedElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {grpc_mdelem_from_slices(
-        grpc_slice_intern(grpc_slice_from_static_string("abc")),
-        grpc_slice_intern(grpc_slice_from_static_string("def")))};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(grpc_mdelem_from_slices(
+            grpc_slice_intern(grpc_slice_from_static_string("abc")),
+            grpc_slice_intern(grpc_slice_from_static_string("def"))))));
   }
 };
 
@@ -188,13 +189,14 @@ template <int kLength, bool kTrueBinary>
 class SingleInternedBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = kTrueBinary;
-  static std::vector<grpc_mdelem> GetElems() {
+  static void Prepare(grpc_metadata_batch* b) {
     grpc_slice bytes = MakeBytes();
-    std::vector<grpc_mdelem> out = {grpc_mdelem_from_slices(
-        grpc_slice_intern(grpc_slice_from_static_string("abc-bin")),
-        grpc_slice_intern(bytes))};
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(grpc_mdelem_from_slices(
+            grpc_slice_intern(grpc_slice_from_static_string("abc-bin")),
+            grpc_slice_intern(bytes)))));
     grpc_slice_unref(bytes);
-    return out;
   }
 
  private:
@@ -211,19 +213,22 @@ class SingleInternedBinaryElem {
 class SingleInternedKeyElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {grpc_mdelem_from_slices(
-        grpc_slice_intern(grpc_slice_from_static_string("abc")),
-        grpc_slice_from_static_string("def"))};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     grpc_slice_intern(grpc_slice_from_static_string("abc")),
+                     grpc_slice_from_static_string("def")))));
   }
 };
 
 class SingleNonInternedElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {grpc_mdelem_from_slices(grpc_slice_from_static_string("abc"),
-                                    grpc_slice_from_static_string("def"))};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(
+        GRPC_LOG_IF_ERROR("addmd", b->Append(grpc_mdelem_from_slices(
+                                       grpc_slice_from_static_string("abc"),
+                                       grpc_slice_from_static_string("def")))));
   }
 };
 
@@ -231,9 +236,10 @@ template <int kLength, bool kTrueBinary>
 class SingleNonInternedBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = kTrueBinary;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {grpc_mdelem_from_slices(grpc_slice_from_static_string("abc-bin"),
-                                    MakeBytes())};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     grpc_slice_from_static_string("abc-bin"), MakeBytes()))));
   }
 
  private:
@@ -250,23 +256,31 @@ class SingleNonInternedBinaryElem {
 class RepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {
-        GRPC_MDELEM_SCHEME_HTTP,
-        GRPC_MDELEM_METHOD_POST,
-        grpc_mdelem_from_slices(
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(grpc_mdelem_from_slices(
             GRPC_MDSTR_PATH,
-            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))),
-        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                grpc_slice_intern(grpc_slice_from_static_string(
-                                    "foo.test.google.fr:1234"))),
-        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
-        GRPC_MDELEM_TE_TRAILERS,
-        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_USER_AGENT,
-            grpc_slice_intern(grpc_slice_from_static_string(
-                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
+            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     GRPC_MDSTR_AUTHORITY,
+                     grpc_slice_intern(grpc_slice_from_static_string(
+                         "foo.test.google.fr:1234"))))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(
+            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     GRPC_MDSTR_USER_AGENT,
+                     grpc_slice_intern(grpc_slice_from_static_string(
+                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
   }
 };
 
@@ -276,17 +290,22 @@ class RepresentativeClientInitialMetadata {
 class MoreRepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {
-        GRPC_MDELEM_SCHEME_HTTP,
-        GRPC_MDELEM_METHOD_POST,
-        grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
-                                grpc_slice_intern(grpc_slice_from_static_string(
-                                    "/grpc.test.FooService/BarMethod"))),
-        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                grpc_slice_intern(grpc_slice_from_static_string(
-                                    "foo.test.google.fr:1234"))),
-        grpc_mdelem_from_slices(
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(grpc_mdelem_from_slices(
+            GRPC_MDSTR_PATH, grpc_slice_intern(grpc_slice_from_static_string(
+                                 "/grpc.test.FooService/BarMethod"))))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     GRPC_MDSTR_AUTHORITY,
+                     grpc_slice_intern(grpc_slice_from_static_string(
+                         "foo.test.google.fr:1234"))))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(grpc_mdelem_from_slices(
             GRPC_MDSTR_GRPC_TRACE_BIN,
             grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
                                           "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
@@ -294,37 +313,49 @@ class MoreRepresentativeClientInitialMetadata {
                                           "\x19\x1a\x1b\x1c\x1d\x1e\x1f"
                                           "\x20\x21\x22\x23\x24\x25\x26\x27\x28"
                                           "\x29\x2a\x2b\x2c\x2d\x2e\x2f"
-                                          "\x30")),
-        grpc_mdelem_from_slices(
+                                          "\x30")))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(grpc_mdelem_from_slices(
             GRPC_MDSTR_GRPC_TAGS_BIN,
             grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
                                           "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                                          "\x10\x11\x12\x13")),
-        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
-        GRPC_MDELEM_TE_TRAILERS,
-        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_USER_AGENT,
-            grpc_slice_intern(grpc_slice_from_static_string(
-                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
+                                          "\x10\x11\x12\x13")))));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(
+            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(grpc_mdelem_from_slices(
+                     GRPC_MDSTR_USER_AGENT,
+                     grpc_slice_intern(grpc_slice_from_static_string(
+                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
   }
 };
 
 class RepresentativeServerInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {GRPC_MDELEM_STATUS_200,
-            GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_STATUS_200)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "addmd",
+        b->Append(
+            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
   }
 };
 
 class RepresentativeServerTrailingMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
-  static std::vector<grpc_mdelem> GetElems() {
-    return {GRPC_MDELEM_GRPC_STATUS_0};
+  static void Prepare(grpc_metadata_batch* b) {
+    GPR_ASSERT(
+        GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_GRPC_STATUS_0)));
   }
 };
 
@@ -434,59 +465,6 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static void free_timeout(void* p) { gpr_free(p); }
-
-// Benchmark the current on_initial_header implementation
-static grpc_error_handle OnInitialHeader(void* user_data, grpc_mdelem md) {
-  // Setup for benchmark. This will bloat the absolute values of this benchmark
-  grpc_chttp2_incoming_metadata_buffer buffer(
-      static_cast<grpc_core::Arena*>(user_data));
-  bool seen_error = false;
-
-  // Below here is the code we actually care about benchmarking
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
-    seen_error = true;
-  }
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    grpc_millis* cached_timeout =
-        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
-    grpc_millis timeout;
-    if (cached_timeout != nullptr) {
-      timeout = *cached_timeout;
-    } else {
-      if (GPR_UNLIKELY(
-              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
-        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-        gpr_free(val);
-        timeout = GRPC_MILLIS_INF_FUTURE;
-      }
-      if (GRPC_MDELEM_IS_INTERNED(md)) {
-        /* not already parsed: parse it now, and store the
-         * result away */
-        cached_timeout =
-            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
-        *cached_timeout = timeout;
-        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-      }
-    }
-    benchmark::DoNotOptimize(timeout);
-    GRPC_MDELEM_UNREF(md);
-  } else {
-    const size_t new_size = buffer.size + GRPC_MDELEM_LENGTH(md);
-    if (!seen_error) {
-      buffer.size = new_size;
-    }
-    grpc_error_handle error =
-        grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
-    if (error != GRPC_ERROR_NONE) {
-      GPR_ASSERT(0);
-    }
-  }
-  return GRPC_ERROR_NONE;
-}
-
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
@@ -496,30 +474,40 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
   auto* arena = grpc_core::Arena::Create(kArenaSize);
-  p.BeginFrame([arena](grpc_mdelem e) { return OnInitialHeader(arena, e); },
+  grpc_core::ManualConstructor<grpc_metadata_batch> b;
+  b.Init(arena);
+  p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
-               grpc_core::HPackParser::Priority::None);
+               grpc_core::HPackParser::Priority::None,
+               grpc_core::HPackParser::LogInfo{
+                   1, grpc_core::HPackParser::LogInfo::kHeaders, false});
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
   }
   while (state.KeepRunning()) {
+    b->Clear();
     for (auto slice : benchmark_slices) {
       GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
     }
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
+      b.Destroy();
       arena->Destroy();
       arena = grpc_core::Arena::Create(kArenaSize);
-      p.BeginFrame([arena](grpc_mdelem e) { return OnInitialHeader(arena, e); },
+      b.Init(arena);
+      p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
-                   grpc_core::HPackParser::Priority::None);
+                   grpc_core::HPackParser::Priority::None,
+                   grpc_core::HPackParser::LogInfo{
+                       1, grpc_core::HPackParser::LogInfo::kHeaders, false});
     }
   }
   // Clean up
-  arena->Destroy();
+  b.Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
+  arena->Destroy();
 
   track_counters.Finish(state);
 }

@@ -18,6 +18,7 @@
 // top-level metadata. The following tests verify that the interactions between
 // WireReaderImpl and both the output (readable) parcel and the transport stream
 // receiver are correct in all possible situations.
+
 #include <memory>
 #include <string>
 #include <thread>
@@ -27,7 +28,8 @@
 
 #include "absl/memory/memory.h"
 
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"

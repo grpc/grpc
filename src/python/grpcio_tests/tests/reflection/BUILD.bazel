@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("//bazel:python_rules.bzl", "py2and3_test")
 
 package(default_visibility = ["//visibility:public"])
 
-py2and3_test(
+py_test(
     name = "_reflection_servicer_test",
     size = "medium",
     srcs = ["_reflection_servicer_test.py"],
     imports = ["../../"],
     main = "_reflection_servicer_test.py",
+    python_version = "PY3",
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing/proto2:empty2_extensions_proto",

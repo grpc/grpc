@@ -1,0 +1,17 @@
+actions {
+  create_channel {
+    target: "unix::\360,\206::::::::::::\354\327::::::::::::::::::\213\300:::::174515:::::::::::::::::, \310/:::::::::::::::::::::::::::::::::::::::?:::::::::::::::::::::::::;::::::::::::::"
+    channel_args {
+      key: "grpc.channel_credentials"
+      resource_quota {
+      }
+    }
+    channel_creds {
+      ssl_channel_creds {
+      }
+    }
+  }
+}
+actions {
+  check_connectivity: true
+}

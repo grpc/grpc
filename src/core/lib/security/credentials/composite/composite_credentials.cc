@@ -147,7 +147,7 @@ void grpc_composite_call_credentials::push_to_inner(
   auto composite_creds =
       static_cast<grpc_composite_call_credentials*>(creds.get());
   for (size_t i = 0; i < composite_creds->inner().size(); ++i) {
-    inner_.push_back(std::move(composite_creds->inner_[i]));
+    inner_.push_back(composite_creds->inner_[i]);
   }
 }
 

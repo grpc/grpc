@@ -444,6 +444,8 @@ class _StreamRequestMixin(Call):
                                                self._request_serializer)
         try:
             await self._cython_call.send_serialized_message(serialized_request)
+        except cygrpc.InternalError:
+            await self._raise_for_status()
         except asyncio.CancelledError:
             if not self.cancelled():
                 self.cancel()

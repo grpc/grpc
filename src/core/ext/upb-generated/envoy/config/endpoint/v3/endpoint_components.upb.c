@@ -14,7 +14,6 @@
 #include "envoy/config/core/v3/config_source.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"

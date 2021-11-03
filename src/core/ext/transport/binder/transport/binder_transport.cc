@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -118,21 +120,11 @@ static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
   gpr_log(GPR_INFO, __func__);
 }
 
-static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
+static void AssignMetadata(grpc_metadata_batch* mb,
                            const grpc_binder::Metadata& md) {
   mb->Clear();
   for (auto& p : md) {
-    grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
-        arena->Alloc(sizeof(grpc_linked_mdelem)));
-    memset(glm, 0, sizeof(grpc_linked_mdelem));
-    grpc_slice key = grpc_slice_from_cpp_string(p.first);
-    grpc_slice value = grpc_slice_from_cpp_string(p.second);
-    glm->md = grpc_mdelem_from_slices(grpc_slice_intern(key),
-                                      grpc_slice_intern(value));
-    // Unref here to prevent memory leak
-    grpc_slice_unref_internal(key);
-    grpc_slice_unref_internal(value);
-    GPR_ASSERT(mb->LinkTail(glm) == GRPC_ERROR_NONE);
+    mb->Append(p.first, grpc_slice_from_cpp_string(p.second));
   }
 }
 
@@ -210,8 +202,7 @@ static void recv_initial_metadata_locked(void* arg,
               "Missing :authority or :path in initial metadata");
         }
       }
-      AssignMetadata(gbs->recv_initial_metadata, gbs->arena,
-                     *args->initial_metadata);
+      AssignMetadata(gbs->recv_initial_metadata, *args->initial_metadata);
       return GRPC_ERROR_NONE;
     }();
 
@@ -293,8 +284,7 @@ static void recv_trailing_metadata_locked(void* arg,
           return GRPC_ERROR_CANCELLED;
         }
       } else {
-        AssignMetadata(gbs->recv_trailing_metadata, gbs->arena,
-                       *args->trailing_metadata);
+        AssignMetadata(gbs->recv_trailing_metadata, *args->trailing_metadata);
         // Append status to metadata
         // TODO(b/192208695): See if we can avoid to manually put status
         // code into the header
@@ -767,3 +757,4 @@ grpc_transport* grpc_create_binder_transport_server(
 
   return &t->base;
 }
+#endif

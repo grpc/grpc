@@ -1390,7 +1390,7 @@ static tsi_result ssl_handshaker_result_create(
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker_result* result =
-      static_cast<tsi_ssl_handshaker_result*>(gpr_zalloc(sizeof(*result)));
+      grpc_core::Zalloc<tsi_ssl_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
   /* Transfer ownership of ssl and network_io to the handshaker result. */
   result->ssl = handshaker->ssl;
@@ -1669,7 +1669,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     SSL_set_accept_state(ssl);
   }
 
-  impl = static_cast<tsi_ssl_handshaker*>(gpr_zalloc(sizeof(*impl)));
+  impl = grpc_core::Zalloc<tsi_ssl_handshaker>();
   impl->ssl = ssl;
   impl->network_io = network_io;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;

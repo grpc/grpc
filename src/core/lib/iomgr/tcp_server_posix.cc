@@ -64,8 +64,7 @@ static grpc_error_handle tcp_server_create(
     grpc_closure* shutdown_complete, const grpc_channel_args* args,
     grpc_slice_allocator_factory* slice_allocator_factory,
     grpc_tcp_server** server) {
-  grpc_tcp_server* s =
-      static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
+  grpc_tcp_server* s = grpc_core::Zalloc<grpc_tcp_server>();
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {

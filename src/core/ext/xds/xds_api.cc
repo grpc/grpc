@@ -82,10 +82,10 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
-#include "udpa/type/v1/typed_struct.upb.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
+#include "xds/type/v3/typed_struct.upb.h"
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -99,6 +99,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -115,11 +116,58 @@ bool XdsAggregateAndLogicalDnsClusterEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(yashykt): Remove once RBAC is no longer experimental
+bool XdsRbacEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_RBAC");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 //
-// XdsApi::Route::HashPolicy
+// XdsApi::RetryPolicy
 //
 
-XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
+std::string XdsApi::RetryPolicy::RetryBackOff::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
+  contents.push_back(
+      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
+  return absl::StrJoin(contents, ",");
+}
+
+std::string XdsApi::RetryPolicy::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
+  contents.push_back(retry_back_off.ToString());
+  return absl::StrCat("{", absl::StrJoin(contents, ","), "}");
+}
+
+//
+// XdsApi::Route::Matchers
+//
+
+std::string XdsApi::Route::Matchers::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrFormat("PathMatcher{%s}", path_matcher.ToString()));
+  for (const HeaderMatcher& header_matcher : header_matchers) {
+    contents.push_back(header_matcher.ToString());
+  }
+  if (fraction_per_million.has_value()) {
+    contents.push_back(absl::StrFormat("Fraction Per Million %d",
+                                       fraction_per_million.value()));
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
+//
+// XdsApi::Route::RouteAction::HashPolicy
+//
+
+XdsApi::Route::RouteAction::HashPolicy::HashPolicy(const HashPolicy& other)
     : type(other.type),
       header_name(other.header_name),
       regex_substitution(other.regex_substitution) {
@@ -129,8 +177,8 @@ XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
   }
 }
 
-XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
-    const HashPolicy& other) {
+XdsApi::Route::RouteAction::HashPolicy&
+XdsApi::Route::RouteAction::HashPolicy::operator=(const HashPolicy& other) {
   type = other.type;
   header_name = other.header_name;
   if (other.regex != nullptr) {
@@ -141,14 +189,14 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
   return *this;
 }
 
-XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
+XdsApi::Route::RouteAction::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
     : type(other.type),
       header_name(std::move(other.header_name)),
       regex(std::move(other.regex)),
       regex_substitution(std::move(other.regex_substitution)) {}
 
-XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
-    HashPolicy&& other) noexcept {
+XdsApi::Route::RouteAction::HashPolicy&
+XdsApi::Route::RouteAction::HashPolicy::operator=(HashPolicy&& other) noexcept {
   type = other.type;
   header_name = std::move(other.header_name);
   regex = std::move(other.regex);
@@ -156,7 +204,7 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
   return *this;
 }
 
-bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
+bool XdsApi::Route::RouteAction::HashPolicy::HashPolicy::operator==(
     const HashPolicy& other) const {
   if (type != other.type) return false;
   if (type == Type::HEADER) {
@@ -172,7 +220,7 @@ bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
   return true;
 }
 
-std::string XdsApi::Route::HashPolicy::ToString() const {
+std::string XdsApi::Route::RouteAction::HashPolicy::ToString() const {
   std::vector<std::string> contents;
   switch (type) {
     case Type::HEADER:
@@ -193,43 +241,10 @@ std::string XdsApi::Route::HashPolicy::ToString() const {
 }
 
 //
-// XdsApi::Route::RetryPolicy
-//
-std::string XdsApi::Route::RetryPolicy::RetryBackOff::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(
-      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
-  contents.push_back(
-      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
-  return absl::StrJoin(contents, ",");
-}
-
-std::string XdsApi::Route::RetryPolicy::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
-  contents.push_back(retry_back_off.ToString());
-  return absl::StrJoin(contents, ",");
-}
-
-//
-// XdsApi::Route
+// XdsApi::Route::RouteAction::ClusterWeight
 //
 
-std::string XdsApi::Route::Matchers::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(
-      absl::StrFormat("PathMatcher{%s}", path_matcher.ToString()));
-  for (const HeaderMatcher& header_matcher : header_matchers) {
-    contents.push_back(header_matcher.ToString());
-  }
-  if (fraction_per_million.has_value()) {
-    contents.push_back(absl::StrFormat("Fraction Per Million %d",
-                                       fraction_per_million.value()));
-  }
-  return absl::StrJoin(contents, "\n");
-}
-
-std::string XdsApi::Route::ClusterWeight::ToString() const {
+std::string XdsApi::Route::RouteAction::ClusterWeight::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(absl::StrCat("cluster=", name));
   contents.push_back(absl::StrCat("weight=", weight));
@@ -246,15 +261,17 @@ std::string XdsApi::Route::ClusterWeight::ToString() const {
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
-std::string XdsApi::Route::ToString() const {
+//
+// XdsApi::Route::RouteAction
+//
+
+std::string XdsApi::Route::RouteAction::ToString() const {
   std::vector<std::string> contents;
-  contents.push_back(matchers.ToString());
   for (const HashPolicy& hash_policy : hash_policies) {
     contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
   }
   if (retry_policy.has_value()) {
-    contents.push_back(
-        absl::StrCat("retry_policy={", retry_policy->ToString(), "}"));
+    contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
@@ -264,6 +281,25 @@ std::string XdsApi::Route::ToString() const {
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+//
+// XdsApi::Route
+//
+
+std::string XdsApi::Route::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(matchers.ToString());
+  auto* route_action = absl::get_if<XdsApi::Route::RouteAction>(&action);
+  if (route_action != nullptr) {
+    contents.push_back(absl::StrCat("route=", route_action->ToString()));
+  } else if (absl::holds_alternative<XdsApi::Route::NonForwardingAction>(
+                 action)) {
+    contents.push_back("non_forwarding_action={}");
+  } else {
+    contents.push_back("unknown_action={}");
   }
   if (!typed_per_filter_config.empty()) {
     contents.push_back("typed_per_filter_config={");
@@ -803,7 +839,7 @@ const char* kCdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
 const char* kEdsV2TypeUrl =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
-bool IsLds(absl::string_view type_url, bool* is_v2 = nullptr) {
+bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
   if (type_url == XdsApi::kLdsTypeUrl) return true;
   if (type_url == kLdsV2TypeUrl) {
     if (is_v2 != nullptr) *is_v2 = true;
@@ -812,16 +848,44 @@ bool IsLds(absl::string_view type_url, bool* is_v2 = nullptr) {
   return false;
 }
 
-bool IsRds(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
+bool IsRdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
   return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
 }
 
-bool IsCds(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
+bool IsCdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
   return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
 }
 
-bool IsEds(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
+bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
   return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
+}
+
+absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
+    absl::string_view name,
+    std::function<bool(absl::string_view, bool*)> is_expected_type) {
+  // Old-style names use the empty string for authority.
+  // ID is prefixed with "old:" to indicate that it's an old-style name.
+  if (!absl::StartsWith(name, "xdstp:")) {
+    return XdsApi::ResourceName{"", absl::StrCat("old:", name)};
+  }
+  // New style name.  Parse URI.
+  auto uri = URI::Parse(name);
+  if (!uri.ok()) return uri.status();
+  // Split the resource type off of the path to get the id.
+  std::pair<absl::string_view, absl::string_view> path_parts =
+      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
+  if (!is_expected_type(path_parts.first, nullptr)) {
+    return absl::InvalidArgumentError(
+        "xdstp URI path must indicate valid xDS resource type");
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
+      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
+  std::sort(query_parameters.begin(), query_parameters.end());
+  return XdsApi::ResourceName{
+      uri->authority(),
+      absl::StrCat(
+          "xdstp:", path_parts.second, (query_parameters.empty() ? "?" : ""),
+          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
 }
 
 }  // namespace
@@ -878,6 +942,41 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       symtab_.ptr());
   // Load HTTP filter proto messages into the upb symtab.
   XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
+}
+
+bool XdsApi::IsLds(absl::string_view type_url) {
+  return IsLdsInternal(type_url);
+}
+
+bool XdsApi::IsRds(absl::string_view type_url) {
+  return IsRdsInternal(type_url);
+}
+
+bool XdsApi::IsCds(absl::string_view type_url) {
+  return IsCdsInternal(type_url);
+}
+
+bool XdsApi::IsEds(absl::string_view type_url) {
+  return IsEdsInternal(type_url);
+}
+
+absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
+    absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
+  return ParseResourceNameInternal(
+      name, [is_expected_type](absl::string_view type, bool*) {
+        return is_expected_type(type);
+      });
+}
+
+std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
+                                              absl::string_view resource_type,
+                                              absl::string_view name) {
+  if (absl::StartsWith(name, "xdstp:")) {
+    return absl::StrCat("xdstp://", authority, "/", resource_type,
+                        absl::StripPrefix(name, "xdstp:"));
+  } else {
+    return std::string(absl::StripPrefix(name, "old:"));
+  }
 }
 
 namespace {
@@ -1094,7 +1193,8 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, const std::string& type_url,
-    const std::set<absl::string_view>& resource_names,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>& resource_names,
     const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
@@ -1147,10 +1247,27 @@ grpc_slice XdsApi::CreateAdsRequest(
     PopulateNode(context, node_, build_version_, user_agent_name_,
                  user_agent_version_, node_msg);
   }
+  // A vector for temporary local storage of resource name strings.
+  std::vector<std::string> resource_name_storage;
+  // Make sure the vector is sized right up-front, so that reallocations
+  // don't move the strings out from under the upb proto object that
+  // points to them.
+  size_t size = 0;
+  for (const auto& p : resource_names) {
+    size += p.second.size();
+  }
+  resource_name_storage.reserve(size);
   // Add resource_names.
-  for (const auto& resource_name : resource_names) {
-    envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
-        request, StdStringToUpbString(resource_name), arena.ptr());
+  for (const auto& a : resource_names) {
+    absl::string_view authority = a.first;
+    for (const auto& p : a.second) {
+      absl::string_view resource_id = p;
+      resource_name_storage.push_back(
+          ConstructFullResourceName(authority, type_url, resource_id));
+      envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
+          request, StdStringToUpbString(resource_name_storage.back()),
+          arena.ptr());
+    }
   }
   MaybeLogDiscoveryRequest(context, request);
   return SerializeDiscoveryRequest(context, request);
@@ -1437,16 +1554,17 @@ grpc_error_handle ExtractHttpFilterTypeName(const EncodingContext& context,
                                             const google_protobuf_Any* any,
                                             absl::string_view* filter_type) {
   *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (*filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+  if (*filter_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
+      *filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
     upb_strview any_value = google_protobuf_Any_value(any);
-    const auto* typed_struct = udpa_type_v1_TypedStruct_parse(
+    const auto* typed_struct = xds_type_v3_TypedStruct_parse(
         any_value.data, any_value.size, context.arena);
     if (typed_struct == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "could not parse TypedStruct from filter config");
     }
     *filter_type =
-        UpbStringToAbsl(udpa_type_v1_TypedStruct_type_url(typed_struct));
+        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
   }
   *filter_type = absl::StripPrefix(*filter_type, "type.googleapis.com/");
   return GRPC_ERROR_NONE;
@@ -1527,9 +1645,9 @@ XdsApi::Duration DurationParse(const google_protobuf_Duration* proto_duration) {
 grpc_error_handle RetryPolicyParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
-    absl::optional<XdsApi::Route::RetryPolicy>* retry) {
+    absl::optional<XdsApi::RetryPolicy>* retry) {
   std::vector<grpc_error_handle> errors;
-  XdsApi::Route::RetryPolicy retry_to_return;
+  XdsApi::RetryPolicy retry_to_return;
   auto retry_on = UpbStringToStdString(
       envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
   std::vector<absl::string_view> codes = absl::StrSplit(retry_on, ',');
@@ -1609,11 +1727,8 @@ grpc_error_handle RetryPolicyParse(
 
 grpc_error_handle RouteActionParse(const EncodingContext& context,
                                    const envoy_config_route_v3_Route* route_msg,
-                                   XdsApi::Route* route, bool* ignore_route) {
-  if (!envoy_config_route_v3_Route_has_route(route_msg)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No RouteAction found in route.");
-  }
+                                   XdsApi::Route::RouteAction* route,
+                                   bool* ignore_route) {
   const envoy_config_route_v3_RouteAction* route_action =
       envoy_config_route_v3_Route_route(route_msg);
   // Get the cluster or weighted_clusters in the RouteAction.
@@ -1642,7 +1757,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
     for (size_t j = 0; j < clusters_size; ++j) {
       const envoy_config_route_v3_WeightedCluster_ClusterWeight*
           cluster_weight = clusters[j];
-      XdsApi::Route::ClusterWeight cluster;
+      XdsApi::Route::RouteAction::ClusterWeight cluster;
       cluster.name = UpbStringToStdString(
           envoy_config_route_v3_WeightedCluster_ClusterWeight_name(
               cluster_weight));
@@ -1711,7 +1826,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
   for (size_t i = 0; i < size; ++i) {
     const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
         hash_policies[i];
-    XdsApi::Route::HashPolicy policy;
+    XdsApi::Route::RouteAction::HashPolicy policy;
     policy.terminal =
         envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
     const envoy_config_route_v3_RouteAction_HashPolicy_Header* header;
@@ -1719,7 +1834,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
         filter_state;
     if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
              hash_policy)) != nullptr) {
-      policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
+      policy.type = XdsApi::Route::RouteAction::HashPolicy::Type::HEADER;
       policy.header_name = UpbStringToStdString(
           envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
               header));
@@ -1763,7 +1878,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
           envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
               filter_state));
       if (key == "io.grpc.channel_id") {
-        policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
+        policy.type = XdsApi::Route::RouteAction::HashPolicy::Type::CHANNEL_ID;
       } else {
         gpr_log(GPR_DEBUG,
                 "RouteAction HashPolicy contains policy specifier "
@@ -1782,7 +1897,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
   const envoy_config_route_v3_RetryPolicy* retry_policy =
       envoy_config_route_v3_RouteAction_retry_policy(route_action);
   if (retry_policy != nullptr) {
-    absl::optional<XdsApi::Route::RetryPolicy> retry;
+    absl::optional<XdsApi::RetryPolicy> retry;
     grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
     if (error != GRPC_ERROR_NONE) return error;
     route->retry_policy = retry;
@@ -1832,7 +1947,7 @@ grpc_error_handle RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
     }
     // Parse retry policy.
-    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy;
+    absl::optional<XdsApi::RetryPolicy> virtual_host_retry_policy;
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
@@ -1871,11 +1986,21 @@ grpc_error_handle RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
       error = RouteRuntimeFractionParse(match, &route);
       if (error != GRPC_ERROR_NONE) return error;
-      error = RouteActionParse(context, routes[j], &route, &ignore_route);
-      if (error != GRPC_ERROR_NONE) return error;
-      if (ignore_route) continue;
-      if (route.retry_policy == absl::nullopt && retry_policy != nullptr) {
-        route.retry_policy = virtual_host_retry_policy;
+      if (envoy_config_route_v3_Route_has_route(routes[j])) {
+        route.action.emplace<XdsApi::Route::RouteAction>();
+        auto& route_action =
+            absl::get<XdsApi::Route::RouteAction>(route.action);
+        error =
+            RouteActionParse(context, routes[j], &route_action, &ignore_route);
+        if (error != GRPC_ERROR_NONE) return error;
+        if (ignore_route) continue;
+        if (route_action.retry_policy == absl::nullopt &&
+            retry_policy != nullptr) {
+          route_action.retry_policy = virtual_host_retry_policy;
+        }
+      } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
+                     routes[j])) {
+        route.action.emplace<XdsApi::Route::NonForwardingAction>();
       }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
@@ -2232,21 +2357,6 @@ grpc_error_handle HttpConnectionManagerParse(
             absl::StrFormat("Filter %s is not supported on %s", filter_type,
                             is_client ? "clients" : "servers"));
       }
-      if (i < num_filters - 1) {
-        // Filters before the last filter must not be terminal.
-        if (filter_impl->IsTerminalFilter()) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-              absl::StrCat("terminal filter for config type ", filter_type,
-                           " must be the last filter in the chain"));
-        }
-      } else {
-        // The last filter must be terminal.
-        if (!filter_impl->IsTerminalFilter()) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-              absl::StrCat("non-terminal filter for config type ", filter_type,
-                           " is the last filter in the chain"));
-        }
-      }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
                                             context.arena);
@@ -2259,6 +2369,36 @@ grpc_error_handle HttpConnectionManagerParse(
           XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
               std::string(name), std::move(*filter_config)});
     }
+    if (http_connection_manager->http_filters.empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Expected at least one HTTP filter");
+    }
+    // Make sure that the last filter is terminal and non-last filters are
+    // non-terminal. Note that this check is being performed in a separate loop
+    // to take care of the case where there are two terminal filters in the list
+    // out of which only one gets added in the final list.
+    for (const auto& http_filter : http_connection_manager->http_filters) {
+      const XdsHttpFilterImpl* filter_impl =
+          XdsHttpFilterRegistry::GetFilterForType(
+              http_filter.config.config_proto_type_name);
+      if (&http_filter != &http_connection_manager->http_filters.back()) {
+        // Filters before the last filter must not be terminal.
+        if (filter_impl->IsTerminalFilter()) {
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("terminal filter for config type ",
+                           http_filter.config.config_proto_type_name,
+                           " must be the last filter in the chain"));
+        }
+      } else {
+        // The last filter must be terminal.
+        if (!filter_impl->IsTerminalFilter()) {
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("non-terminal filter for config type ",
+                           http_filter.config.config_proto_type_name,
+                           " is the last filter in the chain"));
+        }
+      }
+    }
   } else {
     // If using a v2 config, we just hard-code a list containing only the
     // router filter without actually looking at the config.  This ensures
@@ -2268,7 +2408,10 @@ grpc_error_handle HttpConnectionManagerParse(
         XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
-  if (is_client) {
+  // Guarding parsing of RouteConfig on the server side with the environmental
+  // variable since that's the first feature on the server side that will be
+  // using this.
+  if (is_client || XdsRbacEnabled()) {
     // Found inlined route_config. Parse it to find the cluster_name.
     if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
             http_connection_manager_proto)) {
@@ -2503,6 +2646,8 @@ grpc_error_handle FilterChainParse(
         filter_chain_match, &filter_chain->filter_chain_match);
     if (error != GRPC_ERROR_NONE) errors.push_back(error);
   }
+  filter_chain->filter_chain_data =
+      std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
   // Parse the filters list. Currently we only support HttpConnectionManager.
   size_t size = 0;
   auto* filters =
@@ -2538,8 +2683,6 @@ grpc_error_handle FilterChainParse(
               "Could not parse HttpConnectionManager config from filter "
               "typed_config"));
         } else {
-          filter_chain->filter_chain_data =
-              std::make_shared<XdsApi::LdsUpdate::FilterChainData>();
           grpc_error_handle error = HttpConnectionManagerParse(
               false /* is_client */, context, http_connection_manager, is_v2,
               &filter_chain->filter_chain_data->http_connection_manager);
@@ -3346,10 +3489,13 @@ grpc_error_handle AdsResponseParse(
     ResourceTypeSelectorFunction resource_type_selector_function,
     ProtoLogFunction proto_log_function,
     ResourceParseFunction resource_parse_function,
-    const envoy_service_discovery_v3_DiscoveryResponse* response,
     const char* resource_type_string,
-    const std::set<absl::string_view>& expected_resource_names,
-    UpdateMap* update_map, std::set<std::string>* resource_names_failed) {
+    const envoy_service_discovery_v3_DiscoveryResponse* response,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_resource_names,
+    UpdateMap* update_map,
+    std::set<XdsApi::ResourceName>* resource_names_failed) {
   std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
   size_t size;
@@ -3380,15 +3526,23 @@ grpc_error_handle AdsResponseParse(
     // Check the resource name.  Ignore unexpected names.
     std::string resource_name =
         UpbStringToStdString(proto_resource_name_function(resource));
-    if (expected_resource_names.find(resource_name) ==
-        expected_resource_names.end()) {
+    auto resource_name_status = ParseResourceNameInternal(
+        resource_name, resource_type_selector_function);
+    if (!resource_name_status.ok()) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Cannot parse xDS resource name \"", resource_name, "\"")));
+      continue;
+    }
+    auto iter = subscribed_resource_names.find(resource_name_status->authority);
+    if (iter == subscribed_resource_names.end() ||
+        iter->second.find(resource_name_status->id) == iter->second.end()) {
       continue;
     }
     // Fail on duplicate resources.
-    if (update_map->find(resource_name) != update_map->end()) {
+    if (update_map->find(*resource_name_status) != update_map->end()) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("duplicate resource name \"", resource_name, "\"")));
-      resource_names_failed->insert(resource_name);
+      resource_names_failed->insert(*resource_name_status);
       continue;
     }
     // Validate resource.
@@ -3400,10 +3554,10 @@ grpc_error_handle AdsResponseParse(
           grpc_error_add_child(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
                                    resource_name, ": validation error")),
                                error));
-      resource_names_failed->insert(resource_name);
+      resource_names_failed->insert(*resource_name_status);
     } else {
       // Store result in update map, in both validated and serialized form.
-      auto& resource_data = (*update_map)[resource_name];
+      auto& resource_data = (*update_map)[*resource_name_status];
       resource_data.resource = std::move(update);
       resource_data.serialized_proto =
           UpbStringToStdString(serialized_resource);
@@ -3450,10 +3604,18 @@ upb_strview EdsResourceName(
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-    const std::set<absl::string_view>& expected_listener_names,
-    const std::set<absl::string_view>& expected_route_configuration_names,
-    const std::set<absl::string_view>& expected_cluster_names,
-    const std::set<absl::string_view>& expected_eds_service_names) {
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_listener_names,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_route_config_names,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_cluster_names,
+    const std::map<absl::string_view /*authority*/,
+                   std::set<absl::string_view /*name*/>>&
+        subscribed_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
   const EncodingContext context = {client_,
@@ -3488,27 +3650,27 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   if (IsLds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
-        IsLds, MaybeLogListener, LdsResourceParse, response, "LDS",
-        expected_listener_names, &result.lds_update_map,
+        IsLdsInternal, MaybeLogListener, LdsResourceParse, "LDS", response,
+        subscribed_listener_names, &result.lds_update_map,
         &result.resource_names_failed);
   } else if (IsRds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_route_v3_RouteConfiguration_parse,
-        RdsResourceName, IsRds, MaybeLogRouteConfiguration, RouteConfigParse,
-        response, "RDS", expected_route_configuration_names,
+        RdsResourceName, IsRdsInternal, MaybeLogRouteConfiguration,
+        RouteConfigParse, "RDS", response, subscribed_route_config_names,
         &result.rds_update_map, &result.resource_names_failed);
   } else if (IsCds(result.type_url)) {
     result.parse_error = AdsResponseParse(
-        context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName, IsCds,
-        MaybeLogCluster, CdsResourceParse, response, "CDS",
-        expected_cluster_names, &result.cds_update_map,
+        context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName,
+        IsCdsInternal, MaybeLogCluster, CdsResourceParse, "CDS", response,
+        subscribed_cluster_names, &result.cds_update_map,
         &result.resource_names_failed);
   } else if (IsEds(result.type_url)) {
     result.parse_error = AdsResponseParse(
         context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
-        EdsResourceName, IsEds, MaybeLogClusterLoadAssignment, EdsResourceParse,
-        response, "EDS", expected_eds_service_names, &result.eds_update_map,
-        &result.resource_names_failed);
+        EdsResourceName, IsEdsInternal, MaybeLogClusterLoadAssignment,
+        EdsResourceParse, "EDS", response, subscribed_eds_service_names,
+        &result.eds_update_map, &result.resource_names_failed);
   }
   return result;
 }
@@ -3721,6 +3883,7 @@ grpc_error_handle XdsApi::ParseLrsResponse(
 }
 
 namespace {
+
 google_protobuf_Timestamp* GrpcMillisToTimestamp(const EncodingContext& context,
                                                  grpc_millis value) {
   google_protobuf_Timestamp* timestamp =
@@ -3729,218 +3892,6 @@ google_protobuf_Timestamp* GrpcMillisToTimestamp(const EncodingContext& context,
   google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
   google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
   return timestamp;
-}
-
-envoy_admin_v3_UpdateFailureState* CreateUpdateFailureStateUpb(
-    const EncodingContext& context,
-    const XdsApi::ResourceMetadata* resource_metadata) {
-  auto* update_failure_state =
-      envoy_admin_v3_UpdateFailureState_new(context.arena);
-  envoy_admin_v3_UpdateFailureState_set_details(
-      update_failure_state,
-      StdStringToUpbString(resource_metadata->failed_details));
-  envoy_admin_v3_UpdateFailureState_set_version_info(
-      update_failure_state,
-      StdStringToUpbString(resource_metadata->failed_version));
-  envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
-      update_failure_state,
-      GrpcMillisToTimestamp(context, resource_metadata->failed_update_time));
-  return update_failure_state;
-}
-
-void DumpLdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kLdsTypeUrlUpb = upb_strview_makez(XdsApi::kLdsTypeUrl);
-  auto* listener_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_listener_config(
-          per_xds_config, context.arena);
-  envoy_admin_v3_ListenersConfigDump_set_version_info(
-      listener_config_dump,
-      StdStringToUpbString(resource_type_metadata.version));
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_listener =
-        envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(
-            listener_config_dump, context.arena);
-    envoy_admin_v3_ListenersConfigDump_DynamicListener_set_name(
-        dynamic_listener, name_upb);
-    envoy_admin_v3_ListenersConfigDump_DynamicListener_set_client_status(
-        dynamic_listener, meta->client_status);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective listeners
-      auto* dynamic_listener_state =
-          envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_active_state(
-              dynamic_listener, context.arena);
-      envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_version_info(
-          dynamic_listener_state, StdStringToUpbString(meta->version));
-      envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_last_updated(
-          dynamic_listener_state,
-          GrpcMillisToTimestamp(context, meta->update_time));
-      auto* listener_any =
-          envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_listener(
-              dynamic_listener_state, context.arena);
-      google_protobuf_Any_set_type_url(listener_any, kLdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          listener_any, StdStringToUpbString(meta->serialized_proto));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_ListenersConfigDump_DynamicListener_set_error_state(
-          dynamic_listener, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
-}
-
-void DumpRdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kRdsTypeUrlUpb = upb_strview_makez(XdsApi::kRdsTypeUrl);
-  auto* route_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_route_config(per_xds_config,
-                                                                context.arena);
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_route_config =
-        envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(
-            route_config_dump, context.arena);
-    envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_client_status(
-        dynamic_route_config, meta->client_status);
-    auto* route_config_any =
-        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_route_config(
-            dynamic_route_config, context.arena);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective route configs
-      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_version_info(
-          dynamic_route_config, StdStringToUpbString(meta->version));
-      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_last_updated(
-          dynamic_route_config,
-          GrpcMillisToTimestamp(context, meta->update_time));
-      google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          route_config_any, StdStringToUpbString(meta->serialized_proto));
-    } else {
-      // If there isn't a working route config, we still need to print the
-      // name.
-      auto* route_config =
-          envoy_config_route_v3_RouteConfiguration_new(context.arena);
-      envoy_config_route_v3_RouteConfiguration_set_name(route_config, name_upb);
-      size_t length;
-      char* bytes = envoy_config_route_v3_RouteConfiguration_serialize(
-          route_config, context.arena, &length);
-      google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
-      google_protobuf_Any_set_value(route_config_any,
-                                    upb_strview_make(bytes, length));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_error_state(
-          dynamic_route_config, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
-}
-
-void DumpCdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kCdsTypeUrlUpb = upb_strview_makez(XdsApi::kCdsTypeUrl);
-  auto* cluster_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_cluster_config(
-          per_xds_config, context.arena);
-  envoy_admin_v3_ClustersConfigDump_set_version_info(
-      cluster_config_dump,
-      StdStringToUpbString(resource_type_metadata.version));
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_cluster =
-        envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(
-            cluster_config_dump, context.arena);
-    envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_client_status(
-        dynamic_cluster, meta->client_status);
-    auto* cluster_any =
-        envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_cluster(
-            dynamic_cluster, context.arena);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective clusters
-      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_version_info(
-          dynamic_cluster, StdStringToUpbString(meta->version));
-      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_last_updated(
-          dynamic_cluster, GrpcMillisToTimestamp(context, meta->update_time));
-      google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          cluster_any, StdStringToUpbString(meta->serialized_proto));
-    } else {
-      // If there isn't a working cluster, we still need to print the name.
-      auto* cluster = envoy_config_cluster_v3_Cluster_new(context.arena);
-      envoy_config_cluster_v3_Cluster_set_name(cluster, name_upb);
-      size_t length;
-      char* bytes = envoy_config_cluster_v3_Cluster_serialize(
-          cluster, context.arena, &length);
-      google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
-      google_protobuf_Any_set_value(cluster_any,
-                                    upb_strview_make(bytes, length));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_error_state(
-          dynamic_cluster, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
-}
-
-void DumpEdsConfig(const EncodingContext& context,
-                   const XdsApi::ResourceTypeMetadata& resource_type_metadata,
-                   envoy_service_status_v3_PerXdsConfig* per_xds_config) {
-  upb_strview kEdsTypeUrlUpb = upb_strview_makez(XdsApi::kEdsTypeUrl);
-  auto* endpoint_config_dump =
-      envoy_service_status_v3_PerXdsConfig_mutable_endpoint_config(
-          per_xds_config, context.arena);
-  for (auto& p : resource_type_metadata.resource_metadata_map) {
-    absl::string_view name = p.first;
-    const XdsApi::ResourceMetadata* meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    auto* dynamic_endpoint =
-        envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(
-            endpoint_config_dump, context.arena);
-    envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_client_status(
-        dynamic_endpoint, meta->client_status);
-    auto* endpoint_any =
-        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_endpoint_config(
-            dynamic_endpoint, context.arena);
-    if (!meta->serialized_proto.empty()) {
-      // Set in-effective endpoints
-      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_version_info(
-          dynamic_endpoint, StdStringToUpbString(meta->version));
-      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_last_updated(
-          dynamic_endpoint, GrpcMillisToTimestamp(context, meta->update_time));
-      google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
-      google_protobuf_Any_set_value(
-          endpoint_any, StdStringToUpbString(meta->serialized_proto));
-    } else {
-      // If there isn't a working endpoint, we still need to print the name.
-      auto* cluster_load_assignment =
-          envoy_config_endpoint_v3_ClusterLoadAssignment_new(context.arena);
-      envoy_config_endpoint_v3_ClusterLoadAssignment_set_cluster_name(
-          cluster_load_assignment, name_upb);
-      size_t length;
-      char* bytes = envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(
-          cluster_load_assignment, context.arena, &length);
-      google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
-      google_protobuf_Any_set_value(endpoint_any,
-                                    upb_strview_make(bytes, length));
-    }
-    if (meta->client_status == XdsApi::ResourceMetadata::NACKED) {
-      // Set error_state if NACKED
-      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_error_state(
-          dynamic_endpoint, CreateUpdateFailureStateUpb(context, meta));
-    }
-  }
 }
 
 }  // namespace
@@ -3958,33 +3909,50 @@ std::string XdsApi::AssembleClientConfig(
       arena.ptr(), true,    certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
-  // Dump each xDS-type config into PerXdsConfig
-  for (auto& p : resource_type_metadata_map) {
+  // Dump each resource.
+  for (const auto& p : resource_type_metadata_map) {
     absl::string_view type_url = p.first;
-    const ResourceTypeMetadata& resource_type_metadata = p.second;
-    if (type_url == kLdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpLdsConfig(context, resource_type_metadata, per_xds_config);
-    } else if (type_url == kRdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpRdsConfig(context, resource_type_metadata, per_xds_config);
-    } else if (type_url == kCdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpCdsConfig(context, resource_type_metadata, per_xds_config);
-    } else if (type_url == kEdsTypeUrl) {
-      auto* per_xds_config =
-          envoy_service_status_v3_ClientConfig_add_xds_config(client_config,
-                                                              context.arena);
-      DumpEdsConfig(context, resource_type_metadata, per_xds_config);
-    } else {
-      gpr_log(GPR_ERROR, "invalid type_url %s", std::string(type_url).c_str());
-      return "";
+    const ResourceMetadataMap& resource_metadata_map = p.second;
+    for (const auto& q : resource_metadata_map) {
+      absl::string_view resource_name = q.first;
+      const ResourceMetadata& metadata = *q.second;
+      auto* entry =
+          envoy_service_status_v3_ClientConfig_add_generic_xds_configs(
+              client_config, context.arena);
+      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(
+          entry, StdStringToUpbString(type_url));
+      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(
+          entry, StdStringToUpbString(resource_name));
+      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(
+          entry, metadata.client_status);
+      if (!metadata.serialized_proto.empty()) {
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(
+            entry, StdStringToUpbString(metadata.version));
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(
+            entry, GrpcMillisToTimestamp(context, metadata.update_time));
+        auto* any_field =
+            envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
+                entry, context.arena);
+        google_protobuf_Any_set_type_url(any_field,
+                                         StdStringToUpbString(type_url));
+        google_protobuf_Any_set_value(
+            any_field, StdStringToUpbString(metadata.serialized_proto));
+      }
+      if (metadata.client_status == XdsApi::ResourceMetadata::NACKED) {
+        auto* update_failure_state =
+            envoy_admin_v3_UpdateFailureState_new(context.arena);
+        envoy_admin_v3_UpdateFailureState_set_details(
+            update_failure_state,
+            StdStringToUpbString(metadata.failed_details));
+        envoy_admin_v3_UpdateFailureState_set_version_info(
+            update_failure_state,
+            StdStringToUpbString(metadata.failed_version));
+        envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
+            update_failure_state,
+            GrpcMillisToTimestamp(context, metadata.failed_update_time));
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
+            entry, update_failure_state);
+      }
     }
   }
   // Serialize the upb message to bytes

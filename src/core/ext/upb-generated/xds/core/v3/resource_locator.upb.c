@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "upb/msg_internal.h"
 #include "xds/core/v3/resource_locator.upb.h"
-#include "udpa/annotations/status.upb.h"
+#include "xds/annotations/v3/status.upb.h"
 #include "xds/core/v3/context_params.upb.h"
 #include "validate/validate.upb.h"
 

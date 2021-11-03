@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -159,8 +160,7 @@ bool grpc_plugin_credentials::get_request_metadata(
   bool retval = true;  // Synchronous return.
   if (plugin_.get_metadata != nullptr) {
     // Create pending_request object.
-    pending_request* request =
-        static_cast<pending_request*>(gpr_zalloc(sizeof(*request)));
+    pending_request* request = grpc_core::Zalloc<pending_request>();
     request->creds = this;
     request->md_array = md_array;
     request->on_request_metadata = on_request_metadata;

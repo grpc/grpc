@@ -118,6 +118,7 @@ class HPackCompressor {
 
     void Encode(grpc_mdelem md);
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
+    void Encode(TeMetadata, TeMetadata::ValueType value);
 
    private:
     struct FramePrefix {
@@ -140,6 +141,8 @@ class HPackCompressor {
     void EmitLitHdrIncIdx(uint32_t key_index, grpc_mdelem elem);
     void EmitLitHdrNotIdx(uint32_t key_index, grpc_mdelem elem);
     void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
+    void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
+                                                const grpc_slice& value_slice);
     void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
 
     size_t CurrentFrameSize() const;
@@ -187,7 +190,7 @@ class HPackCompressor {
   // a new literal should be added to the compression table or not.
   // They track a single integer that counts how often a particular value has
   // been seen. When that count reaches max (255), all values are halved.
-  grpc_core::PopularityCount<kNumFilterValues> filter_elems_;
+  PopularityCount<kNumFilterValues> filter_elems_;
 
   class KeyElem {
    public:
@@ -264,8 +267,9 @@ class HPackCompressor {
 
   // entry tables for keys & elems: these tables track values that have been
   // seen and *may* be in the decompressor table
-  grpc_core::HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
-  grpc_core::HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
+  HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
+  HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
+  uint32_t te_index_ = 0;
 };
 
 }  // namespace grpc_core

@@ -85,9 +85,6 @@ RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get cl
 
 RUN mkdir /var/local/jenkins
 
-#================
-# libuv
-RUN cd /tmp     && wget http://dist.libuv.org/dist/v1.9.1/libuv-v1.9.1.tar.gz     && tar -xf libuv-v1.9.1.tar.gz     && cd libuv-v1.9.1     && sh autogen.sh && ./configure --prefix=/usr && make && make install
 
 # Install gcc-4.9 and other relevant items
 RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean

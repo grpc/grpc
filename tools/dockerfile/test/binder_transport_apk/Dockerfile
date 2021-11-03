@@ -56,7 +56,7 @@ ENV ANDROID_NDK_HOME=/opt/android-sdk/ndk/21.4.7075529
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 3.7.1
+ENV BAZEL_VERSION 4.2.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

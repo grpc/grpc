@@ -109,9 +109,9 @@ TEST_F(CliCallTest, SimpleRpc) {
   std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
       server_trailing_metadata;
   client_metadata.insert(std::pair<std::string, std::string>("key1", "val1"));
-  Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
-                            client_metadata, &server_initial_metadata,
-                            &server_trailing_metadata);
+  CliCall call(channel_, kMethod, client_metadata);
+  Status s2 = call.Call(request_bin, &response_bin, &server_initial_metadata,
+                        &server_trailing_metadata);
   EXPECT_TRUE(s2.ok());
 
   EXPECT_EQ(expected_response_bin, response_bin);

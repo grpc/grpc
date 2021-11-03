@@ -108,7 +108,7 @@ static tsi_result create_handshaker_result(bool is_client,
     return TSI_INVALID_ARGUMENT;
   }
   local_tsi_handshaker_result* result =
-      static_cast<local_tsi_handshaker_result*>(gpr_zalloc(sizeof(*result)));
+      grpc_core::Zalloc<local_tsi_handshaker_result>();
   result->is_client = is_client;
   if (received_bytes_size > 0) {
     result->unused_bytes =
@@ -170,8 +170,7 @@ tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self) {
     gpr_log(GPR_ERROR, "Invalid arguments to local_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;
   }
-  local_tsi_handshaker* handshaker =
-      static_cast<local_tsi_handshaker*>(gpr_zalloc(sizeof(*handshaker)));
+  local_tsi_handshaker* handshaker = grpc_core::Zalloc<local_tsi_handshaker>();
   handshaker->is_client = is_client;
   handshaker->base.vtable = &handshaker_vtable;
   *self = &handshaker->base;

@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_NO_BINDER
+
 #include "src/core/ext/transport/binder/wire_format/binder_constants.h"
 
 #ifndef GPR_SUPPORT_BINDER_TRANSPORT
@@ -28,3 +30,4 @@ namespace grpc_binder {
 const int kFirstCallId = FIRST_CALL_TRANSACTION + 1000;
 
 }  // namespace grpc_binder
+#endif

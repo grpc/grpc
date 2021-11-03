@@ -122,7 +122,6 @@ libs:
   - test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   - test/core/end2end/tests/streaming_error_response.cc
   - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/workaround_cronet_compression.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/util/test_lb_policies.cc
@@ -250,7 +249,6 @@ libs:
   - test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   - test/core/end2end/tests/streaming_error_response.cc
   - test/core/end2end/tests/trailing_metadata.cc
-  - test/core/end2end/tests/workaround_cronet_compression.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/util/test_lb_policies.cc
@@ -478,9 +476,6 @@ libs:
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
-  - src/core/ext/filters/client_channel/service_config.h
-  - src/core/ext/filters/client_channel/service_config_call_data.h
-  - src/core/ext/filters/client_channel/service_config_parser.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -495,8 +490,9 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
-  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
-  - src/core/ext/filters/workarounds/workaround_utils.h
+  - src/core/ext/service_config/service_config.h
+  - src/core/ext/service_config/service_config_call_data.h
+  - src/core/ext/service_config/service_config_parser.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
@@ -521,7 +517,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
@@ -604,20 +599,22 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/security.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
   - src/core/ext/upb-generated/udpa/annotations/status.upb.h
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.h
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
-  - src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
+  - src/core/ext/upb-generated/xds/annotations/v3/status.upb.h
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.h
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
+  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.h
@@ -703,14 +700,15 @@ libs:
   - src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h
   - src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h
   - src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h
-  - src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.h
   - src/core/ext/upbdefs-generated/validate/validate.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h
+  - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h
   - src/core/ext/xds/certificate_provider_factory.h
   - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
@@ -719,6 +717,7 @@ libs:
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
+  - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
   - src/core/ext/xds/xds_http_fault_filter.h
@@ -755,6 +754,7 @@ libs:
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -838,7 +838,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
-  - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
@@ -923,6 +922,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -986,6 +986,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
+  - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
@@ -996,6 +997,7 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
+  - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1016,9 +1018,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
-  - src/core/ext/filters/client_channel/service_config.cc
   - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
-  - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -1034,8 +1034,8 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
-  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
-  - src/core/ext/filters/workarounds/workaround_utils.cc
+  - src/core/ext/service_config/service_config.cc
+  - src/core/ext/service_config/service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -1064,7 +1064,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/stream_map.cc
@@ -1149,20 +1148,22 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/security.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   - src/core/ext/upb-generated/udpa/annotations/status.upb.c
   - src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
-  - src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
+  - src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
   - src/core/ext/upb-generated/xds/core/v3/authority.upb.c
   - src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
   - src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
+  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c
@@ -1248,20 +1249,22 @@ libs:
   - src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c
   - src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
   - src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
-  - src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c
   - src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c
+  - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
   - src/core/ext/xds/certificate_provider_registry.cc
   - src/core/ext/xds/certificate_provider_store.cc
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_certificate_provider.cc
+  - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
@@ -1387,7 +1390,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
   - src/core/lib/iomgr/timer_manager.cc
-  - src/core/lib/iomgr/udp_server.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -1531,6 +1533,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:bind_front
+  - absl/hash:hash
   - absl/status:statusor
   - absl/types:variant
   - absl/utility:utility
@@ -1723,9 +1726,6 @@ libs:
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
-  - src/core/ext/filters/client_channel/service_config.h
-  - src/core/ext/filters/client_channel/service_config_call_data.h
-  - src/core/ext/filters/client_channel/service_config_parser.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -1740,8 +1740,9 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
-  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
-  - src/core/ext/filters/workarounds/workaround_utils.h
+  - src/core/ext/service_config/service_config.h
+  - src/core/ext/service_config/service_config_call_data.h
+  - src/core/ext/service_config/service_config_parser.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
@@ -1766,7 +1767,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
@@ -1774,8 +1774,8 @@ libs:
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
+  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -1808,6 +1808,7 @@ libs:
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -1891,7 +1892,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
-  - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
@@ -1928,6 +1928,7 @@ libs:
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -1970,6 +1971,7 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
+  - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1988,9 +1990,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
-  - src/core/ext/filters/client_channel/service_config.cc
   - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
-  - src/core/ext/filters/client_channel/service_config_parser.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -2006,8 +2006,8 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
-  - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
-  - src/core/ext/filters/workarounds/workaround_utils.cc
+  - src/core/ext/service_config/service_config.cc
+  - src/core/ext/service_config/service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -2034,7 +2034,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
-  - src/core/ext/transport/chttp2/transport/incoming_metadata.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/stream_map.cc
@@ -2044,8 +2043,8 @@ libs:
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
+  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/avl/avl.cc
@@ -2165,7 +2164,6 @@ libs:
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
   - src/core/lib/iomgr/timer_manager.cc
-  - src/core/lib/iomgr/udp_server.cc
   - src/core/lib/iomgr/unix_sockets_posix.cc
   - src/core/lib/iomgr/unix_sockets_posix_noop.cc
   - src/core/lib/iomgr/wakeup_fd_eventfd.cc
@@ -2339,6 +2337,7 @@ libs:
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
   - include/grpcpp/create_channel.h
+  - include/grpcpp/create_channel_binder.h
   - include/grpcpp/create_channel_posix.h
   - include/grpcpp/ext/health_check_service_server_builder_option.h
   - include/grpcpp/generic/async_generic_service.h
@@ -2412,6 +2411,8 @@ libs:
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
   - include/grpcpp/security/authorization_policy_provider.h
+  - include/grpcpp/security/binder_credentials.h
+  - include/grpcpp/security/binder_security_policy.h
   - include/grpcpp/security/credentials.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/tls_certificate_provider.h
@@ -2444,6 +2445,24 @@ libs:
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/xds_server_builder.h
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.h
+  - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
+  - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
+  - src/core/ext/transport/binder/wire_format/binder_constants.h
+  - src/core/ext/transport/binder/wire_format/transaction.h
+  - src/core/ext/transport/binder/wire_format/wire_reader.h
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
+  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -2456,6 +2475,23 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
+  - src/core/ext/transport/binder/client/channel_create.cc
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
+  - src/core/ext/transport/binder/wire_format/binder_constants.cc
+  - src/core/ext/transport/binder/wire_format/transaction.cc
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -3146,14 +3182,6 @@ targets:
   - test/core/surface/channel_create_test.cc
   deps:
   - grpc_test_util
-- name: channel_stack_builder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_builder_test.cc
-  deps:
-  - grpc_test_util
 - name: channel_stack_test
   build: test
   language: c
@@ -3531,24 +3559,6 @@ targets:
   headers: []
   src:
   - test/core/transport/chttp2/hpack_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_parser_table_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_table_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_parser_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4273,18 +4283,6 @@ targets:
   - test/core/tsi/transport_security_test.cc
   deps:
   - grpc_test_util
-- name: udp_server_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/udp_server_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: varint_test
   build: test
   language: c
@@ -4645,44 +4643,26 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/binder_resolver_test.cc
+  deps:
+  - grpc_test_util
 - name: binder_server_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/client/channel_create_impl.h
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
-  - src/core/ext/transport/binder/server/binder_server.h
-  - src/core/ext/transport/binder/server/binder_server_credentials.h
-  - src/core/ext/transport/binder/transport/binder_stream.h
-  - src/core/ext/transport/binder/transport/binder_transport.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_android.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/end2end/fake_binder.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/core/ext/transport/binder/client/channel_create_impl.cc
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
-  - src/core/ext/transport/binder/server/binder_server.cc
-  - src/core/ext/transport/binder/server/binder_server_credentials.cc
-  - src/core/ext/transport/binder/transport/binder_transport.cc
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_android.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/end2end/binder_server_test.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -4694,27 +4674,87 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/binder_connector.h
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.h
+  - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
+  - src/core/ext/transport/binder/server/binder_server.h
   - src/core/ext/transport/binder/transport/binder_stream.h
   - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
   - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
   - src/core/ext/transport/binder/wire_format/binder_constants.h
   - src/core/ext/transport/binder/wire_format/transaction.h
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/binder_connector.cc
+  - src/core/ext/transport/binder/client/channel_create.cc
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
   - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/credentials_cc.cc
+  - src/cpp/codegen/codegen_init.cc
+  - src/cpp/common/alarm.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/validate_service_config.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
   - test/core/transport/binder/binder_transport_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
@@ -4855,6 +4895,15 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: channel_stack_builder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_builder_test.cc
+  deps:
+  - grpc_test_util
 - name: channel_trace_test
   gtest: true
   build: test
@@ -5127,7 +5176,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/orca_load_report_for_test.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5391,18 +5440,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
-  - src/core/ext/transport/binder/transport/binder_stream.h
-  - src/core/ext/transport/binder/transport/binder_transport.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
-  - src/core/ext/transport/binder/wire_format/binder.h
-  - src/core/ext/transport/binder/wire_format/binder_constants.h
-  - src/core/ext/transport/binder/wire_format/transaction.h
-  - src/core/ext/transport/binder/wire_format/wire_reader.h
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
-  - src/core/ext/transport/binder/wire_format/wire_writer.h
   - test/core/transport/binder/end2end/fake_binder.h
   - test/core/transport/binder/end2end/testing_channel_create.h
   - test/cpp/end2end/test_service_impl.h
@@ -5410,13 +5447,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
-  - src/core/ext/transport/binder/transport/binder_transport.cc
-  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  - src/core/ext/transport/binder/wire_format/binder_constants.cc
-  - src/core/ext/transport/binder/wire_format/transaction.cc
-  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  - src/core/ext/transport/binder/wire_format/wire_writer.cc
   - test/core/transport/binder/end2end/end2end_binder_transport_test.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/testing_channel_create.cc
@@ -5443,6 +5473,97 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: endpoint_binder_pool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.h
+  - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver.h
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
+  - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
+  - src/core/ext/transport/binder/wire_format/binder_constants.h
+  - src/core/ext/transport/binder/wire_format/transaction.h
+  - src/core/ext/transport/binder/wire_format/wire_reader.h
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
+  - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
+  - test/core/transport/binder/mock_objects.h
+  src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
+  - src/core/ext/transport/binder/client/channel_create.cc
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
+  - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
+  - src/core/ext/transport/binder/wire_format/binder_constants.cc
+  - src/core/ext/transport/binder/wire_format/transaction.cc
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/credentials_cc.cc
+  - src/cpp/codegen/codegen_init.cc
+  - src/cpp/common/alarm.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/validate_service_config.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
+  - test/core/transport/binder/endpoint_binder_pool_test.cc
+  - test/core/transport/binder/mock_objects.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: endpoint_config_test
   gtest: true
   build: test
@@ -5572,22 +5693,87 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/security_policy/security_policy.h
+  - src/core/ext/transport/binder/client/binder_connector.h
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.h
+  - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
   - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
   - src/core/ext/transport/binder/wire_format/binder_constants.h
   - src/core/ext/transport/binder/wire_format/transaction.h
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/end2end/fake_binder.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
+  - src/core/ext/transport/binder/client/channel_create.cc
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/credentials_cc.cc
+  - src/cpp/codegen/codegen_init.cc
+  - src/cpp/common/alarm.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/validate_service_config.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
@@ -6019,6 +6205,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
@@ -6098,6 +6285,26 @@ targets:
   - test/core/transport/chttp2/hpack_encoder_index_test.cc
   deps:
   - absl/types:optional
+- name: hpack_parser_table_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_parser_table_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: http2_client
   build: test
   run: false
@@ -6789,6 +6996,15 @@ targets:
   - test/core/gprpp/overload_test.cc
   deps: []
   uses_polling: false
+- name: parsed_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/parsed_metadata_test.cc
+  deps:
+  - grpc_test_util
 - name: pid_controller_test
   gtest: true
   build: test
@@ -7212,6 +7428,35 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: rls_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/test_lb_policies.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/core/util/test_lb_policies.cc
+  - test/cpp/end2end/rls_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - grpc++_test_config
+  - grpc++_test_util
+- name: rls_lb_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/rls_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
 - name: sdk_authz_end2end_test
   gtest: true
   build: test
@@ -7321,6 +7566,18 @@ targets:
   - test/core/surface/server_chttp2_test.cc
   deps:
   - grpc_test_util
+- name: server_config_selector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/server_config_selector/server_config_selector.h
+  src:
+  - src/core/ext/filters/server_config_selector/server_config_selector.cc
+  - test/core/server_config_selector/server_config_selector_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: server_context_test_spouse_test
   gtest: true
   build: test
@@ -7804,12 +8061,86 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/binder/client/binder_connector.h
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.h
+  - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
+  - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
+  - src/core/ext/transport/binder/wire_format/binder_constants.h
   - src/core/ext/transport/binder/wire_format/transaction.h
+  - src/core/ext/transport/binder/wire_format/wire_reader.h
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
+  - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
+  - src/core/ext/transport/binder/client/channel_create.cc
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
+  - src/core/ext/transport/binder/wire_format/binder_constants.cc
   - src/core/ext/transport/binder/wire_format/transaction.cc
+  - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/credentials_cc.cc
+  - src/cpp/codegen/codegen_init.cc
+  - src/cpp/common/alarm.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/validate_service_config.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
   - grpc_test_util
@@ -7905,24 +8236,87 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/security_policy/security_policy.h
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.h
+  - src/core/ext/transport/binder/client/binder_connector.h
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.h
+  - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
   - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
   - src/core/ext/transport/binder/wire_format/binder_constants.h
   - src/core/ext/transport/binder/wire_format/transaction.h
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
-  - src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc
+  - src/core/ext/transport/binder/client/binder_connector.cc
+  - src/core/ext/transport/binder/client/channel_create.cc
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/credentials_cc.cc
+  - src/cpp/codegen/codegen_init.cc
+  - src/cpp/common/alarm.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/validate_service_config.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_reader_test.cc
   deps:
@@ -7933,22 +8327,87 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/binder/security_policy/security_policy.h
+  - src/core/ext/transport/binder/client/binder_connector.h
+  - src/core/ext/transport/binder/client/channel_create_impl.h
+  - src/core/ext/transport/binder/client/connection_id_generator.h
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.h
+  - src/core/ext/transport/binder/client/jni_utils.h
+  - src/core/ext/transport/binder/client/security_policy_setting.h
+  - src/core/ext/transport/binder/server/binder_server.h
+  - src/core/ext/transport/binder/transport/binder_stream.h
+  - src/core/ext/transport/binder/transport/binder_transport.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver.h
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h
   - src/core/ext/transport/binder/wire_format/binder.h
+  - src/core/ext/transport/binder/wire_format/binder_android.h
   - src/core/ext/transport/binder/wire_format/binder_constants.h
   - src/core/ext/transport/binder/wire_format/transaction.h
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/channel_filter.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
   - test/core/transport/binder/mock_objects.h
   src:
+  - src/core/ext/transport/binder/client/binder_connector.cc
+  - src/core/ext/transport/binder/client/channel_create.cc
+  - src/core/ext/transport/binder/client/channel_create_impl.cc
+  - src/core/ext/transport/binder/client/connection_id_generator.cc
+  - src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  - src/core/ext/transport/binder/client/jni_utils.cc
+  - src/core/ext/transport/binder/client/security_policy_setting.cc
+  - src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  - src/core/ext/transport/binder/server/binder_server.cc
+  - src/core/ext/transport/binder/server/binder_server_credentials.cc
+  - src/core/ext/transport/binder/transport/binder_transport.cc
   - src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  - src/core/ext/transport/binder/wire_format/binder_android.cc
   - src/core/ext/transport/binder/wire_format/binder_constants.cc
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/client_callback.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/credentials_cc.cc
+  - src/cpp/codegen/codegen_init.cc
+  - src/cpp/common/alarm.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/channel_filter.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/core_codegen.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/validate_service_config.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_writer_test.cc
   deps:
@@ -8059,7 +8518,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/test_service_impl.cc
-  - test/cpp/end2end/xds_credentials_end2end_test.cc
+  - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
   - grpc++_test_util
 - name: xds_credentials_test
@@ -8078,7 +8537,9 @@ targets:
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
+  - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_server.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
@@ -8116,7 +8577,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/tls.proto
   - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_service_impl.cc
-  - test/cpp/end2end/xds_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
   deps:
   - grpc++_test_config
   - grpc++_test_util

@@ -41,6 +41,15 @@ grpc_channel_args* grpc_channel_args_copy_and_add(const grpc_channel_args* src,
                                                   const grpc_arg* to_add,
                                                   size_t num_to_add);
 
+/** Remove any channel args prefixed with 'grpc.internal.'
+ *  These are used for internal implementation details and are not intended to
+ *  be exposed to users.
+ *  Returns a new channel args instance.
+ *  Does not take ownership of \a src.
+ *  Should be called by any public API that receives channel args. */
+grpc_channel_args* grpc_channel_args_remove_grpc_internal(
+    const grpc_channel_args* src);
+
 /** Copies the arguments in \a src except for those whose keys are in
     \a to_remove. */
 grpc_channel_args* grpc_channel_args_copy_and_remove(

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:bullseye
   
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -37,13 +37,14 @@ RUN apt-get update && apt-get install -y \
   make \
   perl \
   strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
+  python3-dev \
+  python3-setuptools \
+  python3-yaml \
   telnet \
   unzip \
   wget \
-  zip && apt-get clean
+  zip && \
+  apt-get clean
 
 #================
 # Build profiling
@@ -56,13 +57,10 @@ RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
 # Google Cloud platform API libraries
 RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-# Add Debian 'buster' repository, we will need it for installing newer versions of python
-RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
 
 
-RUN apt-get update && apt-get -t stable install -y python3.7 python3-all-dev
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
+RUN ln -s $(which python2) /usr/bin/python

@@ -93,7 +93,7 @@ void grpc_override_well_known_credentials_path_getter(
 
 /* --- grpc_channel_credentials. --- */
 
-#define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
+#define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.internal.channel_credentials"
 
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
@@ -136,6 +136,11 @@ struct grpc_channel_credentials
  private:
   const char* type_;
 };
+
+// TODO(roth): Once we eliminate insecure builds, find a better way to
+// plumb credentials so that it doesn't need to flow through channel
+// args.  For example, we'll want to expose it to LB policies by adding
+// methods on the helper API.
 
 /* Util to encapsulate the channel credentials in a channel arg. */
 grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials* credentials);

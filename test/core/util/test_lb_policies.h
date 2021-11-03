@@ -54,6 +54,10 @@ using AddressTestCallback = std::function<void(const ServerAddress&)>;
 // address used to create a subchannel.
 void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb);
 
+// Registers an LB policy called "fixed_address_lb" that provides a
+// single subchannel whose address is in its configuration.
+void RegisterFixedAddressLoadBalancingPolicy();
+
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H

@@ -57,8 +57,10 @@ GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master |
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
+WORKER_POOL_8CORE_NUM_CORES=8
 # c2-standard-30 is the closest machine spec to 32 core there is
 WORKER_POOL_32CORE=workers-c2-30core-ci
+WORKER_POOL_32CORE_NUM_CORES=30
 
 # Update go version.
 TEST_INFRA_GOVERSION=go1.17.1
@@ -67,10 +69,10 @@ go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 
 # Fetch test-infra repository and build all tools.
 # Note: Submodules are not required for tools build.
-git init ../test-infra
-pushd ../test-infra
-git fetch --depth 1 https://github.com/grpc/test-infra.git
-git reset --hard FETCH_HEAD
+pushd ..
+git clone --depth 1 https://github.com/grpc/test-infra.git
+cd test-infra
+git log -1 --oneline
 make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
@@ -78,17 +80,23 @@ popd
 buildConfigs() {
     local -r pool="$1"
     local -r table="$2"
-    shift 2
+    local -r num_cores="$3"
+    shift 3
+    # TODO(jtattermusch): find a better solution for detecting number of cores in java
+    # then setting the "java_worker_command_prefix"
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
         -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -s java_worker_command_prefix='BENCHMARK_WORKER_OPTS="-XX:ActiveProcessorCount='${num_cores}'"' \
         -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
         -a ci_jobName="${KOKORO_JOB_NAME}" \
         -a ci_gitCommit="${GRPC_GITREF}" \
+        -a ci_gitCommit_go="${GRPC_GO_GITREF}" \
+        -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
@@ -97,8 +105,8 @@ buildConfigs() {
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${WORKER_POOL_8CORE_NUM_CORES}" -l c++ -l csharp -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${WORKER_POOL_32CORE_NUM_CORES}" -l c++ -l csharp -l go -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {

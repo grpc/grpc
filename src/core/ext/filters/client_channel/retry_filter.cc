@@ -27,8 +27,8 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/service_config_call_data.h"
+#include "src/core/ext/service_config/service_config.h"
+#include "src/core/ext/service_config/service_config_call_data.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -420,27 +420,22 @@ class RetryFilter::CallData {
     // BatchData.batch.payload points to this.
     grpc_transport_stream_op_batch_payload batch_payload_;
     // For send_initial_metadata.
-    // Note that we need to make a copy of the initial metadata for each
-    // call attempt instead of just referring to the copy in call_data,
-    // because filters in the subchannel stack may modify the metadata,
-    // so we need to start in a pristine state for each attempt of the call.
-    grpc_linked_mdelem* send_initial_metadata_storage_;
-    grpc_metadata_batch send_initial_metadata_;
+    grpc_linked_mdelem retry_attempts_metadata_;
+    grpc_metadata_batch send_initial_metadata_{calld_->arena_};
     // For send_message.
     // TODO(roth): Restructure this to eliminate use of ManualConstructor.
     ManualConstructor<ByteStreamCache::CachingByteStream> send_message_;
     // For send_trailing_metadata.
-    grpc_linked_mdelem* send_trailing_metadata_storage_;
-    grpc_metadata_batch send_trailing_metadata_;
+    grpc_metadata_batch send_trailing_metadata_{calld_->arena_};
     // For intercepting recv_initial_metadata.
-    grpc_metadata_batch recv_initial_metadata_;
+    grpc_metadata_batch recv_initial_metadata_{calld_->arena_};
     grpc_closure recv_initial_metadata_ready_;
     bool trailing_metadata_available_ = false;
     // For intercepting recv_message.
     grpc_closure recv_message_ready_;
     OrphanablePtr<ByteStream> recv_message_;
     // For intercepting recv_trailing_metadata.
-    grpc_metadata_batch recv_trailing_metadata_;
+    grpc_metadata_batch recv_trailing_metadata_{calld_->arena_};
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
     // These fields indicate which ops have been started and completed on
@@ -573,8 +568,7 @@ class RetryFilter::CallData {
   // Cached data for retrying send ops.
   // send_initial_metadata
   bool seen_send_initial_metadata_ = false;
-  grpc_linked_mdelem* send_initial_metadata_storage_ = nullptr;
-  grpc_metadata_batch send_initial_metadata_;
+  grpc_metadata_batch send_initial_metadata_{arena_};
   uint32_t send_initial_metadata_flags_;
   // TODO(roth): As part of implementing hedging, we'll probably need to
   // have the LB call set a value in CallAttempt and then propagate it
@@ -599,8 +593,7 @@ class RetryFilter::CallData {
   absl::InlinedVector<ByteStreamCache*, 3> send_messages_;
   // send_trailing_metadata
   bool seen_send_trailing_metadata_ = false;
-  grpc_linked_mdelem* send_trailing_metadata_storage_ = nullptr;
-  grpc_metadata_batch send_trailing_metadata_;
+  grpc_metadata_batch send_trailing_metadata_{arena_};
 };
 
 //
@@ -1909,14 +1902,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   //
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
-  call_attempt_->send_initial_metadata_storage_ =
-      static_cast<grpc_linked_mdelem*>(calld->arena_->Alloc(
-          sizeof(grpc_linked_mdelem) *
-          (calld->send_initial_metadata_.non_deadline_count() +
-           (calld->num_attempts_completed_ > 0))));
   grpc_metadata_batch_copy(&calld->send_initial_metadata_,
-                           &call_attempt_->send_initial_metadata_,
-                           call_attempt_->send_initial_metadata_storage_);
+                           &call_attempt_->send_initial_metadata_);
   if (GPR_UNLIKELY(call_attempt_->send_initial_metadata_.legacy_index()
                        ->named.grpc_previous_rpc_attempts != nullptr)) {
     call_attempt_->send_initial_metadata_.Remove(
@@ -1928,9 +1915,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
         *retry_count_strings[calld->num_attempts_completed_ - 1], nullptr);
     grpc_error_handle error = grpc_metadata_batch_add_tail(
         &call_attempt_->send_initial_metadata_,
-        &call_attempt_->send_initial_metadata_storage_
-             [calld->send_initial_metadata_.non_deadline_count()],
-        retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
+        &call_attempt_->retry_attempts_metadata_, retry_md,
+        GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
               grpc_error_std_string(error).c_str());
@@ -1972,13 +1958,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   // We need to make a copy of the metadata batch for each attempt, since
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
-  call_attempt_->send_trailing_metadata_storage_ =
-      static_cast<grpc_linked_mdelem*>(calld->arena_->Alloc(
-          sizeof(grpc_linked_mdelem) *
-          calld->send_trailing_metadata_.non_deadline_count()));
   grpc_metadata_batch_copy(&calld->send_trailing_metadata_,
-                           &call_attempt_->send_trailing_metadata_,
-                           call_attempt_->send_trailing_metadata_storage_);
+                           &call_attempt_->send_trailing_metadata_);
   call_attempt_->started_send_trailing_metadata_ = true;
   batch_.send_trailing_metadata = true;
   batch_.payload->send_trailing_metadata.send_trailing_metadata =
@@ -2291,14 +2272,9 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   // Save a copy of metadata for send_initial_metadata ops.
   if (batch->send_initial_metadata) {
     seen_send_initial_metadata_ = true;
-    GPR_ASSERT(send_initial_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    send_initial_metadata_storage_ = static_cast<grpc_linked_mdelem*>(
-        arena_->Alloc(sizeof(grpc_linked_mdelem) *
-                      send_initial_metadata->non_deadline_count()));
-    grpc_metadata_batch_copy(send_initial_metadata, &send_initial_metadata_,
-                             send_initial_metadata_storage_);
+    grpc_metadata_batch_copy(send_initial_metadata, &send_initial_metadata_);
     send_initial_metadata_flags_ =
         batch->payload->send_initial_metadata.send_initial_metadata_flags;
     peer_string_ = batch->payload->send_initial_metadata.peer_string;
@@ -2312,14 +2288,9 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   // Save metadata batch for send_trailing_metadata ops.
   if (batch->send_trailing_metadata) {
     seen_send_trailing_metadata_ = true;
-    GPR_ASSERT(send_trailing_metadata_storage_ == nullptr);
     grpc_metadata_batch* send_trailing_metadata =
         batch->payload->send_trailing_metadata.send_trailing_metadata;
-    send_trailing_metadata_storage_ = static_cast<grpc_linked_mdelem*>(
-        arena_->Alloc(sizeof(grpc_linked_mdelem) *
-                      send_trailing_metadata->non_deadline_count()));
-    grpc_metadata_batch_copy(send_trailing_metadata, &send_trailing_metadata_,
-                             send_trailing_metadata_storage_);
+    grpc_metadata_batch_copy(send_trailing_metadata, &send_trailing_metadata_);
   }
 }
 

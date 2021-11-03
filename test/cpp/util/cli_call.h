@@ -56,12 +56,9 @@ class CliCall final {
   ~CliCall();
 
   // Perform an unary generic RPC.
-  static Status Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
-                     const OutgoingMetadataContainer& metadata,
-                     IncomingMetadataContainer* server_initial_metadata,
-                     IncomingMetadataContainer* server_trailing_metadata);
+  Status Call(const std::string& request, std::string* response,
+              IncomingMetadataContainer* server_initial_metadata,
+              IncomingMetadataContainer* server_trailing_metadata);
 
   // Send a generic request message in a synchronous manner. NOT thread-safe.
   void Write(const std::string& request);

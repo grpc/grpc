@@ -14,7 +14,7 @@
 
 FROM debian:stretch
 
-RUN apt-get -qq update && apt-get -qq install -y \
+RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf build-essential git libtool \
   libcurl4-openssl-dev libedit-dev libsodium-dev \
   libssl-dev libxml2-dev \

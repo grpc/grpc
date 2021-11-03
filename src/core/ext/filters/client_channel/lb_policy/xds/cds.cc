@@ -23,7 +23,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -208,7 +207,7 @@ CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
 void CdsLb::ClusterWatcher::Notifier::RunInExecCtx(void* arg,
                                                    grpc_error_handle error) {
   Notifier* self = static_cast<Notifier*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   self->parent_->work_serializer()->Run(
       [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
 }

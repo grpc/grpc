@@ -160,6 +160,16 @@ TEST(StatusUtilTest, AllocPtr) {
   }
 }
 
+TEST(StatusUtilTest, AllocHeapPtr) {
+  absl::Status statuses[] = {absl::OkStatus(), absl::CancelledError(),
+                             absl::AbortedError("Message")};
+  for (const auto& s : statuses) {
+    uintptr_t p = internal::StatusAllocHeapPtr(s);
+    EXPECT_EQ(s, internal::StatusGetFromHeapPtr(p));
+    internal::StatusFreeHeapPtr(p);
+  }
+}
+
 }  // namespace
 }  // namespace grpc_core
 

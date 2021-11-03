@@ -42,7 +42,7 @@ typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
     A security connector object represents away to configure the underlying
     transport security mechanism and check the resulting trusted peer.  */
 
-#define GRPC_ARG_SECURITY_CONNECTOR "grpc.security_connector"
+#define GRPC_ARG_SECURITY_CONNECTOR "grpc.internal.security_connector"
 
 class grpc_security_connector
     : public grpc_core::RefCounted<grpc_security_connector> {

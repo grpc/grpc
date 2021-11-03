@@ -38,7 +38,6 @@ grpc_cc_library(
     ],
     hdrs = ["test_suite/event_engine_test.h"],
     external_deps = [
-        "absl/random",
         "gtest",
     ],
     language = "C++",

@@ -39,6 +39,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -456,8 +457,7 @@ int main(int argc, char** argv) {
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
   // Zalloc dst_addrs to avoid oversized frames.
-  test_addrs* dst_addrs =
-      static_cast<test_addrs*>(gpr_zalloc(sizeof(*dst_addrs)));
+  test_addrs* dst_addrs = grpc_core::Zalloc<test_addrs>();
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   // wait a few seconds to make sure IPv6 link-local addresses can be bound

@@ -210,4 +210,14 @@ class StressTest {
 
 }  // namespace grpc_core
 
-int main(int, char**) { grpc_core::StressTest(16, 64).Run(8); }
+int main(int, char**) {
+  if (sizeof(void*) != 8) {
+    gpr_log(
+        GPR_ERROR,
+        "This test assumes 64-bit processors in the values it uses for sizes. "
+        "Since this test is mostly aimed at TSAN coverage, and that's mostly "
+        "platform independent, we simply skip this test in 32-bit builds.");
+    return 0;
+  }
+  grpc_core::StressTest(16, 64).Run(8);
+}
