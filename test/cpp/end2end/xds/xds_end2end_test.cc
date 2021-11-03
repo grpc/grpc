@@ -1312,21 +1312,29 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   bool WaitForNack(
-      std::function<AdsServiceImpl::ResponseState::State()> get_state) {
+      std::function<AdsServiceImpl::ResponseState::State()> get_state,
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
     auto deadline = absl::Now() + absl::Seconds(30);
-    while (get_state() != AdsServiceImpl::ResponseState::NACKED) {
-      if (absl::Now() >= deadline) {
-        return false;
-      }
-      SendRpc();
-    }
-    return true;
+    bool success = true;
+    CheckRpcSendFailure(CheckRpcSendFailureOptions()
+                            .set_continue_predicate([&](size_t) {
+                              if (absl::Now() >= deadline) {
+                                success = false;
+                                return false;
+                              }
+                              return get_state() !=
+                                     AdsServiceImpl::ResponseState::NACKED;
+                            })
+                            .set_expected_error_code(expected_status));
+    return success;
   }
 
-  bool WaitForLdsNack() {
-    return WaitForNack([&]() {
-      return balancers_[0]->ads_service()->lds_response_state().state;
-    });
+  bool WaitForLdsNack(StatusCode expected_status = StatusCode::UNAVAILABLE) {
+    return WaitForNack(
+        [&]() {
+          return balancers_[0]->ads_service()->lds_response_state().state;
+        },
+        expected_status);
   }
 
   bool WaitForRdsNack() {
@@ -8632,7 +8640,8 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8655,7 +8664,8 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8679,7 +8689,8 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8704,7 +8715,8 @@ TEST_P(
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8725,7 +8737,8 @@ TEST_P(XdsServerSecurityTest,
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8751,7 +8764,8 @@ TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8765,7 +8779,8 @@ TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8779,7 +8794,8 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -9548,7 +9564,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr(
@@ -9584,7 +9601,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   if (ipv6_only_) {
     EXPECT_THAT(
         balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9620,7 +9638,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -9644,7 +9663,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -9669,7 +9689,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -9706,7 +9727,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   if (ipv6_only_) {
     EXPECT_THAT(
         balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9740,7 +9762,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(
       balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
@@ -9764,7 +9787,8 @@ TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
               ::testing::HasSubstr("Invalid domain pattern \"\""));
 }
@@ -9775,7 +9799,8 @@ TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
               ::testing::HasSubstr("VirtualHost has no domains"));
 }
@@ -9786,7 +9811,8 @@ TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
               ::testing::HasSubstr("No route found in the virtual host"));
 }
@@ -9801,7 +9827,8 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
               ::testing::HasSubstr("Match can't be null"));
 }
@@ -10598,7 +10625,7 @@ TEST_P(DropTest, DropAll) {
 
 class BalancerUpdateTest : public XdsEnd2endTest {
  public:
-  BalancerUpdateTest() : XdsEnd2endTest(4, 3) {}
+  BalancerUpdateTest() : XdsEnd2endTest(4, 3) { StartAllBackends(); }
 };
 
 // Tests that the old LB call is still used after the balancer address update
@@ -10808,7 +10835,7 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
 
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingTest() : XdsEnd2endTest(4, 1, 3) {}
+  ClientLoadReportingTest() : XdsEnd2endTest(4, 1, 3) { StartAllBackends(); }
 };
 
 // Tests that the load report received at the balancer is correct.
@@ -11016,7 +11043,9 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
 
 class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 1, 20) {}
+  ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 1, 20) {
+    StartAllBackends();
+  }
 };
 
 // Tests that the drop stats are correctly reported by client load reporting.
@@ -11089,7 +11118,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
 
 class FaultInjectionTest : public XdsEnd2endTest {
  public:
-  FaultInjectionTest() : XdsEnd2endTest(1, 1) {}
+  FaultInjectionTest() : XdsEnd2endTest(1, 1) { StartAllBackends(); }
 
   // Builds a Listener with Fault Injection filter config. If the http_fault
   // is nullptr, then assign an empty filter config. This filter config is
@@ -11640,7 +11669,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
 
 class BootstrapSourceTest : public XdsEnd2endTest {
  public:
-  BootstrapSourceTest() : XdsEnd2endTest(4, 1) {}
+  BootstrapSourceTest() : XdsEnd2endTest(4, 1) { StartAllBackends(); }
 };
 
 TEST_P(BootstrapSourceTest, Vanilla) {
@@ -11658,6 +11687,7 @@ TEST_P(BootstrapSourceTest, Vanilla) {
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
   ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {
+    StartAllBackends();
     admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
