@@ -138,7 +138,7 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
-        destinations: Optional[List['Destination']]
+        destinations: List['Destination']
         drop: Optional[int]
 
         @classmethod
@@ -153,7 +153,7 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
-        matches: Optional[List['RouteMatch']]
+        matches: List['RouteMatch']
         action: 'RouteAction'
 
         @classmethod
