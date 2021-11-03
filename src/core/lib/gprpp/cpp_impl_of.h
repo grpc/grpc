@@ -40,4 +40,4 @@ class CppImplOf {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_CPP_IMPL_OF_H
