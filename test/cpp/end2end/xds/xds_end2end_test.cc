@@ -816,7 +816,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ResetStub();
   }
 
-  ~XdsEnd2endTest() {
+  ~XdsEnd2endTest() override {
     ShutdownAllBackends();
     for (auto& balancer : balancers_) balancer->Shutdown();
     // Clear global xDS channel args, since they will go out of scope
@@ -11696,7 +11696,7 @@ TEST_P(BootstrapSourceTest, Vanilla) {
 #ifndef DISABLED_XDS_PROTO_IN_CC
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
-  ClientStatusDiscoveryServiceTest(
+  explicit ClientStatusDiscoveryServiceTest(
       int xds_resource_does_not_exist_timeout_ms = 0)
       : XdsEnd2endTest(1, 1, 100, xds_resource_does_not_exist_timeout_ms) {
     StartAllBackends();
