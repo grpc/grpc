@@ -94,7 +94,7 @@ END2END_FIXTURES = {
     "h2_local_abstract_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
-        _platforms = ["linux", "mac", "posix"],
+        _platforms = ["linux", "posix"],
     ),
     "h2_local_uds": _fixture_options(
         secure = True,
