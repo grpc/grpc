@@ -453,10 +453,10 @@ cdef class Channel:
     self._arguments = arguments
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     c_channel_credentials = (
-    channel_credentials.c() if channel_credentials is not None
-    else grpc_insecure_credentials_create())
+        channel_credentials.c() if channel_credentials is not None
+        else grpc_insecure_credentials_create())
     self._state.c_channel = grpc_channel_create(
-    <char *>target, c_channel_credentials, channel_args.c_args())
+        <char *>target, c_channel_credentials, channel_args.c_args())
     grpc_channel_credentials_release(c_channel_credentials)
 
   def target(self):

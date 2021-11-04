@@ -25,10 +25,6 @@
 
 extern void grpc_register_extra_plugins(void);
 
-namespace grpc_core {
-extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
-}  // namespace grpc_core
-
 void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
 void grpc_client_channel_init(void);
@@ -130,6 +126,7 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
+extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);

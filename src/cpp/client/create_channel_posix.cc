@@ -17,6 +17,7 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/grpc_library.h>

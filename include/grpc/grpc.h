@@ -331,14 +331,6 @@ GRPCAPI grpc_channel* grpc_channel_create(const char* target,
                                           grpc_channel_credentials* creds,
                                           const grpc_channel_args* args);
 
-/** Create a secure channel to 'target' using file descriptor 'fd' and passed-in
-    credentials. The 'target' argument will be used to indicate the name for
-    this channel. Note that this API currently only supports insecure channel
-    credentials. Using other types of credentials will result in a failure. */
-GRPCAPI grpc_channel* grpc_channel_create_from_fd(
-    const char* target, int fd, grpc_channel_credentials* creds,
-    const grpc_channel_args* args);
-
 /** Create a lame client: this client fails every operation attempted on it. */
 GRPCAPI grpc_channel* grpc_lame_client_channel_create(
     const char* target, grpc_status_code error_code, const char* error_message);
@@ -483,23 +475,6 @@ GRPCAPI void grpc_server_set_config_fetcher(
    REQUIRES: server not started */
 GRPCAPI int grpc_server_add_http2_port(grpc_server* server, const char* addr,
                                        grpc_server_credentials* creds);
-
-/** Add the connected secure communication channel based on file descriptor 'fd'
-   to the 'server' and server credentials 'creds'. The 'fd' must be an open file
-   descriptor corresponding to a connected socket. Events from the file
-   descriptor may come on any of the server completion queues (i.e completion
-   queues registered via the grpc_server_register_completion_queue API).
-
-   The 'reserved' pointer MUST be NULL.
-
-   TODO(hork): add channel_args to this API to allow endpoints and transports
-   created in this function to participate in the resource quota feature.
-
-   Note that this API currently only supports inseure server credentials
-   Using other types of credentials will result in a failure. */
-GRPCAPI void grpc_server_add_channel_from_fd(grpc_server* server,
-                                             void* reserved, int fd,
-                                             grpc_server_credentials* creds);
 
 /** Start a server - tells all listeners to start listening */
 GRPCAPI void grpc_server_start(grpc_server* server);

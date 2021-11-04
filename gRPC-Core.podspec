@@ -114,6 +114,7 @@ Pod::Spec.new do |s|
                       'include/grpc/event_engine/port.h',
                       'include/grpc/fork.h',
                       'include/grpc/grpc.h',
+                      'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/grpc_security_constants.h',
                       'include/grpc/impl/codegen/atm.h',

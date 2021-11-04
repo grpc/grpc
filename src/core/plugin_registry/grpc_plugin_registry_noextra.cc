@@ -24,8 +24,5 @@
 void grpc_register_extra_plugins(void) {}
 
 namespace grpc_core {
-void RegisterExtraFilters(CoreConfiguration::Builder* builder){
-    // Use builder to avoid unused-parameter warning.
-    (void)builder;
-}
+void RegisterExtraFilters(CoreConfiguration::Builder* /* builder */){}
 }  // namespace grpc_core

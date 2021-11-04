@@ -16,6 +16,7 @@
  *
  */
 
+#include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/server_posix.h>
 
@@ -25,7 +26,7 @@ namespace grpc {
 
 void AddInsecureChannelFromFd(grpc::Server* server, int fd) {
   grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
-  grpc_server_add_channel_from_fd(server->c_server(), nullptr, fd, creds);
+  grpc_server_add_channel_from_fd(server->c_server(), fd, creds);
   grpc_server_credentials_release(creds);
 }
 

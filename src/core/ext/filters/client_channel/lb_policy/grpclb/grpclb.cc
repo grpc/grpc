@@ -1318,9 +1318,22 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // Don't want to pass down channelz node from parent; the balancer
       // channel will get its own.
       GRPC_ARG_CHANNELZ_CHANNEL_NODE,
+      // Remove the channel args for channel credentials and replace it
+      // with a version that does not contain call credentials. The loadbalancer
+      // is not necessarily trusted to handle bearer token credentials.
+      GRPC_ARG_CHANNEL_CREDENTIALS,
   };
+  // Create channel args for channel credentials that does not contain bearer
+  // token credentials.
+  grpc_channel_credentials* channel_credentials =
+      grpc_channel_credentials_find_in_args(args);
+  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
+  GPR_ASSERT(channel_credentials != nullptr);
+  creds_sans_call_creds =
+      channel_credentials->duplicate_without_call_credentials();
+  GPR_ASSERT(creds_sans_call_creds != nullptr);
   // Channel args to add.
-  absl::InlinedVector<grpc_arg, 3> args_to_add = {
+  absl::InlinedVector<grpc_arg, 4> args_to_add = {
       // The fake resolver response generator, which we use to inject
       // address updates into the LB channel.
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
@@ -1331,30 +1344,14 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // Tells channelz that this is an internal channel.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+      // A channel args for new channel credentials that does not contain bearer
+      // tokens.
+      grpc_channel_credentials_to_arg(creds_sans_call_creds.get()),
   };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
-  // Make any necessary modifications for security.
-  absl::InlinedVector<const char*, 1> creds_args_to_remove;
-  absl::InlinedVector<grpc_arg, 1> creds_args_to_add;
-  // Substitute the channel credentials with a version without call
-  // credentials: the load balancer is not necessarily trusted to handle
-  // bearer token credentials.
-  grpc_channel_credentials* channel_credentials =
-      grpc_channel_credentials_find_in_args(new_args);
-  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
-  GPR_ASSERT(channel_credentials != nullptr);
-  creds_sans_call_creds =
-      channel_credentials->duplicate_without_call_credentials();
-  GPR_ASSERT(creds_sans_call_creds != nullptr);
-  creds_args_to_remove.emplace_back(GRPC_ARG_CHANNEL_CREDENTIALS);
-  creds_args_to_add.emplace_back(
-      grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
-  grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
-      new_args, creds_args_to_remove.data(), creds_args_to_remove.size(),
-      creds_args_to_add.data(), creds_args_to_add.size());
   // Clean up.
   grpc_channel_args_destroy(new_args);
   return result;

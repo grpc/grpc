@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -89,7 +90,7 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
   grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
-  grpc_server_add_channel_from_fd(f->server, nullptr, sfd->fd_pair[1], creds);
+  grpc_server_add_channel_from_fd(f->server, sfd->fd_pair[1], creds);
   grpc_server_credentials_release(creds);
 }
 

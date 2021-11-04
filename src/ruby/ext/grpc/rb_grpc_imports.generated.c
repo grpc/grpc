@@ -71,7 +71,6 @@ grpc_channel_reset_connect_backoff_type grpc_channel_reset_connect_backoff_impor
 grpc_channel_credentials_release_type grpc_channel_credentials_release_import;
 grpc_server_credentials_release_type grpc_server_credentials_release_import;
 grpc_channel_create_type grpc_channel_create_import;
-grpc_channel_create_from_fd_type grpc_channel_create_from_fd_import;
 grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 grpc_channel_destroy_type grpc_channel_destroy_import;
 grpc_call_cancel_type grpc_call_cancel_import;
@@ -88,7 +87,6 @@ grpc_server_config_fetcher_xds_create_type grpc_server_config_fetcher_xds_create
 grpc_server_config_fetcher_destroy_type grpc_server_config_fetcher_destroy_import;
 grpc_server_set_config_fetcher_type grpc_server_set_config_fetcher_import;
 grpc_server_add_http2_port_type grpc_server_add_http2_port_import;
-grpc_server_add_channel_from_fd_type grpc_server_add_channel_from_fd_import;
 grpc_server_start_type grpc_server_start_import;
 grpc_server_shutdown_and_notify_type grpc_server_shutdown_and_notify_import;
 grpc_server_cancel_all_calls_type grpc_server_cancel_all_calls_import;
@@ -113,6 +111,8 @@ grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 grpc_channelz_get_subchannel_type grpc_channelz_get_subchannel_import;
 grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
 grpc_authorization_policy_provider_arg_vtable_type grpc_authorization_policy_provider_arg_vtable_import;
+grpc_channel_create_from_fd_type grpc_channel_create_from_fd_import;
+grpc_server_add_channel_from_fd_type grpc_server_add_channel_from_fd_import;
 grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 grpc_auth_context_property_iterator_type grpc_auth_context_property_iterator_import;
 grpc_auth_context_peer_identity_type grpc_auth_context_peer_identity_import;
@@ -361,7 +361,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_credentials_release_import = (grpc_channel_credentials_release_type) GetProcAddress(library, "grpc_channel_credentials_release");
   grpc_server_credentials_release_import = (grpc_server_credentials_release_type) GetProcAddress(library, "grpc_server_credentials_release");
   grpc_channel_create_import = (grpc_channel_create_type) GetProcAddress(library, "grpc_channel_create");
-  grpc_channel_create_from_fd_import = (grpc_channel_create_from_fd_type) GetProcAddress(library, "grpc_channel_create_from_fd");
   grpc_lame_client_channel_create_import = (grpc_lame_client_channel_create_type) GetProcAddress(library, "grpc_lame_client_channel_create");
   grpc_channel_destroy_import = (grpc_channel_destroy_type) GetProcAddress(library, "grpc_channel_destroy");
   grpc_call_cancel_import = (grpc_call_cancel_type) GetProcAddress(library, "grpc_call_cancel");
@@ -378,7 +377,6 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_server_config_fetcher_destroy_import = (grpc_server_config_fetcher_destroy_type) GetProcAddress(library, "grpc_server_config_fetcher_destroy");
   grpc_server_set_config_fetcher_import = (grpc_server_set_config_fetcher_type) GetProcAddress(library, "grpc_server_set_config_fetcher");
   grpc_server_add_http2_port_import = (grpc_server_add_http2_port_type) GetProcAddress(library, "grpc_server_add_http2_port");
-  grpc_server_add_channel_from_fd_import = (grpc_server_add_channel_from_fd_type) GetProcAddress(library, "grpc_server_add_channel_from_fd");
   grpc_server_start_import = (grpc_server_start_type) GetProcAddress(library, "grpc_server_start");
   grpc_server_shutdown_and_notify_import = (grpc_server_shutdown_and_notify_type) GetProcAddress(library, "grpc_server_shutdown_and_notify");
   grpc_server_cancel_all_calls_import = (grpc_server_cancel_all_calls_type) GetProcAddress(library, "grpc_server_cancel_all_calls");
@@ -403,6 +401,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channelz_get_subchannel_import = (grpc_channelz_get_subchannel_type) GetProcAddress(library, "grpc_channelz_get_subchannel");
   grpc_channelz_get_socket_import = (grpc_channelz_get_socket_type) GetProcAddress(library, "grpc_channelz_get_socket");
   grpc_authorization_policy_provider_arg_vtable_import = (grpc_authorization_policy_provider_arg_vtable_type) GetProcAddress(library, "grpc_authorization_policy_provider_arg_vtable");
+  grpc_channel_create_from_fd_import = (grpc_channel_create_from_fd_type) GetProcAddress(library, "grpc_channel_create_from_fd");
+  grpc_server_add_channel_from_fd_import = (grpc_server_add_channel_from_fd_type) GetProcAddress(library, "grpc_server_add_channel_from_fd");
   grpc_auth_property_iterator_next_import = (grpc_auth_property_iterator_next_type) GetProcAddress(library, "grpc_auth_property_iterator_next");
   grpc_auth_context_property_iterator_import = (grpc_auth_context_property_iterator_type) GetProcAddress(library, "grpc_auth_context_property_iterator");
   grpc_auth_context_peer_identity_import = (grpc_auth_context_peer_identity_type) GetProcAddress(library, "grpc_auth_context_peer_identity");

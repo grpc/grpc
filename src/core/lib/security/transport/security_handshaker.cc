@@ -310,23 +310,21 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   // Done with handshaker result.
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
-  // Add auth context to channel args.
-  absl::InlinedVector<grpc_arg, 1> args_to_add;
-  args_to_add.push_back(grpc_auth_context_to_arg(auth_context_.get()));
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      // Add auth context to channel args.
+      grpc_auth_context_to_arg(auth_context_.get()),
+  };
+  RefCountedPtr<channelz::SocketNode::Security> channelz_security;
+  // Add channelz channel args only if frame protector is created.
+  if (has_frame_protector) {
+    channelz_security =
+        MakeChannelzSecurityFromAuthContext(auth_context_.get());
+    args_to_add.push_back(channelz_security->MakeChannelArg());
+  }
   grpc_channel_args* tmp_args = args_->args;
   args_->args = grpc_channel_args_copy_and_add(tmp_args, args_to_add.data(),
                                                args_to_add.size());
   grpc_channel_args_destroy(tmp_args);
-  // Add channelz channel args only if frame protector is created.
-  if (has_frame_protector) {
-    absl::InlinedVector<grpc_arg, 1> args_to_add;
-    auto security = MakeChannelzSecurityFromAuthContext(auth_context_.get());
-    args_to_add.push_back(security->MakeChannelArg());
-    grpc_channel_args* tmp_args = args_->args;
-    args_->args = grpc_channel_args_copy_and_add(tmp_args, args_to_add.data(),
-                                                 args_to_add.size());
-    grpc_channel_args_destroy(tmp_args);
-  }
   // Invoke callback.
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);
   // Set shutdown to true so that subsequent calls to

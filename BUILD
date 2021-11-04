@@ -179,6 +179,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/compression.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
+    "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
     "include/grpc/slice.h",
@@ -388,7 +389,6 @@ grpc_cc_library(
         "grpc_authorization_base",
         "grpc_base",
         "grpc_common",
-        "grpc_lb_policy_rls",
         "grpc_security_base",
         "grpc_trace",
         "slice",
@@ -415,9 +415,6 @@ grpc_cc_library(
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
-    }) + select({
-        "grpc_no_rls": ["GRPC_NO_RLS"],
-        "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -425,10 +422,6 @@ grpc_cc_library(
         {
             "grpc_no_xds": [],
             "//conditions:default": GRPC_XDS_TARGETS,
-        },
-        {
-            "grpc_no_rls": [],
-            "//conditions:default": ["grpc_lb_policy_rls"],
         },
     ],
     standalone = True,
@@ -1965,7 +1958,17 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_common",
+    defines = select({
+        "grpc_no_rls": ["GRPC_NO_RLS"],
+        "//conditions:default": [],
+    }),
     language = "c++",
+    select_deps = [
+        {
+            "grpc_no_rls": [],
+            "//conditions:default": ["grpc_lb_policy_rls"],
+        },
+    ],
     deps = [
         "grpc_base",
         # standard plugins

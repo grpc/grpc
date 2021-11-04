@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>

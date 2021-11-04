@@ -31,6 +31,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -1019,9 +1020,8 @@ done:
 }
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-void grpc_server_add_channel_from_fd(grpc_server* server, void* reserved,
-                                     int fd, grpc_server_credentials* creds) {
-  GPR_ASSERT(reserved == nullptr);
+void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
+                                     grpc_server_credentials* creds) {
   // For now, we only support insecure server credentials
   if (creds == nullptr ||
       strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
@@ -1062,8 +1062,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, void* reserved,
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
 
-void grpc_server_add_channel_from_fd(grpc_server* /* server */,
-                                     void* /* reserved */, int /* fd */,
+void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
                                      grpc_server_credentials* /* creds */) {
   GPR_ASSERT(0);
 }
