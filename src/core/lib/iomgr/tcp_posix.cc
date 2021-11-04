@@ -837,7 +837,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
 }
 
 static void tcp_continue_read(grpc_tcp* tcp) {
-  if (tcp->incoming_buffer->length < tcp->cur_read_chunk_size &&
+  if (tcp->incoming_buffer->length < size_t(tcp->cur_read_chunk_size) &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO,
