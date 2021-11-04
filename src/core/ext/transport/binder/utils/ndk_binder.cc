@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
 
+#ifndef GRPC_NO_BINDER
+
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <dlfcn.h>
@@ -159,4 +161,5 @@ jobject AIBinder_toJavaBinder(JNIEnv* env, AIBinder* binder) {
 }  // namespace ndk_util
 }  // namespace grpc_binder
 
+#endif
 #endif
