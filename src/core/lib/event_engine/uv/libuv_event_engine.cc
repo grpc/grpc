@@ -391,15 +391,17 @@ LibuvEventEngine::CreateListener(
       "LibuvEventEngine::CreateListener is unimplemented.");
 }
 
-absl::Status LibuvEventEngine::Connect(
+EventEngine::ConnectionHandle LibuvEventEngine::Connect(
     /*on_connect=*/OnConnectCallback,
     /*addr=*/const ResolvedAddress&,
     /*args=*/const EndpointConfig&,
     /*memory_allocator=*/MemoryAllocator,
     /*deadline=*/absl::Time) {
   GPR_ASSERT(false && "LibuvEventEngine::Connect is unimplemented.");
-  return absl::UnimplementedError(
-      "LibuvEventEngine::Connect is unimplemented.");
+}
+
+bool LibuvEventEngine::CancelConnect(/*handle=*/EventEngine::ConnectionHandle) {
+  GPR_ASSERT(false && "LibuvEventEngine::CancelConnect is unimplemented.");
 }
 
 std::unique_ptr<EventEngine::DNSResolver> LibuvEventEngine::GetDNSResolver() {

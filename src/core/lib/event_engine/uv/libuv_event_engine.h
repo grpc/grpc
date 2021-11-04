@@ -69,12 +69,13 @@ class LibuvEventEngine final
       /*args=*/const EndpointConfig&,
       /*memory_allocator_factory=*/
       std::unique_ptr<MemoryAllocatorFactory>) override;
-  absl::Status Connect(
+  ConnectionHandle Connect(
       /*on_connect=*/OnConnectCallback,
       /*addr=*/const ResolvedAddress&,
       /*args=*/const EndpointConfig&,
       /*memory_allocator=*/MemoryAllocator,
       /*deadline=*/absl::Time) override;
+  bool CancelConnect(/*handle=*/ConnectionHandle) override;
   std::unique_ptr<DNSResolver> GetDNSResolver() override;
   void Run(Closure* fn) override;
   TaskHandle RunAt(absl::Time when, Closure* fn) override;
