@@ -73,6 +73,7 @@ def _rank_diff_bytes(diff_bytes):
         return 2 * mul
     return 3 * mul
 
+
 _build('bloat_diff_new')
 
 if args.diff_base:
