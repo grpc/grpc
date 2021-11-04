@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_NO_BINDER
+
 #include <grpcpp/security/binder_security_policy.h>
 
 #ifdef GPR_ANDROID
@@ -47,3 +49,4 @@ bool InternalOnlySecurityPolicy::IsAuthorized(int) { return false; }
 }  // namespace binder
 }  // namespace experimental
 }  // namespace grpc
+#endif

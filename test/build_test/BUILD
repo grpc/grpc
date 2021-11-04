@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
 licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
-
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 # build test //test/build_test:objective_c_examples_test
 build_test(

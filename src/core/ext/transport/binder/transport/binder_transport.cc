@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -755,3 +757,4 @@ grpc_transport* grpc_create_binder_transport_server(
 
   return &t->base;
 }
+#endif

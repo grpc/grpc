@@ -14,8 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/binder/client/binder_connector.h"
+#ifndef GRPC_NO_BINDER
 
+#include "src/core/ext/transport/binder/client/binder_connector.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -129,3 +130,5 @@ BinderClientChannelFactory::CreateSubchannel(
 }
 
 }  // namespace grpc_core
+
+#endif  // GRPC_NO_BINDER
