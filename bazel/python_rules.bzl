@@ -195,7 +195,7 @@ def _generate_pb2_grpc_src_impl(context):
         "--proto_path={}".format(get_include_directory(i))
         for i in includes
     ]
-    arguments += ["--proto_path={}".format(context.genfiles_dir.path)]
+    arguments.append("--proto_path={}".format(context.genfiles_dir.path))
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(

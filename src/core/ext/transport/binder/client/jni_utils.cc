@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <grpc/support/log.h>
 
 #if defined(ANDROID) || defined(__ANDROID__)
@@ -86,4 +88,5 @@ jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
 
 }  // namespace grpc_binder
 
+#endif
 #endif

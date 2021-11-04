@@ -2776,6 +2776,24 @@ endif()
 endif()
 
 add_library(grpc++
+  src/core/ext/transport/binder/client/binder_connector.cc
+  src/core/ext/transport/binder/client/channel_create.cc
+  src/core/ext/transport/binder/client/channel_create_impl.cc
+  src/core/ext/transport/binder/client/connection_id_generator.cc
+  src/core/ext/transport/binder/client/endpoint_binder_pool.cc
+  src/core/ext/transport/binder/client/jni_utils.cc
+  src/core/ext/transport/binder/client/security_policy_setting.cc
+  src/core/ext/transport/binder/security_policy/binder_security_policy.cc
+  src/core/ext/transport/binder/server/binder_server.cc
+  src/core/ext/transport/binder/server/binder_server_credentials.cc
+  src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/ndk_binder.cc
+  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
+  src/core/ext/transport/binder/wire_format/binder_android.cc
+  src/core/ext/transport/binder/wire_format/binder_constants.cc
+  src/core/ext/transport/binder/wire_format/transaction.cc
+  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
+  src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -2948,6 +2966,7 @@ foreach(_hdr
   include/grpcpp/client_context.h
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_binder.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/generic/async_generic_service.h
@@ -3021,6 +3040,8 @@ foreach(_hdr
   include/grpcpp/security/auth_context.h
   include/grpcpp/security/auth_metadata_processor.h
   include/grpcpp/security/authorization_policy_provider.h
+  include/grpcpp/security/binder_credentials.h
+  include/grpcpp/security/binder_security_policy.h
   include/grpcpp/security/credentials.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/tls_certificate_provider.h
@@ -8322,23 +8343,6 @@ add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  src/core/ext/transport/binder/client/binder_connector.cc
-  src/core/ext/transport/binder/client/channel_create.cc
-  src/core/ext/transport/binder/client/channel_create_impl.cc
-  src/core/ext/transport/binder/client/connection_id_generator.cc
-  src/core/ext/transport/binder/client/endpoint_binder_pool.cc
-  src/core/ext/transport/binder/client/jni_utils.cc
-  src/core/ext/transport/binder/client/security_policy_setting.cc
-  src/core/ext/transport/binder/security_policy/binder_security_policy.cc
-  src/core/ext/transport/binder/server/binder_server.cc
-  src/core/ext/transport/binder/server/binder_server_credentials.cc
-  src/core/ext/transport/binder/transport/binder_transport.cc
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_android.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/end2end/binder_server_test.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/cpp/end2end/test_service_impl.cc
@@ -8388,6 +8392,7 @@ add_executable(binder_transport_test
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/ndk_binder.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -10019,23 +10024,6 @@ add_executable(end2end_binder_transport_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  src/core/ext/transport/binder/client/binder_connector.cc
-  src/core/ext/transport/binder/client/channel_create.cc
-  src/core/ext/transport/binder/client/channel_create_impl.cc
-  src/core/ext/transport/binder/client/connection_id_generator.cc
-  src/core/ext/transport/binder/client/endpoint_binder_pool.cc
-  src/core/ext/transport/binder/client/jni_utils.cc
-  src/core/ext/transport/binder/client/security_policy_setting.cc
-  src/core/ext/transport/binder/security_policy/binder_security_policy.cc
-  src/core/ext/transport/binder/server/binder_server.cc
-  src/core/ext/transport/binder/server/binder_server_credentials.cc
-  src/core/ext/transport/binder/transport/binder_transport.cc
-  src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
-  src/core/ext/transport/binder/wire_format/binder_android.cc
-  src/core/ext/transport/binder/wire_format/binder_constants.cc
-  src/core/ext/transport/binder/wire_format/transaction.cc
-  src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
-  src/core/ext/transport/binder/wire_format/wire_writer.cc
   test/core/transport/binder/end2end/end2end_binder_transport_test.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/core/transport/binder/end2end/testing_channel_create.cc
@@ -10140,6 +10128,7 @@ add_executable(endpoint_binder_pool_test
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/ndk_binder.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -10547,6 +10536,7 @@ add_executable(fake_binder_test
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/ndk_binder.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -16172,6 +16162,7 @@ add_executable(transport_stream_receiver_test
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/ndk_binder.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -16478,6 +16469,7 @@ add_executable(wire_reader_test
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/ndk_binder.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc
@@ -16568,6 +16560,7 @@ add_executable(wire_writer_test
   src/core/ext/transport/binder/server/binder_server.cc
   src/core/ext/transport/binder/server/binder_server_credentials.cc
   src/core/ext/transport/binder/transport/binder_transport.cc
+  src/core/ext/transport/binder/utils/ndk_binder.cc
   src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc
   src/core/ext/transport/binder/wire_format/binder_android.cc
   src/core/ext/transport/binder/wire_format/binder_constants.cc

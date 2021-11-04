@@ -166,6 +166,7 @@ def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
 
     job_spec_list = []
     for line in testcase_lines:
+        print("Creating jobspec with cmdline '{}'".format(line))
         # TODO(jtattermusch): revisit the logic for updating test case commands
         # what it currently being done seems fragile.
 

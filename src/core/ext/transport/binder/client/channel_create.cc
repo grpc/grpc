@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_NO_BINDER
+
 #include <grpcpp/create_channel_binder.h>
 
 // The interface is only defined if GPR_ANDROID is defined, because some
@@ -30,11 +32,6 @@
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <grpc/support/port_platform.h>
-
-#include <android/binder_auto_utils.h>
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
-#include <android/binder_interface_utils.h>
 
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
@@ -158,3 +155,5 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
 #endif  // GPR_ANDROID
+
+#endif  // GRPC_NO_BINDER

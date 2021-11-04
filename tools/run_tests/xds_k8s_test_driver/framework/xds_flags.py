@@ -36,6 +36,10 @@ RESOURCE_SUFFIX = flags.DEFINE_string(
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
+ROUTER_SCOPE = flags.DEFINE_string(
+    "config_scope",
+    default=None,
+    help="Scope specified in router if using AppNet APIs")
 COMPUTE_API_VERSION = flags.DEFINE_string(
     "compute_api_version",
     default='v1',
