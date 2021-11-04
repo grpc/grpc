@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_NO_BINDER
+
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <map>
@@ -329,3 +331,4 @@ absl::Status ReadableParcelAndroid::ReadString(std::string* str) {
 }  // namespace grpc_binder
 
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
+#endif

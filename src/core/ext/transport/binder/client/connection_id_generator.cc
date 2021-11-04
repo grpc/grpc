@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/client/connection_id_generator.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include "absl/strings/str_cat.h"
 
 namespace {
@@ -65,3 +67,4 @@ ConnectionIdGenerator* GetConnectionIdGenerator() {
 }
 
 }  // namespace grpc_binder
+#endif

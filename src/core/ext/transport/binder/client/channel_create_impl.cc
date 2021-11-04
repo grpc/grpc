@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <memory>
 #include <utility>
 
@@ -100,3 +102,4 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
 
 }  // namespace internal
 }  // namespace grpc
+#endif
