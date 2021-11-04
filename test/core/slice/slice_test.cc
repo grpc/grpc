@@ -328,7 +328,7 @@ TEST_P(SliceSizedTest, FromCopiedString) {
 
   EXPECT_TRUE(slice.is_equivalent(slice.Ref()));
   EXPECT_TRUE(slice.is_equivalent(slice.AsOwned()));
-  EXPECT_TRUE(slice.is_equivalent(slice.Ref().IntoOwned()));
+  EXPECT_TRUE(slice.is_equivalent(slice.Ref().TakeOwned()));
 }
 
 INSTANTIATE_TEST_SUITE_P(SliceSizedTest, SliceSizedTest,
@@ -372,12 +372,12 @@ TEST(SliceTest, ExternalAsOwned) {
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }
 
-TEST(SliceTest, ExternalIntoOwned) {
+TEST(SliceTest, ExternalTakeOwned) {
   std::unique_ptr<std::string> external_string(
       new std::string(RandomString(1024)));
   SumSlice(Slice(ExternallyManagedSlice(external_string->data(),
                                         external_string->length()))
-               .IntoOwned());
+               .TakeOwned());
 }
 
 TEST(SliceTest, StaticSlice) {
