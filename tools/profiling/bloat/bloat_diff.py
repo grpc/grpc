@@ -99,7 +99,7 @@ for lib in LIBS:
         sections = [
             x for x in csv.reader(
                 subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' %
-                                        (old_version[0], new_version[0]),
+                                        (new_version[0], old_version[0]),
                                         shell=True).decode().splitlines())
         ]
         print(sections)
