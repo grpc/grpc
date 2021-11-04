@@ -97,6 +97,12 @@ class EventEngine {
   struct TaskHandle {
     intptr_t keys[2];
   };
+  /// A handle to a cancellable connection attempt.
+  ///
+  /// Returned by \a Connect, and can be passed to \a CancelConnect.
+  struct ConnectionHandle {
+    intptr_t keys[2];
+  };
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///
@@ -224,23 +230,30 @@ class EventEngine {
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
-  /// May return an error status immediately if there was a failure in the
-  /// synchronous part of establishing a connection. In that event, the \a
-  /// on_connect callback *will not* have been executed. Otherwise, it is
-  /// expected that the \a on_connect callback will be asynchronously executed
-  /// exactly once by the EventEngine.
+  /// Even in the event of an error, it is expected that the \a on_connect
+  /// callback will be asynchronously executed exactly once by the EventEngine.
+  /// A connection attempt can be cancelled using the \a CancelConnect method.
   ///
   /// Implementation Note: it is important that the \a memory_allocator be used
   /// for all read/write buffer allocations in the EventEngine implementation.
   /// This allows gRPC's \a ResourceQuota system to monitor and control memory
   /// usage with graceful degradation mechanisms. Please see the \a
   /// MemoryAllocator API for more information.
-  virtual absl::Status Connect(OnConnectCallback on_connect,
-                               const ResolvedAddress& addr,
-                               const EndpointConfig& args,
-                               MemoryAllocator memory_allocator,
-                               absl::Time deadline) = 0;
+  virtual ConnectionHandle Connect(OnConnectCallback on_connect,
+                                   const ResolvedAddress& addr,
+                                   const EndpointConfig& args,
+                                   MemoryAllocator memory_allocator,
+                                   absl::Time deadline) = 0;
 
+  /// Request cancellation of a connection attempt.
+  ///
+  /// If the associated connection has already been completed, it will not be
+  /// cancelled, and this method will return false.
+  ///
+  /// If the associated connection has not been completed, it will be cancelled,
+  /// and this method will return true. The \a OnConnectCallback will not be
+  /// called.
+  virtual bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
   class DNSResolver {
    public:
