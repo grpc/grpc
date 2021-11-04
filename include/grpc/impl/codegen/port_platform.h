@@ -127,6 +127,9 @@
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
 #ifdef __ANDROID_API__
+#if __ANDROID_API__ < 21
+#error "Requires Android API v21 and above"
+#endif
 #if (__ANDROID_API__) >= 29
 #define GPR_SUPPORT_BINDER_TRANSPORT 1
 #endif
