@@ -77,6 +77,13 @@ class XdsBootstrap {
     bool ShouldUseV3() const;
   };
 
+  struct Authority {
+    std::string client_listener_resource_name_template;
+    absl::InlinedVector<XdsServer, 1> xds_servers;
+
+    const XdsServer& server() const { return xds_servers[0]; }
+  };
+
   // Creates bootstrap object from json_string.
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error parsing the contents.
@@ -92,18 +99,26 @@ class XdsBootstrap {
   // add support for fallback for the xds channel.
   const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
+  const std::string& client_default_listener_resource_name_template() const {
+    return client_default_listener_resource_name_template_;
+  }
   const std::string& server_listener_resource_name_template() const {
     return server_listener_resource_name_template_;
   }
-
+  std::map<std::string, Authority>& authorities() { return authorities_; }
+  absl::optional<Authority> LookupAuthority(const std::string& name) const;
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
     return certificate_providers_;
   }
 
  private:
-  grpc_error_handle ParseXdsServerList(Json* json);
-  grpc_error_handle ParseXdsServer(Json* json, size_t idx);
+  grpc_error_handle ParseXdsServerList(
+      Json* json, absl::InlinedVector<XdsServer, 1>& servers);
+  grpc_error_handle ParseXdsServer(Json* json, size_t idx,
+                                   absl::InlinedVector<XdsServer, 1>& servers);
+  grpc_error_handle ParseAuthorities(Json* json);
+  grpc_error_handle ParseAuthority(Json* json, const std::string& name);
   grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
   grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
                                       XdsServer* server);
@@ -116,7 +131,9 @@ class XdsBootstrap {
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;
+  std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
+  std::map<std::string, Authority> authorities_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
 };
 

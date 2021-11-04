@@ -30,6 +30,7 @@
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -37,6 +38,16 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
+
+// TODO(donnadionne): check to see if federation is enabled, this will be
+// removed once federation is fully integrated and enabled by default.
+bool XdsFederationEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FEDERATION");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
 
 //
 // XdsChannelCredsRegistry
@@ -109,7 +120,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "\"xds_servers\" field is not an array"));
   } else {
-    grpc_error_handle parse_error = ParseXdsServerList(&it->second);
+    grpc_error_handle parse_error = ParseXdsServerList(&it->second, servers_);
     if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   }
   it = json.mutable_object()->find("node");
@@ -120,6 +131,28 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
     } else {
       grpc_error_handle parse_error = ParseNode(&it->second);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  it = json.mutable_object()->find("authorities");
+  if (XdsFederationEnabled() && it != json.mutable_object()->end()) {
+    if (it->second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"authorities\" field is not an object"));
+    } else {
+      grpc_error_handle parse_error = ParseAuthorities(&it->second);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  it = json.mutable_object()->find(
+      "client_default_listener_resource_name_template");
+  if (XdsFederationEnabled() && it != json.mutable_object()->end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"client_default_listener_resource_name_template\" field is not a "
+          "string"));
+    } else {
+      client_default_listener_resource_name_template_ =
+          std::move(*it->second.mutable_string_value());
     }
   }
   it = json.mutable_object()->find("server_listener_resource_name_template");
@@ -146,7 +179,17 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
                                          &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
+absl::optional<XdsBootstrap::Authority> XdsBootstrap::LookupAuthority(
+    const std::string& name) const {
+  auto it = authorities_.find(name);
+  if (it != authorities_.end()) {
+    return it->second;
+  }
+  return absl::nullopt;
+}
+
+grpc_error_handle XdsBootstrap::ParseXdsServerList(
+    Json* json, absl::InlinedVector<XdsServer, 1>& servers) {
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
@@ -154,7 +197,7 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("array element ", i, " is not an object")));
     } else {
-      grpc_error_handle parse_error = ParseXdsServer(&child, i);
+      grpc_error_handle parse_error = ParseXdsServer(&child, i, servers);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
@@ -162,10 +205,13 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(Json* json) {
                                        &error_list);
 }
 
-grpc_error_handle XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
+grpc_error_handle XdsBootstrap::ParseXdsServer(
+    Json* json, size_t idx, absl::InlinedVector<XdsServer, 1>& servers) {
   std::vector<grpc_error_handle> error_list;
-  servers_.emplace_back();
-  XdsServer& server = servers_[servers_.size() - 1];
+  gpr_log(GPR_INFO, "donna servers %d and authorities %d", servers_.size(),
+          authorities_.size());
+  servers.emplace_back();
+  XdsServer& server = servers[servers_.size() - 1];
   auto it = json->mutable_object()->find("server_uri");
   if (it == json->mutable_object()->end()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -201,6 +247,58 @@ grpc_error_handle XdsBootstrap::ParseXdsServer(Json* json, size_t idx) {
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
       absl::StrCat("errors parsing index ", idx), &error_list);
+}
+
+grpc_error_handle XdsBootstrap::ParseAuthorities(Json* json) {
+  std::vector<grpc_error_handle> error_list;
+  for (auto p : json->object_value()) {
+    if (p.first.empty()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:authorities element error: name cannot be empty"));
+      continue;
+    }
+    if (p.second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          "field:authorities element error: element is not a object"));
+      continue;
+    }
+    grpc_error_handle parse_error = ParseAuthority(&(p.second), p.first);
+    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"authorities\"",
+                                       &error_list);
+}
+
+grpc_error_handle XdsBootstrap::ParseAuthority(Json* json,
+                                               const std::string& name) {
+  std::vector<grpc_error_handle> error_list;
+  Authority authority;
+  auto it =
+      json->mutable_object()->find("client_listener_resource_name_template");
+  if (it != json->mutable_object()->end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"client_listener_resource_name_template\" field is not a string"));
+    }
+    authority.client_listener_resource_name_template =
+        std::move(*it->second.mutable_string_value());
+  }
+  it = json->mutable_object()->find("xds_servers");
+  if (it != json->mutable_object()->end()) {
+    if (it->second.type() != Json::Type::ARRAY) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"xds_servers\" field is not an array"));
+    } else {
+      grpc_error_handle parse_error =
+          ParseXdsServerList(&it->second, authority.xds_servers);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  if (error_list.empty()) {
+    authorities_[name] = std::move(authority);
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing authority ", name), &error_list);
 }
 
 grpc_error_handle XdsBootstrap::ParseChannelCredsArray(Json* json,
@@ -449,6 +547,11 @@ std::string XdsBootstrap::ToString() const {
                                  "],\n"));
   }
   parts.push_back("  }\n],\n");
+  if (!client_default_listener_resource_name_template_.empty()) {
+    parts.push_back(absl::StrFormat(
+        "client_default_listener_resource_name_template=\"%s\",\n",
+        client_default_listener_resource_name_template_));
+  }
   if (!server_listener_resource_name_template_.empty()) {
     parts.push_back(
         absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",

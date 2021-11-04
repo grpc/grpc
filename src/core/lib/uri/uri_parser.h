@@ -32,6 +32,10 @@
 
 namespace grpc_core {
 
+bool ShouldEscape(unsigned char c);
+
+std::string PercentEncode(absl::string_view str);
+
 class URI {
  public:
   struct QueryParam {
@@ -47,7 +51,7 @@ class URI {
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
   // Explicit construction by individual URI components
   URI(std::string scheme, std::string authority, std::string path,
-      std::vector<QueryParam> query_parameter_pairs, std::string fragment_);
+      std::vector<QueryParam> query_parameter_pairs, std::string fragment);
   URI() = default;
   // Copy construction and assignment
   URI(const URI& other);
