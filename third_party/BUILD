@@ -181,3 +181,14 @@ alias(
     name = "libuv",
     actual = "@libuv//:libuv",
 )
+
+# For test only
+alias(
+    name = "twisted",
+    actual = "@com_github_twisted_twisted//:twisted",
+)
+
+alias(
+    name = "yaml",
+    actual = "@com_github_yaml_pyyaml//:yaml",
+)
