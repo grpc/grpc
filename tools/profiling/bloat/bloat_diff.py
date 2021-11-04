@@ -99,7 +99,7 @@ for lib in LIBS:
         sections = [
             x for x in csv.reader(
                 subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' %
-                                        (old_version[0], new_version[0]),
+                                        (new_version[0], old_version[0]),
                                         shell=True).decode().splitlines())
         ]
         print(sections)
@@ -111,8 +111,8 @@ for lib in LIBS:
     text += '\n\n'
 
 severity = int(
-    math.copysign(max(0, math.log(abs(diff_size) / 1000, 10),
-                      diff_size))) if diff_size != 0 else 0
+    math.copysign(max(0, math.log(abs(diff_size) / 1000, 10)),
+                  diff_size)) if diff_size != 0 else 0
 
 print("SEVERITY: %d" % severity)
 

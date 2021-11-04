@@ -16,6 +16,7 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
+# buildifier: disable=unnamed-macro
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
@@ -447,9 +448,12 @@ def grpc_deps():
     grpc_python_deps()
 
 # TODO: move some dependencies from "grpc_deps" here?
+# buildifier: disable=unnamed-macro
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.
-       Loads dependencies that are only needed to run grpc library's tests."""
+
+    Loads dependencies that are only needed to run grpc library's tests.
+    """
     native.bind(
         name = "twisted",
         actual = "@com_github_twisted_twisted//:twisted",
