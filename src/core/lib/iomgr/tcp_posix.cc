@@ -370,6 +370,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int cur_read_chunk_size;
 
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
@@ -789,6 +790,13 @@ static void tcp_do_read(grpc_tcp* tcp) {
     total_read_bytes += read_bytes;
     if (tcp->inq == 0 || total_read_bytes == tcp->incoming_buffer->length) {
       /* We have filled incoming_buffer, and we cannot read any more. */
+      /* Increase the chunk size if we can */
+      tcp->cur_read_chunk_size = std::min(
+          // Usual growth rate is 3/2, but grow at least
+          // min_read_chunk_size.
+          std::max(3 * static_cast<int>(tcp->incoming_buffer->length) / 2,
+                   tcp->cur_read_chunk_size + tcp->min_read_chunk_size),
+          tcp->max_read_chunk_size);
       break;
     }
 
@@ -829,16 +837,19 @@ static void tcp_do_read(grpc_tcp* tcp) {
 }
 
 static void tcp_continue_read(grpc_tcp* tcp) {
-  /* Wait for allocation only when there is no buffer left. */
-  if (tcp->incoming_buffer->length == 0 &&
+  if (tcp->incoming_buffer->length < tcp->cur_read_chunk_size &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
+      gpr_log(GPR_INFO,
+              "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d cur_chunk=%d "
+              "buf_len=%" PRIdPTR,
+              tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
+              tcp->cur_read_chunk_size, tcp->incoming_buffer->length);
     }
     grpc_slice_buffer_add_indexed(
         tcp->incoming_buffer,
         tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size, tcp->max_read_chunk_size)));
+            tcp->min_read_chunk_size, tcp->cur_read_chunk_size)));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
@@ -1732,6 +1743,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->incoming_buffer = nullptr;
   tcp->target_length = static_cast<double>(tcp_read_chunk_size);
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
+  tcp->cur_read_chunk_size = tcp_min_read_chunk_size;
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */
