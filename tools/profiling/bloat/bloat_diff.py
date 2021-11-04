@@ -112,7 +112,7 @@ for lib in LIBS:
 
 severity = int(
     math.copysign(max(0, math.log(abs(diff_size) / 1000, 10)),
-                      diff_size)) if diff_size != 0 else 0
+                  diff_size)) if diff_size != 0 else 0
 
 print("SEVERITY: %d" % severity)
 
