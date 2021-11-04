@@ -59,6 +59,21 @@ def _build(output_dir):
     subprocess.check_call('make -j%d' % args.jobs, shell=True, cwd=output_dir)
 
 
+def _rank_diff_bytes(diff_bytes):
+    """Determine how significant diff_bytes is, and return a simple integer representing that"""
+    mul = 1
+    if diff_bytes < 0:
+        mul = -1
+        diff_bytes = -diff_bytes
+    if diff_bytes < 2 * 1024:
+        return 0
+    if diff_bytes < 16 * 1024:
+        return 1 * mul
+    if diff_bytes < 128 * 1024:
+        return 2 * mul
+    return 3 * mul
+
+
 _build('bloat_diff_new')
 
 if args.diff_base:
@@ -99,7 +114,7 @@ for lib in LIBS:
         sections = [
             x for x in csv.reader(
                 subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' %
-                                        (old_version[0], new_version[0]),
+                                        (new_version[0], old_version[0]),
                                         shell=True).decode().splitlines())
         ]
         print(sections)
@@ -110,10 +125,7 @@ for lib in LIBS:
                                         shell=True).decode()
     text += '\n\n'
 
-severity = int(
-    math.copysign(max(0, math.log(abs(diff_size) / 1000, 10),
-                      diff_size))) if diff_size != 0 else 0
-
+severity = _rank_diff_bytes(diff_size)
 print("SEVERITY: %d" % severity)
 
 print(text)

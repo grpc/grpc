@@ -1206,6 +1206,9 @@ src/core/ext/transport/binder/server/binder_server_credentials.cc \
 src/core/ext/transport/binder/transport/binder_stream.h \
 src/core/ext/transport/binder/transport/binder_transport.cc \
 src/core/ext/transport/binder/transport/binder_transport.h \
+src/core/ext/transport/binder/utils/binder_auto_utils.h \
+src/core/ext/transport/binder/utils/ndk_binder.cc \
+src/core/ext/transport/binder/utils/ndk_binder.h \
 src/core/ext/transport/binder/utils/transport_stream_receiver.h \
 src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc \
 src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h \
