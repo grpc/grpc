@@ -1327,9 +1327,8 @@ grpc_channel_args* BuildBalancerChannelArgs(
   // token credentials.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args);
-  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
   GPR_ASSERT(channel_credentials != nullptr);
-  creds_sans_call_creds =
+  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds =
       channel_credentials->duplicate_without_call_credentials();
   GPR_ASSERT(creds_sans_call_creds != nullptr);
   // Channel args to add.
@@ -1348,11 +1347,9 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // tokens.
       grpc_channel_credentials_to_arg(creds_sans_call_creds.get()),
   };
-  // Construct channel args.
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+  return grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
-  return new_args;
 }
 
 //
