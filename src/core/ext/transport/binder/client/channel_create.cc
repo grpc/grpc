@@ -14,7 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/binder/client/channel_create.h"
+#ifndef GRPC_NO_BINDER
+
+#include <grpcpp/create_channel_binder.h>
 
 // The interface is only defined if GPR_ANDROID is defined, because some
 // arguments requires JNI.
@@ -158,3 +160,5 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
 #endif  // GPR_ANDROID
+
+#endif  // GRPC_NO_BINDER

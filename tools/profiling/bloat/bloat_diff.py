@@ -15,9 +15,12 @@
 # limitations under the License.
 
 import argparse
+import csv
 import glob
+import math
 import multiprocessing
 import os
+import pathlib
 import shutil
 import subprocess
 import sys
@@ -71,27 +74,48 @@ if args.diff_base:
         subprocess.check_call(['git', 'checkout', where_am_i])
         subprocess.check_call(['git', 'submodule', 'update'])
 
-subprocess.check_call('make -j%d' % args.jobs,
-                      shell=True,
-                      cwd='third_party/bloaty')
+pathlib.Path('bloaty-build').mkdir(exist_ok=True)
+subprocess.check_call(
+    ['cmake', '-G', 'Unix Makefiles', '../third_party/bloaty'],
+    cwd='bloaty-build')
+subprocess.check_call('make -j%d' % args.jobs, shell=True, cwd='bloaty-build')
 
 text = ''
+diff_size = 0
 for lib in LIBS:
     text += '****************************************************************\n\n'
     text += lib + '\n\n'
     old_version = glob.glob('bloat_diff_old/%s' % lib)
     new_version = glob.glob('bloat_diff_new/%s' % lib)
     assert len(new_version) == 1
-    cmd = 'third_party/bloaty/bloaty -d compileunits,symbols'
+    cmd = 'bloaty-build/bloaty -d compileunits,symbols'
     if old_version:
         assert len(old_version) == 1
         text += subprocess.check_output('%s %s -- %s' %
                                         (cmd, new_version[0], old_version[0]),
                                         shell=True).decode()
+        for filename in [old_version, new_version]:
+            subprocess.check_call('strip %s' % filename[0], shell=True)
+        sections = [
+            x for x in csv.reader(
+                subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' %
+                                        (new_version[0], old_version[0]),
+                                        shell=True).decode().splitlines())
+        ]
+        print(sections)
+        for section in sections[1:]:
+            diff_size += int(section[2])
     else:
         text += subprocess.check_output('%s %s' % (cmd, new_version[0]),
                                         shell=True).decode()
     text += '\n\n'
 
+severity = int(
+    math.copysign(max(0, math.log(abs(diff_size) / 1000, 10)),
+                  diff_size)) if diff_size != 0 else 0
+
+print("SEVERITY: %d" % severity)
+
 print(text)
 check_on_pr.check_on_pr('Bloat Difference', '```\n%s\n```' % text)
+check_on_pr.label_significance_on_pr('bloat', severity)

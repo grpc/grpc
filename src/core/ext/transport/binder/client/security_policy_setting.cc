@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_NO_BINDER
+
 #include "src/core/ext/transport/binder/client/security_policy_setting.h"
 
 namespace grpc_binder {
@@ -40,3 +42,4 @@ SecurityPolicySetting* GetSecurityPolicySetting() {
 }
 
 }  // namespace grpc_binder
+#endif
