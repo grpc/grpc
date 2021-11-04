@@ -1352,9 +1352,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
-  // Clean up.
-  grpc_channel_args_destroy(new_args);
-  return result;
+  return new_args;
 }
 
 //
