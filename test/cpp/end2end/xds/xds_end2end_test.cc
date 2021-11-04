@@ -11696,7 +11696,9 @@ TEST_P(BootstrapSourceTest, Vanilla) {
 #ifndef DISABLED_XDS_PROTO_IN_CC
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
-  ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {
+  ClientStatusDiscoveryServiceTest(
+      int xds_resource_does_not_exist_timeout_ms = 0)
+      : XdsEnd2endTest(1, 1, 100, xds_resource_does_not_exist_timeout_ms) {
     StartAllBackends();
     admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
@@ -12234,10 +12236,10 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
 
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
  protected:
-  CsdsShortAdsTimeoutTest() {
-    // Shorten the ADS subscription timeout to speed up the test run.
-    xds_resource_does_not_exist_timeout_ms_ = 2000;
-  }
+  // Shorten the ADS subscription timeout to speed up the test run.
+  CsdsShortAdsTimeoutTest()
+      : ClientStatusDiscoveryServiceTest(
+            /* xds_resource_does_not_exist_timeout_ms_ = */ 2000) {}
 };
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
