@@ -233,7 +233,7 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       [](const Buffer&, Slice value) {
         const auto length = value.length();
         return ParsedMetadata(Which(), Which::ParseMemento(std::move(value)),
-                              TransportSize(strlen(Which::key()), length));
+                              TransportSize(Which::key().length(), length));
       },
       // debug_string
       [](const Buffer& value) {
