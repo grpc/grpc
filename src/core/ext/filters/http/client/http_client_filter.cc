@@ -565,12 +565,13 @@ static grpc_core::Slice user_agent_from_args(const grpc_channel_args* args,
 static grpc_error_handle http_client_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  new (chand) channel_data();
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(args->optional_transport != nullptr);
   chand->static_scheme = scheme_from_args(args->channel_args);
   chand->max_payload_size_for_get =
       max_payload_size_from_args(args->channel_args);
-  new (&chand->user_agent) grpc_core::Slice(user_agent_from_args(
+  chand->user_agent = grpc_core::Slice(user_agent_from_args(
       args->channel_args, args->optional_transport->vtable->name));
   return GRPC_ERROR_NONE;
 }
