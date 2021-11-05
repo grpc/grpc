@@ -201,7 +201,7 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       [](const Buffer&, Slice value) {
         const auto length = value.length();
         return ParsedMetadata(Which(), Which::ParseMemento(std::move(value)),
-                              TransportSize(strlen(Which::key()), length));
+                              TransportSize(Which::key().length(), length));
       },
       // debug_string
       [](const Buffer& value) {
@@ -260,7 +260,7 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       [](const Buffer&, Slice value) {
         const auto length = value.length();
         return ParsedMetadata(Which(), Which::ParseMemento(std::move(value)),
-                              TransportSize(strlen(Which::key()), length));
+                              TransportSize(Which::key().length(), length));
       },
       // debug_string
       [](const Buffer& value) {

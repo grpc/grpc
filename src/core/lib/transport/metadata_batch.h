@@ -83,7 +83,7 @@ namespace grpc_core {
 struct GrpcTimeoutMetadata {
   using ValueType = grpc_millis;
   using MementoType = grpc_millis;
-  static const char* key() { return "grpc-timeout"; }
+  static absl::string_view key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value) {
     grpc_millis timeout;
     if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value.c_slice(), &timeout))) {
@@ -115,7 +115,7 @@ struct TeMetadata {
     kInvalid,
   };
   using MementoType = ValueType;
-  static const char* key() { return "te"; }
+  static absl::string_view key() { return "te"; }
   static MementoType ParseMemento(Slice value) {
     auto out = kInvalid;
     if (value == "trailers") {
@@ -142,7 +142,7 @@ struct TeMetadata {
 struct UserAgentMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
-  static const char* key() { return "user-agent"; }
+  static absl::string_view key() { return "user-agent"; }
   static MementoType ParseMemento(Slice value) { return value.TakeOwned(); }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(const ValueType& x) { return x.Ref(); }
@@ -239,7 +239,7 @@ struct AppendHelper<Container> {
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
-//   static constexpr char* key() { return "grpc-xyz"; }
+//   static constexpr absl::string_view key() { return "grpc-xyz"; }
 //   // Parse a memento from a slice
 //   // Takes ownership of value
 //   static MementoType ParseMemento(Slice value) { ... }
