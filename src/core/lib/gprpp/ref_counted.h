@@ -192,8 +192,6 @@ class RefCount {
     return prior == 1;
   }
 
-  bool IsOne() const { return get() == 1; }
-
  private:
   Value get() const { return value_.load(std::memory_order_relaxed); }
 

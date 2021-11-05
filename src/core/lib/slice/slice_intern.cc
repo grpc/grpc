@@ -235,7 +235,7 @@ static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
   /* search for an existing string */
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash && grpc_core::InternedSlice(s) == args) {
-      if (s->refcnt.RefIfNonZero()) {
+      if (grpc_core::IncrementIfNonzero(&s->refcnt)) {
         return s;
       }
     }

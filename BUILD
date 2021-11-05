@@ -1513,7 +1513,6 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-        "ref_counted",
     ],
 )
 

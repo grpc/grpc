@@ -461,7 +461,7 @@ class RuSliceRefcount {
 
  private:
   grpc_slice_refcount base_;
-  RefCount refs_;
+  std::atomic<size_t> refs_{0};
   grpc_resource_user* resource_user_;
   size_t size_;
 };
