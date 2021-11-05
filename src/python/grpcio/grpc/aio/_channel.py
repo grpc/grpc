@@ -358,7 +358,7 @@ class Channel(_base_channel.Channel):
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
         if grace and call_tasks:
-            await asyncio.wait(call_tasks, timeout=grace, loop=self._loop)
+            await asyncio.wait(call_tasks, timeout=grace)
 
         # Time to cancel existing calls.
         for call in calls:

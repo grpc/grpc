@@ -56,7 +56,7 @@ class _EOF:
 
     def __bool__(self):
         return False
-    
+
     def __len__(self):
         return 0
 
@@ -144,7 +144,7 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
         TypeError: StopIteration interacts badly with generators and cannot be
             raised into a Future
     """
-    queue = asyncio.Queue(maxsize=1, loop=loop)
+    queue = asyncio.Queue(maxsize=1)
 
     def yield_to_queue():
         try:

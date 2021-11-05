@@ -523,7 +523,8 @@ class _InterceptedStreamRequestMixin:
         # Write might never end up since the call could abrubtly finish,
         # we give up on the first awaitable object that finishes.
         _, _ = await asyncio.wait(
-            (self._write_to_iterator_queue.put(request), call.code()),
+            (self._loop.create_task(self._write_to_iterator_queue.put(request)),
+             self._loop.create_task(call.code())),
             return_when=asyncio.FIRST_COMPLETED)
 
         if call.done():

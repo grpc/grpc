@@ -371,7 +371,7 @@ class _StreamRequestMixin(Call):
 
     def _init_stream_request_mixin(
             self, request_iterator: Optional[RequestIterableType]):
-        self._metadata_sent = asyncio.Event(loop=self._loop)
+        self._metadata_sent = asyncio.Event()
         self._done_writing_flag = False
 
         # If user passes in an async iterator, create a consumer Task.
