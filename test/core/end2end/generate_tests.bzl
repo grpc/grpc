@@ -91,7 +91,17 @@ END2END_FIXTURES = {
     "h2_ssl": _fixture_options(secure = True),
     "h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_tls": _fixture_options(secure = True),
+    "h2_local_abstract_uds_percent_encoded": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "posix"],
+    ),
     "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_local_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
@@ -394,14 +404,16 @@ def _compatible(fopt, topt):
 def _platform_support_tags(fopt):
     result = []
     if not "windows" in fopt._platforms:
-        result += ["no_windows"]
+        result.append("no_windows")
     if not "mac" in fopt._platforms:
-        result += ["no_mac"]
+        result.append("no_mac")
     if not "linux" in fopt._platforms:
-        result += ["no_linux"]
+        result.append("no_linux")
     return result
 
+# buildifier: disable=unnamed-macro
 def grpc_end2end_tests():
+    """Instantiates the gRPC end2end tests."""
     grpc_cc_library(
         name = "end2end_tests",
         srcs = ["end2end_tests.cc", "end2end_test_utils.cc"] + [
@@ -479,7 +491,9 @@ def grpc_end2end_tests():
                     flaky = t in fopt.flaky_tests,
                 )
 
+# buildifier: disable=unnamed-macro
 def grpc_end2end_nosec_tests():
+    """Instantiates the gRPC end2end no security tests"""
     grpc_cc_library(
         name = "end2end_nosec_tests",
         srcs = ["end2end_nosec_tests.cc", "end2end_test_utils.cc"] + [

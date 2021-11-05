@@ -12,23 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
+#ifndef GRPCPP_SECURITY_BINDER_CREDENTIALS_H
+#define GRPCPP_SECURITY_BINDER_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
+#include <memory>
 
+#include <grpcpp/security/binder_security_policy.h>
 #include <grpcpp/security/server_credentials.h>
 
-#include "src/core/ext/transport/binder/security_policy/security_policy.h"
-
 namespace grpc {
+
+class ChannelCredentials;
+
 namespace experimental {
 
-/// Builds Binder ServerCredentials.
+/// EXPERIMENTAL Builds Binder ServerCredentials.
 ///
-/// Calling \a ServerBuilder::AddListeningPort() with Binder ServerCredentials
-/// in a non-Android environment will make the subsequent call to
-/// \a ServerBuilder::BuildAndStart() returns a null pointer.
+/// This should be used along with `binder:` URI scheme. The path in the URI can
+/// later be used to access the server's endpoint binder.
+/// Note that calling \a ServerBuilder::AddListeningPort() with Binder
+/// ServerCredentials in a non-supported environment will make the subsequent
+/// call to \a ServerBuilder::BuildAndStart() return a null pointer.
 std::shared_ptr<grpc::ServerCredentials> BinderServerCredentials(
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy);
@@ -36,4 +40,4 @@ std::shared_ptr<grpc::ServerCredentials> BinderServerCredentials(
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_CREDENTIALS_H
+#endif  // GRPCPP_SECURITY_BINDER_CREDENTIALS_H

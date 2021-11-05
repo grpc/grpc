@@ -18,7 +18,6 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
-    "grpc_upb_proto_library",
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
@@ -44,8 +43,19 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_no_xds",
+    name = "grpc_no_xds_define",
     values = {"define": "grpc_no_xds=true"},
+)
+
+# When gRPC is build as shared library, binder transport code might still
+# get included even when user's code does not depend on it. In that case
+# --define=grpc_no_binder=true can be used to disable binder transport
+# related code to reduce binary size.
+# For users using build system other than bazel, they can define
+# GRPC_NO_BINDER to achieve the same effect.
+config_setting(
+    name = "grpc_no_binder_define",
+    values = {"define": "grpc_no_binder=true"},
 )
 
 config_setting(
@@ -59,8 +69,32 @@ config_setting(
 )
 
 selects.config_setting_group(
-    name = "grpc_mobile",
+    name = "grpc_no_xds",
     match_any = [
+        ":grpc_no_xds_define",
+        # In addition to disabling XDS support when --define=grpc_no_xds=true is
+        # specified, we also disable it on mobile platforms where it is not
+        # likely to be needed and where reducing the binary size is more
+        # important.
+        ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_binder",
+    match_any = [
+        ":grpc_no_binder_define",
+        # We do not need binder on ios.
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_rls",
+    match_any = [
+        # Disable RLS support on mobile platforms where it is not likely to be
+        # needed and where reducing the binary size is more important.
         ":android",
         ":ios",
     ],
@@ -110,11 +144,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "granola"  # @unused
+g_stands_for = "green"  # @unused
 
-core_version = "19.1.0"  # @unused
+core_version = "20.0.0"  # @unused
 
-version = "1.42.0-dev"  # @unused
+version = "1.43.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -380,26 +414,24 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
     ],
     defines = select({
-        # On mobile, don't build RLS or xDS.
-        "grpc_mobile": [
-            "GRPC_NO_XDS",
-            "GRPC_NO_RLS",
-        ],
-        # Don't build xDS if --define=grpc_no_xds=true is used.
         "grpc_no_xds": ["GRPC_NO_XDS"],
-        # By default, build both RLS and xDS.
+        "//conditions:default": [],
+    }) + select({
+        "grpc_no_rls": ["GRPC_NO_RLS"],
         "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
-    select_deps = {
-        # On mobile, don't build RLS or xDS.
-        "grpc_mobile": [],
-        # Don't build xDS if --define=grpc_no_xds=true is used.
-        "grpc_no_xds": ["grpc_lb_policy_rls"],
-        # By default, build both RLS and xDS.
-        "//conditions:default": ["grpc_lb_policy_rls"] + GRPC_XDS_TARGETS,
-    },
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": GRPC_XDS_TARGETS,
+        },
+        {
+            "grpc_no_rls": [],
+            "//conditions:default": ["grpc_lb_policy_rls"],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -438,13 +470,21 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc++_xds_client",
-            "grpc++_xds_server",
-        ],
-    },
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": [
+                "grpc++_xds_client",
+                "grpc++_xds_server",
+            ],
+        },
+        {
+            "grpc_no_binder": [],
+            "//conditions:default": [
+                "grpc++_binder",
+            ],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -511,11 +551,11 @@ grpc_cc_library(
         "src/core/ext/transport/binder/client/endpoint_binder_pool.cc",
         "src/core/ext/transport/binder/client/jni_utils.cc",
         "src/core/ext/transport/binder/client/security_policy_setting.cc",
-        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc",
-        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc",
+        "src/core/ext/transport/binder/security_policy/binder_security_policy.cc",
         "src/core/ext/transport/binder/server/binder_server.cc",
         "src/core/ext/transport/binder/server/binder_server_credentials.cc",
         "src/core/ext/transport/binder/transport/binder_transport.cc",
+        "src/core/ext/transport/binder/utils/ndk_binder.cc",
         "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc",
         "src/core/ext/transport/binder/wire_format/binder_android.cc",
         "src/core/ext/transport/binder/wire_format/binder_constants.cc",
@@ -525,19 +565,16 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/transport/binder/client/binder_connector.h",
-        "src/core/ext/transport/binder/client/channel_create.h",
         "src/core/ext/transport/binder/client/channel_create_impl.h",
         "src/core/ext/transport/binder/client/connection_id_generator.h",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.h",
         "src/core/ext/transport/binder/client/jni_utils.h",
         "src/core/ext/transport/binder/client/security_policy_setting.h",
-        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h",
-        "src/core/ext/transport/binder/security_policy/security_policy.h",
-        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h",
         "src/core/ext/transport/binder/server/binder_server.h",
-        "src/core/ext/transport/binder/server/binder_server_credentials.h",
         "src/core/ext/transport/binder/transport/binder_stream.h",
         "src/core/ext/transport/binder/transport/binder_transport.h",
+        "src/core/ext/transport/binder/utils/binder_auto_utils.h",
+        "src/core/ext/transport/binder/utils/ndk_binder.h",
         "src/core/ext/transport/binder/utils/transport_stream_receiver.h",
         "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h",
         "src/core/ext/transport/binder/wire_format/binder.h",
@@ -548,6 +585,10 @@ grpc_cc_library(
         "src/core/ext/transport/binder/wire_format/wire_reader_impl.h",
         "src/core/ext/transport/binder/wire_format/wire_writer.h",
     ],
+    defines = select({
+        "grpc_no_binder": ["GRPC_NO_BINDER"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
@@ -559,8 +600,10 @@ grpc_cc_library(
         "absl/time",
     ],
     language = "c++",
-    # TODO(mingcl): Move public headers under include/ and put them here
     public_hdrs = [
+        "include/grpcpp/security/binder_security_policy.h",
+        "include/grpcpp/create_channel_binder.h",
+        "include/grpcpp/security/binder_credentials.h",
     ],
     deps = [
         "gpr",
@@ -568,7 +611,6 @@ grpc_cc_library(
         "gpr_platform",
         "grpc",
         "grpc++_base",
-        "grpc++_internals",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -1203,6 +1245,9 @@ grpc_cc_library(
     name = "activity",
     srcs = [
         "src/core/lib/promise/activity.cc",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
     ],
     language = "c++",
     public_hdrs = [
@@ -4045,10 +4090,10 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/admin_services.h",
     ],
-    select_deps = {
+    select_deps = [{
         "grpc_no_xds": [],
         "//conditions:default": ["//:grpcpp_csds"],
-    },
+    }],
     deps = [
         "gpr",
         "grpc++",
