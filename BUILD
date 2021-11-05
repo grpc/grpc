@@ -3120,6 +3120,7 @@ grpc_cc_library(
         "absl/time",
     ],
     language = "c++",
+    visibility = ["@grpc:public"],
     deps = [
         "config",
         "gpr_base",
