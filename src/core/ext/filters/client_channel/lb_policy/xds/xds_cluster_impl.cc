@@ -283,6 +283,12 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
         locality_stats_(std::move(locality_stats)),
         call_counter_(std::move(call_counter)) {}
 
+  ~SubchannelCallTracker() override {
+    locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    GPR_DEBUG_ASSERT(!started_);
+  }
+
   void Start() override {
     // Increment number of calls in flight.
     call_counter_->Increment();
@@ -294,6 +300,9 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
     if (original_subchannel_call_tracker_ != nullptr) {
       original_subchannel_call_tracker_->Start();
     }
+#ifndef NDEBUG
+    started_ = true;
+#endif
   }
 
   void Finish(FinishArgs args) override {
@@ -304,11 +313,12 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
     // Record call completion for load reporting.
     if (locality_stats_ != nullptr) {
       locality_stats_->AddCallFinished(!args.status.ok());
-      locality_stats_.reset(DEBUG_LOCATION, "LocalityStats+call");
     }
     // Decrement number of calls in flight.
     call_counter_->Decrement();
-    call_counter_.reset(DEBUG_LOCATION, "call");
+#ifndef NDEBUG
+    started_ = false;
+#endif
   }
 
  private:
@@ -316,6 +326,9 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
       original_subchannel_call_tracker_;
   RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
   RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
+#ifndef NDEBUG
+  bool started_ = false;
+#endif
 };
 
 //
@@ -368,7 +381,8 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
       auto* subchannel_wrapper =
           static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
       // Handle load reporting.
-      locality_stats = subchannel_wrapper->locality_stats()->Ref();
+      locality_stats = subchannel_wrapper->locality_stats()->Ref(
+          DEBUG_LOCATION, "SubchannelCallTracker");
       // Unwrap subchannel to pass back up the stack.
       complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     }
@@ -377,7 +391,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
         absl::make_unique<SubchannelCallTracker>(
             std::move(complete_pick->subchannel_call_tracker),
             std::move(locality_stats),
-            call_counter_->Ref(DEBUG_LOCATION, "call"));
+            call_counter_->Ref(DEBUG_LOCATION, "SubchannelCallTracker"));
   } else {
     // TODO(roth): We should ideally also record call failures here in the case
     // where a pick fails.  This is challenging, because we don't know which
