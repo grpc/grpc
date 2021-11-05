@@ -855,7 +855,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Invalid address: addr cannot be a nullptr.");
   }
-  if (strlen(addr) >= 9 && strncmp(addr, "external:", 9) == 0) {
+  if (strncmp(addr, "external:", 9) == 0) {
     return grpc_core::Chttp2ServerListener::CreateWithAcceptor(
         server, addr, args, args_modifier);
   }
@@ -868,10 +868,10 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (absl::StartsWith(parsed_addr, kUnixUriPrefix)) {
       error = grpc_resolve_unix_domain_address(
-          addr + sizeof(kUnixUriPrefix) - 1, &resolved);
+          &parsed_addr[sizeof(kUnixUriPrefix) - 1], &resolved);
     } else if (absl::StartsWith(addr, kUnixAbstractUriPrefix)) {
       error = grpc_resolve_unix_abstract_domain_address(
-          addr + sizeof(kUnixAbstractUriPrefix) - 1, &resolved);
+          &parsed_addr[sizeof(kUnixAbstractUriPrefix) - 1], &resolved);
     } else {
       error = grpc_blocking_resolve_address(parsed_addr.c_str(), "https",
                                             &resolved);
