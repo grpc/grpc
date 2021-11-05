@@ -127,7 +127,7 @@
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
 #ifdef __ANDROID_API__
-#if (__ANDROID_API__) >= 29
+#if (__ANDROID_API__) >= 23
 #define GPR_SUPPORT_BINDER_TRANSPORT 1
 #endif
 #endif

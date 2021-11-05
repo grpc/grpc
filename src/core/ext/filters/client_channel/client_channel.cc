@@ -1091,7 +1091,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   // resolver creation will succeed later.
   if (!ResolverRegistry::IsValidTarget(uri_to_resolve_)) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("the target uri is not valid: ", uri_to_resolve_.c_str()));
+        absl::StrCat("the target uri is not valid: ", uri_to_resolve_));
     return;
   }
   // Strip out service config channel arg, so that it doesn't affect

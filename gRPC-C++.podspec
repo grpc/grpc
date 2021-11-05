@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.42.0-dev'
+  version = '1.43.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -291,6 +291,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/binder/transport/binder_stream.h',
                       'src/core/ext/transport/binder/transport/binder_transport.cc',
                       'src/core/ext/transport/binder/transport/binder_transport.h',
+                      'src/core/ext/transport/binder/utils/binder_auto_utils.h',
+                      'src/core/ext/transport/binder/utils/ndk_binder.cc',
+                      'src/core/ext/transport/binder/utils/ndk_binder.h',
                       'src/core/ext/transport/binder/utils/transport_stream_receiver.h',
                       'src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc',
                       'src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h',
@@ -987,6 +990,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/binder/server/binder_server.h',
                               'src/core/ext/transport/binder/transport/binder_stream.h',
                               'src/core/ext/transport/binder/transport/binder_transport.h',
+                              'src/core/ext/transport/binder/utils/binder_auto_utils.h',
+                              'src/core/ext/transport/binder/utils/ndk_binder.h',
                               'src/core/ext/transport/binder/utils/transport_stream_receiver.h',
                               'src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h',
                               'src/core/ext/transport/binder/wire_format/binder.h',
