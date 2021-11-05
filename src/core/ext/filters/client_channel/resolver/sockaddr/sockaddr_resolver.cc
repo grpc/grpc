@@ -91,7 +91,8 @@ bool ParseUri(const URI& uri,
   // Construct addresses.
   bool errors_found = false;
   for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
-    URI ith_uri(uri.scheme(), "", std::string(ith_path), {}, "");
+    URI ith_uri(uri.scheme(), "",
+                std::string(ith_path.data(), ith_path.length()), {}, "");
     grpc_resolved_address addr;
     if (!parse(ith_uri, &addr)) {
       errors_found = true;

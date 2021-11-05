@@ -502,7 +502,7 @@ static grpc_endpoint_vtable vtable = {win_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
-                               const char* peer_string,
+                               absl::string_view peer_string,
                                grpc_slice_allocator* slice_allocator) {
   grpc_tcp* tcp = new grpc_tcp;
   memset(tcp, 0, sizeof(grpc_tcp));
@@ -521,7 +521,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   } else {
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
-  tcp->peer_string = peer_string;
+  tcp->peer_string = std::string(peer_string.data(), peer_string.size());
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->slice_allocator = slice_allocator;
   return &tcp->base;

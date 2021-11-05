@@ -679,14 +679,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // balancers that it needs, so that we aren't wasting resources.
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds = 100,
+                 int xds_resource_does_not_exist_timeout_ms = 0,
                  bool use_xds_enabled_server = false)
       : num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
-        use_xds_enabled_server_(use_xds_enabled_server) {}
-
-  void SetUp() override {
+        xds_resource_does_not_exist_timeout_ms_(
+            xds_resource_does_not_exist_timeout_ms),
+        use_xds_enabled_server_(use_xds_enabled_server) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -811,20 +812,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       // args for the xDS channel.
       grpc_core::internal::UnsetGlobalXdsClientForTest();
     }
-    // Start the backends
-    for (const auto& backend : backends_) {
-      backend->Start();
-    }
     // Create channel and stub.
     ResetStub();
   }
 
-  const char* DefaultEdsServiceName() const {
-    return GetParam().use_fake_resolver() ? kServerName
-                                          : kDefaultEdsServiceName;
-  }
-
-  void TearDown() override {
+  ~XdsEnd2endTest() override {
     ShutdownAllBackends();
     for (auto& balancer : balancers_) balancer->Shutdown();
     // Clear global xDS channel args, since they will go out of scope
@@ -832,6 +824,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
+  }
+
+  const char* DefaultEdsServiceName() const {
+    return GetParam().use_fake_resolver() ? kServerName
+                                          : kDefaultEdsServiceName;
   }
 
   void StartAllBackends() {
@@ -1951,7 +1948,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
 class BasicTest : public XdsEnd2endTest {
  public:
-  BasicTest() : XdsEnd2endTest(4, 1) {}
+  BasicTest() : XdsEnd2endTest(4, 1) { StartAllBackends(); }
 };
 
 // Tests that the balancer sends the correct response to the client, and the
@@ -2581,7 +2578,9 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
-  XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {}
+  XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 1, 3) {
+    StartAllBackends();
+  }
 };
 
 // Tests load reporting when switching over from one cluster to another.
@@ -7312,8 +7311,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
 
 class XdsSecurityTest : public BasicTest {
  protected:
-  void SetUp() override {
-    BasicTest::SetUp();
+  XdsSecurityTest() {
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
@@ -7344,10 +7342,9 @@ class XdsSecurityTest : public BasicTest {
     SetNextResolutionForLbChannelAllBalancers();
   }
 
-  void TearDown() override {
+  ~XdsSecurityTest() override {
     g_fake1_cert_data_map = nullptr;
     g_fake2_cert_data_map = nullptr;
-    BasicTest::TearDown();
   }
 
   // Sends CDS updates with the new security configuration and verifies that
@@ -8242,10 +8239,7 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   XdsEnabledServerTest()
-      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {}
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
+      : XdsEnd2endTest(1, 1, 100, 0, true /* use_xds_enabled_server */) {
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
@@ -8256,7 +8250,10 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
   }
 };
 
-TEST_P(XdsEnabledServerTest, Basic) { WaitForBackend(0); }
+TEST_P(XdsEnabledServerTest, Basic) {
+  backends_[0]->Start();
+  WaitForBackend(0);
+}
 
 TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   Listener listener = default_server_listener_;
@@ -8265,6 +8262,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8279,6 +8277,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   listener.mutable_api_listener();
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8294,6 +8293,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   listener.mutable_default_filter_chain()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8310,6 +8310,7 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
   ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8334,6 +8335,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8359,6 +8361,7 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8387,6 +8390,7 @@ TEST_P(XdsEnabledServerTest,
   ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   WaitForBackend(0);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8402,6 +8406,7 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
       "192.168.1.1");
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::FAILED_PRECONDITION);
@@ -8412,6 +8417,7 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
   listener.mutable_use_original_dst()->set_value(true);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
@@ -8424,10 +8430,7 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   XdsServerSecurityTest()
-      : XdsEnd2endTest(1, 1, 100, true /* use_xds_enabled_server */) {}
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
+      : XdsEnd2endTest(1, 1, 100, 0, true /* use_xds_enabled_server */) {
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
@@ -8450,10 +8453,9 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     SetNextResolutionForLbChannelAllBalancers();
   }
 
-  void TearDown() override {
+  ~XdsServerSecurityTest() override {
     g_fake1_cert_data_map = nullptr;
     g_fake2_cert_data_map = nullptr;
-    XdsEnd2endTest::TearDown();
   }
 
   void SetLdsUpdate(absl::string_view root_instance_name,
@@ -8643,6 +8645,7 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
   transport_socket->set_name("unknown_transport_socket");
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8666,6 +8669,7 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8690,6 +8694,7 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8715,6 +8720,7 @@ TEST_P(
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8736,6 +8742,7 @@ TEST_P(XdsServerSecurityTest,
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8762,6 +8769,7 @@ TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8776,6 +8784,7 @@ TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   SetLdsUpdate("", "", "unknown", "", false);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8790,6 +8799,7 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   const auto response_state =
@@ -8818,6 +8828,7 @@ TEST_P(XdsServerSecurityTest,
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -8835,6 +8846,7 @@ TEST_P(XdsServerSecurityTest, TestMtls) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
 }
@@ -8847,6 +8859,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
       {"", {bad_root_cert_, bad_identity_pair_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin2", "", "fake_plugin1", "", true);
@@ -8862,6 +8875,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
       {"", {root_cert_, identity_pair_2_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin2", "", true);
@@ -8878,6 +8892,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothPluginsUpdated) {
       {"", {bad_root_cert_, bad_identity_pair_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   SetLdsUpdate("fake_plugin2", "", "fake_plugin2", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
           true /* test_expects_failure */);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
@@ -8894,6 +8909,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
       {"bad", {bad_root_cert_, bad_identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "bad", "fake_plugin1", "", true);
@@ -8907,6 +8923,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
       {"good", {root_cert_, identity_pair_2_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "good", true);
@@ -8920,6 +8937,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithBothCertificateNamesUpdated) {
       {"good", {root_cert_, identity_pair_2_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("fake_plugin1", "good", "fake_plugin1", "good", true);
@@ -8932,6 +8950,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringButProvidingClientCerts) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
 }
@@ -8941,6 +8960,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsNotRequiringAndNotProvidingClientCerts) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -8950,6 +8970,7 @@ TEST_P(XdsServerSecurityTest, TestTls) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
 }
@@ -8962,6 +8983,7 @@ TEST_P(XdsServerSecurityTest, TestTlsWithIdentityPluginUpdate) {
       {"", {root_cert_, identity_pair_2_}}};
   g_fake2_cert_data_map = &fake2_cert_map;
   SetLdsUpdate("", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("", "", "fake_plugin2", "", false);
@@ -8975,6 +8997,7 @@ TEST_P(XdsServerSecurityTest, TestTlsWithIdentityCertificateNameUpdate) {
       {"good", {root_cert_, identity_pair_2_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("", "", "fake_plugin1", "good", false);
@@ -8987,6 +9010,7 @@ TEST_P(XdsServerSecurityTest, TestFallback) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -8995,6 +9019,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
   SetLdsUpdate("", "", "fake_plugin1", "", false);
@@ -9007,6 +9032,7 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
@@ -9019,6 +9045,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_);
   SetLdsUpdate("", "", "", "", false);
@@ -9030,6 +9057,7 @@ TEST_P(XdsServerSecurityTest, TestFallbackToMtls) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   SendRpc([this]() { return CreateMtlsChannel(); },
@@ -9041,6 +9069,7 @@ TEST_P(XdsServerSecurityTest, TestTlsToFallback) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "fake_plugin1", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateTlsChannel(); },
           server_authenticated_identity_, {});
   SetLdsUpdate("", "", "", "", false);
@@ -9052,6 +9081,7 @@ TEST_P(XdsServerSecurityTest, TestFallbackToTls) {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
   SetLdsUpdate("", "", "", "", false);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
@@ -9081,6 +9111,7 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
   SetValidLdsUpdate();
+  backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
@@ -9089,6 +9120,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   SetInvalidLdsUpdate();
+  backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::UNAVAILABLE);
@@ -9098,6 +9130,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   SetValidLdsUpdate();
+  backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
@@ -9117,6 +9150,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
 TEST_P(XdsEnabledServerStatusNotificationTest,
        NotServingStatusToServingStatusTransition) {
   SetInvalidLdsUpdate();
+  backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::UNAVAILABLE);
@@ -9135,6 +9169,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ServingStatusToNonServingStatusTransition) {
   SetValidLdsUpdate();
+  backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
@@ -9149,6 +9184,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
+  backends_[0]->Start();
   for (int i = 0; i < 5; i++) {
     // Send a valid LDS update to get the server to start listening
     SetValidLdsUpdate();
@@ -9171,6 +9207,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
 TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   // Send a valid LDS update to get the server to start listening
   SetValidLdsUpdate();
+  backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
@@ -9223,6 +9260,7 @@ using XdsServerFilterChainMatchTest = XdsServerSecurityTest;
 
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenNoFilterChainMentioned) {
+  backends_[0]->Start();
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -9238,6 +9276,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       ->set_value(8080);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -9254,6 +9293,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9270,6 +9310,7 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9287,6 +9328,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9304,6 +9346,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
@@ -9328,6 +9371,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // A successful RPC proves that filter chains that mention "raw_buffer" as
   // the transport protocol are chosen as the best match in the round.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9381,6 +9425,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9414,6 +9459,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9473,6 +9519,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // A successful RPC proves that the filter chain with the longest matching
   // source prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9504,6 +9551,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   listener.clear_default_filter_chain();
   balancers_[0]->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
+  backends_[0]->Start();
   // A successful RPC proves that the filter chain with matching source port
   // was chosen.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -9521,6 +9569,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
       ServerHcmAccessor().Unpack(listener));
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9557,6 +9606,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   prefix_range->mutable_prefix_len()->set_value(32);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   if (ipv6_only_) {
@@ -9593,6 +9643,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
       "raw_buffer");
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9617,6 +9668,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9642,6 +9694,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       FilterChainMatch::EXTERNAL);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9679,6 +9732,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   prefix_range->mutable_prefix_len()->set_value(32);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   if (ipv6_only_) {
@@ -9713,6 +9767,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
   SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
                                              default_server_route_config_);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(
@@ -9737,6 +9792,7 @@ TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
   route_config.mutable_virtual_hosts()->at(0).add_domains("");
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9748,6 +9804,7 @@ TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
   route_config.mutable_virtual_hosts()->at(0).clear_domains();
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9759,6 +9816,7 @@ TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
   route_config.mutable_virtual_hosts()->at(0).clear_routes();
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9774,6 +9832,7 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
       .clear_match();
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
+  backends_[0]->Start();
   ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
   EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
@@ -9818,12 +9877,13 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   CheckRpcSendOk();
 }
 
-class TimeoutTest : public BasicTest {
+class TimeoutTest : public XdsEnd2endTest {
  protected:
-  void SetUp() override {
-    xds_resource_does_not_exist_timeout_ms_ = 500;
-    BasicTest::SetUp();
-  }
+  TimeoutTest()
+      : XdsEnd2endTest(/* num_backends= */ 4, /* num_balancers= */ 1,
+                       /*client_load_reporting_interval_seconds= */ 100,
+                       /* xds_resource_does_not_exist_timeout_ms */ 500,
+                       /* use_xds_enabled_server= */ false) {}
 };
 
 // Tests that LDS client times out when no response received.
@@ -10090,10 +10150,7 @@ TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
 
 class FailoverTest : public BasicTest {
  public:
-  void SetUp() override {
-    BasicTest::SetUp();
-    ResetStub(500);
-  }
+  FailoverTest() { ResetStub(500); }
 };
 
 // Localities with the highest priority are used when multiple priority exist.
@@ -10578,7 +10635,7 @@ TEST_P(DropTest, DropAll) {
 
 class BalancerUpdateTest : public XdsEnd2endTest {
  public:
-  BalancerUpdateTest() : XdsEnd2endTest(4, 3) {}
+  BalancerUpdateTest() : XdsEnd2endTest(4, 3) { StartAllBackends(); }
 };
 
 // Tests that the old LB call is still used after the balancer address update
@@ -10788,7 +10845,7 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
 
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingTest() : XdsEnd2endTest(4, 1, 3) {}
+  ClientLoadReportingTest() : XdsEnd2endTest(4, 1, 3) { StartAllBackends(); }
 };
 
 // Tests that the load report received at the balancer is correct.
@@ -10996,7 +11053,9 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
 
 class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 1, 20) {}
+  ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 1, 20) {
+    StartAllBackends();
+  }
 };
 
 // Tests that the drop stats are correctly reported by client load reporting.
@@ -11069,7 +11128,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
 
 class FaultInjectionTest : public XdsEnd2endTest {
  public:
-  FaultInjectionTest() : XdsEnd2endTest(1, 1) {}
+  FaultInjectionTest() : XdsEnd2endTest(1, 1) { StartAllBackends(); }
 
   // Builds a Listener with Fault Injection filter config. If the http_fault
   // is nullptr, then assign an empty filter config. This filter config is
@@ -11620,7 +11679,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
 
 class BootstrapSourceTest : public XdsEnd2endTest {
  public:
-  BootstrapSourceTest() : XdsEnd2endTest(4, 1) {}
+  BootstrapSourceTest() : XdsEnd2endTest(4, 1) { StartAllBackends(); }
 };
 
 TEST_P(BootstrapSourceTest, Vanilla) {
@@ -11637,10 +11696,10 @@ TEST_P(BootstrapSourceTest, Vanilla) {
 #ifndef DISABLED_XDS_PROTO_IN_CC
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
-  ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {}
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
+  explicit ClientStatusDiscoveryServiceTest(
+      int xds_resource_does_not_exist_timeout_ms = 0)
+      : XdsEnd2endTest(1, 1, 100, xds_resource_does_not_exist_timeout_ms) {
+    StartAllBackends();
     admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
@@ -11657,7 +11716,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
     }
   }
 
-  void TearDown() override {
+  ~ClientStatusDiscoveryServiceTest() override {
     if (stream_ != nullptr) {
       EXPECT_TRUE(stream_->WritesDone());
       Status status = stream_->Finish();
@@ -11665,7 +11724,6 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
                                << " message=" << status.error_message();
     }
     admin_server_thread_->Shutdown();
-    XdsEnd2endTest::TearDown();
   }
 
   envoy::service::status::v3::ClientStatusResponse FetchCsdsResponse() {
@@ -12177,11 +12235,11 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
 }
 
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
-  void SetUp() override {
-    // Shorten the ADS subscription timeout to speed up the test run.
-    xds_resource_does_not_exist_timeout_ms_ = 2000;
-    ClientStatusDiscoveryServiceTest::SetUp();
-  }
+ protected:
+  // Shorten the ADS subscription timeout to speed up the test run.
+  CsdsShortAdsTimeoutTest()
+      : ClientStatusDiscoveryServiceTest(
+            /* xds_resource_does_not_exist_timeout_ms_ = */ 2000) {}
 };
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
