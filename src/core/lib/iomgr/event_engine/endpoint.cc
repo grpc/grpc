@@ -39,7 +39,6 @@ namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::ResolvedAddressToURI;
-using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -163,8 +162,8 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
   return endpoint;
 }
 
-grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
-                               absl::string_view peer_address) {
+grpc_endpoint* grpc_tcp_create(/*channel_args=*/const grpc_channel_args*,
+                               /*peer_address=*/absl::string_view) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   return &endpoint->base;

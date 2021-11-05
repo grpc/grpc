@@ -1,0 +1,21 @@
+actions {
+  create_channel {
+    target: "unix:"
+    channel_args {
+      key: "grpc.default_compression_algorithm"
+      i: 71776123355660288
+    }
+  }
+}
+actions {
+  create_server {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  advance_time: 6881279
+}
+actions {
+}

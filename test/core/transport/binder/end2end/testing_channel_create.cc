@@ -16,7 +16,8 @@
 
 #include <utility>
 
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/lib/channel/channel_args.h"

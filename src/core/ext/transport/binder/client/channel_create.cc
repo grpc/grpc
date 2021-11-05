@@ -14,7 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/binder/client/channel_create.h"
+#ifndef GRPC_NO_BINDER
+
+#include <grpcpp/create_channel_binder.h>
 
 // The interface is only defined if GPR_ANDROID is defined, because some
 // arguments requires JNI.
@@ -30,11 +32,6 @@
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <grpc/support/port_platform.h>
-
-#include <android/binder_auto_utils.h>
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
-#include <android/binder_interface_utils.h>
 
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
@@ -89,13 +86,9 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   // TODO(mingcl): Consider if we want to delay the connection establishment
   // until SubchannelConnector start establishing connection. For now we don't
   // see any benifits doing that.
-  // clang-format off
-  grpc_binder::CallStaticJavaMethod(static_cast<JNIEnv*>(jni_env_void),
-                       "io/grpc/binder/cpp/NativeConnectionHelper",
-                       "tryEstablishConnection",
-                       "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-                       application, std::string(package_name), std::string(class_name), connection_id);
-  // clang-format on
+  grpc_binder::TryEstablishConnection(static_cast<JNIEnv*>(jni_env_void),
+                                      application, package_name, class_name,
+                                      connection_id);
 
   // Set server URI to a URI that contains connection id. The URI will be used
   // by subchannel connector to obtain correct endpoint binder from
@@ -122,6 +115,11 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   grpc_channel_args_destroy(new_args);
 
   return channel;
+}
+
+bool InitializeBinderChannelJavaClass(void* jni_env_void) {
+  return grpc_binder::FindNativeConnectionHelper(
+             static_cast<JNIEnv*>(jni_env_void)) != nullptr;
 }
 
 }  // namespace experimental
@@ -152,9 +150,16 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   return {};
 }
 
+bool InitializeBinderChannelJavaClass(void* jni_env_void) {
+  GPR_ASSERT(0);
+  return {};
+}
+
 }  // namespace experimental
 }  // namespace grpc
 
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
 #endif  // GPR_ANDROID
+
+#endif  // GRPC_NO_BINDER

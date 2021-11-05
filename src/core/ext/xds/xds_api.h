@@ -407,20 +407,30 @@ class XdsApi {
     std::string ToString() const;
   };
 
+  struct ResourceName {
+    std::string authority;
+    std::string id;
+
+    bool operator<(const ResourceName& other) const {
+      if (authority < other.authority) return true;
+      if (id < other.id) return true;
+      return false;
+    }
+  };
+
   struct LdsResourceData {
     LdsUpdate resource;
     std::string serialized_proto;
   };
 
-  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsResourceData>;
+  using LdsUpdateMap = std::map<ResourceName, LdsResourceData>;
 
   struct RdsResourceData {
     RdsUpdate resource;
     std::string serialized_proto;
   };
 
-  using RdsUpdateMap =
-      std::map<std::string /*route_config_name*/, RdsResourceData>;
+  using RdsUpdateMap = std::map<ResourceName, RdsResourceData>;
 
   struct CdsUpdate {
     enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
@@ -476,7 +486,7 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsResourceData>;
+  using CdsUpdateMap = std::map<ResourceName, CdsResourceData>;
 
   struct EdsUpdate {
     struct Priority {
@@ -565,8 +575,7 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using EdsUpdateMap =
-      std::map<std::string /*eds_service_name*/, EdsResourceData>;
+  using EdsUpdateMap = std::map<ResourceName, EdsResourceData>;
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
@@ -615,7 +624,7 @@ class XdsApi {
     grpc_millis failed_update_time = 0;
   };
   using ResourceMetadataMap =
-      std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
+      std::map<std::string /*resource_name*/, const ResourceMetadata*>;
   using ResourceTypeMetadataMap =
       std::map<absl::string_view /*type_url*/, ResourceMetadataMap>;
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
@@ -651,28 +660,53 @@ class XdsApi {
     RdsUpdateMap rds_update_map;
     CdsUpdateMap cds_update_map;
     EdsUpdateMap eds_update_map;
-    std::set<std::string> resource_names_failed;
+    std::set<ResourceName> resource_names_failed;
   };
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          const CertificateProviderStore::PluginDefinitionMap* map);
 
+  static bool IsLds(absl::string_view type_url);
+  static bool IsRds(absl::string_view type_url);
+  static bool IsCds(absl::string_view type_url);
+  static bool IsEds(absl::string_view type_url);
+
+  // A helper method to parse the resource name and return back a ResourceName
+  // struct.  Optionally the parser can check the resource type portion of the
+  // resource name.
+  static absl::StatusOr<ResourceName> ParseResourceName(
+      absl::string_view name,
+      bool (*is_expected_type)(absl::string_view) = nullptr);
+
+  // A helper method to construct the resource name from parts.
+  static std::string ConstructFullResourceName(absl::string_view authority,
+                                               absl::string_view resource_type,
+                                               absl::string_view name);
+
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                              const std::string& type_url,
-                              const std::set<absl::string_view>& resource_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error_handle error,
-                              bool populate_node);
+  grpc_slice CreateAdsRequest(
+      const XdsBootstrap::XdsServer& server, const std::string& type_url,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>& resource_names,
+      const std::string& version, const std::string& nonce,
+      grpc_error_handle error, bool populate_node);
 
   // Parses an ADS response.
   AdsParseResult ParseAdsResponse(
       const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-      const std::set<absl::string_view>& expected_listener_names,
-      const std::set<absl::string_view>& expected_route_configuration_names,
-      const std::set<absl::string_view>& expected_cluster_names,
-      const std::set<absl::string_view>& expected_eds_service_names);
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>&
+          subscribed_listener_names,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>&
+          subscribed_route_config_names,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>&
+          subscribed_cluster_names,
+      const std::map<absl::string_view /*authority*/,
+                     std::set<absl::string_view /*name*/>>&
+          subscribed_eds_service_names);
 
   // Creates an initial LRS request.
   grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);

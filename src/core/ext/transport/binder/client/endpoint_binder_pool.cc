@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
@@ -34,7 +36,8 @@ Java_io_grpc_binder_cpp_GrpcBinderConnection_notifyConnected__Ljava_lang_String_
   const char* conn_id = jni_env->GetStringUTFChars(conn_id_jstring, &isCopy);
   gpr_log(GPR_ERROR, "%s called with conn_id = %s", __func__, conn_id);
   GPR_ASSERT(ibinder != nullptr);
-  ndk::SpAIBinder aibinder = grpc_binder::FromJavaBinder(jni_env, ibinder);
+  grpc_binder::ndk_util::SpAIBinder aibinder =
+      grpc_binder::FromJavaBinder(jni_env, ibinder);
   gpr_log(GPR_ERROR, "aibinder = %p", aibinder.get());
   auto b = absl::make_unique<grpc_binder::BinderAndroid>(aibinder);
   GPR_ASSERT(b != nullptr);
@@ -106,3 +109,4 @@ EndpointBinderPool* GetEndpointBinderPool() {
   return p;
 }
 }  // namespace grpc_binder
+#endif
