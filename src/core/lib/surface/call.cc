@@ -1001,7 +1001,7 @@ class PublishToAppEncoder {
   template <typename Which>
   void Encode(Which, const grpc_core::Slice& value) {
     const auto key = Which::key();
-    Append(grpc_slice_from_static_buffer(key.data(), key.length()),
+    Append(grpc_core::ExternallyManagedSlice(key.data(), key.length()),
            value.c_slice());
   }
 
