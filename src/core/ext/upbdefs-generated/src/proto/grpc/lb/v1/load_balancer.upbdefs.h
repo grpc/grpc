@@ -46,6 +46,11 @@ UPB_INLINE const upb_msgdef *grpc_lb_v1_LoadBalanceResponse_getmsgdef(upb_symtab
   return upb_symtab_lookupmsg(s, "grpc.lb.v1.LoadBalanceResponse");
 }
 
+UPB_INLINE const upb_msgdef *grpc_lb_v1_FallbackResponse_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &src_proto_grpc_lb_v1_load_balancer_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "grpc.lb.v1.FallbackResponse");
+}
+
 UPB_INLINE const upb_msgdef *grpc_lb_v1_InitialLoadBalanceResponse_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &src_proto_grpc_lb_v1_load_balancer_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "grpc.lb.v1.InitialLoadBalanceResponse");
@@ -59,11 +64,6 @@ UPB_INLINE const upb_msgdef *grpc_lb_v1_ServerList_getmsgdef(upb_symtab *s) {
 UPB_INLINE const upb_msgdef *grpc_lb_v1_Server_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &src_proto_grpc_lb_v1_load_balancer_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "grpc.lb.v1.Server");
-}
-
-UPB_INLINE const upb_msgdef *grpc_lb_v1_FallbackResponse_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &src_proto_grpc_lb_v1_load_balancer_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "grpc.lb.v1.FallbackResponse");
 }
 
 #ifdef __cplusplus
