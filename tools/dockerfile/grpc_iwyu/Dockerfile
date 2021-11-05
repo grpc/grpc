@@ -16,6 +16,8 @@ FROM debian:bullseye
 
 RUN apt-get update && apt-get install -y clang-11 llvm-11-dev libclang-11-dev clang-format-11 jq git cmake python
 
+ENV CLANG_FORMAT=clang-format-11
+
 RUN git clone https://github.com/include-what-you-use/include-what-you-use.git /iwyu
 # latest commit on the clang 11 branch
 RUN cd /iwyu && git checkout 5db414ac448004fe019871c977905cb7c2cff23f
