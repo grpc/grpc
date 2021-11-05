@@ -3311,6 +3311,7 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    visibility = ["@grpc:public"],
     deps = [
         "alts_util",
         "config",
