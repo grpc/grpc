@@ -51,7 +51,6 @@ static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
   }
   grpc_custom_socket* socket = connect->socket;
   delete connect;
-  socket->refs--;
   if (socket->refs == 0) {
     grpc_custom_socket_vtable->destroy(socket);
     gpr_free(socket);
@@ -75,6 +74,7 @@ static void on_alarm(void* acp, grpc_error_handle error) {
     grpc_custom_socket_vtable->close(socket, custom_close_callback);
   }
   done = (--connect->refs == 0);
+  socket->refs--;
   if (done) {
     custom_tcp_connect_cleanup(connect);
   }
@@ -92,6 +92,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
     connect->slice_allocator = nullptr;
   }
   done = (--connect->refs == 0);
+  socket->refs--;
   if (done) {
     grpc_core::ExecCtx::Get()->Flush();
     custom_tcp_connect_cleanup(connect);
