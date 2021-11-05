@@ -86,13 +86,9 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   // TODO(mingcl): Consider if we want to delay the connection establishment
   // until SubchannelConnector start establishing connection. For now we don't
   // see any benifits doing that.
-  // clang-format off
-  grpc_binder::CallStaticJavaMethod(static_cast<JNIEnv*>(jni_env_void),
-                       "io/grpc/binder/cpp/NativeConnectionHelper",
-                       "tryEstablishConnection",
-                       "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-                       application, std::string(package_name), std::string(class_name), connection_id);
-  // clang-format on
+  grpc_binder::TryEstablishConnection(static_cast<JNIEnv*>(jni_env_void),
+                                      application, package_name, class_name,
+                                      connection_id);
 
   // Set server URI to a URI that contains connection id. The URI will be used
   // by subchannel connector to obtain correct endpoint binder from
@@ -121,6 +117,11 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   return channel;
 }
 
+bool InitializeBinderChannelJavaClass(void* jni_env_void) {
+  return grpc_binder::FindNativeConnectionHelper(
+             static_cast<JNIEnv*>(jni_env_void)) != nullptr;
+}
+
 }  // namespace experimental
 }  // namespace grpc
 
@@ -145,6 +146,11 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>,
     const ChannelArguments&) {
+  GPR_ASSERT(0);
+  return {};
+}
+
+bool InitializeBinderChannelJavaClass(void* jni_env_void) {
   GPR_ASSERT(0);
   return {};
 }

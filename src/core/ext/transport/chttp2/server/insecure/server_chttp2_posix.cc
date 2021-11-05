@@ -48,7 +48,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create(name.c_str());
   grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name.c_str(), true), server_args, name.c_str(),
+      grpc_fd_create(fd, name.c_str(), true), server_args, name,
       grpc_slice_allocator_create(resource_quota, name, server_args));
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */,

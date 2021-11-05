@@ -20,8 +20,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This class will be invoked by gRPC binder transport internal implementation to perform operations
- * that are only possible in Java
+ * This class will be invoked by gRPC binder transport internal implementation (from
+ * src/core/ext/transport/binder/client/jni_utils.cc) to perform operations that are only possible
+ * in Java
  */
 final class NativeConnectionHelper {
   // Maps connection id to GrpcBinderConnection instances
