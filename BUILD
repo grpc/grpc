@@ -1592,20 +1592,20 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
     ],
-    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS,
+    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + [
+        "src/core/lib/event_engine/event_engine_factory.h",
+    ],
     deps = [
-      "gpr_platform"
-    ]
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
-    name = "event_engine_factory",
+    name = "default_event_engine_factory",
     srcs = [
         "src/core/lib/event_engine/event_engine_factory.cc",
     ],
-    hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
-    ],
+    hdrs = [],
     external_deps = [
         # TODO(hork): uv, in a subsequent PR
     ],
@@ -1953,7 +1953,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "event_engine_base",
-        "event_engine_factory",
+        "default_event_engine_factory",
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",
