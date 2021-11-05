@@ -21,24 +21,21 @@
 
 #include <jni.h>
 
-#include <string>
+#include "absl/strings/string_view.h"
 
 namespace grpc_binder {
 
-// For now we hard code the arguments of the Java function because this is only
-// used to call that single function.
-void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
-                          const std::string& method, const std::string& type,
-                          jobject application, const std::string& pkg,
-                          const std::string& cls);
-void CallStaticJavaMethod(JNIEnv* env, const std::string& clazz,
-                          const std::string& method, const std::string& type,
-                          jobject application, const std::string& pkg,
-                          const std::string& cls, const std::string& conn_id);
+// Finds NativeConnectionHelper Java class and caches it. This is useful because
+// FindClass only works when there is a Java class in the call stack. Typically
+// user might want to call this once in a place that is called from Java (ex.
+// JNI_OnLoad) so subsequent BinderTransport code can find Java class
+jclass FindNativeConnectionHelper(JNIEnv* env);
 
-jobject CallStaticJavaMethodForObject(JNIEnv* env, const std::string& clazz,
-                                      const std::string& method,
-                                      const std::string& type);
+// Calls Java method NativeConnectionHelper.tryEstablishConnection
+void TryEstablishConnection(JNIEnv* env, jobject application,
+                            absl::string_view pkg, absl::string_view cls,
+                            absl::string_view conn_id);
+
 }  // namespace grpc_binder
 
 #endif
