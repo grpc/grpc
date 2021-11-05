@@ -3644,6 +3644,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_secure",
     language = "c++",
+    public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:public"],
     deps = [
         "config",
