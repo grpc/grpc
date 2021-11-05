@@ -91,7 +91,17 @@ END2END_FIXTURES = {
     "h2_ssl": _fixture_options(secure = True),
     "h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_tls": _fixture_options(secure = True),
+    "h2_local_abstract_uds_percent_encoded": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "posix"],
+    ),
     "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_local_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
