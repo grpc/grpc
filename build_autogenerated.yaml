@@ -4111,15 +4111,6 @@ targets:
   - test/core/transport/chttp2/stream_map_test.cc
   deps:
   - grpc_test_util
-- name: stream_owned_slice_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/stream_owned_slice_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: string_test
   build: test
   language: c
