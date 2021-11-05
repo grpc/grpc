@@ -1593,6 +1593,9 @@ grpc_cc_library(
         "src/core/lib/event_engine/event_engine.cc",
     ],
     hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS,
+    deps = [
+      "gpr_platform"
+    ]
 )
 
 grpc_cc_library(
