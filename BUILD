@@ -3643,6 +3643,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_secure",
     language = "c++",
+    visibility = ["@grpc:public"],
     deps = [
         "config",
         "gpr_base",
