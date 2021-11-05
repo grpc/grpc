@@ -1662,7 +1662,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_channel_args* channel_args,
-                               const char* peer_string) {
+                               absl::string_view peer_string) {
   static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
   int tcp_max_read_chunk_size = 4 * 1024 * 1024;
@@ -1719,7 +1719,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
                                tcp_tx_zerocopy_send_bytes_thresh);
   tcp->base.vtable = &vtable;
-  tcp->peer_string = peer_string;
+  tcp->peer_string = std::string(peer_string.data(), peer_string.size());
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
                           ->memory_quota()

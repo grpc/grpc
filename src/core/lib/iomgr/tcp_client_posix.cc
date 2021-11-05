@@ -123,7 +123,8 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
 }
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
+    grpc_fd* fd, const grpc_channel_args* channel_args,
+    absl::string_view addr_str) {
   return grpc_tcp_create(fd, channel_args, addr_str);
 }
 
@@ -172,8 +173,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args,
-                                           ac->addr_str.c_str());
+      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str);
       fd = nullptr;
       break;
     case ENOBUFS:
@@ -282,7 +282,7 @@ void grpc_tcp_client_create_from_prepared_fd(
 
   if (err >= 0) {
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args,
-                                         grpc_sockaddr_to_uri(addr).c_str());
+                                         grpc_sockaddr_to_uri(addr));
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     return;
   }

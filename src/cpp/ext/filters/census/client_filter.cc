@@ -91,35 +91,28 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       start_time_(absl::Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
-  memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
-  memset(&tracing_bin_, 0, sizeof(grpc_linked_mdelem));
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
                               uint32_t /* flags */) {
-  size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
+  char tracing_buf[kMaxTraceContextLen];
+  size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                              kMaxTraceContextLen);
   if (tracing_len > 0) {
     GRPC_LOG_IF_ERROR(
         "census grpc_filter",
-        grpc_metadata_batch_add_tail(
-            send_initial_metadata, &tracing_bin_,
-            grpc_mdelem_from_slices(
-                GRPC_MDSTR_GRPC_TRACE_BIN,
-                grpc_core::UnmanagedMemorySlice(tracing_buf_, tracing_len)),
-            GRPC_BATCH_GRPC_TRACE_BIN));
+        send_initial_metadata->Append(grpc_mdelem_from_slices(
+            GRPC_MDSTR_GRPC_TRACE_BIN,
+            grpc_core::UnmanagedMemorySlice(tracing_buf, tracing_len))));
   }
   grpc_slice tags = grpc_empty_slice();
   // TODO(unknown): Add in tagging serialization.
   size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
   if (encoded_tags_len > 0) {
-    GRPC_LOG_IF_ERROR(
-        "census grpc_filter",
-        grpc_metadata_batch_add_tail(
-            send_initial_metadata, &stats_bin_,
-            grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TAGS_BIN, tags),
-            GRPC_BATCH_GRPC_TAGS_BIN));
+    GRPC_LOG_IF_ERROR("census grpc_filter",
+                      send_initial_metadata->Append(grpc_mdelem_from_slices(
+                          GRPC_MDSTR_GRPC_TAGS_BIN, tags)));
   }
 }
 

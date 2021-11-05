@@ -29,6 +29,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -54,6 +55,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace {
@@ -821,17 +823,19 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   *port_num = -1;
   grpc_resolved_addresses* resolved = nullptr;
   std::vector<grpc_error_handle> error_list;
+  std::string parsed_addr = URI::PercentDecode(absl::NullSafeStringView(addr));
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
-    if (absl::StartsWith(addr, kUnixUriPrefix)) {
+    if (absl::StartsWith(parsed_addr, kUnixUriPrefix)) {
       error = grpc_resolve_unix_domain_address(
-          addr + sizeof(kUnixUriPrefix) - 1, &resolved);
+          absl::StripPrefix(parsed_addr, kUnixUriPrefix), &resolved);
     } else if (absl::StartsWith(addr, kUnixAbstractUriPrefix)) {
       error = grpc_resolve_unix_abstract_domain_address(
-          addr + sizeof(kUnixAbstractUriPrefix) - 1, &resolved);
+          absl::StripPrefix(parsed_addr, kUnixAbstractUriPrefix), &resolved);
     } else {
-      error = grpc_blocking_resolve_address(addr, "https", &resolved);
+      error = grpc_blocking_resolve_address(parsed_addr.c_str(), "https",
+                                            &resolved);
     }
     if (error != GRPC_ERROR_NONE) return error;
     // Create a listener for each resolved address.
