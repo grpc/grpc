@@ -130,10 +130,9 @@ const Json* GetJsonField(const Json::Object& object,
 // adds an error to error_list.
 // Upon any other error, adds an error to error_list and returns false.
 template <typename T>
-bool ParseJsonObjectField(const Json::Object& object,
-                          absl::string_view field_name, T* output,
-                          std::vector<grpc_error_handle>* error_list,
-                          bool required = true) {
+GPR_ATTRIBUTE_NOINLINE bool ParseJsonObjectField(
+    const Json::Object& object, absl::string_view field_name, T* output,
+    std::vector<grpc_error_handle>* error_list, bool required = true) {
   const Json* child_object_json =
       GetJsonField(object, field_name, error_list, required);
   if (child_object_json == nullptr) return false;
