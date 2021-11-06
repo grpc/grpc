@@ -115,6 +115,11 @@ inline bool ExtractJsonType(const Json& json, absl::string_view field_name,
   return ExtractJsonObject(json, field_name, output, error_list);
 }
 
+// Lookup field_name in object.
+// If it is found, return a pointer to it.
+// If it is not found, return nullptr.
+// If it is not found and required is true, also
+// append an appropriate error message to error_list.
 const Json* GetJsonField(const Json::Object& object,
                          absl::string_view field_name,
                          std::vector<grpc_error_handle>* error_list,
