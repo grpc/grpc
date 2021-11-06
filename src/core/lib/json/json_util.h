@@ -118,6 +118,11 @@ inline bool ExtractJsonType(const Json& json, absl::string_view field_name,
   return ExtractJsonObject(json, field_name, output, error_list);
 }
 
+const Json* GetJsonField(const Json::Object& object,
+                         absl::string_view field_name,
+                         std::vector<grpc_error_handle>* error_list,
+                         bool required);
+
 // Extracts a field from a JSON object, automatically selecting the type
 // of parsing based on the output parameter type.
 // If the field is not present, returns false, and if required is true,
@@ -128,18 +133,10 @@ bool ParseJsonObjectField(const Json::Object& object,
                           absl::string_view field_name, T* output,
                           std::vector<grpc_error_handle>* error_list,
                           bool required = true) {
-  // TODO(roth): Once we can use C++14 heterogenous lookups, stop
-  // creating a std::string here.
-  auto it = object.find(std::string(field_name));
-  if (it == object.end()) {
-    if (required) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("field:", field_name, " error:does not exist.")));
-    }
-    return false;
-  }
-  auto& child_object_json = it->second;
-  return ExtractJsonType(child_object_json, field_name, output, error_list);
+  const Json* child_object_json =
+      GetJsonField(object, field_name, error_list, required);
+  if (child_object_json == nullptr) return false;
+  return ExtractJsonType(*child_object_json, field_name, output, error_list);
 }
 
 // Alternative to ParseJsonObjectField() for duration-value fields.
