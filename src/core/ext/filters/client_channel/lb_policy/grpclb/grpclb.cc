@@ -1790,8 +1790,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     if (it != json.object_value().end()) {
       const Json& service_name_json = it->second;
       if (service_name_json.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:serviceName error:type should be string"));
+        AddFieldError("serviceName", "type should be string", &error_list);
       } else {
         service_name = service_name_json.string_value();
       }

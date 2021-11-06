@@ -26,12 +26,6 @@
 
 namespace grpc_core {
 
-void AddFieldError(absl::string_view field_name, absl::string_view error,
-                   std::vector<grpc_error_handle>* error_list) {
-  error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-      absl::StrCat("field:", field_name, " error:", error)));
-}
-
 bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();

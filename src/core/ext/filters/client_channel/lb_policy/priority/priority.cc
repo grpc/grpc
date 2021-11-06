@@ -806,11 +806,9 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
     std::map<std::string, PriorityLbConfig::PriorityLbChild> children;
     auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:children error:required field missing"));
+      AddFieldError("children", "required field missing", &error_list);
     } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:children error:type should be object"));
+      AddFieldError("children", "type should be object", &error_list);
     } else {
       const Json::Object& object = it->second.object_value();
       for (const auto& p : object) {
@@ -864,11 +862,9 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
     std::vector<std::string> priorities;
     it = json.object_value().find("priorities");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:priorities error:required field missing"));
+      AddFieldError("priorities", "required field missing", &error_list);
     } else if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:priorities error:type should be array"));
+      AddFieldError("priorities", "type should be array", &error_list);
     } else {
       const Json::Array& array = it->second.array_value();
       for (size_t i = 0; i < array.size(); ++i) {

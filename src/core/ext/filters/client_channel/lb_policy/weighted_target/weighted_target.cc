@@ -650,11 +650,9 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     WeightedTargetLbConfig::TargetMap target_map;
     auto it = json.object_value().find("targets");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:targets error:required field not present"));
+      AddFieldError("targets", "required field not present", &error_list);
     } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:targets error:type should be object"));
+      AddFieldError("targets", "type should be object", &error_list);
     } else {
       for (const auto& p : it->second.object_value()) {
         WeightedTargetLbConfig::ChildConfig child_config;
@@ -691,16 +689,13 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "required field \"weight\" not specified"));
     } else if (it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:weight error:must be of type number"));
+      AddFieldError("weight", "must be of type number", &error_list);
     } else {
       int weight = gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (weight == -1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:weight error:unparseable value"));
+        AddFieldError("weight", "unparseable value", &error_list);
       } else if (weight == 0) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:weight error:value must be greater than zero"));
+        AddFieldError("weight", "value must be greater than zero", &error_list);
       } else {
         child_config->weight = weight;
       }

@@ -2016,6 +2016,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "json",
+        "json_util",
     ],
 )
 

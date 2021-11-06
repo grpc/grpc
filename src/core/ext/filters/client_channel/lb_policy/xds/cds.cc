@@ -715,8 +715,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "required field 'cluster' not present"));
     } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:cluster error:type should be string"));
+      AddFieldError("cluster", "type should be string", &error_list);
     } else {
       cluster = it->second.string_value();
     }

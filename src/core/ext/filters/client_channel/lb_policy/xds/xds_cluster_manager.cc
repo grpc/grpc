@@ -617,11 +617,9 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
     std::set<std::string /*cluster_name*/> clusters_to_be_used;
     auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:children error:required field not present"));
+      AddFieldError("children", "required field not present", &error_list);
     } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:children error:type should be object"));
+      AddFieldError("children", "type should be object", &error_list);
     } else {
       for (const auto& p : it->second.object_value()) {
         const std::string& child_name = p.first;

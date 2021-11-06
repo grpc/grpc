@@ -439,4 +439,10 @@ class AtomicError {
   gpr_spinlock lock_;
 };
 
+namespace grpc_core {
+// Add an error to an error list.
+void AddFieldError(absl::string_view field_name, absl::string_view error,
+                   std::vector<grpc_error_handle>* error_list);
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_H */

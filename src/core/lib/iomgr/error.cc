@@ -982,4 +982,12 @@ bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
   return false;
 }
 
+namespace grpc_core {
+void AddFieldError(absl::string_view field_name, absl::string_view error,
+                   std::vector<grpc_error_handle>* error_list) {
+  error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      absl::StrCat("field:", field_name, " error:", error)));
+}
+}  // namespace grpc_core
+
 #endif  // GRPC_ERROR_IS_ABSEIL_STATUS

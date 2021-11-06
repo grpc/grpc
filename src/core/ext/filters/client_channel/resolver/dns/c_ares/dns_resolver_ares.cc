@@ -234,7 +234,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     return "";
   }
   const Json* service_config = nullptr;
-  absl::InlinedVector<grpc_error_handle, 4> error_list;
+  std::vector<grpc_error_handle> error_list;
   for (const Json& choice : json.array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -245,8 +245,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     auto it = choice.object_value().find("clientLanguage");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:clientLanguage error:should be of type array"));
+        AddFieldError("clientLanguage", "should be of type array", &error_list);
       } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
         continue;
       }
@@ -255,8 +254,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     it = choice.object_value().find("clientHostname");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:clientHostname error:should be of type array"));
+        AddFieldError("clientHostname", "should be of type array", &error_list);
       } else {
         char* hostname = grpc_gethostname();
         if (hostname == nullptr ||
@@ -269,14 +267,12 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     it = choice.object_value().find("percentage");
     if (it != choice.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:percentage error:should be of type number"));
+        AddFieldError("percentage", "should be of type number", &error_list);
       } else {
         int random_pct = rand() % 100;
         int percentage;
         if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:percentage error:should be of type integer"));
+          AddFieldError("percentage", "should be of type integer", &error_list);
         } else if (random_pct > percentage || percentage == 0) {
           continue;
         }
@@ -285,11 +281,9 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     // Found service config.
     it = choice.object_value().find("serviceConfig");
     if (it == choice.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:serviceConfig error:required field missing"));
+      AddFieldError("serviceConfig", "required field missing", &error_list);
     } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:serviceConfig error:should be of type object"));
+      AddFieldError("serviceConfig", "should be of type object", &error_list);
     } else if (service_config == nullptr) {
       service_config = &it->second;
     }

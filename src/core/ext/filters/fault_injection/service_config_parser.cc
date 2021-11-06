@@ -55,8 +55,8 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
                              &sub_error_list, false)) {
       if (!grpc_status_code_from_string(abort_code_string.c_str(),
                                         &(fault_injection_policy.abort_code))) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:abortCode error:failed to parse status code"));
+        AddFieldError("abortCode", "failed to parse status code",
+                      &sub_error_list);
       }
     }
     // Parse abort_message
@@ -85,10 +85,9 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       if (fault_injection_policy.abort_percentage_denominator != 100 &&
           fault_injection_policy.abort_percentage_denominator != 10000 &&
           fault_injection_policy.abort_percentage_denominator != 1000000) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:abortPercentageDenominator error:Denominator can only be "
-            "one of "
-            "100, 10000, 1000000"));
+        AddFieldError("abortPercentageDenominator",
+                      "Denominator can only be one of 100, 10000, 1000000",
+                      &sub_error_list);
       }
     }
     // Parse delay
@@ -115,10 +114,9 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       if (fault_injection_policy.delay_percentage_denominator != 100 &&
           fault_injection_policy.delay_percentage_denominator != 10000 &&
           fault_injection_policy.delay_percentage_denominator != 1000000) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:delayPercentageDenominator error:Denominator can only be "
-            "one of "
-            "100, 10000, 1000000"));
+        AddFieldError("delayPercentageDenominator",
+                      "Denominator can only be one of 100, 10000, 1000000",
+                      &sub_error_list);
       }
     }
     // Parse max_faults
@@ -126,8 +124,8 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
                              &fault_injection_policy.max_faults,
                              &sub_error_list, false)) {
       if (fault_injection_policy.max_faults < 0) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxFaults error:should be zero or positive"));
+        AddFieldError("maxFaults", "should be zero or positive",
+                      &sub_error_list);
       }
     }
     if (!sub_error_list.empty()) {

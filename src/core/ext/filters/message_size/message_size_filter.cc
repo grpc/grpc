@@ -77,14 +77,14 @@ MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING &&
         it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:maxRequestMessageBytes error:should be of type number"));
+      AddFieldError("maxRequestMessageBytes", "should be of type number",
+                    &error_list);
     } else {
       max_request_message_bytes =
           gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_request_message_bytes == -1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxRequestMessageBytes error:should be non-negative"));
+        AddFieldError("maxRequestMessageBytes", "should be non-negative",
+                      &error_list);
       }
     }
   }
@@ -94,14 +94,14 @@ MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING &&
         it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:maxResponseMessageBytes error:should be of type number"));
+      AddFieldError("maxResponseMessageBytes", "should be of type number",
+                    &error_list);
     } else {
       max_response_message_bytes =
           gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_response_message_bytes == -1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxResponseMessageBytes error:should be non-negative"));
+        AddFieldError("maxResponseMessageBytes", "should be non-negative",
+                      &error_list);
       }
     }
   }

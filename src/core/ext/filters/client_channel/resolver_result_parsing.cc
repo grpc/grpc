@@ -74,8 +74,7 @@ absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
   auto it = field.object_value().find("serviceName");
   if (it != field.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:serviceName error:should be of type string"));
+      AddFieldError("serviceName", "should be of type string", &error_list);
     } else {
       service_name = it->second.string_value();
     }
@@ -112,8 +111,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
   it = json.object_value().find("loadBalancingPolicy");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingPolicy error:type should be string"));
+      AddFieldError("loadBalancingPolicy", "type should be string",
+                    &error_list);
     } else {
       lb_policy_name = it->second.string_value();
       for (size_t i = 0; i < lb_policy_name.size(); ++i) {
@@ -122,8 +121,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
       bool requires_config = false;
       if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
               lb_policy_name.c_str(), &requires_config)) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:loadBalancingPolicy error:Unknown lb policy"));
+        AddFieldError("loadBalancingPolicy", "Unknown lb policy", &error_list);
       } else if (requires_config) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
@@ -168,8 +166,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     } else if (it->second.type() == Json::Type::JSON_FALSE) {
       wait_for_ready.emplace(false);
     } else {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:waitForReady error:Type should be true/false"));
+      AddFieldError("waitForReady", "Type should be true/false", &error_list);
     }
   }
   // Parse timeout.

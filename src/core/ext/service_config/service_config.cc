@@ -88,8 +88,7 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
   auto it = json.object_value().find("name");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:name error:not of type Array"));
+      AddFieldError("name", "not of type Array", &error_list);
       return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
     }
     const Json::Array& name_array = it->second.array_value();
@@ -102,8 +101,8 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
         found_name = true;
         if (path.empty()) {
           if (default_method_config_vector_ != nullptr) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "field:name error:multiple default method configs"));
+            AddFieldError("name", "multiple default method configs",
+                          &error_list);
           }
           default_method_config_vector_ = vector_ptr;
         } else {
@@ -112,8 +111,8 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
           // store a ref to the key in the map.
           auto& value = parsed_method_configs_map_[key];
           if (value != nullptr) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "field:name error:multiple method configs with same name"));
+            AddFieldError("name", "multiple method configs with same name",
+                          &error_list);
             // The map entry already existed, so we need to unref the
             // key we just created.
             grpc_slice_unref_internal(key);
@@ -136,13 +135,11 @@ grpc_error_handle ServiceConfig::ParsePerMethodParams(
   auto it = json_.object_value().find("methodConfig");
   if (it != json_.object_value().end()) {
     if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:methodConfig error:not of type Array"));
+      AddFieldError("methodConfig", "not of type Array", &error_list);
     }
     for (const Json& method_config : it->second.array_value()) {
       if (method_config.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:methodConfig error:not of type Object"));
+        AddFieldError("methodConfig", "not of type Object", &error_list);
         continue;
       }
       grpc_error_handle error = ParseJsonMethodConfig(args, method_config);

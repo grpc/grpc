@@ -1148,11 +1148,10 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         discovery_mechanisms;
     auto it = json.object_value().find("discoveryMechanisms");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:discoveryMechanisms error:required field missing"));
+      AddFieldError("discoveryMechanisms", "required field missing",
+                    &error_list);
     } else if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:discoveryMechanisms error:type should be array"));
+      AddFieldError("discoveryMechanisms", "type should be array", &error_list);
     } else {
       const Json::Array& array = it->second.array_value();
       for (size_t i = 0; i < array.size(); ++i) {
@@ -1172,8 +1171,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (discovery_mechanisms.empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:discovery_mechanism error:list is missing or empty"));
+      AddFieldError("discovery_mechanism", "list is missing or empty",
+                    &error_list);
     }
     Json xds_lb_policy = Json::Object{
         {"ROUND_ROBIN", Json::Object()},
@@ -1181,22 +1180,21 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     it = json.object_value().find("xdsLbPolicy");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:xdsLbPolicy error:type should be array"));
+        AddFieldError("xdsLbPolicy", "type should be array", &error_list);
       } else {
         const Json::Array& array = it->second.array_value();
         for (size_t i = 0; i < array.size(); ++i) {
           if (array[i].type() != Json::Type::OBJECT) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "field:xdsLbPolicy error:element should be of type object"));
+            AddFieldError("xdsLbPolicy", "element should be of type object",
+                          &error_list);
             continue;
           }
           const Json::Object& policy = array[i].object_value();
           auto policy_it = policy.find("ROUND_ROBIN");
           if (policy_it != policy.end()) {
             if (policy_it->second.type() != Json::Type::OBJECT) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:ROUND_ROBIN error:type should be object"));
+              AddFieldError("ROUND_ROBIN", "type should be object",
+                            &error_list);
             }
             break;
           }
@@ -1235,11 +1233,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     // Cluster name.
     auto it = json.object_value().find("clusterName");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:clusterName error:required field missing"));
+      AddFieldError("clusterName", "required field missing", &error_list);
     } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:clusterName error:type should be string"));
+      AddFieldError("clusterName", "type should be string", &error_list);
     } else {
       discovery_mechanism->cluster_name = it->second.string_value();
     }
@@ -1247,8 +1243,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     it = json.object_value().find("lrsLoadReportingServerName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
+        AddFieldError("lrsLoadReportingServerName", "type should be string",
+                      &error_list);
       } else {
         discovery_mechanism->lrs_load_reporting_server_name.emplace(
             it->second.string_value());
@@ -1259,8 +1255,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     it = json.object_value().find("max_concurrent_requests");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:max_concurrent_requests error:must be of type number"));
+        AddFieldError("max_concurrent_requests", "must be of type number",
+                      &error_list);
       } else {
         discovery_mechanism->max_concurrent_requests =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
@@ -1269,11 +1265,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     // Discovery Mechanism type
     it = json.object_value().find("type");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:type error:required field missing"));
+      AddFieldError("type", "required field missing", &error_list);
     } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:type error:type should be string"));
+      AddFieldError("type", "type should be string", &error_list);
     } else {
       if (it->second.string_value() == "EDS") {
         discovery_mechanism->type = XdsClusterResolverLbConfig::
@@ -1281,8 +1275,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         it = json.object_value().find("edsServiceName");
         if (it != json.object_value().end()) {
           if (it->second.type() != Json::Type::STRING) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "field:edsServiceName error:type should be string"));
+            AddFieldError("edsServiceName", "type should be string",
+                          &error_list);
           } else {
             discovery_mechanism->eds_service_name = it->second.string_value();
           }
@@ -1292,17 +1286,14 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
             DiscoveryMechanism::DiscoveryMechanismType::LOGICAL_DNS;
         it = json.object_value().find("dnsHostname");
         if (it == json.object_value().end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:dnsHostname error:required field missing"));
+          AddFieldError("dnsHostname", "required field missing", &error_list);
         } else if (it->second.type() != Json::Type::STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:dnsHostname error:type should be string"));
+          AddFieldError("dnsHostname", "type should be string", &error_list);
         } else {
           discovery_mechanism->dns_hostname = it->second.string_value();
         }
       } else {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:type error:invalid type"));
+        AddFieldError("type", "invalid type", &error_list);
       }
     }
     return error_list;

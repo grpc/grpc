@@ -675,8 +675,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:childPolicy error:required field missing"));
+      AddFieldError("childPolicy", "required field missing", &error_list);
     } else {
       grpc_error_handle parse_error = GRPC_ERROR_NONE;
       child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
@@ -693,11 +692,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     std::string cluster_name;
     it = json.object_value().find("clusterName");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:clusterName error:required field missing"));
+      AddFieldError("clusterName", "required field missing", &error_list);
     } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:clusterName error:type should be string"));
+      AddFieldError("clusterName", "type should be string", &error_list);
     } else {
       cluster_name = it->second.string_value();
     }
@@ -706,8 +703,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     it = json.object_value().find("edsServiceName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:edsServiceName error:type should be string"));
+        AddFieldError("edsServiceName", "type should be string", &error_list);
       } else {
         eds_service_name = it->second.string_value();
       }
@@ -717,8 +713,8 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     it = json.object_value().find("lrsLoadReportingServerName");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
+        AddFieldError("lrsLoadReportingServerName", "type should be string",
+                      &error_list);
       } else {
         lrs_load_reporting_server_name = it->second.string_value();
       }
@@ -728,8 +724,8 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     it = json.object_value().find("maxConcurrentRequests");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:max_concurrent_requests error:must be of type number"));
+        AddFieldError("max_concurrent_requests", "must be of type number",
+                      &error_list);
       } else {
         max_concurrent_requests =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
@@ -739,8 +735,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     auto drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
     it = json.object_value().find("dropCategories");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:dropCategories error:required field missing"));
+      AddFieldError("dropCategories", "required field missing", &error_list);
     } else {
       std::vector<grpc_error_handle> child_errors =
           ParseDropCategories(it->second, drop_config.get());

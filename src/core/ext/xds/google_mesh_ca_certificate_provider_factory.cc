@@ -227,8 +227,7 @@ GoogleMeshCaCertificateProviderFactory::Config::Parse(
   if (ParseJsonObjectField(config_json.object_value(), "key_type", &key_type,
                            &error_list, false)) {
     if (key_type != "RSA") {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:key_type error:Only RSA is supported."));
+      AddFieldError("key_type", "Only RSA is supported.", &error_list);
     }
   }
   if (!ParseJsonObjectField(config_json.object_value(), "key_size",

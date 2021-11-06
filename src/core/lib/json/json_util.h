@@ -35,10 +35,6 @@ namespace grpc_core {
 // Returns true on success, false otherwise.
 bool ParseDurationFromJson(const Json& field, grpc_millis* duration);
 
-// Add an error to an error list.
-void AddFieldError(absl::string_view field_name, absl::string_view error,
-                   std::vector<grpc_error_handle>* error_list);
-
 //
 // Helper functions for extracting types from JSON.
 // Return true on success, false otherwise. If an error is encountered during
