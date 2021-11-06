@@ -654,7 +654,7 @@ class StsTokenFetcherCredentials
 
 absl::StatusOr<URI> ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options) {
-  absl::InlinedVector<grpc_error_handle, 3> error_list;
+  std::vector<grpc_error_handle> error_list;
   absl::StatusOr<URI> sts_url =
       URI::Parse(options->token_exchange_service_uri == nullptr
                      ? ""
@@ -664,18 +664,17 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
         absl::StrFormat("Invalid or missing STS endpoint URL. Error: %s",
                         sts_url.status().ToString())));
   } else if (sts_url->scheme() != "https" && sts_url->scheme() != "http") {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid URI scheme, must be https to http."));
+    AddStringToErrorList("Invalid URI scheme, must be https to http.",
+                         &error_list);
   }
   if (options->subject_token_path == nullptr ||
       strlen(options->subject_token_path) == 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "subject_token needs to be specified"));
+    AddStringToErrorList("subject_token needs to be specified", &error_list);
   }
   if (options->subject_token_type == nullptr ||
       strlen(options->subject_token_type) == 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "subject_token_type needs to be specified"));
+    AddStringToErrorList("subject_token_type needs to be specified",
+                         &error_list);
   }
   if (error_list.empty()) {
     return sts_url;

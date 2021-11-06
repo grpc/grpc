@@ -716,18 +716,17 @@ grpc_error_handle InsertOrUpdateChildPolicyField(const std::string& field,
   std::vector<grpc_error_handle> error_list;
   for (Json& child_json : *config->mutable_array()) {
     if (child_json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "child policy item is not an object"));
+      AddStringToErrorList("child policy item is not an object", &error_list);
     } else {
       Json::Object& child = *child_json.mutable_object();
       if (child.size() != 1) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "child policy item contains more than one field"));
+        AddStringToErrorList("child policy item contains more than one field",
+                             &error_list);
       } else {
         Json& child_config_json = child.begin()->second;
         if (child_config_json.type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "child policy item config is not an object"));
+          AddStringToErrorList("child policy item config is not an object",
+                               &error_list);
         } else {
           Json::Object& child_config = *child_config_json.mutable_object();
           child_config[field] = Json(value);
@@ -2086,14 +2085,13 @@ grpc_error_handle ParseJsonHeaders(size_t idx, const Json& json,
   std::vector<grpc_error_handle> error_list;
   // requiredMatch must not be present.
   if (json.object_value().find("requiredMatch") != json.object_value().end()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:requiredMatch error:must not be present"));
+    AddStringToErrorList("field:requiredMatch error:must not be present",
+                         &error_list);
   }
   // Find key.
   if (ParseJsonObjectField(json.object_value(), "key", key, &error_list) &&
       key->empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:key error:must be non-empty"));
+    AddStringToErrorList("field:key error:must be non-empty", &error_list);
   }
   // Find headers.
   const Json::Array* headers_json = nullptr;
@@ -2101,8 +2099,7 @@ grpc_error_handle ParseJsonHeaders(size_t idx, const Json& json,
                        &error_list);
   if (headers_json != nullptr) {
     if (headers_json->empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:names error:list is empty"));
+      AddStringToErrorList("field:names error:list is empty", &error_list);
     } else {
       size_t name_idx = 0;
       for (const Json& name_json : *headers_json) {
@@ -2160,8 +2157,7 @@ grpc_error_handle ParseGrpcKeybuilder(
   if (ParseJsonObjectField(json.object_value(), "names", &names_array,
                            &error_list)) {
     if (names_array->empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:names error:list is empty"));
+      AddStringToErrorList("field:names error:list is empty", &error_list);
     } else {
       size_t name_idx = 0;
       for (const Json& name_json : *names_array) {
@@ -2173,8 +2169,9 @@ grpc_error_handle ParseGrpcKeybuilder(
         } else {
           bool inserted = names.insert(name).second;
           if (!inserted) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-                absl::StrCat("field:names error:duplicate entry for ", name)));
+            AddStringToErrorList(
+                absl::StrCat("field:names error:duplicate entry for ", name),
+                &error_list);
           }
         }
       }
@@ -2186,8 +2183,8 @@ grpc_error_handle ParseGrpcKeybuilder(
                                    &error_list](const std::string& key) {
     auto it = all_keys.find(key);
     if (it != all_keys.end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("key \"", key, "\" listed multiple times")));
+      AddStringToErrorList(
+          absl::StrCat("key \"", key, "\" listed multiple times"), &error_list);
     } else {
       all_keys.insert(key);
     }
@@ -2276,8 +2273,9 @@ grpc_error_handle ParseGrpcKeybuilder(
   for (const std::string& name : names) {
     bool inserted = key_builder_map->emplace(name, key_builder).second;
     if (!inserted) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("field:names error:duplicate entry for ", name)));
+      AddStringToErrorList(
+          absl::StrCat("field:names error:duplicate entry for ", name),
+          &error_list);
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
@@ -2320,8 +2318,9 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   if (ParseJsonObjectField(json, "lookupService",
                            &route_lookup_config.lookup_service, &error_list)) {
     if (!ResolverRegistry::IsValidTarget(route_lookup_config.lookup_service)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:lookupService error:must be valid gRPC target URI"));
+      AddStringToErrorList(
+          "field:lookupService error:must be valid gRPC target URI",
+          &error_list);
     }
   }
   // Parse lookupServiceTimeout.
@@ -2345,8 +2344,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
       /*required=*/false);
   // If staleAge is set, then maxAge must also be set.
   if (stale_age_set && !max_age_set) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:maxAge error:must be set if staleAge is set"));
+    AddStringToErrorList("field:maxAge error:must be set if staleAge is set",
+                         &error_list);
   }
   // Ignore staleAge if greater than or equal to maxAge.
   if (route_lookup_config.stale_age >= route_lookup_config.max_age) {
@@ -2356,8 +2355,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   ParseJsonObjectField(json, "cacheSizeBytes",
                        &route_lookup_config.cache_size_bytes, &error_list);
   if (route_lookup_config.cache_size_bytes <= 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:cacheSizeBytes error:must be greater than 0"));
+    AddStringToErrorList("field:cacheSizeBytes error:must be greater than 0",
+                         &error_list);
   }
   // Clamp cacheSizeBytes to the max allowed value.
   if (route_lookup_config.cache_size_bytes > kMaxCacheSizeBytes) {
@@ -2368,8 +2367,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
                            &route_lookup_config.default_target, &error_list,
                            /*required=*/false)) {
     if (route_lookup_config.default_target.empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:defaultTarget error:must be non-empty if set"));
+      AddStringToErrorList("field:defaultTarget error:must be non-empty if set",
+                           &error_list);
     }
   }
   *error =
@@ -2445,8 +2444,9 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
             config.object_value(), "childPolicyConfigTargetFieldName",
             &child_policy_config_target_field_name, &error_list)) {
       if (child_policy_config_target_field_name.empty()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:childPolicyConfigTargetFieldName error:must be non-empty"));
+        AddStringToErrorList(
+            "field:childPolicyConfigTargetFieldName error:must be non-empty",
+            &error_list);
       }
     }
     // Parse childPolicy.
@@ -2455,11 +2455,11 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
         default_child_policy_parsed_config;
     auto it = config.object_value().find("childPolicy");
     if (it == config.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:childPolicy error:does not exist."));
+      AddStringToErrorList("field:childPolicy error:does not exist.",
+                           &error_list);
     } else if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:childPolicy error:type should be ARRAY"));
+      AddStringToErrorList("field:childPolicy error:type should be ARRAY",
+                           &error_list);
     } else {
       grpc_error_handle child_error = ValidateChildPolicyList(
           it->second, child_policy_config_target_field_name,

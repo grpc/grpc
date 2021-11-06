@@ -78,16 +78,18 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
                        &config->private_key_file_, &error_list, false);
   if (config->identity_cert_file_.empty() !=
       config->private_key_file_.empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    AddStringToErrorList(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
-        "or both unset."));
+        "or both unset.",
+        &error_list);
   }
   ParseJsonObjectField(config_json.object_value(), "ca_certificate_file",
                        &config->root_cert_file_, &error_list, false);
   if (config->identity_cert_file_.empty() && config->root_cert_file_.empty()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    AddStringToErrorList(
         "At least one of \"certificate_file\" and \"ca_certificate_file\" must "
-        "be specified."));
+        "be specified.",
+        &error_list);
   }
   if (!ParseJsonObjectFieldAsDuration(
           config_json.object_value(), "refresh_interval",

@@ -237,8 +237,9 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
   std::vector<grpc_error_handle> error_list;
   for (const Json& choice : json.array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Service Config Choice, error: should be of type object"));
+      AddStringToErrorList(
+          "Service Config Choice, error: should be of type object",
+          &error_list);
       continue;
     }
     // Check client language, if specified.

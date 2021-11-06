@@ -1226,8 +1226,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       XdsClusterResolverLbConfig::DiscoveryMechanism* discovery_mechanism) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type object"));
+      AddStringToErrorList("value should be of type object", &error_list);
       return error_list;
     }
     // Cluster name.

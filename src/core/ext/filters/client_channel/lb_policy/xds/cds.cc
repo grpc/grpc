@@ -712,8 +712,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
     std::string cluster;
     auto it = json.object_value().find("cluster");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "required field 'cluster' not present"));
+      AddStringToErrorList("required field 'cluster' not present", &error_list);
     } else if (it->second.type() != Json::Type::STRING) {
       AddFieldError("cluster", "type should be string", &error_list);
     } else {

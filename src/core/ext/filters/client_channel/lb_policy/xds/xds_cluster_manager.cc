@@ -624,8 +624,9 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
       for (const auto& p : it->second.object_value()) {
         const std::string& child_name = p.first;
         if (child_name.empty()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:children element error: name cannot be empty"));
+          AddStringToErrorList(
+              "field:children element error: name cannot be empty",
+              &error_list);
           continue;
         }
         RefCountedPtr<LoadBalancingPolicy::Config> child_config;
@@ -658,8 +659,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
       RefCountedPtr<LoadBalancingPolicy::Config>* child_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type object"));
+      AddStringToErrorList("value should be of type object", &error_list);
       return error_list;
     }
     auto it = json.object_value().find("childPolicy");

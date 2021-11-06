@@ -71,30 +71,33 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
   // Parse maxTokens.
   auto it = json.object_value().find("maxTokens");
   if (it == json.object_value().end()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryThrottling field:maxTokens error:Not found"));
+    AddStringToErrorList(
+        "field:retryThrottling field:maxTokens error:Not found", &error_list);
   } else if (it->second.type() != Json::Type::NUMBER) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    AddStringToErrorList(
         "field:retryThrottling field:maxTokens error:Type should be "
-        "number"));
+        "number",
+        &error_list);
   } else {
     *max_milli_tokens =
         gpr_parse_nonnegative_int(it->second.string_value().c_str()) * 1000;
     if (*max_milli_tokens <= 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      AddStringToErrorList(
           "field:retryThrottling field:maxTokens error:should be "
-          "greater than zero"));
+          "greater than zero",
+          &error_list);
     }
   }
   // Parse tokenRatio.
   it = json.object_value().find("tokenRatio");
   if (it == json.object_value().end()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryThrottling field:tokenRatio error:Not found"));
+    AddStringToErrorList(
+        "field:retryThrottling field:tokenRatio error:Not found", &error_list);
   } else if (it->second.type() != Json::Type::NUMBER) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    AddStringToErrorList(
         "field:retryThrottling field:tokenRatio error:type should be "
-        "number"));
+        "number",
+        &error_list);
   } else {
     // We support up to 3 decimal digits.
     size_t whole_len = it->second.string_value().size();
@@ -109,9 +112,10 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
       if (decimal_len > 3) decimal_len = 3;
       if (!gpr_parse_bytes_to_uint32(decimal_point + 1, decimal_len,
                                      &decimal_value)) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        AddStringToErrorList(
             "field:retryThrottling field:tokenRatio error:Failed "
-            "parsing"));
+            "parsing",
+            &error_list);
         return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
       }
       uint32_t decimal_multiplier = 1;
@@ -122,17 +126,19 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
     }
     uint32_t whole_value;
     if (!gpr_parse_bytes_to_uint32(value, whole_len, &whole_value)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      AddStringToErrorList(
           "field:retryThrottling field:tokenRatio error:Failed "
-          "parsing"));
+          "parsing",
+          &error_list);
       return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
     }
     *milli_token_ratio =
         static_cast<int>((whole_value * multiplier) + decimal_value);
     if (*milli_token_ratio <= 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      AddStringToErrorList(
           "field:retryThrottling field:tokenRatio error:value should "
-          "be greater than 0"));
+          "be greater than 0",
+          &error_list);
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);

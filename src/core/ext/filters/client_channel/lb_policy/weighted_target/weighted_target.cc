@@ -679,15 +679,14 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       const Json& json, WeightedTargetLbConfig::ChildConfig* child_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "value should be of type object"));
+      AddStringToErrorList("value should be of type object", &error_list);
       return error_list;
     }
     // Weight.
     auto it = json.object_value().find("weight");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "required field \"weight\" not specified"));
+      AddStringToErrorList("required field \"weight\" not specified",
+                           &error_list);
     } else if (it->second.type() != Json::Type::NUMBER) {
       AddFieldError("weight", "must be of type number", &error_list);
     } else {

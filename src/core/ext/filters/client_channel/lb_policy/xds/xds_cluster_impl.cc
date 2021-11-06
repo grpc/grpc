@@ -760,8 +760,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "dropCategories field is not an array"));
+      AddStringToErrorList("dropCategories field is not an array", &error_list);
       return error_list;
     }
     for (size_t i = 0; i < json.array_value().size(); ++i) {
@@ -784,29 +783,27 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "dropCategories entry is not an object"));
+      AddStringToErrorList("dropCategories entry is not an object",
+                           &error_list);
       return error_list;
     }
     std::string category;
     auto it = json.object_value().find("category");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"category\" field not present"));
+      AddStringToErrorList("\"category\" field not present", &error_list);
     } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"category\" field is not a string"));
+      AddStringToErrorList("\"category\" field is not a string", &error_list);
     } else {
       category = it->second.string_value();
     }
     uint32_t requests_per_million = 0;
     it = json.object_value().find("requests_per_million");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"requests_per_million\" field is not present"));
+      AddStringToErrorList("\"requests_per_million\" field is not present",
+                           &error_list);
     } else if (it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"requests_per_million\" field is not a number"));
+      AddStringToErrorList("\"requests_per_million\" field is not a number",
+                           &error_list);
     } else {
       requests_per_million =
           gpr_parse_nonnegative_int(it->second.string_value().c_str());
