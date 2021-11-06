@@ -26,6 +26,12 @@
 
 namespace grpc_core {
 
+void AddFieldError(absl::string_view field_name, absl::string_view error,
+                   std::vector<grpc_error_handle>* error_list) {
+  error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      absl::StrCat("field:", field_name, " error:", error)));
+}
+
 bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();
@@ -65,8 +71,7 @@ bool ExtractJsonBool(const Json& json, absl::string_view field_name,
       *output = false;
       return true;
     default:
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("field:", field_name, " error:type should be BOOLEAN")));
+      AddFieldError(field_name, "type should be BOOLEAN", error_list);
       return false;
   }
 }
@@ -76,6 +81,7 @@ bool ExtractJsonArray(const Json& json, absl::string_view field_name,
                       std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::ARRAY) {
     *output = nullptr;
+    AddFieldError(field_name, "type should be ARRAY", error_list);
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("field:", field_name, " error:type should be ARRAY")));
     return false;
@@ -89,8 +95,7 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
                        std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::OBJECT) {
     *output = nullptr;
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:", field_name, " error:type should be OBJECT")));
+    AddFieldError(field_name, "type should be OBJECT", error_list);
     return false;
   }
   *output = &json.object_value();
@@ -107,10 +112,10 @@ bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
   if (child_object_json == nullptr) return false;
   if (!ParseDurationFromJson(*child_object_json, output)) {
     *output = GRPC_MILLIS_INF_PAST;
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:", field_name,
-                     " error:type should be STRING of the form given by "
-                     "google.proto.Duration.")));
+    AddFieldError(
+        field_name,
+        "type should be STRING of the form given by google.proto.Duration.",
+        error_list);
     return false;
   }
   return true;
@@ -122,10 +127,7 @@ const Json* GetJsonField(const Json::Object& object,
                          bool required) {
   auto it = object.find(std::string(field_name));
   if (it == object.end()) {
-    if (required) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("field:", field_name, " error:does not exist.")));
-    }
+    if (required) AddFieldError(field_name, "does not exist.", error_list);
     return nullptr;
   }
   return &it->second;

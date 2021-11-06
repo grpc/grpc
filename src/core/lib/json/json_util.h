@@ -35,6 +35,10 @@ namespace grpc_core {
 // Returns true on success, false otherwise.
 bool ParseDurationFromJson(const Json& field, grpc_millis* duration);
 
+// Add an error to an error list.
+void AddFieldError(absl::string_view field_name, absl::string_view error,
+                   std::vector<grpc_error_handle>* error_list);
+
 //
 // Helper functions for extracting types from JSON.
 // Return true on success, false otherwise. If an error is encountered during
@@ -46,13 +50,11 @@ bool ExtractJsonNumber(const Json& json, absl::string_view field_name,
                        std::vector<grpc_error_handle>* error_list) {
   static_assert(std::is_integral<NumericType>::value, "Integral required");
   if (json.type() != Json::Type::NUMBER) {
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:", field_name, " error:type should be NUMBER")));
+    AddFieldError(field_name, "type should be NUMBER", error_list);
     return false;
   }
   if (!absl::SimpleAtoi(json.string_value(), output)) {
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:", field_name, " error:failed to parse.")));
+    AddFieldError(field_name, "failed to parse.", error_list);
     return false;
   }
   return true;
@@ -68,8 +70,7 @@ bool ExtractJsonString(const Json& json, absl::string_view field_name,
                        std::vector<grpc_error_handle>* error_list) {
   if (json.type() != Json::Type::STRING) {
     *output = "";
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:", field_name, " error:type should be STRING")));
+    AddFieldError(field_name, "type should be STRING", error_list);
     return false;
   }
   *output = json.string_value();
