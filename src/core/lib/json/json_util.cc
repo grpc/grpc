@@ -119,6 +119,8 @@ const Json* GetJsonField(const Json::Object& object,
                          absl::string_view field_name,
                          std::vector<grpc_error_handle>* error_list,
                          bool required) {
+  // TODO(roth): Once we can use C++14 heterogenous lookups, stop
+  // creating a std::string here.
   auto it = object.find(std::string(field_name));
   if (it == object.end()) {
     if (required) AddFieldError(field_name, "does not exist.", error_list);
