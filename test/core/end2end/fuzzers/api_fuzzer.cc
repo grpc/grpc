@@ -371,24 +371,6 @@ class Call : public std::enable_shared_from_this<Call> {
                                static_cast<size_t>(metadata.size()), m};
   }
 
-  // For call type client, we need to ensure that a GRPC_OP_RECV_INTIAL_METADATA
-  // op is always enqueued. Otherwise, the input may timeout.
-  // grpc/include/grpc/impl/codegen/grpc_types.h states that one such op
-  // "must" be enqueued at the client.
-  absl::optional<grpc_op> MaybeAdjustBatchOps(uint8_t* batch_ops) {
-    if (type_ != CallType::CLIENT || enqueued_recv_initial_metadata_) {
-      return {};
-    }
-    grpc_op op;
-    memset(&op, 0, sizeof(op));
-    enqueued_recv_initial_metadata_ = true;
-    op.op = GRPC_OP_RECV_INITIAL_METADATA;
-    *batch_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
-    op.data.recv_initial_metadata.recv_initial_metadata =
-        &recv_initial_metadata_;
-    return op;
-  }
-
   absl::optional<grpc_op> ReadOp(
       const api_fuzzer::BatchOp& batch_op, bool* batch_is_ok,
       uint8_t* batch_ops, std::vector<std::function<void()>>* unwinders) {
@@ -1047,11 +1029,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         for (const auto& batch_op : batch) {
           auto op = active_call->ReadOp(batch_op, &ok, &has_ops, &unwinders);
           if (!op.has_value()) continue;
-          ops.push_back(*op);
-        }
-
-        auto op = active_call->MaybeAdjustBatchOps(&has_ops);
-        if (op.has_value()) {
           ops.push_back(*op);
         }
 
