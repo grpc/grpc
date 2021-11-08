@@ -64,6 +64,16 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
+    bool operator<(const XdsServer& other) const {
+      if (server_uri < other.server_uri) return true;
+      if (channel_creds_type < other.channel_creds_type) return true;
+      if (channel_creds_config.Dump() < other.channel_creds_config.Dump()) {
+        return true;
+      }
+      if (server_features < other.server_features) return true;
+      return false;
+    }
+
     bool ShouldUseV3() const;
   };
 
