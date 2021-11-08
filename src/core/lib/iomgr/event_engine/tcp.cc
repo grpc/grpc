@@ -284,8 +284,9 @@ grpc_fd* grpc_fd_create(int /* fd */, const char* /* name */,
 }
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    /*fd=*/grpc_fd*, /*channel_args=*/const grpc_channel_args*,
-    /*addr_str=*/absl::string_view, grpc_slice_allocator* slice_allocator) {
+    grpc_fd* /* fd */, const grpc_channel_args* /* channel_args */,
+    absl::string_view /* addr_str */,
+    grpc_slice_allocator* slice_allocator /* slice_allocator */) {
   grpc_slice_allocator_destroy(slice_allocator);
   return nullptr;
 }
