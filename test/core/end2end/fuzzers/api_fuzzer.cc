@@ -799,7 +799,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       }
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(
-        std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS/1000), GPR_TIMESPAN));
+        std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS/1000)),
+        GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
       continue;
@@ -860,7 +861,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
                     static_cast<uint64_t>(MAX_WAIT_MS)),
                   std::min(action.create_channel()
                     .channel_actions(i).add_n_bytes_writable(),
-                    static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTE)),
+                    static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTES)),
                   std::min(action.create_channel()
                     .channel_actions(i).add_n_bytes_readable(),
                     static_cast<uint64_t>(MAX_ADD_N_READABLE_BYTES)),
