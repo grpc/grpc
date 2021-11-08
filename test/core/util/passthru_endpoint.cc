@@ -77,8 +77,8 @@ struct passthru_endpoint {
 
 static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
   GPR_ASSERT(m->pending_read_op.is_armed);
-  GPR_ASSERT(m->bytes_read_so_far
-    <= m->parent->channel_effects->allowed_read_bytes);
+  GPR_ASSERT(m->bytes_read_so_far <=
+             m->parent->channel_effects->allowed_read_bytes);
   if (m->parent->shutdown) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->pending_read_op.cb,
@@ -95,11 +95,12 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
   // This delayed processing should only be invoked when read_buffer has
   // something in it.
   GPR_ASSERT(m->read_buffer.count > 0);
-  uint64_t readable_length = std::min<uint64_t>(m->read_buffer.length,
-    m->parent->channel_effects->allowed_read_bytes - m->bytes_read_so_far);
+  uint64_t readable_length = std::min<uint64_t>(
+      m->read_buffer.length,
+      m->parent->channel_effects->allowed_read_bytes - m->bytes_read_so_far);
   GPR_ASSERT(readable_length > 0);
-  grpc_slice_buffer_move_first_no_ref(
-    &m->read_buffer, readable_length, m->pending_read_op.slices);
+  grpc_slice_buffer_move_first_no_ref(&m->read_buffer, readable_length,
+                                      m->pending_read_op.slices);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb, error);
   if (m->parent->simulate_channel_actions) {
     m->bytes_read_so_far += readable_length;
@@ -133,7 +134,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 // Copy src slice and split the copy at n bytes into two separate slices
 void grpc_slice_copy_split(grpc_slice src, size_t n, grpc_slice& split1,
-  grpc_slice& split2) {
+                           grpc_slice& split2) {
   GPR_ASSERT(n <= GRPC_SLICE_LENGTH(src));
   if (n == GRPC_SLICE_LENGTH(src)) {
     split1 = grpc_slice_copy(src);
@@ -144,7 +145,7 @@ void grpc_slice_copy_split(grpc_slice src, size_t n, grpc_slice& split1,
   memcpy(GRPC_SLICE_START_PTR(split1), GRPC_SLICE_START_PTR(src), n);
   split2 = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(src) - n);
   memcpy(GRPC_SLICE_START_PTR(split2), GRPC_SLICE_START_PTR(src) + n,
-    GRPC_SLICE_LENGTH(src) - n);
+         GRPC_SLICE_LENGTH(src) - n);
 }
 
 static half* other_half(half* h) {
@@ -154,8 +155,8 @@ static half* other_half(half* h) {
 
 static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   GPR_ASSERT(m->pending_write_op.is_armed);
-  GPR_ASSERT(m->bytes_written_so_far
-    <= m->parent->channel_effects->allowed_write_bytes);
+  GPR_ASSERT(m->bytes_written_so_far <=
+             m->parent->channel_effects->allowed_write_bytes);
   if (m->parent->shutdown) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->pending_write_op.cb,
@@ -165,19 +166,21 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     return;
   }
   if (m->bytes_written_so_far ==
-        m->parent->channel_effects->allowed_write_bytes) {
+      m->parent->channel_effects->allowed_write_bytes) {
     // Keep it in pending state.
     return;
   }
 
   half* other = other_half(m);
-  uint64_t max_writable = std::min<uint64_t>(m->pending_write_op.slices->length,
-    m->parent->channel_effects->allowed_write_bytes - m->bytes_written_so_far);
-  uint64_t max_readable =
-    other->parent->channel_effects->allowed_read_bytes -
-    other->bytes_read_so_far;
-  uint64_t immediate_bytes_read = other->on_read != nullptr ?
-    std::min<uint64_t>(max_readable, max_writable) : 0;
+  uint64_t max_writable =
+      std::min<uint64_t>(m->pending_write_op.slices->length,
+                         m->parent->channel_effects->allowed_write_bytes -
+                             m->bytes_written_so_far);
+  uint64_t max_readable = other->parent->channel_effects->allowed_read_bytes -
+                          other->bytes_read_so_far;
+  uint64_t immediate_bytes_read =
+      other->on_read != nullptr ? std::min<uint64_t>(max_readable, max_writable)
+                                : 0;
 
   GPR_ASSERT(max_writable > 0);
   GPR_ASSERT(max_readable >= 0);
@@ -188,14 +191,14 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   // Estimate if the original write would still be pending at the end of this
   // process
   bool would_write_be_pending =
-    max_writable < m->pending_write_op.slices->length;
+      max_writable < m->pending_write_op.slices->length;
   if (!m->parent->simulate_channel_actions) {
     GPR_ASSERT(!would_write_be_pending);
   }
   grpc_slice_buffer* slices = m->pending_write_op.slices;
-  grpc_slice_buffer* dest = other->on_read != nullptr ?
-    other->on_read_out : &other->read_buffer;
-  while(max_writable > 0) {
+  grpc_slice_buffer* dest =
+      other->on_read != nullptr ? other->on_read_out : &other->read_buffer;
+  while (max_writable > 0) {
     grpc_slice slice = grpc_slice_buffer_take_first(slices);
     uint64_t slice_length = GPR_SLICE_LENGTH(slice);
     GPR_ASSERT(slice_length > 0);
@@ -243,7 +246,6 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     other->on_read = nullptr;
   }
 
-
   if (!would_write_be_pending) {
     // No slices should be left
     GPR_ASSERT(m->pending_write_op.slices->count == 0);
@@ -259,8 +261,9 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_lock(&m->parent->mu);
   gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown"));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, cb,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown"));
   } else {
     GPR_ASSERT(!m->pending_write_op.is_armed);
     m->pending_write_op.is_armed = true;
@@ -271,7 +274,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     GPR_ASSERT(m->pending_write_op.slices->count == 0);
     for (int i = 0; i < static_cast<int>(slices->count); i++) {
       grpc_slice_buffer_add_indexed(m->pending_write_op.slices,
-        grpc_slice_copy(slices->slices[i]));
+                                    grpc_slice_copy(slices->slices[i]));
     }
     do_pending_write_op_locked(m, GRPC_ERROR_NONE);
   }
@@ -397,9 +400,10 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->slice_allocator = slice_allocator;
 }
 
-void grpc_passthru_endpoint_create(
-  grpc_endpoint** client, grpc_endpoint** server,
-  grpc_passthru_endpoint_stats* stats, bool simulate_channel_actions) {
+void grpc_passthru_endpoint_create(grpc_endpoint** client,
+                                   grpc_endpoint** server,
+                                   grpc_passthru_endpoint_stats* stats,
+                                   bool simulate_channel_actions) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
@@ -451,11 +455,11 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
   }
   auto curr_action = m->parent->channel_effects->actions[0];
   m->parent->channel_effects->actions.erase(
-    m->parent->channel_effects->actions.begin());
+      m->parent->channel_effects->actions.begin());
   m->parent->channel_effects->allowed_read_bytes +=
-    curr_action.add_n_readable_bytes;
+      curr_action.add_n_readable_bytes;
   m->parent->channel_effects->allowed_write_bytes +=
-    curr_action.add_n_writable_bytes;
+      curr_action.add_n_writable_bytes;
   flush_pending_ops_locked(m, error);
   flush_pending_ops_locked(other_half(m), error);
   sched_next_channel_action_locked(m);
@@ -467,21 +471,20 @@ static void sched_next_channel_action_locked(half* m) {
     m->parent->channel_effects->on_complete();
     return;
   }
-  grpc_timer_init(
-      &m->parent->channel_effects->timer,
-      m->parent->channel_effects->actions[0].wait_ms
-      + grpc_core::ExecCtx::Get()->Now(),
-      GRPC_CLOSURE_CREATE(
-        do_next_sched_channel_action, m, grpc_schedule_on_exec_ctx));
+  grpc_timer_init(&m->parent->channel_effects->timer,
+                  m->parent->channel_effects->actions[0].wait_ms +
+                      grpc_core::ExecCtx::Get()->Now(),
+                  GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
+                                      grpc_schedule_on_exec_ctx));
 }
 
-void start_scheduling_grpc_passthru_endpoint_channel_effects(grpc_endpoint* ep,
-  const std::vector<grpc_passthru_endpoint_channel_action>& actions,
-  std::function<void()> on_complete) {
+void start_scheduling_grpc_passthru_endpoint_channel_effects(
+    grpc_endpoint* ep,
+    const std::vector<grpc_passthru_endpoint_channel_action>& actions,
+    std::function<void()> on_complete) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
-  if (!m->parent->simulate_channel_actions ||
-    m->parent->shutdown) {
+  if (!m->parent->simulate_channel_actions || m->parent->shutdown) {
     gpr_mu_unlock(&m->parent->mu);
     return;
   }

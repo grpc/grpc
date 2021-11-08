@@ -37,16 +37,18 @@ typedef struct {
   uint64_t add_n_readable_bytes;
 } grpc_passthru_endpoint_channel_action;
 
-void grpc_passthru_endpoint_create(
-  grpc_endpoint** client, grpc_endpoint** server,
-  grpc_passthru_endpoint_stats* stats, bool simulate_channel_actions=false);
+void grpc_passthru_endpoint_create(grpc_endpoint** client,
+                                   grpc_endpoint** server,
+                                   grpc_passthru_endpoint_stats* stats,
+                                   bool simulate_channel_actions = false);
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
 
 void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
 
-void start_scheduling_grpc_passthru_endpoint_channel_effects(grpc_endpoint* ep,
-  const std::vector<grpc_passthru_endpoint_channel_action>& actions,
-  std::function<void()> on_complete);
+void start_scheduling_grpc_passthru_endpoint_channel_effects(
+    grpc_endpoint* ep,
+    const std::vector<grpc_passthru_endpoint_channel_action>& actions,
+    std::function<void()> on_complete);
 
 #endif  // PASSTHRU_ENDPOINT_H

@@ -43,13 +43,13 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
-#define MAX_ADVANCE_TIME_MICROS (24 * 3600 * 365 * 1000000) // 1 year
+#define MAX_ADVANCE_TIME_MICROS (24 * 3600 * 365 * 1000000)  // 1 year
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_WAIT_MS (24 * 3600 * 365 * 1000) // 1 year
+#define MAX_WAIT_MS (24 * 3600 * 365 * 1000)  // 1 year
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_READABLE_BYTES (2* 1024 * 1024) // 2GB
+#define MAX_ADD_N_READABLE_BYTES (2 * 1024 * 1024)  // 2GB
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_WRITABLE_BYTES (2* 1024 * 1024) // 2GB
+#define MAX_ADD_N_WRITABLE_BYTES (2 * 1024 * 1024)  // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -184,10 +184,7 @@ static void do_connect(void* arg, grpc_error_handle error) {
     grpc_passthru_endpoint_create(&client, &server, nullptr, true);
     *fc->ep = client;
     start_scheduling_grpc_passthru_endpoint_channel_effects(
-      client, g_channel_actions,
-      [&](){
-        g_channel_force_delete = true;
-      });
+        client, g_channel_actions, [&]() { g_channel_force_delete = true; });
     grpc_transport* transport = grpc_create_chttp2_transport(
         nullptr, server, false,
         grpc_resource_user_create(g_resource_quota, "transport-user"));
@@ -236,7 +233,6 @@ static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
@@ -449,9 +445,7 @@ class Call : public std::enable_shared_from_this<Call> {
           *batch_ops |= 1 << GRPC_OP_RECV_MESSAGE;
           pending_recv_message_op_ = true;
           op.data.recv_message.recv_message = &recv_message_;
-          unwinders->push_back([this]() {
-            pending_recv_message_op_ = false;
-          });
+          unwinders->push_back([this]() { pending_recv_message_op_ = false; });
         }
         break;
       case api_fuzzer::BatchOp::kReceiveStatusOnClient:
@@ -536,8 +530,6 @@ class Call : public std::enable_shared_from_this<Call> {
 
 static std::vector<std::shared_ptr<Call>> g_calls;
 static size_t g_active_call = 0;
-
-
 
 static Call* ActiveCall() {
   while (!g_calls.empty()) {
@@ -798,9 +790,11 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         call->Shutdown();
       }
 
-      g_now = gpr_time_add(g_now, gpr_time_from_seconds(
-        std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS/1000)),
-        GPR_TIMESPAN));
+      g_now = gpr_time_add(
+          g_now,
+          gpr_time_from_seconds(
+              std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS / 1000)),
+              GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
       continue;
@@ -829,9 +823,9 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       case api_fuzzer::Action::kAdvanceTime: {
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(
-              std::min(static_cast<uint64_t>(action.advance_time()),
-              static_cast<uint64_t>(MAX_ADVANCE_TIME_MICROS)),
-              GPR_TIMESPAN));
+                       std::min(static_cast<uint64_t>(action.advance_time()),
+                                static_cast<uint64_t>(MAX_ADVANCE_TIME_MICROS)),
+                       GPR_TIMESPAN));
         break;
       }
       // create an insecure channel
@@ -853,19 +847,20 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
                 action.create_channel().target().c_str(), args, nullptr);
           }
           g_channel_actions.clear();
-          for (int i = 0; i <
-            action.create_channel().channel_actions_size(); i++) {
-              g_channel_actions.push_back(
-                {
-                  std::min(action.create_channel().channel_actions(i).wait_ms(),
-                    static_cast<uint64_t>(MAX_WAIT_MS)),
-                  std::min(action.create_channel()
-                    .channel_actions(i).add_n_bytes_writable(),
-                    static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTES)),
-                  std::min(action.create_channel()
-                    .channel_actions(i).add_n_bytes_readable(),
-                    static_cast<uint64_t>(MAX_ADD_N_READABLE_BYTES)),
-                });
+          for (int i = 0; i < action.create_channel().channel_actions_size();
+               i++) {
+            g_channel_actions.push_back({
+                std::min(action.create_channel().channel_actions(i).wait_ms(),
+                         static_cast<uint64_t>(MAX_WAIT_MS)),
+                std::min(action.create_channel()
+                             .channel_actions(i)
+                             .add_n_bytes_writable(),
+                         static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTES)),
+                std::min(action.create_channel()
+                             .channel_actions(i)
+                             .add_n_bytes_readable(),
+                         static_cast<uint64_t>(MAX_ADD_N_READABLE_BYTES)),
+            });
           }
           GPR_ASSERT(g_channel != nullptr);
           g_channel_force_delete = false;
@@ -1010,7 +1005,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       }
       // queue some ops on a call
       case api_fuzzer::Action::kQueueBatch: {
-
         auto* active_call = ActiveCall();
         if (active_call == nullptr ||
             active_call->type() == CallType::PENDING_SERVER ||
