@@ -63,9 +63,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     OpenCensusCallTracer* parent_;
     const bool arena_allocated_;
     CensusContext context_;
-    // Metadata elements for tracing and census stats data.
-    grpc_linked_mdelem stats_bin_;
-    grpc_linked_mdelem tracing_bin_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     // Server elapsed time in nanoseconds.
@@ -75,9 +72,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     uint64_t sent_message_count_ = 0;
     // End status code
     absl::StatusCode status_code_;
-    // Buffer needed for grpc_slice to reference when adding trace context
-    // metatdata to outgoing message.
-    char tracing_buf_[kMaxTraceContextLen];
   };
 
   explicit OpenCensusCallTracer(const grpc_call_element_args* args);
