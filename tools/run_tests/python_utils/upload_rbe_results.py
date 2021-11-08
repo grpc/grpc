@@ -127,7 +127,10 @@ def _get_resultstore_data(api_key, invocation_id):
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes,actions.timing,actions.test_action'
             % (invocation_id, api_key, page_token),
             headers={'Content-Type': 'application/json'})
-        results = json.loads(urllib.request.urlopen(req).read())
+        raw_resp = urllib.request.urlopen(req).read()
+        decoded_resp = raw_resp if isinstance(
+            raw_resp, str) else raw_resp.decode('utf-8', 'ignore')
+        results = json.loads(decoded_resp)
         all_actions.extend(results['actions'])
         if 'nextPageToken' not in results:
             break
