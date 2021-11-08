@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -756,8 +756,8 @@ _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES = {
     'no_df_padding_sanity_test': 'large_unary'
 }
 
-_HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES.keys(
-)
+_HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS = list(
+    _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES.keys())
 
 _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
@@ -782,7 +782,7 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
 
     # turn environ into -e docker args
     if environ:
-        for k, v in environ.items():
+        for k, v in list(environ.items()):
             docker_cmdline += ['-e', '%s=%s' % (k, v)]
 
     # set working directory
@@ -1208,7 +1208,7 @@ argp.add_argument('--google_default_creds_use_key_file',
                         'google_default_credentials test case, e.g. by '
                         'setting env var GOOGLE_APPLICATION_CREDENTIALS.'))
 argp.add_argument('--prod_servers',
-                  choices=prod_servers.keys(),
+                  choices=list(prod_servers.keys()),
                   default=['default'],
                   nargs='+',
                   help=('The servers to run cloud_to_prod and '
@@ -1549,7 +1549,7 @@ try:
         (server_host, server_port) = server[1].split(':')
         server_addresses[server_name] = (server_host, server_port)
 
-    for server_name, server_address in server_addresses.items():
+    for server_name, server_address in list(server_addresses.items()):
         (server_host, server_port) = server_address
         server_language = _LANGUAGES.get(server_name, None)
         skip_server = []  # test cases unimplemented by server
@@ -1663,7 +1663,7 @@ try:
 
     report_utils.render_junit_xml_report(resultset, _TESTS_XML_REPORT)
 
-    for name, job in resultset.items():
+    for name, job in list(resultset.items()):
         if "http2" in name:
             job[0].http2results = aggregate_http2_results(job[0].message)
 
@@ -1676,7 +1676,7 @@ try:
         sys.exit(0)
 finally:
     # Check if servers are still running.
-    for server, job in server_jobs.items():
+    for server, job in list(server_jobs.items()):
         if not job.is_running():
             print('Server "%s" has exited prematurely.' % server)
 
