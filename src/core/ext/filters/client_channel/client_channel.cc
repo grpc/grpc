@@ -2451,7 +2451,7 @@ class ClientChannel::LoadBalancedCall::Metadata
     template <class Which>
     void Encode(Which, const typename Which::ValueType& value) {
       auto value_slice = Which::Encode(value);
-      out_.emplace_back(Which::key(), value_slice.as_string_view());
+      out_.emplace_back(std::string(Which::key()), std::string(value_slice.as_string_view()));
     }
 
     void Encode(GrpcTimeoutMetadata, grpc_millis) {}
