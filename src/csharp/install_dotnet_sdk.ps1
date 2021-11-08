@@ -22,4 +22,4 @@ Invoke-WebRequest -Uri $InstallScriptUrl -OutFile $InstallScriptPath
 
 # Installed versions should be kept in sync with
 # templates/tools/dockerfile/csharp_dotnetcli_deps.include
-&$InstallScriptPath -Version 2.1.816
+&$InstallScriptPath -Version 5.0.402
