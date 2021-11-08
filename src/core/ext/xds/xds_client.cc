@@ -136,10 +136,10 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
   void SubscribeLocked(const std::string& type_url,
-                       const XdsApi::ResourceName& resource)
+                       const XdsApi::ResourceName& name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   void UnsubscribeLocked(const std::string& type_url,
-                         const XdsApi::ResourceName& resource,
+                         const XdsApi::ResourceName& name,
                          bool delay_unsubscription)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -590,12 +590,12 @@ void XdsClient::ChannelState::SubscribeLocked(
 }
 
 void XdsClient::ChannelState::UnsubscribeLocked(
-    const std::string& type_url, const XdsApi::ResourceName& resource,
+    const std::string& type_url, const XdsApi::ResourceName& name,
     bool delay_unsubscription) {
   if (ads_calld_ != nullptr) {
     auto* calld = ads_calld_->calld();
     if (calld != nullptr) {
-      calld->UnsubscribeLocked(type_url, resource, delay_unsubscription);
+      calld->UnsubscribeLocked(type_url, name, delay_unsubscription);
       if (!calld->HasSubscribedResources()) {
         ads_calld_.reset();
       }
