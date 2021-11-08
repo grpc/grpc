@@ -162,8 +162,8 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
   return endpoint;
 }
 
-grpc_endpoint* grpc_tcp_create(/*channel_args=*/const grpc_channel_args*,
-                               /*peer_address=*/absl::string_view) {
+grpc_endpoint* grpc_tcp_create(const grpc_channel_args* /* channel_args */,
+                               absl::string_view /* peer_address */) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   return &endpoint->base;

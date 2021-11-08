@@ -521,7 +521,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   } else {
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
-  tcp->peer_string = std::string(peer_string.data(), peer_string.size());
+  tcp->peer_string = std::string(peer_string);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->slice_allocator = slice_allocator;
   return &tcp->base;
