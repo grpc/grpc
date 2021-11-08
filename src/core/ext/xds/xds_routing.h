@@ -27,6 +27,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -34,47 +35,35 @@ namespace grpc_core {
 
 class XdsRouting {
  public:
-  template <typename T>
-  static T* FindVirtualHostForDomain(std::vector<T>* virtual_hosts,
-                                     absl::string_view domain) {
-    // Find the best matched virtual host.
-    // The search order for 4 groups of domain patterns:
-    //   1. Exact match.
-    //   2. Suffix match (e.g., "*ABC").
-    //   3. Prefix match (e.g., "ABC*").
-    //   4. Universe match (i.e., "*").
-    // Within each group, longest match wins.
-    // If the same best matched domain pattern appears in multiple virtual
-    // hosts, the first matched virtual host wins.
-    T* target_vhost = nullptr;
-    MatchType best_match_type = INVALID_MATCH;
-    size_t longest_match = 0;
-    // Check each domain pattern in each virtual host to determine the best
-    // matched virtual host.
-    for (T& vhost : *virtual_hosts) {
-      for (const std::string& domain_pattern : vhost.domains) {
-        // Check the match type first. Skip the pattern if it's not better
-        // than current match.
-        const MatchType match_type = DomainPatternMatchType(domain_pattern);
-        // This should be caught by RouteConfigParse().
-        GPR_ASSERT(match_type != INVALID_MATCH);
-        if (match_type > best_match_type) continue;
-        if (match_type == best_match_type &&
-            domain_pattern.size() <= longest_match) {
-          continue;
-        }
-        // Skip if match fails.
-        if (!DomainMatch(match_type, domain_pattern, domain)) continue;
-        // Choose this match.
-        target_vhost = &vhost;
-        best_match_type = match_type;
-        longest_match = domain_pattern.size();
-        if (best_match_type == EXACT_MATCH) break;
-      }
-      if (best_match_type == EXACT_MATCH) break;
-    }
-    return target_vhost;
-  }
+  class VirtualHostListIterator {
+   public:
+    virtual ~VirtualHostListIterator() = default;
+    // Returns the number of virtual hosts in the list.
+    virtual size_t Size() const = 0;
+    // Returns the domain list for the virtual host at the specified index.
+    virtual const std::vector<std::string>& GetDomainsForVirtualHost(
+        size_t index) const = 0;
+  };
+
+  class RouteListIterator {
+   public:
+    virtual ~RouteListIterator() = default;
+    // Number of routes.
+    virtual size_t Size() const = 0;
+    // Returns the matchers for the route at the specified index.
+    virtual const XdsApi::Route::Matchers& GetMatchersForRoute(
+        size_t index) const = 0;
+  };
+
+  // Returns the index of the selected virtual host in the list.
+  static absl::optional<size_t> FindVirtualHostForDomain(
+      const VirtualHostListIterator& vhost_iterator, absl::string_view domain);
+
+  // Returns the index in route_list_iterator to use for a request with
+  // the specified path and metadata, or nullopt if no route matches.
+  static absl::optional<size_t> GetRouteForRequest(
+      const RouteListIterator& route_list_iterator, absl::string_view path,
+      grpc_metadata_batch* initial_metadata);
 
   // Returns true if \a domain_pattern is a valid domain pattern, false
   // otherwise.
@@ -87,27 +76,14 @@ class XdsRouting {
       grpc_metadata_batch* initial_metadata, absl::string_view header_name,
       std::string* concatenated_value);
 
-  // Returns true if the headers match, false otherwise.
-  static bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
-                           grpc_metadata_batch* initial_metadata);
-
-  // Returns true if the random number generated is less than \a
-  // fraction_per_million, false otherwise.
-  static bool UnderFraction(const uint32_t fraction_per_million);
-
- private:
-  enum MatchType {
-    EXACT_MATCH,
-    SUFFIX_MATCH,
-    PREFIX_MATCH,
-    UNIVERSE_MATCH,
-    INVALID_MATCH,
+  struct GeneratePerHttpFilterConfigsResult {
+    std::map<std::string, std::vector<std::string>> per_filter_configs;
+    grpc_error_handle error;
+    grpc_channel_args* args; // Guaranteed to be nullptr if error is GRPC_ERROR_NONE
   };
-  // Returns true if match succeeds.
-  static bool DomainMatch(MatchType match_type,
-                          absl::string_view domain_pattern_in,
-                          absl::string_view expected_host_name_in);
-  static MatchType DomainPatternMatchType(absl::string_view domain_pattern);
+  // Generates a map of per_filter_configs that goes from the field name to the list of elements for that field
+  static GeneratePerHttpFilterConfigsResult GeneratePerHTTPFilterConfigs(const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter> &filters, grpc_channel_args* args, const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
+    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight);
 };
 
 }  // namespace grpc_core

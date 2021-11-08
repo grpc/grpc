@@ -233,6 +233,8 @@ class XdsResolver : public Resolver {
     };
     using RouteTable = std::vector<Route>;
 
+    class RouteListIterator;
+
     void MaybeAddCluster(const std::string& name);
     grpc_error_handle CreateMethodConfig(
         const XdsApi::Route& route,
@@ -363,6 +365,25 @@ bool XdsResolver::XdsConfigSelector::Route::operator==(
          weighted_cluster_state == other.weighted_cluster_state &&
          MethodConfigsEqual(method_config.get(), other.method_config.get());
 }
+
+// Implementation of XdsRouting::RouteListIterator for getting the matching
+// route for a request.
+class XdsResolver::XdsConfigSelector::RouteListIterator
+    : public XdsRouting::RouteListIterator {
+ public:
+  RouteListIterator(const RouteTable& route_table)
+      : route_table_(route_table) {}
+
+  size_t Size() const override { return route_table_.size(); }
+
+  const XdsApi::Route::Matchers& GetMatchersForRoute(
+      size_t index) const override {
+    return route_table_[index].route.matchers;
+  }
+
+ private:
+  const RouteTable& route_table_;
+};
 
 //
 // XdsResolver::XdsConfigSelector
@@ -621,23 +642,11 @@ absl::optional<uint64_t> HeaderHashHelper(
 
 ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     GetCallConfigArgs args) {
-  for (const auto& entry : route_table_) {
-    // Path matching.
-    if (!entry.route.matchers.path_matcher.Match(
-            StringViewFromSlice(*args.path))) {
-      continue;
-    }
-    // Header Matching.
-    if (!XdsRouting::HeadersMatch(entry.route.matchers.header_matchers,
-                                  args.initial_metadata)) {
-      continue;
-    }
-    // Match fraction check
-    if (entry.route.matchers.fraction_per_million.has_value() &&
-        !XdsRouting::UnderFraction(
-            entry.route.matchers.fraction_per_million.value())) {
-      continue;
-    }
+  auto route_index = XdsRouting::GetRouteForRequest(
+      RouteListIterator(route_table_), StringViewFromSlice(*args.path),
+      args.initial_metadata);
+  if (route_index.has_value()) {
+    auto& entry = route_table_[route_index.value()];
     // Found a route match
     const auto* route_action =
         absl::get_if<XdsApi::Route::RouteAction>(&entry.route.action);
@@ -815,21 +824,42 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
   }
 }
 
+namespace {
+// TODO(): Should this be moved to xds_api.h?
+class VirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
+ public:
+  VirtualHostListIterator(
+      const std::vector<XdsApi::RdsUpdate::VirtualHost>& virtual_hosts)
+      : virtual_hosts_(virtual_hosts) {}
+
+  size_t Size() const override { return virtual_hosts_.size(); }
+
+  const std::vector<std::string>& GetDomainsForVirtualHost(
+      size_t index) const override {
+    return virtual_hosts_[index].domains;
+  }
+
+ private:
+  const std::vector<XdsApi::RdsUpdate::VirtualHost>& virtual_hosts_;
+};
+}  // namespace
+
 void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated route config", this);
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
-  XdsApi::RdsUpdate::VirtualHost* vhost = XdsRouting::FindVirtualHostForDomain(
-      &rds_update.virtual_hosts, server_name_);
-  if (vhost == nullptr) {
+  auto vhost_index = XdsRouting::FindVirtualHostForDomain(
+      VirtualHostListIterator(rds_update.virtual_hosts), server_name_);
+  if (!vhost_index.has_value()) {
     OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", server_name_,
                      " in RouteConfiguration")));
     return;
   }
   // Save the virtual host in the resolver.
-  current_virtual_host_ = std::move(*vhost);
+  current_virtual_host_ =
+      std::move(rds_update.virtual_hosts[vhost_index.value()]);
   // Send a new result to the channel.
   GenerateResult();
 }

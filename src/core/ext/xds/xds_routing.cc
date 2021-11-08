@@ -22,14 +22,18 @@
 
 namespace grpc_core {
 
-bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {
-  return DomainPatternMatchType(domain_pattern) != XdsRouting::INVALID_MATCH;
-}
+namespace {
+enum MatchType {
+  EXACT_MATCH,
+  SUFFIX_MATCH,
+  PREFIX_MATCH,
+  UNIVERSE_MATCH,
+  INVALID_MATCH,
+};
 
 // Returns true if match succeeds.
-bool XdsRouting::DomainMatch(MatchType match_type,
-                             absl::string_view domain_pattern_in,
-                             absl::string_view expected_host_name_in) {
+bool DomainMatch(MatchType match_type, absl::string_view domain_pattern_in,
+                 absl::string_view expected_host_name_in) {
   // Normalize the args to lower-case. Domain matching is case-insensitive.
   std::string domain_pattern = std::string(domain_pattern_in);
   std::string expected_host_name = std::string(expected_host_name_in);
@@ -62,14 +66,95 @@ bool XdsRouting::DomainMatch(MatchType match_type,
   }
 }
 
-XdsRouting::MatchType XdsRouting::DomainPatternMatchType(
-    absl::string_view domain_pattern) {
+MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
   if (domain_pattern.empty()) return INVALID_MATCH;
   if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
   if (domain_pattern == "*") return UNIVERSE_MATCH;
   if (domain_pattern[0] == '*') return SUFFIX_MATCH;
   if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
   return INVALID_MATCH;
+}
+
+bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
+                  grpc_metadata_batch* initial_metadata) {
+  for (const auto& header_matcher : header_matchers) {
+    std::string concatenated_value;
+    if (!header_matcher.Match(XdsRouting::GetHeaderValue(
+            initial_metadata, header_matcher.name(), &concatenated_value))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool UnderFraction(const uint32_t fraction_per_million) {
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
+  return random_number < fraction_per_million;
+}
+
+}  // namespace
+
+absl::optional<size_t> XdsRouting::GetRouteForRequest(
+    const RouteListIterator& route_list_iterator, absl::string_view path,
+    grpc_metadata_batch* initial_metadata) {
+  for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
+    const XdsApi::Route::Matchers& matchers =
+        route_list_iterator.GetMatchersForRoute(i);
+    if (matchers.path_matcher.Match(path) &&
+        HeadersMatch(matchers.header_matchers, initial_metadata) &&
+        (!matchers.fraction_per_million.has_value() ||
+         UnderFraction(*matchers.fraction_per_million))) {
+      return i;
+    }
+  }
+  return absl::nullopt;
+}
+
+absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
+    const VirtualHostListIterator& vhost_iterator, absl::string_view domain) {
+  // Find the best matched virtual host.
+  // The search order for 4 groups of domain patterns:
+  //   1. Exact match.
+  //   2. Suffix match (e.g., "*ABC").
+  //   3. Prefix match (e.g., "ABC*").
+  //   4. Universe match (i.e., "*").
+  // Within each group, longest match wins.
+  // If the same best matched domain pattern appears in multiple virtual
+  // hosts, the first matched virtual host wins.
+  absl::optional<size_t> target_index;
+  MatchType best_match_type = INVALID_MATCH;
+  size_t longest_match = 0;
+  // Check each domain pattern in each virtual host to determine the best
+  // matched virtual host.
+  for (size_t i = 0; i < vhost_iterator.Size(); ++i) {
+    const auto& domains = vhost_iterator.GetDomainsForVirtualHost(i);
+    for (const std::string& domain_pattern : domains) {
+      // Check the match type first. Skip the pattern if it's not better
+      // than current match.
+      const MatchType match_type = DomainPatternMatchType(domain_pattern);
+      // This should be caught by RouteConfigParse().
+      GPR_ASSERT(match_type != INVALID_MATCH);
+      if (match_type > best_match_type) continue;
+      if (match_type == best_match_type &&
+          domain_pattern.size() <= longest_match) {
+        continue;
+      }
+      // Skip if match fails.
+      if (!DomainMatch(match_type, domain_pattern, domain)) continue;
+      // Choose this match.
+      target_index = i;
+      best_match_type = match_type;
+      longest_match = domain_pattern.size();
+      if (best_match_type == EXACT_MATCH) break;
+    }
+    if (best_match_type == EXACT_MATCH) break;
+  }
+  return target_index;
+}
+
+bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {
+  return DomainPatternMatchType(domain_pattern) != INVALID_MATCH;
 }
 
 absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
@@ -87,22 +172,35 @@ absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
                                        concatenated_value);
 }
 
-bool XdsRouting::HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
-                              grpc_metadata_batch* initial_metadata) {
-  for (const auto& header_matcher : header_matchers) {
-    std::string concatenated_value;
-    if (!header_matcher.Match(GetHeaderValue(
-            initial_metadata, header_matcher.name(), &concatenated_value))) {
-      return false;
+std::map<std::string, std::vector<std::string>> GeneratePerHTTPFilterConfigs(const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter> &filters, grpc_channel_args* args, const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
+    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight) {
+  GeneratePerHttpFilterConfigsResult result;
+  for (const auto& http_filter : http_filters) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time in the XdsApi code.
+    const XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(
+            http_filter.config.config_proto_type_name);
+    GPR_ASSERT(filter_impl != nullptr);
+    // If there is not actually any C-core filter associated with this
+    // xDS filter, then it won't need any config, so skip it.
+    if (filter_impl->channel_filter() == nullptr) continue;
+    // Allow filter to add channel args that may affect service config
+    // parsing.
+    args = filter_impl->ModifyChannelArgs(args);
+    // Find config override, if any.
+    const XdsHttpFilterImpl::FilterConfig* config_override =
+        FindFilterConfigOverride(http_filter.name, vhost, route, cluster_weight);
+    // Generate service config for filter.
+    auto method_config_field =
+        filter_impl->GenerateServiceConfig(http_filter.config, config_override);
+    if (!method_config_field.ok()) {
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "failed to generate method config for HTTP filter ", http_filter.name,
+          ": ", method_config_field.status().ToString()));
     }
-  }
-  return true;
-}
-
-bool XdsRouting::UnderFraction(const uint32_t fraction_per_million) {
-  // Generate a random number in [0, 1000000).
-  const uint32_t random_number = rand() % 1000000;
-  return random_number < fraction_per_million;
+    result.per_filter_configs[method_config_field->service_config_field_name]
+        .push_back(method_config_field->element);
 }
 
 }  // namespace grpc_core

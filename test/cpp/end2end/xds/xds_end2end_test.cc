@@ -9844,7 +9844,7 @@ TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
   route_config.mutable_virtual_hosts()->at(0).clear_routes();
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
-  backends_[0]->Start();  
+  backends_[0]->Start();
   if (GetParam().enable_rds_testing()) {
     ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
         << "timed out waiting for NACK";
@@ -9869,7 +9869,7 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
       .clear_match();
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
-  backends_[0]->Start();  
+  backends_[0]->Start();
   if (GetParam().enable_rds_testing()) {
     ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
         << "timed out waiting for NACK";

@@ -279,7 +279,9 @@ class XdsServerConfigSelector : public ServerConfigSelector {
   CallConfig GetCallConfig(grpc_metadata_batch* metadata) override;
 
  private:
+  class VirtualHostListIterator;
   struct VirtualHost {
+    class RouteListIterator;
     struct Route {
       bool inappropriate_action;  // true if an action other than
                                   // kNonForwardingAction is configured.
@@ -291,6 +293,39 @@ class XdsServerConfigSelector : public ServerConfigSelector {
   };
 
   std::vector<VirtualHost> virtual_hosts_;
+};
+
+class XdsServerConfigSelector::VirtualHostListIterator
+    : public XdsRouting::VirtualHostListIterator {
+ public:
+  VirtualHostListIterator(const std::vector<VirtualHost>& virtual_hosts)
+      : virtual_hosts_(virtual_hosts) {}
+
+  size_t Size() const override { return virtual_hosts_.size(); }
+
+  const std::vector<std::string>& GetDomainsForVirtualHost(
+      size_t index) const override {
+    return virtual_hosts_[index].domains;
+  }
+
+ private:
+  const std::vector<VirtualHost>& virtual_hosts_;
+};
+
+class XdsServerConfigSelector::VirtualHost::RouteListIterator
+    : public XdsRouting::RouteListIterator {
+ public:
+  RouteListIterator(const std::vector<Route>& routes) : routes_(routes) {}
+
+  size_t Size() const override { return routes_.size(); }
+
+  const XdsApi::Route::Matchers& GetMatchersForRoute(
+      size_t index) const override {
+    return routes_[index].matchers;
+  }
+
+ private:
+  const std::vector<Route>& routes_;
 };
 
 absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>>
@@ -345,7 +380,6 @@ XdsServerConfigSelector::Create(
         per_filter_configs[method_config_field->service_config_field_name]
             .push_back(method_config_field->element);
       }
-      grpc_channel_args_destroy(args);
       std::vector<std::string> fields;
       fields.reserve(per_filter_configs.size());
       for (const auto& p : per_filter_configs) {
@@ -369,6 +403,7 @@ XdsServerConfigSelector::Create(
             ServiceConfig::Create(args, json.c_str(), &error);
         GPR_ASSERT(error == GRPC_ERROR_NONE);
       }
+      grpc_channel_args_destroy(args);
     }
   }
   return config_selector;
@@ -390,29 +425,19 @@ ServerConfigSelector::CallConfig XdsServerConfigSelector::GetCallConfig(
   }
   absl::string_view authority = StringViewFromSlice(
       GRPC_MDVALUE(metadata->legacy_index()->named.authority->md));
-  auto* virtual_host =
-      XdsRouting::FindVirtualHostForDomain(&virtual_hosts_, authority);
-  if (virtual_host == nullptr) {
+  auto vhost_index = XdsRouting::FindVirtualHostForDomain(
+      VirtualHostListIterator(virtual_hosts_), authority);
+  if (!vhost_index.has_value()) {
     call_config.error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", authority,
                      " in RouteConfiguration"));
     return call_config;
   }
-  for (const auto& route : virtual_host->routes) {
-    // Path matching.
-    if (!route.matchers.path_matcher.Match(path)) {
-      continue;
-    }
-    // Header Matching.
-    if (!XdsRouting::HeadersMatch(route.matchers.header_matchers, metadata)) {
-      continue;
-    }
-    // Match fraction check
-    if (route.matchers.fraction_per_million.has_value() &&
-        !XdsRouting::UnderFraction(
-            route.matchers.fraction_per_million.value())) {
-      continue;
-    }
+  auto& virtual_host = virtual_hosts_[vhost_index.value()];
+  auto route_index = XdsRouting::GetRouteForRequest(
+      VirtualHost::RouteListIterator(virtual_host.routes), path, metadata);
+  if (route_index.has_value()) {
+    auto& route = virtual_host.routes[route_index.value()];
     // Found the matching route
     if (route.inappropriate_action) {
       call_config.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
