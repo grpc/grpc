@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,7 +50,7 @@ def start_port_server():
                 sys.executable,  # use the same python binary as this process
                 os.path.abspath('tools/run_tests/python_utils/port_server.py'),
                 'dump_version'
-            ]))
+            ]).decode())
         logging.info('my port server is version %d', current_version)
         running = (version >= current_version)
         if not running:

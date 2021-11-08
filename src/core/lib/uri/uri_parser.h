@@ -60,6 +60,8 @@ class URI {
   URI(URI&&) = default;
   URI& operator=(URI&&) = default;
 
+  static std::string PercentDecode(absl::string_view str);
+
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
   const std::string& path() const { return path_; }

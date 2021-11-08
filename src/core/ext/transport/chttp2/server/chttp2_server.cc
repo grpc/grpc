@@ -29,6 +29,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -53,6 +54,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace {
@@ -849,6 +851,10 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                       grpc_channel_args* args,
                                       Chttp2ServerArgsModifier args_modifier,
                                       int* port_num) {
+  if (addr == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid address: addr cannot be a nullptr.");
+  }
   if (strncmp(addr, "external:", 9) == 0) {
     return grpc_core::Chttp2ServerListener::CreateWithAcceptor(
         server, addr, args, args_modifier);
@@ -856,17 +862,21 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   *port_num = -1;
   grpc_resolved_addresses* resolved = nullptr;
   std::vector<grpc_error_handle> error_list;
+  std::string parsed_addr = URI::PercentDecode(addr);
+  absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
-    if (absl::StartsWith(addr, kUnixUriPrefix)) {
-      error = grpc_resolve_unix_domain_address(
-          addr + sizeof(kUnixUriPrefix) - 1, &resolved);
-    } else if (absl::StartsWith(addr, kUnixAbstractUriPrefix)) {
-      error = grpc_resolve_unix_abstract_domain_address(
-          addr + sizeof(kUnixAbstractUriPrefix) - 1, &resolved);
+    if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
+      error =
+          grpc_resolve_unix_domain_address(parsed_addr_unprefixed, &resolved);
+    } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
+                                   kUnixAbstractUriPrefix)) {
+      error = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed,
+                                                        &resolved);
     } else {
-      error = grpc_blocking_resolve_address(addr, "https", &resolved);
+      error = grpc_blocking_resolve_address(parsed_addr.c_str(), "https",
+                                            &resolved);
     }
     if (error != GRPC_ERROR_NONE) return error;
     // Create a listener for each resolved address.

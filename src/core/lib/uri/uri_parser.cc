@@ -67,9 +67,27 @@ std::string PercentEncode(absl::string_view str) {
 
 namespace {
 
+// Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
+// See https://tools.ietf.org/html/rfc3986#section-3.4
+bool IsPCharString(absl::string_view str) {
+  return (str.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                "abcdefghijklmnopqrstuvwxyz"
+                                "0123456789"
+                                "?/:@\\-._~!$&'()*+,;=%") ==
+          absl::string_view::npos);
+}
+
+absl::Status MakeInvalidURIStatus(absl::string_view part_name,
+                                  absl::string_view uri,
+                                  absl::string_view extra) {
+  return absl::InvalidArgumentError(absl::StrFormat(
+      "Could not parse '%s' from uri '%s'. %s", part_name, uri, extra));
+}
+}  // namespace
+
 // Similar to `grpc_permissive_percent_decode_slice`, this %-decodes all valid
 // triplets, and passes through the rest verbatim.
-std::string PercentDecode(absl::string_view str) {
+std::string URI::PercentDecode(absl::string_view str) {
   if (str.empty() || !absl::StrContains(str, "%")) {
     return std::string(str);
   }
@@ -94,24 +112,6 @@ std::string PercentDecode(absl::string_view str) {
   }
   return out;
 }
-
-// Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
-// See https://tools.ietf.org/html/rfc3986#section-3.4
-bool IsPCharString(absl::string_view str) {
-  return (str.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                "abcdefghijklmnopqrstuvwxyz"
-                                "0123456789"
-                                "?/:@\\-._~!$&'()*+,;=%") ==
-          absl::string_view::npos);
-}
-
-absl::Status MakeInvalidURIStatus(absl::string_view part_name,
-                                  absl::string_view uri,
-                                  absl::string_view extra) {
-  return absl::InvalidArgumentError(absl::StrFormat(
-      "Could not parse '%s' from uri '%s'. %s", part_name, uri, extra));
-}
-}  // namespace
 
 absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   absl::StatusOr<std::string> decoded;
