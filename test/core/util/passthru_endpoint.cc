@@ -227,11 +227,11 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     }
 
     if (max_readable > 0) {
-      GPR_ASSERT(max_readable >= split_length);
+      GPR_ASSERT(max_readable >= static_cast<uint64_t>(split_length));
       max_readable -= split_length;
     }
 
-    GPR_ASSERT(max_writable >= split_length);
+    GPR_ASSERT(max_writable >= static_cast<uint64_t>(split_length));
     max_writable -= split_length;
   }
   if (immediate_bytes_read > 0) {
@@ -269,7 +269,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     // Copy slices into m->pending_write_op.slices
     m->pending_write_op.slices = &m->write_buffer;
     GPR_ASSERT(m->pending_write_op.slices->count == 0);
-    for (int i = 0; i < slices->count; i++) {
+    for (int i = 0; i < static_cast<int>(slices->count); i++) {
       grpc_slice_buffer_add_indexed(m->pending_write_op.slices,
         grpc_slice_copy(slices->slices[i]));
     }
