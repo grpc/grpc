@@ -101,7 +101,9 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
   grpc_slice_buffer_move_first_no_ref(
     &m->read_buffer, readable_length, m->pending_read_op.slices);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb, error);
-  m->bytes_read_so_far += readable_length;
+  if (m->parent->simulate_channel_actions) {
+    m->bytes_read_so_far += readable_length;
+  }
   m->pending_read_op.is_armed = false;
 }
 
@@ -171,18 +173,25 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   half* other = other_half(m);
   uint64_t max_writable = std::min(m->pending_write_op.slices->length,
     m->parent->channel_effects->allowed_write_bytes - m->bytes_written_so_far);
-  uint64_t max_readable = other->parent->channel_effects->allowed_read_bytes - other->bytes_read_so_far;
+  uint64_t max_readable =
+    other->parent->channel_effects->allowed_read_bytes -
+    other->bytes_read_so_far;
   uint64_t immediate_bytes_read = other->on_read != nullptr ?
     std::min(max_readable, max_writable) : 0;
 
   GPR_ASSERT(max_writable > 0);
   GPR_ASSERT(max_readable >= 0);
   // At the end of this process, we should have written max_writable bytes;
-  m->bytes_written_so_far += max_writable;
+  if (m->parent->simulate_channel_actions) {
+    m->bytes_written_so_far += max_writable;
+  }
   // Estimate if the original write would still be pending at the end of this
   // process
   bool would_write_be_pending =
     max_writable < m->pending_write_op.slices->length;
+  if (!m->parent->simulate_channel_actions) {
+    GPR_ASSERT(!would_write_be_pending);
+  }
   grpc_slice_buffer* slices = m->pending_write_op.slices;
   grpc_slice_buffer* dest = other->on_read != nullptr ?
     other->on_read_out : &other->read_buffer;
@@ -227,7 +236,9 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   }
   if (immediate_bytes_read > 0) {
     GPR_ASSERT(!other->pending_read_op.is_armed);
-    other->bytes_read_so_far += immediate_bytes_read;
+    if (m->parent->simulate_channel_actions) {
+      other->bytes_read_so_far += immediate_bytes_read;
+    }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, other->on_read, error);
     other->on_read = nullptr;
   }
@@ -379,6 +390,8 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->on_read = nullptr;
   m->bytes_read_so_far = 0;
   m->bytes_written_so_far = 0;
+  m->pending_write_op.is_armed = false;
+  m->pending_read_op.is_armed = false;
   std::string name =
       absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
   m->slice_allocator = slice_allocator;
