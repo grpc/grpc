@@ -476,7 +476,7 @@ class Call : public std::enable_shared_from_this<Call> {
   Validator* FinishedBatchValidator(uint8_t has_ops) {
     ++pending_ops_;
     auto self = shared_from_this();
-    return MakeValidator([self, has_ops](bool success) {
+    return MakeValidator([self, has_ops](bool /*success*/) {
       --self->pending_ops_;
       if (has_ops & (1u << GRPC_OP_RECV_MESSAGE)) {
         self->pending_recv_message_op_ = false;
