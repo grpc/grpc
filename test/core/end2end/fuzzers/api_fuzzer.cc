@@ -799,7 +799,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       }
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(
-        std::max(1, MAX_WAIT_MS/1000), GPR_TIMESPAN));
+        std::max<int64_t>(1, (int64_t)MAX_WAIT_MS/1000), GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
       continue;

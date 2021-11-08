@@ -95,7 +95,7 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
   // This delayed processing should only be invoked when read_buffer has
   // something in it.
   GPR_ASSERT(m->read_buffer.count > 0);
-  uint64_t readable_length = std::min(m->read_buffer.length,
+  uint64_t readable_length = std::min<uint64_t>(m->read_buffer.length,
     m->parent->channel_effects->allowed_read_bytes - m->bytes_read_so_far);
   GPR_ASSERT(readable_length > 0);
   grpc_slice_buffer_move_first_no_ref(
@@ -171,13 +171,13 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   }
 
   half* other = other_half(m);
-  uint64_t max_writable = std::min(m->pending_write_op.slices->length,
+  uint64_t max_writable = std::min<uint64_t>(m->pending_write_op.slices->length,
     m->parent->channel_effects->allowed_write_bytes - m->bytes_written_so_far);
   uint64_t max_readable =
     other->parent->channel_effects->allowed_read_bytes -
     other->bytes_read_so_far;
   uint64_t immediate_bytes_read = other->on_read != nullptr ?
-    std::min(max_readable, max_writable) : 0;
+    std::min<uint64_t>(max_readable, max_writable) : 0;
 
   GPR_ASSERT(max_writable > 0);
   GPR_ASSERT(max_readable >= 0);
@@ -202,17 +202,17 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     grpc_slice split1, split2;
     ssize_t split_length = 0;
     if (slice_length <= max_readable) {
-      split_length = std::min(slice_length, max_writable);
+      split_length = std::min<uint64_t>(slice_length, max_writable);
     } else if (max_readable > 0) {
       // slice_length > max_readable
-      split_length = std::min(max_readable, max_writable);
+      split_length = std::min<uint64_t>(max_readable, max_writable);
     } else {
       // slice_length still > max_readable but max_readable is 0.
       // In this case put the bytes into other->read_buffer. During a future
       // read if max_readable still remains zero at the time of read, the
       // pending read logic will kick in.
       dest = &other->read_buffer;
-      split_length = std::min(slice_length, max_writable);
+      split_length = std::min<uint64_t>(slice_length, max_writable);
     }
 
     grpc_slice_copy_split(slice, split_length, split1, split2);
@@ -335,7 +335,7 @@ void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
 static void me_destroy(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
   gpr_mu_lock(&p->mu);
-  if (0 == --p->halves && !p->channel_effects->actions.size()) {
+  if (0 == --p->halves && p->channel_effects->actions.empty()) {
     // no pending channel actions exist
     gpr_mu_unlock(&p->mu);
     grpc_passthru_endpoint_destroy(p);
@@ -443,7 +443,7 @@ static void sched_next_channel_action_locked(half* m);
 static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
   half* m = reinterpret_cast<half*>(arg);
   gpr_mu_lock(&m->parent->mu);
-  GPR_ASSERT(m->parent->channel_effects->actions.size());
+  GPR_ASSERT(!m->parent->channel_effects->actions.empty());
   if (m->parent->halves == 0) {
     gpr_mu_unlock(&m->parent->mu);
     grpc_passthru_endpoint_destroy(m->parent);
@@ -463,7 +463,7 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 }
 
 static void sched_next_channel_action_locked(half* m) {
-  if (!m->parent->channel_effects->actions.size()) {
+  if (m->parent->channel_effects->actions.empty()) {
     m->parent->channel_effects->on_complete();
     return;
   }
