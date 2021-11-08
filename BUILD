@@ -1592,11 +1592,18 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
     ],
-    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + [
+    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS + [
         "src/core/lib/event_engine/event_engine_factory.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+    ],
     deps = [
+        "gpr_base",
         "gpr_platform",
+        "grpc_codegen",
     ],
 )
 
