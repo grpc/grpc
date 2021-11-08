@@ -85,7 +85,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Install dotnet SDK
-ENV DOTNET_SDK_VERSION 2.1.816
+ENV DOTNET_SDK_VERSION 5.0.402
 RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
