@@ -3844,6 +3844,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_codegen_base",
+    external_deps = [
+        "absl/status",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/async_stream.h",
@@ -3927,9 +3930,6 @@ grpc_cc_library(
         "grpc++_internal_hdrs_only",
         "grpc_codegen",
     ],
-    external_deps = [
-        "absl/status"
-    ]
 )
 
 grpc_cc_library(
