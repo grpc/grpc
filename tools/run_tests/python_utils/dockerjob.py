@@ -18,10 +18,10 @@ from __future__ import print_function
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import time
 import uuid
-import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import jobset
