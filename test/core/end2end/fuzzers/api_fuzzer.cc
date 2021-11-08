@@ -43,13 +43,13 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
-#define MAX_ADVANCE_TIME_MICROS 24 * 3600 * 365 * 1000000 // 1 year
+#define MAX_ADVANCE_TIME_MICROS (24 * 3600 * 365 * 1000000) // 1 year
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_WAIT_MS 24 * 3600 * 365 * 1000 // 1 year
+#define MAX_WAIT_MS (24 * 3600 * 365 * 1000) // 1 year
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_READABLE_BYTES 2* 1024 * 1024 // 2GB
+#define MAX_ADD_N_READABLE_BYTES (2* 1024 * 1024) // 2GB
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_WRITABLE_BYTES 2* 1024 * 1024 // 2GB
+#define MAX_ADD_N_WRITABLE_BYTES (2* 1024 * 1024) // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -799,7 +799,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       }
 
       g_now = gpr_time_add(g_now, gpr_time_from_seconds(
-        std::max<int64_t>(1, (int64_t)MAX_WAIT_MS/1000), GPR_TIMESPAN));
+        std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS/1000), GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
       continue;
@@ -828,8 +828,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       case api_fuzzer::Action::kAdvanceTime: {
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(
-              std::min((uint64_t)action.advance_time(),
-              (uint64_t)MAX_ADVANCE_TIME_MICROS),
+              std::min(static_cast<uint64_t>(action.advance_time()),
+              static_cast<uint64_t>(MAX_ADVANCE_TIME_MICROS)),
               GPR_TIMESPAN));
         break;
       }
@@ -857,13 +857,13 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
               g_channel_actions.push_back(
                 {
                   std::min(action.create_channel().channel_actions(i).wait_ms(),
-                    (uint64_t)MAX_WAIT_MS),
+                    static_cast<uint64_t>(MAX_WAIT_MS)),
                   std::min(action.create_channel()
                     .channel_actions(i).add_n_bytes_writable(),
-                    (uint64_t)MAX_ADD_N_WRITABLE_BYTES),
+                    static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTE)),
                   std::min(action.create_channel()
                     .channel_actions(i).add_n_bytes_readable(),
-                    (uint64_t)MAX_ADD_N_READABLE_BYTES),
+                    static_cast<uint64_t>(MAX_ADD_N_READABLE_BYTES)),
                 });
           }
           GPR_ASSERT(g_channel != nullptr);
