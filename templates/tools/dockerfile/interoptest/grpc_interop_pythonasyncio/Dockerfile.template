@@ -14,7 +14,9 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../../python_bullseye.include"/>
+  <%include file="../../python_bullseye_base.include"/>
 
   RUN apt-get update && apt-get install -y python3 python3-pip python3-all-dev
-  RUN ln -s $(which python2) /usr/bin/python
+  RUN ln -s $(which python3) /usr/bin/python
+
+  <%include file="../../gcp_api_libraries.include"/>

@@ -17,10 +17,10 @@
   FROM gcc:4.9
   
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../python_deps.include"/>
-  <%include file="../../gcp_api_libraries.include"/>
-  <%include file="../../cmake_jessie_backports.include"/>
+  <%include file="../../run_tests_python_deps.include"/>
+  <%include file="../../cxx_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
-  
+  <%include file="../../cmake_jessie_backports.include"/>
+
   # Define the default command.
   CMD ["bash"]
