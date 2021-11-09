@@ -470,25 +470,6 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   resolver_->MaybeRemoveUnusedClusters();
 }
 
-const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
-    const std::string& instance_name,
-    const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
-    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight) {
-  // Check ClusterWeight, if any.
-  if (cluster_weight != nullptr) {
-    auto it = cluster_weight->typed_per_filter_config.find(instance_name);
-    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
-  }
-  // Check Route.
-  auto it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) return &it->second;
-  // Check VirtualHost.
-  it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) return &it->second;
-  // Not found.
-  return nullptr;
-}
-
 grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsApi::Route& route,
     const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight,
@@ -545,39 +526,15 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
                         route_action.max_stream_duration->nanos));
   }
   // Handle xDS HTTP filters.
-  std::map<std::string, std::vector<std::string>> per_filter_configs;
-  grpc_channel_args* args = grpc_channel_args_copy(resolver_->args_);
-  for (const auto& http_filter :
-       resolver_->current_listener_.http_connection_manager.http_filters) {
-    // Find filter.  This is guaranteed to succeed, because it's checked
-    // at config validation time in the XdsApi code.
-    const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(
-            http_filter.config.config_proto_type_name);
-    GPR_ASSERT(filter_impl != nullptr);
-    // If there is not actually any C-core filter associated with this
-    // xDS filter, then it won't need any config, so skip it.
-    if (filter_impl->channel_filter() == nullptr) continue;
-    // Allow filter to add channel args that may affect service config
-    // parsing.
-    args = filter_impl->ModifyChannelArgs(args);
-    // Find config override, if any.
-    const XdsHttpFilterImpl::FilterConfig* config_override =
-        FindFilterConfigOverride(http_filter.name,
-                                 resolver_->current_virtual_host_, route,
-                                 cluster_weight);
-    // Generate service config for filter.
-    auto method_config_field =
-        filter_impl->GenerateServiceConfig(http_filter.config, config_override);
-    if (!method_config_field.ok()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "failed to generate method config for HTTP filter ", http_filter.name,
-          ": ", method_config_field.status().ToString()));
-    }
-    per_filter_configs[method_config_field->service_config_field_name]
-        .push_back(method_config_field->element);
+  XdsRouting::GeneratePerHttpFilterConfigsResult result =
+      XdsRouting::GeneratePerHTTPFilterConfigs(
+          resolver_->current_listener_.http_connection_manager.http_filters,
+          resolver_->current_virtual_host_, route, cluster_weight,
+          grpc_channel_args_copy(resolver_->args_));
+  if (result.error != GRPC_ERROR_NONE) {
+    return result.error;
   }
-  for (const auto& p : per_filter_configs) {
+  for (const auto& p : result.per_filter_configs) {
     fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
                                      absl::StrJoin(p.second, ",\n"),
                                      "\n    ]"));
@@ -595,9 +552,9 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    *method_config = ServiceConfig::Create(args, json.c_str(), &error);
+    *method_config = ServiceConfig::Create(result.args, json.c_str(), &error);
   }
-  grpc_channel_args_destroy(args);
+  grpc_channel_args_destroy(result.args);
   return error;
 }
 

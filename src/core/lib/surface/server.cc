@@ -1595,8 +1595,7 @@ void grpc_server_set_config_fetcher(
   GRPC_API_TRACE("grpc_server_set_config_fetcher(server=%p, config_fetcher=%p)",
                  2, (server, server_config_fetcher));
   server->core_server->set_config_fetcher(
-      grpc_core::RefCountedPtr<grpc_server_config_fetcher>(
-          server_config_fetcher));
+      std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
 }
 
 void grpc_server_config_fetcher_destroy(
