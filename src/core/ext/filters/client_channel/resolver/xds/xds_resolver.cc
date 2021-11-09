@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
@@ -60,16 +59,15 @@ class XdsResolver : public Resolver {
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set),
         xds_client_(std::move(xds_client)),
-        server_name_(data_plane_authority),
         lds_resource_name_(std::move(lds_resource_name)),
         data_plane_authority_(std::move(data_plane_authority)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO,
               "[xds_resolver %p] created for URI scheme %s path %s authority "
-              "%s server name %s lds resource name %s data plane authority %s",
+              "%s lds resource name %s data plane authority %s",
               this, args.uri.scheme().c_str(), args.uri.path().c_str(),
-              args.uri.authority().c_str(), server_name_.c_str(),
-              lds_resource_name_.c_str(), data_plane_authority_.c_str());
+              args.uri.authority().c_str(), lds_resource_name_.c_str(),
+              data_plane_authority_.c_str());
     }
   }
 
@@ -270,7 +268,6 @@ class XdsResolver : public Resolver {
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
   RefCountedPtr<XdsClient> xds_client_;
-  std::string server_name_;
   std::string lds_resource_name_;
   std::string data_plane_authority_;
 
@@ -800,7 +797,7 @@ void XdsResolver::StartLocked() {
                                    interested_parties_);
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
-  xds_client_->WatchListenerData(server_name_, std::move(watcher));
+  xds_client_->WatchListenerData(lds_resource_name_, std::move(watcher));
 }
 
 void XdsResolver::ShutdownLocked() {
@@ -809,12 +806,14 @@ void XdsResolver::ShutdownLocked() {
   }
   if (xds_client_ != nullptr) {
     if (listener_watcher_ != nullptr) {
-      xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
+      xds_client_->CancelListenerDataWatch(lds_resource_name_,
+                                           listener_watcher_,
                                            /*delay_unsubscription=*/false);
     }
     if (route_config_watcher_ != nullptr) {
-      xds_client_->CancelRouteConfigDataWatch(
-          server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+      xds_client_->CancelRouteConfigDataWatch(route_config_name_,
+                                              route_config_watcher_,
+                                              /*delay_unsubscription=*/false);
     }
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties_);
@@ -863,10 +862,10 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
   XdsApi::RdsUpdate::VirtualHost* vhost =
-      rds_update.FindVirtualHostForDomain(server_name_);
+      rds_update.FindVirtualHostForDomain(data_plane_authority_);
   if (vhost == nullptr) {
     OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("could not find VirtualHost for ", server_name_,
+        absl::StrCat("could not find VirtualHost for ", data_plane_authority_,
                      " in RouteConfiguration")));
     return;
   }
