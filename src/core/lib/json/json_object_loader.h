@@ -83,27 +83,27 @@ struct TypeVtable {
 
 template <typename T>
 struct TypeVtableImpl {
-  static TypeVtable* vtable() {
-    static TypeVtable vtable{
-        // create
-        []() -> void* { return new T(); },
-        // destroy
-        [](void* ptr) { delete static_cast<T*>(ptr); },
-        // push_to_vec
-        [](void* ptr, void* vec) {
-          auto* vec_ptr = static_cast<std::vector<T>*>(vec);
-          auto* src_ptr = static_cast<T*>(ptr);
-          vec_ptr->emplace_back(std::move(*src_ptr));
-        },
-        // insert_to_map
-        [](std::string key, void* ptr, void* map) {
-          auto* map_ptr = static_cast<std::map<std::string, T>*>(map);
-          auto* src_ptr = static_cast<T*>(ptr);
-          map_ptr->emplace(std::move(key), std::move(*src_ptr));
-        },
-    };
-    return &vtable;
-  }
+  static const TypeVtable vtable;
+};
+
+template <typename T>
+const TypeVtable TypeVtableImpl<T>::vtable{
+    // create
+    []() -> void* { return new T(); },
+    // destroy
+    [](void* ptr) { delete static_cast<T*>(ptr); },
+    // push_to_vec
+    [](void* ptr, void* vec) {
+      auto* vec_ptr = static_cast<std::vector<T>*>(vec);
+      auto* src_ptr = static_cast<T*>(ptr);
+      vec_ptr->emplace_back(std::move(*src_ptr));
+    },
+    // insert_to_map
+    [](std::string key, void* ptr, void* map) {
+      auto* map_ptr = static_cast<std::map<std::string, T>*>(map);
+      auto* src_ptr = static_cast<T*>(ptr);
+      map_ptr->emplace(std::move(key), std::move(*src_ptr));
+    },
 };
 
 struct TypeRef;
@@ -195,7 +195,7 @@ class JsonObjectLoader final {
         [](const void* arg) -> json_detail::TypeRef {
           const auto* loader = static_cast<const JsonObjectLoader*>(arg);
           return json_detail::TypeRef{
-              json_detail::TypeVtableImpl<T>::vtable(),
+              &json_detail::TypeVtableImpl<T>::vtable,
               loader->elements_,
               kElemCount,
               loader->get_type_ref_fns_,

@@ -127,15 +127,15 @@ void TypeRef::WithLoaderForTypeData(
       case Element::kMap:
         abort();  // not reachable
       case Element::kInt32:
-        vtable = TypeVtableImpl<int32_t>::vtable();
+        vtable = &TypeVtableImpl<int32_t>::vtable;
         convert_number = ConvertNumber<int32_t>;
         break;
       case Element::kUint32:
-        vtable = TypeVtableImpl<uint32_t>::vtable();
+        vtable = &TypeVtableImpl<uint32_t>::vtable;
         convert_number = ConvertNumber<uint32_t>;
         break;
       case Element::kString:
-        vtable = TypeVtableImpl<std::string>::vtable();
+        vtable = &TypeVtableImpl<std::string>::vtable;
         convert_string = ConvertString<std::string>;
         break;
     }
