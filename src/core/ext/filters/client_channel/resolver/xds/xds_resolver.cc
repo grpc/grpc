@@ -1047,7 +1047,7 @@ class XdsResolverFactory : public ResolverFactory {
                                      "/envoy.config.listener.v3.Listener/%s");
       }
       lds_resource_name = absl::StrReplaceAll(
-          name_template, {{"%s", PercentEncode(data_plane_authority)}});
+          name_template, {{"%s", URI::PercentEncode(data_plane_authority)}});
       gpr_log(GPR_INFO, "donna name template %s and lds_resource_name %s",
               name_template.c_str(), lds_resource_name.c_str());
     } else {
@@ -1060,7 +1060,7 @@ class XdsResolverFactory : public ResolverFactory {
         name_template = "%s";
       }
       if (absl::StartsWith(name_template, "xdstp:")) {
-        target_hostname = PercentEncode(target_hostname);
+        target_hostname = URI::PercentEncode(target_hostname);
       }
       lds_resource_name =
           absl::StrReplaceAll(name_template, {{"%s", target_hostname}});

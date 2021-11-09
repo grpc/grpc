@@ -35,11 +35,14 @@
 
 namespace grpc_core {
 
+namespace {
+
 bool ShouldEscape(unsigned char c) {
   // Unreserved characters RFC 3986 section 2.3 Unreserved Characters.
   if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-      (c >= '0' && c <= '9'))
+      (c >= '0' && c <= '9')) {
     return false;
+  }
   switch (c) {
     case '-':
     case '_':
@@ -49,23 +52,6 @@ bool ShouldEscape(unsigned char c) {
   }
   return true;
 }
-
-std::string PercentEncode(absl::string_view str) {
-  std::string out;
-  for (unsigned char c : str) {
-    if (ShouldEscape(c)) {
-      std::string hex = absl::BytesToHexString(absl::StrCat(c));
-      GPR_ASSERT(hex.size() == 2);
-      out.push_back('%');
-      out.append(hex);
-    } else {
-      out.push_back(c);
-    }
-  }
-  return out;
-}
-
-namespace {
 
 // Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
 // See https://tools.ietf.org/html/rfc3986#section-3.4
@@ -84,6 +70,21 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
       "Could not parse '%s' from uri '%s'. %s", part_name, uri, extra));
 }
 }  // namespace
+
+std::string URI::PercentEncode(absl::string_view str) {
+  std::string out;
+  for (unsigned char c : str) {
+    if (ShouldEscape(c)) {
+      std::string hex = absl::BytesToHexString(absl::StrCat(c));
+      GPR_ASSERT(hex.size() == 2);
+      out.push_back('%');
+      out.append(hex);
+    } else {
+      out.push_back(c);
+    }
+  }
+  return out;
+}
 
 // Similar to `grpc_permissive_percent_decode_slice`, this %-decodes all valid
 // triplets, and passes through the rest verbatim.
