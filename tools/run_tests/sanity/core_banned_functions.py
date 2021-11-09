@@ -66,11 +66,11 @@ for root, dirs, files in os.walk('src/core'):
             continue
         with open(path) as f:
             text = f.read()
-        for banned, exceptions in BANNED_EXCEPT.items():
+        for banned, exceptions in list(BANNED_EXCEPT.items()):
             if path in exceptions:
                 continue
             if banned in text:
-                print('Illegal use of "%s" in %s' % (banned, path))
+                print(('Illegal use of "%s" in %s' % (banned, path)))
                 errors += 1
 
 assert errors == 0

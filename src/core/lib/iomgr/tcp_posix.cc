@@ -1719,7 +1719,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
                                tcp_tx_zerocopy_send_bytes_thresh);
   tcp->base.vtable = &vtable;
-  tcp->peer_string = std::string(peer_string.data(), peer_string.size());
+  tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
                           ->memory_quota()
