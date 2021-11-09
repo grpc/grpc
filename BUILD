@@ -1591,6 +1591,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_base",
+    srcs = [
+        "src/core/lib/event_engine/event_engine.cc",
+    ],
+    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS + [
+        "src/core/lib/event_engine/event_engine_factory.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+    ],
+    deps = [
+        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
+    ],
+)
+
+grpc_cc_library(
+    name = "default_event_engine_factory",
+    srcs = [
+        "src/core/lib/event_engine/event_engine_factory.cc",
+    ],
+    hdrs = [],
+    external_deps = [
+        # TODO(hork): uv, in a subsequent PR
+    ],
+    deps = [
+        "event_engine_base",
+        "gpr_base",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1616,7 +1652,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/channel_args_endpoint_config.cc",
-        "src/core/lib/event_engine/event_engine.cc",
         "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
@@ -1637,14 +1672,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
-        "src/core/lib/iomgr/event_engine/closure.cc",
-        "src/core/lib/iomgr/event_engine/endpoint.cc",
-        "src/core/lib/iomgr/event_engine/iomgr.cc",
-        "src/core/lib/iomgr/event_engine/pollset.cc",
-        "src/core/lib/iomgr/event_engine/resolved_address_internal.cc",
-        "src/core/lib/iomgr/event_engine/resolver.cc",
-        "src/core/lib/iomgr/event_engine/tcp.cc",
-        "src/core/lib/iomgr/event_engine/timer.cc",
         "src/core/lib/iomgr/executor/mpmcqueue.cc",
         "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
@@ -1748,6 +1775,18 @@ grpc_cc_library(
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
         "src/core/lib/uri/uri_parser.cc",
+    ] +
+    # TODO(hork): delete the iomgr glue code when EventEngine is fully
+    # integrated, or when it becomes obvious the glue code is unnecessary.
+    [
+        "src/core/lib/iomgr/event_engine/closure.cc",
+        "src/core/lib/iomgr/event_engine/endpoint.cc",
+        "src/core/lib/iomgr/event_engine/iomgr.cc",
+        "src/core/lib/iomgr/event_engine/pollset.cc",
+        "src/core/lib/iomgr/event_engine/resolved_address_internal.cc",
+        "src/core/lib/iomgr/event_engine/resolver.cc",
+        "src/core/lib/iomgr/event_engine/tcp.cc",
+        "src/core/lib/iomgr/event_engine/timer.cc",
     ],
     hdrs = [
         "src/core/lib/transport/error_utils.h",
@@ -1767,7 +1806,6 @@ grpc_cc_library(
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/status_util.h",
-        "src/core/lib/slice/slice_split.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
@@ -1796,12 +1834,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
-        "src/core/lib/iomgr/event_engine/closure.h",
-        "src/core/lib/iomgr/event_engine/endpoint.h",
-        "src/core/lib/iomgr/event_engine/iomgr.h",
-        "src/core/lib/iomgr/event_engine/pollset.h",
-        "src/core/lib/iomgr/event_engine/promise.h",
-        "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
@@ -1854,6 +1886,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
+        "src/core/lib/slice/slice_split.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/builtins.h",
         "src/core/lib/surface/call.h",
@@ -1896,6 +1929,15 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
+    ] +
+    # TODO(hork): delete the iomgr glue code when EventEngine is fully
+    # integrated, or when it becomes obvious the glue code is unnecessary.
+    [
+        "src/core/lib/iomgr/event_engine/closure.h",
+        "src/core/lib/iomgr/event_engine/endpoint.h",
+        "src/core/lib/iomgr/event_engine/pollset.h",
+        "src/core/lib/iomgr/event_engine/promise.h",
+        "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -1918,8 +1960,10 @@ grpc_cc_library(
         "chunked_vector",
         "closure",
         "config",
+        "default_event_engine_factory",
         "dual_ref_counted",
         "error",
+        "event_engine_base",
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",

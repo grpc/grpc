@@ -11,27 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
+
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/support/log.h>
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
-                                              socklen_t size)
-    : size_(size) {
-  GPR_ASSERT(size <= sizeof(address_));
-  memcpy(&address_, address, size);
-}
-
-const struct sockaddr* EventEngine::ResolvedAddress::address() const {
-  return reinterpret_cast<const struct sockaddr*>(address_);
-}
-
-socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
+/// Access the shared global EventEngine instance.
+///
+/// The concept of a global EventEngine may go away in a post-iomgr world.
+/// Strongly consider whether you could use \a CreateEventEngine instead.
+EventEngine* GetDefaultEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H

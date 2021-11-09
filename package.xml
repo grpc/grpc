@@ -770,6 +770,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
@@ -901,7 +903,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/iomgr.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/iomgr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/promise.h" role="src" />
