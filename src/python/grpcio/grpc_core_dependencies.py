@@ -365,6 +365,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/debug/trace.cc',
     'src/core/lib/event_engine/endpoint_config.cc',
     'src/core/lib/event_engine/event_engine.cc',
+    'src/core/lib/event_engine/event_engine_factory.cc',
     'src/core/lib/event_engine/sockaddr.cc',
     'src/core/lib/gpr/alloc.cc',
     'src/core/lib/gpr/atm.cc',
