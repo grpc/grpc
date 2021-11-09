@@ -44,7 +44,7 @@ extern TraceFlag grpc_xds_client_refcount_trace;
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
   // Listener data watcher interface.  Implemented by callers.
-  class ListenerWatcherInterface {
+  class ListenerWatcherInterface : public RefCounted<ListenerWatcherInterface> {
    public:
     virtual ~ListenerWatcherInterface() = default;
     virtual void OnListenerChanged(XdsApi::LdsUpdate listener) = 0;

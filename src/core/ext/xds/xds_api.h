@@ -43,6 +43,8 @@
 
 namespace grpc_core {
 
+bool XdsRbacEnabled();
+
 class XdsClient;
 
 class XdsApi {

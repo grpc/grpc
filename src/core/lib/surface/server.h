@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
@@ -110,7 +111,7 @@ class Server : public InternallyRefCounted<Server> {
   }
 
   void set_config_fetcher(
-      RefCountedPtr<grpc_server_config_fetcher> config_fetcher) {
+      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
     config_fetcher_ = std::move(config_fetcher);
   }
 
@@ -411,7 +412,7 @@ class Server : public InternallyRefCounted<Server> {
 
   grpc_channel_args* const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
-  RefCountedPtr<grpc_server_config_fetcher> config_fetcher_;
+  std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
@@ -464,10 +465,10 @@ struct grpc_server {
   grpc_core::OrphanablePtr<grpc_core::Server> core_server;
 };
 
-struct grpc_server_config_fetcher
-    : public grpc_core::RefCounted<grpc_server_config_fetcher> {
+struct grpc_server_config_fetcher {
  public:
-  class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
+  class ConnectionManager
+      : public grpc_core::DualRefCounted<ConnectionManager> {
    public:
     // Ownership of \a args is transfered.
     virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
@@ -486,6 +487,8 @@ struct grpc_server_config_fetcher
     // only resume when UpdateConfig() is invoked.
     virtual void StopServing() = 0;
   };
+
+  virtual ~grpc_server_config_fetcher() = default;
 
   virtual void StartWatch(std::string listening_address,
                           std::unique_ptr<WatcherInterface> watcher) = 0;

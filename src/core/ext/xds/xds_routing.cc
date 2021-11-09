@@ -172,9 +172,38 @@ absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
                                        concatenated_value);
 }
 
-std::map<std::string, std::vector<std::string>> GeneratePerHTTPFilterConfigs(const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter> &filters, grpc_channel_args* args, const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
+namespace {
+
+const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
+    const std::string& instance_name,
+    const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
     const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight) {
+  // Check ClusterWeight, if any.
+  if (cluster_weight != nullptr) {
+    auto it = cluster_weight->typed_per_filter_config.find(instance_name);
+    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
+  }
+  // Check Route.
+  auto it = route.typed_per_filter_config.find(instance_name);
+  if (it != route.typed_per_filter_config.end()) return &it->second;
+  // Check VirtualHost.
+  it = vhost.typed_per_filter_config.find(instance_name);
+  if (it != vhost.typed_per_filter_config.end()) return &it->second;
+  // Not found.
+  return nullptr;
+}
+
+}  // namespace
+
+XdsRouting::GeneratePerHttpFilterConfigsResult
+XdsRouting::GeneratePerHTTPFilterConfigs(
+    const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
+        http_filters,
+    const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
+    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight,
+    grpc_channel_args* args) {
   GeneratePerHttpFilterConfigsResult result;
+  result.args = args;
   for (const auto& http_filter : http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
@@ -187,20 +216,26 @@ std::map<std::string, std::vector<std::string>> GeneratePerHTTPFilterConfigs(con
     if (filter_impl->channel_filter() == nullptr) continue;
     // Allow filter to add channel args that may affect service config
     // parsing.
-    args = filter_impl->ModifyChannelArgs(args);
+    args = filter_impl->ModifyChannelArgs(result.args);
     // Find config override, if any.
     const XdsHttpFilterImpl::FilterConfig* config_override =
-        FindFilterConfigOverride(http_filter.name, vhost, route, cluster_weight);
+        FindFilterConfigOverride(http_filter.name, vhost, route,
+                                 cluster_weight);
     // Generate service config for filter.
     auto method_config_field =
         filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      grpc_channel_args_destroy(result.args);
+      result.args = nullptr;
+      result.error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "failed to generate method config for HTTP filter ", http_filter.name,
           ": ", method_config_field.status().ToString()));
+      break;
     }
     result.per_filter_configs[method_config_field->service_config_field_name]
         .push_back(method_config_field->element);
+  }
+  return result;
 }
 
 }  // namespace grpc_core
