@@ -986,8 +986,9 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 class XdsResolverFactory : public ResolverFactory {
  public:
   bool IsValidUri(const URI& uri) const override {
-    if (GPR_UNLIKELY(!uri.authority().empty())) {
-      gpr_log(GPR_ERROR, "URI authority not supported");
+    if (uri.path().empty() || uri.path().back() == '/') {
+      gpr_log(GPR_ERROR,
+              "URI path does not contain valid data plane authority");
       return false;
     }
     return true;
@@ -998,9 +999,9 @@ class XdsResolverFactory : public ResolverFactory {
     // also used to select the right VirtualHost from the RouteConfiguration.
     // We need to take the part of the URI path following the last
     // "/" character or the entire path if the path contains no "/" character.
-    std::vector<std::string> v = absl::StrSplit(uri.path(), '/');
-    GPR_ASSERT(!v.empty());
-    return v[v.size() - 1];
+    size_t pos = uri.path().find_last_of('/');
+    if (pos == uri.path().npos) return uri.path();
+    return uri.path().substr(pos + 1);
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
@@ -1022,53 +1023,49 @@ class XdsResolverFactory : public ResolverFactory {
     std::string lds_resource_name;
     std::string data_plane_authority;
     std::string authority;
-    if (args.uri.scheme() == "xds") {
-      std::string target_hostname(absl::StripPrefix(args.uri.path(), "/"));
-      data_plane_authority = GetDefaultAuthority(args.uri);
-      gpr_log(GPR_INFO, "donna target_hostname is %s", target_hostname.c_str());
-      // always empty: if (!args.uri.authority().empty()) {
-      std::vector<std::string> parts_of_uri =
-          absl::StrSplit(target_hostname, "/");
-      GPR_ASSERT(parts_of_uri.size() == 1 || parts_of_uri.size() == 2);
-      if (parts_of_uri.size() == 2) {
-        gpr_log(GPR_INFO, "donna uri authority is not empty");
-        authority = parts_of_uri[0];
-        auto authority_config =
-            xds_client->bootstrap().LookupAuthority(authority);
-        if (authority_config == absl::nullopt) {
-          gpr_log(GPR_ERROR,
-                  "Invalid target URI -- authority not found for %s.",
-                  target_hostname.c_str());
-          return nullptr;
-        }
-        std::string name_template =
-            authority_config->client_listener_resource_name_template;
-        if (name_template.empty()) {
-          name_template = absl::StrCat("xdstp://", authority,
-                                       "/envoy.config.listener.v3.Listener/%s");
-        }
-        lds_resource_name = absl::StrReplaceAll(
-            name_template, {{"%s", PercentEncode(data_plane_authority)}});
-        gpr_log(GPR_INFO, "donna name template %s and lds_resource_name %s",
-                name_template.c_str(), lds_resource_name.c_str());
-      } else {
-        gpr_log(GPR_INFO, "donna uri authority is empty");
-        // args.uri.authority().empty() and uri path does not contain authority
-        // case
-        std::string name_template =
-            xds_client->bootstrap()
-                .client_default_listener_resource_name_template();
-        if (name_template.empty()) {
-          name_template = "%s";
-        }
-        if (absl::StartsWith(name_template, "xdstp:")) {
-          target_hostname = PercentEncode(target_hostname);
-        }
-        lds_resource_name =
-            absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
+    std::string target_hostname(absl::StripPrefix(args.uri.path(), "/"));
+    data_plane_authority = GetDefaultAuthority(args.uri);
+    gpr_log(GPR_INFO, "donna target_hostname is %s", target_hostname.c_str());
+    std::vector<std::string> parts_of_uri =
+        absl::StrSplit(target_hostname, "/");
+    GPR_ASSERT(parts_of_uri.size() == 1 || parts_of_uri.size() == 2);
+    if (parts_of_uri.size() == 2) {
+      // target_uri.authority is set case
+      gpr_log(GPR_INFO, "donna uri authority is not empty");
+      authority = parts_of_uri[0];
+      auto authority_config =
+          xds_client->bootstrap().LookupAuthority(authority);
+      if (authority_config == absl::nullopt) {
+        gpr_log(GPR_ERROR, "Invalid target URI -- authority not found for %s.",
+                target_hostname.c_str());
+        return nullptr;
       }
-      data_plane_authority = GetDefaultAuthority(args.uri);
+      std::string name_template =
+          authority_config->client_listener_resource_name_template;
+      if (name_template.empty()) {
+        name_template = absl::StrCat("xdstp://", authority,
+                                     "/envoy.config.listener.v3.Listener/%s");
+      }
+      lds_resource_name = absl::StrReplaceAll(
+          name_template, {{"%s", PercentEncode(data_plane_authority)}});
+      gpr_log(GPR_INFO, "donna name template %s and lds_resource_name %s",
+              name_template.c_str(), lds_resource_name.c_str());
+    } else {
+      // target_uri.authority not set
+      gpr_log(GPR_INFO, "donna uri authority is empty");
+      std::string name_template =
+          xds_client->bootstrap()
+              .client_default_listener_resource_name_template();
+      if (name_template.empty()) {
+        name_template = "%s";
+      }
+      if (absl::StartsWith(name_template, "xdstp:")) {
+        target_hostname = PercentEncode(target_hostname);
+      }
+      lds_resource_name =
+          absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
     }
+    data_plane_authority = GetDefaultAuthority(args.uri);
     gpr_log(GPR_INFO,
             "donna constructued lds_resource_name %s and data plane authority "
             "%s %s",
