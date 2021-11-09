@@ -31,7 +31,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Type
 
 import yaml
 
-from . import loadtest_config
+import loadtest_config
 
 TEMPLATE_FILE_HEADER_COMMENT = """
 # Template generated from load test configurations by loadtest_template.py.
