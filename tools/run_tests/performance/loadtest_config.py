@@ -31,12 +31,12 @@ import os
 import string
 import sys
 from typing import Any, Dict, Iterable, Mapping, Optional, Type
-import uuid
 
 import yaml
 
-from . import scenario_config
-from . import scenario_config_exporter
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import scenario_config
+import scenario_config_exporter
 
 CONFIGURATION_FILE_HEADER_COMMENT = """
 # Load test configurations generated from a template by loadtest_config.py.
