@@ -78,36 +78,19 @@ class XdsResolver : public Resolver {
   }
 
  private:
-  class Notifier {
-   public:
-    Notifier(RefCountedPtr<XdsResolver> resolver, XdsApi::LdsUpdate update);
-    Notifier(RefCountedPtr<XdsResolver> resolver, XdsApi::RdsUpdate update);
-    Notifier(RefCountedPtr<XdsResolver> resolver, grpc_error_handle error);
-    explicit Notifier(RefCountedPtr<XdsResolver> resolver);
-
-   private:
-    enum Type { kLdsUpdate, kRdsUpdate, kError, kDoesNotExist };
-
-    static void RunInExecCtx(void* arg, grpc_error_handle error);
-    void RunInWorkSerializer(grpc_error_handle error);
-
-    RefCountedPtr<XdsResolver> resolver_;
-    grpc_closure closure_;
-    XdsApi::LdsUpdate update_;
-    Type type_;
-  };
-
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnListenerChanged(XdsApi::LdsUpdate listener) override {
-      new Notifier(resolver_, std::move(listener));
+      resolver_->NotifyLdsUpdate(std::move(listener));
     }
     void OnError(grpc_error_handle error) override {
-      new Notifier(resolver_, error);
+      resolver_->NotifyError(error);
     }
-    void OnResourceDoesNotExist() override { new Notifier(resolver_); }
+    void OnResourceDoesNotExist() override {
+      resolver_->NotifyResourceDoesNotExist();
+    }
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
@@ -118,12 +101,14 @@ class XdsResolver : public Resolver {
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override {
-      new Notifier(resolver_, std::move(route_config));
+      resolver_->NotifyRdsUpdate(std::move(route_config));
     }
     void OnError(grpc_error_handle error) override {
-      new Notifier(resolver_, error);
+      resolver_->NotifyError(error);
     }
-    void OnResourceDoesNotExist() override { new Notifier(resolver_); }
+    void OnResourceDoesNotExist() override {
+      resolver_->NotifyResourceDoesNotExist();
+    }
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
@@ -254,6 +239,12 @@ class XdsResolver : public Resolver {
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
 
+  // Helper functions to notify updates
+  void NotifyLdsUpdate(XdsApi::LdsUpdate update);
+  void NotifyRdsUpdate(XdsApi::RdsUpdate update);
+  void NotifyError(grpc_error_handle error);
+  void NotifyResourceDoesNotExist();
+
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
   std::string server_name_;
@@ -274,71 +265,6 @@ class XdsResolver : public Resolver {
 
   ClusterState::ClusterStateMap cluster_state_map_;
 };
-
-//
-// XdsResolver::Notifier
-//
-
-XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver,
-                                XdsApi::LdsUpdate update)
-    : resolver_(std::move(resolver)),
-      update_(std::move(update)),
-      type_(kLdsUpdate) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver,
-                                XdsApi::RdsUpdate update)
-    : resolver_(std::move(resolver)), type_(kRdsUpdate) {
-  update_.http_connection_manager.rds_update = std::move(update);
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver,
-                                grpc_error_handle error)
-    : resolver_(std::move(resolver)), type_(kError) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
-}
-
-XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver)
-    : resolver_(std::move(resolver)), type_(kDoesNotExist) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-void XdsResolver::Notifier::RunInExecCtx(void* arg, grpc_error_handle error) {
-  Notifier* self = static_cast<Notifier*>(arg);
-  (void)GRPC_ERROR_REF(error);
-  self->resolver_->work_serializer_->Run(
-      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
-}
-
-void XdsResolver::Notifier::RunInWorkSerializer(grpc_error_handle error) {
-  if (resolver_->xds_client_ == nullptr) {
-    GRPC_ERROR_UNREF(error);
-    delete this;
-    return;
-  }
-  switch (type_) {
-    case kLdsUpdate:
-      resolver_->OnListenerUpdate(std::move(update_));
-      break;
-    case kRdsUpdate:
-      resolver_->OnRouteConfigUpdate(
-          std::move(*update_.http_connection_manager.rds_update));
-      break;
-    case kError:
-      resolver_->OnError(error);
-      break;
-    case kDoesNotExist:
-      resolver_->OnResourceDoesNotExist();
-      break;
-  };
-  delete this;
-}
 
 //
 // XdsResolver::XdsConfigSelector::Route
@@ -786,7 +712,7 @@ void XdsResolver::StartLocked() {
   }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
-  auto watcher = absl::make_unique<ListenerWatcher>(Ref());
+  auto watcher = MakeRefCounted<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
   xds_client_->WatchListenerData(server_name_, std::move(watcher));
 }
@@ -827,7 +753,7 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
         std::move(listener.http_connection_manager.route_config_name);
     if (!route_config_name_.empty()) {
       current_virtual_host_.routes.clear();
-      auto watcher = absl::make_unique<RouteConfigWatcher>(Ref());
+      auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
       route_config_watcher_ = watcher.get();
       xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
     }
@@ -966,6 +892,54 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
     // Send a new result to the channel.
     GenerateResult();
   }
+}
+
+void XdsResolver::NotifyLdsUpdate(XdsApi::LdsUpdate update) {
+  RefCountedPtr<XdsResolver> resolver = Ref();
+  work_serializer_->Run(
+      [resolver, update]() {
+        if (resolver->xds_client_ == nullptr) {
+          return;
+        }
+        resolver->OnListenerUpdate(std::move(update));
+      },
+      DEBUG_LOCATION);
+}
+
+void XdsResolver::NotifyRdsUpdate(XdsApi::RdsUpdate update) {
+  RefCountedPtr<XdsResolver> resolver = Ref();
+  work_serializer_->Run(
+      [resolver, update]() {
+        if (resolver->xds_client_ == nullptr) {
+          return;
+        }
+        resolver->OnRouteConfigUpdate(std::move(update));
+      },
+      DEBUG_LOCATION);
+}
+
+void XdsResolver::NotifyError(grpc_error_handle error) {
+  RefCountedPtr<XdsResolver> resolver = Ref();
+  work_serializer_->Run(
+      [resolver, error]() {
+        if (resolver->xds_client_ == nullptr) {
+          return;
+        }
+        resolver->OnError(error);
+      },
+      DEBUG_LOCATION);
+}
+
+void XdsResolver::NotifyResourceDoesNotExist() {
+  RefCountedPtr<XdsResolver> resolver = Ref();
+  work_serializer_->Run(
+      [resolver]() {
+        if (resolver->xds_client_ == nullptr) {
+          return;
+        }
+        resolver->OnResourceDoesNotExist();
+      },
+      DEBUG_LOCATION);
 }
 
 //

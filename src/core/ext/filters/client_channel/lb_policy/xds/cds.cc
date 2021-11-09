@@ -72,35 +72,30 @@ class CdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
     void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override {
-      new Notifier(parent_, name_, std::move(cluster_data));
+      RefCountedPtr<CdsLb> cds_lb = parent_;
+      std::string name = name_;
+      parent_->work_serializer()->Run(
+          [cds_lb, name, cluster_data]() {
+            cds_lb->OnClusterChanged(name, std::move(cluster_data));
+          },
+          DEBUG_LOCATION);
     }
     void OnError(grpc_error_handle error) override {
-      new Notifier(parent_, name_, error);
+      RefCountedPtr<CdsLb> cds_lb = parent_;
+      std::string name = name_;
+      parent_->work_serializer()->Run(
+          [cds_lb, name, error]() { cds_lb->OnError(name, error); },
+          DEBUG_LOCATION);
     }
-    void OnResourceDoesNotExist() override { new Notifier(parent_, name_); }
+    void OnResourceDoesNotExist() override {
+      RefCountedPtr<CdsLb> cds_lb = parent_;
+      std::string name = name_;
+      parent_->work_serializer()->Run(
+          [cds_lb, name]() { cds_lb->OnResourceDoesNotExist(name); },
+          DEBUG_LOCATION);
+    }
 
    private:
-    class Notifier {
-     public:
-      Notifier(RefCountedPtr<CdsLb> parent, std::string name,
-               XdsApi::CdsUpdate update);
-      Notifier(RefCountedPtr<CdsLb> parent, std::string name,
-               grpc_error_handle error);
-      explicit Notifier(RefCountedPtr<CdsLb> parent, std::string name);
-
-     private:
-      enum Type { kUpdate, kError, kDoesNotExist };
-
-      static void RunInExecCtx(void* arg, grpc_error_handle error);
-      void RunInWorkSerializer(grpc_error_handle error);
-
-      RefCountedPtr<CdsLb> parent_;
-      std::string name_;
-      grpc_closure closure_;
-      XdsApi::CdsUpdate update_;
-      Type type_;
-    };
-
     RefCountedPtr<CdsLb> parent_;
     std::string name_;
   };
@@ -173,60 +168,6 @@ class CdsLb : public LoadBalancingPolicy {
   // Internal state.
   bool shutting_down_ = false;
 };
-
-//
-// CdsLb::ClusterWatcher::Notifier
-//
-
-CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
-                                          std::string name,
-                                          XdsApi::CdsUpdate update)
-    : parent_(std::move(parent)),
-      name_(std::move(name)),
-      update_(std::move(update)),
-      type_(kUpdate) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
-                                          std::string name,
-                                          grpc_error_handle error)
-    : parent_(std::move(parent)), name_(std::move(name)), type_(kError) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
-}
-
-CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
-                                          std::string name)
-    : parent_(std::move(parent)), name_(std::move(name)), type_(kDoesNotExist) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-void CdsLb::ClusterWatcher::Notifier::RunInExecCtx(void* arg,
-                                                   grpc_error_handle error) {
-  Notifier* self = static_cast<Notifier*>(arg);
-  (void)GRPC_ERROR_REF(error);
-  self->parent_->work_serializer()->Run(
-      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
-}
-
-void CdsLb::ClusterWatcher::Notifier::RunInWorkSerializer(
-    grpc_error_handle error) {
-  switch (type_) {
-    case kUpdate:
-      parent_->OnClusterChanged(name_, std::move(update_));
-      break;
-    case kError:
-      parent_->OnError(name_, error);
-      break;
-    case kDoesNotExist:
-      parent_->OnResourceDoesNotExist(name_);
-      break;
-  };
-  delete this;
-}
 
 //
 // CdsLb::Helper
@@ -352,7 +293,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       }
       watchers_.clear();
     }
-    auto watcher = absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
+    auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), config_->cluster());
     watchers_[config_->cluster()].watcher = watcher.get();
     xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
   }
@@ -373,7 +314,7 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
   auto& state = watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
-    auto watcher = absl::make_unique<ClusterWatcher>(Ref(), name);
+    auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), name);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               name.c_str());

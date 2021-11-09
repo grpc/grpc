@@ -176,37 +176,35 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
       void OnEndpointChanged(XdsApi::EdsUpdate update) override {
-        new Notifier(discovery_mechanism_, std::move(update));
+        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism =
+            discovery_mechanism_;
+        discovery_mechanism->parent()->work_serializer()->Run(
+            [discovery_mechanism, update]() {
+              discovery_mechanism->parent()->OnEndpointChanged(
+                  discovery_mechanism->index(), std::move(update));
+            },
+            DEBUG_LOCATION);
       }
       void OnError(grpc_error_handle error) override {
-        new Notifier(discovery_mechanism_, error);
+        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism =
+            discovery_mechanism_;
+        discovery_mechanism->parent()->work_serializer()->Run(
+            [discovery_mechanism, error]() {
+              discovery_mechanism->parent()->OnError(
+                  discovery_mechanism->index(), error);
+            },
+            DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        new Notifier(discovery_mechanism_);
+        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism =
+            discovery_mechanism_;
+        discovery_mechanism->parent()->work_serializer()->Run(
+            [discovery_mechanism]() {
+              discovery_mechanism->parent()->OnResourceDoesNotExist(
+                  discovery_mechanism->index());
+            },
+            DEBUG_LOCATION);
       }
-
-     private:
-      class Notifier {
-       public:
-        Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
-                 XdsApi::EdsUpdate update);
-        Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
-                 grpc_error_handle error);
-        explicit Notifier(
-            RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism);
-        ~Notifier() { discovery_mechanism_.reset(DEBUG_LOCATION, "Notifier"); }
-
-       private:
-        enum Type { kUpdate, kError, kDoesNotExist };
-
-        static void RunInExecCtx(void* arg, grpc_error_handle error);
-        void RunInWorkSerializer(grpc_error_handle error);
-
-        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
-        grpc_closure closure_;
-        XdsApi::EdsUpdate update_;
-        Type type_;
-      };
 
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
@@ -403,7 +401,7 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
             ":%p starting xds watch for %s",
             parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  auto watcher = absl::make_unique<EndpointWatcher>(
+  auto watcher = MakeRefCounted<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
   parent()->xds_client_->WatchEndpointData(GetEdsResourceName(),
@@ -420,66 +418,6 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
   parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
                                                  watcher_);
   Unref();
-}
-
-//
-// XdsClusterResolverLb::EndpointWatcher::Notifier
-//
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism,
-             XdsApi::EdsUpdate update)
-    : discovery_mechanism_(std::move(discovery_mechanism)),
-      update_(std::move(update)),
-      type_(kUpdate) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism,
-             grpc_error_handle error)
-    : discovery_mechanism_(std::move(discovery_mechanism)), type_(kError) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
-}
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism)
-    : discovery_mechanism_(std::move(discovery_mechanism)),
-      type_(kDoesNotExist) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInExecCtx(void* arg, grpc_error_handle error) {
-  Notifier* self = static_cast<Notifier*>(arg);
-  (void)GRPC_ERROR_REF(error);
-  self->discovery_mechanism_->parent()->work_serializer()->Run(
-      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
-}
-
-void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInWorkSerializer(grpc_error_handle error) {
-  switch (type_) {
-    case kUpdate:
-      discovery_mechanism_->parent()->OnEndpointChanged(
-          discovery_mechanism_->index(), std::move(update_));
-      break;
-    case kError:
-      discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
-                                              error);
-      break;
-    case kDoesNotExist:
-      discovery_mechanism_->parent()->OnResourceDoesNotExist(
-          discovery_mechanism_->index());
-      break;
-  };
-  delete this;
 }
 
 //
