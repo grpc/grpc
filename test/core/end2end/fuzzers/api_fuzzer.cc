@@ -792,276 +792,277 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
           g_channel = grpc_channel_create(
               action.create_channel().target().c_str(), creds, args);
           grpc_channel_credentials_release(creds);
-        }
-        GPR_ASSERT(g_channel != nullptr);
-        {
-          grpc_core::ExecCtx exec_ctx;
-          grpc_channel_args_destroy(args);
-        }
-      }
-        else {
+          GPR_ASSERT(g_channel != nullptr);
+          {
+            grpc_core::ExecCtx exec_ctx;
+            grpc_channel_args_destroy(args);
+          }
+        } else {
           no_more_actions();
         }
         break;
-    }
-    // destroy a channel
-    case api_fuzzer::Action::kCloseChannel: {
-      if (g_channel != nullptr) {
-        grpc_channel_destroy(g_channel);
-        g_channel = nullptr;
-      } else {
-        no_more_actions();
       }
-      break;
-    }
-    // bring up a server
-    case api_fuzzer::Action::kCreateServer: {
-      if (g_server == nullptr) {
-        grpc_channel_args* args =
-            ReadArgs(action.create_server().channel_args());
-        g_server = grpc_server_create(args, nullptr);
-        GPR_ASSERT(g_server != nullptr);
-        {
-          grpc_core::ExecCtx exec_ctx;
-          grpc_channel_args_destroy(args);
+      // destroy a channel
+      case api_fuzzer::Action::kCloseChannel: {
+        if (g_channel != nullptr) {
+          grpc_channel_destroy(g_channel);
+          g_channel = nullptr;
+        } else {
+          no_more_actions();
         }
-        grpc_server_register_completion_queue(g_server, cq, nullptr);
-        grpc_server_start(g_server);
-        server_shutdown = false;
-        GPR_ASSERT(pending_server_shutdowns == 0);
-      } else {
-        no_more_actions();
+        break;
       }
-      break;
-    }
-    // begin server shutdown
-    case api_fuzzer::Action::kShutdownServer: {
-      if (g_server != nullptr) {
-        grpc_server_shutdown_and_notify(
-            g_server, cq, AssertSuccessAndDecrement(&pending_server_shutdowns));
-        pending_server_shutdowns++;
-        server_shutdown = true;
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // cancel all calls if shutdown
-    case api_fuzzer::Action::kCancelAllCallsIfShutdown: {
-      if (g_server != nullptr && server_shutdown) {
-        grpc_server_cancel_all_calls(g_server);
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // destroy server
-    case api_fuzzer::Action::kDestroyServerIfReady: {
-      if (g_server != nullptr && server_shutdown &&
-          pending_server_shutdowns == 0) {
-        grpc_server_destroy(g_server);
-        g_server = nullptr;
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // check connectivity
-    case api_fuzzer::Action::kCheckConnectivity: {
-      if (g_channel != nullptr) {
-        grpc_channel_check_connectivity_state(g_channel,
-                                              action.check_connectivity());
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // watch connectivity
-    case api_fuzzer::Action::kWatchConnectivity: {
-      if (g_channel != nullptr) {
-        grpc_connectivity_state st =
-            grpc_channel_check_connectivity_state(g_channel, 0);
-        if (st != GRPC_CHANNEL_SHUTDOWN) {
-          gpr_timespec deadline = gpr_time_add(
-              gpr_now(GPR_CLOCK_REALTIME),
-              gpr_time_from_micros(action.watch_connectivity(), GPR_TIMESPAN));
-          grpc_channel_watch_connectivity_state(
-              g_channel, st, deadline, cq,
-              ValidateConnectivityWatch(deadline, &pending_channel_watches));
-          pending_channel_watches++;
+      // bring up a server
+      case api_fuzzer::Action::kCreateServer: {
+        if (g_server == nullptr) {
+          grpc_channel_args* args =
+              ReadArgs(action.create_server().channel_args());
+          g_server = grpc_server_create(args, nullptr);
+          GPR_ASSERT(g_server != nullptr);
+          {
+            grpc_core::ExecCtx exec_ctx;
+            grpc_channel_args_destroy(args);
+          }
+          grpc_server_register_completion_queue(g_server, cq, nullptr);
+          grpc_server_start(g_server);
+          server_shutdown = false;
+          GPR_ASSERT(pending_server_shutdowns == 0);
+        } else {
+          no_more_actions();
         }
-      } else {
-        no_more_actions();
+        break;
       }
-      break;
-    }
-    // create a call
-    case api_fuzzer::Action::kCreateCall: {
-      bool ok = true;
-      if (g_channel == nullptr) ok = false;
-      // If the active call is a server call, then use it as the parent call
-      // to exercise the propagation logic.
-      Call* parent_call = ActiveCall();
-      if (parent_call != nullptr && parent_call->type() != CallType::SERVER) {
-        parent_call = nullptr;
+      // begin server shutdown
+      case api_fuzzer::Action::kShutdownServer: {
+        if (g_server != nullptr) {
+          grpc_server_shutdown_and_notify(
+              g_server, cq,
+              AssertSuccessAndDecrement(&pending_server_shutdowns));
+          pending_server_shutdowns++;
+          server_shutdown = true;
+        } else {
+          no_more_actions();
+        }
+        break;
       }
-      g_calls.emplace_back(new Call(CallType::CLIENT));
-      grpc_slice method =
-          g_calls.back()->ReadSlice(action.create_call().method());
-      if (GRPC_SLICE_LENGTH(method) == 0) {
-        ok = false;
+      // cancel all calls if shutdown
+      case api_fuzzer::Action::kCancelAllCallsIfShutdown: {
+        if (g_server != nullptr && server_shutdown) {
+          grpc_server_cancel_all_calls(g_server);
+        } else {
+          no_more_actions();
+        }
+        break;
       }
-      grpc_slice host = g_calls.back()->ReadSlice(action.create_call().host());
-      gpr_timespec deadline = gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(action.create_call().timeout(), GPR_TIMESPAN));
+      // destroy server
+      case api_fuzzer::Action::kDestroyServerIfReady: {
+        if (g_server != nullptr && server_shutdown &&
+            pending_server_shutdowns == 0) {
+          grpc_server_destroy(g_server);
+          g_server = nullptr;
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // check connectivity
+      case api_fuzzer::Action::kCheckConnectivity: {
+        if (g_channel != nullptr) {
+          grpc_channel_check_connectivity_state(g_channel,
+                                                action.check_connectivity());
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // watch connectivity
+      case api_fuzzer::Action::kWatchConnectivity: {
+        if (g_channel != nullptr) {
+          grpc_connectivity_state st =
+              grpc_channel_check_connectivity_state(g_channel, 0);
+          if (st != GRPC_CHANNEL_SHUTDOWN) {
+            gpr_timespec deadline =
+                gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                             gpr_time_from_micros(action.watch_connectivity(),
+                                                  GPR_TIMESPAN));
+            grpc_channel_watch_connectivity_state(
+                g_channel, st, deadline, cq,
+                ValidateConnectivityWatch(deadline, &pending_channel_watches));
+            pending_channel_watches++;
+          }
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // create a call
+      case api_fuzzer::Action::kCreateCall: {
+        bool ok = true;
+        if (g_channel == nullptr) ok = false;
+        // If the active call is a server call, then use it as the parent call
+        // to exercise the propagation logic.
+        Call* parent_call = ActiveCall();
+        if (parent_call != nullptr && parent_call->type() != CallType::SERVER) {
+          parent_call = nullptr;
+        }
+        g_calls.emplace_back(new Call(CallType::CLIENT));
+        grpc_slice method =
+            g_calls.back()->ReadSlice(action.create_call().method());
+        if (GRPC_SLICE_LENGTH(method) == 0) {
+          ok = false;
+        }
+        grpc_slice host =
+            g_calls.back()->ReadSlice(action.create_call().host());
+        gpr_timespec deadline = gpr_time_add(
+            gpr_now(GPR_CLOCK_REALTIME),
+            gpr_time_from_micros(action.create_call().timeout(), GPR_TIMESPAN));
 
-      if (ok) {
-        g_calls.back()->SetCall(grpc_channel_create_call(
-            g_channel, parent_call == nullptr ? nullptr : parent_call->call(),
-            action.create_call().propagation_mask(), cq, method, &host,
-            deadline, nullptr));
-      } else {
-        g_calls.pop_back();
-        no_more_actions();
-      }
-      break;
-    }
-    // switch the 'current' call
-    case api_fuzzer::Action::kChangeActiveCall: {
-      g_active_call++;
-      ActiveCall();
-      break;
-    }
-    // queue some ops on a call
-    case api_fuzzer::Action::kQueueBatch: {
-      auto* active_call = ActiveCall();
-      if (active_call == nullptr ||
-          active_call->type() == CallType::PENDING_SERVER ||
-          active_call->call() == nullptr) {
-        no_more_actions();
-        break;
-      }
-      const auto& batch = action.queue_batch().operations();
-      if (batch.size() > 6) {
-        no_more_actions();
-        break;
-      }
-      std::vector<grpc_op> ops;
-      bool ok = true;
-      uint8_t has_ops = 0;
-      std::vector<std::function<void()>> unwinders;
-      for (const auto& batch_op : batch) {
-        auto op = active_call->ReadOp(batch_op, &ok, &has_ops, &unwinders);
-        if (!op.has_value()) continue;
-        ops.push_back(*op);
-      }
-      if (g_channel == nullptr) ok = false;
-      if (ok) {
-        auto* v = active_call->FinishedBatchValidator(has_ops);
-        grpc_call_error error = grpc_call_start_batch(
-            active_call->call(), ops.data(), ops.size(), v, nullptr);
-        if (error != GRPC_CALL_OK) {
-          v->Run(false);
+        if (ok) {
+          g_calls.back()->SetCall(grpc_channel_create_call(
+              g_channel, parent_call == nullptr ? nullptr : parent_call->call(),
+              action.create_call().propagation_mask(), cq, method, &host,
+              deadline, nullptr));
+        } else {
+          g_calls.pop_back();
+          no_more_actions();
         }
-      } else {
-        no_more_actions();
-        for (auto& unwind : unwinders) {
-          unwind();
-        }
-      }
-      break;
-    }
-    // cancel current call
-    case api_fuzzer::Action::kCancelCall: {
-      auto* active_call = ActiveCall();
-      if (active_call != nullptr && active_call->call() != nullptr) {
-        grpc_call_cancel(active_call->call(), nullptr);
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // get a calls peer
-    case api_fuzzer::Action::kGetPeer: {
-      auto* active_call = ActiveCall();
-      if (active_call != nullptr && active_call->call() != nullptr) {
-        free_non_null(grpc_call_get_peer(active_call->call()));
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // get a channels target
-    case api_fuzzer::Action::kGetTarget: {
-      if (g_channel != nullptr) {
-        free_non_null(grpc_channel_get_target(g_channel));
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // send a ping on a channel
-    case api_fuzzer::Action::kPing: {
-      if (g_channel != nullptr) {
-        pending_pings++;
-        grpc_channel_ping(g_channel, cq, Decrement(&pending_pings), nullptr);
-      } else {
-        no_more_actions();
-      }
-      break;
-    }
-    // enable a tracer
-    case api_fuzzer::Action::kEnableTracer: {
-      grpc_tracer_set_enabled(action.enable_tracer().c_str(), 1);
-      break;
-    }
-    // disable a tracer
-    case api_fuzzer::Action::kDisableTracer: {
-      grpc_tracer_set_enabled(action.disable_tracer().c_str(), 0);
-      break;
-    }
-    // request a server call
-    case api_fuzzer::Action::kRequestCall: {
-      if (g_server == nullptr) {
-        no_more_actions();
         break;
       }
-      g_calls.emplace_back(new Call(CallType::PENDING_SERVER));
-      g_calls.back()->RequestCall(g_server, cq);
-      break;
-    }
-    // destroy a call
-    case api_fuzzer::Action::kDestroyCall: {
-      auto* active_call = ActiveCall();
-      if (active_call != nullptr &&
-          active_call->type() != CallType::PENDING_SERVER &&
-          active_call->call() != nullptr) {
-        g_calls[g_active_call]->Shutdown();
-      } else {
-        no_more_actions();
+      // switch the 'current' call
+      case api_fuzzer::Action::kChangeActiveCall: {
+        g_active_call++;
+        ActiveCall();
+        break;
       }
-      break;
-    }
-    // resize the buffer pool
-    case api_fuzzer::Action::kResizeResourceQuota: {
-      grpc_resource_quota_resize(g_resource_quota,
-                                 action.resize_resource_quota());
-      break;
+      // queue some ops on a call
+      case api_fuzzer::Action::kQueueBatch: {
+        auto* active_call = ActiveCall();
+        if (active_call == nullptr ||
+            active_call->type() == CallType::PENDING_SERVER ||
+            active_call->call() == nullptr) {
+          no_more_actions();
+          break;
+        }
+        const auto& batch = action.queue_batch().operations();
+        if (batch.size() > 6) {
+          no_more_actions();
+          break;
+        }
+        std::vector<grpc_op> ops;
+        bool ok = true;
+        uint8_t has_ops = 0;
+        std::vector<std::function<void()>> unwinders;
+        for (const auto& batch_op : batch) {
+          auto op = active_call->ReadOp(batch_op, &ok, &has_ops, &unwinders);
+          if (!op.has_value()) continue;
+          ops.push_back(*op);
+        }
+        if (g_channel == nullptr) ok = false;
+        if (ok) {
+          auto* v = active_call->FinishedBatchValidator(has_ops);
+          grpc_call_error error = grpc_call_start_batch(
+              active_call->call(), ops.data(), ops.size(), v, nullptr);
+          if (error != GRPC_CALL_OK) {
+            v->Run(false);
+          }
+        } else {
+          no_more_actions();
+          for (auto& unwind : unwinders) {
+            unwind();
+          }
+        }
+        break;
+      }
+      // cancel current call
+      case api_fuzzer::Action::kCancelCall: {
+        auto* active_call = ActiveCall();
+        if (active_call != nullptr && active_call->call() != nullptr) {
+          grpc_call_cancel(active_call->call(), nullptr);
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // get a calls peer
+      case api_fuzzer::Action::kGetPeer: {
+        auto* active_call = ActiveCall();
+        if (active_call != nullptr && active_call->call() != nullptr) {
+          free_non_null(grpc_call_get_peer(active_call->call()));
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // get a channels target
+      case api_fuzzer::Action::kGetTarget: {
+        if (g_channel != nullptr) {
+          free_non_null(grpc_channel_get_target(g_channel));
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // send a ping on a channel
+      case api_fuzzer::Action::kPing: {
+        if (g_channel != nullptr) {
+          pending_pings++;
+          grpc_channel_ping(g_channel, cq, Decrement(&pending_pings), nullptr);
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // enable a tracer
+      case api_fuzzer::Action::kEnableTracer: {
+        grpc_tracer_set_enabled(action.enable_tracer().c_str(), 1);
+        break;
+      }
+      // disable a tracer
+      case api_fuzzer::Action::kDisableTracer: {
+        grpc_tracer_set_enabled(action.disable_tracer().c_str(), 0);
+        break;
+      }
+      // request a server call
+      case api_fuzzer::Action::kRequestCall: {
+        if (g_server == nullptr) {
+          no_more_actions();
+          break;
+        }
+        g_calls.emplace_back(new Call(CallType::PENDING_SERVER));
+        g_calls.back()->RequestCall(g_server, cq);
+        break;
+      }
+      // destroy a call
+      case api_fuzzer::Action::kDestroyCall: {
+        auto* active_call = ActiveCall();
+        if (active_call != nullptr &&
+            active_call->type() != CallType::PENDING_SERVER &&
+            active_call->call() != nullptr) {
+          g_calls[g_active_call]->Shutdown();
+        } else {
+          no_more_actions();
+        }
+        break;
+      }
+      // resize the buffer pool
+      case api_fuzzer::Action::kResizeResourceQuota: {
+        grpc_resource_quota_resize(g_resource_quota,
+                                   action.resize_resource_quota());
+        break;
+      }
     }
   }
-}
 
-GPR_ASSERT(g_channel == nullptr);
-GPR_ASSERT(g_server == nullptr);
-GPR_ASSERT(ActiveCall() == nullptr);
-GPR_ASSERT(g_calls.empty());
+  GPR_ASSERT(g_channel == nullptr);
+  GPR_ASSERT(g_server == nullptr);
+  GPR_ASSERT(ActiveCall() == nullptr);
+  GPR_ASSERT(g_calls.empty());
 
-grpc_completion_queue_shutdown(cq);
-GPR_ASSERT(poll_cq());
-grpc_completion_queue_destroy(cq);
+  grpc_completion_queue_shutdown(cq);
+  GPR_ASSERT(poll_cq());
+  grpc_completion_queue_destroy(cq);
 
-grpc_resource_quota_unref(g_resource_quota);
+  grpc_resource_quota_unref(g_resource_quota);
 
-grpc_shutdown_blocking();
+  grpc_shutdown_blocking();
 }
