@@ -8,14 +8,7 @@
 
 #include "upb/def.h"
 #include "src/proto/grpc/gcp/transport_security_common.upbdefs.h"
-
-extern const upb_msglayout grpc_gcp_RpcProtocolVersions_msginit;
-extern const upb_msglayout grpc_gcp_RpcProtocolVersions_Version_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &grpc_gcp_RpcProtocolVersions_msginit,
-  &grpc_gcp_RpcProtocolVersions_Version_msginit,
-};
+#include "src/proto/grpc/gcp/transport_security_common.upb.h"
 
 static const char descriptor[512] = {'\n', '2', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'g', 'c', 'p', '/', 't', 'r', 'a', 'n', 
 's', 'p', 'o', 'r', 't', '_', 's', 'e', 'c', 'u', 'r', 'i', 't', 'y', '_', 'c', 'o', 'm', 'm', 'o', 'n', '.', 'p', 'r', 'o', 
@@ -46,7 +39,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init src_proto_grpc_gcp_transport_security_common_proto_upbdefinit = {
   deps,
-  layouts,
+  &src_proto_grpc_gcp_transport_security_common_proto_upb_file_layout,
   "src/proto/grpc/gcp/transport_security_common.proto",
   UPB_STRVIEW_INIT(descriptor, 512)
 };

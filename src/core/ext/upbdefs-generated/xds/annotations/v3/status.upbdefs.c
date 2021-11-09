@@ -8,20 +8,9 @@
 
 #include "upb/def.h"
 #include "xds/annotations/v3/status.upbdefs.h"
+#include "xds/annotations/v3/status.upb.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-extern const upb_msglayout xds_annotations_v3_FileStatusAnnotation_msginit;
-extern const upb_msglayout xds_annotations_v3_MessageStatusAnnotation_msginit;
-extern const upb_msglayout xds_annotations_v3_FieldStatusAnnotation_msginit;
-extern const upb_msglayout xds_annotations_v3_StatusAnnotation_msginit;
-
-static const upb_msglayout *layouts[4] = {
-  &xds_annotations_v3_FileStatusAnnotation_msginit,
-  &xds_annotations_v3_MessageStatusAnnotation_msginit,
-  &xds_annotations_v3_FieldStatusAnnotation_msginit,
-  &xds_annotations_v3_StatusAnnotation_msginit,
-};
-
 static const char descriptor[936] = {'\n', '\037', 'x', 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 's', 't', 'a', 't', 
 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\022', 'x', 'd', 's', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 
 '.', 'v', '3', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 
@@ -69,7 +58,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init xds_annotations_v3_status_proto_upbdefinit = {
   deps,
-  layouts,
+  &xds_annotations_v3_status_proto_upb_file_layout,
   "xds/annotations/v3/status.proto",
   UPB_STRVIEW_INIT(descriptor, 936)
 };

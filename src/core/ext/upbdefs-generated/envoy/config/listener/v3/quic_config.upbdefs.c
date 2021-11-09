@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/listener/v3/quic_config.upbdefs.h"
+#include "envoy/config/listener/v3/quic_config.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
@@ -17,12 +18,6 @@ extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_listener_v3_QuicProtocolOptions_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_listener_v3_QuicProtocolOptions_msginit,
-};
-
 static const char descriptor[1107] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
 '3', '/', 'q', 'u', 'i', 'c', '_', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 
 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 
@@ -84,7 +79,7 @@ static upb_def_init *deps[9] = {
 
 upb_def_init envoy_config_listener_v3_quic_config_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_listener_v3_quic_config_proto_upb_file_layout,
   "envoy/config/listener/v3/quic_config.proto",
   UPB_STRVIEW_INIT(descriptor, 1107)
 };

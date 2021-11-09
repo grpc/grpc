@@ -23,6 +23,9 @@ extern "C" {
 struct udpa_annotations_FieldSecurityAnnotation;
 typedef struct udpa_annotations_FieldSecurityAnnotation udpa_annotations_FieldSecurityAnnotation;
 extern const upb_msglayout udpa_annotations_FieldSecurityAnnotation_msginit;
+extern const upb_msglayout_ext udpa_annotations_security_ext;
+struct google_protobuf_FieldOptions;
+extern const upb_msglayout google_protobuf_FieldOptions_msginit;
 
 
 /* udpa.annotations.FieldSecurityAnnotation */
@@ -60,6 +63,10 @@ UPB_INLINE void udpa_annotations_FieldSecurityAnnotation_set_configure_for_untru
 UPB_INLINE void udpa_annotations_FieldSecurityAnnotation_set_configure_for_untrusted_upstream(udpa_annotations_FieldSecurityAnnotation *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
+
+UPB_INLINE bool udpa_annotations_has_security(const struct google_protobuf_FieldOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_security_ext) != NULL; }
+UPB_INLINE const udpa_annotations_FieldSecurityAnnotation* udpa_annotations_security(const struct google_protobuf_FieldOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_security_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_FieldSecurityAnnotation*); }
+extern const upb_msglayout_file udpa_annotations_security_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
