@@ -157,7 +157,7 @@ class FinishedJsonObjectLoader final : public TypeRefProvider {
  public:
   FinishedJsonObjectLoader(const json_detail::Element* elements,
                            const TypeRefProvider* const* type_ref_providers) {
-    for (size_t i = 0; i < kElemCount - 1; i++) {
+    for (size_t i = 0; i < kElemCount; i++) {
       elements_[i] = elements[i];
     }
     for (size_t i = 0; i < kTypeCount; i++) {
@@ -216,6 +216,13 @@ class JsonObjectLoader final {
     return Field(name, false, p, u_loader);
   }
 
+  template <typename U, size_t N, size_t M>
+  JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1> Field(
+      const char* name, std::map<std::string, U> T::*p,
+      const json_detail::FinishedJsonObjectLoader<U, N, M>* u_loader) const {
+    return Field(name, false, p, u_loader);
+  }
+
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1, kTypeCount> OptionalField(
       const char* name, U T::*p) const {
@@ -225,6 +232,13 @@ class JsonObjectLoader final {
   template <typename U, size_t N, size_t M>
   JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1> OptionalField(
       const char* name, std::vector<U> T::*p,
+      const JsonObjectLoader<U, N, M>* u_loader) const {
+    return Field(name, true, p, u_loader);
+  }
+
+  template <typename U, size_t N, size_t M>
+  JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1> OptionalField(
+      const char* name, std::map<std::string, U> T::*p,
       const JsonObjectLoader<U, N, M>* u_loader) const {
     return Field(name, true, p, u_loader);
   }
@@ -267,6 +281,36 @@ class JsonObjectLoader final {
         reinterpret_cast<uintptr_t>(&(static_cast<T*>(nullptr)->*p)));
     e.optional = optional;
     e.type = json_detail::Element::kVector;
+    e.type_data =
+        kTypeCount + static_cast<size_t>(json_detail::Element::kVector);
+    return JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1>(
+        elements_, type_ref_providers_, e, u_loader);
+  }
+
+  template <typename U>
+  JsonObjectLoader<T, kElemCount + 1, kTypeCount> Field(
+      const char* name, bool optional, std::map<std::string, U> T::*p) const {
+    json_detail::Element e;
+    strcpy(e.name, name);
+    e.member_offset = static_cast<uint16_t>(
+        reinterpret_cast<uintptr_t>(&(static_cast<T*>(nullptr)->*p)));
+    e.optional = optional;
+    e.type = json_detail::Element::kMap;
+    e.type_data = json_detail::ElementTypeOf<U>::type();
+    return JsonObjectLoader<T, kElemCount + 1, kTypeCount>(
+        elements_, type_ref_providers_, e);
+  }
+
+  template <typename U, size_t N, size_t M>
+  JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1> Field(
+      const char* name, bool optional, std::map<std::string, U> T::*p,
+      const json_detail::FinishedJsonObjectLoader<U, N, M>* u_loader) const {
+    json_detail::Element e;
+    strcpy(e.name, name);
+    e.member_offset = static_cast<uint16_t>(
+        reinterpret_cast<uintptr_t>(&(static_cast<T*>(nullptr)->*p)));
+    e.optional = optional;
+    e.type = json_detail::Element::kMap;
     e.type_data =
         kTypeCount + static_cast<size_t>(json_detail::Element::kVector);
     return JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1>(

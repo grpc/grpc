@@ -39,7 +39,7 @@ namespace json_detail {
 template <typename T>
 GPR_ATTRIBUTE_NOINLINE void ConvertNumber(const std::string& value, void* dest,
                                           ErrorList* error_list) {
-  if (!absl::SimpleAtoi(value, static_cast<int32_t*>(dest))) {
+  if (!absl::SimpleAtoi(value, static_cast<T*>(dest))) {
     error_list->AddError("failed to parse.");
   }
 }
@@ -72,6 +72,7 @@ void TypeRef::Load(const Json::Object& json, void* dest,
         LoadVector(value, elements[i].type_data, member_ptr, errors);
         break;
       case Element::kMap:
+        LoadMap(value, elements[i].type_data, member_ptr, errors);
         break;
     }
   }

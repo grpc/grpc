@@ -26,7 +26,8 @@ auto Parse(const std::string& json, const Loader* loader, ErrorList* errors) ->
     typename Loader::ResultType {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto parsed = Json::Parse(json, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << " parsing: " << json;
+  EXPECT_EQ(error, GRPC_ERROR_NONE)
+      << " parsing: " << json << "  error: " << grpc_error_string(error);
   EXPECT_EQ(parsed.type(), Json::Type::OBJECT) << " parsing: " << json;
   return loader->Load(parsed.object_value(), errors);
 }
@@ -54,6 +55,17 @@ const auto kTestStruct2Loader =
     JsonObjectLoader<TestStruct2>()
         .Field("a", &TestStruct2::a, &kTestStruct1Loader)
         .Field("b", &TestStruct2::b)
+        .Finish();
+
+struct TestStruct3 {
+  std::map<std::string, TestStruct1> a;
+  std::map<std::string, int32_t> b;
+};
+
+const auto kTestStruct3Loader =
+    JsonObjectLoader<TestStruct3>()
+        .Field("a", &TestStruct3::a, &kTestStruct1Loader)
+        .Field("b", &TestStruct3::b)
         .Finish();
 
 TEST(JsonObjectLoaderTest, LoadTestStruct1) {
@@ -125,6 +137,31 @@ TEST(JsonObjectLoaderTest, LoadTestStruct2) {
     EXPECT_EQ(absl::StrJoin(errors.errors(), "\n"),
               "field:.a[0].a error:is not a number.\n"
               "field:.b[1] error:is not a number.");
+  }
+}
+
+TEST(JsonObjectLoaderTest, LoadTestStruct3) {
+  {
+    ErrorList errors;
+    auto s = Parse(
+        "{\"a\":{\"k1\":{\"a\":7, \"x\":\"bar\"}, "
+        "\"k2\":{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}}, "
+        "\"b\":{\"k1\":1,\"k2\":2,\"k3\":3}}",
+        &kTestStruct3Loader, &errors);
+    EXPECT_EQ(s.a.size(), 2);
+    EXPECT_EQ(s.a["k1"].a, 7);
+    EXPECT_EQ(s.a["k1"].b, 1);
+    EXPECT_EQ(s.a["k1"].c, 2);
+    EXPECT_EQ(s.a["k1"].x, "bar");
+    EXPECT_EQ(s.a["k2"].a, 1);
+    EXPECT_EQ(s.a["k2"].b, 2);
+    EXPECT_EQ(s.a["k2"].c, 3);
+    EXPECT_EQ(s.a["k2"].x, "foo");
+    EXPECT_EQ(s.b.size(), 3);
+    EXPECT_EQ(s.b["k1"], 1);
+    EXPECT_EQ(s.b["k2"], 2);
+    EXPECT_EQ(s.b["k3"], 3);
+    EXPECT_EQ(errors.errors().size(), 0);
   }
 }
 
