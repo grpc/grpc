@@ -5165,6 +5165,19 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "json_object_loader",
+    srcs = ["src/core/lib/json/json_object_loader.cc"],
+    hdrs = ["src/core/lib/json/json_object_loader.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
+    ],
+)
+
 grpc_generate_one_off_targets()
 
 filegroup(
