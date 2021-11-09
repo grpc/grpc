@@ -17,6 +17,7 @@
 import argparse
 import json
 import os
+import ssl
 import sys
 import urllib.error
 import urllib.parse
@@ -127,7 +128,13 @@ def _get_resultstore_data(api_key, invocation_id):
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes,actions.timing,actions.test_action'
             % (invocation_id, api_key, page_token),
             headers={'Content-Type': 'application/json'})
-        raw_resp = urllib.request.urlopen(req).read()
+        ctx_dict = {}
+        if os.getenv("PYTHONHTTPSVERIFY") == 0:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            ctx_dict = {"context": ctx}
+        raw_resp = urllib.request.urlopen(req, **ctx_dict).read()
         decoded_resp = raw_resp if isinstance(
             raw_resp, str) else raw_resp.decode('utf-8', 'ignore')
         results = json.loads(decoded_resp)
