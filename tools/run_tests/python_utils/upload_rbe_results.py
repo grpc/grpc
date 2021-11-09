@@ -129,7 +129,7 @@ def _get_resultstore_data(api_key, invocation_id):
             % (invocation_id, api_key, page_token),
             headers={'Content-Type': 'application/json'})
         ctx_dict = {}
-        if os.getenv("PYTHONHTTPSVERIFY") == 0:
+        if os.getenv("PYTHONHTTPSVERIFY") == "0":
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
