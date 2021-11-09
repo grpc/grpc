@@ -145,7 +145,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
           parent_->config_->discovery_mechanisms()[index_].eds_service_name};
     }
 
-   protected:
+    // parent() and index() could have been protected methods but a bug in msvc
+    // disallows accessing protected members of the base class through a nested
+    // class.
     XdsClusterResolverLb* parent() const { return parent_.get(); }
     size_t index() const { return index_; }
 
@@ -258,10 +260,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
      private:
       RefCountedPtr<LogicalDNSDiscoveryMechanism> discovery_mechanism_;
     };
-
-    // This is necessary only because of a bug in msvc where nested class cannot
-    // access protected member in base class.
-    friend class ResolverResultHandler;
 
     OrphanablePtr<Resolver> resolver_;
   };
