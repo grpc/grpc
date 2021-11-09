@@ -308,8 +308,8 @@ class Job(object):
                                              cwd=self._spec.cwd,
                                              shell=self._spec.shell,
                                              env=env)
-        delay = 0.3
-        for i in range(0, 4):
+        delay = 1.0
+        for i in range(5):
             try:
                 self._process = try_start()
                 break
