@@ -296,9 +296,15 @@ class Job(object):
             cmdline = ['time', '-p'] + cmdline
         else:
             measure_cpu_costs = False
+        dev_null = None
+        if sys.version_info[0] < 3:
+            dev_null = open(os.devnull, 'wb')
+        else:
+            dev_null = subprocess.DEVNULL
         try_start = lambda: subprocess.Popen(args=cmdline,
                                              stderr=subprocess.STDOUT,
                                              stdout=self._logfile,
+                                             stdin=dev_null,
                                              cwd=self._spec.cwd,
                                              shell=self._spec.shell,
                                              env=env)
