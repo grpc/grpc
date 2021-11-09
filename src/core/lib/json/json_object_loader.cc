@@ -61,55 +61,68 @@ void TypeRef::Load(const Json::Object& json, void* dest,
       continue;
     }
     void* member_ptr = dest_chr + elements[i].member_offset;
+    const Json& value = it->second;
     switch (elements[i].type) {
       case Element::kInt32:
       case Element::kUint32:
       case Element::kString:
-        WithLoaderForTypeData(
-            elements[i].type, errors,
-            [&](const TypeVtable*, LoadFn load)
-                GPR_ATTRIBUTE_NOINLINE { load(it->second, member_ptr); });
+        LoadScalar(value, elements[i].type, member_ptr, errors);
         break;
-      case Element::kVector: {
-        if (it->second.type() != Json::Type::ARRAY) {
-          errors->AddError("is not an array.");
-          continue;
-        }
-        const Json::Array& array = it->second.array_value();
-        for (size_t j = 0; j < array.size(); j++) {
-          ScopedField array_elem(errors, absl::StrCat("[", j, "]"));
-          const Json& elem_json = array[j];
-          WithLoaderForTypeData(elements[i].type_data, errors,
-                                [&](const TypeVtable* vtable, LoadFn load)
-                                    GPR_ATTRIBUTE_NOINLINE {
-                                      void* p = vtable->create();
-                                      load(elem_json, p);
-                                      vtable->push_to_vec(p, member_ptr);
-                                      vtable->destroy(p);
-                                    });
-        }
-      } break;
-      case Element::kMap: {
-        if (it->second.type() != Json::Type::OBJECT) {
-          errors->AddError("is not an object.");
-          continue;
-        }
-        const Json::Object& object = it->second.object_value();
-        for (const auto& pair : object) {
-          ScopedField map_elem(errors, absl::StrCat(".", pair.first));
-          const Json& elem_json = pair.second;
-          WithLoaderForTypeData(elements[i].type_data, errors,
-                                [&](const TypeVtable* vtable, LoadFn load)
-                                    GPR_ATTRIBUTE_NOINLINE {
-                                      void* p = vtable->create();
-                                      load(elem_json, p);
-                                      vtable->insert_to_map(pair.first, p,
-                                                            member_ptr);
-                                      vtable->destroy(p);
-                                    });
-        }
-      } break;
+      case Element::kVector:
+        LoadVector(value, elements[i].type_data, member_ptr, errors);
+        break;
+      case Element::kMap:
+        break;
     }
+  }
+}
+
+void TypeRef::LoadScalar(const Json& json, Element::Type type, void* dest,
+                         ErrorList* errors) const {
+  WithLoaderForTypeData(type, errors,
+                        [&](const TypeVtable*, LoadFn load)
+                            GPR_ATTRIBUTE_NOINLINE { load(json, dest); });
+}
+
+void TypeRef::LoadVector(const Json& json, uint8_t type_data, void* dest,
+                         ErrorList* errors) const {
+  if (json.type() != Json::Type::ARRAY) {
+    errors->AddError("is not an array.");
+    return;
+  }
+  const Json::Array& array = json.array_value();
+  for (size_t i = 0; i < array.size(); i++) {
+    ScopedField array_elem(errors, absl::StrCat("[", i, "]"));
+    const Json& elem_json = array[i];
+    WithLoaderForTypeData(type_data, errors,
+                          [&](const TypeVtable* vtable, LoadFn load)
+                              GPR_ATTRIBUTE_NOINLINE {
+                                void* p = vtable->create();
+                                load(elem_json, p);
+                                vtable->push_to_vec(p, dest);
+                                vtable->destroy(p);
+                              });
+  }
+}
+
+void TypeRef::LoadMap(const Json& json, uint8_t type_data, void* dest,
+                      ErrorList* errors) const {
+  if (json.type() != Json::Type::OBJECT) {
+    errors->AddError("is not an object.");
+    return;
+  }
+  const Json::Object& object = json.object_value();
+  for (const auto& pair : object) {
+    ScopedField map_elem(errors, absl::StrCat(".", pair.first));
+    const Json& elem_json = pair.second;
+    WithLoaderForTypeData(type_data, errors,
+                          [&](const TypeVtable* vtable, LoadFn load)
+                              GPR_ATTRIBUTE_NOINLINE {
+                                void* p = vtable->create();
+                                load(elem_json, p);
+                                vtable->insert_to_map(pair.first, p, dest);
+                                vtable->destroy(p);
+                              });
   }
 }
 

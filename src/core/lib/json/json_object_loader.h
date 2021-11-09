@@ -126,6 +126,12 @@ struct TypeRef {
       uint8_t tag, ErrorList* errors,
       absl::FunctionRef<void(const TypeVtable* vtable, LoadFn load)>) const
       GPR_ATTRIBUTE_NOINLINE;
+  void LoadScalar(const Json& json, Element::Type type, void* dest,
+                  ErrorList* errors) const GPR_ATTRIBUTE_NOINLINE;
+  void LoadVector(const Json& json, uint8_t type_data, void* dest,
+                  ErrorList* errors) const GPR_ATTRIBUTE_NOINLINE;
+  void LoadMap(const Json& json, uint8_t type_data, void* dest,
+               ErrorList* errors) const GPR_ATTRIBUTE_NOINLINE;
 };
 
 inline TypeRef GetTypeRefFn::operator()() const { return fn(arg); }
