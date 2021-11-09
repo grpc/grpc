@@ -113,11 +113,6 @@ struct GetTypeRefFn {
   TypeRef operator()() const;
 };
 
-struct Loader {
-  const TypeVtable* vtable;
-  std::function<void(const Json&, void* dest, ErrorList*)> load_fn;
-};
-
 struct TypeRef {
   const TypeVtable* vtable;
   const Element* elements;
@@ -126,7 +121,11 @@ struct TypeRef {
 
   void Load(const Json::Object& json, void* dest,
             ErrorList* errors) const GPR_ATTRIBUTE_NOINLINE;
-  Loader LoaderForTypeData(uint8_t tag) const GPR_ATTRIBUTE_NOINLINE;
+  using LoadFn = absl::FunctionRef<void(const Json& json, void* dest_ptr)>;
+  void WithLoaderForTypeData(
+      uint8_t tag, ErrorList* errors,
+      absl::FunctionRef<void(const TypeVtable* vtable, LoadFn load)>) const
+      GPR_ATTRIBUTE_NOINLINE;
 };
 
 inline TypeRef GetTypeRefFn::operator()() const { return fn(arg); }

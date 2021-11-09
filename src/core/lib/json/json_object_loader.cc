@@ -65,8 +65,10 @@ void TypeRef::Load(const Json::Object& json, void* dest,
       case Element::kInt32:
       case Element::kUint32:
       case Element::kString:
-        LoaderForTypeData(elements[i].type)
-            .load_fn(it->second, member_ptr, errors);
+        WithLoaderForTypeData(
+            elements[i].type, errors,
+            [&](const TypeVtable*, LoadFn load)
+                GPR_ATTRIBUTE_NOINLINE { load(it->second, member_ptr); });
         break;
       case Element::kVector: {
         if (it->second.type() != Json::Type::ARRAY) {
@@ -74,14 +76,17 @@ void TypeRef::Load(const Json::Object& json, void* dest,
           continue;
         }
         const Json::Array& array = it->second.array_value();
-        auto loader = LoaderForTypeData(elements[i].type_data);
-        for (size_t i = 0; i < array.size(); i++) {
-          ScopedField array_elem(errors, absl::StrCat("[", i, "]"));
-          const Json& elem_json = array[i];
-          void* p = loader.vtable->create();
-          loader.load_fn(elem_json, p, errors);
-          loader.vtable->push_to_vec(p, member_ptr);
-          loader.vtable->destroy(p);
+        for (size_t j = 0; j < array.size(); j++) {
+          ScopedField array_elem(errors, absl::StrCat("[", j, "]"));
+          const Json& elem_json = array[j];
+          WithLoaderForTypeData(elements[i].type_data, errors,
+                                [&](const TypeVtable* vtable, LoadFn load)
+                                    GPR_ATTRIBUTE_NOINLINE {
+                                      void* p = vtable->create();
+                                      load(elem_json, p);
+                                      vtable->push_to_vec(p, member_ptr);
+                                      vtable->destroy(p);
+                                    });
         }
       } break;
       case Element::kMap: {
@@ -90,21 +95,27 @@ void TypeRef::Load(const Json::Object& json, void* dest,
           continue;
         }
         const Json::Object& object = it->second.object_value();
-        auto loader = LoaderForTypeData(elements[i].type_data);
         for (const auto& pair : object) {
           ScopedField map_elem(errors, absl::StrCat(".", pair.first));
           const Json& elem_json = pair.second;
-          void* p = loader.vtable->create();
-          loader.load_fn(elem_json, p, errors);
-          loader.vtable->insert_to_map(pair.first, p, member_ptr);
-          loader.vtable->destroy(p);
+          WithLoaderForTypeData(elements[i].type_data, errors,
+                                [&](const TypeVtable* vtable, LoadFn load)
+                                    GPR_ATTRIBUTE_NOINLINE {
+                                      void* p = vtable->create();
+                                      load(elem_json, p);
+                                      vtable->insert_to_map(pair.first, p,
+                                                            member_ptr);
+                                      vtable->destroy(p);
+                                    });
         }
       } break;
     }
   }
 }
 
-Loader TypeRef::LoaderForTypeData(uint8_t tag) const {
+void TypeRef::WithLoaderForTypeData(
+    uint8_t tag, ErrorList* errors,
+    absl::FunctionRef<void(const TypeVtable* vtable, LoadFn load)> fn) const {
   if (tag < Element::kVector) {
     void (*convert_number)(const std::string& value, void* dest,
                            ErrorList* error_list) = nullptr;
@@ -129,36 +140,35 @@ Loader TypeRef::LoaderForTypeData(uint8_t tag) const {
         break;
     }
     if (convert_number != nullptr) {
-      return Loader{vtable, [convert_number](const Json& json, void* dest,
-                                             ErrorList* errors) {
-                      if (json.type() != Json::Type::NUMBER) {
-                        errors->AddError("is not a number.");
-                        return;
-                      }
-                      convert_number(json.string_value(), dest, errors);
-                    }};
+      fn(vtable, [convert_number, errors](const Json& json, void* dest_ptr) {
+        if (json.type() != Json::Type::NUMBER) {
+          errors->AddError("is not a number.");
+          return;
+        }
+        convert_number(json.string_value(), dest_ptr, errors);
+      });
+      return;
     }
     if (convert_string != nullptr) {
-      return Loader{vtable, [convert_string](const Json& json, void* dest,
-                                             ErrorList* errors) {
-                      if (json.type() != Json::Type::STRING) {
-                        errors->AddError("is not a string.");
-                        return;
-                      }
-                      convert_string(json.string_value(), dest, errors);
-                    }};
+      fn(vtable, [convert_string, errors](const Json& json, void* dest_ptr) {
+        if (json.type() != Json::Type::STRING) {
+          errors->AddError("is not a string.");
+          return;
+        }
+        convert_string(json.string_value(), dest_ptr, errors);
+      });
+      return;
     }
     abort();  // not reachable
   }
   TypeRef type_ref = get_type_refs[tag - Element::kVector]();
-  return Loader{type_ref.vtable,
-                [type_ref](const Json& json, void* dest, ErrorList* errors) {
-                  if (json.type() != Json::Type::OBJECT) {
-                    errors->AddError("is not an object.");
-                    return;
-                  }
-                  type_ref.Load(json.object_value(), dest, errors);
-                }};
+  fn(type_ref.vtable, [type_ref, errors](const Json& json, void* dest) {
+    if (json.type() != Json::Type::OBJECT) {
+      errors->AddError("is not an object.");
+      return;
+    }
+    type_ref.Load(json.object_value(), dest, errors);
+  });
 }
 
 }  // namespace json_detail
