@@ -21,9 +21,9 @@
 namespace grpc_core {
 namespace {
 
-template <typename T, size_t N, size_t M>
-T Parse(const std::string& json, const JsonObjectLoader<T, N, M>* loader,
-        ErrorList* errors) {
+template <typename Loader>
+auto Parse(const std::string& json, const Loader* loader, ErrorList* errors) ->
+    typename Loader::ResultType {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto parsed = Json::Parse(json, &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << " parsing: " << json;
@@ -42,7 +42,8 @@ const auto kTestStruct1Loader = JsonObjectLoader<TestStruct1>()
                                     .Field("a", &TestStruct1::a)
                                     .OptionalField("b", &TestStruct1::b)
                                     .OptionalField("c", &TestStruct1::c)
-                                    .Field("x", &TestStruct1::x);
+                                    .Field("x", &TestStruct1::x)
+                                    .Finish();
 
 struct TestStruct2 {
   std::vector<TestStruct1> a;
@@ -52,7 +53,8 @@ struct TestStruct2 {
 const auto kTestStruct2Loader =
     JsonObjectLoader<TestStruct2>()
         .Field("a", &TestStruct2::a, &kTestStruct1Loader)
-        .Field("b", &TestStruct2::b);
+        .Field("b", &TestStruct2::b)
+        .Finish();
 
 TEST(JsonObjectLoaderTest, LoadTestStruct1) {
   {

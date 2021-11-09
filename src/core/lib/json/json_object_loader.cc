@@ -174,14 +174,16 @@ void TypeRef::WithLoaderForTypeData(
     }
     abort();  // not reachable
   }
-  TypeRef type_ref = get_type_refs[tag - Element::kVector]();
-  fn(type_ref.vtable, [type_ref, errors](const Json& json, void* dest) {
-    if (json.type() != Json::Type::OBJECT) {
-      errors->AddError("is not an object.");
-      return;
-    }
-    type_ref.Load(json.object_value(), dest, errors);
-  });
+  type_ref_providers[tag - Element::kVector]->WithTypeRef(
+      [&](const TypeRef& type_ref) {
+        fn(type_ref.vtable, [type_ref, errors](const Json& json, void* dest) {
+          if (json.type() != Json::Type::OBJECT) {
+            errors->AddError("is not an object.");
+            return;
+          }
+          type_ref.Load(json.object_value(), dest, errors);
+        });
+      });
 }
 
 }  // namespace json_detail

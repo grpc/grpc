@@ -106,18 +106,13 @@ const TypeVtable TypeVtableImpl<T>::vtable{
     },
 };
 
-struct TypeRef;
-struct GetTypeRefFn {
-  TypeRef (*fn)(const void* arg);
-  const void* arg;
-  TypeRef operator()() const;
-};
+class TypeRefProvider;
 
 struct TypeRef {
   const TypeVtable* vtable;
   const Element* elements;
   size_t count;
-  const GetTypeRefFn* get_type_refs;
+  const TypeRefProvider* const* type_ref_providers;
 
   void Load(const Json::Object& json, void* dest,
             ErrorList* errors) const GPR_ATTRIBUTE_NOINLINE;
@@ -134,7 +129,13 @@ struct TypeRef {
                ErrorList* errors) const GPR_ATTRIBUTE_NOINLINE;
 };
 
-inline TypeRef GetTypeRefFn::operator()() const { return fn(arg); }
+class TypeRefProvider {
+ public:
+  virtual void WithTypeRef(absl::FunctionRef<void(const TypeRef&)>) const = 0;
+
+ protected:
+  ~TypeRefProvider() = default;
+};
 
 template <typename T>
 struct ElementTypeOf;
@@ -151,6 +152,39 @@ struct ElementTypeOf<std::string> {
   static Element::Type type() { return Element::kString; }
 };
 
+template <typename T, size_t kElemCount, size_t kTypeCount>
+class FinishedJsonObjectLoader final : public TypeRefProvider {
+ public:
+  FinishedJsonObjectLoader(const json_detail::Element* elements,
+                           const TypeRefProvider* const* type_ref_providers) {
+    for (size_t i = 0; i < kElemCount - 1; i++) {
+      elements_[i] = elements[i];
+    }
+    for (size_t i = 0; i < kTypeCount; i++) {
+      type_ref_providers_[i] = type_ref_providers[i];
+    }
+  }
+
+  using ResultType = T;
+
+  GPR_ATTRIBUTE_NOINLINE T Load(const Json::Object& json,
+                                ErrorList* errors) const {
+    T t;
+    WithTypeRef(
+        [&](const TypeRef& type_ref) { type_ref.Load(json, &t, errors); });
+    return t;
+  }
+
+  void WithTypeRef(absl::FunctionRef<void(const TypeRef&)> fn) const override {
+    fn(TypeRef{&TypeVtableImpl<T>::vtable, elements_, kElemCount,
+               type_ref_providers_});
+  }
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS json_detail::Element elements_[kElemCount];
+  GPR_NO_UNIQUE_ADDRESS const TypeRefProvider* type_ref_providers_[kTypeCount];
+};
+
 }  // namespace json_detail
 
 template <typename T, size_t kElemCount = 0, size_t kTypeCount = 0>
@@ -163,6 +197,12 @@ class JsonObjectLoader final {
                   "Only initial loader step can have kTypeCount==0.");
   }
 
+  json_detail::FinishedJsonObjectLoader<T, kElemCount, kTypeCount> Finish()
+      const {
+    return json_detail::FinishedJsonObjectLoader<T, kElemCount, kTypeCount>(
+        elements_, type_ref_providers_);
+  }
+
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1, kTypeCount> Field(const char* name,
                                                         U T::*p) const {
@@ -172,7 +212,7 @@ class JsonObjectLoader final {
   template <typename U, size_t N, size_t M>
   JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1> Field(
       const char* name, std::vector<U> T::*p,
-      const JsonObjectLoader<U, N, M>* u_loader) const {
+      const json_detail::FinishedJsonObjectLoader<U, N, M>* u_loader) const {
     return Field(name, false, p, u_loader);
   }
 
@@ -189,27 +229,6 @@ class JsonObjectLoader final {
     return Field(name, true, p, u_loader);
   }
 
-  GPR_ATTRIBUTE_NOINLINE T Load(const Json::Object& json,
-                                ErrorList* errors) const {
-    T t;
-    get_type_ref_fn()().Load(json, &t, errors);
-    return t;
-  }
-
-  json_detail::GetTypeRefFn get_type_ref_fn() const {
-    return json_detail::GetTypeRefFn{
-        [](const void* arg) -> json_detail::TypeRef {
-          const auto* loader = static_cast<const JsonObjectLoader*>(arg);
-          return json_detail::TypeRef{
-              &json_detail::TypeVtableImpl<T>::vtable,
-              loader->elements_,
-              kElemCount,
-              loader->get_type_ref_fns_,
-          };
-        },
-        this};
-  }
-
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1, kTypeCount> Field(const char* name,
                                                         bool optional,
@@ -221,7 +240,7 @@ class JsonObjectLoader final {
     e.optional = optional;
     e.type = json_detail::ElementTypeOf<U>::type();
     return JsonObjectLoader<T, kElemCount + 1, kTypeCount>(
-        elements_, get_type_ref_fns_, e);
+        elements_, type_ref_providers_, e);
   }
 
   template <typename U>
@@ -235,13 +254,13 @@ class JsonObjectLoader final {
     e.type = json_detail::Element::kVector;
     e.type_data = json_detail::ElementTypeOf<U>::type();
     return JsonObjectLoader<T, kElemCount + 1, kTypeCount>(
-        elements_, get_type_ref_fns_, e);
+        elements_, type_ref_providers_, e);
   }
 
   template <typename U, size_t N, size_t M>
   JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1> Field(
       const char* name, bool optional, std::vector<U> T::*p,
-      const JsonObjectLoader<U, N, M>* u_loader) const {
+      const json_detail::FinishedJsonObjectLoader<U, N, M>* u_loader) const {
     json_detail::Element e;
     strcpy(e.name, name);
     e.member_offset = static_cast<uint16_t>(
@@ -251,38 +270,41 @@ class JsonObjectLoader final {
     e.type_data =
         kTypeCount + static_cast<size_t>(json_detail::Element::kVector);
     return JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1>(
-        elements_, get_type_ref_fns_, e, u_loader->get_type_ref_fn());
+        elements_, type_ref_providers_, e, u_loader);
   }
 
-  JsonObjectLoader(const json_detail::Element* elements,
-                   const json_detail::GetTypeRefFn* get_type_ref_fns,
-                   json_detail::Element new_element) {
+  JsonObjectLoader(
+      const json_detail::Element* elements,
+      const json_detail::TypeRefProvider* const* type_ref_providers,
+      json_detail::Element new_element) {
     for (size_t i = 0; i < kElemCount - 1; i++) {
       elements_[i] = elements[i];
     }
     elements_[kElemCount - 1] = new_element;
     for (size_t i = 0; i < kTypeCount; i++) {
-      get_type_ref_fns_[i] = get_type_ref_fns[i];
+      type_ref_providers_[i] = type_ref_providers[i];
     }
   }
 
-  JsonObjectLoader(const json_detail::Element* elements,
-                   const json_detail::GetTypeRefFn* get_type_ref_fns,
-                   json_detail::Element new_element,
-                   json_detail::GetTypeRefFn new_get_type_ref_fn) {
+  JsonObjectLoader(
+      const json_detail::Element* elements,
+      const json_detail::TypeRefProvider* const* type_ref_providers,
+      json_detail::Element new_element,
+      const json_detail::TypeRefProvider* new_get_type_ref_fn) {
     for (size_t i = 0; i < kElemCount - 1; i++) {
       elements_[i] = elements[i];
     }
     elements_[kElemCount - 1] = new_element;
     for (size_t i = 0; i < kTypeCount - 1; i++) {
-      get_type_ref_fns_[i] = get_type_ref_fns[i];
+      type_ref_providers_[i] = type_ref_providers[i];
     }
-    get_type_ref_fns_[kTypeCount - 1] = new_get_type_ref_fn;
+    type_ref_providers_[kTypeCount - 1] = new_get_type_ref_fn;
   }
 
  private:
   GPR_NO_UNIQUE_ADDRESS json_detail::Element elements_[kElemCount];
-  GPR_NO_UNIQUE_ADDRESS json_detail::GetTypeRefFn get_type_ref_fns_[kTypeCount];
+  GPR_NO_UNIQUE_ADDRESS const json_detail::TypeRefProvider*
+      type_ref_providers_[kTypeCount];
 };
 
 }  // namespace grpc_core
