@@ -898,7 +898,7 @@ void XdsResolver::NotifyLdsUpdate(XdsApi::LdsUpdate update,
                                   const DebugLocation& location) {
   RefCountedPtr<XdsResolver> resolver = Ref();
   work_serializer_->Run(
-      [resolver, update]() {
+      [resolver, update]() mutable {
         if (resolver->xds_client_ == nullptr) {
           return;
         }
@@ -911,7 +911,7 @@ void XdsResolver::NotifyRdsUpdate(XdsApi::RdsUpdate update,
                                   const DebugLocation& location) {
   RefCountedPtr<XdsResolver> resolver = Ref();
   work_serializer_->Run(
-      [resolver, update]() {
+      [resolver, update]() mutable {
         if (resolver->xds_client_ == nullptr) {
           return;
         }

@@ -2170,7 +2170,7 @@ void XdsClient::WatchListenerData(
     MutexLock lock(&mu_);
     AuthorityState& authority_state = authority_state_map_[resource->authority];
     ListenerState& listener_state = authority_state.listener_map[resource->id];
-    listener_state.watchers[w] = std::move(watcher);
+    listener_state.watchers[w] = watcher;
     // If we've already received an LDS update, notify the new watcher
     // immediately.
     if (listener_state.update.has_value()) {
@@ -2247,7 +2247,7 @@ void XdsClient::WatchRouteConfigData(
     auto& authority_state = authority_state_map_[resource->authority];
     RouteConfigState& route_config_state =
         authority_state.route_config_map[resource->id];
-    route_config_state.watchers[w] = std::move(watcher);
+    route_config_state.watchers[w] = watcher;
     // If we've already received an RDS update, notify the new watcher
     // immediately.
     if (route_config_state.update.has_value()) {

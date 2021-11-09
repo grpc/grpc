@@ -75,7 +75,7 @@ class CdsLb : public LoadBalancingPolicy {
       RefCountedPtr<CdsLb> cds_lb = parent_;
       std::string name = name_;
       parent_->work_serializer()->Run(
-          [cds_lb, name, cluster_data]() {
+          [cds_lb, name, cluster_data]() mutable {
             cds_lb->OnClusterChanged(name, std::move(cluster_data));
           },
           DEBUG_LOCATION);

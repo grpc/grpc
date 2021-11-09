@@ -179,7 +179,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism =
             discovery_mechanism_;
         discovery_mechanism->parent()->work_serializer()->Run(
-            [discovery_mechanism, update]() {
+            [discovery_mechanism, update]() mutable {
               discovery_mechanism->parent()->OnEndpointChanged(
                   discovery_mechanism->index(), std::move(update));
             },

@@ -48,7 +48,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
    public:
     // TODO(review_note): Tried adding ABSL_EXCLUSIVE_LOCKS_REQUIRED but that
     // did not work. Tried work_serializer_, XdsClient::work_serializer_
-    virtual ~ListenerWatcherInterface() = default;
     virtual void OnListenerChanged(XdsApi::LdsUpdate listener) = 0;
     virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
@@ -58,7 +57,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class RouteConfigWatcherInterface
       : public RefCounted<RouteConfigWatcherInterface> {
    public:
-    virtual ~RouteConfigWatcherInterface() = default;
     virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) = 0;
     virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
@@ -67,7 +65,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Cluster data watcher interface.  Implemented by callers.
   class ClusterWatcherInterface : public RefCounted<ClusterWatcherInterface> {
    public:
-    virtual ~ClusterWatcherInterface() = default;
     virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
     virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
@@ -76,7 +73,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Endpoint data watcher interface.  Implemented by callers.
   class EndpointWatcherInterface : public RefCounted<EndpointWatcherInterface> {
    public:
-    virtual ~EndpointWatcherInterface() = default;
     virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
     virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
