@@ -46,7 +46,7 @@ GPR_ATTRIBUTE_NOINLINE void ConvertNumber(const std::string& value, void* dest,
 
 template <typename T>
 GPR_ATTRIBUTE_NOINLINE void ConvertString(const std::string& value, void* dest,
-                                          ErrorList* error_list) {
+                                          ErrorList*) {
   *static_cast<T*>(dest) = value;
 }
 
