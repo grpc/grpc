@@ -32,7 +32,9 @@ class CppImplOf {
   }
 
   // Retrieve a c pointer (of the same ownership as this)
-  CType* c_ptr() { return reinterpret_cast<CType*>(static_cast<CppType*>(this)); }
+  CType* c_ptr() {
+    return reinterpret_cast<CType*>(static_cast<CppType*>(this));
+  }
 
  protected:
   ~CppImplOf() = default;
