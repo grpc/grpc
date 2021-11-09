@@ -31,6 +31,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Type
 
 import yaml
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import loadtest_config
 
 TEMPLATE_FILE_HEADER_COMMENT = """

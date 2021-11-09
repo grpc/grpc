@@ -34,6 +34,7 @@ from typing import Any, Dict, Iterable, Mapping, Optional, Type
 
 import yaml
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import scenario_config
 import scenario_config_exporter
 
