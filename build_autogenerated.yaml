@@ -6469,6 +6469,18 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
+- name: json_object_loader_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/json/json_object_loader.h
+  src:
+  - src/core/lib/json/json_object_loader.cc
+  - test/core/json/json_object_loader_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: json_test
   gtest: true
   build: test
