@@ -83,13 +83,13 @@ class XdsResolver : public Resolver {
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnListenerChanged(XdsApi::LdsUpdate listener) override {
-      resolver_->NotifyLdsUpdate(std::move(listener));
+      resolver_->NotifyLdsUpdate(std::move(listener), DEBUG_LOCATION);
     }
     void OnError(grpc_error_handle error) override {
-      resolver_->NotifyError(error);
+      resolver_->NotifyError(error, DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      resolver_->NotifyResourceDoesNotExist();
+      resolver_->NotifyResourceDoesNotExist(DEBUG_LOCATION);
     }
 
    private:
@@ -101,13 +101,13 @@ class XdsResolver : public Resolver {
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override {
-      resolver_->NotifyRdsUpdate(std::move(route_config));
+      resolver_->NotifyRdsUpdate(std::move(route_config), DEBUG_LOCATION);
     }
     void OnError(grpc_error_handle error) override {
-      resolver_->NotifyError(error);
+      resolver_->NotifyError(error, DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      resolver_->NotifyResourceDoesNotExist();
+      resolver_->NotifyResourceDoesNotExist(DEBUG_LOCATION);
     }
 
    private:
@@ -240,10 +240,10 @@ class XdsResolver : public Resolver {
   void MaybeRemoveUnusedClusters();
 
   // Helper functions to notify updates
-  void NotifyLdsUpdate(XdsApi::LdsUpdate update);
-  void NotifyRdsUpdate(XdsApi::RdsUpdate update);
-  void NotifyError(grpc_error_handle error);
-  void NotifyResourceDoesNotExist();
+  void NotifyLdsUpdate(XdsApi::LdsUpdate update, const DebugLocation& location);
+  void NotifyRdsUpdate(XdsApi::RdsUpdate update, const DebugLocation& location);
+  void NotifyError(grpc_error_handle error, const DebugLocation& location);
+  void NotifyResourceDoesNotExist(const DebugLocation& location);
 
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
@@ -894,7 +894,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
   }
 }
 
-void XdsResolver::NotifyLdsUpdate(XdsApi::LdsUpdate update) {
+void XdsResolver::NotifyLdsUpdate(XdsApi::LdsUpdate update,
+                                  const DebugLocation& location) {
   RefCountedPtr<XdsResolver> resolver = Ref();
   work_serializer_->Run(
       [resolver, update]() {
@@ -903,10 +904,11 @@ void XdsResolver::NotifyLdsUpdate(XdsApi::LdsUpdate update) {
         }
         resolver->OnListenerUpdate(std::move(update));
       },
-      DEBUG_LOCATION);
+      location);
 }
 
-void XdsResolver::NotifyRdsUpdate(XdsApi::RdsUpdate update) {
+void XdsResolver::NotifyRdsUpdate(XdsApi::RdsUpdate update,
+                                  const DebugLocation& location) {
   RefCountedPtr<XdsResolver> resolver = Ref();
   work_serializer_->Run(
       [resolver, update]() {
@@ -915,10 +917,11 @@ void XdsResolver::NotifyRdsUpdate(XdsApi::RdsUpdate update) {
         }
         resolver->OnRouteConfigUpdate(std::move(update));
       },
-      DEBUG_LOCATION);
+      location);
 }
 
-void XdsResolver::NotifyError(grpc_error_handle error) {
+void XdsResolver::NotifyError(grpc_error_handle error,
+                              const DebugLocation& location) {
   RefCountedPtr<XdsResolver> resolver = Ref();
   work_serializer_->Run(
       [resolver, error]() {
@@ -927,10 +930,10 @@ void XdsResolver::NotifyError(grpc_error_handle error) {
         }
         resolver->OnError(error);
       },
-      DEBUG_LOCATION);
+      location);
 }
 
-void XdsResolver::NotifyResourceDoesNotExist() {
+void XdsResolver::NotifyResourceDoesNotExist(const DebugLocation& location) {
   RefCountedPtr<XdsResolver> resolver = Ref();
   work_serializer_->Run(
       [resolver]() {
@@ -939,7 +942,7 @@ void XdsResolver::NotifyResourceDoesNotExist() {
         }
         resolver->OnResourceDoesNotExist();
       },
-      DEBUG_LOCATION);
+      location);
 }
 
 //

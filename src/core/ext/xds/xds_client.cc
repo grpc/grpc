@@ -2320,7 +2320,7 @@ void XdsClient::WatchClusterData(
     MutexLock lock(&mu_);
     auto& authority_state = authority_state_map_[resource->authority];
     ClusterState& cluster_state = authority_state.cluster_map[resource->id];
-    cluster_state.watchers[w] = std::move(watcher);
+    cluster_state.watchers[w] = watcher;
     // If we've already received a CDS update, notify the new watcher
     // immediately.
     if (cluster_state.update.has_value()) {
