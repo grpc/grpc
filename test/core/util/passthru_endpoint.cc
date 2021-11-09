@@ -133,7 +133,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 // Copy src slice and split the copy at n bytes into two separate slices
-void grpc_slice_copy_split(grpc_slice src, size_t n, grpc_slice& split1,
+void grpc_slice_copy_split(grpc_slice src, uint64_t n, grpc_slice& split1,
                            grpc_slice& split2) {
   GPR_ASSERT(n <= GRPC_SLICE_LENGTH(src));
   if (n == GRPC_SLICE_LENGTH(src)) {
@@ -203,7 +203,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     uint64_t slice_length = GPR_SLICE_LENGTH(slice);
     GPR_ASSERT(slice_length > 0);
     grpc_slice split1, split2;
-    ssize_t split_length = 0;
+    uint64_t split_length = 0;
     if (slice_length <= max_readable) {
       split_length = std::min<uint64_t>(slice_length, max_writable);
     } else if (max_readable > 0) {
