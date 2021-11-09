@@ -788,7 +788,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/debug/trace.cc )
   s.files += %w( src/core/lib/debug/trace.h )
   s.files += %w( src/core/lib/event_engine/channel_args_endpoint_config.h )
-  s.files += %w( src/core/lib/event_engine/endpoint_config.cc )
   s.files += %w( src/core/lib/event_engine/event_engine.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.h )

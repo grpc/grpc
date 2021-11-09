@@ -1615,7 +1615,6 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.cc",
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
-        "src/core/lib/event_engine/endpoint_config.cc",
         "src/core/lib/event_engine/event_engine.cc",
         "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
