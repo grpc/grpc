@@ -2485,7 +2485,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
 
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 /*TEST_P(GlobalXdsClientTest, FederationBasic) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FEDERATION", "true");
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kNewServerName = "new-server.example.com";
   const char* kNewUrl = "xds.example.com/new-server.example.com";
   Listener listener = default_listener_;
@@ -2505,7 +2505,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancers_[0]->ads_service()->clients().size());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FEDERATION");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }*/
 
 // Tests that the NACK for multiple bad LDS resources includes both errors.

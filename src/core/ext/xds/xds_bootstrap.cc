@@ -42,7 +42,7 @@ namespace grpc_core {
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FEDERATION");
+  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -224,26 +224,28 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
-  it = json.mutable_object()->find("authorities");
-  if (XdsFederationEnabled() && it != json.mutable_object()->end()) {
-    if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"authorities\" field is not an object"));
-    } else {
-      grpc_error_handle parse_error = ParseAuthorities(&it->second);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+  if (XdsFederationEnabled()) {
+    it = json.mutable_object()->find("authorities");
+    if (it != json.mutable_object()->end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"authorities\" field is not an object"));
+      } else {
+        grpc_error_handle parse_error = ParseAuthorities(&it->second);
+        if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      }
     }
-  }
-  it = json.mutable_object()->find(
-      "client_default_listener_resource_name_template");
-  if (XdsFederationEnabled() && it != json.mutable_object()->end()) {
-    if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"client_default_listener_resource_name_template\" field is not a "
-          "string"));
-    } else {
-      client_default_listener_resource_name_template_ =
-          std::move(*it->second.mutable_string_value());
+    it = json.mutable_object()->find(
+        "client_default_listener_resource_name_template");
+    if (it != json.mutable_object()->end()) {
+      if (it->second.type() != Json::Type::STRING) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"client_default_listener_resource_name_template\" field is not a "
+            "string"));
+      } else {
+        client_default_listener_resource_name_template_ =
+            std::move(*it->second.mutable_string_value());
+      }
     }
   }
   it = json.mutable_object()->find("server_listener_resource_name_template");
@@ -302,18 +304,13 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(
 
 grpc_error_handle XdsBootstrap::ParseAuthorities(Json* json) {
   std::vector<grpc_error_handle> error_list;
-  for (auto p : json->object_value()) {
-    if (p.first.empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:authorities element error: name cannot be empty"));
-      continue;
-    }
+  for (auto& p : *(json->mutable_object())) {
     if (p.second.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           "field:authorities element error: element is not a object"));
       continue;
     }
-    grpc_error_handle parse_error = ParseAuthority(&(p.second), p.first);
+    grpc_error_handle parse_error = ParseAuthority(&p.second, p.first);
     if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"authorities\"",
