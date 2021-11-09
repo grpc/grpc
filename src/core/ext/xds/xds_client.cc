@@ -501,18 +501,21 @@ class XdsClient::ChannelState::StateWatcher
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
-    MutexLock lock(&parent_->xds_client_->mu_);
-    if (!parent_->shutting_down_ &&
-        new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      // In TRANSIENT_FAILURE.  Notify all watchers of error.
-      gpr_log(GPR_INFO,
-              "[xds_client %p] xds channel in state:TRANSIENT_FAILURE "
-              "status_message:(%s)",
-              parent_->xds_client(), status.ToString().c_str());
-      parent_->xds_client_->NotifyOnErrorLocked(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "xds channel in TRANSIENT_FAILURE"));
+    {
+      MutexLock lock(&parent_->xds_client_->mu_);
+      if (!parent_->shutting_down_ &&
+          new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // In TRANSIENT_FAILURE.  Notify all watchers of error.
+        gpr_log(GPR_INFO,
+                "[xds_client %p] xds channel in state:TRANSIENT_FAILURE "
+                "status_message:(%s)",
+                parent_->xds_client(), status.ToString().c_str());
+        parent_->xds_client_->NotifyOnErrorLocked(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "xds channel in TRANSIENT_FAILURE"));
+      }
     }
+    parent_->xds_client()->work_serializer_.DrainQueue();
   }
 
   WeakRefCountedPtr<ChannelState> parent_;
