@@ -55,7 +55,7 @@ bool iomgr_platform_is_any_background_poller_thread(void) {
 }
 
 bool iomgr_platform_add_closure_to_background_poller(
-    /*closure=*/grpc_closure*, /*error=*/grpc_error_handle) {
+    grpc_closure* /* closure */, grpc_error_handle /* error */) {
   return false;
 }
 
