@@ -751,6 +751,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -785,7 +786,6 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine/closure.h
   - src/core/lib/iomgr/event_engine/endpoint.h
-  - src/core/lib/iomgr/event_engine/iomgr.h
   - src/core/lib/iomgr/event_engine/pollset.h
   - src/core/lib/iomgr/event_engine/promise.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
@@ -1297,6 +1297,7 @@ libs:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -1805,6 +1806,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/endpoint_config_internal.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -1839,7 +1841,6 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine/closure.h
   - src/core/lib/iomgr/event_engine/endpoint.h
-  - src/core/lib/iomgr/event_engine/iomgr.h
   - src/core/lib/iomgr/event_engine/pollset.h
   - src/core/lib/iomgr/event_engine/promise.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
@@ -2072,6 +2073,7 @@ libs:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -5582,6 +5584,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: error_details_test
   gtest: true
   build: test

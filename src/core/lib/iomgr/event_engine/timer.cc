@@ -16,9 +16,9 @@
 #ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
-#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/init.h"
@@ -26,11 +26,12 @@
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 void timer_init(grpc_timer* timer, grpc_millis deadline,
                 grpc_closure* closure) {
-  timer->ee_task_handle = grpc_iomgr_event_engine()->RunAt(
+  timer->ee_task_handle = GetDefaultEventEngine()->RunAt(
       grpc_core::ToAbslTime(
           grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
       GrpcClosureToCallback(closure));
@@ -39,7 +40,7 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
 
 void timer_cancel(grpc_timer* timer) {
   auto handle = timer->ee_task_handle;
-  if (!grpc_iomgr_event_engine()->Cancel(handle)) {
+  if (!GetDefaultEventEngine()->Cancel(handle)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
                             GRPC_ERROR_CANCELLED);
   }
