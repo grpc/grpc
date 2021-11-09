@@ -64,6 +64,8 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
+    static XdsServer Parse(Json* json, grpc_error_handle* error);
+
     bool operator<(const XdsServer& other) const {
       if (server_uri < other.server_uri) return true;
       if (channel_creds_type < other.channel_creds_type) return true;
@@ -105,8 +107,10 @@ class XdsBootstrap {
   const std::string& server_listener_resource_name_template() const {
     return server_listener_resource_name_template_;
   }
-  std::map<std::string, Authority>& authorities() { return authorities_; }
-  absl::optional<Authority> LookupAuthority(const std::string& name) const;
+  const std::map<std::string, Authority>& authorities() const {
+    return authorities_;
+  }
+  const Authority* LookupAuthority(const std::string& name) const;
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
     return certificate_providers_;
@@ -114,15 +118,9 @@ class XdsBootstrap {
 
  private:
   grpc_error_handle ParseXdsServerList(
-      Json* json, absl::InlinedVector<XdsServer, 1>& servers);
-  grpc_error_handle ParseXdsServer(Json* json, size_t idx,
-                                   absl::InlinedVector<XdsServer, 1>& servers);
+      Json* json, absl::InlinedVector<XdsServer, 1>* servers);
   grpc_error_handle ParseAuthorities(Json* json);
   grpc_error_handle ParseAuthority(Json* json, const std::string& name);
-  grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
-  grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
-                                      XdsServer* server);
-  grpc_error_handle ParseServerFeaturesArray(Json* json, XdsServer* server);
   grpc_error_handle ParseNode(Json* json);
   grpc_error_handle ParseLocality(Json* json);
   grpc_error_handle ParseCertificateProviders(Json* json);

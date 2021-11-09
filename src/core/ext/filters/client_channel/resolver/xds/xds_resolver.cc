@@ -1035,7 +1035,7 @@ class XdsResolverFactory : public ResolverFactory {
       authority = parts_of_uri[0];
       auto authority_config =
           xds_client->bootstrap().LookupAuthority(authority);
-      if (authority_config == absl::nullopt) {
+      if (authority_config == nullptr) {
         gpr_log(GPR_ERROR, "Invalid target URI -- authority not found for %s.",
                 target_hostname.c_str());
         return nullptr;
