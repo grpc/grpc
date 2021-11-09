@@ -353,4 +353,4 @@ class JsonObjectLoader final {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
