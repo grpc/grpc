@@ -1578,7 +1578,6 @@ libs:
   - test/core/util/test_tcp_server.h
   - test/core/util/tls_utils.h
   - test/core/util/tracer_util.h
-  - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -1602,7 +1601,6 @@ libs:
   - test/core/util/test_tcp_server.cc
   - test/core/util/tls_utils.cc
   - test/core/util/tracer_util.cc
-  - test/core/util/trickle_endpoint.cc
   deps:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
@@ -1634,7 +1632,6 @@ libs:
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
   - test/core/util/tracer_util.h
-  - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -1657,7 +1654,6 @@ libs:
   - test/core/util/test_config.cc
   - test/core/util/test_tcp_server.cc
   - test/core/util/tracer_util.cc
-  - test/core/util/trickle_endpoint.cc
   deps:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
@@ -8473,7 +8469,6 @@ targets:
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
   - test/core/util/tracer_util.h
-  - test/core/util/trickle_endpoint.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -8499,7 +8494,6 @@ targets:
   - test/core/util/test_config.cc
   - test/core/util/test_tcp_server.cc
   - test/core/util/tracer_util.cc
-  - test/core/util/trickle_endpoint.cc
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
   - absl/debugging:failure_signal_handler

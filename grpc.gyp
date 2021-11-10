@@ -1099,7 +1099,6 @@
         'test/core/util/test_tcp_server.cc',
         'test/core/util/tls_utils.cc',
         'test/core/util/tracer_util.cc',
-        'test/core/util/trickle_endpoint.cc',
       ],
     },
     {
@@ -1133,7 +1132,6 @@
         'test/core/util/test_config.cc',
         'test/core/util/test_tcp_server.cc',
         'test/core/util/tracer_util.cc',
-        'test/core/util/trickle_endpoint.cc',
       ],
     },
     {
