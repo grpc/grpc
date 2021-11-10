@@ -220,6 +220,7 @@ def diff(bms, loops, regex, track, old, new, counters):
         if d is None: continue
         histogram.append(d)
     histogram.sort()
+    print("histogram of speedups: ", histogram)
     if len(histogram) == 0:
         significance = 0
     else:
