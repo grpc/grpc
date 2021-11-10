@@ -40,11 +40,10 @@ class GreeterClient {
     Status status = stub_->SayHello(&context, request, &reply);
     if (status.ok()) {
       return reply.message();
-    } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
-      return "RPC failed";
     }
+    std::cout << status.error_code() << ": " << status.error_message()
+              << std::endl;
+    return "RPC failed";
   }
 
  private:
