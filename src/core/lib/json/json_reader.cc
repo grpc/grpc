@@ -275,6 +275,18 @@ JsonReader::Status JsonReader::Run() {
     switch (c) {
       /* Let's process the error case first. */
       case GRPC_JSON_READ_CHAR_EOF:
+        switch (state_) {
+          case State::GRPC_JSON_STATE_VALUE_NUMBER:
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_EPM:
+            if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
+            state_ = State::GRPC_JSON_STATE_VALUE_END;
+            break;
+
+          default:
+            break;
+        }
         if (IsComplete()) {
           return Status::GRPC_JSON_DONE;
         }
