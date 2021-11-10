@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <android/binder_auto_utils.h>
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
-#include <android/binder_interface_utils.h>
 #include <android/log.h>
 #include <jni.h>
 
@@ -23,10 +19,8 @@
 #include "examples/protos/helloworld.pb.h"
 
 #include <grpcpp/grpcpp.h>
-
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
-#include "src/core/ext/transport/binder/server/binder_server.h"
-#include "src/core/ext/transport/binder/server/binder_server_credentials.h"
+#include <grpcpp/security/binder_credentials.h>
+#include <grpcpp/security/binder_security_policy.h>
 
 namespace {
 class GreeterService : public helloworld::Greeter::Service {

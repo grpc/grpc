@@ -66,6 +66,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",

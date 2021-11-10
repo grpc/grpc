@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -137,7 +137,7 @@ class CallStack(object):
         self.signature = initial_call_stack_builder.signature
         self.lines = initial_call_stack_builder.lines
         for line in self.lines:
-            for key, val in line.times.items():
+            for key, val in list(line.times.items()):
                 line.times[key] = [val]
 
     def add(self, call_stack_builder):
@@ -146,13 +146,13 @@ class CallStack(object):
         assert len(self.lines) == len(call_stack_builder.lines)
         for lsum, line in zip(self.lines, call_stack_builder.lines):
             assert lsum.tag == line.tag
-            assert lsum.times.keys() == line.times.keys()
-            for k, lst in lsum.times.items():
+            assert list(lsum.times.keys()) == list(line.times.keys())
+            for k, lst in list(lsum.times.items()):
                 lst.append(line.times[k])
 
     def finish(self):
         for line in self.lines:
-            for lst in line.times.values():
+            for lst in list(line.times.values()):
                 lst.sort()
 
 
@@ -175,7 +175,7 @@ with open(args.source) as f:
             del builder[thd]
 time_taken = time.time() - start
 
-call_stacks = sorted(call_stacks.values(),
+call_stacks = sorted(list(call_stacks.values()),
                      key=lambda cs: cs.count,
                      reverse=True)
 total_stacks = 0
@@ -260,7 +260,7 @@ for cs in call_stacks:
         out.write(BANNER[args.fmt] % {
             'count': cs.count,
         })
-    header, _ = zip(*FORMAT)
+    header, _ = list(zip(*FORMAT))
     table = []
     for line in cs.lines:
         fields = []

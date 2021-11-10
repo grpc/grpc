@@ -851,6 +851,10 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                       grpc_channel_args* args,
                                       Chttp2ServerArgsModifier args_modifier,
                                       int* port_num) {
+  if (addr == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid address: addr cannot be a nullptr.");
+  }
   if (strncmp(addr, "external:", 9) == 0) {
     return grpc_core::Chttp2ServerListener::CreateWithAcceptor(
         server, addr, args, args_modifier);
@@ -859,15 +863,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   grpc_resolved_addresses* resolved = nullptr;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
+  absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
-    if (absl::StartsWith(parsed_addr, kUnixUriPrefix)) {
-      error = grpc_resolve_unix_domain_address(
-          absl::StripPrefix(parsed_addr, kUnixUriPrefix), &resolved);
-    } else if (absl::StartsWith(addr, kUnixAbstractUriPrefix)) {
-      error = grpc_resolve_unix_abstract_domain_address(
-          absl::StripPrefix(parsed_addr, kUnixAbstractUriPrefix), &resolved);
+    if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
+      error =
+          grpc_resolve_unix_domain_address(parsed_addr_unprefixed, &resolved);
+    } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
+                                   kUnixAbstractUriPrefix)) {
+      error = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed,
+                                                        &resolved);
     } else {
       error = grpc_blocking_resolve_address(parsed_addr.c_str(), "https",
                                             &resolved);

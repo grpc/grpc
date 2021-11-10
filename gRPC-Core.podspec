@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.42.0-dev'
+  version = '1.43.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20210324.0'
+  abseil_version = '1.20210324.2'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -867,9 +867,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.cc',
                       'src/core/lib/debug/trace.h',
-                      'src/core/lib/event_engine/endpoint_config.cc',
-                      'src/core/lib/event_engine/endpoint_config_internal.h',
+                      'src/core/lib/event_engine/channel_args_endpoint_config.cc',
+                      'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/event_engine.cc',
+                      'src/core/lib/event_engine/event_engine_factory.cc',
+                      'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/sockaddr.cc',
                       'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.cc',
@@ -1001,7 +1003,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/event_engine/endpoint.cc',
                       'src/core/lib/iomgr/event_engine/endpoint.h',
                       'src/core/lib/iomgr/event_engine/iomgr.cc',
-                      'src/core/lib/iomgr/event_engine/iomgr.h',
                       'src/core/lib/iomgr/event_engine/pollset.cc',
                       'src/core/lib/iomgr/event_engine/pollset.h',
                       'src/core/lib/iomgr/event_engine/promise.h',
@@ -1789,7 +1790,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
-                              'src/core/lib/event_engine/endpoint_config_internal.h',
+                              'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                              'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
@@ -1852,7 +1854,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/event_engine/closure.h',
                               'src/core/lib/iomgr/event_engine/endpoint.h',
-                              'src/core/lib/iomgr/event_engine/iomgr.h',
                               'src/core/lib/iomgr/event_engine/pollset.h',
                               'src/core/lib/iomgr/event_engine/promise.h',
                               'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
