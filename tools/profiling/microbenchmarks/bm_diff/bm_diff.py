@@ -215,9 +215,11 @@ def diff(bms, loops, regex, track, old, new, counters):
     # benchmark delta %-age, and then apply some hand chosen thresholds
     histogram = []
     for bm in benchmarks.values():
-        if bm.skip(): continue
+        if bm.skip():
+            continue
         d = bm.speedup('cpu_time')
-        if d is None: continue
+        if d is None:
+            continue
         histogram.append(d)
     histogram.sort()
     print("histogram of speedups: ", histogram)
@@ -257,7 +259,8 @@ def diff(bms, loops, regex, track, old, new, counters):
             note = '\n\nMissing files (indicates new benchmark): \n%s' % fmt_dict(
                 nonexistant_files)
     if rows:
-        return tabulate.tabulate(rows, headers=headers, floatfmt='+.2f'), note, significance
+        return tabulate.tabulate(rows, headers=headers,
+                                 floatfmt='+.2f'), note, significance
     else:
         return None, note, 0
 
