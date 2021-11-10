@@ -52,7 +52,7 @@ struct InternedSliceRefcount {
   grpc_slice_refcount base;
   grpc_slice_refcount sub;
   const size_t length;
-  std::atomic<size_t> refcnt{0};
+  std::atomic<size_t> refcnt{1};
   const uint32_t hash;
   InternedSliceRefcount* bucket_next;
 };
