@@ -76,39 +76,44 @@ const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
-// Helper template function to invoke `OnError()` on a list of watchers \a
-// watchers_list within \a work_serializer. Works with all 4 resource types.
-template <class T>
-void ScheduleNotifyWatchersOnErrorInWorkSerializer(
-    WorkSerializer* work_serializer, const T& watchers_list,
-    grpc_error_handle error, const grpc_core::DebugLocation& location) {
-  work_serializer->Schedule(
-      [watchers_list, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) {
-        for (const auto& p : watchers_list) {
-          p.first->OnError(GRPC_ERROR_REF(error));
-        }
-        GRPC_ERROR_UNREF(error);
-      },
-      location);
-}
-
-// Helper template function to invoke `OnResourceDoesNotExist()` on a list of
-// watchers \a watchers_list within \a work_serializer. Works with all 4
-// resource types.
-template <class T>
-void ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-    WorkSerializer* work_serializer, const T& watchers_list,
-    const grpc_core::DebugLocation& location) {
-  work_serializer->Schedule(
-      [watchers_list]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) {
-        for (const auto& p : watchers_list) {
-          p.first->OnResourceDoesNotExist();
-        }
-      },
-      location);
-}
-
 }  // namespace
+
+class XdsClient::Notifier {
+ public:
+  // Helper template function to invoke `OnError()` on a list of watchers \a
+  // watchers_list within \a work_serializer. Works with all 4 resource types.
+  template <class T>
+  static void ScheduleNotifyWatchersOnErrorInWorkSerializer(
+      XdsClient* xds_client, const T& watchers_list, grpc_error_handle error,
+      const grpc_core::DebugLocation& location) {
+    xds_client->work_serializer_.Schedule(
+        [watchers_list, error]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnError(GRPC_ERROR_REF(error));
+              }
+              GRPC_ERROR_UNREF(error);
+            },
+        location);
+  }
+
+  // Helper template function to invoke `OnResourceDoesNotExist()` on a list of
+  // watchers \a watchers_list within \a work_serializer. Works with all 4
+  // resource types.
+  template <class T>
+  static void ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+      XdsClient* xds_client, const T& watchers_list,
+      const grpc_core::DebugLocation& location) {
+    xds_client->work_serializer_.Schedule(
+        [watchers_list]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnResourceDoesNotExist();
+              }
+            },
+        location);
+  }
+};
 
 //
 // Internal class declarations
@@ -247,27 +252,27 @@ class XdsClient::ChannelState::AdsCallState
         if (type_url_ == XdsApi::kLdsTypeUrl) {
           ListenerState& state = authority_state.listener_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          ScheduleNotifyWatchersOnErrorInWorkSerializer(
-              &ads_calld_->xds_client()->work_serializer_, state.watchers,
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
               GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else if (type_url_ == XdsApi::kRdsTypeUrl) {
           RouteConfigState& state =
               authority_state.route_config_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          ScheduleNotifyWatchersOnErrorInWorkSerializer(
-              &ads_calld_->xds_client()->work_serializer_, state.watchers,
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
               GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else if (type_url_ == XdsApi::kCdsTypeUrl) {
           ClusterState& state = authority_state.cluster_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          ScheduleNotifyWatchersOnErrorInWorkSerializer(
-              &ads_calld_->xds_client()->work_serializer_, state.watchers,
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
               GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else if (type_url_ == XdsApi::kEdsTypeUrl) {
           EndpointState& state = authority_state.endpoint_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          ScheduleNotifyWatchersOnErrorInWorkSerializer(
-              &ads_calld_->xds_client()->work_serializer_, state.watchers,
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
               GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else {
           GPR_UNREACHABLE_CODE(return );
@@ -1040,7 +1045,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     auto& value = listener_state.update.value();
     xds_client()->work_serializer_.Schedule(
         [watchers_list, value]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) {
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
               for (const auto& p : watchers_list) {
                 p.first->OnListenerChanged(value);
               }
@@ -1084,9 +1089,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
         // For that case, we rely on the request timeout instead.
         if (!listener_state.update.has_value()) continue;
         listener_state.update.reset();
-        ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-            &xds_client()->work_serializer_, listener_state.watchers,
-            DEBUG_LOCATION);
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), listener_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1106,9 +1110,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
                 ->authority_state_map_[authority_name]
                 .route_config_map[listener_name];
         route_config_state.update.reset();
-        ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-            &xds_client()->work_serializer_, route_config_state.watchers,
-            DEBUG_LOCATION);
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), route_config_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1157,7 +1160,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
     auto& value = route_config_state.update.value();
     xds_client()->work_serializer_.Schedule(
         [watchers_list, value]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) {
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
               for (const auto& p : watchers_list) {
                 p.first->OnRouteConfigChanged(value);
               }
@@ -1219,7 +1222,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     auto& value = cluster_state.update.value();
     xds_client()->work_serializer_.Schedule(
         [watchers_list, value]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) {
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
               for (const auto& p : watchers_list) {
                 p.first->OnClusterChanged(value);
               }
@@ -1263,9 +1266,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
         // For that case, we rely on the request timeout instead.
         if (!cluster_state.update.has_value()) continue;
         cluster_state.update.reset();
-        ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-            &xds_client()->work_serializer_, cluster_state.watchers,
-            DEBUG_LOCATION);
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), cluster_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1284,9 +1286,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
                                             ->authority_state_map_[authority]
                                             .endpoint_map[eds_resource_name];
         endpoint_state.update.reset();
-        ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-            &xds_client()->work_serializer_, endpoint_state.watchers,
-            DEBUG_LOCATION);
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), endpoint_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1338,7 +1339,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
     auto& value = endpoint_state.update.value();
     xds_client()->work_serializer_.Schedule(
         [watchers_list, value]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) {
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
               for (const auto& p : watchers_list) {
                 p.first->OnEndpointChanged(value);
               }
@@ -1370,9 +1371,9 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateHelperLocked(
   auto it = state_map->find(resource_name);
   if (it == state_map->end()) return;
   auto& state = it->second;
-  ScheduleNotifyWatchersOnErrorInWorkSerializer(
-      &xds_client()->work_serializer_, state.watchers,
-      GRPC_ERROR_REF(result.parse_error), DEBUG_LOCATION);
+  Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+      xds_client(), state.watchers, GRPC_ERROR_REF(result.parse_error),
+      DEBUG_LOCATION);
   UpdateResourceMetadataNacked(result.version, error_details, update_time,
                                &state.meta);
 }
@@ -2161,7 +2162,7 @@ void XdsClient::WatchListenerData(
     work_serializer_.Run(
         // TODO(yashykt): When we move to C++14, capture watcher using
         // std::move()
-        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
+        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
           watcher->OnError(error);
         },
         DEBUG_LOCATION);
@@ -2242,7 +2243,7 @@ void XdsClient::WatchRouteConfigData(
     work_serializer_.Run(
         // TODO(yashykt): When we move to C++14, capture watcher using
         // std::move()
-        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
+        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
           watcher->OnError(error);
         },
         DEBUG_LOCATION);
