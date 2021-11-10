@@ -84,7 +84,7 @@ declare -A EXPECTED_CLIENT_OUTPUT=(
 
 for feature in ${FEATURES[@]}; do
   echo "$(tput setaf 4) testing: $feature $(tput sgr 0)"
-  bazel build $feature:all || fail "failed to build $feature"
+  bazel build //examples/cpp/features/${feature}:all || fail "failed to build $feature"
 
   SERVER_LOG="$(mktemp)"
   $ROOT_DIR/bazel-bin/examples/cpp/features/$feature/server &>$SERVER_LOG &
