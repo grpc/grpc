@@ -1104,6 +1104,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />
