@@ -1380,7 +1380,7 @@ LIBGRPC_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
-    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/event_engine_factory.cc \
     src/core/lib/event_engine/sockaddr.cc \
@@ -1866,7 +1866,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
-    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/event_engine_factory.cc \
     src/core/lib/event_engine/sockaddr.cc \
