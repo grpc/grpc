@@ -2,7 +2,6 @@
   "Grpc.Core.Tests": [
     "Grpc.Core.Interceptors.Tests.ClientInterceptorTest",
     "Grpc.Core.Interceptors.Tests.ServerInterceptorTest",
-    "Grpc.Core.Tests.SanityTest",
     "Grpc.Core.Tests.ServerBindFailedTest",
     "Grpc.Core.Tests.ServerTest",
     "Grpc.Core.Tests.ShutdownHookClientTest",
