@@ -20,7 +20,7 @@ If Not "%RUN_TESTS_FLAGS%"=="%RUN_TESTS_FLAGS:python=%" (
 )
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-python3.9 tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
+C:\tools\python-3.9.0-amd64.exe tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
 set RUNTESTS_EXITCODE=%errorlevel%
 
 bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
