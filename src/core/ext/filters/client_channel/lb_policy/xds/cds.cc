@@ -72,26 +72,32 @@ class CdsLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
     void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override {
-      RefCountedPtr<CdsLb> cds_lb = parent_;
-      std::string name = name_;
+      Ref().release();  // Ref held by lambda
       parent_->work_serializer()->Run(
-          [cds_lb, name, cluster_data]() mutable {
-            cds_lb->OnClusterChanged(name, std::move(cluster_data));
+          // TODO(roth): When we move to C++14, capture cluster_data with
+          // std::move().
+          [this, cluster_data]() mutable {
+            parent_->OnClusterChanged(name_, std::move(cluster_data));
+            Unref();
           },
           DEBUG_LOCATION);
     }
     void OnError(grpc_error_handle error) override {
-      RefCountedPtr<CdsLb> cds_lb = parent_;
-      std::string name = name_;
+      Ref().release();  // Ref held by lambda
       parent_->work_serializer()->Run(
-          [cds_lb, name, error]() { cds_lb->OnError(name, error); },
+          [this, error]() {
+            parent_->OnError(name_, error);
+            Unref();
+          },
           DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      RefCountedPtr<CdsLb> cds_lb = parent_;
-      std::string name = name_;
+      Ref().release();  // Ref held by lambda
       parent_->work_serializer()->Run(
-          [cds_lb, name]() { cds_lb->OnResourceDoesNotExist(name); },
+          [this]() {
+            parent_->OnResourceDoesNotExist(name_);
+            Unref();
+          },
           DEBUG_LOCATION);
     }
 

@@ -145,9 +145,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
           parent_->config_->discovery_mechanisms()[index_].eds_service_name};
     }
 
-    // parent() and index() could have been protected methods but a bug in msvc
-    // disallows accessing protected members of the base class through a nested
-    // class.
+   protected:
     XdsClusterResolverLb* parent() const { return parent_.get(); }
     size_t index() const { return index_; }
 
@@ -178,36 +176,51 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
       void OnEndpointChanged(XdsApi::EdsUpdate update) override {
-        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism =
-            discovery_mechanism_;
-        discovery_mechanism->parent()->work_serializer()->Run(
-            [discovery_mechanism, update]() mutable {
-              discovery_mechanism->parent()->OnEndpointChanged(
-                  discovery_mechanism->index(), std::move(update));
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            // TODO(yashykt): When we move to C++14, capture update with
+            // std::move
+            [this, update]() mutable {
+              OnEndpointChangedHelper(std::move(update));
+              Unref();
             },
             DEBUG_LOCATION);
       }
       void OnError(grpc_error_handle error) override {
-        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism =
-            discovery_mechanism_;
-        discovery_mechanism->parent()->work_serializer()->Run(
-            [discovery_mechanism, error]() {
-              discovery_mechanism->parent()->OnError(
-                  discovery_mechanism->index(), error);
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            [this, error]() {
+              OnErrorHelper(error);
+              Unref();
             },
             DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism =
-            discovery_mechanism_;
-        discovery_mechanism->parent()->work_serializer()->Run(
-            [discovery_mechanism]() {
-              discovery_mechanism->parent()->OnResourceDoesNotExist(
-                  discovery_mechanism->index());
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            [this]() {
+              OnResourceDoesNotExistHelper();
+              Unref();
             },
             DEBUG_LOCATION);
       }
 
+     private:
+      // Code accessing protected methods of `DiscoveryMechanism` need to be
+      // in methods of this class rather than in lambdas to work around an MSVC
+      // bug.
+      void OnEndpointChangedHelper(XdsApi::EdsUpdate update) {
+        discovery_mechanism_->parent()->OnEndpointChanged(
+            discovery_mechanism_->index(), std::move(update));
+      }
+      void OnErrorHelper(grpc_error_handle error) {
+        discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
+                                                error);
+      }
+      void OnResourceDoesNotExistHelper() {
+        discovery_mechanism_->parent()->OnResourceDoesNotExist(
+            discovery_mechanism_->index());
+      }
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
 
@@ -260,6 +273,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
      private:
       RefCountedPtr<LogicalDNSDiscoveryMechanism> discovery_mechanism_;
     };
+
+    // This is necessary only because of a bug in msvc where nested class cannot
+    // access protected member in base class.
+    friend class ResolverResultHandler;
 
     OrphanablePtr<Resolver> resolver_;
   };
