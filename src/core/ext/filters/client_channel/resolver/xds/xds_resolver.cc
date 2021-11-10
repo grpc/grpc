@@ -822,8 +822,9 @@ void XdsResolver::StartLocked() {
     std::string name_template =
         authority_config->client_listener_resource_name_template;
     if (name_template.empty()) {
-      name_template = absl::StrCat("xdstp://", authority,
-                                   "/envoy.config.listener.v3.Listener/%s");
+      name_template = absl::StrCat(
+          "xdstp://", authority,
+          "/type.googleapis.com/envoy.config.listener.v3.Listener/%s");
     }
     lds_resource_name_ = absl::StrReplaceAll(
         name_template, {{"%s", URI::PercentEncode(data_plane_authority_)}});
