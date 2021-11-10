@@ -213,7 +213,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                iomgr_platforms=['native', 'gevent', 'asyncio'],
+                                iomgr_platforms=['native'],
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
@@ -332,15 +332,15 @@ def _create_portability_test_jobs(extra_args=[],
                                 inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(languages=['python'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                arch='default',
-                                compiler='python_alpine',
-                                labels=['portability', 'multilang'],
-                                extra_args=extra_args +
-                                ['--report_multi_target'],
-                                inner_jobs=inner_jobs)
+    # test_jobs += _generate_jobs(languages=['python'],
+    #                             configs=['dbg'],
+    #                             platforms=['linux'],
+    #                             arch='default',
+    #                             compiler='python_alpine',
+    #                             labels=['portability', 'multilang'],
+    #                             extra_args=extra_args +
+    #                             ['--report_multi_target'],
+    #                             inner_jobs=inner_jobs)
 
     return test_jobs
 
