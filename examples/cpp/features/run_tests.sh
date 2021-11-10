@@ -16,9 +16,15 @@
 # Test structure borrowed with gratitude from
 # https://github.com/grpc/grpc-go/tree/master/examples/features
 
-set -eu
+set -eux
 
-ROOT_DIR=../../..
+# execute in root dir
+SCRIPTPATH="$(
+  cd -- "$(dirname "$0")" >/dev/null 2>&1
+  pwd -P
+)"
+cd ${SCRIPTPATH}/../../..
+
 SERVER_PORT=50051
 
 export TMPDIR=$(mktemp -d)
@@ -27,15 +33,15 @@ trap "rm -rf ${TMPDIR}" EXIT
 clean() {
   # loop a handful of times in case job shutdown is not immediate
   for i in {1..5}; do
-    # kill all child jobs, even if some have ended themselves.
+    # kill all jobs
     jobs -p | xargs kill &>/dev/null || true
-    # wait for jobs
+    # wait for all jobs to exit
     sleep 0.3
     if ! jobs | read; then
       return
     fi
   done
-  echo "$(tput setaf 1) clean failed to kill tests $(tput sgr 0)"
+  echo "ERROR: clean failed to kill tests"
   jobs
   exit 1
 }
@@ -47,22 +53,20 @@ fail() {
 }
 
 pass() {
-  echo "$(tput setaf 2) $1 $(tput sgr 0)"
+  echo "SUCCESS: $1"
 }
 
 wait_for_server() {
   feature=$1
   wait_command=${SERVER_WAIT_COMMAND[$feature]:-${SERVER_WAIT_COMMAND["default"]}}
-  echo "$(tput setaf 4) waiting for server to start $(tput sgr 0)"
-  for i in {1..10}; do
-    eval "$wait_command" 2>&1 &>/dev/null
-    if [ $? -eq 0 ]; then
-      pass "server started"
-      return
-    fi
+  echo "INFO: waiting for server to start"
+  declare -i i=0
+  while ! eval "$wait_command"; do
+    ((++i < 10)) || fail "cannot determine if server started"
+    lsof -U
     sleep 1
   done
-  fail "cannot determine if server started"
+  pass "server started"
 }
 
 FEATURES=(
@@ -83,17 +87,17 @@ declare -A EXPECTED_CLIENT_OUTPUT=(
 )
 
 for feature in ${FEATURES[@]}; do
-  echo "$(tput setaf 4) testing: $feature $(tput sgr 0)"
-  bazel build //examples/cpp/features/${feature}:all || fail "failed to build $feature"
+  echo "TESTING: $feature"
+  bazel build --define=use_strict_warning=true //examples/cpp/features/${feature}:all || fail "failed to build $feature"
 
   SERVER_LOG="$(mktemp)"
-  $ROOT_DIR/bazel-bin/examples/cpp/features/$feature/server &>$SERVER_LOG &
+  ./bazel-bin/examples/cpp/features/$feature/server &>$SERVER_LOG &
 
   wait_for_server $feature
 
   # TODO(hork): add a timeout to abort client?
   CLIENT_LOG="$(mktemp)"
-  $ROOT_DIR/bazel-bin/examples/cpp/features/$feature/client &>$CLIENT_LOG
+  ./bazel-bin/examples/cpp/features/$feature/client &>$CLIENT_LOG
 
   if [ -n "${EXPECTED_SERVER_OUTPUT[$feature]}" ]; then
     if ! grep -q "${EXPECTED_SERVER_OUTPUT[$feature]}" $SERVER_LOG; then
