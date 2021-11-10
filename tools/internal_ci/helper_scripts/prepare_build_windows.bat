@@ -47,9 +47,7 @@ set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
 @rem Only install Python interpreters if we are running Python tests
-If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
-    powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
-)
+powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
 
 @rem Needed for big_query_utils
 python -m pip install google-api-python-client || goto :error
