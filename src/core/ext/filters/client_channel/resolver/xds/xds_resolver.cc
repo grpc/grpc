@@ -926,6 +926,7 @@ void XdsResolver::NotifyError(grpc_error_handle error,
   work_serializer_->Run(
       [resolver, error]() {
         if (resolver->xds_client_ == nullptr) {
+          GRPC_ERROR_UNREF(error);
           return;
         }
         resolver->OnError(error);
