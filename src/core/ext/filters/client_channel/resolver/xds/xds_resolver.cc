@@ -83,13 +83,41 @@ class XdsResolver : public Resolver {
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnListenerChanged(XdsApi::LdsUpdate listener) override {
-      resolver_->NotifyLdsUpdate(std::move(listener), DEBUG_LOCATION);
+      Ref().release();  // ref held by lambda
+      resolver_->work_serializer_->Run(
+          // TODO(yashykt): When we move to C++14, capture listener with
+          // std::move
+          [this, listener]() mutable {
+            if (resolver_->xds_client_ != nullptr) {
+              resolver_->OnListenerUpdate(std::move(listener));
+            }
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
     void OnError(grpc_error_handle error) override {
-      resolver_->NotifyError(error, DEBUG_LOCATION);
+      Ref().release();  // ref held by lambda
+      resolver_->work_serializer_->Run(
+          [this, error]() {
+            if (resolver_->xds_client_ != nullptr) {
+              resolver_->OnError(error);
+            } else {
+              GRPC_ERROR_UNREF(error);
+            }
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      resolver_->NotifyResourceDoesNotExist(DEBUG_LOCATION);
+      Ref().release();  // ref held by lambda
+      resolver_->work_serializer_->Run(
+          [this]() {
+            if (resolver_->xds_client_ != nullptr) {
+              resolver_->OnResourceDoesNotExist();
+            }
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
 
    private:
@@ -101,13 +129,41 @@ class XdsResolver : public Resolver {
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
     void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override {
-      resolver_->NotifyRdsUpdate(std::move(route_config), DEBUG_LOCATION);
+      Ref().release();  // ref held by lambda
+      resolver_->work_serializer_->Run(
+          // TODO(yashykt): When we move to C++14, capture route_config with
+          // std::move
+          [this, route_config]() mutable {
+            if (resolver_->xds_client_ != nullptr) {
+              resolver_->OnRouteConfigUpdate(std::move(route_config));
+            }
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
     void OnError(grpc_error_handle error) override {
-      resolver_->NotifyError(error, DEBUG_LOCATION);
+      Ref().release();  // ref held by lambda
+      resolver_->work_serializer_->Run(
+          [this, error]() {
+            if (resolver_->xds_client_ != nullptr) {
+              resolver_->OnError(error);
+            } else {
+              GRPC_ERROR_UNREF(error);
+            }
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
     void OnResourceDoesNotExist() override {
-      resolver_->NotifyResourceDoesNotExist(DEBUG_LOCATION);
+      Ref().release();  // ref held by lambda
+      resolver_->work_serializer_->Run(
+          [this]() {
+            if (resolver_->xds_client_ != nullptr) {
+              resolver_->OnResourceDoesNotExist();
+            }
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
 
    private:
@@ -238,12 +294,6 @@ class XdsResolver : public Resolver {
       RefCountedPtr<ServiceConfig>* service_config);
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
-
-  // Helper functions to notify updates
-  void NotifyLdsUpdate(XdsApi::LdsUpdate update, const DebugLocation& location);
-  void NotifyRdsUpdate(XdsApi::RdsUpdate update, const DebugLocation& location);
-  void NotifyError(grpc_error_handle error, const DebugLocation& location);
-  void NotifyResourceDoesNotExist(const DebugLocation& location);
 
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
@@ -892,58 +942,6 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
     // Send a new result to the channel.
     GenerateResult();
   }
-}
-
-void XdsResolver::NotifyLdsUpdate(XdsApi::LdsUpdate update,
-                                  const DebugLocation& location) {
-  RefCountedPtr<XdsResolver> resolver = Ref();
-  work_serializer_->Run(
-      [resolver, update]() mutable {
-        if (resolver->xds_client_ == nullptr) {
-          return;
-        }
-        resolver->OnListenerUpdate(std::move(update));
-      },
-      location);
-}
-
-void XdsResolver::NotifyRdsUpdate(XdsApi::RdsUpdate update,
-                                  const DebugLocation& location) {
-  RefCountedPtr<XdsResolver> resolver = Ref();
-  work_serializer_->Run(
-      [resolver, update]() mutable {
-        if (resolver->xds_client_ == nullptr) {
-          return;
-        }
-        resolver->OnRouteConfigUpdate(std::move(update));
-      },
-      location);
-}
-
-void XdsResolver::NotifyError(grpc_error_handle error,
-                              const DebugLocation& location) {
-  RefCountedPtr<XdsResolver> resolver = Ref();
-  work_serializer_->Run(
-      [resolver, error]() {
-        if (resolver->xds_client_ == nullptr) {
-          GRPC_ERROR_UNREF(error);
-          return;
-        }
-        resolver->OnError(error);
-      },
-      location);
-}
-
-void XdsResolver::NotifyResourceDoesNotExist(const DebugLocation& location) {
-  RefCountedPtr<XdsResolver> resolver = Ref();
-  work_serializer_->Run(
-      [resolver]() {
-        if (resolver->xds_client_ == nullptr) {
-          return;
-        }
-        resolver->OnResourceDoesNotExist();
-      },
-      location);
 }
 
 //

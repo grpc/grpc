@@ -46,36 +46,46 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Listener data watcher interface.  Implemented by callers.
   class ListenerWatcherInterface : public RefCounted<ListenerWatcherInterface> {
    public:
-    // TODO(review_note): Tried adding ABSL_EXCLUSIVE_LOCKS_REQUIRED but that
-    // did not work. Tried work_serializer_, XdsClient::work_serializer_
-    virtual void OnListenerChanged(XdsApi::LdsUpdate listener) = 0;
-    virtual void OnError(grpc_error_handle error) = 0;
-    virtual void OnResourceDoesNotExist() = 0;
+    virtual void OnListenerChanged(XdsApi::LdsUpdate listener)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnError(grpc_error_handle error)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnResourceDoesNotExist()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
   };
 
   // RouteConfiguration data watcher interface.  Implemented by callers.
   class RouteConfigWatcherInterface
       : public RefCounted<RouteConfigWatcherInterface> {
    public:
-    virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) = 0;
-    virtual void OnError(grpc_error_handle error) = 0;
-    virtual void OnResourceDoesNotExist() = 0;
+    virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnError(grpc_error_handle error)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnResourceDoesNotExist()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
   };
 
   // Cluster data watcher interface.  Implemented by callers.
   class ClusterWatcherInterface : public RefCounted<ClusterWatcherInterface> {
    public:
-    virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
-    virtual void OnError(grpc_error_handle error) = 0;
-    virtual void OnResourceDoesNotExist() = 0;
+    virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnError(grpc_error_handle error)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnResourceDoesNotExist()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
   };
 
   // Endpoint data watcher interface.  Implemented by callers.
   class EndpointWatcherInterface : public RefCounted<EndpointWatcherInterface> {
    public:
-    virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
-    virtual void OnError(grpc_error_handle error) = 0;
-    virtual void OnResourceDoesNotExist() = 0;
+    virtual void OnEndpointChanged(XdsApi::EdsUpdate update)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnError(grpc_error_handle error)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
+    virtual void OnResourceDoesNotExist()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(XdsClient::work_serializer_) = 0;
   };
 
   // Factory function to get or create the global XdsClient instance.
