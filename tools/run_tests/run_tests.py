@@ -488,6 +488,51 @@ class CLanguage(object):
     def __str__(self):
         return self.make_target
 
+class FakeLanguage(object):
+
+    def __init__(self):
+        pass
+
+    def configure(self, config, args):
+        self.config = config
+        self.args = args
+
+    def test_specs(self):
+        out = []
+        cmdline = ["sleep", "5"]
+        for i in range(10):
+            out.append(
+                self.config.job_spec(
+                    cmdline,
+                    shortname="sleep {}".format(i),
+                )
+            )
+        return sorted(out)
+
+    def make_targets(self):
+        return []
+
+    def make_options(self):
+        return []
+
+    def pre_build_steps(self):
+        return []
+
+    def build_steps(self):
+        return []
+
+    def post_tests_steps(self):
+        return []
+
+    def makefile_name(self):
+        return 'Makefile'
+
+    def dockerfile_dir(self):
+        return None
+
+    def __str__(self):
+        return self.make_target
+
 
 # This tests Node on grpc/grpc-node and will become the standard for Node testing
 class RemoteNodeLanguage(object):
@@ -1228,7 +1273,8 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
-    'sanity': Sanity()
+    'fake': FakeLanguage(),
+    'sanity': Sanity(),
 }
 
 _MSBUILD_CONFIG = {
