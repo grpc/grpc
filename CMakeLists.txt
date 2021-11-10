@@ -1827,8 +1827,9 @@ add_library(grpc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/endpoint_config.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/event_engine_factory.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
@@ -2468,8 +2469,9 @@ add_library(grpc_unsecure
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/endpoint_config.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/event_engine_factory.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc

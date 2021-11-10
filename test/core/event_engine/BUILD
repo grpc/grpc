@@ -23,6 +23,7 @@ grpc_cc_test(
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",

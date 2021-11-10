@@ -100,7 +100,7 @@ run_test() {
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
   set -x
-  python -m "tests.${test_name}" \
+  python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
