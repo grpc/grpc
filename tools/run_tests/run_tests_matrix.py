@@ -193,7 +193,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
     # C# tests on .NET desktop/mono
     test_jobs += _generate_jobs(languages=['csharp'],
-                                configs=['dbg', 'opt'],
+                                configs=['dbg'],
                                 platforms=['linux', 'macos', 'windows'],
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
