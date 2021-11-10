@@ -18,11 +18,13 @@ from __future__ import print_function
 import json
 import os
 import subprocess
+import sys
 import tempfile
 import time
 import uuid
 
-from . import jobset
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import jobset
 
 _DEVNULL = open(os.devnull, 'w')
 

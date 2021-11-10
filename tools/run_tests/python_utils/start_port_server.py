@@ -24,7 +24,8 @@ import time
 
 import six.moves.urllib.request as request
 
-from . import jobset
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import jobset
 
 # must be synchronized with test/core/util/port_server_client.h
 _PORT_SERVER_PORT = 32766
