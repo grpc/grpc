@@ -107,7 +107,6 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   } else {
     Json* channel_creds = &it->second;
     for (size_t i = 0; i < channel_creds->mutable_array()->size(); ++i) {
-      gpr_log(GPR_INFO, "donna in Parse for loop %d", i);
       Json& child_channel_cred = channel_creds->mutable_array()->at(i);
       if (child_channel_cred.type() != Json::Type::OBJECT) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -170,7 +169,6 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
       "errors parsing xds server", &error_list);
-  gpr_log(GPR_INFO, "donna returned a server");
   return server;
 }
 
@@ -291,10 +289,7 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(
           absl::StrCat("array element ", i, " is not an object")));
     } else {
       grpc_error_handle parse_error;
-      gpr_log(GPR_INFO, "donna about to add a new server %d", servers->size());
       servers->emplace_back(XdsServer::Parse(&child, &parse_error));
-      gpr_log(GPR_INFO, "donna about after add a new server %d",
-              servers->size());
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }

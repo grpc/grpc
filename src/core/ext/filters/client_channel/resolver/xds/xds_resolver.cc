@@ -805,12 +805,10 @@ void XdsResolver::StartLocked() {
   std::string authority;
   std::string target_hostname(absl::StripPrefix(uri_.path(), "/"));
   data_plane_authority_ = GetDefaultAuthority(uri_);
-  gpr_log(GPR_INFO, "donna target_hostname is %s", target_hostname.c_str());
   std::vector<std::string> parts_of_uri = absl::StrSplit(target_hostname, "/");
   GPR_ASSERT(parts_of_uri.size() == 1 || parts_of_uri.size() == 2);
   if (parts_of_uri.size() == 2) {
     // target_uri.authority is set case
-    gpr_log(GPR_INFO, "donna uri authority is not empty");
     authority = parts_of_uri[0];
     auto authority_config = xds_client_->bootstrap().LookupAuthority(authority);
     if (authority_config == nullptr) {
@@ -828,11 +826,8 @@ void XdsResolver::StartLocked() {
     }
     lds_resource_name_ = absl::StrReplaceAll(
         name_template, {{"%s", URI::PercentEncode(data_plane_authority_)}});
-    gpr_log(GPR_INFO, "donna name template %s and lds_resource_name %s",
-            name_template.c_str(), lds_resource_name_.c_str());
   } else {
     // target_uri.authority not set
-    gpr_log(GPR_INFO, "donna uri authority is empty");
     std::string name_template =
         xds_client_->bootstrap()
             .client_default_listener_resource_name_template();
@@ -846,11 +841,11 @@ void XdsResolver::StartLocked() {
         absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
   }
   data_plane_authority_ = GetDefaultAuthority(uri_);
-  gpr_log(GPR_INFO,
-          "donna constructued lds_resource_name %s and data plane authority "
-          "%s %s",
-          lds_resource_name_.c_str(), data_plane_authority_.c_str(),
-          authority.c_str());
+  gpr_log(
+      GPR_INFO,
+      "donna lds_resource_name %s and data plane authority %s and authority %s",
+      lds_resource_name_.c_str(), data_plane_authority_.c_str(),
+      authority.c_str());
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
