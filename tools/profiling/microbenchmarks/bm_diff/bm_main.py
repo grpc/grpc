@@ -135,8 +135,9 @@ def main(args):
     random.shuffle(jobs_list, random.SystemRandom().random)
     jobset.run(jobs_list, maxjobs=args.jobs)
 
-    diff, note, significance = bm_diff.diff(args.benchmarks, args.loops, args.regex,
-                              args.track, old, 'new', args.counters)
+    diff, note, significance = bm_diff.diff(args.benchmarks, args.loops,
+                                            args.regex, args.track, old, 'new',
+                                            args.counters)
     if diff:
         text = '[%s] Performance differences noted:\n%s' % (
             args.pr_comment_name, diff)
