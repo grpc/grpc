@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/gprpp/cpp_impl_of.h"
 
-#include "src/core/lib/resource_quota/resource_quota.h"
+#include <gtest/gtest.h>
+
+typedef struct grpc_foo grpc_foo;
 
 namespace grpc_core {
+namespace {
+class Foo : public CppImplOf<Foo, grpc_foo> {};
+}  // namespace
 
-ResourceQuota::ResourceQuota(std::string name)
-    : memory_quota_(MakeMemoryQuota(std::move(name))),
-      thread_quota_(MakeRefCounted<ThreadQuota>()) {}
-
-ResourceQuota::~ResourceQuota() = default;
-
-ResourceQuotaRefPtr ResourceQuota::Default() {
-  static auto default_resource_quota =
-      MakeResourceQuota("default_resource_quota").release();
-  return default_resource_quota->Ref();
-}
+TEST(CppImplOfTest, CreateDestroy) { delete Foo::FromC((new Foo())->c_ptr()); }
 
 }  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

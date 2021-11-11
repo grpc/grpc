@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -287,8 +288,7 @@ typedef enum {
 
 struct grpc_chttp2_transport {
   grpc_chttp2_transport(const grpc_channel_args* channel_args,
-                        grpc_endpoint* ep, bool is_client,
-                        grpc_resource_user* resource_user);
+                        grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
@@ -296,7 +296,9 @@ struct grpc_chttp2_transport {
   grpc_endpoint* ep;
   std::string peer_string;
 
-  grpc_resource_user* resource_user;
+  grpc_core::MemoryOwner memory_owner;
+  const grpc_core::MemoryAllocator::Reservation self_reservation;
+  grpc_core::ReclamationSweep active_reclamation;
 
   grpc_core::Combiner* combiner;
 
@@ -520,6 +522,8 @@ struct grpc_chttp2_stream {
   struct Reffer {
     explicit Reffer(grpc_chttp2_stream* s);
   } reffer;
+
+  grpc_core::MemoryAllocator::Reservation stream_reservation;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;

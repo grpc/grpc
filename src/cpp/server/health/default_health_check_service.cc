@@ -202,28 +202,16 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
 
 bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
     const ByteBuffer& request, std::string* service_name) {
-  std::vector<Slice> slices;
-  if (!request.Dump(&slices).ok()) return false;
+  Slice slice;
+  if (!request.DumpToSingleSlice(&slice).ok()) return false;
   uint8_t* request_bytes = nullptr;
   size_t request_size = 0;
-  if (slices.size() == 1) {
-    request_bytes = const_cast<uint8_t*>(slices[0].begin());
-    request_size = slices[0].size();
-  } else if (slices.size() > 1) {
-    request_bytes = static_cast<uint8_t*>(gpr_malloc(request.Length()));
-    uint8_t* copy_to = request_bytes;
-    for (size_t i = 0; i < slices.size(); i++) {
-      memcpy(copy_to, slices[i].begin(), slices[i].size());
-      copy_to += slices[i].size();
-    }
-  }
+  request_bytes = const_cast<uint8_t*>(slice.begin());
+  request_size = slice.size();
   upb::Arena arena;
   grpc_health_v1_HealthCheckRequest* request_struct =
       grpc_health_v1_HealthCheckRequest_parse(
           reinterpret_cast<char*>(request_bytes), request_size, arena.ptr());
-  if (slices.size() > 1) {
-    gpr_free(request_bytes);
-  }
   if (request_struct == nullptr) {
     return false;
   }

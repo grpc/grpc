@@ -28,6 +28,7 @@ def _fixture_options(
         tracing = False,
         _platforms = ["windows", "linux", "mac", "posix"],
         is_inproc = False,
+        is_1byte = False,
         is_http2 = True,
         supports_proxy_auth = False,
         supports_write_buffering = True,
@@ -42,6 +43,7 @@ def _fixture_options(
         secure = secure,
         tracing = tracing,
         is_inproc = is_inproc,
+        is_1byte = is_1byte,
         is_http2 = is_http2,
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
@@ -76,6 +78,7 @@ END2END_FIXTURES = {
         fullstack = False,
         dns_resolver = False,
         client_channel = False,
+        is_1byte = True,
     ),
     "h2_sockpair": _fixture_options(
         fullstack = False,
@@ -151,6 +154,7 @@ END2END_NOSEC_FIXTURES = {
         dns_resolver = False,
         client_channel = False,
         secure = False,
+        is_1byte = True,
     ),
     "h2_sockpair": _fixture_options(
         fullstack = False,
@@ -184,6 +188,7 @@ def _test_options(
         secure = False,
         traceable = False,
         exclude_inproc = False,
+        exclude_1byte = False,
         needs_http2 = False,
         needs_proxy_auth = False,
         needs_write_buffering = False,
@@ -198,6 +203,7 @@ def _test_options(
         secure = secure,
         traceable = traceable,
         exclude_inproc = exclude_inproc,
+        exclude_1byte = exclude_1byte,
         needs_http2 = needs_http2,
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
@@ -215,6 +221,7 @@ END2END_TESTS = {
         proxyable = False,
         # TODO(b/151212019): Test case known to be flaky under epoll1.
         exclude_pollers = ["epoll1"],
+        exclude_1byte = True,
     ),
     "call_creds": _test_options(secure = True),
     "call_host_override": _test_options(
@@ -255,9 +262,9 @@ END2END_TESTS = {
     ),
     "high_initial_seqno": _test_options(),
     "idempotent_request": _test_options(),
-    "invoke_large_request": _test_options(),
+    "invoke_large_request": _test_options(exclude_1byte = True),
     "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
-    "large_metadata": _test_options(),
+    "large_metadata": _test_options(exclude_1byte = True),
     "max_concurrent_streams": _test_options(
         proxyable = False,
         exclude_inproc = True,
@@ -269,7 +276,7 @@ END2END_TESTS = {
     "no_error_on_hotpath": _test_options(proxyable = False),
     "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
-    "payload": _test_options(),
+    "payload": _test_options(exclude_1byte = True),
     # TODO(juanlishen): This is disabled for now because it depends on some generated functions in
     # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
     # OpenCensus can only be built via Bazel so far.
@@ -357,8 +364,9 @@ END2END_TESTS = {
     "stream_compression_compressed_payload": _test_options(
         proxyable = False,
         exclude_inproc = True,
+        exclude_1byte = True,
     ),
-    "stream_compression_payload": _test_options(exclude_inproc = True),
+    "stream_compression_payload": _test_options(exclude_inproc = True, exclude_1byte = True),
     "stream_compression_ping_pong_streaming": _test_options(exclude_inproc = True),
     "trailing_metadata": _test_options(),
     "authority_not_supported": _test_options(),
@@ -386,6 +394,9 @@ def _compatible(fopt, topt):
             return False
     if topt.exclude_inproc:
         if fopt.is_inproc:
+            return False
+    if topt.exclude_1byte:
+        if fopt.is_1byte:
             return False
     if topt.needs_http2:
         if not fopt.is_http2:

@@ -16,6 +16,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <stdlib.h>  // for abort()
+
 #include <algorithm>
 #include <memory>
 #include <type_traits>
@@ -42,6 +44,9 @@ class SliceBuffer {
   grpc_slice_buffer* slice_buffer_;
 };
 
+// Tracks memory allocated by one system.
+// Is effectively a thin wrapper/smart pointer for a MemoryAllocatorImpl,
+// providing a convenient and stable API.
 class MemoryAllocator {
  public:
   /// Construct a MemoryAllocator given an internal::MemoryAllocatorImpl
@@ -50,6 +55,8 @@ class MemoryAllocator {
   explicit MemoryAllocator(
       std::shared_ptr<internal::MemoryAllocatorImpl> allocator)
       : allocator_(std::move(allocator)) {}
+  // Construct an invalid MemoryAllocator.
+  MemoryAllocator() : allocator_(nullptr) {}
   ~MemoryAllocator() {
     if (allocator_ != nullptr) allocator_->Shutdown();
   }
@@ -60,6 +67,14 @@ class MemoryAllocator {
   MemoryAllocator(MemoryAllocator&&) = default;
   MemoryAllocator& operator=(MemoryAllocator&&) = default;
 
+  /// Drop the underlying allocator and make this an empty object.
+  /// The object will not be usable after this call unless it's a valid
+  /// allocator is moved into it.
+  void Reset() {
+    if (allocator_ != nullptr) allocator_->Shutdown();
+    allocator_.reset();
+  }
+
   /// Reserve bytes from the quota.
   /// If we enter overcommit, reclamation will begin concurrently.
   /// Returns the number of bytes reserved.
@@ -67,13 +82,6 @@ class MemoryAllocator {
 
   /// Release some bytes that were previously reserved.
   void Release(size_t n) { return allocator_->Release(n); }
-
-  /// Return a pointer to the underlying implementation.
-  /// Note that the interface of said implementatoin is unstable and likely to
-  /// change at any time.
-  internal::MemoryAllocatorImpl* get_internal_impl_ptr() {
-    return allocator_.get();
-  }
 
   //
   // The remainder of this type are helper functions implemented in terms of
@@ -175,8 +183,15 @@ class MemoryAllocator {
   };
 
  protected:
-  const std::shared_ptr<internal::MemoryAllocatorImpl>& allocator() {
-    return allocator_;
+  /// Return a pointer to the underlying implementation.
+  /// Note that the interface of said implementation is unstable and likely to
+  /// change at any time.
+  internal::MemoryAllocatorImpl* get_internal_impl_ptr() {
+    return allocator_.get();
+  }
+
+  const internal::MemoryAllocatorImpl* get_internal_impl_ptr() const {
+    return allocator_.get();
   }
 
  private:
@@ -198,10 +213,11 @@ class MemoryAllocatorFactory {
   virtual ~MemoryAllocatorFactory() = default;
   /// On Endpoint creation, call \a CreateMemoryAllocator to create a new
   /// allocator for the endpoint.
+  /// \a name is used to label the memory allocator in debug logs.
   /// Typically we'll want to:
-  ///    auto allocator = factory->CreateMemoryAllocator();
+  ///    auto allocator = factory->CreateMemoryAllocator(peer_address_string);
   ///    auto* endpoint = allocator->New<MyEndpoint>(std::move(allocator), ...);
-  virtual MemoryAllocator CreateMemoryAllocator() = 0;
+  virtual MemoryAllocator CreateMemoryAllocator(absl::string_view name) = 0;
 };
 
 }  // namespace experimental

@@ -46,6 +46,7 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -600,13 +601,11 @@ void Server::Start() {
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
-    const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
-    grpc_resource_user* resource_user, size_t preallocated_bytes) {
+    const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel =
-      grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
-                          resource_user, preallocated_bytes, &error);
+  grpc_channel* channel = grpc_channel_create(
+      nullptr, args, GRPC_SERVER_CHANNEL, transport, &error);
   if (channel == nullptr) {
     return error;
   }
@@ -1477,8 +1476,12 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
   args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
+  grpc_channel_args* new_args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(args);
   grpc_server* c_server = new grpc_server;
-  c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
+  c_server->core_server =
+      grpc_core::MakeOrphanable<grpc_core::Server>(new_args);
+  grpc_channel_args_destroy(new_args);
   grpc_channel_args_destroy(args);
   return c_server;
 }
