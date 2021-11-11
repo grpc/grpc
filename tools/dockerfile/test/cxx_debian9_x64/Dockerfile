@@ -14,63 +14,66 @@
 
 FROM debian:9
 
-# Install Git and basic packages.
+#=================
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
   build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  dnsutils \
+  autoconf \
+  libtool \
+  pkg-config \
+  && apt-get clean
+
+# GCC
+RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
+  g++ \
+  g++-multilib  \
+  && apt-get clean
+
+# libc6
+RUN apt-get update && apt-get install -y \
   libc6 \
   libc6-dbg \
   libc6-dev \
-  libgtest-dev \
-  libtool \
+  && apt-get clean
+
+# Tools
+RUN apt-get update && apt-get install -y \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
   make \
-  perl \
   strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
+  time \
   unzip \
   wget \
-  zip && apt-get clean
-
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+  zip \
+  && apt-get clean
 
 #====================
-# Python dependencies
+# Python dependencies to run tools/run_tests scripts
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
+RUN apt-get update && apt-get install -y python3-all-dev python3-pip
 
 # Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv==16.7.9
-RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
+RUN python3 -m pip install --upgrade pip==19.3.1
+RUN python3 -m pip install virtualenv==16.7.9
+RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
 
-# Google Cloud platform API libraries
-RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+# Google Cloud Platform API libraries
+# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
+RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 #=================
 # Install cmake

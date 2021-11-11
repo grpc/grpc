@@ -14,98 +14,44 @@
 
 FROM debian:buster
 
-# Install Git and basic packages.
+#=================
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
   build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  dnsutils \
+  autoconf \
+  libtool \
+  pkg-config \
+  && apt-get clean
+
+# GCC
+RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
+  g++ \
+  g++-multilib  \
+  && apt-get clean
+
+# libc6
+RUN apt-get update && apt-get install -y \
   libc6 \
   libc6-dbg \
   libc6-dev \
-  libgtest-dev \
-  libtool \
+  && apt-get clean
+
+# Tools
+RUN apt-get update && apt-get install -y \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
   make \
-  perl \
   strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
+  time \
   unzip \
   wget \
-  zip && apt-get clean
+  zip \
+  && apt-get clean
 
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
-
-#====================
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
-
-# Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv==16.7.9
-RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
-
-#================
-# C# dependencies
-
-# cmake >=3.6 needed to build grpc_csharp_ext
-RUN apt-get update && apt-get install -y cmake && apt-get clean
-
-# Install mono
-RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
-RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
-RUN apt-get update && apt-get install -y \
-    mono-devel \
-    ca-certificates-mono \
-    nuget \
-    && apt-get clean
-
-# Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/3.1.415/dotnet-sdk-3.1.415-linux-x64.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz
-
-# Install .NET 6
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/6.0.100/dotnet-sdk-6.0.100-linux-x64.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz
-
-# Make sure "dotnet" is on PATH
-RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
-
-# Trigger the population of the local package cache
-ENV NUGET_XMLDOC_MODE skip
-RUN mkdir warmup \
-    && cd warmup \
-    && dotnet new \
-    && cd .. \
-    && rm -rf warmup
-
-
-RUN mkdir /var/local/jenkins
-
-# Define the default command.
-CMD ["bash"]

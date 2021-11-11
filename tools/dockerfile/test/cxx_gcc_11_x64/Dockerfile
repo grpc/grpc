@@ -14,41 +14,4 @@
 
 FROM gcc:11
 
-RUN apt-get update && apt-get install -y curl git golang time wget zip
-#====================
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
-
-# Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv==16.7.9
-RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
-
-RUN pip install PyYAML==5.4.1
-RUN apt-get install python-is-python2
-# Google Cloud platform API libraries
-RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
-
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
-
-#=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
-
-RUN apt-get update && apt-get install -y cmake && apt-get clean
-
-
-RUN mkdir /var/local/jenkins
-
-
-# Define the default command.
-CMD ["bash"]
+RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean

@@ -12,54 +12,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:9
-
+FROM debian:stretch
 
 #=================
-# PHP7 dependencies
+# Basic C core dependencies
 
-# Install Git and basic packages.
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get update && apt-get install -y \
-  autoconf \
-  automake \
   build-essential \
-  ccache \
-  curl \
-  git \
-  libbison-dev \
-  libcurl4-openssl-dev \
-  libgmp-dev \
-  libgmp3-dev \
-  libssl-dev \
+  autoconf \
   libtool \
-  libxml2-dev \
   pkg-config \
-  re2c \
+  && apt-get clean
+
+# GCC
+RUN apt-get update && apt-get install -y \
+  gcc \
+  gcc-multilib \
+  g++ \
+  g++-multilib  \
+  && apt-get clean
+
+# libc6
+RUN apt-get update && apt-get install -y \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  && apt-get clean
+
+# Tools
+RUN apt-get update && apt-get install -y \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
+  make \
+  strace \
   time \
   unzip \
   wget \
   zip \
-  zlib1g-dev && apt-get clean
-
-# Compile PHP7 from source
-RUN git clone https://github.com/php/php-src /var/local/git/php-src
-RUN cd /var/local/git/php-src \
-  && git checkout PHP-7.2.34 \
-  && ./buildconf --force \
-  && ./configure \
-  --with-gmp \
-  --with-openssl \
-  --with-zlib \
-  && make -j$(nproc) \
-  && make install
-
-
-RUN mkdir /var/local/jenkins
-
-# Install composer
-RUN curl -sS https://getcomposer.org/installer | php
-RUN mv composer.phar /usr/local/bin/composer
-
-# Define the default command.
-CMD ["bash"]
+  && apt-get clean
 
