@@ -572,7 +572,7 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
 }
 
 void XdsClient::ChannelState::SubscribeLocked(
-    const std::string& type_url, const XdsApi::ResourceName& resource) {
+    const std::string& type_url, const XdsApi::ResourceName& name) {
   if (ads_calld_ == nullptr) {
     // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
@@ -586,7 +586,7 @@ void XdsClient::ChannelState::SubscribeLocked(
   // because when the call is restarted it will resend all necessary requests.
   if (ads_calld() == nullptr) return;
   // Subscribe to this resource if the ADS call is active.
-  ads_calld()->SubscribeLocked(type_url, resource);
+  ads_calld()->SubscribeLocked(type_url, name);
 }
 
 void XdsClient::ChannelState::UnsubscribeLocked(
