@@ -2495,8 +2495,8 @@ TEST_P(GlobalXdsClientTest, FederationBasic) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   // const char* kNewServerName = "new-server.example.com";
   const char* kNewServerName =
-      "xdstp://xds.example.com/type.googleapis.com/"
-      "envoy.config.listener.v3.Listener/new-server.example.com";
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "new-server.example.com";
   const char* kNewUrl = "xds://xds.example.com/new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);

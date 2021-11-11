@@ -845,19 +845,29 @@ bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
     if (is_v2 != nullptr) *is_v2 = true;
     return true;
   }
+  if (type_url ==
+      absl::StripPrefix(XdsApi::kLdsTypeUrl, "type.googleapis.com/")) {
+    return true;
+  }
   return false;
 }
 
 bool IsRdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
+  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl ||
+         type_url ==
+             absl::StripPrefix(XdsApi::kRdsTypeUrl, "type.googleapis.com/");
 }
 
 bool IsCdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
+  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl ||
+         type_url ==
+             absl::StripPrefix(XdsApi::kCdsTypeUrl, "type.googleapis.com/");
 }
 
 bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
+  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl ||
+         type_url ==
+             absl::StripPrefix(XdsApi::kEdsTypeUrl, "type.googleapis.com/");
 }
 
 absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
@@ -873,15 +883,11 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
   if (!uri.ok()) {
     return uri.status();
   }
-  // Split the resource type off of the path to get the id.
-  std::vector<absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 3));
-  if (path_parts.size() != 4) {
-    return absl::InvalidArgumentError(
-        "xdstp URI path must have at least 2 slashes");
-  }
-  if (!is_expected_type(absl::StrCat(path_parts[1], "/", path_parts[2]),
-                        nullptr)) {
+  // Strip off any leading slash and Split the resource type off of the path to
+  // get the id.
+  std::pair<absl::string_view, absl::string_view> path_parts = absl::StrSplit(
+      absl::StripPrefix(uri->path(), "/"), absl::MaxSplits('/', 1));
+  if (!is_expected_type(path_parts.first, nullptr)) {
     return absl::InvalidArgumentError(
         "xdstp URI path must indicate valid xDS resource type");
   }
@@ -891,7 +897,7 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
   return XdsApi::ResourceName{
       uri->authority(),
       absl::StrCat(
-          "xdstp:", path_parts[3], (!query_parameters.empty() ? "?" : ""),
+          "xdstp:", path_parts.second, (!query_parameters.empty() ? "?" : ""),
           absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
 }
 
@@ -1269,8 +1275,9 @@ grpc_slice XdsApi::CreateAdsRequest(
     absl::string_view authority = a.first;
     for (const auto& p : a.second) {
       absl::string_view resource_id = p;
-      resource_name_storage.push_back(
-          ConstructFullResourceName(authority, type_url, resource_id));
+      resource_name_storage.push_back(ConstructFullResourceName(
+          authority, absl::StripPrefix(type_url, "type.googleapis.com/"),
+          resource_id));
       envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
           request, StdStringToUpbString(resource_name_storage.back()),
           arena.ptr());

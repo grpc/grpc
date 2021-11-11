@@ -45,6 +45,24 @@ const char* kXdsClusterAttribute = "xds_cluster_name";
 
 namespace {
 
+static std::string GetDefaultAuthorityInternal(const URI& uri) {
+  // Obtain the authority to use for the data plane connections, which is
+  // also used to select the right VirtualHost from the RouteConfiguration.
+  // We need to take the part of the URI path following the last
+  // "/" character or the entire path if the path contains no "/" character.
+  size_t pos = uri.path().find_last_of('/');
+  if (pos == uri.path().npos) return uri.path();
+  return uri.path().substr(pos + 1);
+}
+
+static std::string GetDataPlaneAuthority(const grpc_channel_args& args,
+                                         const URI& uri) {
+  const char* authority =
+      grpc_channel_args_find_string(&args, GRPC_ARG_DEFAULT_AUTHORITY);
+  if (authority != nullptr) return authority;
+  return GetDefaultAuthorityInternal(uri);
+}
+
 //
 // XdsResolver
 //
@@ -56,13 +74,14 @@ class XdsResolver : public Resolver {
         result_handler_(std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set),
-        uri_(std::move(args.uri)) {
+        uri_(std::move(args.uri)),
+        data_plane_authority_(GetDataPlaneAuthority(*args.args, uri_)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO,
               "[xds_resolver %p] created for URI scheme %s path %s authority "
-              "%s",
+              "%s data plane authority %s",
               this, args.uri.scheme().c_str(), args.uri.path().c_str(),
-              args.uri.authority().c_str());
+              args.uri.authority().c_str(), data_plane_authority_.c_str());
     }
   }
 
@@ -72,8 +91,6 @@ class XdsResolver : public Resolver {
       gpr_log(GPR_INFO, "[xds_resolver %p] destroyed", this);
     }
   }
-
-  static std::string GetDefaultAuthority(const URI& uri);
 
   void StartLocked() override;
 
@@ -780,16 +797,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 // XdsResolver
 //
 
-std::string XdsResolver::GetDefaultAuthority(const URI& uri) {
-  // Obtain the authority to use for the data plane connections, which is
-  // also used to select the right VirtualHost from the RouteConfiguration.
-  // We need to take the part of the URI path following the last
-  // "/" character or the entire path if the path contains no "/" character.
-  size_t pos = uri.path().find_last_of('/');
-  if (pos == uri.path().npos) return uri.path();
-  return uri.path().substr(pos + 1);
-}
-
 void XdsResolver::StartLocked() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   xds_client_ = XdsClient::GetOrCreate(args_, &error);
@@ -802,7 +809,6 @@ void XdsResolver::StartLocked() {
     return;
   }
   std::string resource_name_fragment(absl::StripPrefix(uri_.path(), "/"));
-  data_plane_authority_ = GetDefaultAuthority(uri_);
   if (!uri_.authority().empty()) {
     // target_uri.authority is set case
     const auto* authority_config =
@@ -816,9 +822,8 @@ void XdsResolver::StartLocked() {
     std::string name_template =
         authority_config->client_listener_resource_name_template;
     if (name_template.empty()) {
-      name_template = absl::StrCat(
-          "xdstp://", uri_.authority(),
-          "/type.googleapis.com/envoy.config.listener.v3.Listener/%s");
+      name_template = absl::StrCat("xdstp://", uri_.authority(),
+                                   "/envoy.config.listener.v3.Listener/%s");
     }
     lds_resource_name_ = absl::StrReplaceAll(
         name_template, {{"%s", URI::PercentEncode(resource_name_fragment)}});
@@ -1043,13 +1048,7 @@ class XdsResolverFactory : public ResolverFactory {
   }
 
   std::string GetDefaultAuthority(const URI& uri) const override {
-    // Obtain the authority to use for the data plane connections, which is
-    // also used to select the right VirtualHost from the RouteConfiguration.
-    // We need to take the part of the URI path following the last
-    // "/" character or the entire path if the path contains no "/" character.
-    size_t pos = uri.path().find_last_of('/');
-    if (pos == uri.path().npos) return uri.path();
-    return uri.path().substr(pos + 1);
+    return GetDefaultAuthorityInternal(uri);
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
