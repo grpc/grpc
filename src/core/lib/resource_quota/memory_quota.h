@@ -15,8 +15,6 @@
 #ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
@@ -25,6 +23,9 @@
 #include <memory>
 #include <queue>
 #include <vector>
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -398,8 +399,8 @@ class MemoryQuota final
   // Return true if the instantaneous memory pressure is high.
   bool IsMemoryPressureHigh() const {
     static constexpr double kMemoryPressureHighThreshold = 0.9;
-    return memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize().first >
-           kMemoryPressureHighThreshold;
+    return memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize()
+               .first > kMemoryPressureHighThreshold;
   }
 
  private:

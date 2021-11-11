@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/resource_quota/memory_quota.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/resource_quota/memory_quota.h"
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
@@ -421,7 +421,8 @@ void BasicMemoryQuota::Return(size_t amount) {
   free_bytes_.fetch_add(amount, std::memory_order_relaxed);
 }
 
-std::pair<double, size_t> BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() const {
+std::pair<double, size_t>
+BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() const {
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   size_t quota_size = quota_size_.load();
@@ -430,7 +431,7 @@ std::pair<double, size_t> BasicMemoryQuota::InstantaneousPressureAndMaxRecommend
   double pressure = (size - free) / size;
   if (pressure < 0.0) pressure = 0.0;
   if (pressure > 1.0) pressure = 1.0;
-  return std::make_pair(pressure, quota_size/16);
+  return std::make_pair(pressure, quota_size / 16);
 }
 
 //
