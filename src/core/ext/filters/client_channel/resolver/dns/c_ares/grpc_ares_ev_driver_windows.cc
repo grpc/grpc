@@ -420,6 +420,7 @@ class GrpcPolledFdWindows {
   static void OnTcpConnect(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
+    grpc_core::MutexLock lock(polled_fd->mu_);
     grpc_polled_fd->OnTcpConnectLocked(error);
   }
 
