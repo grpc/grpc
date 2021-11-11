@@ -150,34 +150,29 @@ static void my_cancel_ares_request_locked(grpc_ares_request* request) {
 ////////////////////////////////////////////////////////////////////////////////
 // client connection
 
-static void sched_connect(grpc_closure* closure,
-                          grpc_slice_allocator* slice_allocator,
-                          grpc_endpoint** ep, gpr_timespec deadline);
+static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
+                          gpr_timespec deadline);
 
 typedef struct {
   grpc_timer timer;
   grpc_closure* closure;
   grpc_endpoint** ep;
   gpr_timespec deadline;
-  grpc_slice_allocator* slice_allocator;
 } future_connect;
 
 static void do_connect(void* arg, grpc_error_handle error) {
   future_connect* fc = static_cast<future_connect*>(arg);
   if (error != GRPC_ERROR_NONE) {
-    grpc_slice_allocator_destroy(fc->slice_allocator);
     *fc->ep = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != nullptr) {
-    grpc_slice_allocator_destroy(fc->slice_allocator);
     grpc_endpoint* client;
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr);
     *fc->ep = client;
 
     grpc_transport* transport = grpc_create_chttp2_transport(
-        nullptr, server, false,
-        grpc_resource_user_create(g_resource_quota, "transport-user"));
+        g_server->core_server->channel_args(), server, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR("SetupTransport",
                                  g_server->core_server->SetupTransport(
                                      transport, nullptr, nullptr, nullptr)));
@@ -185,17 +180,15 @@ static void do_connect(void* arg, grpc_error_handle error) {
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
   } else {
-    sched_connect(fc->closure, fc->slice_allocator, fc->ep, fc->deadline);
+    sched_connect(fc->closure, fc->ep, fc->deadline);
   }
   gpr_free(fc);
 }
 
-static void sched_connect(grpc_closure* closure,
-                          grpc_slice_allocator* slice_allocator,
-                          grpc_endpoint** ep, gpr_timespec deadline) {
+static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
+                          gpr_timespec deadline) {
   if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
     *ep = nullptr;
-    grpc_slice_allocator_destroy(slice_allocator);
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, closure,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connect deadline exceeded"));
@@ -206,19 +199,17 @@ static void sched_connect(grpc_closure* closure,
   fc->closure = closure;
   fc->ep = ep;
   fc->deadline = deadline;
-  fc->slice_allocator = slice_allocator;
   grpc_timer_init(
       &fc->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
 static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_slice_allocator* slice_allocator,
                                   grpc_pollset_set* /*interested_parties*/,
                                   const grpc_channel_args* /*channel_args*/,
                                   const grpc_resolved_address* /*addr*/,
                                   grpc_millis deadline) {
-  sched_connect(closure, slice_allocator, ep,
+  sched_connect(closure, ep,
                 grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
 }
 
@@ -444,9 +435,6 @@ class Call : public std::enable_shared_from_this<Call> {
     auto self = shared_from_this();
     return MakeValidator([self, has_ops](bool) {
       --self->pending_ops_;
-      if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE)) && self->call_closed_) {
-        GPR_ASSERT(self->recv_message_ == nullptr);
-      }
       if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE) &&
            self->recv_message_ != nullptr)) {
         grpc_byte_buffer_destroy(self->recv_message_);
@@ -538,32 +526,35 @@ template <typename ChannelArgContainer>
 grpc_channel_args* ReadArgs(const ChannelArgContainer& args) {
   grpc_channel_args* res =
       static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  res->num_args = args.size();
   res->args =
       static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * args.size()));
+  int j = 0;
   for (int i = 0; i < args.size(); i++) {
-    res->args[i].key = gpr_strdup(args[i].key().c_str());
     switch (args[i].value_case()) {
       case api_fuzzer::ChannelArg::kStr:
-        res->args[i].type = GRPC_ARG_STRING;
-        res->args[i].value.string = gpr_strdup(args[i].str().c_str());
+        res->args[j].type = GRPC_ARG_STRING;
+        res->args[j].value.string = gpr_strdup(args[i].str().c_str());
         break;
       case api_fuzzer::ChannelArg::kI:
-        res->args[i].type = GRPC_ARG_INTEGER;
-        res->args[i].value.integer = args[i].i();
+        res->args[j].type = GRPC_ARG_INTEGER;
+        res->args[j].value.integer = args[i].i();
         break;
       case api_fuzzer::ChannelArg::kResourceQuota:
+        if (args[i].key() != GRPC_ARG_RESOURCE_QUOTA) continue;
         grpc_resource_quota_ref(g_resource_quota);
-        res->args[i].type = GRPC_ARG_POINTER;
-        res->args[i].value.pointer.p = g_resource_quota;
-        res->args[i].value.pointer.vtable = grpc_resource_quota_arg_vtable();
+        res->args[j].type = GRPC_ARG_POINTER;
+        res->args[j].value.pointer.p = g_resource_quota;
+        res->args[j].value.pointer.vtable = grpc_resource_quota_arg_vtable();
         break;
       case api_fuzzer::ChannelArg::VALUE_NOT_SET:
-        res->args[i].type = GRPC_ARG_INTEGER;
-        res->args[i].value.integer = 0;
+        res->args[j].type = GRPC_ARG_INTEGER;
+        res->args[j].value.integer = 0;
         break;
     }
+    res->args[j].key = gpr_strdup(args[i].key().c_str());
+    ++j;
   }
+  res->num_args = j;
   return res;
 }
 

@@ -19,9 +19,9 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/event_engine/promise.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -32,6 +32,7 @@
 namespace {
 using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::Promise;
 
 /// A fire-and-forget class representing an individual DNS request.
@@ -80,7 +81,7 @@ void resolve_address(const char* addr, const char* default_port,
                      grpc_closure* on_done,
                      grpc_resolved_addresses** addresses) {
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
-      grpc_iomgr_event_engine()->GetDNSResolver();
+      GetDefaultEventEngine()->GetDNSResolver();
   if (dns_resolver == nullptr) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, on_done,

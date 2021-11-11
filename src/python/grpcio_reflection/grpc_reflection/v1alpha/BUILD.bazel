@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:public"])
 
 py_proto_library(
     name = "reflection_py_pb2",
+    imports = ["../../"],
     deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_descriptor"],
 )
 

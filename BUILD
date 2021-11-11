@@ -18,7 +18,6 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
-    "grpc_upb_proto_library",
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
@@ -48,6 +47,17 @@ config_setting(
     values = {"define": "grpc_no_xds=true"},
 )
 
+# When gRPC is build as shared library, binder transport code might still
+# get included even when user's code does not depend on it. In that case
+# --define=grpc_no_binder=true can be used to disable binder transport
+# related code to reduce binary size.
+# For users using build system other than bazel, they can define
+# GRPC_NO_BINDER to achieve the same effect.
+config_setting(
+    name = "grpc_no_binder_define",
+    values = {"define": "grpc_no_binder=true"},
+)
+
 config_setting(
     name = "android",
     values = {"crosstool_top": "//external:android/crosstool"},
@@ -56,12 +66,6 @@ config_setting(
 config_setting(
     name = "ios",
     values = {"apple_platform_type": "ios"},
-)
-
-# Fuzzers can be built as fuzzers or as tests
-config_setting(
-    name = "grpc_build_fuzzers",
-    values = {"define": "grpc_build_fuzzers=true"},
 )
 
 selects.config_setting_group(
@@ -75,6 +79,31 @@ selects.config_setting_group(
         ":android",
         ":ios",
     ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_binder",
+    match_any = [
+        ":grpc_no_binder_define",
+        # We do not need binder on ios.
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_rls",
+    match_any = [
+        # Disable RLS support on mobile platforms where it is not likely to be
+        # needed and where reducing the binary size is more important.
+        ":android",
+        ":ios",
+    ],
+)
+
+# Fuzzers can be built as fuzzers or as tests
+config_setting(
+    name = "grpc_build_fuzzers",
+    values = {"define": "grpc_build_fuzzers=true"},
 )
 
 config_setting(
@@ -115,11 +144,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "granola"  # @unused
+g_stands_for = "green"  # @unused
 
-core_version = "19.1.0"  # @unused
+core_version = "20.0.0"  # @unused
 
-version = "1.42.0-dev"  # @unused
+version = "1.43.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -162,6 +191,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/memory_request.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
@@ -296,6 +326,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_certificate_provider.h",
     "include/grpcpp/security/authorization_policy_provider.h",
+    "include/grpcpp/security/tls_certificate_verifier.h",
     "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_builder.h",
@@ -368,6 +399,16 @@ grpc_cc_library(
     ],
 )
 
+GRPC_XDS_TARGETS = [
+    "grpc_lb_policy_cds",
+    "grpc_lb_policy_xds_cluster_impl",
+    "grpc_lb_policy_xds_cluster_manager",
+    "grpc_lb_policy_xds_cluster_resolver",
+    "grpc_resolver_xds",
+    "grpc_resolver_c2p",
+    "grpc_xds_server_config_fetcher",
+]
+
 grpc_cc_library(
     name = "grpc",
     srcs = [
@@ -377,21 +418,22 @@ grpc_cc_library(
     defines = select({
         "grpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
+    }) + select({
+        "grpc_no_rls": ["GRPC_NO_RLS"],
+        "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc_lb_policy_cds",
-            "grpc_lb_policy_xds_cluster_impl",
-            "grpc_lb_policy_xds_cluster_manager",
-            "grpc_lb_policy_xds_cluster_resolver",
-            "grpc_resolver_xds",
-            "grpc_resolver_c2p",
-            "grpc_xds_server_config_fetcher",
-        ],
-    },
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": GRPC_XDS_TARGETS,
+        },
+        {
+            "grpc_no_rls": [],
+            "//conditions:default": ["grpc_lb_policy_rls"],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -402,7 +444,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_lb_policy_rls",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",
@@ -426,18 +467,25 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
-        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc++_xds_client",
-            "grpc++_xds_server",
-        ],
-    },
+    select_deps = [
+        {
+            "grpc_no_xds": [],
+            "//conditions:default": [
+                "grpc++_xds_client",
+                "grpc++_xds_server",
+            ],
+        },
+        {
+            "grpc_no_binder": [],
+            "//conditions:default": [
+                "grpc++_binder",
+            ],
+        },
+    ],
     standalone = True,
     visibility = [
         "@grpc:public",
@@ -458,18 +506,18 @@ grpc_cc_library(
         "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/common/tls_certificate_provider.cc",
+        "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/common/tls_credentials_options_util.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
-        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/synchronization",
         "absl/container:inlined_vector",
         "absl/strings",
@@ -497,15 +545,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_binder",
     srcs = [
+        "src/core/ext/transport/binder/client/binder_connector.cc",
         "src/core/ext/transport/binder/client/channel_create.cc",
         "src/core/ext/transport/binder/client/channel_create_impl.cc",
+        "src/core/ext/transport/binder/client/connection_id_generator.cc",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.cc",
         "src/core/ext/transport/binder/client/jni_utils.cc",
-        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.cc",
-        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.cc",
+        "src/core/ext/transport/binder/client/security_policy_setting.cc",
+        "src/core/ext/transport/binder/security_policy/binder_security_policy.cc",
         "src/core/ext/transport/binder/server/binder_server.cc",
         "src/core/ext/transport/binder/server/binder_server_credentials.cc",
         "src/core/ext/transport/binder/transport/binder_transport.cc",
+        "src/core/ext/transport/binder/utils/ndk_binder.cc",
         "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.cc",
         "src/core/ext/transport/binder/wire_format/binder_android.cc",
         "src/core/ext/transport/binder/wire_format/binder_constants.cc",
@@ -514,17 +565,17 @@ grpc_cc_library(
         "src/core/ext/transport/binder/wire_format/wire_writer.cc",
     ],
     hdrs = [
-        "src/core/ext/transport/binder/client/channel_create.h",
+        "src/core/ext/transport/binder/client/binder_connector.h",
         "src/core/ext/transport/binder/client/channel_create_impl.h",
+        "src/core/ext/transport/binder/client/connection_id_generator.h",
         "src/core/ext/transport/binder/client/endpoint_binder_pool.h",
         "src/core/ext/transport/binder/client/jni_utils.h",
-        "src/core/ext/transport/binder/security_policy/internal_only_security_policy.h",
-        "src/core/ext/transport/binder/security_policy/security_policy.h",
-        "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h",
+        "src/core/ext/transport/binder/client/security_policy_setting.h",
         "src/core/ext/transport/binder/server/binder_server.h",
-        "src/core/ext/transport/binder/server/binder_server_credentials.h",
         "src/core/ext/transport/binder/transport/binder_stream.h",
         "src/core/ext/transport/binder/transport/binder_transport.h",
+        "src/core/ext/transport/binder/utils/binder_auto_utils.h",
+        "src/core/ext/transport/binder/utils/ndk_binder.h",
         "src/core/ext/transport/binder/utils/transport_stream_receiver.h",
         "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h",
         "src/core/ext/transport/binder/wire_format/binder.h",
@@ -535,6 +586,10 @@ grpc_cc_library(
         "src/core/ext/transport/binder/wire_format/wire_reader_impl.h",
         "src/core/ext/transport/binder/wire_format/wire_writer.h",
     ],
+    defines = select({
+        "grpc_no_binder": ["GRPC_NO_BINDER"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
@@ -546,8 +601,10 @@ grpc_cc_library(
         "absl/time",
     ],
     language = "c++",
-    # TODO(mingcl): Move public headers under include/ and put them here
     public_hdrs = [
+        "include/grpcpp/security/binder_security_policy.h",
+        "include/grpcpp/create_channel_binder.h",
+        "include/grpcpp/security/binder_credentials.h",
     ],
     deps = [
         "gpr",
@@ -555,8 +612,8 @@ grpc_cc_library(
         "gpr_platform",
         "grpc",
         "grpc++_base",
-        "grpc++_internals",
         "grpc_base",
+        "grpc_client_channel",
         "grpc_codegen",
         "orphanable",
         "slice_refcount",
@@ -843,6 +900,12 @@ grpc_cc_library(
     name = "construct_destruct",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
+)
+
+grpc_cc_library(
+    name = "cpp_impl_of",
+    hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -1190,6 +1253,9 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/promise/activity.cc",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/activity.h",
@@ -1375,6 +1441,7 @@ grpc_cc_library(
     hdrs = [
         "include/grpc/event_engine/internal/memory_allocator_impl.h",
         "include/grpc/event_engine/memory_allocator.h",
+        "include/grpc/event_engine/memory_request.h",
     ],
     language = "c++",
     deps = [
@@ -1400,10 +1467,12 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
+        "map",
         "orphanable",
         "poll",
         "race",
         "ref_counted_ptr",
+        "resource_quota_trace",
         "seq",
         "slice_refcount",
         "useful",
@@ -1425,6 +1494,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "resource_quota_trace",
+    srcs = [
+        "src/core/lib/resource_quota/trace.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/trace.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "resource_quota",
     srcs = [
         "src/core/lib/resource_quota/resource_quota.cc",
@@ -1433,6 +1516,7 @@ grpc_cc_library(
         "src/core/lib/resource_quota/resource_quota.h",
     ],
     deps = [
+        "cpp_impl_of",
         "gpr_base",
         "memory_quota",
         "ref_counted",
@@ -1542,6 +1626,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_base",
+    srcs = [
+        "src/core/lib/event_engine/event_engine.cc",
+    ],
+    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS + [
+        "src/core/lib/event_engine/event_engine_factory.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+    ],
+    deps = [
+        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
+    ],
+)
+
+grpc_cc_library(
+    name = "default_event_engine_factory",
+    srcs = [
+        "src/core/lib/event_engine/event_engine_factory.cc",
+    ],
+    hdrs = [],
+    external_deps = [
+        # TODO(hork): uv, in a subsequent PR
+    ],
+    deps = [
+        "event_engine_base",
+        "gpr_base",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1565,8 +1685,7 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.cc",
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
-        "src/core/lib/event_engine/endpoint_config.cc",
-        "src/core/lib/event_engine/event_engine.cc",
+        "src/core/lib/event_engine/channel_args_endpoint_config.cc",
         "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
@@ -1587,14 +1706,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
-        "src/core/lib/iomgr/event_engine/closure.cc",
-        "src/core/lib/iomgr/event_engine/endpoint.cc",
-        "src/core/lib/iomgr/event_engine/iomgr.cc",
-        "src/core/lib/iomgr/event_engine/pollset.cc",
-        "src/core/lib/iomgr/event_engine/resolved_address_internal.cc",
-        "src/core/lib/iomgr/event_engine/resolver.cc",
-        "src/core/lib/iomgr/event_engine/tcp.cc",
-        "src/core/lib/iomgr/event_engine/timer.cc",
         "src/core/lib/iomgr/executor/mpmcqueue.cc",
         "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
@@ -1625,7 +1736,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/resolve_address_custom.cc",
         "src/core/lib/iomgr/resolve_address_posix.cc",
         "src/core/lib/iomgr/resolve_address_windows.cc",
-        "src/core/lib/iomgr/resource_quota.cc",
         "src/core/lib/iomgr/socket_factory_posix.cc",
         "src/core/lib/iomgr/socket_mutator.cc",
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
@@ -1661,6 +1771,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
+        "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1698,6 +1809,18 @@ grpc_cc_library(
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
         "src/core/lib/uri/uri_parser.cc",
+    ] +
+    # TODO(hork): delete the iomgr glue code when EventEngine is fully
+    # integrated, or when it becomes obvious the glue code is unnecessary.
+    [
+        "src/core/lib/iomgr/event_engine/closure.cc",
+        "src/core/lib/iomgr/event_engine/endpoint.cc",
+        "src/core/lib/iomgr/event_engine/iomgr.cc",
+        "src/core/lib/iomgr/event_engine/pollset.cc",
+        "src/core/lib/iomgr/event_engine/resolved_address_internal.cc",
+        "src/core/lib/iomgr/event_engine/resolver.cc",
+        "src/core/lib/iomgr/event_engine/tcp.cc",
+        "src/core/lib/iomgr/event_engine/timer.cc",
     ],
     hdrs = [
         "src/core/lib/transport/error_utils.h",
@@ -1716,17 +1839,17 @@ grpc_cc_library(
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/status_util.h",
-        "src/core/lib/slice/slice_split.h",
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
+        "src/core/lib/resource_quota/api.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
         "src/core/lib/compression/stream_compression_gzip.h",
         "src/core/lib/compression/stream_compression_identity.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
-        "src/core/lib/event_engine/endpoint_config_internal.h",
+        "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/event_engine/sockaddr.h",
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
@@ -1745,12 +1868,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
-        "src/core/lib/iomgr/event_engine/closure.h",
-        "src/core/lib/iomgr/event_engine/endpoint.h",
-        "src/core/lib/iomgr/event_engine/iomgr.h",
-        "src/core/lib/iomgr/event_engine/pollset.h",
-        "src/core/lib/iomgr/event_engine/promise.h",
-        "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
@@ -1774,7 +1891,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
-        "src/core/lib/iomgr/resource_quota.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
@@ -1803,6 +1919,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
+        "src/core/lib/slice/slice_split.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/builtins.h",
         "src/core/lib/surface/call.h",
@@ -1845,6 +1962,15 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
+    ] +
+    # TODO(hork): delete the iomgr glue code when EventEngine is fully
+    # integrated, or when it becomes obvious the glue code is unnecessary.
+    [
+        "src/core/lib/iomgr/event_engine/closure.h",
+        "src/core/lib/iomgr/event_engine/endpoint.h",
+        "src/core/lib/iomgr/event_engine/pollset.h",
+        "src/core/lib/iomgr/event_engine/promise.h",
+        "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -1868,8 +1994,10 @@ grpc_cc_library(
         "chunked_vector",
         "closure",
         "config",
+        "default_event_engine_factory",
         "dual_ref_counted",
         "error",
+        "event_engine_base",
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",
@@ -1877,9 +2005,11 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "json",
+        "memory_quota",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "resource_quota",
         "slice",
         "slice_refcount",
         "table",
@@ -1937,6 +2067,7 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
+        "grpc_resolver_binder",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
@@ -2485,6 +2616,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_xds_channel_stack_modifier",
+    srcs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.cc",
+    ],
+    hdrs = [
+        "src/core/ext/xds/xds_channel_stack_modifier.h",
+    ],
+    language = "c++",
+    deps = [
+        "channel_init",
+        "config",
+        "gpr_base",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
@@ -2496,6 +2644,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
     ],
 )
@@ -2978,6 +3127,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_binder",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_client_channel",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_fake",
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
@@ -3069,6 +3235,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
         "src/core/lib/security/credentials/tls/tls_utils.cc",
@@ -3119,6 +3286,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/credentials/tls/tls_utils.h",
@@ -3141,6 +3309,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/functional:bind_front",
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
@@ -3429,7 +3598,9 @@ grpc_cc_library(
         "hpack_encoder_index",
         "hpack_encoder_table",
         "match",
+        "memory_quota",
         "popularity_count",
+        "resource_quota_trace",
         "slice",
         "slice_refcount",
         "useful",
@@ -3524,6 +3695,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_http_filters",
         "grpc_transport_chttp2",
+        "memory_quota",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
@@ -4004,10 +4176,10 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/admin_services.h",
     ],
-    select_deps = {
+    select_deps = [{
         "grpc_no_xds": [],
         "//conditions:default": ["//:grpcpp_csds"],
-    },
+    }],
     deps = [
         "gpr",
         "grpc++",

@@ -16,7 +16,8 @@
 
 #include <utility>
 
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -125,7 +126,7 @@ grpc_channel* grpc_binder_channel_create_for_testing(grpc_server* server,
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_channel* channel =
       grpc_channel_create("binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          client_transport, nullptr, 0, &error);
+                          client_transport, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_channel_args_destroy(client_args);
   return channel;

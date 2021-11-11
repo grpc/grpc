@@ -17,13 +17,13 @@ set -ex
 
 #install ubuntu pre-requisites
 sudo apt update
-sudo apt install -y build-essential autoconf libtool pkg-config cmake python python-pip clang
+sudo apt install -y build-essential autoconf libtool pkg-config cmake python3 python3-pip clang
 sudo pip install six
 
 cd grpc
 
 # without port server running, many tests will fail
-python tools/run_tests/start_port_server.py
+python3 tools/run_tests/start_port_server.py
 
 # build with bazel
 tools/bazel build --config=opt //test/...

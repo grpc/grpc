@@ -26,12 +26,13 @@ class StressTest {
   // Create a stress test with some size.
   StressTest(size_t num_quotas, size_t num_allocators) {
     for (size_t i = 0; i < num_quotas; ++i) {
-      quotas_.emplace_back();
+      quotas_.emplace_back(absl::StrCat("quota[", i, "]"));
     }
     std::random_device g;
     std::uniform_int_distribution<size_t> dist(0, num_quotas - 1);
     for (size_t i = 0; i < num_allocators; ++i) {
-      allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner());
+      allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner(
+          absl::StrCat("allocator[", i, "]")));
     }
   }
 
@@ -54,8 +55,8 @@ class StressTest {
            {ReclamationPass::kBenign, ReclamationPass::kIdle,
             ReclamationPass::kDestructive}) {
         threads.push_back(Run([allocator, pass](StatePtr st) mutable {
-          if (st->RememberReservation(allocator->allocator()->MakeReservation(
-                  st->RandomRequest()))) {
+          if (st->RememberReservation(
+                  allocator->MakeReservation(st->RandomRequest()))) {
             allocator->PostReclaimer(
                 pass, [st](absl::optional<ReclamationSweep> sweep) {
                   if (!sweep.has_value()) return;
@@ -210,4 +211,14 @@ class StressTest {
 
 }  // namespace grpc_core
 
-int main(int, char**) { grpc_core::StressTest(16, 64).Run(8); }
+int main(int, char**) {
+  if (sizeof(void*) != 8) {
+    gpr_log(
+        GPR_ERROR,
+        "This test assumes 64-bit processors in the values it uses for sizes. "
+        "Since this test is mostly aimed at TSAN coverage, and that's mostly "
+        "platform independent, we simply skip this test in 32-bit builds.");
+    return 0;
+  }
+  grpc_core::StressTest(16, 64).Run(8);
+}

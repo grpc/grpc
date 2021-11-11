@@ -894,7 +894,7 @@ cdef class AioServer:
         self._crash_exception = None
 
         if interceptors:
-            self._interceptors = interceptors
+            self._interceptors = tuple(interceptors)
         else:
             self._interceptors = ()
 
