@@ -18,18 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
 #include "third_party/grpc/include/grpc/impl/codegen/grpc_types.h"
+
+#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <errno.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -43,6 +38,13 @@
 
 #include <algorithm>
 #include <unordered_map>
+
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -845,8 +847,7 @@ static void tcp_continue_read(grpc_tcp* tcp) {
           tcp->incoming_buffer,
           tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
               tcp->min_read_chunk_size,
-              std::min(tcp->max_read_chunk_size,
-                       extra_wanted))));
+              std::min(tcp->max_read_chunk_size, extra_wanted))));
     }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
