@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_trickle_diff.sh"
-timeout_mins: 120
-before_action {
-  fetch_keystore {
-    keystore_resource {
-      keystore_config_id: 73836
-      keyname: "grpc_checks_private_key"
-    }
-  }
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+licenses(["notice"])
+
+grpc_package(name = "test/cpp/security")
+
+grpc_cc_test(
+    name = "tls_certificate_verifier_test",
+    srcs = ["tls_certificate_verifier_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:tls_test_utils",
+    ],
+)

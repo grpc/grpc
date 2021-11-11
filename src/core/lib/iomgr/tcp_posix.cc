@@ -54,10 +54,11 @@
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -369,6 +370,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int cur_read_chunk_size;
 
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
@@ -393,7 +395,8 @@ struct grpc_tcp {
   std::string peer_string;
   std::string local_address;
 
-  grpc_slice_allocator* slice_allocator;
+  grpc_core::MemoryOwner memory_owner;
+  grpc_core::MemoryAllocator::Reservation self_reservation;
 
   grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
   gpr_mu tb_mu; /* Lock for access to list of traced buffers */
@@ -608,7 +611,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
-  grpc_slice_allocator_destroy(tcp->slice_allocator);
   /* The lock is not really necessary here, since all refs have been released */
   gpr_mu_lock(&tcp->tb_mu);
   grpc_core::TracedBuffer::Shutdown(
@@ -788,6 +790,13 @@ static void tcp_do_read(grpc_tcp* tcp) {
     total_read_bytes += read_bytes;
     if (tcp->inq == 0 || total_read_bytes == tcp->incoming_buffer->length) {
       /* We have filled incoming_buffer, and we cannot read any more. */
+      /* Increase the chunk size if we can */
+      tcp->cur_read_chunk_size = std::min(
+          // Usual growth rate is 3/2, but grow at least
+          // min_read_chunk_size.
+          std::max(3 * static_cast<int>(tcp->incoming_buffer->length) / 2,
+                   tcp->cur_read_chunk_size + tcp->min_read_chunk_size),
+          tcp->max_read_chunk_size);
       break;
     }
 
@@ -827,36 +836,20 @@ static void tcp_do_read(grpc_tcp* tcp) {
   TCP_UNREF(tcp, "read");
 }
 
-static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
-  grpc_tcp* tcp = static_cast<grpc_tcp*>(tcpp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp,
-            grpc_error_std_string(error).c_str());
-  }
-  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
-    grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-    grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
-    call_read_cb(tcp, GRPC_ERROR_REF(error));
-    TCP_UNREF(tcp, "read");
-  } else {
-    tcp_do_read(tcp);
-  }
-}
-
 static void tcp_continue_read(grpc_tcp* tcp) {
-  /* Wait for allocation only when there is no buffer left. */
-  if (tcp->incoming_buffer->length == 0 &&
+  if (tcp->incoming_buffer->length < size_t(tcp->cur_read_chunk_size) &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
+      gpr_log(GPR_INFO,
+              "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d cur_chunk=%d "
+              "buf_len=%" PRIdPTR,
+              tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
+              tcp->cur_read_chunk_size, tcp->incoming_buffer->length);
     }
-    if (GPR_UNLIKELY(!grpc_slice_allocator_allocate(
-            tcp->slice_allocator, tcp->target_length, 1,
-            grpc_slice_allocator_intent::kReadBuffer, tcp->incoming_buffer,
-            tcp_read_allocation_done, tcp))) {
-      // Wait for allocation.
-      return;
-    }
+    grpc_slice_buffer_add_indexed(
+        tcp->incoming_buffer,
+        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+            tcp->min_read_chunk_size, tcp->cur_read_chunk_size)));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
@@ -1669,8 +1662,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_channel_args* channel_args,
-                               absl::string_view peer_string,
-                               grpc_slice_allocator* slice_allocator) {
+                               absl::string_view peer_string) {
   static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
   int tcp_max_read_chunk_size = 4 * 1024 * 1024;
@@ -1729,7 +1721,10 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->slice_allocator = slice_allocator;
+  tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
+                          ->memory_quota()
+                          ->CreateMemoryOwner(peer_string);
+  tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
@@ -1748,6 +1743,9 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->incoming_buffer = nullptr;
   tcp->target_length = static_cast<double>(tcp_read_chunk_size);
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
+  tcp->cur_read_chunk_size =
+      grpc_core::Clamp(GRPC_TCP_DEFAULT_READ_SLICE_SIZE,
+                       tcp_min_read_chunk_size, tcp_max_read_chunk_size);
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */

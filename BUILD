@@ -191,6 +191,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/memory_request.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
@@ -325,6 +326,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_certificate_provider.h",
     "include/grpcpp/security/authorization_policy_provider.h",
+    "include/grpcpp/security/tls_certificate_verifier.h",
     "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_builder.h",
@@ -465,7 +467,6 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
-        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
@@ -505,18 +506,18 @@ grpc_cc_library(
         "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/common/tls_certificate_provider.cc",
+        "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/common/tls_credentials_options_util.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
-        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/synchronization",
         "absl/container:inlined_vector",
         "absl/strings",
@@ -899,6 +900,12 @@ grpc_cc_library(
     name = "construct_destruct",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
+)
+
+grpc_cc_library(
+    name = "cpp_impl_of",
+    hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -1434,6 +1441,7 @@ grpc_cc_library(
     hdrs = [
         "include/grpc/event_engine/internal/memory_allocator_impl.h",
         "include/grpc/event_engine/memory_allocator.h",
+        "include/grpc/event_engine/memory_request.h",
     ],
     language = "c++",
     deps = [
@@ -1459,10 +1467,12 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
+        "map",
         "orphanable",
         "poll",
         "race",
         "ref_counted_ptr",
+        "resource_quota_trace",
         "seq",
         "slice_refcount",
         "useful",
@@ -1484,6 +1494,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "resource_quota_trace",
+    srcs = [
+        "src/core/lib/resource_quota/trace.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/trace.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "resource_quota",
     srcs = [
         "src/core/lib/resource_quota/resource_quota.cc",
@@ -1492,6 +1516,7 @@ grpc_cc_library(
         "src/core/lib/resource_quota/resource_quota.h",
     ],
     deps = [
+        "cpp_impl_of",
         "gpr_base",
         "memory_quota",
         "ref_counted",
@@ -1702,7 +1727,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/resolve_address_custom.cc",
         "src/core/lib/iomgr/resolve_address_posix.cc",
         "src/core/lib/iomgr/resolve_address_windows.cc",
-        "src/core/lib/iomgr/resource_quota.cc",
         "src/core/lib/iomgr/socket_factory_posix.cc",
         "src/core/lib/iomgr/socket_mutator.cc",
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
@@ -1738,6 +1762,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
+        "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1809,6 +1834,7 @@ grpc_cc_library(
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
+        "src/core/lib/resource_quota/api.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
         "src/core/lib/compression/stream_compression_gzip.h",
@@ -1857,7 +1883,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
-        "src/core/lib/iomgr/resource_quota.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
@@ -1971,9 +1996,11 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "json",
+        "memory_quota",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "resource_quota",
         "slice",
         "slice_refcount",
         "table",
@@ -3199,6 +3226,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
         "src/core/lib/security/credentials/tls/tls_utils.cc",
@@ -3249,6 +3277,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/credentials/tls/tls_utils.h",
@@ -3271,6 +3300,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/functional:bind_front",
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
@@ -3559,7 +3589,9 @@ grpc_cc_library(
         "hpack_encoder_index",
         "hpack_encoder_table",
         "match",
+        "memory_quota",
         "popularity_count",
+        "resource_quota_trace",
         "slice",
         "slice_refcount",
         "useful",
@@ -3654,6 +3686,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_http_filters",
         "grpc_transport_chttp2",
+        "memory_quota",
         "ref_counted",
         "ref_counted_ptr",
         "slice",

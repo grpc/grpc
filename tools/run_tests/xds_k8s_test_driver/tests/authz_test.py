@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import datetime
+import time
 from typing import Optional
 
 from absl import flags
@@ -28,6 +29,13 @@ _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
 
+# The client generates QPS even when it is still loading information from xDS.
+# Once it finally connects there will be an outpouring of the bufferred RPCs and
+# the server needs time to chew through the backlog, especially since it is
+# still a new process and so probably interpreted. The server on one run
+# processed 225 RPCs a second, so with the client configured for 25 qps this is
+# 40 seconds worth of buffering before starting to drain the backlog.
+_SETTLE_DURATION = datetime.timedelta(seconds=5)
 _SAMPLE_DURATION = datetime.timedelta(seconds=0.5)
 
 
@@ -193,6 +201,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
         test_client: _XdsTestClient = self.startSecureTestClient(test_server)
+        time.sleep(_SETTLE_DURATION.total_seconds())
 
         with self.subTest('01_host_wildcard'):
             self.configure_and_assert(test_client, 'host-wildcard',
@@ -246,6 +255,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
         test_client: _XdsTestClient = self.startSecureTestClient(test_server)
+        time.sleep(_SETTLE_DURATION.total_seconds())
 
         with self.subTest('01_host_wildcard'):
             self.configure_and_assert(test_client, 'host-wildcard',
@@ -271,6 +281,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
         test_client: _XdsTestClient = self.startSecureTestClient(test_server)
+        time.sleep(_SETTLE_DURATION.total_seconds())
 
         with self.subTest('01_host_wildcard'):
             self.configure_and_assert(test_client, 'host-wildcard',
@@ -304,6 +315,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         test_server: _XdsTestServer = self.startSecureTestServer()
         self.setupServerBackends()
         test_client: _XdsTestClient = self.startSecureTestClient(test_server)
+        time.sleep(_SETTLE_DURATION.total_seconds())
 
         with self.subTest('01_host_wildcard'):
             self.configure_and_assert(test_client, 'host-wildcard',
