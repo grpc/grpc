@@ -21,41 +21,11 @@
 #include <type_traits>
 #include <vector>
 
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/slice.h>
-
-// forward-declaring an internal struct, not used publicly.
-struct grpc_slice_buffer;
 
 namespace grpc_event_engine {
 namespace experimental {
-
-/// Reservation request - how much memory do we want to allocate?
-class MemoryRequest {
- public:
-  /// Request a fixed amount of memory.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  MemoryRequest(size_t n) : min_(n), max_(n) {}
-  /// Request a range of memory.
-  /// Requires: \a min <= \a max.
-  /// Requires: \a max <= max_size()
-  MemoryRequest(size_t min, size_t max) : min_(min), max_(max) {}
-
-  /// Maximum allowable request size - hard coded to 1GB.
-  static constexpr size_t max_allowed_size() { return 1024 * 1024 * 1024; }
-
-  /// Increase the size by \a amount.
-  /// Undefined behavior if min() + amount or max() + amount overflows.
-  MemoryRequest Increase(size_t amount) const {
-    return MemoryRequest(min_ + amount, max_ + amount);
-  }
-
-  size_t min() const { return min_; }
-  size_t max() const { return max_; }
-
- private:
-  size_t min_;
-  size_t max_;
-};
 
 namespace internal {
 
