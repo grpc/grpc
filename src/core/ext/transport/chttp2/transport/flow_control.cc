@@ -324,8 +324,10 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
 }
 
 // Take in a target and modifies it based on the memory pressure of the system
-static double AdjustForMemoryPressure(double memory_pressure, double target) {
+static double AdjustForMemoryPressure(grpc_resource_quota* quota,
+                                      double target) {
   // do not increase window under heavy memory pressure.
+  double memory_pressure = grpc_resource_quota_get_memory_pressure(quota);
   static const double kLowMemPressure = 0.1;
   static const double kZeroTarget = 22;
   static const double kHighMemPressure = 0.8;
@@ -341,7 +343,7 @@ static double AdjustForMemoryPressure(double memory_pressure, double target) {
 }
 
 double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(t_->memory_owner.InstantaneousPressure(),
+  return AdjustForMemoryPressure(grpc_resource_user_quota(t_->resource_user),
                                  1 + log2(bdp_estimator_.EstimateBdp()));
 }
 

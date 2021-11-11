@@ -24,14 +24,13 @@
 
 #include <netinet/in.h>
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/resource_quota/api.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static const int kConnectTimeout = 5;
@@ -127,9 +126,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   /* connect to it */
   XCTAssertEqual(getsockname(svr_fd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len), 0);
   init_event_closure(&done, &connected);
-  grpc_channel_args *args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
-  grpc_tcp_client_connect(&done, &ep_, nullptr, args, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
-  grpc_channel_args_destroy(args);
+  grpc_tcp_client_connect(&done, &ep_, grpc_slice_allocator_create_unlimited(), nullptr, nullptr,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   /* await the connection */
   do {

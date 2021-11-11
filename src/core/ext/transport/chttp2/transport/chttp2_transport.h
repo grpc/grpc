@@ -38,7 +38,8 @@ extern bool g_flow_control_enabled;
 /// from the caller; if the caller still needs the resource_user after creating
 /// a transport, the caller must take another ref.
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client);
+    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
+    grpc_resource_user* resource_user);
 
 grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
 grpc_chttp2_transport_get_socket_node(grpc_transport* transport);

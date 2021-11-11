@@ -29,7 +29,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -1295,10 +1294,9 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   default_authority_arg.type = GRPC_ARG_STRING;
   default_authority_arg.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
   default_authority_arg.value.string = const_cast<char*>("inproc.authority");
-  args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   grpc_channel_args* client_args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(args);
-  grpc_channel_args_destroy(args);
+      grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
+
   grpc_transport* server_transport;
   grpc_transport* client_transport;
   inproc_transports_create(&server_transport, server_args, &client_transport,
@@ -1311,7 +1309,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   if (error == GRPC_ERROR_NONE) {
     channel =
         grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, &error);
+                            client_transport, nullptr, 0, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",

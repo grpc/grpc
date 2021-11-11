@@ -22,10 +22,12 @@
 
 grpc_tcp_server_vtable* grpc_tcp_server_impl;
 
-grpc_error_handle grpc_tcp_server_create(grpc_closure* shutdown_complete,
-                                         const grpc_channel_args* args,
-                                         grpc_tcp_server** server) {
-  return grpc_tcp_server_impl->create(shutdown_complete, args, server);
+grpc_error_handle grpc_tcp_server_create(
+    grpc_closure* shutdown_complete, const grpc_channel_args* args,
+    grpc_slice_allocator_factory* slice_allocator_factory,
+    grpc_tcp_server** server) {
+  return grpc_tcp_server_impl->create(shutdown_complete, args,
+                                      slice_allocator_factory, server);
 }
 
 void grpc_tcp_server_start(grpc_tcp_server* server,

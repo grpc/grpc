@@ -118,12 +118,6 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
     return t;
   }
 
-  T operator->() const {
-    static_assert(std::is_pointer<T>::value,
-                  "operator-> only usable on pointers");
-    return this->operator T();
-  }
-
   T operator=(T t) {
     char* src = reinterpret_cast<char*>(&t);
     for (pthread_key_t key : keys_) {
