@@ -55,8 +55,7 @@ def _build(output_dir):
     subprocess.check_call([
         'cmake', '-DgRPC_BUILD_TESTS=OFF', '-DBUILD_SHARED_LIBS=ON',
         '-DCMAKE_BUILD_TYPE=RelWithDebInfo', '-DCMAKE_C_FLAGS="-gsplit-dwarf"',
-        '-DCMAKE_CXX_FLAGS="-gsplit-dwarf"'
-        '..'
+        '-DCMAKE_CXX_FLAGS="-gsplit-dwarf"', '..'
     ],
                           cwd=output_dir)
     subprocess.check_call('make -j%d' % args.jobs, shell=True, cwd=output_dir)
