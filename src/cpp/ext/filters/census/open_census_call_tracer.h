@@ -83,6 +83,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   explicit OpenCensusCallTracer(const grpc_call_element_args* args);
   ~OpenCensusCallTracer() override;
 
+  void GenerateContext();
   OpenCensusCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
 
