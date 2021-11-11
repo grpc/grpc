@@ -224,6 +224,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
 
+    // This is necessary only because of a bug in msvc where nested class
+    // cannot access protected member in base class.
+    friend class EndpointWatcher;
+
     absl::string_view GetEdsResourceName() const {
       if (!parent()->is_xds_uri_) return parent()->server_name_;
       if (!parent()

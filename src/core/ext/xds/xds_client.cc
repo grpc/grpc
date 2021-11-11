@@ -2320,11 +2320,9 @@ void XdsClient::WatchClusterData(
     }
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
         "Unable to parse resource name for cluster %s", cluster_name));
-    work_serializer_.Run(
-        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
-          watcher->OnError(error);
-        },
-        DEBUG_LOCATION);
+    work_serializer_.Run([watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                             work_serializer_) { watcher->OnError(error); },
+                         DEBUG_LOCATION);
     return;
   }
   {
@@ -2399,11 +2397,9 @@ void XdsClient::WatchEndpointData(
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Unable to parse resource name for endpoint service %s",
                         eds_service_name));
-    work_serializer_.Run(
-        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
-          watcher->OnError(error);
-        },
-        DEBUG_LOCATION);
+    work_serializer_.Run([watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                             work_serializer_) { watcher->OnError(error); },
+                         DEBUG_LOCATION);
     return;
   }
   {
