@@ -49,6 +49,65 @@ bool XdsFederationEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
+                                    XdsBootstrap::XdsServer* server) {
+  std::vector<grpc_error_handle> error_list;
+  std::string type;
+  auto it = json->mutable_object()->find("type");
+  if (it == json->mutable_object()->end()) {
+    error_list.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("\"type\" field not present"));
+  } else if (it->second.type() != Json::Type::STRING) {
+    error_list.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("\"type\" field is not a string"));
+  } else {
+    type = std::move(*it->second.mutable_string_value());
+  }
+  Json config;
+  it = json->mutable_object()->find("config");
+  if (it != json->mutable_object()->end()) {
+    if (it->second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"config\" field is not an object"));
+    } else {
+      config = std::move(it->second);
+    }
+  }
+  // Select the first channel creds type that we support.
+  if (server->channel_creds_type.empty() &&
+      XdsChannelCredsRegistry::IsSupported(type)) {
+    if (!XdsChannelCredsRegistry::IsValidConfig(type, config)) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "invalid config for channel creds type \"", type, "\"")));
+    }
+    server->channel_creds_type = std::move(type);
+    server->channel_creds_config = std::move(config);
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+      absl::StrCat("errors parsing index ", idx), &error_list);
+}
+
+grpc_error_handle ParseChannelCredsArray(Json* json,
+                                         XdsBootstrap::XdsServer* server) {
+  std::vector<grpc_error_handle> error_list;
+  for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
+    Json& child = json->mutable_array()->at(i);
+    if (child.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("array element ", i, " is not an object")));
+    } else {
+      grpc_error_handle parse_error = ParseChannelCreds(&child, i, server);
+      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  if (server->channel_creds_type.empty()) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "no known creds type found in \"channel_creds\""));
+  }
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"channel_creds\" array",
+                                       &error_list);
+}
+
 //
 // XdsChannelCredsRegistry
 //
@@ -105,50 +164,9 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "\"channel_creds\" field is not an array"));
   } else {
-    Json* channel_creds = &it->second;
-    for (size_t i = 0; i < channel_creds->mutable_array()->size(); ++i) {
-      Json& child_channel_cred = channel_creds->mutable_array()->at(i);
-      if (child_channel_cred.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("array element ", i, " is not an object")));
-      } else {
-        std::string type;
-        auto it = child_channel_cred.mutable_object()->find("type");
-        if (it == child_channel_cred.mutable_object()->end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "\"type\" field not present"));
-        } else if (it->second.type() != Json::Type::STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "\"type\" field is not a string"));
-        } else {
-          type = std::move(*it->second.mutable_string_value());
-        }
-        Json config;
-        it = child_channel_cred.mutable_object()->find("config");
-        if (it != child_channel_cred.mutable_object()->end()) {
-          if (it->second.type() != Json::Type::OBJECT) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "\"config\" field is not an object"));
-          } else {
-            config = std::move(it->second);
-          }
-        }
-        // Select the first channel creds type that we support.
-        if (server.channel_creds_type.empty() &&
-            XdsChannelCredsRegistry::IsSupported(type)) {
-          if (!XdsChannelCredsRegistry::IsValidConfig(type, config)) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                "invalid config for channel creds type \"", type, "\"")));
-          }
-          server.channel_creds_type = std::move(type);
-          server.channel_creds_config = std::move(config);
-        }
-      }
-    }
-    if (server.channel_creds_type.empty()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "no known creds type found in \"channel_creds\""));
-    }
+    grpc_error_handle parse_error =
+        ParseChannelCredsArray(&it->second, &server);
+    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   }
   it = json->mutable_object()->find("server_features");
   if (it != json->mutable_object()->end()) {
