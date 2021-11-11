@@ -889,6 +889,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         &grpc_core::FakeResolverResponseGenerator::kChannelArgPointerVtable);
     std::string uri = absl::StrCat(
         GetParam().use_fake_resolver() ? "fake" : "xds", ":///", server_name);
+    if (absl::StartsWith(server_name, "xds")) {
+      uri = server_name;
+    }
     std::shared_ptr<ChannelCredentials> channel_creds =
         GetParam().use_xds_credentials()
             ? XdsCredentials(CreateTlsFallbackCredentials())
@@ -2494,7 +2497,7 @@ TEST_P(GlobalXdsClientTest, FederationBasic) {
   const char* kNewServerName =
       "xdstp://xds.example.com/type.googleapis.com/"
       "envoy.config.listener.v3.Listener/new-server.example.com";
-  const char* kNewUrl = "xds.example.com/new-server.example.com";
+  const char* kNewUrl = "xds://xds.example.com/new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);

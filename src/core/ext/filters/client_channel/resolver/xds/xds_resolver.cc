@@ -56,14 +56,13 @@ class XdsResolver : public Resolver {
         result_handler_(std::move(args.result_handler)),
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set),
-        uri_(args.uri) {
+        uri_(std::move(args.uri)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO,
               "[xds_resolver %p] created for URI scheme %s path %s authority "
-              "%s lds resource name %s data plane authority %s",
+              "%s",
               this, args.uri.scheme().c_str(), args.uri.path().c_str(),
-              args.uri.authority().c_str(), lds_resource_name_.c_str(),
-              data_plane_authority_.c_str());
+              args.uri.authority().c_str());
     }
   }
 
@@ -802,18 +801,15 @@ void XdsResolver::StartLocked() {
     result_handler_->ReturnError(error);
     return;
   }
-  std::string authority;
-  std::string target_hostname(absl::StripPrefix(uri_.path(), "/"));
+  std::string resource_name_fragment(absl::StripPrefix(uri_.path(), "/"));
   data_plane_authority_ = GetDefaultAuthority(uri_);
-  std::vector<std::string> parts_of_uri = absl::StrSplit(target_hostname, "/");
-  GPR_ASSERT(parts_of_uri.size() == 1 || parts_of_uri.size() == 2);
-  if (parts_of_uri.size() == 2) {
+  if (!uri_.authority().empty()) {
     // target_uri.authority is set case
-    authority = parts_of_uri[0];
-    auto authority_config = xds_client_->bootstrap().LookupAuthority(authority);
+    const auto* authority_config =
+        xds_client_->bootstrap().LookupAuthority(uri_.authority());
     if (authority_config == nullptr) {
       gpr_log(GPR_ERROR, "Invalid target URI -- authority not found for %s.",
-              target_hostname.c_str());
+              resource_name_fragment.c_str());
       result_handler_->ReturnError(error);
       return;
     }
@@ -821,31 +817,30 @@ void XdsResolver::StartLocked() {
         authority_config->client_listener_resource_name_template;
     if (name_template.empty()) {
       name_template = absl::StrCat(
-          "xdstp://", authority,
+          "xdstp://", uri_.authority(),
           "/type.googleapis.com/envoy.config.listener.v3.Listener/%s");
     }
     lds_resource_name_ = absl::StrReplaceAll(
-        name_template, {{"%s", URI::PercentEncode(data_plane_authority_)}});
+        name_template, {{"%s", URI::PercentEncode(resource_name_fragment)}});
   } else {
     // target_uri.authority not set
-    std::string name_template =
+    absl::string_view name_template =
         xds_client_->bootstrap()
             .client_default_listener_resource_name_template();
     if (name_template.empty()) {
       name_template = "%s";
     }
     if (absl::StartsWith(name_template, "xdstp:")) {
-      target_hostname = URI::PercentEncode(target_hostname);
+      resource_name_fragment = URI::PercentEncode(resource_name_fragment);
     }
     lds_resource_name_ =
-        absl::StrReplaceAll(name_template, {{"%s", target_hostname}});
+        absl::StrReplaceAll(name_template, {{"%s", resource_name_fragment}});
   }
-  data_plane_authority_ = GetDefaultAuthority(uri_);
   gpr_log(
       GPR_INFO,
       "donna lds_resource_name %s and data plane authority %s and authority %s",
       lds_resource_name_.c_str(), data_plane_authority_.c_str(),
-      authority.c_str());
+      uri_.authority().c_str());
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());
