@@ -2230,7 +2230,6 @@ add_library(grpc_test_util
   test/core/util/test_tcp_server.cc
   test/core/util/tls_utils.cc
   test/core/util/tracer_util.cc
-  test/core/util/trickle_endpoint.cc
 )
 
 set_target_properties(grpc_test_util PROPERTIES
@@ -2298,7 +2297,6 @@ add_library(grpc_test_util_unsecure
   test/core/util/test_config.cc
   test/core/util/test_tcp_server.cc
   test/core/util/tracer_util.cc
-  test/core/util/trickle_endpoint.cc
 )
 
 set_target_properties(grpc_test_util_unsecure PROPERTIES
@@ -16811,7 +16809,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/test_config.cc
     test/core/util/test_tcp_server.cc
     test/core/util/tracer_util.cc
-    test/core/util/trickle_endpoint.cc
     test/cpp/performance/writes_per_rpc_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
