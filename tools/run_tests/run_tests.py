@@ -500,7 +500,7 @@ class FakeLanguage(object):
     def test_specs(self):
         out = []
         cmdline = ["sleep", "5"]
-        for i in range(10):
+        for i in range(100):
             out.append(
                 self.config.job_spec(
                     cmdline,
