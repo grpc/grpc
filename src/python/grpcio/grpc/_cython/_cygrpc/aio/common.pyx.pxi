@@ -189,7 +189,7 @@ else:
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):
-    if not isinstance(metadata, tuple) or not isinstance(metadata, list):
+    if not hasattr(metadata, '__iter__') or isinstance(metadata, dict):
         raise TypeError(f'Invalid trailing metadata type, expected {TYPE_METADATA_STRING}: {metadata}')
     for item in metadata:
         if not isinstance(item, tuple):
