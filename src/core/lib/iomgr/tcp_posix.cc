@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "third_party/grpc/include/grpc/impl/codegen/grpc_types.h"
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/iomgr/port.h"
 
