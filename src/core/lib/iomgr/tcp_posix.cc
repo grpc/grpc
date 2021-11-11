@@ -1744,7 +1744,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->target_length = static_cast<double>(tcp_read_chunk_size);
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
   tcp->cur_read_chunk_size =
-      (tcp_max_read_chunk_size + 3 * tcp_min_read_chunk_size) / 4;
+      grpc_core::Clamp(GRPC_TCP_DEFAULT_READ_SLICE_SIZE,
+                       tcp_min_read_chunk_size, tcp_max_read_chunk_size);
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */
