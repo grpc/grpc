@@ -1022,6 +1022,7 @@ include/grpcpp/security/binder_security_policy.h \
 include/grpcpp/security/credentials.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \
+include/grpcpp/security/tls_certificate_verifier.h \
 include/grpcpp/security/tls_credentials_options.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \

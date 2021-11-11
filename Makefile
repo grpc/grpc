@@ -1380,7 +1380,7 @@ LIBGRPC_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
-    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/event_engine_factory.cc \
     src/core/lib/event_engine/memory_allocator.cc \
@@ -1527,6 +1527,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
@@ -1873,7 +1874,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
-    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/event_engine_factory.cc \
     src/core/lib/event_engine/memory_allocator.cc \
@@ -2961,6 +2962,7 @@ src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_utils.cc: $(OPENSSL_DEP)

@@ -751,7 +751,7 @@ libs:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/event_engine/endpoint_config_internal.h
+  - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
@@ -891,6 +891,7 @@ libs:
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
@@ -1314,7 +1315,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
-  - src/core/lib/event_engine/endpoint_config.cc
+  - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -1461,6 +1462,7 @@ libs:
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
@@ -1827,7 +1829,7 @@ libs:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/event_engine/endpoint_config_internal.h
+  - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
@@ -2111,7 +2113,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
-  - src/core/lib/event_engine/endpoint_config.cc
+  - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -2464,6 +2466,7 @@ libs:
   - include/grpcpp/security/credentials.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/tls_certificate_provider.h
+  - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
@@ -2517,7 +2520,6 @@ libs:
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
-  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -2567,8 +2569,8 @@ libs:
   - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
   - src/cpp/common/tls_credentials_options.cc
-  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/common/validate_service_config.cc
   - src/cpp/common/version_cc.cc
   - src/cpp/server/async_generic_service.cc
@@ -2848,6 +2850,7 @@ libs:
   - include/grpcpp/security/credentials.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/tls_certificate_provider.h
+  - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
@@ -6215,6 +6218,15 @@ targets:
   - test/core/security/grpc_tls_certificate_provider_test.cc
   deps:
   - grpc_test_util
+- name: grpc_tls_certificate_verifier_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_certificate_verifier_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
@@ -7983,9 +7995,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/util/tls_test_utils.h
   src:
   - test/cpp/client/credentials_test.cc
+  - test/cpp/util/tls_test_utils.cc
   deps:
   - grpc++
   - grpc_test_util
@@ -7993,9 +8007,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/util/tls_test_utils.h
   src:
   - test/cpp/server/credentials_test.cc
+  - test/cpp/util/tls_test_utils.cc
   deps:
   - grpc++
   - grpc_test_util
@@ -8095,6 +8111,18 @@ targets:
   headers: []
   src:
   - test/cpp/common/timer_test.cc
+  deps:
+  - grpc++
+  - grpc_test_util
+- name: tls_certificate_verifier_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - test/cpp/security/tls_certificate_verifier_test.cc
+  - test/cpp/util/tls_test_utils.cc
   deps:
   - grpc++
   - grpc_test_util
@@ -8620,6 +8648,7 @@ targets:
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
@@ -8659,6 +8688,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
   deps:
   - grpc++_test_config
   - grpc++_test_util
