@@ -2622,6 +2622,8 @@ void XdsClient::NotifyOnErrorLocked(grpc_error_handle error) {
     }
   }
   work_serializer_.Schedule(
+      // TODO(yashykt): When we move to C++14, capture *_watchers using
+      // std::move()
       [listener_watchers, route_config_watchers, cluster_watchers,
        endpoint_watchers, error]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {

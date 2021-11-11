@@ -88,9 +88,7 @@ class XdsResolver : public Resolver {
           // TODO(yashykt): When we move to C++14, capture listener with
           // std::move
           [this, listener]() mutable {
-            if (resolver_->xds_client_ != nullptr) {
-              resolver_->OnListenerUpdate(std::move(listener));
-            }
+            resolver_->OnListenerUpdate(std::move(listener));
             Unref();
           },
           DEBUG_LOCATION);
@@ -99,11 +97,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this, error]() {
-            if (resolver_->xds_client_ != nullptr) {
-              resolver_->OnError(error);
-            } else {
-              GRPC_ERROR_UNREF(error);
-            }
+            resolver_->OnError(error);
             Unref();
           },
           DEBUG_LOCATION);
@@ -112,9 +106,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this]() {
-            if (resolver_->xds_client_ != nullptr) {
-              resolver_->OnResourceDoesNotExist();
-            }
+            resolver_->OnResourceDoesNotExist();
             Unref();
           },
           DEBUG_LOCATION);
@@ -134,9 +126,7 @@ class XdsResolver : public Resolver {
           // TODO(yashykt): When we move to C++14, capture route_config with
           // std::move
           [this, route_config]() mutable {
-            if (resolver_->xds_client_ != nullptr) {
-              resolver_->OnRouteConfigUpdate(std::move(route_config));
-            }
+            resolver_->OnRouteConfigUpdate(std::move(route_config));
             Unref();
           },
           DEBUG_LOCATION);
@@ -145,11 +135,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this, error]() {
-            if (resolver_->xds_client_ != nullptr) {
-              resolver_->OnError(error);
-            } else {
-              GRPC_ERROR_UNREF(error);
-            }
+            resolver_->OnError(error);
             Unref();
           },
           DEBUG_LOCATION);
@@ -158,9 +144,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this]() {
-            if (resolver_->xds_client_ != nullptr) {
-              resolver_->OnResourceDoesNotExist();
-            }
+            resolver_->OnResourceDoesNotExist();
             Unref();
           },
           DEBUG_LOCATION);
@@ -790,6 +774,9 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
   }
+  if (xds_client_ == nullptr) {
+    return;
+  }
   if (listener.http_connection_manager.route_config_name !=
       route_config_name_) {
     if (route_config_watcher_ != nullptr) {
@@ -825,6 +812,9 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated route config", this);
   }
+  if (xds_client_ == nullptr) {
+    return;
+  }
   // Find the relevant VirtualHost from the RouteConfiguration.
   XdsApi::RdsUpdate::VirtualHost* vhost =
       rds_update.FindVirtualHostForDomain(server_name_);
@@ -843,6 +833,10 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
 void XdsResolver::OnError(grpc_error_handle error) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
           this, grpc_error_std_string(error).c_str());
+  if (xds_client_ == nullptr) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   Result result;
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
@@ -855,6 +849,9 @@ void XdsResolver::OnResourceDoesNotExist() {
           "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
           "update and returning empty service config",
           this);
+  if (xds_client_ == nullptr) {
+    return;
+  }
   current_virtual_host_.routes.clear();
   Result result;
   result.service_config =
