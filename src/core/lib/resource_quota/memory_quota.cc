@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/memory_quota.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
@@ -159,9 +159,14 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
   // flexibility.
   if (scaled_size_over_min != 0) {
     double pressure;
+    size_t max_recommended_allocation_size;
     {
       MutexLock lock(&memory_quota_mu_);
-      pressure = memory_quota_->InstantaneousPressure();
+      const auto pressure_and_max_recommended_allocation_size =
+          memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize();
+      pressure = pressure_and_max_recommended_allocation_size.first;
+      max_recommended_allocation_size =
+          pressure_and_max_recommended_allocation_size.second;
     }
     // Reduce allocation size proportional to the pressure > 80% usage.
     if (pressure > 0.8) {
@@ -169,6 +174,12 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
           std::min(scaled_size_over_min,
                    static_cast<size_t>((request.max() - request.min()) *
                                        (1.0 - pressure) / 0.2));
+    }
+    if (max_recommended_allocation_size < request.min()) {
+      scaled_size_over_min = 0;
+    } else if (request.min() + scaled_size_over_min >
+               max_recommended_allocation_size) {
+      scaled_size_over_min = max_recommended_allocation_size - request.min();
     }
   }
 
@@ -410,15 +421,16 @@ void BasicMemoryQuota::Return(size_t amount) {
   free_bytes_.fetch_add(amount, std::memory_order_relaxed);
 }
 
-size_t BasicMemoryQuota::InstantaneousPressure() const {
+std::pair<double, size_t> BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() const {
   double free = free_bytes_.load();
   if (free < 0) free = 0;
-  double size = quota_size_.load();
-  if (size < 1) return 1.0;
+  size_t quota_size = quota_size_.load();
+  double size = quota_size;
+  if (size < 1) return std::make_pair(1.0, 1);
   double pressure = (size - free) / size;
   if (pressure < 0.0) pressure = 0.0;
   if (pressure > 1.0) pressure = 1.0;
-  return pressure;
+  return std::make_pair(pressure, quota_size/16);
 }
 
 //
