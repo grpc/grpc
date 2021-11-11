@@ -69,7 +69,7 @@ class GrpcPolledFdFactory {
  * the resulting GrpcPolledFdFactory as well as any GrpcPolledFd
  * returned by the factory. */
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    grpc_core::Mutex* mu);
+    Mutex* mu);
 
 }  // namespace grpc_core
 

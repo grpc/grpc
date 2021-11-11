@@ -99,7 +99,7 @@ class GrpcPolledFdWindows {
     WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY,
   };
 
-  GrpcPolledFdWindows(ares_socket_t as, grpc_core::Mutex* mu,
+  GrpcPolledFdWindows(ares_socket_t as, Mutex* mu,
                       int address_family, int socket_type)
       : mu_(mu),
         read_buf_(grpc_empty_slice()),
@@ -420,7 +420,7 @@ class GrpcPolledFdWindows {
   static void OnTcpConnect(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
-    grpc_core::MutexLock lock(polled_fd->mu_);
+    MutexLock lock(polled_fd->mu_);
     grpc_polled_fd->OnTcpConnectLocked(error);
   }
 
@@ -569,7 +569,7 @@ class GrpcPolledFdWindows {
   static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     (void)GRPC_ERROR_REF(error);
-    grpc_core::MutexLock lock(polled_fd->mu_);
+    MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpReadableLocked(error);
   }
 
@@ -613,7 +613,7 @@ class GrpcPolledFdWindows {
   static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     (void)GRPC_ERROR_REF(error);
-    grpc_core::MutexLock lock(polled_fd->mu_);
+    MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpWriteableLocked(error);
   }
 
@@ -649,7 +649,7 @@ class GrpcPolledFdWindows {
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
  private:
-  grpc_core::Mutex* mu_;
+  Mutex* mu_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -691,7 +691,7 @@ struct SockToPolledFdEntry {
  * with a GrpcPolledFdWindows factory and event driver */
 class SockToPolledFdMap {
  public:
-  explicit SockToPolledFdMap(grpc_core::Mutex* mu) : mu_(mu) {}
+  explicit SockToPolledFdMap(Mutex* mu) : mu_(mu) {}
 
   ~SockToPolledFdMap() { GPR_ASSERT(head_ == nullptr); }
 
@@ -804,7 +804,7 @@ class SockToPolledFdMap {
   }
 
  private:
-  grpc_core::Mutex* mu_;
+  Mutex* mu_;
   SockToPolledFdEntry* head_ = nullptr;
 };
 
@@ -854,7 +854,7 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  explicit GrpcPolledFdFactoryWindows(grpc_core::Mutex* mu)
+  explicit GrpcPolledFdFactoryWindows(Mutex* mu)
       : sock_to_polled_fd_map_(mu) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
@@ -876,7 +876,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    grpc_core::Mutex* mu) {
+    Mutex* mu) {
   return absl::make_unique<GrpcPolledFdFactoryWindows>(mu);
 }
 

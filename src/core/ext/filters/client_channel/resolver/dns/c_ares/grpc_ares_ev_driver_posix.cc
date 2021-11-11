@@ -99,7 +99,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    grpc_core::Mutex* /* mu */) {
+    Mutex* /* mu */) {
   return absl::make_unique<GrpcPolledFdFactoryPosix>();
 }
 
