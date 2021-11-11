@@ -1135,8 +1135,7 @@ static void on_dns_lookup_done(void* arg, grpc_error_handle error) {
              sizeof(grpc_resolved_address));
     }
   }
-  (void)GRPC_ERROR_REF(error);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done, GRPC_ERROR_REF(error));
   delete r;
 }
 
