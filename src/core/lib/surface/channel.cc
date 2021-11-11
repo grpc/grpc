@@ -41,6 +41,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -68,6 +69,7 @@ grpc_channel* grpc_channel_create_with_builder(
   } else {
     GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
   }
+  std::string name = grpc_channel_stack_builder_get_target(builder);
   grpc_error_handle builder_error = grpc_channel_stack_builder_finish(
       builder, sizeof(grpc_channel), 1, destroy_channel, nullptr,
       reinterpret_cast<void**>(&channel));
@@ -87,6 +89,9 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   channel->registration_table.Init();
+  channel->allocator.Init(grpc_core::ResourceQuotaFromChannelArgs(args)
+                              ->memory_quota()
+                              ->CreateMemoryOwner(name));
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,
@@ -486,6 +491,7 @@ static void destroy_channel(void* arg, grpc_error_handle /*error*/) {
   }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   channel->registration_table.Destroy();
+  channel->allocator.Destroy();
   gpr_free(channel->target);
   gpr_free(channel);
   // See comment in grpc_channel_create() for why we do this.

@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 #include <inttypes.h>
 #include <string.h>

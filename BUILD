@@ -803,7 +803,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
-        "src/core/lib/gprpp/arena.cc",
         "src/core/lib/gprpp/examine_stack.cc",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
@@ -827,7 +826,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -1480,6 +1478,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "arena",
+    srcs = [
+        "src/core/lib/resource_quota/arena.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/arena.h",
+    ],
+    deps = [
+        "memory_quota",
+        "gpr_base",
+    ]
+)
+
+grpc_cc_library(
     name = "thread_quota",
     srcs = [
         "src/core/lib/resource_quota/thread_quota.cc",
@@ -1980,6 +1992,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "arena",
         "bitset",
         "channel_stack_type",
         "chunked_vector",
@@ -3312,6 +3325,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "arena",
         "config",
         "error",
         "gpr_base",

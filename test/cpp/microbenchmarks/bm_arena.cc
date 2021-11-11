@@ -20,7 +20,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

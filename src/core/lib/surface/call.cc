@@ -45,11 +45,11 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_split.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/slice/slice_utils.h"
@@ -363,7 +363,8 @@ grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
       call_and_stack_size + (args->parent ? sizeof(child_call) : 0);
 
   std::pair<grpc_core::Arena*, void*> arena_with_call =
-      grpc_core::Arena::CreateWithAlloc(initial_size, call_alloc_size);
+      grpc_core::Arena::CreateWithAlloc(initial_size, call_alloc_size,
+                                        &*args->channel->allocator);
   arena = arena_with_call.first;
   call = new (arena_with_call.second) grpc_call(arena, *args);
   *out_call = call;

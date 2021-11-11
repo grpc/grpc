@@ -110,6 +110,7 @@ struct grpc_channel {
   grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
       registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
+  grpc_core::ManualConstructor<grpc_core::MemoryAllocator> allocator;
 
   char* target;
 };

@@ -23,10 +23,10 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 
