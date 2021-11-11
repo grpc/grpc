@@ -179,7 +179,7 @@ class BinderServerListener : public Server::ListenerInterface {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }
 
-    gpr_log(GPR_ERROR, "calling uid = %d", uid);
+    gpr_log(GPR_INFO, "BinderServerListener calling uid = %d", uid);
     if (!security_policy_->IsAuthorized(uid)) {
       // TODO(mingcl): For now we just ignore this unauthorized
       // SETUP_TRANSPORT transaction and ghost the client. Check if we should
@@ -195,7 +195,7 @@ class BinderServerListener : public Server::ListenerInterface {
     if (!status.ok()) {
       return status;
     }
-    gpr_log(GPR_INFO, "version = %d", version);
+    gpr_log(GPR_INFO, "BinderTransport client protocol version = %d", version);
     // TODO(waynetu): Check supported version.
     std::unique_ptr<grpc_binder::Binder> client_binder{};
     status = parcel->ReadBinder(&client_binder);
@@ -212,8 +212,8 @@ class BinderServerListener : public Server::ListenerInterface {
         std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
     grpc_channel_args* args = grpc_channel_args_copy(server_->channel_args());
-    grpc_error_handle error = server_->SetupTransport(server_transport, nullptr,
-                                                      args, nullptr, nullptr);
+    grpc_error_handle error =
+        server_->SetupTransport(server_transport, nullptr, args, nullptr);
     grpc_channel_args_destroy(args);
     return grpc_error_to_absl_status(error);
   }

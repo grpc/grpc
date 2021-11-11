@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# appengine_config.py
-from google.appengine.ext import vendor
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-# Add any libraries install in the "lib" folder.
-vendor.add('lib')
+licenses(["notice"])
+
+grpc_package(name = "test/cpp/security")
+
+grpc_cc_test(
+    name = "tls_certificate_verifier_test",
+    srcs = ["tls_certificate_verifier_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:tls_test_utils",
+    ],
+)

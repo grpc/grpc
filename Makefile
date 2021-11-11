@@ -1375,8 +1375,11 @@ LIBGRPC_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
+    src/core/lib/event_engine/event_engine_factory.cc \
+    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
@@ -1441,7 +1444,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
@@ -1481,9 +1483,15 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/matchers/matchers.cc \
+    src/core/lib/promise/activity.cc \
     src/core/lib/resolver/resolver.cc \
     src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resolver/server_address.cc \
+    src/core/lib/resource_quota/api.cc \
+    src/core/lib/resource_quota/memory_quota.cc \
+    src/core/lib/resource_quota/resource_quota.cc \
+    src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/sdk_server_authz_filter.cc \
@@ -1518,6 +1526,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
@@ -1624,6 +1633,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/memory_allocator.h \
+    include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
@@ -1860,8 +1870,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
+    src/core/lib/event_engine/event_engine_factory.cc \
+    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
@@ -1925,7 +1938,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
@@ -1964,9 +1976,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/promise/activity.cc \
     src/core/lib/resolver/resolver.cc \
     src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resolver/server_address.cc \
+    src/core/lib/resource_quota/api.cc \
+    src/core/lib/resource_quota/memory_quota.cc \
+    src/core/lib/resource_quota/resource_quota.cc \
+    src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc \
     src/core/lib/service_config/service_config.cc \
     src/core/lib/service_config/service_config_parser.cc \
@@ -2026,6 +2044,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/memory_allocator.h \
+    include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
@@ -2945,6 +2964,7 @@ src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_utils.cc: $(OPENSSL_DEP)

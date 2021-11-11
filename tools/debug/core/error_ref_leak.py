@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -44,4 +44,4 @@ for line in data:
             assert (err in errs)
             errs.remove(err)
 
-print "leaked:", errs
+print(("leaked:", errs))
