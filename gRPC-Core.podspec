@@ -2272,7 +2272,9 @@ Pod::Spec.new do |s|
                       'test/core/util/tls_utils.cc',
                       'test/core/util/tls_utils.h',
                       'test/core/util/tracer_util.cc',
-                      'test/core/util/tracer_util.h'
+                      'test/core/util/tracer_util.h',
+                      'test/core/util/trickle_endpoint.cc',
+                      'test/core/util/trickle_endpoint.h'
   end
 
   # patch include of openssl to openssl_grpc

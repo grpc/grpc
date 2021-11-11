@@ -118,7 +118,7 @@ class Benchmark:
                          (f, new_name, new, old_name, old, mdn_diff))
             s = bm_speedup.speedup(new, old, 1e-5)
             if abs(s) > 3:
-                if mdn_diff > 0.5:
+                if mdn_diff > 0.5 or 'trickle' in f:
                     self.final[f] = '%+d%%' % s
         return self.final.keys()
 
