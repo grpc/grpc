@@ -2322,7 +2322,6 @@ void XdsClient::WatchClusterData(
         "Unable to parse resource name for cluster %s", cluster_name));
     work_serializer_.Run(
         [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
-          // review_note: this should fix a leak
           watcher->OnError(error);
         },
         DEBUG_LOCATION);
@@ -2402,7 +2401,6 @@ void XdsClient::WatchEndpointData(
                         eds_service_name));
     work_serializer_.Run(
         [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
-          // review_note: this should fix a leak
           watcher->OnError(error);
         },
         DEBUG_LOCATION);
