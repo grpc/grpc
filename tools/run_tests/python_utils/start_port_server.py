@@ -82,6 +82,8 @@ def start_port_server():
             port_server = subprocess.Popen(args,
                                            env=env,
                                            cwd=tempdir,
+                                           stdin=subprocess.DEVNULL,
+                                           stdout=subprocess.DEVNULL,
                                            creationflags=creationflags,
                                            close_fds=True)
         else:
