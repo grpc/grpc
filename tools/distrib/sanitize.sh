@@ -27,5 +27,5 @@ tools/run_tests/sanity/check_include_style.py --fix || true
 tools/distrib/yapf_code.sh
 tools/distrib/isort_code.sh
 tools/distrib/clang_format_code.sh
-tools/distrib/buildifier_format_code.sh || true
+tools/distrib/buildifier_format_code_strict.sh || true
 
