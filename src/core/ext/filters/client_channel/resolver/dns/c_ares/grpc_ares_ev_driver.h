@@ -58,8 +58,7 @@ class GrpcPolledFdFactory {
   virtual ~GrpcPolledFdFactory() {}
   /* Creates a new wrapped fd for the current platform */
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      grpc_core::Mutex* mu) = 0;
+      ares_socket_t as, grpc_pollset_set* driver_pollset_set) = 0;
   /* Optionally configures the ares channel after creation */
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };

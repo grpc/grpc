@@ -396,7 +396,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           fdn = static_cast<fd_node*>(gpr_malloc(sizeof(fd_node)));
           fdn->grpc_polled_fd =
               ev_driver->polled_fd_factory->NewGrpcPolledFdLocked(
-                  socks[i], ev_driver->pollset_set, &ev_driver->request->mu);
+                  socks[i], ev_driver->pollset_set);
           GRPC_CARES_TRACE_LOG("request:%p new fd: %s", ev_driver->request,
                                fdn->grpc_polled_fd->GetName());
           fdn->ev_driver = ev_driver;
