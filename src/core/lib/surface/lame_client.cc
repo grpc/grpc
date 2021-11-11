@@ -30,7 +30,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -185,13 +184,9 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
           GRPC_ERROR_INT_GRPC_STATUS, error_code),
       GRPC_ERROR_STR_GRPC_MESSAGE, error_message);
   grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(&error);
-  grpc_channel_args* args0 =
-      grpc_channel_args_copy_and_add(nullptr, &error_arg, 1);
-  grpc_channel_args* args = grpc_core::EnsureResourceQuotaInChannelArgs(args0);
-  grpc_channel_args_destroy(args0);
+  grpc_channel_args args = {1, &error_arg};
   grpc_channel* channel = grpc_channel_create(
-      target, args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr);
-  grpc_channel_args_destroy(args);
+      target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr, 0, nullptr);
   GRPC_ERROR_UNREF(error);
   return channel;
 }

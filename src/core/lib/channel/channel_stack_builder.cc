@@ -42,6 +42,8 @@ struct grpc_channel_stack_builder {
   // various set/get-able parameters
   grpc_channel_args* args;
   grpc_transport* transport;
+  grpc_resource_user* resource_user;
+  size_t preallocated_bytes;
   char* target;
   const char* name;
 };

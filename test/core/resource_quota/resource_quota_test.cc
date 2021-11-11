@@ -20,7 +20,7 @@ namespace grpc_core {
 namespace testing {
 
 TEST(ResourceQuotaTest, Works) {
-  auto q = MakeRefCounted<ResourceQuota>("foo");
+  auto q = MakeRefCounted<ResourceQuota>();
   EXPECT_NE(q->thread_quota(), nullptr);
   EXPECT_NE(q->memory_quota(), nullptr);
 }

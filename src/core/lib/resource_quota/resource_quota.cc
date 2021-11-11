@@ -18,16 +18,10 @@
 
 namespace grpc_core {
 
-ResourceQuota::ResourceQuota(std::string name)
-    : memory_quota_(MakeMemoryQuota(std::move(name))),
+ResourceQuota::ResourceQuota()
+    : memory_quota_(std::make_shared<MemoryQuota>()),
       thread_quota_(MakeRefCounted<ThreadQuota>()) {}
 
 ResourceQuota::~ResourceQuota() = default;
-
-ResourceQuotaRefPtr ResourceQuota::Default() {
-  static auto default_resource_quota =
-      MakeResourceQuota("default_resource_quota").release();
-  return default_resource_quota->Ref();
-}
 
 }  // namespace grpc_core

@@ -42,6 +42,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -93,14 +94,15 @@ static void client_setup_transport(grpc_transport* transport) {
    * GRPC_CLIENT_DIRECT_CHANNEL */
   g_ctx.client =
       grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          transport, nullptr);
+                          transport, nullptr, 0, nullptr);
   grpc_channel_args_destroy(args);
 }
 
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
   grpc_transport* transport;
-  transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->client, true);
+  transport = grpc_create_chttp2_transport(
+      nullptr, g_ctx.ep->client, true, grpc_resource_user_create_unlimited());
   client_setup_transport(transport);
   GPR_ASSERT(g_ctx.client);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -113,7 +115,8 @@ static void init_server() {
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
   grpc_server_start(g_ctx.server);
-  transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->server, false);
+  transport = grpc_create_chttp2_transport(
+      nullptr, g_ctx.ep->server, false, grpc_resource_user_create_unlimited());
   server_setup_transport(transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }

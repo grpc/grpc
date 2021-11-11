@@ -212,8 +212,8 @@ class BinderServerListener : public Server::ListenerInterface {
         std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
     grpc_channel_args* args = grpc_channel_args_copy(server_->channel_args());
-    grpc_error_handle error =
-        server_->SetupTransport(server_transport, nullptr, args, nullptr);
+    grpc_error_handle error = server_->SetupTransport(server_transport, nullptr,
+                                                      args, nullptr, nullptr);
     grpc_channel_args_destroy(args);
     return grpc_error_to_absl_status(error);
   }
