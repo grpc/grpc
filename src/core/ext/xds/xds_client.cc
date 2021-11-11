@@ -906,13 +906,13 @@ void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
 }
 
 void XdsClient::ChannelState::AdsCallState::UnsubscribeLocked(
-    const std::string& type_url, const XdsApi::ResourceName& resource,
+    const std::string& type_url, const XdsApi::ResourceName& name,
     bool delay_unsubscription) {
   auto& type_state_map = state_map_[type_url];
-  auto& authority_map = type_state_map.subscribed_resources[resource.authority];
-  authority_map.erase(resource.id);
+  auto& authority_map = type_state_map.subscribed_resources[name.authority];
+  authority_map.erase(name.id);
   if (authority_map.empty()) {
-    type_state_map.subscribed_resources.erase(resource.authority);
+    type_state_map.subscribed_resources.erase(name.authority);
   }
   if (!delay_unsubscription) SendMessageLocked(type_url);
 }
