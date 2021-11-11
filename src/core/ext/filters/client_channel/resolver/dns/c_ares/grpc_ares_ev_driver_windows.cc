@@ -159,7 +159,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnReadableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnReadableLocked "
+        "fd:|%s| ContinueRegisterForOnReadableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
@@ -215,7 +215,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnWriteableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnWriteableLocked "
+        "fd:|%s| ContinueRegisterForOnWriteableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
