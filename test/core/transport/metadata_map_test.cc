@@ -19,22 +19,26 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
 namespace testing {
 
+static auto* g_memory_allocator = new MemoryAllocator(
+    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+
 TEST(MetadataMapTest, Noop) {
-  auto arena = MakeScopedArena(1024);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   MetadataMap<>(arena.get());
 }
 
 TEST(MetadataMapTest, NoopWithDeadline) {
-  auto arena = MakeScopedArena(1024);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   MetadataMap<GrpcTimeoutMetadata>(arena.get());
 }
 
 TEST(MetadataMapTest, SimpleOps) {
-  auto arena = MakeScopedArena(1024);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   MetadataMap<GrpcTimeoutMetadata> map(arena.get());
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
@@ -70,7 +74,7 @@ class FakeEncoder {
 
 TEST(MetadataMapTest, EmptyEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   MetadataMap<GrpcTimeoutMetadata> map(arena.get());
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "");
@@ -78,7 +82,7 @@ TEST(MetadataMapTest, EmptyEncodeTest) {
 
 TEST(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
-  auto arena = MakeScopedArena(1024);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   MetadataMap<GrpcTimeoutMetadata> map(arena.get());
   map.Set(GrpcTimeoutMetadata(), 1234);
   map.Encode(&encoder);

@@ -30,6 +30,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -38,6 +39,10 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
@@ -69,7 +74,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
@@ -111,7 +116,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   Fixture::Prepare(&b);
 
@@ -473,7 +478,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
-  auto* arena = grpc_core::Arena::Create(kArenaSize);
+  auto* arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
@@ -494,7 +499,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     if (0 == (state.iterations() & 0xfff)) {
       b.Destroy();
       arena->Destroy();
-      arena = grpc_core::Arena::Create(kArenaSize);
+      arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,

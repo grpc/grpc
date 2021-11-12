@@ -26,9 +26,14 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 struct TestInput {
   const char* input;
@@ -67,7 +72,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   void TestVector(grpc_slice_split_mode mode, const char* hexstring,
                   std::string expect) {
-    auto arena = grpc_core::MakeScopedArena(1024);
+    auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
     grpc_core::ExecCtx exec_ctx;
     grpc_slice input = parse_hexstring(hexstring);
     grpc_slice* slices;

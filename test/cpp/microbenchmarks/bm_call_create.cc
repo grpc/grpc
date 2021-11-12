@@ -41,6 +41,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
 #include "src/cpp/client/create_channel_internal.h"
@@ -48,6 +49,10 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 void BM_Zalloc(benchmark::State& state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
@@ -535,14 +540,15 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   TestOp test_op_data;
   const int kArenaSize = 4096;
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
-  grpc_call_element_args call_args{call_stack,
-                                   nullptr,
-                                   context,
-                                   method,
-                                   start_time,
-                                   deadline,
-                                   grpc_core::Arena::Create(kArenaSize),
-                                   nullptr};
+  grpc_call_element_args call_args{
+      call_stack,
+      nullptr,
+      context,
+      method,
+      start_time,
+      deadline,
+      grpc_core::Arena::Create(kArenaSize, g_memory_allocator),
+      nullptr};
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(
@@ -554,7 +560,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     // recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
       call_args.arena->Destroy();
-      call_args.arena = grpc_core::Arena::Create(kArenaSize);
+      call_args.arena =
+          grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
     }
   }
   call_args.arena->Destroy();

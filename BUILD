@@ -881,6 +881,7 @@ grpc_cc_library(
     hdrs = ["src/core/lib/gprpp/chunked_vector.h"],
     external_deps = ["absl/utility"],
     deps = [
+        "arena",
         # TODO(ctiller): weaken this to just arena when that splits into its own target
         "gpr_base",
     ],

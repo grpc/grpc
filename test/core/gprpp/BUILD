@@ -305,6 +305,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:chunked_vector",
+        "//:resource_quota",
         "//:gpr_base",
         "//test/core/util:grpc_suppressions",
     ],
@@ -320,6 +321,7 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "//:chunked_vector",
+        "//:resource_quota",
         "//test/core/util:grpc_test_util",
     ],
 )
