@@ -704,6 +704,8 @@ static void tcp_do_read(grpc_tcp* tcp) {
     iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
   }
 
+  GPR_ASSERT(tcp->incoming_buffer->length != 0);
+
   do {
     /* Assume there is something on the queue. If we receive TCP_INQ from
      * kernel, we will update this value, otherwise, we have to assume there is
@@ -842,13 +844,12 @@ static void tcp_continue_read(grpc_tcp* tcp) {
     int target_length = static_cast<int>(tcp->target_length);
     int extra_wanted =
         target_length - static_cast<int>(tcp->incoming_buffer->length);
-    if (extra_wanted >= tcp->min_read_chunk_size) {
-      grpc_slice_buffer_add_indexed(
-          tcp->incoming_buffer,
-          tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-              tcp->min_read_chunk_size,
-              std::min(tcp->max_read_chunk_size, extra_wanted))));
-    }
+    grpc_slice_buffer_add_indexed(
+        tcp->incoming_buffer,
+        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+            tcp->min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
+                             tcp->max_read_chunk_size))));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
