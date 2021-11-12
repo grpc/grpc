@@ -105,8 +105,10 @@ for lib in LIBS:
     old_version = glob.glob('bloat_diff_old/%s' % lib)
     new_version = glob.glob('bloat_diff_new/%s' % lib)
     for filename in [old_version, new_version]:
-        subprocess.check_call('strip %s -o %s.stripped' % filename[0],
-                              shell=True)
+        if filename:
+            subprocess.check_call('strip %s -o %s.stripped' %
+                                  (filename[0], filename[0]),
+                                  shell=True)
     assert len(new_version) == 1
     cmd = 'bloaty-build/bloaty -d compileunits,symbols'
     if old_version:
