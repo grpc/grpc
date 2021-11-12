@@ -317,9 +317,16 @@ grpc_error_handle XdsBootstrap::ParseAuthority(Json* json,
     if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"client_listener_resource_name_template\" field is not a string"));
+    } else {
+      if (!absl::StartsWith(it->second.string_value(),
+                            absl::StrCat("xdstp://", name, "/"))) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"client_listener_resource_name_template\" field is not valid"));
+      } else {
+        authority.client_listener_resource_name_template =
+            std::move(*it->second.mutable_string_value());
+      }
     }
-    authority.client_listener_resource_name_template =
-        std::move(*it->second.mutable_string_value());
   }
   it = json->mutable_object()->find("xds_servers");
   if (it != json->mutable_object()->end()) {
@@ -529,13 +536,13 @@ std::string XdsBootstrap::ToString() const {
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
                         entry.second.client_listener_resource_name_template));
     parts.push_back(
-        absl::StrFormat("      servers=[\n"
-                        "        {\n"
-                        "          uri=\"%s\",\n"
-                        "          creds_type=%s,\n",
+        absl::StrFormat("    servers=[\n"
+                        "      {\n"
+                        "        uri=\"%s\",\n"
+                        "        creds_type=%s,\n",
                         entry.second.server().server_uri,
                         entry.second.server().channel_creds_type));
-    parts.push_back("  },\n");
+    parts.push_back("      },\n");
   }
   parts.push_back("}");
   parts.push_back("certificate_providers={\n");
