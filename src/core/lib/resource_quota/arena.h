@@ -22,8 +22,8 @@
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
 
-#ifndef GRPC_CORE_LIB_GPRPP_ARENA_H
-#define GRPC_CORE_LIB_GPRPP_ARENA_H
+#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#define GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -134,4 +134,4 @@ inline ScopedArenaPtr MakeScopedArena(size_t initial_size,
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_ARENA_H */
+#endif /* GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H */
