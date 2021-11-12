@@ -41,6 +41,8 @@ RUN apt-get update && apt-get -y install \
 # Python dependencies
 
 # Install dependencies
+# TODO(jtattermusch): This installs python3.5. Is it even needed
+# when we install python3.6 in the next step?
 RUN apt-get update && apt-get install -y \
     python3-all-dev
 
@@ -64,6 +66,11 @@ RUN cd /tmp && \
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
 
+
+# Remove python2.7 which is present in the base image.
+# This is needed for the grpc bazel build to work.
+# TODO(jtattermusch): remove once https://github.com/grpc/grpc/issues/28026 is fixed.
+RUN apt-get remove -y python2.7-minimal
 
 #========================
 # Bazel installation
