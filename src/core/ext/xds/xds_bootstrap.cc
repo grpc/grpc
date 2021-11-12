@@ -33,6 +33,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -146,17 +147,9 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
     Json* json, grpc_error_handle* error) {
   std::vector<grpc_error_handle> error_list;
   XdsServer server;
-  auto it = json->mutable_object()->find("server_uri");
-  if (it == json->mutable_object()->end()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"server_uri\" field not present"));
-  } else if (it->second.type() != Json::Type::STRING) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"server_uri\" field is not a string"));
-  } else {
-    server.server_uri = std::move(*it->second.mutable_string_value());
-  }
-  it = json->mutable_object()->find("channel_creds");
+  ParseJsonObjectField(json->object_value(), "server_uri", &server.server_uri,
+                       &error_list);
+  auto it = json->mutable_object()->find("channel_creds");
   if (it == json->mutable_object()->end()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "\"channel_creds\" field not present"));
@@ -168,20 +161,14 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
         ParseChannelCredsArray(&it->second, &server);
     if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   }
-  it = json->mutable_object()->find("server_features");
-  if (it != json->mutable_object()->end()) {
-    if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"server_features\" field is not an array"));
-    } else {
-      Json* json = &it->second;
-      for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
-        Json& child = json->mutable_array()->at(i);
-        if (child.type() == Json::Type::STRING &&
-            child.string_value() == "xds_v3") {
-          server.server_features.insert(
-              std::move(*child.mutable_string_value()));
-        }
+  const Json::Array* server_features_array = nullptr;
+  ParseJsonObjectField(json->object_value(), "server_features",
+                       &server_features_array, &error_list, /*required=*/false);
+  if (server_features_array != nullptr) {
+    for (const Json& feature_json : *server_features_array) {
+      if (feature_json.type() == Json::Type::STRING &&
+          feature_json.string_value() == "xds_v3") {
+        server.server_features.insert(feature_json.string_value());
       }
     }
   }
