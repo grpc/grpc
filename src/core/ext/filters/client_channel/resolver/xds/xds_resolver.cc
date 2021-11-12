@@ -841,11 +841,13 @@ void XdsResolver::StartLocked() {
     lds_resource_name_ =
         absl::StrReplaceAll(name_template, {{"%s", resource_name_fragment}});
   }
-  gpr_log(
-      GPR_INFO,
-      "donna lds_resource_name %s and data plane authority %s and authority %s",
-      lds_resource_name_.c_str(), data_plane_authority_.c_str(),
-      uri_.authority().c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO,
+            "[xds_resolver %p] Started with lds_resource_name %s, "
+            "data_plane_authority %s, and authority %s",
+            this, lds_resource_name_.c_str(), data_plane_authority_.c_str(),
+            uri_.authority().c_str());
+  }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
   auto watcher = absl::make_unique<ListenerWatcher>(Ref());

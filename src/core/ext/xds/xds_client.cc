@@ -2093,8 +2093,6 @@ void XdsClient::WatchListenerData(
     w->OnError(GRPC_ERROR_REF(error));
     return;
   }
-  gpr_log(GPR_INFO, "donna WatchListenerData authority %s and id %s",
-          resource->authority.c_str(), resource->id.c_str());
   AuthorityState& authority_state = authority_state_map_[resource->authority];
   ListenerState& listener_state = authority_state.listener_map[resource->id];
   listener_state.watchers[w] = std::move(watcher);

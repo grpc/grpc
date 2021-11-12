@@ -62,7 +62,7 @@ grpc_error_handle ParseChannelCreds(const Json& json, size_t idx,
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"config\" field is not an object"));
     } else {
-      config = std::move(it->second);
+      config = it->second;
     }
   }
   // Select the first channel creds type that we support.
