@@ -817,8 +817,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/arena.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/chunked_vector.h" role="src" />
@@ -1060,6 +1058,8 @@
     <file baseinstalldir="/" name="src/core/lib/promise/seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.cc" role="src" />

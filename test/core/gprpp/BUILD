@@ -305,8 +305,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:chunked_vector",
-        "//:resource_quota",
         "//:gpr_base",
+        "//:resource_quota",
         "//test/core/util:grpc_suppressions",
     ],
 )
