@@ -97,7 +97,7 @@ template <typename T>
 struct TypeVtableImpl {
   static const TypeVtable vtable;
 
-  static void* Create() { return new T;  }
+  static void* Create() { return new T; }
   static void Destroy(void* ptr) { delete static_cast<T*>(ptr); }
   static void PushToVec(void* ptr, void* vec) {
     auto* vec_ptr = static_cast<std::vector<T>*>(vec);
