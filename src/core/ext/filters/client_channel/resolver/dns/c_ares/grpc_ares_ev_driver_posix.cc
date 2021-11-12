@@ -98,8 +98,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   void ConfigureAresChannelLocked(ares_channel /*channel*/) override {}
 };
 
-std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    Mutex* /* mu */) {
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* /* mu */) {
   return absl::make_unique<GrpcPolledFdFactoryPosix>();
 }
 

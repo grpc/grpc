@@ -68,8 +68,7 @@ class GrpcPolledFdFactory {
  * parameter is guaranteed to be alive for the the whole lifetime of
  * the resulting GrpcPolledFdFactory as well as any GrpcPolledFd
  * returned by the factory. */
-std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    Mutex* mu);
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu);
 
 }  // namespace grpc_core
 
