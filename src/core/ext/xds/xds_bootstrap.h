@@ -64,7 +64,7 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
-    static XdsServer Parse(Json* json, grpc_error_handle* error);
+    static XdsServer Parse(const Json& json, grpc_error_handle* error);
 
     bool operator<(const XdsServer& other) const {
       if (server_uri < other.server_uri) return true;

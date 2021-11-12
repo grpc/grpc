@@ -50,23 +50,14 @@ bool XdsFederationEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
+grpc_error_handle ParseChannelCreds(const Json& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {
   std::vector<grpc_error_handle> error_list;
   std::string type;
-  auto it = json->mutable_object()->find("type");
-  if (it == json->mutable_object()->end()) {
-    error_list.push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("\"type\" field not present"));
-  } else if (it->second.type() != Json::Type::STRING) {
-    error_list.push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("\"type\" field is not a string"));
-  } else {
-    type = std::move(*it->second.mutable_string_value());
-  }
+  ParseJsonObjectField(json.object_value(), "type", &type, &error_list);
   Json config;
-  it = json->mutable_object()->find("config");
-  if (it != json->mutable_object()->end()) {
+  auto it = json.object_value().find("config");
+  if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"config\" field is not an object"));
@@ -88,16 +79,16 @@ grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
       absl::StrCat("errors parsing index ", idx), &error_list);
 }
 
-grpc_error_handle ParseChannelCredsArray(Json* json,
+grpc_error_handle ParseChannelCredsArray(const Json& json,
                                          XdsBootstrap::XdsServer* server) {
   std::vector<grpc_error_handle> error_list;
-  for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
-    Json& child = json->mutable_array()->at(i);
+  for (size_t i = 0; i < json.array_value().size(); ++i) {
+    const Json& child = json.array_value().at(i);
     if (child.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("array element ", i, " is not an object")));
     } else {
-      grpc_error_handle parse_error = ParseChannelCreds(&child, i, server);
+      grpc_error_handle parse_error = ParseChannelCreds(child, i, server);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
@@ -144,25 +135,24 @@ XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
 //
 
 XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
-    Json* json, grpc_error_handle* error) {
+    const Json& json, grpc_error_handle* error) {
   std::vector<grpc_error_handle> error_list;
   XdsServer server;
-  ParseJsonObjectField(json->object_value(), "server_uri", &server.server_uri,
+  ParseJsonObjectField(json.object_value(), "server_uri", &server.server_uri,
                        &error_list);
-  auto it = json->mutable_object()->find("channel_creds");
-  if (it == json->mutable_object()->end()) {
+  auto it = json.object_value().find("channel_creds");
+  if (it == json.object_value().end()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "\"channel_creds\" field not present"));
   } else if (it->second.type() != Json::Type::ARRAY) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "\"channel_creds\" field is not an array"));
   } else {
-    grpc_error_handle parse_error =
-        ParseChannelCredsArray(&it->second, &server);
+    grpc_error_handle parse_error = ParseChannelCredsArray(it->second, &server);
     if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   }
   const Json::Array* server_features_array = nullptr;
-  ParseJsonObjectField(json->object_value(), "server_features",
+  ParseJsonObjectField(json.object_value(), "server_features",
                        &server_features_array, &error_list, /*required=*/false);
   if (server_features_array != nullptr) {
     for (const Json& feature_json : *server_features_array) {
@@ -294,7 +284,7 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(
           absl::StrCat("array element ", i, " is not an object")));
     } else {
       grpc_error_handle parse_error;
-      servers->emplace_back(XdsServer::Parse(&child, &parse_error));
+      servers->emplace_back(XdsServer::Parse(child, &parse_error));
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
