@@ -96,26 +96,27 @@ struct TypeVtable {
 template <typename T>
 struct TypeVtableImpl {
   static const TypeVtable vtable;
+
+  static void* Create() { return new T;  }
+  static void Destroy(void* ptr) { delete static_cast<T*>(ptr); }
+  static void PushToVec(void* ptr, void* vec) {
+    auto* vec_ptr = static_cast<std::vector<T>*>(vec);
+    auto* src_ptr = static_cast<T*>(ptr);
+    vec_ptr->emplace_back(std::move(*src_ptr));
+  }
+  static void InsertToMap(std::string key, void* ptr, void* map) {
+    auto* map_ptr = static_cast<std::map<std::string, T>*>(map);
+    auto* src_ptr = static_cast<T*>(ptr);
+    map_ptr->emplace(std::move(key), std::move(*src_ptr));
+  }
 };
 
 template <typename T>
 const TypeVtable TypeVtableImpl<T>::vtable{
-    // create
-    []() -> void* { return new T(); },
-    // destroy
-    [](void* ptr) { delete static_cast<T*>(ptr); },
-    // push_to_vec
-    [](void* ptr, void* vec) {
-      auto* vec_ptr = static_cast<std::vector<T>*>(vec);
-      auto* src_ptr = static_cast<T*>(ptr);
-      vec_ptr->emplace_back(std::move(*src_ptr));
-    },
-    // insert_to_map
-    [](std::string key, void* ptr, void* map) {
-      auto* map_ptr = static_cast<std::map<std::string, T>*>(map);
-      auto* src_ptr = static_cast<T*>(ptr);
-      map_ptr->emplace(std::move(key), std::move(*src_ptr));
-    },
+    Create,
+    Destroy,
+    PushToVec,
+    InsertToMap,
 };
 
 class TypeRefProvider;
