@@ -68,8 +68,8 @@ struct Element {
     kMap,
   };
   Element() = default;
-  template <typename A, typename B> 
-  Element(B A::* p, Type type, bool optional, uint8_t type_data,
+  template <typename A, typename B>
+  Element(B A::*p, Type type, bool optional, uint8_t type_data,
           const char* name)
       : member_offset(static_cast<uint16_t>(
             reinterpret_cast<uintptr_t>(&(static_cast<A*>(nullptr)->*p)))),
@@ -165,8 +165,9 @@ struct ElementTypeOf<std::string> {
   static Element::Type type() { return Element::kString; }
 };
 
-// Vec<T, kSize> provides a constant array type that can be appended to by copying.
-// It's setup so that most compilers can optimize away all of its operations.
+// Vec<T, kSize> provides a constant array type that can be appended to by
+// copying. It's setup so that most compilers can optimize away all of its
+// operations.
 template <typename T, size_t kSize>
 class Vec {
  public:
@@ -192,10 +193,10 @@ class Vec<T, 0> {
 template <typename T, size_t kElemCount, size_t kTypeCount>
 class FinishedJsonObjectLoader final : public TypeRefProvider {
  public:
-  FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements,
+  FinishedJsonObjectLoader(
+      const Vec<Element, kElemCount>& elements,
       const Vec<const TypeRefProvider*, kTypeCount>& type_ref_providers)
-      : elements_(elements), type_ref_providers_(type_ref_providers) {
-  }
+      : elements_(elements), type_ref_providers_(type_ref_providers) {}
 
   using ResultType = T;
 
@@ -214,7 +215,8 @@ class FinishedJsonObjectLoader final : public TypeRefProvider {
 
  private:
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
-  GPR_NO_UNIQUE_ADDRESS Vec<const TypeRefProvider*, kTypeCount> type_ref_providers_;
+  GPR_NO_UNIQUE_ADDRESS Vec<const TypeRefProvider*, kTypeCount>
+      type_ref_providers_;
 };
 
 template <typename T, size_t kElemCount = 0, size_t kTypeCount = 0>
@@ -227,8 +229,7 @@ class JsonObjectLoader final {
                   "Only initial loader step can have kTypeCount==0.");
   }
 
-  FinishedJsonObjectLoader<T, kElemCount, kTypeCount> Finish()
-      const {
+  FinishedJsonObjectLoader<T, kElemCount, kTypeCount> Finish() const {
     return FinishedJsonObjectLoader<T, kElemCount, kTypeCount>(
         elements_, type_ref_providers_);
   }
@@ -287,8 +288,7 @@ class JsonObjectLoader final {
       const char* name, bool optional, std::vector<U> T::*p) const {
     return JsonObjectLoader<T, kElemCount + 1, kTypeCount>(
         elements_, type_ref_providers_,
-        Element(p, Element::kVector,optional,
-                ElementTypeOf<U>::type(), name));
+        Element(p, Element::kVector, optional, ElementTypeOf<U>::type(), name));
   }
 
   template <typename U, size_t N, size_t M>
@@ -298,8 +298,7 @@ class JsonObjectLoader final {
     return JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1>(
         elements_, type_ref_providers_,
         Element(p, Element::kVector, optional,
-                kTypeCount + static_cast<size_t>(Element::kVector),
-                name),
+                kTypeCount + static_cast<size_t>(Element::kVector), name),
         u_loader);
   }
 
@@ -308,45 +307,38 @@ class JsonObjectLoader final {
       const char* name, bool optional, std::map<std::string, U> T::*p) const {
     return JsonObjectLoader<T, kElemCount + 1, kTypeCount>(
         elements_, type_ref_providers_,
-        Element(p, Element::kMap,optional,
-                ElementTypeOf<U>::type(), name));
+        Element(p, Element::kMap, optional, ElementTypeOf<U>::type(), name));
   }
 
   template <typename U, size_t N, size_t M>
   JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1> Field(
       const char* name, bool optional, std::map<std::string, U> T::*p,
       const FinishedJsonObjectLoader<U, N, M>* u_loader) const {
-    return 
-      JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1>(
+    return JsonObjectLoader<T, kElemCount + 1, kTypeCount + 1>(
         elements_, type_ref_providers_,
-      Element(
-        p, Element::kMap, optional,
-        kTypeCount + static_cast<size_t>(Element::kVector), name), u_loader);
+        Element(p, Element::kMap, optional,
+                kTypeCount + static_cast<size_t>(Element::kVector), name),
+        u_loader);
   }
 
   JsonObjectLoader(
       const Vec<Element, kElemCount - 1>& elements,
-      const Vec<const TypeRefProvider*, kTypeCount>&
-          type_ref_providers,
+      const Vec<const TypeRefProvider*, kTypeCount>& type_ref_providers,
       Element new_element)
       : elements_(elements, new_element),
         type_ref_providers_(type_ref_providers) {}
 
   JsonObjectLoader(
       const Vec<Element, kElemCount - 1>& elements,
-      const Vec<const TypeRefProvider*,
-                             kTypeCount - 1>& type_ref_providers,
-      Element new_element,
-      const TypeRefProvider* new_type_ref_provider)
+      const Vec<const TypeRefProvider*, kTypeCount - 1>& type_ref_providers,
+      Element new_element, const TypeRefProvider* new_type_ref_provider)
       : elements_(elements, new_element),
         type_ref_providers_(type_ref_providers, new_type_ref_provider) {}
 
  private:
-  GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount>
-      elements_;
+  GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
   GPR_NO_UNIQUE_ADDRESS
-      Vec<const TypeRefProvider*, kTypeCount>
-          type_ref_providers_;
+  Vec<const TypeRefProvider*, kTypeCount> type_ref_providers_;
 };
 
 }  // namespace json_detail
