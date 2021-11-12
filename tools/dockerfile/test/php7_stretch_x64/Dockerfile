@@ -107,12 +107,11 @@ RUN cd /var/local/git/php-src \
   && make -j$(nproc) \
   && make install
 
-#=================	
-# PHP Test dependencies	
+#=================
+# PHP Test dependencies
 
- RUN apt-get update && apt-get install -y \	
+ RUN apt-get update && apt-get install -y \
     valgrind
-
 
 RUN mkdir /var/local/jenkins
 
