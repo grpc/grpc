@@ -594,7 +594,7 @@ class Php7Language(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_debian9_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_stretch_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
