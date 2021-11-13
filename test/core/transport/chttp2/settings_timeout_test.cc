@@ -102,7 +102,7 @@ class Client {
       : server_address_(server_address) {}
 
   void Connect() {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     grpc_resolved_addresses* server_addresses = nullptr;
     grpc_error_handle error =
         grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
@@ -116,7 +116,7 @@ class Client {
     grpc_tcp_client_connect(
         state.closure(), &endpoint_, grpc_slice_allocator_create_unlimited(),
         pollset_set, nullptr /* channel_args */, server_addresses->addrs,
-        grpc_core::ExecCtx::Get()->Now() + 1000);
+        ExecCtx::Get()->Now() + 1000);
     ASSERT_TRUE(PollUntilDone(
         &state,
         grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
@@ -129,13 +129,13 @@ class Client {
   // Reads until an error is returned.
   // Returns true if an error was encountered before the deadline.
   bool ReadUntilError() {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     grpc_slice_buffer read_buffer;
     grpc_slice_buffer_init(&read_buffer);
     bool retval = true;
     // Use a deadline of 3 seconds, which is a lot more than we should
     // need for a 1-second timeout, but this helps avoid flakes.
-    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 3000;
+    grpc_millis deadline = ExecCtx::Get()->Now() + 3000;
     while (true) {
       EventState state;
       grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
@@ -155,7 +155,7 @@ class Client {
   }
 
   void Shutdown() {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     grpc_endpoint_destroy(endpoint_);
     grpc_pollset_shutdown(pollset_,
                           GRPC_CLOSURE_CREATE(&Client::PollsetDestroy, pollset_,
@@ -201,13 +201,12 @@ class Client {
       gpr_mu_lock(mu_);
       GRPC_LOG_IF_ERROR(
           "grpc_pollset_work",
-          grpc_pollset_work(pollset_, &worker,
-                            grpc_core::ExecCtx::Get()->Now() + 100));
+          grpc_pollset_work(pollset_, &worker, ExecCtx::Get()->Now() + 100));
       // Flushes any work scheduled before or during polling.
-      grpc_core::ExecCtx::Get()->Flush();
+      ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);
       if (state != nullptr && state->done()) return true;
-      if (grpc_core::ExecCtx::Get()->Now() >= deadline) return false;
+      if (ExecCtx::Get()->Now() >= deadline) return false;
     }
   }
 

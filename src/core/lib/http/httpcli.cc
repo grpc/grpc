@@ -97,7 +97,7 @@ class InternalRequest {
  private:
   void Finish(grpc_error_handle error) {
     grpc_polling_entity_del_from_pollset_set(pollent_, context_->pollset_set);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
+    ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
     delete this;
   }
 

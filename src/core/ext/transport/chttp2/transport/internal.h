@@ -258,7 +258,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   grpc_chttp2_transport* transport_;  // Immutable.
   grpc_chttp2_stream* stream_;        // Immutable.
 
-  grpc_core::RefCount refs_;
+  RefCount refs_;
 
   /* Accessed only by transport thread when stream->pending_byte_stream == false
    * Accessed only by application thread when stream->pending_byte_stream ==

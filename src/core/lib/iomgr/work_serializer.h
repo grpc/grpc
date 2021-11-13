@@ -72,15 +72,13 @@ class ABSL_LOCKABLE WorkSerializer {
   //   }
   //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) { ... }
   //
-  // TODO(yashkt): Replace grpc_core::DebugLocation with absl::SourceLocation
+  // TODO(yashkt): Replace DebugLocation with absl::SourceLocation
   // once we can start using it directly.
-  void Run(std::function<void()> callback,
-           const grpc_core::DebugLocation& location);
+  void Run(std::function<void()> callback, const DebugLocation& location);
 
   // Schedule \a callback to be run later when the queue of callbacks is
   // drained.
-  void Schedule(std::function<void()> callback,
-                const grpc_core::DebugLocation& location);
+  void Schedule(std::function<void()> callback, const DebugLocation& location);
   // Drains the queue of callbacks.
   void DrainQueue();
 

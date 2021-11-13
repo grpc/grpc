@@ -140,7 +140,7 @@ void ErrorDestroy(void* p) {
     delete error;
   }
 }
-int ErrorCompare(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
+int ErrorCompare(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
     ErrorCopy, ErrorDestroy, ErrorCompare};
 

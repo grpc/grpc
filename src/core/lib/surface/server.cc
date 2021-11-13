@@ -600,7 +600,7 @@ void Server::Start() {
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
-    const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
+    const RefCountedPtr<channelz::SocketNode>& socket_node,
     grpc_resource_user* resource_user, size_t preallocated_bytes) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;

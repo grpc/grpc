@@ -441,9 +441,9 @@ void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
 }
 
 void grpc_flush_cached_google_default_credentials(void) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
-  grpc_core::MutexLock lock(g_state_mu);
+  MutexLock lock(g_state_mu);
   g_metadata_server_available = 0;
 }
 
