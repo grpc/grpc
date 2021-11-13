@@ -28,36 +28,50 @@ namespace arena_promise_detail {
 
 template <typename Callable>
 static constexpr bool AllowSharedAllocation() {
-  return std::is_empty<Callable>::value &&
-         std::is_default_constructible<Callable>::value;
+  return std::is_empty<Callable>::value;
 }
+
+struct UsersShouldNotTypeThis {};
 
 }  // namespace arena_promise_detail
 
+// A promise for which the state memory is allocated from an arena.
 template <typename T>
 class ArenaPromise {
  public:
+  // Construct an empty, uncallable, invalid ArenaPromise.
   ArenaPromise() = default;
 
+  // Construct an ArenaPromise that will call the given callable when polled.
   template <typename Callable>
-  ArenaPromise(Arena* arena,
-               absl::enable_if_t<
-                   !arena_promise_detail::AllowSharedAllocation<Callable>(),
-                   Callable>&& callable)
-      : impl_(arena->New<CallableImpl<Callable>>(
+  ArenaPromise(
+      absl::enable_if_t<
+          !arena_promise_detail::AllowSharedAllocation<Callable>(), Arena*>
+          arena,
+      Callable&& callable)
+      : impl_(arena->template New<CallableImpl<Callable>>(
             std::forward<Callable>(callable))) {}
 
+  // Construct an ArenaPromise that will call the given callable when polled.
+  // This variant exploits the emptiness of many callables to avoid actually
+  // allocating memory for the promise.
   template <typename Callable>
   explicit ArenaPromise(
+      Callable&& callable,
       absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
-                        Callable>&& callable)
+                        arena_promise_detail::UsersShouldNotTypeThis> =
+          arena_promise_detail::UsersShouldNotTypeThis())
       : impl_(SharedImpl<Callable>::Get()) {}
 
+  // Construct an ArenaPromise that will call the given callable when polled.
+  // This variant exploits the emptiness of many callables to avoid actually
+  // allocating memory for the promise.
   template <typename Callable>
   explicit ArenaPromise(
-      Arena*,
       absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
-                        Callable>&& callable)
+                        Arena*>
+          arena,
+      Callable&& callable)
       : impl_(SharedImpl<Callable>::Get()) {}
 
   ArenaPromise(const ArenaPromise&) = delete;
@@ -73,6 +87,8 @@ class ArenaPromise {
 
   ~ArenaPromise() { impl_->~ImplInterface(); }
 
+  Poll<T> operator()() { return impl_->Poll(); }
+
  private:
   class ImplInterface {
    public:
@@ -80,7 +96,7 @@ class ArenaPromise {
     virtual ~ImplInterface() = default;
   };
 
-  class NullImpl : public ImplInterface {
+  class NullImpl final : public ImplInterface {
    public:
     Poll<T> Poll() override {
       abort();
@@ -89,7 +105,7 @@ class ArenaPromise {
   };
 
   template <typename Callable>
-  class CallableImpl {
+  class CallableImpl final : public ImplInterface {
    public:
     explicit CallableImpl(Callable&& callable)
         : callable_(std::move(callable)) {}
@@ -100,9 +116,9 @@ class ArenaPromise {
   };
 
   template <typename Callable>
-  class SharedImpl {
+  class SharedImpl final : public ImplInterface {
    public:
-    Poll<T> Poll() override { return callable_(); }
+    Poll<T> Poll() override { return (*static_cast<Callable*>(nullptr))(); }
     static SharedImpl* Get() { return &impl_; }
 
    private:
@@ -110,7 +126,6 @@ class ArenaPromise {
     ~SharedImpl() = default;
 
     static SharedImpl impl_;
-    static Callable callable_;
   };
 
   static NullImpl null_impl_;
@@ -118,13 +133,12 @@ class ArenaPromise {
 };
 
 template <typename T>
-template <typename Callable>
-typename ArenaPromise<T>::template SharedImpl<Callable>
-    ArenaPromise<T>::SharedImpl<Callable>::impl_;
+typename ArenaPromise<T>::NullImpl ArenaPromise<T>::null_impl_;
 
 template <typename T>
 template <typename Callable>
-Callable ArenaPromise<T>::SharedImpl<Callable>::callable_;
+typename ArenaPromise<T>::template SharedImpl<Callable>
+    ArenaPromise<T>::SharedImpl<Callable>::impl_;
 
 }  // namespace grpc_core
 
