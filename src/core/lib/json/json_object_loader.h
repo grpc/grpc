@@ -95,7 +95,15 @@ struct TypeVtable {
 
 template <typename T>
 struct TypeVtableImpl {
-  static const TypeVtable vtable;
+  static const TypeVtable* vtable() {
+    static const TypeVtable vtable = {
+        Create,
+        Destroy,
+        PushToVec,
+        InsertToMap,
+    };
+    return &vtable;
+  }
 
   static void* Create() { return new T; }
   static void Destroy(void* ptr) { delete static_cast<T*>(ptr); }
@@ -109,14 +117,6 @@ struct TypeVtableImpl {
     auto* src_ptr = static_cast<T*>(ptr);
     map_ptr->emplace(std::move(key), std::move(*src_ptr));
   }
-};
-
-template <typename T>
-const TypeVtable TypeVtableImpl<T>::vtable{
-    Create,
-    Destroy,
-    PushToVec,
-    InsertToMap,
 };
 
 class TypeRefProvider;
@@ -209,7 +209,7 @@ class FinishedJsonObjectLoader final : public TypeRefProvider {
   }
 
   void WithTypeRef(absl::FunctionRef<void(const TypeRef&)> fn) const override {
-    fn(TypeRef{&TypeVtableImpl<T>::vtable, elements_.data(), kElemCount,
+    fn(TypeRef{TypeVtableImpl<T>::vtable(), elements_.data(), kElemCount,
                type_ref_providers_.data()});
   }
 
