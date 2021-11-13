@@ -227,10 +227,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void CancelConnectivityWatchLocked();
 
     void SubscribeLocked(const std::string& type_url,
-                         const XdsApi::ResourceName& name)
+                         const XdsApi::ResourceName& resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void UnsubscribeLocked(const std::string& type_url,
-                           const XdsApi::ResourceName& name,
+                           const XdsApi::ResourceName& resource,
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
