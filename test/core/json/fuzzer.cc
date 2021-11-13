@@ -36,6 +36,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     auto text2 = json.Dump();
     auto json2 = grpc_core::Json::Parse(text2, &error);
     printf("%s --> %s\n", text2.c_str(), grpc_error_string(error));
+    printf("json1: %s\n", json.Dump().c_str());
+    printf("json2: %s\n", json2.Dump().c_str());
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     GPR_ASSERT(json == json2);
   }
