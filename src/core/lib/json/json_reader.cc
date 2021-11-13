@@ -146,7 +146,7 @@ bool JsonReader::StringAddChar(uint32_t c) {
     case 1:
     case 2:
     case 3:
-      if ((c & 0xc0) != 0x40) return false;
+      if ((c & 0xc0) != 0x80) return false;
       --utf8_bytes_remaining_;
       break;
     default:
