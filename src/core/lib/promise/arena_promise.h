@@ -57,7 +57,7 @@ class ArenaPromise {
   // allocating memory for the promise.
   template <typename Callable>
   explicit ArenaPromise(
-      Callable&& callable,
+      Callable&&,
       absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
                         arena_promise_detail::UsersShouldNotTypeThis> =
           arena_promise_detail::UsersShouldNotTypeThis())
@@ -71,7 +71,7 @@ class ArenaPromise {
       absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
                         Arena*>
           arena,
-      Callable&& callable)
+      Callable&&)
       : impl_(SharedImpl<Callable>::Get()) {}
 
   ArenaPromise(const ArenaPromise&) = delete;
