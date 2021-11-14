@@ -8065,6 +8065,18 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: tls_key_export_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/tls_key_export_test.cc
+  deps:
+  - grpc++_test_util
 - name: tls_security_connector_test
   gtest: true
   build: test
