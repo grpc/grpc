@@ -65,13 +65,6 @@ void TlsCredentialsOptions::set_tls_session_key_log_file_path(
       c_credentials_options_, tls_session_key_log_file_path.c_str());
 }
 
-void TlsChannelCredentialsOptions::set_server_verification_option(
-    grpc_tls_server_verification_option server_verification_option) {
-  grpc_tls_credentials_options* options = c_credentials_options();
-  GPR_ASSERT(options != nullptr);
-  grpc_tls_credentials_options_set_server_verification_option(
-      options, server_verification_option);
-
 void TlsCredentialsOptions::set_certificate_verifier(
     std::shared_ptr<CertificateVerifier> certificate_verifier) {
   certificate_verifier_ = std::move(certificate_verifier);

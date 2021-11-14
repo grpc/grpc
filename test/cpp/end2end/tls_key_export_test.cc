@@ -75,20 +75,6 @@ class EchoServer final : public EchoTestService::Service {
   }
 };
 
-// A no-op server authorization check.
-class ServerAuthzCheck
-    : public ::grpc::experimental::TlsServerAuthorizationCheckInterface {
- public:
-  int Schedule(
-      ::grpc::experimental::TlsServerAuthorizationCheckArg* arg) override {
-    if (arg != nullptr) {
-      arg->set_status(GRPC_STATUS_OK);
-      arg->set_success(true);
-    }
-    return 0;
-  }
-};
-
 class TestScenario {
  public:
   TestScenario(int num_listening_ports, bool share_tls_key_log_file,
@@ -179,10 +165,6 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
         std::make_shared<FileWatcherCertificateProvider>(
             CLIENT_KEY_PATH, CLIENT_CERT_PATH, CA_CERT_PATH, 1);
 
-    auth_check_ = std::make_shared<
-        ::grpc::experimental::TlsServerAuthorizationCheckConfig>(
-        std::make_shared<ServerAuthzCheck>());
-
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       // Configure tls credential options for each port
       TlsServerCredentialsOptions server_creds_options(
@@ -226,11 +208,8 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
       TlsChannelCredentialsOptions channel_creds_options;
       channel_creds_options.set_certificate_provider(
           channel_certificate_provider);
-      channel_creds_options.set_server_verification_option(
-          GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
       channel_creds_options.watch_identity_key_cert_pairs();
       channel_creds_options.watch_root_certs();
-      channel_creds_options.set_server_authorization_check_config(auth_check_);
 
       // Set a separate ssl key log file for each port if not shared.
       if (GetParam().share_tls_key_log_file()) {
@@ -276,8 +255,6 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   std::vector<std::unique_ptr<EchoTestService::Stub>> stubs_;
   EchoServer service_;
   std::unique_ptr<::grpc::Server> server_;
-  std::shared_ptr<::grpc::experimental::TlsServerAuthorizationCheckConfig>
-      auth_check_;
   std::thread server_thread_;
 };
 
