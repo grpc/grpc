@@ -201,6 +201,8 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    class SubchannelCallTracker;
+
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
     RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
@@ -265,6 +267,71 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 };
 
 //
+// XdsClusterImplLb::Picker::SubchannelCallTracker
+//
+
+class XdsClusterImplLb::Picker::SubchannelCallTracker
+    : public LoadBalancingPolicy::SubchannelCallTrackerInterface {
+ public:
+  SubchannelCallTracker(
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+          original_subchannel_call_tracker,
+      RefCountedPtr<XdsClusterLocalityStats> locality_stats,
+      RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter)
+      : original_subchannel_call_tracker_(
+            std::move(original_subchannel_call_tracker)),
+        locality_stats_(std::move(locality_stats)),
+        call_counter_(std::move(call_counter)) {}
+
+  ~SubchannelCallTracker() override {
+    locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    GPR_DEBUG_ASSERT(!started_);
+  }
+
+  void Start() override {
+    // Increment number of calls in flight.
+    call_counter_->Increment();
+    // Record a call started.
+    if (locality_stats_ != nullptr) {
+      locality_stats_->AddCallStarted();
+    }
+    // Delegate if needed.
+    if (original_subchannel_call_tracker_ != nullptr) {
+      original_subchannel_call_tracker_->Start();
+    }
+#ifndef NDEBUG
+    started_ = true;
+#endif
+  }
+
+  void Finish(FinishArgs args) override {
+    // Delegate if needed.
+    if (original_subchannel_call_tracker_ != nullptr) {
+      original_subchannel_call_tracker_->Finish(args);
+    }
+    // Record call completion for load reporting.
+    if (locality_stats_ != nullptr) {
+      locality_stats_->AddCallFinished(!args.status.ok());
+    }
+    // Decrement number of calls in flight.
+    call_counter_->Decrement();
+#ifndef NDEBUG
+    started_ = false;
+#endif
+  }
+
+ private:
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      original_subchannel_call_tracker_;
+  RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
+  RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
+#ifndef NDEBUG
+  bool started_ = false;
+#endif
+};
+
+//
 // XdsClusterImplLb::Picker
 //
 
@@ -291,17 +358,17 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     return PickResult::Drop(absl::UnavailableError(
         absl::StrCat("EDS-configured drop: ", *drop_category)));
   }
-  // Handle circuit breaking.
-  uint32_t current = call_counter_->Load();
-  // Check and see if we exceeded the max concurrent requests count.
-  if (current >= max_concurrent_requests_) {
+  // Check if we exceeded the max concurrent requests circuit breaking limit.
+  // Note: We check the value here, but we don't actually increment the
+  // counter for the current request until the channel calls the subchannel
+  // call tracker's Start() method.  This means that we may wind up
+  // allowing more concurrent requests than the configured limit.
+  if (call_counter_->Load() >= max_concurrent_requests_) {
     if (drop_stats_ != nullptr) drop_stats_->AddUncategorizedDrops();
     return PickResult::Drop(absl::UnavailableError("circuit breaker drop"));
   }
-  call_counter_->Increment();
   // If we're not dropping the call, we should always have a child picker.
   if (picker_ == nullptr) {  // Should never happen.
-    call_counter_->Decrement();
     return PickResult::Fail(absl::InternalError(
         "xds_cluster_impl picker not given any child picker"));
   }
@@ -309,46 +376,27 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   PickResult result = picker_->Pick(args);
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
-    XdsClusterLocalityStats* locality_stats = nullptr;
+    RefCountedPtr<XdsClusterLocalityStats> locality_stats;
     if (drop_stats_ != nullptr) {  // If load reporting is enabled.
       auto* subchannel_wrapper =
           static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
       // Handle load reporting.
-      locality_stats = subchannel_wrapper->locality_stats()->Ref().release();
-      // Record a call started.
-      locality_stats->AddCallStarted();
+      locality_stats = subchannel_wrapper->locality_stats()->Ref(
+          DEBUG_LOCATION, "SubchannelCallTracker");
       // Unwrap subchannel to pass back up the stack.
       complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     }
-    // Intercept the recv_trailing_metadata op to record call completion.
-    auto* call_counter = call_counter_->Ref(DEBUG_LOCATION, "call").release();
-    auto original_recv_trailing_metadata_ready =
-        complete_pick->recv_trailing_metadata_ready;
-    complete_pick->recv_trailing_metadata_ready =
-        // Note: This callback does not run in either the control plane
-        // work serializer or in the data plane mutex.
-        [locality_stats, original_recv_trailing_metadata_ready, call_counter](
-            absl::Status status, MetadataInterface* metadata,
-            CallState* call_state) {
-          // Record call completion for load reporting.
-          if (locality_stats != nullptr) {
-            locality_stats->AddCallFinished(!status.ok());
-            locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
-          }
-          // Decrement number of calls in flight.
-          call_counter->Decrement();
-          call_counter->Unref(DEBUG_LOCATION, "call");
-          // Invoke the original recv_trailing_metadata_ready callback, if any.
-          if (original_recv_trailing_metadata_ready != nullptr) {
-            original_recv_trailing_metadata_ready(status, metadata, call_state);
-          }
-        };
+    // Inject subchannel call tracker to record call completion.
+    complete_pick->subchannel_call_tracker =
+        absl::make_unique<SubchannelCallTracker>(
+            std::move(complete_pick->subchannel_call_tracker),
+            std::move(locality_stats),
+            call_counter_->Ref(DEBUG_LOCATION, "SubchannelCallTracker"));
   } else {
     // TODO(roth): We should ideally also record call failures here in the case
     // where a pick fails.  This is challenging, because we don't know which
     // picks are for wait_for_ready RPCs or how many times we'll return a
     // failure for the same wait_for_ready RPC.
-    call_counter_->Decrement();
   }
   return result;
 }

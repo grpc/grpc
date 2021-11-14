@@ -35,12 +35,11 @@ namespace {
 // and destroyed
 TEST(XdsChannelStackModifierTest, CopyChannelArgs) {
   grpc_init();
-  auto server_config_selector_provider =
-      MakeRefCounted<XdsChannelStackModifier>(
-          std::vector<const grpc_channel_filter*>{});
-  grpc_arg arg = server_config_selector_provider->MakeChannelArg();
+  auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
+      std::vector<const grpc_channel_filter*>{});
+  grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  EXPECT_EQ(server_config_selector_provider,
+  EXPECT_EQ(channel_stack_modifier,
             XdsChannelStackModifier::GetFromChannelArgs(*args));
   grpc_channel_args_destroy(args);
   grpc_shutdown();
@@ -49,10 +48,9 @@ TEST(XdsChannelStackModifierTest, CopyChannelArgs) {
 // Test compare on channel args with the same XdsChannelStackModifier
 TEST(XdsChannelStackModifierTest, ChannelArgsCompare) {
   grpc_init();
-  auto server_config_selector_provider =
-      MakeRefCounted<XdsChannelStackModifier>(
-          std::vector<const grpc_channel_filter*>{});
-  grpc_arg arg = server_config_selector_provider->MakeChannelArg();
+  auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
+      std::vector<const grpc_channel_filter*>{});
+  grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   grpc_channel_args* new_args = grpc_channel_args_copy(args);
   EXPECT_EQ(XdsChannelStackModifier::GetFromChannelArgs(*new_args),
@@ -76,11 +74,9 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   const grpc_channel_filter test_filter_2 = {
       nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
       0,       nullptr, nullptr, nullptr, kTestFilter2};
-  auto server_config_selector_provider =
-      MakeRefCounted<XdsChannelStackModifier>(
-          std::vector<const grpc_channel_filter*>{&test_filter_1,
-                                                  &test_filter_2});
-  grpc_arg arg = server_config_selector_provider->MakeChannelArg();
+  auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
+      std::vector<const grpc_channel_filter*>{&test_filter_1, &test_filter_2});
+  grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   // Create a phony grpc_channel_stack_builder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
@@ -122,11 +118,9 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   const grpc_channel_filter test_filter_2 = {
       nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
       0,       nullptr, nullptr, nullptr, kTestFilter2};
-  auto server_config_selector_provider =
-      MakeRefCounted<XdsChannelStackModifier>(
-          std::vector<const grpc_channel_filter*>{&test_filter_1,
-                                                  &test_filter_2});
-  grpc_arg arg = server_config_selector_provider->MakeChannelArg();
+  auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
+      std::vector<const grpc_channel_filter*>{&test_filter_1, &test_filter_2});
+  grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   // Create a phony grpc_channel_stack_builder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();

@@ -12,7 +12,7 @@ target 'CronetTests' do
 
   pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
   pod '!ProtoCompiler-gRPCCppPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-  pod 'Protobuf-C++', :podspec => "#{GRPC_LOCAL_SRC}/src/cpp", :inhibit_warnings => true
+  pod 'Protobuf-C++', :podspec => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
 
   pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 

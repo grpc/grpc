@@ -29,7 +29,7 @@ from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
-import packaging
+import packaging.version
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
@@ -115,10 +115,10 @@ class DumpedXdsConfig(dict):
                                generic_xds_config['typeUrl']):
                     self.rds = generic_xds_config["xdsConfig"]
                 elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
-                    self.cds = generic_xds_config["xdsConfig"]
+                    self.cds.append(generic_xds_config["xdsConfig"])
                 elif re.search(r'\.ClusterLoadAssignment$',
                                generic_xds_config['typeUrl']):
-                    self.eds = generic_xds_config["xdsConfig"]
+                    self.eds.append(generic_xds_config["xdsConfig"])
             except Exception as e:
                 logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)

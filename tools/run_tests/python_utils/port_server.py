@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -193,7 +193,7 @@ class Handler(BaseHTTPRequestHandler):
             now = time.time()
             out = yaml.dump({
                 'pool': pool,
-                'in_use': dict((k, now - v) for k, v in in_use.items())
+                'in_use': dict((k, now - v) for k, v in list(in_use.items()))
             })
             mu.release()
             self.wfile.write(out.encode('ascii'))

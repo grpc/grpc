@@ -57,8 +57,7 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            /execute/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+            /run_scripts/run_worker.sh
       command:
       - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
@@ -183,8 +182,7 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            /execute/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+            /run_scripts/run_worker.sh
       command:
       - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}

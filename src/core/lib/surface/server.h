@@ -464,12 +464,6 @@ struct grpc_server {
   grpc_core::OrphanablePtr<grpc_core::Server> core_server;
 };
 
-// TODO(roth): Eventually, will need a way to modify configuration even after
-// a connection is established (e.g., to change things like L7 rate
-// limiting, RBAC, and fault injection configs).  One possible option
-// would be to do something like ServiceConfig and ConfigSelector, but
-// that might add unnecessary per-call overhead.  Need to consider other
-// approaches here.
 struct grpc_server_config_fetcher {
  public:
   class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
@@ -494,7 +488,6 @@ struct grpc_server_config_fetcher {
 
   virtual ~grpc_server_config_fetcher() = default;
 
-  // Ownership of \a args is transferred.
   virtual void StartWatch(std::string listening_address,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;

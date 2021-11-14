@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Includes default copts.
+"""
+
 # This is a list of llvm flags to be used when being built with use_strict_warning=1
 GRPC_LLVM_WARNING_FLAGS = [
     # Enable all & extra warnings

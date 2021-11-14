@@ -196,6 +196,7 @@ bool grpc_ssl_check_call_host(absl::string_view host,
   if (status != GRPC_SECURITY_OK) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "call host does not match SSL server name");
+    gpr_log(GPR_ERROR, "call host does not match SSL server name");
   }
   grpc_shallow_peer_destruct(&peer);
   return true;

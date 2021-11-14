@@ -55,4 +55,72 @@ bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
   return true;
 }
 
+bool ExtractJsonBool(const Json& json, absl::string_view field_name,
+                     bool* output, std::vector<grpc_error_handle>* error_list) {
+  switch (json.type()) {
+    case Json::Type::JSON_TRUE:
+      *output = true;
+      return true;
+    case Json::Type::JSON_FALSE:
+      *output = false;
+      return true;
+    default:
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("field:", field_name, " error:type should be BOOLEAN")));
+      return false;
+  }
+}
+
+bool ExtractJsonArray(const Json& json, absl::string_view field_name,
+                      const Json::Array** output,
+                      std::vector<grpc_error_handle>* error_list) {
+  if (json.type() != Json::Type::ARRAY) {
+    *output = nullptr;
+    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("field:", field_name, " error:type should be ARRAY")));
+    return false;
+  }
+  *output = &json.array_value();
+  return true;
+}
+
+bool ExtractJsonObject(const Json& json, absl::string_view field_name,
+                       const Json::Object** output,
+                       std::vector<grpc_error_handle>* error_list) {
+  if (json.type() != Json::Type::OBJECT) {
+    *output = nullptr;
+    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("field:", field_name, " error:type should be OBJECT")));
+    return false;
+  }
+  *output = &json.object_value();
+  return true;
+}
+
+bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
+                                    absl::string_view field_name,
+                                    grpc_millis* output,
+                                    std::vector<grpc_error_handle>* error_list,
+                                    bool required) {
+  // TODO(roth): Once we can use C++14 heterogenous lookups, stop
+  // creating a std::string here.
+  auto it = object.find(std::string(field_name));
+  if (it == object.end()) {
+    if (required) {
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("field:", field_name, " error:does not exist.")));
+    }
+    return false;
+  }
+  if (!ParseDurationFromJson(it->second, output)) {
+    *output = GRPC_MILLIS_INF_PAST;
+    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("field:", field_name,
+                     " error:type should be STRING of the form given by "
+                     "google.proto.Duration.")));
+    return false;
+  }
+  return true;
+}
+
 }  // namespace grpc_core

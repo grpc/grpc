@@ -484,6 +484,7 @@ grpc_cc_test(
         "gtest",
         "absl/types:optional",
     ],
+    tags = ["no_test_ios"],
     deps = [
         ":counted_service",
         ":test_service_impl",

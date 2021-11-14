@@ -34,7 +34,7 @@ void grpc_create_socketpair_if_unix(int /* sv */[2]) {
 }
 
 grpc_error_handle grpc_resolve_unix_domain_address(
-    const char* /* name */, grpc_resolved_addresses** addresses) {
+    absl::string_view /* name */, grpc_resolved_addresses** addresses) {
   *addresses = NULL;
   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Unix domain sockets are not supported on Windows");

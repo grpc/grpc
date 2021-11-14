@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -697,8 +699,9 @@ grpc_binder_transport::grpc_binder_transport(
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
     : is_client(is_client),
       combiner(grpc_combiner_create()),
-      state_tracker(is_client ? "binder_transport_client"
-                              : "binder_transport_server"),
+      state_tracker(
+          is_client ? "binder_transport_client" : "binder_transport_server",
+          GRPC_CHANNEL_READY),
       refs(1, nullptr) {
   gpr_log(GPR_INFO, __func__);
   base.vtable = get_vtable();
@@ -755,3 +758,4 @@ grpc_transport* grpc_create_binder_transport_server(
 
   return &t->base;
 }
+#endif
