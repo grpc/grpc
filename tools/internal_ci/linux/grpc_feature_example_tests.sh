@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,23 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#!/usr/bin/env bash
+#
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-# Config file for the internal CI (in protobuf text format)
+mkdir -p /var/local/git
+git clone /var/local/jenkins/grpc /var/local/git/grpc
+(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
+&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+${name}')
+cd /var/local/git/grpc
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_trickle_diff.sh"
-timeout_mins: 120
-before_action {
-  fetch_keystore {
-    keystore_resource {
-      keystore_config_id: 73836
-      keyname: "grpc_checks_private_key"
-    }
-  }
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+apt-get install -y lsof
+
+./examples/cpp/features/run_tests.sh

@@ -91,7 +91,7 @@ def get_commit_log(prevRelLabel, relBranch):
         "%s..%s" % (prevRelLabel, relBranch)
     ]
     print(("Running ", " ".join(glg_command)))
-    return subprocess.check_output(glg_command)
+    return subprocess.check_output(glg_command).decode('utf-8', 'ignore')
 
 
 def get_pr_data(pr_num):
@@ -127,13 +127,13 @@ def get_pr_titles(gitLogs):
     import re
     error_count = 0
     # PRs with merge commits
-    match_merge_pr = b"Merge pull request #(\d+)"
+    match_merge_pr = "Merge pull request #(\d+)"
     prlist_merge_pr = re.findall(match_merge_pr, gitLogs, re.MULTILINE)
     print("\nPRs matching 'Merge pull request #<num>':")
     print(prlist_merge_pr)
     print("\n")
     # PRs using Github's squash & merge feature
-    match_sq = b"\(#(\d+)\)$"
+    match_sq = "\(#(\d+)\)$"
     prlist_sq = re.findall(match_sq, gitLogs, re.MULTILINE)
     print("\nPRs matching '[PR Description](#<num>)$'")
     print(prlist_sq)
@@ -171,8 +171,6 @@ def get_pr_titles(gitLogs):
 
         prline = "-  " + body + " ([#" + pr_num + "](" + HTML_URL + pr_num + "))"
         detail = "- " + pr["merged_by"]["login"] + "@ " + prline
-        prline = prline.encode('ascii', 'ignore')
-        detail = detail.encode('ascii', 'ignore')
         print(detail)
         #if no RL label
         if not rl_no_found and not rl_yes_found:

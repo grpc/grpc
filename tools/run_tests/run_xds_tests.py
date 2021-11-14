@@ -2122,20 +2122,6 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
     # to the appropriate config for the case, defined above.
     test_cases = [
         (
-            'zero_percent_fault_injection',
-            {},
-            {
-                0: 1
-            },  # OK
-        ),
-        (
-            'non_matching_fault_injection',  # Not in route_rules, above.
-            {},
-            {
-                0: 1
-            },  # OK
-        ),
-        (
             'always_delay',
             {
                 'timeout_sec': 2
@@ -2168,7 +2154,21 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                 16: .5,
                 0: .5
             },  # UNAUTHENTICATED / OK: 50% / 50%
-        )
+        ),
+        (
+            'zero_percent_fault_injection',
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
+        (
+            'non_matching_fault_injection',  # Not in route_rules, above.
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
     ]
 
     passed = True
@@ -2190,12 +2190,15 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
             # but this improves confidence that the test is valid if the
             # previous client_config would lead to the same results.
             time.sleep(1)
-            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
-            # second timeout.
-            attempt_count = 20
+            # Each attempt takes 10 seconds
             if first_case:
-                attempt_count = 120
+                # Give the first test case 600s for xDS config propagation.
+                attempt_count = 60
                 first_case = False
+            else:
+                # The accumulated stats might include previous sub-test, running
+                # the test multiple times to deflake
+                attempt_count = 10
             before_stats = get_client_accumulated_stats()
             if not before_stats.stats_per_method:
                 raise ValueError(

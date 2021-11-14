@@ -53,7 +53,6 @@ grpc_cc_library(
         "test_config.cc",
         "test_tcp_server.cc",
         "tracer_util.cc",
-        "trickle_endpoint.cc",
     ],
     hdrs = [
         "cmdline.h",
@@ -76,7 +75,6 @@ grpc_cc_library(
         "test_config.h",
         "test_tcp_server.h",
         "tracer_util.h",
-        "trickle_endpoint.h",
     ],
     external_deps = [
         "absl/debugging:failure_signal_handler",

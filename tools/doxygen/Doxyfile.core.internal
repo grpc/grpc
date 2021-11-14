@@ -1508,7 +1508,6 @@ src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \
 src/core/lib/address_utils/sockaddr_utils.cc \
 src/core/lib/address_utils/sockaddr_utils.h \
-src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
@@ -1558,8 +1557,8 @@ src/core/lib/debug/stats_data.cc \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
-src/core/lib/event_engine/endpoint_config.cc \
-src/core/lib/event_engine/endpoint_config_internal.h \
+src/core/lib/event_engine/channel_args_endpoint_config.cc \
+src/core/lib/event_engine/channel_args_endpoint_config.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_factory.cc \
 src/core/lib/event_engine/event_engine_factory.h \
@@ -1898,6 +1897,8 @@ src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h \
+src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
+src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
 src/core/lib/security/credentials/tls/tls_credentials.cc \

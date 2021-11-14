@@ -103,6 +103,7 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/util/test_config.h"
+#include "test/cpp/util/tls_test_utils.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 #include "src/cpp/server/csds/csds.h"
@@ -139,6 +140,9 @@ using ::envoy::type::matcher::v3::StringMatcher;
 using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
+using ::grpc::experimental::ExternalCertificateVerifier;
+using ::grpc::experimental::IdentityKeyCertPair;
+using ::grpc::experimental::StaticDataCertificateProvider;
 
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
@@ -538,34 +542,25 @@ class FakeCertificateProviderFactory
 FakeCertificateProvider::CertDataMap* g_fake1_cert_data_map = nullptr;
 FakeCertificateProvider::CertDataMap* g_fake2_cert_data_map = nullptr;
 
-int ServerAuthCheckSchedule(void* /* config_user_data */,
-                            grpc_tls_server_authorization_check_arg* arg) {
-  arg->success = 1;
-  arg->status = GRPC_STATUS_OK;
-  return 0; /* synchronous check */
-}
-
 std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
-  // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
-  grpc_tls_credentials_options_set_server_verification_option(
-      options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-  grpc_tls_credentials_options_set_certificate_provider(
-      options,
-      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath),
-          ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
-          .get());
-  grpc_tls_credentials_options_watch_root_certs(options);
-  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
-  grpc_tls_server_authorization_check_config* check_config =
-      grpc_tls_server_authorization_check_config_create(
-          nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
-  grpc_tls_credentials_options_set_server_authorization_check_config(
-      options, check_config);
-  auto channel_creds = std::make_shared<SecureChannelCredentials>(
-      grpc_tls_credentials_create(options));
-  grpc_tls_server_authorization_check_config_release(check_config);
+  IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = ReadFile(kServerKeyPath);
+  key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
+  std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+      ReadFile(kCaCertPath), identity_key_cert_pairs);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(std::move(certificate_provider));
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  auto verifier =
+      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+  options.set_certificate_verifier(std::move(verifier));
+  options.set_verify_server_certs(true);
+  options.set_check_call_host(false);
+  auto channel_creds = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_creds.get() != nullptr);
   return channel_creds;
 }
 
@@ -8502,27 +8497,23 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
-    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-    grpc_tls_credentials_options* options =
-        grpc_tls_credentials_options_create();
-    grpc_tls_credentials_options_set_server_verification_option(
-        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-    grpc_tls_credentials_options_set_certificate_provider(
-        options,
-        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
-            ReadFile(kCaCertPath),
-            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
-            .get());
-    grpc_tls_credentials_options_watch_root_certs(options);
-    grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
-    grpc_tls_server_authorization_check_config* check_config =
-        grpc_tls_server_authorization_check_config_create(
-            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
-    grpc_tls_credentials_options_set_server_authorization_check_config(
-        options, check_config);
-    auto channel_creds = std::make_shared<SecureChannelCredentials>(
-        grpc_tls_credentials_create(options));
-    grpc_tls_server_authorization_check_config_release(check_config);
+    IdentityKeyCertPair key_cert_pair;
+    key_cert_pair.private_key = ReadFile(kServerKeyPath);
+    key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
+    std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
+    identity_key_cert_pairs.emplace_back(key_cert_pair);
+    auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+        ReadFile(kCaCertPath), identity_key_cert_pairs);
+    grpc::experimental::TlsChannelCredentialsOptions options;
+    options.set_certificate_provider(std::move(certificate_provider));
+    options.watch_root_certs();
+    options.watch_identity_key_cert_pairs();
+    auto verifier =
+        ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+    options.set_verify_server_certs(true);
+    options.set_certificate_verifier(std::move(verifier));
+    auto channel_creds = grpc::experimental::TlsCredentials(options);
+    GPR_ASSERT(channel_creds.get() != nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -8534,26 +8525,17 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
-    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-    grpc_tls_credentials_options* options =
-        grpc_tls_credentials_options_create();
-    grpc_tls_credentials_options_set_server_verification_option(
-        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-    grpc_tls_credentials_options_set_certificate_provider(
-        options,
-        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
-            ReadFile(kCaCertPath),
-            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
-            .get());
-    grpc_tls_credentials_options_watch_root_certs(options);
-    grpc_tls_server_authorization_check_config* check_config =
-        grpc_tls_server_authorization_check_config_create(
-            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
-    grpc_tls_credentials_options_set_server_authorization_check_config(
-        options, check_config);
-    auto channel_creds = std::make_shared<SecureChannelCredentials>(
-        grpc_tls_credentials_create(options));
-    grpc_tls_server_authorization_check_config_release(check_config);
+    auto certificate_provider =
+        std::make_shared<StaticDataCertificateProvider>(ReadFile(kCaCertPath));
+    grpc::experimental::TlsChannelCredentialsOptions options;
+    options.set_certificate_provider(std::move(certificate_provider));
+    options.watch_root_certs();
+    auto verifier =
+        ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+    options.set_verify_server_certs(true);
+    options.set_certificate_verifier(std::move(verifier));
+    auto channel_creds = grpc::experimental::TlsCredentials(options);
+    GPR_ASSERT(channel_creds.get() != nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
