@@ -807,7 +807,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/address_utils/parse_address.h',
                       'src/core/lib/address_utils/sockaddr_utils.cc',
                       'src/core/lib/address_utils/sockaddr_utils.h',
-                      'src/core/lib/avl/avl.cc',
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.cc',
                       'src/core/lib/backoff/backoff.h',

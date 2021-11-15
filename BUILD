@@ -1661,6 +1661,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "avl",
+    hdrs = [
+        "src/core/lib/avl/avl.h",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
@@ -1718,7 +1728,6 @@ grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
-        "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
@@ -1879,7 +1888,6 @@ grpc_cc_library(
         "src/core/lib/transport/error_utils.h",
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
-        "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
@@ -1901,7 +1909,6 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
-        "src/core/lib/event_engine/endpoint_config_internal.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/event_engine/sockaddr.h",
         "src/core/lib/http/format_request.h",
@@ -2040,6 +2047,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "avl",
         "bitset",
         "channel_args",
         "channel_stack_type",

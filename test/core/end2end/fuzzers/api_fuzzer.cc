@@ -370,9 +370,12 @@ class Call : public std::enable_shared_from_this<Call> {
           *batch_is_ok = false;
         } else {
           *batch_ops |= 1 << GRPC_OP_SEND_MESSAGE;
-          auto send = ReadSlice(batch_op.send_message().message());
+          std::vector<grpc_slice> slices;
+          for (const auto& m : batch_op.send_message().message()) {
+            slices.push_back(ReadSlice(m));
+          }
           send_message_ = op.data.send_message.send_message =
-              grpc_raw_byte_buffer_create(&send, 1);
+              grpc_raw_byte_buffer_create(slices.data(), slices.size());
           unwinders->push_back([this]() {
             grpc_byte_buffer_destroy(send_message_);
             send_message_ = nullptr;

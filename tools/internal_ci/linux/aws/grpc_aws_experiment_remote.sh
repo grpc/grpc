@@ -15,14 +15,15 @@
 
 set -ex
 
-#install ubuntu pre-requisites
+# install pre-requisites for gRPC C core build
 sudo apt update
 sudo apt install -y build-essential autoconf libtool pkg-config cmake python3 python3-pip clang
-sudo pip install six
+
+python3 --version
 
 cd grpc
 
-# without port server running, many tests will fail
+# tests require port server to be running
 python3 tools/run_tests/start_port_server.py
 
 # build with bazel
