@@ -69,8 +69,7 @@ class ArenaPromise {
   template <typename Callable>
   explicit ArenaPromise(
       absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
-                        Arena*>
-          arena,
+                        Arena*>,
       Callable&&)
       : impl_(SharedImpl<Callable>::Get()) {}
 
