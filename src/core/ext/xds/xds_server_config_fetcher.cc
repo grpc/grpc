@@ -357,7 +357,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
                   std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
                       watcher) override {
     grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
-    auto listener_watcher = absl::make_unique<ListenerWatcher>(
+    auto listener_watcher = MakeRefCounted<ListenerWatcher>(
         std::move(watcher), xds_client_, serving_status_notifier_,
         listening_address);
     auto* listener_watcher_ptr = listener_watcher.get();

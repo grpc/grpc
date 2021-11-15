@@ -191,6 +191,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/event_engine.h",
     "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/memory_allocator.h",
+    "include/grpc/event_engine/memory_request.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
 ]
 
@@ -902,6 +903,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "cpp_impl_of",
+    hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "gpr_codegen",
     language = "c++",
     public_hdrs = [
@@ -1449,6 +1456,7 @@ grpc_cc_library(
     hdrs = [
         "include/grpc/event_engine/internal/memory_allocator_impl.h",
         "include/grpc/event_engine/memory_allocator.h",
+        "include/grpc/event_engine/memory_request.h",
     ],
     language = "c++",
     deps = [
@@ -1474,10 +1482,12 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "loop",
+        "map",
         "orphanable",
         "poll",
         "race",
         "ref_counted_ptr",
+        "resource_quota_trace",
         "seq",
         "slice_refcount",
         "useful",
@@ -1499,6 +1509,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "resource_quota_trace",
+    srcs = [
+        "src/core/lib/resource_quota/trace.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/trace.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
     name = "resource_quota",
     srcs = [
         "src/core/lib/resource_quota/resource_quota.cc",
@@ -1507,6 +1531,7 @@ grpc_cc_library(
         "src/core/lib/resource_quota/resource_quota.h",
     ],
     deps = [
+        "cpp_impl_of",
         "gpr_base",
         "memory_quota",
         "ref_counted",
@@ -1606,6 +1631,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "avl",
+    hdrs = [
+        "src/core/lib/avl/avl.h",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
@@ -1646,7 +1681,6 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/address_utils/sockaddr_utils.cc",
-        "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -1717,7 +1751,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/resolve_address_custom.cc",
         "src/core/lib/iomgr/resolve_address_posix.cc",
         "src/core/lib/iomgr/resolve_address_windows.cc",
-        "src/core/lib/iomgr/resource_quota.cc",
         "src/core/lib/iomgr/socket_factory_posix.cc",
         "src/core/lib/iomgr/socket_mutator.cc",
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
@@ -1753,6 +1786,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
+        "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -1808,7 +1842,6 @@ grpc_cc_library(
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/address_utils/sockaddr_utils.h",
-        "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_args.h",
@@ -1824,6 +1857,7 @@ grpc_cc_library(
         "src/core/lib/compression/algorithm_metadata.h",
         "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
+        "src/core/lib/resource_quota/api.h",
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/compression/stream_compression.h",
         "src/core/lib/compression/stream_compression_gzip.h",
@@ -1872,7 +1906,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
-        "src/core/lib/iomgr/resource_quota.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
@@ -1970,6 +2003,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "avl",
         "bitset",
         "channel_stack_type",
         "chunked_vector",
@@ -1986,9 +2020,11 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "json",
+        "memory_quota",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "resource_quota",
         "slice",
         "slice_refcount",
         "table",
@@ -3577,7 +3613,9 @@ grpc_cc_library(
         "hpack_encoder_index",
         "hpack_encoder_table",
         "match",
+        "memory_quota",
         "popularity_count",
+        "resource_quota_trace",
         "slice",
         "slice_refcount",
         "useful",
@@ -3672,6 +3710,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_http_filters",
         "grpc_transport_chttp2",
+        "memory_quota",
         "ref_counted",
         "ref_counted_ptr",
         "slice",

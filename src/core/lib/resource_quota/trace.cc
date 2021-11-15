@@ -1,4 +1,4 @@
-// Copyright 2021 The gRPC Authors
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_TEST_CORE_UTIL_RESOURCE_USER_UTIL_H
-#define GRPC_TEST_CORE_UTIL_RESOURCE_USER_UTIL_H
 
-#include "src/core/lib/iomgr/resource_quota.h"
+#include <grpc/support/port_platform.h>
 
-grpc_resource_user* grpc_resource_user_create_unlimited(
-    grpc_resource_quota* resource_quota = nullptr);
+#include "src/core/lib/resource_quota/trace.h"
 
-grpc_slice_allocator* grpc_slice_allocator_create_unlimited();
-
-#endif  // GRPC_TEST_CORE_UTIL_RESOURCE_USER_UTIL_H
+grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
