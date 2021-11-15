@@ -196,9 +196,7 @@ class BinderServerListener : public Server::ListenerInterface {
       return status;
     }
     gpr_log(GPR_INFO, "BinderTransport client protocol version = %d", version);
-    // TODO(mingcl): Make sure we only give client a version that is not newer
-    // than the version they specify. For now, we always tell client that we
-    // only support version=1.
+    // TODO(waynetu): Check supported version.
     std::unique_ptr<grpc_binder::Binder> client_binder{};
     status = parcel->ReadBinder(&client_binder);
     if (!status.ok()) {
