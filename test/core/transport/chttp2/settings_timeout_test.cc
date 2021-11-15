@@ -119,8 +119,7 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    grpc_channel_args* args =
-        EnsureResourceQuotaInChannelArgs(nullptr);
+    grpc_channel_args* args = EnsureResourceQuotaInChannelArgs(nullptr);
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
                             server_addresses->addrs,
                             ExecCtx::Get()->Now() + 1000);
@@ -209,8 +208,7 @@ class Client {
       gpr_mu_lock(mu_);
       GRPC_LOG_IF_ERROR(
           "grpc_pollset_work",
-          grpc_pollset_work(pollset_, &worker,
-                            ExecCtx::Get()->Now() + 100));
+          grpc_pollset_work(pollset_, &worker, ExecCtx::Get()->Now() + 100));
       // Flushes any work scheduled before or during polling.
       ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);
