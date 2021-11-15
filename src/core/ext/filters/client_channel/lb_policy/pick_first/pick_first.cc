@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -181,20 +179,25 @@ void PickFirst::ResetBackoffLocked() {
 }
 
 void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
-  // Create a subchannel list from the latest_update_args_.
+  // Create a subchannel list from latest_update_args_.
+  ServerAddressList addresses;
+  if (latest_update_args_.addresses.ok()) {
+    addresses = *latest_update_args_.addresses;
+  }
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, latest_update_args_.addresses,
+      this, &grpc_lb_pick_first_trace, std::move(addresses),
       *latest_update_args_.args);
   // Empty update or no valid subchannels.
   if (subchannel_list->num_subchannels() == 0) {
     // Unsubscribe from all current subchannels.
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
-    // If not idle, put the channel in TRANSIENT_FAILURE.
-    // (If we are idle, then this will happen in ExitIdleLocked() if we
-    // haven't gotten a non-empty update by the time the application tries
-    // to start a new call.)
-    absl::Status status = absl::UnavailableError("Empty update");
+    // Put the channel in TRANSIENT_FAILURE.
+    absl::Status status =
+        latest_update_args_.addresses.ok()
+            ? absl::UnavailableError(absl::StrCat(
+                  "empty address list: ", latest_update_args_.resolution_note))
+            : latest_update_args_.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
@@ -258,17 +261,29 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
 
 void PickFirst::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-    gpr_log(GPR_INFO,
-            "Pick First %p received update with %" PRIuPTR " addresses", this,
-            args.addresses.size());
+    if (args.addresses.ok()) {
+      gpr_log(GPR_INFO,
+              "Pick First %p received update with %" PRIuPTR " addresses", this,
+              args.addresses->size());
+    } else {
+      gpr_log(GPR_INFO,
+              "Pick First %p received update with address error: %s", this,
+              args.addresses.status().ToString().c_str());
+    }
   }
-  // Update the latest_update_args_
+  // Add GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
   grpc_arg new_arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
   const grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
   std::swap(new_args, args.args);
   grpc_channel_args_destroy(new_args);
+  // If the update contains a resolver error and we have a previous update
+  // that was not a resolver error, keep using the previous addresses.
+  if (!args.addresses.ok() && latest_update_args_.config != nullptr) {
+    args.addresses = std::move(latest_update_args_.addresses);
+  }
+  // Update latest_update_args_.
   latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().

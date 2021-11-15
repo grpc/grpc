@@ -1,28 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-/** Round Robin Policy.
- *
- * Before every pick, the \a get_next_ready_subchannel_index_locked function
- * returns the p->subchannel_list->subchannels index for next subchannel,
- * respecting the relative order of the addresses provided upon creation or
- * updates. Note however that updates will start picking from the beginning of
- * the updated list. */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -166,15 +156,14 @@ class RoundRobin : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  /** list of subchannels */
+  // List of subchannels.
   OrphanablePtr<RoundRobinSubchannelList> subchannel_list_;
-  /** Latest version of the subchannel list.
-   * Subchannel connectivity callbacks will only promote updated subchannel
-   * lists if they equal \a latest_pending_subchannel_list. In other words,
-   * racing callbacks that reference outdated subchannel lists won't perform any
-   * update. */
+  // Latest pending subchannel list.
+  // When we get an updated address list, we create a new subchannel list
+  // for it here, and we wait to swap it into subchannel_list_ until the new
+  // list becomes READY.
   OrphanablePtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
-  /** are we shutting down? */
+
   bool shutdown_ = false;
 };
 
@@ -303,31 +292,30 @@ void RoundRobin::RoundRobinSubchannelList::
   RoundRobin* p = static_cast<RoundRobin*>(policy());
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_.get() != this) return;
-  /* In priority order. The first rule to match terminates the search (ie, if we
-   * are on rule n, all previous rules were unfulfilled).
-   *
-   * 1) RULE: ANY subchannel is READY => policy is READY.
-   *    CHECK: subchannel_list->num_ready > 0.
-   *
-   * 2) RULE: ANY subchannel is CONNECTING => policy is CONNECTING.
-   *    CHECK: sd->curr_connectivity_state == CONNECTING.
-   *
-   * 3) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
-   *                                                   TRANSIENT_FAILURE.
-   *    CHECK: subchannel_list->num_transient_failures ==
-   *           subchannel_list->num_subchannels.
-   */
+  // In priority order. The first rule to match terminates the search (ie, if we
+  // are on rule n, all previous rules were unfulfilled).
+  //
+  // 1) RULE: ANY subchannel is READY => policy is READY.
+  //    CHECK: subchannel_list->num_ready > 0.
+  //
+  // 2) RULE: ANY subchannel is CONNECTING => policy is CONNECTING.
+  //    CHECK: sd->curr_connectivity_state == CONNECTING.
+  //
+  // 3) RULE: ALL subchannels are TRANSIENT_FAILURE => policy is
+  //                                                   TRANSIENT_FAILURE.
+  //    CHECK: subchannel_list->num_transient_failures ==
+  //           subchannel_list->num_subchannels.
   if (num_ready_ > 0) {
-    /* 1) READY */
+    // 1) READY
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(), absl::make_unique<Picker>(p, this));
   } else if (num_connecting_ > 0) {
-    /* 2) CONNECTING */
+    // 2) CONNECTING
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
-    /* 3) TRANSIENT_FAILURE */
+    // 3) TRANSIENT_FAILURE
     absl::Status status =
         absl::UnavailableError("connections to all backends failing");
     p->channel_control_helper()->UpdateState(
@@ -432,24 +420,39 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
 }
 
 void RoundRobin::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
-            this, args.addresses.size());
+  ServerAddressList addresses;
+  if (args.addresses.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
+      gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
+              this, args.addresses->size());
+    }
+    addresses = std::move(*args.addresses);
+  } else {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
+      gpr_log(GPR_INFO, "[RR %p] received update with address error: %s",
+              this, args.addresses.status().ToString().c_str());
+    }
+    // If we already have a subchannel list, then ignore the resolver
+    // failure and keep using the existing list.
+    if (subchannel_list_ != nullptr) return;
   }
   // Replace latest_pending_subchannel_list_.
-  if (latest_pending_subchannel_list_ != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO,
-              "[RR %p] Shutting down previous pending subchannel list %p", this,
-              latest_pending_subchannel_list_.get());
-    }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace) &&
+      latest_pending_subchannel_list_ != nullptr) {
+    gpr_log(GPR_INFO,
+            "[RR %p] Shutting down previous pending subchannel list %p", this,
+            latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, std::move(args.addresses), *args.args);
+      this, &grpc_lb_round_robin_trace, std::move(addresses), *args.args);
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.
-    absl::Status status = absl::UnavailableError("Empty update");
+    absl::Status status =
+        args.addresses.ok()
+            ? absl::UnavailableError(
+                  absl::StrCat("empty address list: ", args.resolution_note))
+            : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));

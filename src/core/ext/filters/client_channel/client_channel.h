@@ -216,7 +216,7 @@ class ClientChannel {
 
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
-  void OnResolverErrorLocked(grpc_error_handle error)
+  void OnResolverErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void CreateOrUpdateLbPolicyLocked(
@@ -288,8 +288,7 @@ class ClientChannel {
   ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
       nullptr;
   // Data from service config.
-  grpc_error_handle resolver_transient_failure_error_
-      ABSL_GUARDED_BY(resolution_mu_) = GRPC_ERROR_NONE;
+  absl::Status resolver_transient_failure_error_ ABSL_GUARDED_BY(resolution_mu_);
   bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) = false;
   RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
   RefCountedPtr<ConfigSelector> config_selector_

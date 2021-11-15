@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -249,8 +250,7 @@ class XdsResolver : public Resolver {
   void OnError(grpc_error_handle error);
   void OnResourceDoesNotExist();
 
-  grpc_error_handle CreateServiceConfig(
-      RefCountedPtr<ServiceConfig>* service_config);
+  absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
 
@@ -781,7 +781,12 @@ void XdsResolver::StartLocked() {
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
             grpc_error_std_string(error).c_str());
-    result_handler_->ReturnError(error);
+    std::string error_message;
+    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    Result result;
+    result.service_config = absl::UnavailableError(
+        absl::StrCat("Failed to create XdsClient: ", error_message));
+    result_handler_->ReportResult(std::move(result));
     return;
   }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
@@ -870,8 +875,9 @@ void XdsResolver::OnError(grpc_error_handle error) {
   Result result;
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result.service_config_error = error;
-  result_handler_->ReturnResult(std::move(result));
+  result.service_config = grpc_error_to_absl_status(error);
+  result_handler_->ReportResult(std::move(result));
+  GRPC_ERROR_UNREF(error);
 }
 
 void XdsResolver::OnResourceDoesNotExist() {
@@ -881,15 +887,14 @@ void XdsResolver::OnResourceDoesNotExist() {
           this);
   current_virtual_host_.routes.clear();
   Result result;
-  result.service_config =
-      ServiceConfig::Create(args_, "{}", &result.service_config_error);
-  GPR_ASSERT(result.service_config != nullptr);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  result.service_config = ServiceConfig::Create(args_, "{}", &error);
+  GPR_ASSERT(*result.service_config != nullptr);
   result.args = grpc_channel_args_copy(args_);
-  result_handler_->ReturnResult(std::move(result));
+  result_handler_->ReportResult(std::move(result));
 }
 
-grpc_error_handle XdsResolver::CreateServiceConfig(
-    RefCountedPtr<ServiceConfig>* service_config) {
+absl::StatusOr<RefCountedPtr<ServiceConfig>> XdsResolver::CreateServiceConfig() {
   std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
     clusters.push_back(
@@ -916,8 +921,13 @@ grpc_error_handle XdsResolver::CreateServiceConfig(
       "}");
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error_handle error = GRPC_ERROR_NONE;
-  *service_config = ServiceConfig::Create(args_, json.c_str(), &error);
-  return error;
+  absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
+      ServiceConfig::Create(args_, json.c_str(), &error);
+  if (error != GRPC_ERROR_NONE) {
+    result = grpc_error_to_absl_status(error);
+    GRPC_ERROR_UNREF(error);
+  }
+  return result;
 }
 
 void XdsResolver::GenerateResult() {
@@ -932,15 +942,12 @@ void XdsResolver::GenerateResult() {
     return;
   }
   Result result;
-  error = CreateServiceConfig(&result.service_config);
-  if (error != GRPC_ERROR_NONE) {
-    OnError(grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                               GRPC_STATUS_UNAVAILABLE));
-    return;
-  }
+  result.service_config = CreateServiceConfig();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
-            result.service_config->json_string().c_str());
+            result.service_config.ok()
+                ? (*result.service_config)->json_string().c_str()
+                : result.service_config.status().ToString().c_str());
   }
   grpc_arg new_args[] = {
       xds_client_->MakeChannelArg(),
@@ -948,7 +955,7 @@ void XdsResolver::GenerateResult() {
   };
   result.args =
       grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
-  result_handler_->ReturnResult(std::move(result));
+  result_handler_->ReportResult(std::move(result));
 }
 
 void XdsResolver::MaybeRemoveUnusedClusters() {
