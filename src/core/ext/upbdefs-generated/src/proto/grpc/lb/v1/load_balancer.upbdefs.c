@@ -8,31 +8,10 @@
 
 #include "upb/def.h"
 #include "src/proto/grpc/lb/v1/load_balancer.upbdefs.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
-extern const upb_msglayout grpc_lb_v1_LoadBalanceRequest_msginit;
-extern const upb_msglayout grpc_lb_v1_InitialLoadBalanceRequest_msginit;
-extern const upb_msglayout grpc_lb_v1_ClientStatsPerToken_msginit;
-extern const upb_msglayout grpc_lb_v1_ClientStats_msginit;
-extern const upb_msglayout grpc_lb_v1_LoadBalanceResponse_msginit;
-extern const upb_msglayout grpc_lb_v1_InitialLoadBalanceResponse_msginit;
-extern const upb_msglayout grpc_lb_v1_ServerList_msginit;
-extern const upb_msglayout grpc_lb_v1_Server_msginit;
-extern const upb_msglayout grpc_lb_v1_FallbackResponse_msginit;
-
-static const upb_msglayout *layouts[9] = {
-  &grpc_lb_v1_LoadBalanceRequest_msginit,
-  &grpc_lb_v1_InitialLoadBalanceRequest_msginit,
-  &grpc_lb_v1_ClientStatsPerToken_msginit,
-  &grpc_lb_v1_ClientStats_msginit,
-  &grpc_lb_v1_LoadBalanceResponse_msginit,
-  &grpc_lb_v1_InitialLoadBalanceResponse_msginit,
-  &grpc_lb_v1_ServerList_msginit,
-  &grpc_lb_v1_Server_msginit,
-  &grpc_lb_v1_FallbackResponse_msginit,
-};
-
 static const char descriptor[1767] = {'\n', '(', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'l', 'b', '/', 'v', '1', '/', 'l', 'o', 
 'a', 'd', '_', 'b', 'a', 'l', 'a', 'n', 'c', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\n', 'g', 'r', 'p', 'c', '.', 'l', 
 'b', '.', 'v', '1', '\032', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'u', 'r', 
@@ -114,7 +93,7 @@ static upb_def_init *deps[3] = {
 
 upb_def_init src_proto_grpc_lb_v1_load_balancer_proto_upbdefinit = {
   deps,
-  layouts,
+  &src_proto_grpc_lb_v1_load_balancer_proto_upb_file_layout,
   "src/proto/grpc/lb/v1/load_balancer.proto",
   UPB_STRVIEW_INIT(descriptor, 1767)
 };

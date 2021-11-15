@@ -8,19 +8,12 @@
 
 #include "upb/def.h"
 #include "xds/core/v3/collection_entry.upbdefs.h"
+#include "xds/core/v3/collection_entry.upb.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
 extern upb_def_init xds_core_v3_resource_locator_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout xds_core_v3_CollectionEntry_msginit;
-extern const upb_msglayout xds_core_v3_CollectionEntry_InlineEntry_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &xds_core_v3_CollectionEntry_msginit,
-  &xds_core_v3_CollectionEntry_InlineEntry_msginit,
-};
-
 static const char descriptor[598] = {'\n', '\"', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'c', 'o', 'l', 'l', 'e', 'c', 't', 'i', 'o', 'n', '_', 
 'e', 'n', 't', 'r', 'y', '.', 'p', 'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', 
 '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 't', 
@@ -57,7 +50,7 @@ static upb_def_init *deps[5] = {
 
 upb_def_init xds_core_v3_collection_entry_proto_upbdefinit = {
   deps,
-  layouts,
+  &xds_core_v3_collection_entry_proto_upb_file_layout,
   "xds/core/v3/collection_entry.proto",
   UPB_STRVIEW_INIT(descriptor, 598)
 };

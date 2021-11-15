@@ -74,6 +74,8 @@ UPB_INLINE struct google_protobuf_Struct* xds_type_v3_TypedStruct_mutable_value(
   return sub;
 }
 
+extern const upb_msglayout_file xds_type_v3_typed_struct_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

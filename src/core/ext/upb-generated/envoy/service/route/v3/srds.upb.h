@@ -53,6 +53,8 @@ UPB_INLINE char *envoy_service_route_v3_SrdsDummy_serialize(const envoy_service_
 
 
 
+extern const upb_msglayout_file envoy_service_route_v3_srds_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

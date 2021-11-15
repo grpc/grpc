@@ -8,16 +8,7 @@
 
 #include "upb/def.h"
 #include "src/proto/grpc/lookup/v1/rls.upbdefs.h"
-
-extern const upb_msglayout grpc_lookup_v1_RouteLookupRequest_msginit;
-extern const upb_msglayout grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit;
-extern const upb_msglayout grpc_lookup_v1_RouteLookupResponse_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &grpc_lookup_v1_RouteLookupRequest_msginit,
-  &grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_msginit,
-  &grpc_lookup_v1_RouteLookupResponse_msginit,
-};
+#include "src/proto/grpc/lookup/v1/rls.upb.h"
 
 static const char descriptor[737] = {'\n', '\"', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'l', 'o', 'o', 'k', 'u', 'p', '/', 'v', 
 '1', '/', 'r', 'l', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\016', 'g', 'r', 'p', 'c', '.', 'l', 'o', 'o', 'k', 'u', 'p', '.', 
@@ -57,7 +48,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init src_proto_grpc_lookup_v1_rls_proto_upbdefinit = {
   deps,
-  layouts,
+  &src_proto_grpc_lookup_v1_rls_proto_upb_file_layout,
   "src/proto/grpc/lookup/v1/rls.proto",
   UPB_STRVIEW_INIT(descriptor, 737)
 };

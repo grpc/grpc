@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upbdefs.h"
+#include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
@@ -19,22 +20,6 @@ extern upb_def_init udpa_annotations_sensitive_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsParameters_msginit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit;
-
-static const upb_msglayout *layouts[6] = {
-  &envoy_extensions_transport_sockets_tls_v3_TlsParameters_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit,
-};
-
 static const char descriptor[3401] = {'\n', '6', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 
 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '/', 't', 'l', 's', '/', 'v', '3', '/', 'c', 'o', 'm', 'm', 'o', 'n', 
 '.', 'p', 'r', 'o', 't', 'o', '\022', ')', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 
@@ -190,7 +175,7 @@ static upb_def_init *deps[11] = {
 
 upb_def_init envoy_extensions_transport_sockets_tls_v3_common_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_extensions_transport_sockets_tls_v3_common_proto_upb_file_layout,
   "envoy/extensions/transport_sockets/tls/v3/common.proto",
   UPB_STRVIEW_INIT(descriptor, 3401)
 };

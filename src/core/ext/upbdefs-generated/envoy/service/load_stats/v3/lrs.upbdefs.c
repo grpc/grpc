@@ -8,20 +8,13 @@
 
 #include "upb/def.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
+#include "envoy/service/load_stats/v3/lrs.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_service_load_stats_v3_LoadStatsRequest_msginit;
-extern const upb_msglayout envoy_service_load_stats_v3_LoadStatsResponse_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &envoy_service_load_stats_v3_LoadStatsRequest_msginit,
-  &envoy_service_load_stats_v3_LoadStatsResponse_msginit,
-};
-
 static const char descriptor[958] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 
 's', '/', 'v', '3', '/', 'l', 'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\033', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 
 'v', 'i', 'c', 'e', '.', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 's', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', 
@@ -74,7 +67,7 @@ static upb_def_init *deps[6] = {
 
 upb_def_init envoy_service_load_stats_v3_lrs_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_service_load_stats_v3_lrs_proto_upb_file_layout,
   "envoy/service/load_stats/v3/lrs.proto",
   UPB_STRVIEW_INIT(descriptor, 958)
 };

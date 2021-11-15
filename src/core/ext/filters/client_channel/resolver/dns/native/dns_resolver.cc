@@ -239,10 +239,10 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
     const grpc_millis ms_until_next_resolution =
-        earliest_next_resolution - grpc_core::ExecCtx::Get()->Now();
+        earliest_next_resolution - ExecCtx::Get()->Now();
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
-          grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
+          ExecCtx::Get()->Now() - last_resolution_timestamp_;
       gpr_log(GPR_DEBUG,
               "In cooldown from last resolution (from %" PRId64
               " ms ago). Will resolve again in %" PRId64 " ms",
@@ -277,7 +277,7 @@ void NativeDnsResolver::StartResolvingLocked() {
                     grpc_schedule_on_exec_ctx);
   grpc_resolve_address(name_to_resolve_.c_str(), kDefaultSecurePort,
                        interested_parties_, &on_resolved_, &addresses_);
-  last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
+  last_resolution_timestamp_ = ExecCtx::Get()->Now();
 }
 
 //

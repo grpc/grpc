@@ -105,7 +105,7 @@ class RegistryState {
   // hurting performance (which is unlikely, since these allocations
   // only occur at gRPC initialization time).
   absl::InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
-  grpc_core::UniquePtr<char> default_prefix_;
+  UniquePtr<char> default_prefix_;
 };
 
 static RegistryState* g_state = nullptr;
@@ -182,15 +182,14 @@ std::string ResolverRegistry::GetDefaultAuthority(absl::string_view target) {
   return authority;
 }
 
-grpc_core::UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
-    const char* target) {
+UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(const char* target) {
   GPR_ASSERT(g_state != nullptr);
   URI uri;
   std::string canonical_target;
   g_state->FindResolverFactory(target, &uri, &canonical_target);
-  return grpc_core::UniquePtr<char>(canonical_target.empty()
-                                        ? gpr_strdup(target)
-                                        : gpr_strdup(canonical_target.c_str()));
+  return UniquePtr<char>(canonical_target.empty()
+                             ? gpr_strdup(target)
+                             : gpr_strdup(canonical_target.c_str()));
 }
 
 }  // namespace grpc_core

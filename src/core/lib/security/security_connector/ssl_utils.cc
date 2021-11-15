@@ -563,7 +563,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   const bool not_use_system_roots =
       GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
   // First try to load the roots from the configuration.
-  grpc_core::UniquePtr<char> default_root_certs_path =
+  UniquePtr<char> default_root_certs_path =
       GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
   if (strlen(default_root_certs_path.get()) > 0) {
     GRPC_LOG_IF_ERROR(

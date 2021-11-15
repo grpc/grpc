@@ -43,7 +43,7 @@ ReclamationPass MapReclamationPass(memory_quota_fuzzer::Reclaimer::Pass pass) {
 class Fuzzer {
  public:
   void Run(const memory_quota_fuzzer::Msg& msg) {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     RunMsg(msg);
     do {
       memory_quotas_.clear();

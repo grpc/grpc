@@ -66,8 +66,7 @@ void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](grpc_channel_stack_builder* builder) {
         return grpc_channel_stack_builder_append_filter(
-            builder, &grpc_core::ClientChannel::kFilterVtable, nullptr,
-            nullptr);
+            builder, &ClientChannel::kFilterVtable, nullptr, nullptr);
       });
 }
 

@@ -238,7 +238,7 @@ class HPackCompressor {
 
   class KeySliceRef {
    public:
-    using Stored = grpc_core::RefCountedPtr<grpc_slice_refcount>;
+    using Stored = RefCountedPtr<grpc_slice_refcount>;
 
     KeySliceRef(grpc_slice_refcount* ref, uint32_t hash)
         : ref_(ref), hash_(hash) {}

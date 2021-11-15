@@ -95,7 +95,7 @@ struct GrpcTimeoutMetadata {
     if (timeout == GRPC_MILLIS_INF_FUTURE) {
       return GRPC_MILLIS_INF_FUTURE;
     }
-    return grpc_core::ExecCtx::Get()->Now() + timeout;
+    return ExecCtx::Get()->Now() + timeout;
   }
   static grpc_slice Encode(ValueType x) {
     char timeout[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
@@ -820,9 +820,8 @@ absl::optional<absl::string_view> MetadataMap<Traits...>::GetValue(
   // Find all values for the specified key.
   absl::InlinedVector<absl::string_view, 1> values;
   for (grpc_linked_mdelem* md = list_.head; md != nullptr; md = md->next) {
-    absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md->md));
-    absl::string_view value =
-        grpc_core::StringViewFromSlice(GRPC_MDVALUE(md->md));
+    absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
+    absl::string_view value = StringViewFromSlice(GRPC_MDVALUE(md->md));
     if (target_key == key) values.push_back(value);
   }
   // If none found, no match.

@@ -74,6 +74,8 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_cluster_v3_Filter_mutable_ty
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_cluster_v3_filter_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

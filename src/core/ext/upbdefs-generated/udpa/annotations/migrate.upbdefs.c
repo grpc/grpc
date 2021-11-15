@@ -8,18 +8,9 @@
 
 #include "upb/def.h"
 #include "udpa/annotations/migrate.upbdefs.h"
+#include "udpa/annotations/migrate.upb.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-extern const upb_msglayout udpa_annotations_MigrateAnnotation_msginit;
-extern const upb_msglayout udpa_annotations_FieldMigrateAnnotation_msginit;
-extern const upb_msglayout udpa_annotations_FileMigrateAnnotation_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &udpa_annotations_MigrateAnnotation_msginit,
-  &udpa_annotations_FieldMigrateAnnotation_msginit,
-  &udpa_annotations_FileMigrateAnnotation_msginit,
-};
-
 static const char descriptor[893] = {'\n', '\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 'g', 'r', 'a', 't', 
 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 
 '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 
@@ -65,7 +56,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init udpa_annotations_migrate_proto_upbdefinit = {
   deps,
-  layouts,
+  &udpa_annotations_migrate_proto_upb_file_layout,
   "udpa/annotations/migrate.proto",
   UPB_STRVIEW_INIT(descriptor, 893)
 };

@@ -8,16 +8,9 @@
 
 #include "upb/def.h"
 #include "src/proto/grpc/gcp/altscontext.upbdefs.h"
+#include "src/proto/grpc/gcp/altscontext.upb.h"
 
 extern upb_def_init src_proto_grpc_gcp_transport_security_common_proto_upbdefinit;
-extern const upb_msglayout grpc_gcp_AltsContext_msginit;
-extern const upb_msglayout grpc_gcp_AltsContext_PeerAttributesEntry_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &grpc_gcp_AltsContext_msginit,
-  &grpc_gcp_AltsContext_PeerAttributesEntry_msginit,
-};
-
 static const char descriptor[718] = {'\n', '$', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'g', 'c', 'p', '/', 'a', 'l', 't', 's', 
 'c', 'o', 'n', 't', 'e', 'x', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\010', 'g', 'r', 'p', 'c', '.', 'g', 'c', 'p', '\032', '2', 
 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'g', 'c', 'p', '/', 't', 'r', 'a', 'n', 's', 'p', 
@@ -56,7 +49,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init src_proto_grpc_gcp_altscontext_proto_upbdefinit = {
   deps,
-  layouts,
+  &src_proto_grpc_gcp_altscontext_proto_upb_file_layout,
   "src/proto/grpc/gcp/altscontext.proto",
   UPB_STRVIEW_INIT(descriptor, 718)
 };
