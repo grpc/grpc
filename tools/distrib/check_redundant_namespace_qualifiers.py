@@ -140,9 +140,11 @@ for config in _CONFIGURATION:
             for file in files:
                 if file.endswith('.cc') or file.endswith('.h'):
                     path = os.path.join(root, file)
-                    print(path)
-                    with open(path) as f:
-                        contents = f.read()
+                    try:
+                        with open(path) as f:
+                            contents = f.read()
+                    except IOError:
+                        continue
                     updated = update_file(contents, config.namespaces)
                     if updated != contents:
                         changed.append(path)

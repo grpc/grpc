@@ -227,17 +227,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "resource_quota_test",
-    srcs = ["resource_quota_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
     language = "C++",

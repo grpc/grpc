@@ -116,8 +116,6 @@ typedef struct grpc_tcp {
   grpc_slice_buffer* write_slices;
   grpc_slice_buffer* read_slices;
 
-  grpc_slice_allocator* slice_allocator;
-
   /* The IO Completion Port runs from another thread. We need some mechanism
      to protect ourselves when requesting a shutdown. */
   gpr_mu mu;
@@ -132,7 +130,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
-  grpc_slice_allocator_destroy(tcp->slice_allocator);
   if (tcp->shutting_down) GRPC_ERROR_UNREF(tcp->shutdown_error);
   delete tcp;
 }
@@ -502,8 +499,7 @@ static grpc_endpoint_vtable vtable = {win_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
-                               absl::string_view peer_string,
-                               grpc_slice_allocator* slice_allocator) {
+                               absl::string_view peer_string) {
   grpc_tcp* tcp = new grpc_tcp;
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
@@ -523,7 +519,6 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   }
   tcp->peer_string = std::string(peer_string);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  tcp->slice_allocator = slice_allocator;
   return &tcp->base;
 }
 

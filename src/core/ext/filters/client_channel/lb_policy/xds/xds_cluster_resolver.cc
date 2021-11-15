@@ -176,40 +176,57 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
       void OnEndpointChanged(XdsApi::EdsUpdate update) override {
-        new Notifier(discovery_mechanism_, std::move(update));
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            // TODO(yashykt): When we move to C++14, capture update with
+            // std::move
+            [this, update]() mutable {
+              OnEndpointChangedHelper(std::move(update));
+              Unref();
+            },
+            DEBUG_LOCATION);
       }
       void OnError(grpc_error_handle error) override {
-        new Notifier(discovery_mechanism_, error);
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            [this, error]() {
+              OnErrorHelper(error);
+              Unref();
+            },
+            DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        new Notifier(discovery_mechanism_);
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            [this]() {
+              OnResourceDoesNotExistHelper();
+              Unref();
+            },
+            DEBUG_LOCATION);
       }
 
      private:
-      class Notifier {
-       public:
-        Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
-                 XdsApi::EdsUpdate update);
-        Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
-                 grpc_error_handle error);
-        explicit Notifier(
-            RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism);
-        ~Notifier() { discovery_mechanism_.reset(DEBUG_LOCATION, "Notifier"); }
-
-       private:
-        enum Type { kUpdate, kError, kDoesNotExist };
-
-        static void RunInExecCtx(void* arg, grpc_error_handle error);
-        void RunInWorkSerializer(grpc_error_handle error);
-
-        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
-        grpc_closure closure_;
-        XdsApi::EdsUpdate update_;
-        Type type_;
-      };
-
+      // Code accessing protected methods of `DiscoveryMechanism` need to be
+      // in methods of this class rather than in lambdas to work around an MSVC
+      // bug.
+      void OnEndpointChangedHelper(XdsApi::EdsUpdate update) {
+        discovery_mechanism_->parent()->OnEndpointChanged(
+            discovery_mechanism_->index(), std::move(update));
+      }
+      void OnErrorHelper(grpc_error_handle error) {
+        discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
+                                                error);
+      }
+      void OnResourceDoesNotExistHelper() {
+        discovery_mechanism_->parent()->OnResourceDoesNotExist(
+            discovery_mechanism_->index());
+      }
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
+
+    // This is necessary only because of a bug in msvc where nested class
+    // cannot access protected member in base class.
+    friend class EndpointWatcher;
 
     absl::string_view GetEdsResourceName() const {
       if (!parent()->is_xds_uri_) return parent()->server_name_;
@@ -403,7 +420,7 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
             ":%p starting xds watch for %s",
             parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  auto watcher = absl::make_unique<EndpointWatcher>(
+  auto watcher = MakeRefCounted<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
   parent()->xds_client_->WatchEndpointData(GetEdsResourceName(),
@@ -420,66 +437,6 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
   parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
                                                  watcher_);
   Unref();
-}
-
-//
-// XdsClusterResolverLb::EndpointWatcher::Notifier
-//
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism,
-             XdsApi::EdsUpdate update)
-    : discovery_mechanism_(std::move(discovery_mechanism)),
-      update_(std::move(update)),
-      type_(kUpdate) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism,
-             grpc_error_handle error)
-    : discovery_mechanism_(std::move(discovery_mechanism)), type_(kError) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
-}
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism)
-    : discovery_mechanism_(std::move(discovery_mechanism)),
-      type_(kDoesNotExist) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInExecCtx(void* arg, grpc_error_handle error) {
-  Notifier* self = static_cast<Notifier*>(arg);
-  (void)GRPC_ERROR_REF(error);
-  self->discovery_mechanism_->parent()->work_serializer()->Run(
-      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
-}
-
-void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInWorkSerializer(grpc_error_handle error) {
-  switch (type_) {
-    case kUpdate:
-      discovery_mechanism_->parent()->OnEndpointChanged(
-          discovery_mechanism_->index(), std::move(update_));
-      break;
-    case kError:
-      discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
-                                              error);
-      break;
-    case kDoesNotExist:
-      discovery_mechanism_->parent()->OnResourceDoesNotExist(
-          discovery_mechanism_->index());
-      break;
-  };
-  delete this;
 }
 
 //
