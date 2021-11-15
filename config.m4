@@ -662,7 +662,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
-    src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
@@ -772,6 +771,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_print.c \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
@@ -912,13 +912,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_strex.c \
     third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
     third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
     third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
     third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
     third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/name_print.c \
     third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
@@ -997,6 +997,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/dtls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/dtls_record.cc \
     third_party/boringssl-with-bazel/src/ssl/encrypted_client_hello.cc \
+    third_party/boringssl-with-bazel/src/ssl/extensions.cc \
     third_party/boringssl-with-bazel/src/ssl/handoff.cc \
     third_party/boringssl-with-bazel/src/ssl/handshake.cc \
     third_party/boringssl-with-bazel/src/ssl/handshake_client.cc \
@@ -1019,7 +1020,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/ssl_versions.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_x509.cc \
     third_party/boringssl-with-bazel/src/ssl/t1_enc.cc \
-    third_party/boringssl-with-bazel/src/ssl/t1_lib.cc \
     third_party/boringssl-with-bazel/src/ssl/tls13_both.cc \
     third_party/boringssl-with-bazel/src/ssl/tls13_client.cc \
     third_party/boringssl-with-bazel/src/ssl/tls13_enc.cc \
@@ -1240,7 +1240,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
