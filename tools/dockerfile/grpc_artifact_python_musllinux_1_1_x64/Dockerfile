@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+FROM quay.io/pypa/musllinux_1_1_x86_64:2021-11-15-a808c18
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_build_artifacts.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-    regex: "github/grpc/artifacts/**"
-  }
-}
+###################################
+# Install Python build requirements
+RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
+RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
