@@ -39,7 +39,7 @@
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
-  ~grpc_tls_credentials_options() = default;
+  ~grpc_tls_credentials_options() override = default;
   // Getters for member fields.
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;

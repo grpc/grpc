@@ -84,7 +84,7 @@ void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
 typedef struct tsi_tls_session_key_logger tsi_tls_session_key_logger;
 
 static constexpr bool tsi_tls_session_key_logging_supported() {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER > 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   return true;
 #else
   return false;
