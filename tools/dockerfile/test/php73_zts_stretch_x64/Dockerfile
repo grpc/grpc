@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:4
+FROM php:7.3-zts-stretch
 
-RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
+RUN apt-get update && apt-get install -y \
+  autoconf automake build-essential git libtool curl \
+  zlib1g-dev \
+  && apt-get clean
+
+# install php pthreads from source
+# TODO(jtattermusch): is this really needed?
+# See https://github.com/grpc/grpc/pull/23056
+WORKDIR /tmp
+RUN git clone https://github.com/krakjoe/pthreads
+RUN cd pthreads && \
+  phpize && \
+  ./configure && \
+  make && \
+  make install
+
 #====================
 # run_tests.py python dependencies
 
@@ -40,19 +55,12 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
-
-#=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
-
-RUN apt-get update && apt-get install -y cmake && apt-get clean
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php
+RUN mv composer.phar /usr/local/bin/composer
 
 
 RUN mkdir /var/local/jenkins
-
 
 # Define the default command.
 CMD ["bash"]

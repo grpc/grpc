@@ -55,3 +55,50 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
+#====================
+# run_tests.py python dependencies
+
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
+RUN apt-get update && apt-get install -y \
+  python3 \
+  python3-pip \
+  python3-setuptools \
+  python3-yaml \
+  && apt-get clean
+
+# use pinned version of pip to avoid sudden breakages
+RUN python3 -m pip install --upgrade pip==19.3.1
+
+# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
+# but since our python2 usage is deprecated, we should get rid of it.
+RUN python3 -m pip install six==1.16.0
+
+# Google Cloud Platform API libraries
+# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
+RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+
+
+#==================
+# Ruby dependencies
+
+# Install rvm
+RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
+RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+RUN \curl -sSL https://get.rvm.io | bash -s stable
+
+# Install Ruby 2.5
+RUN apt-get update && apt-get install -y procps && apt-get clean
+RUN /bin/bash -l -c "rvm install ruby-2.5"
+RUN /bin/bash -l -c "rvm use --default ruby-2.5"
+RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler --no-document -v 1.9"
+
+
+RUN mkdir /var/local/jenkins
+
+# Define the default command.
+CMD ["bash"]
