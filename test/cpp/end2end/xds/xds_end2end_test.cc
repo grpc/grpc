@@ -9907,7 +9907,7 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   rpc_options.SetupRpc(&context, &request);
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
-  EXPECT_EQ(GRPC_STATUS_UNAVAILABLE, status.error_code());
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
 }
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
@@ -9959,7 +9959,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   rpc_options.SetupRpc(&context, &request);
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
-  EXPECT_EQ(GRPC_STATUS_UNAVAILABLE, status.error_code());
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
 }
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
