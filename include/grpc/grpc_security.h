@@ -1274,7 +1274,6 @@ GRPCAPI void grpc_authorization_policy_provider_release(
  *  key logging file path using the API specified below.
  */
 
-
 /**
  * EXPERIMENTAL API - Subject to change.
  * Associates a session key logging config with a
@@ -1284,8 +1283,7 @@ GRPCAPI void grpc_authorization_policy_provider_release(
  *   stored.
  */
 GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
-    grpc_tls_credentials_options* options,
-    const char* path);
+    grpc_tls_credentials_options* options, const char* path);
 
 #ifdef __cplusplus
 }

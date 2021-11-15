@@ -117,7 +117,7 @@ struct grpc_tls_credentials_options
   }
   // Sets the tls session key log file path.
   void set_tls_session_key_log_file_path(
-    std::string tls_session_key_log_file_path) {
+      std::string tls_session_key_log_file_path) {
     tls_session_key_log_file_path_ = std::move(tls_session_key_log_file_path);
   }
 

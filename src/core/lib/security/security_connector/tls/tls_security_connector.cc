@@ -265,11 +265,10 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
       ssl_session_cache_(ssl_session_cache) {
   if (options_ != nullptr) {
     std::string tls_session_key_log_file_path =
-      options_->tls_session_key_log_file_path();
+        options_->tls_session_key_log_file_path();
     if (!tls_session_key_log_file_path.empty()) {
       tls_session_key_logger_ =
-        tsi::TlsSessionKeyLoggerCache::Get(
-          tls_session_key_log_file_path);
+          tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
     }
   }
   if (ssl_session_cache_ != nullptr) {
@@ -547,7 +546,8 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
-      reinterpret_cast<tsi_tls_session_key_logger*>(tls_session_key_logger_.get()),
+      reinterpret_cast<tsi_tls_session_key_logger*>(
+          tls_session_key_logger_.get()),
       &client_handshaker_factory_);
   /* Free memory. */
   if (pem_key_cert_pair != nullptr) {
@@ -585,11 +585,10 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
       options_(std::move(options)) {
   if (options_ != nullptr) {
     std::string tls_session_key_log_file_path =
-      options_->tls_session_key_log_file_path();
+        options_->tls_session_key_log_file_path();
     if (!tls_session_key_log_file_path.empty()) {
       tls_session_key_logger_ =
-        tsi::TlsSessionKeyLoggerCache::Get(
-          tls_session_key_log_file_path);
+          tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
     }
   }
   // Create a watcher.
@@ -825,7 +824,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
-      reinterpret_cast<tsi_tls_session_key_logger*>(tls_session_key_logger_.get()),
+      reinterpret_cast<tsi_tls_session_key_logger*>(
+          tls_session_key_logger_.get()),
       &server_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,

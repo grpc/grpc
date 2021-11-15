@@ -99,8 +99,8 @@ void grpc_tls_credentials_options_set_check_call_host(
 
 void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
     grpc_tls_credentials_options* options, const char* path) {
-  if (!tsi_tls_session_key_logging_supported() ||
-      options == nullptr || path == nullptr) {
+  if (!tsi_tls_session_key_logging_supported() || options == nullptr ||
+      path == nullptr) {
     return;
   }
   GRPC_API_TRACE(
@@ -110,9 +110,8 @@ void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
   // Tls session key logging is assumed to be enabled if the specified log
   // file is non-empty.
   if (strlen(path) > 0) {
-    gpr_log(
-        GPR_INFO, "Enabling TLS session key logging with keys stored at: %s",
-        path);
+    gpr_log(GPR_INFO,
+            "Enabling TLS session key logging with keys stored at: %s", path);
     options->set_tls_session_key_log_file_path(path);
   }
 }

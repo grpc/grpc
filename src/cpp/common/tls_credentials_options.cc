@@ -60,7 +60,7 @@ void TlsCredentialsOptions::set_identity_cert_name(
 }
 
 void TlsCredentialsOptions::set_tls_session_key_log_file_path(
-      const std::string& tls_session_key_log_file_path) {
+    const std::string& tls_session_key_log_file_path) {
   grpc_tls_credentials_options_set_tls_session_key_log_file_path(
       c_credentials_options_, tls_session_key_log_file_path.c_str());
 }
