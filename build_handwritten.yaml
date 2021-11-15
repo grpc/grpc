@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: granola
   protobuf_version: 3.18.1
-  version: 1.42.0-pre1
+  version: 1.42.0
 targets:
 - name: check_epollexclusive
   build: tool

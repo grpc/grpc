@@ -150,7 +150,7 @@ g_stands_for = "granola"  # @unused
 
 core_version = "20.0.0"  # @unused
 
-version = "1.42.0-pre1"  # @unused
+version = "1.42.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
