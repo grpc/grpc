@@ -85,7 +85,7 @@ class XdsClient::Notifier {
   template <class T>
   static void ScheduleNotifyWatchersOnErrorInWorkSerializer(
       XdsClient* xds_client, const T& watchers_list, grpc_error_handle error,
-      const grpc_core::DebugLocation& location) {
+      const DebugLocation& location) {
     xds_client->work_serializer_.Schedule(
         [watchers_list, error]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
@@ -103,7 +103,7 @@ class XdsClient::Notifier {
   template <class T>
   static void ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
       XdsClient* xds_client, const T& watchers_list,
-      const grpc_core::DebugLocation& location) {
+      const DebugLocation& location) {
     xds_client->work_serializer_.Schedule(
         [watchers_list]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
@@ -1490,7 +1490,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
             xds_client(), grpc_error_std_string(result.parse_error).c_str());
     GRPC_ERROR_UNREF(result.parse_error);
   } else {
-    grpc_millis update_time = grpc_core::ExecCtx::Get()->Now();
+    grpc_millis update_time = ExecCtx::Get()->Now();
     // Update nonce.
     auto& state = state_map_[result.type_url];
     state.nonce = std::move(result.nonce);
@@ -2793,7 +2793,7 @@ namespace {
 std::string GetBootstrapContents(const char* fallback_config,
                                  grpc_error_handle* error) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
-  grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
+  UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
@@ -2810,8 +2810,7 @@ std::string GetBootstrapContents(const char* fallback_config,
     return contents_str;
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
-  grpc_core::UniquePtr<char> env_config(
-      gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
+  UniquePtr<char> env_config(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
   if (env_config != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
