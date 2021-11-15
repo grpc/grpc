@@ -67,10 +67,11 @@ RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
 
 
-# Remove python2.7 which is present in the base image.
-# This is needed for the grpc bazel build to work.
-# TODO(jtattermusch): remove once https://github.com/grpc/grpc/issues/28026 is fixed.
-RUN apt-get remove -y python2.7-minimal
+# Python2's python.h still needs to be present in order for the bazel build
+# to work.
+# TODO(jtattermusch): remove once https://github.com/grpc/grpc/issues/28026
+# is fixed.
+RUN apt-get update && apt-get install -y python-all-dev python-setuptools
 
 #========================
 # Bazel installation
