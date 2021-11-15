@@ -367,7 +367,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -390,8 +389,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
-    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
+    src/core/lib/event_engine/event_engine_factory.cc \
+    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/event_engine/uv/libuv_event_engine.cc \
     src/core/lib/gpr/alloc.cc \
@@ -500,7 +501,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
@@ -542,6 +542,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/matchers/matchers.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
+    src/core/lib/promise/activity.cc \
+    src/core/lib/resource_quota/api.cc \
+    src/core/lib/resource_quota/memory_quota.cc \
+    src/core/lib/resource_quota/resource_quota.cc \
+    src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/sdk_server_authz_filter.cc \
@@ -576,6 +582,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
@@ -1135,7 +1142,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.42.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.43.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
@@ -1261,7 +1268,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
@@ -1278,6 +1284,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)

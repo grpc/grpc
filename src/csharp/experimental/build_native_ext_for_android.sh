@@ -36,7 +36,7 @@ cd build
 # ANDROID_ABI in ('arm64-v8a', 'armeabi-v7a')
 # e.g. ANDROID_ABI=armeabi-v7a
 
-# android-19 corresponds to Lollipop 5.0
+# android-21 corresponds to Lollipop 5.0
 ${ANDROID_SDK_CMAKE} ../.. \
   -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK_PATH}/build/cmake/android.toolchain.cmake" \
   -DCMAKE_ANDROID_NDK="${ANDROID_NDK_PATH}" \

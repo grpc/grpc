@@ -16,6 +16,8 @@
 
 #include "test/core/util/tls_utils.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -69,6 +71,102 @@ std::string GetFileContents(const char* path) {
   std::string credential = std::string(StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return credential;
+}
+
+int SyncExternalVerifier::Verify(void* user_data,
+                                 grpc_tls_custom_verification_check_request*,
+                                 grpc_tls_on_custom_verification_check_done_cb,
+                                 void*, grpc_status_code* sync_status,
+                                 char** sync_error_details) {
+  auto* self = static_cast<SyncExternalVerifier*>(user_data);
+  if (self->success_) {
+    *sync_status = GRPC_STATUS_OK;
+    return true;  // Synchronous call
+  }
+  *sync_status = GRPC_STATUS_UNAUTHENTICATED;
+  *sync_error_details = gpr_strdup("SyncExternalVerifier failed");
+  return true;  // Synchronous call
+}
+
+void SyncExternalVerifier::Destruct(void* user_data) {
+  auto* self = static_cast<SyncExternalVerifier*>(user_data);
+  delete self;
+}
+
+AsyncExternalVerifier::~AsyncExternalVerifier() {
+  // Tell the thread to shut down.
+  {
+    MutexLock lock(&mu_);
+    queue_.push_back(Request{nullptr, nullptr, nullptr, true});
+  }
+  // Wait for thread to exit.
+  thread_.Join();
+  grpc_shutdown();
+}
+
+int AsyncExternalVerifier::Verify(
+    void* user_data, grpc_tls_custom_verification_check_request* request,
+    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
+    grpc_status_code*, char**) {
+  auto* self = static_cast<AsyncExternalVerifier*>(user_data);
+  // Add request to queue to be picked up by worker thread.
+  MutexLock lock(&self->mu_);
+  self->queue_.push_back(Request{request, callback, callback_arg, false});
+  return false;  // Asynchronous call
+}
+
+namespace {
+
+void DestroyExternalVerifier(void* arg) {
+  auto* verifier = static_cast<AsyncExternalVerifier*>(arg);
+  delete verifier;
+}
+
+}  // namespace
+
+void AsyncExternalVerifier::Destruct(void* user_data) {
+  auto* self = static_cast<AsyncExternalVerifier*>(user_data);
+  // Spawn a detached thread to destroy the verifier, to make sure that we don't
+  // try to join the worker thread from within the worker thread.
+  grpc_core::Thread destroy_thread(
+      "DestroyExternalVerifier", DestroyExternalVerifier, self, nullptr,
+      grpc_core::Thread::Options().set_joinable(false));
+  destroy_thread.Start();
+}
+
+void AsyncExternalVerifier::WorkerThread(void* arg) {
+  auto* self = static_cast<AsyncExternalVerifier*>(arg);
+  while (true) {
+    // Check queue for work.
+    bool got_request = false;
+    Request request;
+    {
+      MutexLock lock(&self->mu_);
+      if (!self->queue_.empty()) {
+        got_request = true;
+        request = self->queue_.front();
+        self->queue_.pop_front();
+      }
+    }
+    // If nothing found in the queue, sleep for a bit and try again.
+    if (!got_request) {
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      continue;
+    }
+    // If we're being told to shut down, return.
+    if (request.shutdown) {
+      return;
+    }
+    // Process the request.
+    if (self->success_) {
+      request.callback(request.request, request.callback_arg, GRPC_STATUS_OK,
+                       "");
+    } else {
+      request.callback(request.request, request.callback_arg,
+                       GRPC_STATUS_UNAUTHENTICATED,
+                       "AsyncExternalVerifier failed");
+    }
+  }
 }
 
 }  // namespace testing

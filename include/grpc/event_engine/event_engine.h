@@ -378,9 +378,20 @@ class EventEngine {
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
-// TODO(hork): finalize the API and document it. We need to firm up the story
-// around user-provided EventEngines.
-std::shared_ptr<EventEngine> DefaultEventEngineFactory();
+/// Replace gRPC's default EventEngine factory
+///
+/// Applications may call \a SetDefaultEventEngineFactory at any time to replace
+/// the default factory used within gRPC. EventEngines will be created when
+/// necessary, when they are otherwise not provided by the application.
+///
+/// To be certain that none of the gRPC-provided built-in EventEngines are
+/// created, applications must set a custom EventEngine factory method *before*
+/// grpc is initialized.
+void SetDefaultEventEngineFactory(
+    const std::function<std::unique_ptr<EventEngine>()>* factory);
+
+/// Create an EventEngine using the default factory
+std::unique_ptr<EventEngine> CreateEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -139,13 +139,12 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   request.http.hdrs = headers;
   request.handshaker =
       url_.scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
-  grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
-                   &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
+  grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent,
+                   ResourceQuota::Default(), &request, ctx_->deadline,
+                   &ctx_->closure, &ctx_->response);
   grpc_http_request_destroy(&request.http);
 }
 

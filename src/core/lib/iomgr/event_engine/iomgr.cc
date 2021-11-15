@@ -19,7 +19,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -39,29 +38,20 @@ grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");
 
 namespace {
 
-using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::LibuvEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-EventEngine* g_event_engine = nullptr;
-
-void iomgr_platform_init(void) {
-  if (g_event_engine == nullptr) {
-    g_event_engine = new LibuvEventEngine();
-  }
-}
+// TODO(nnoble): Instantiate the default EventEngine if none have been provided.
+void iomgr_platform_init(void) {}
 
 void iomgr_platform_flush(void) {}
 
-void iomgr_platform_shutdown(void) {
-  delete g_event_engine;
-  g_event_engine = nullptr;
-}
+void iomgr_platform_shutdown(void) {}
 
 void iomgr_platform_shutdown_background_closure(void) {}
 
 bool iomgr_platform_is_any_background_poller_thread(void) {
-  return g_event_engine->IsWorkerThread();
+  return GetDefaultEventEngine()->IsWorkerThread();
 }
 
 bool iomgr_platform_add_closure_to_background_poller(
@@ -90,20 +80,5 @@ void grpc_set_default_iomgr_platform() {
 }
 
 bool grpc_iomgr_run_in_background() { return false; }
-
-grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine() {
-  return g_event_engine;
-}
-
-namespace grpc_core {
-
-void SetDefaultEventEngine(
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine) {
-  GPR_ASSERT(g_event_engine == nullptr);
-  g_event_engine = event_engine.release();
-}
-
-}  // namespace grpc_core
 
 #endif  // GRPC_USE_EVENT_ENGINE

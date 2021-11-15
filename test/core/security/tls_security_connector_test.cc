@@ -33,6 +33,7 @@
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define CLIENT_CERT_PATH "src/core/tsi/test_creds/multi-domain.pem"
@@ -41,17 +42,18 @@
 #define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 
-namespace grpc {
+namespace grpc_core {
 namespace testing {
 
 constexpr const char* kRootCertName = "root_cert_name";
 constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kErrorMessage = "error_message";
-constexpr const char* kTargetName = "some_target";
+constexpr const char* kTargetName = "foo.bar.com:443";
 
 class TlsSecurityConnectorTest : public ::testing::Test {
  protected:
   TlsSecurityConnectorTest() {}
+
   void SetUp() override {
     grpc_slice ca_slice_1, ca_slice_0, cert_slice_1, key_slice_1, cert_slice_0,
         key_slice_0;
@@ -87,12 +89,27 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     grpc_slice_unref(key_slice_0);
   }
 
-  void TearDown() override {}
+  static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {
+    const char* expected_error_msg = static_cast<const char*>(arg);
+    if (expected_error_msg == nullptr) {
+      EXPECT_EQ(error, GRPC_ERROR_NONE);
+    } else {
+      EXPECT_EQ(GetErrorMsg(error), expected_error_msg);
+    }
+  }
+
+  static std::string GetErrorMsg(grpc_error_handle error) {
+    std::string error_str;
+    GPR_ASSERT(
+        grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_str));
+    return error_str;
+  }
 
   std::string root_cert_1_;
   std::string root_cert_0_;
   grpc_core::PemKeyCertPairList identity_pairs_1_;
   grpc_core::PemKeyCertPairList identity_pairs_0_;
+  grpc_core::HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
 class TlsTestCertificateProvider : public ::grpc_tls_certificate_provider {
@@ -110,7 +127,10 @@ class TlsTestCertificateProvider : public ::grpc_tls_certificate_provider {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 };
 
-// Tests for ChannelSecurityConnector.
+//
+// Tests for Certificate Providers in ChannelSecurityConnector.
+//
+
 TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -347,33 +367,84 @@ TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailNoOptions) {
   EXPECT_EQ(connector, nullptr);
 }
 
-TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameSuccess) {
-  const char* target_name = "foo.test.google.fr";
+//
+// Tests for Certificate Verifier in ChannelSecurityConnector.
+//
+
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorWithSyncExternalVerifierSucceeds) {
+  auto* sync_verifier_ = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  options->set_check_call_host(false);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, target_name,
-                 &peer.properties[0]) == TSI_OK);
-  grpc_error_handle error =
-      grpc_core::internal::TlsCheckHostName(target_name, &peer);
-  tsi_peer_destruct(&peer);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
 }
 
-TEST_F(TlsSecurityConnectorTest, TlsCheckHostNameFail) {
-  const char* target_name = "foo.test.google.fr";
-  const char* another_name = "bar.test.google.fr";
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorWithSyncExternalVerifierFails) {
+  auto* sync_verifier_ = new SyncExternalVerifier(false);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  options->set_check_call_host(false);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, another_name,
-                 &peer.properties[0]) == TSI_OK);
-  grpc_error_handle error =
-      grpc_core::internal::TlsCheckHostName(target_name, &peer);
-  tsi_peer_destruct(&peer);
-  EXPECT_NE(error, GRPC_ERROR_NONE);
-  GRPC_ERROR_UNREF(error);
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: UNAUTHENTICATED: "
+      "SyncExternalVerifier failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
+      grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -477,6 +548,192 @@ TEST_F(TlsSecurityConnectorTest,
 }
 
 // Tests for ServerSecurityConnector.
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorWithAsyncExternalVerifierSucceeds) {
+  auto* async_verifier = new AsyncExternalVerifier(true);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier->Ref());
+  options->set_check_call_host(false);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
+  core_external_verifier->Unref();
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorWithAsyncExternalVerifierFails) {
+  auto* async_verifier = new AsyncExternalVerifier(false);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier->Ref());
+  options->set_check_call_host(false);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: UNAUTHENTICATED: "
+      "AsyncExternalVerifier failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
+      grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
+  core_external_verifier->Unref();
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorHostnameVerifierSucceeds) {
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
+  options->set_check_call_host(false);
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a full TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(7, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_PROPERTY, "pem_cert", &peer.properties[2]) ==
+             TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_SECURITY_LEVEL_PEER_PROPERTY,
+                 tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+                 &peer.properties[3]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_CHAIN_PROPERTY, "pem_cert_chain",
+                 &peer.properties[4]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[5]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.baz.com",
+                 &peer.properties[6]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorHostnameVerifierFails) {
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a full TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(7, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.com",
+                 &peer.properties[1]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_PROPERTY, "pem_cert", &peer.properties[2]) ==
+             TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_SECURITY_LEVEL_PEER_PROPERTY,
+                 tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+                 &peer.properties[3]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_PEM_CERT_CHAIN_PROPERTY, "pem_cert_chain",
+                 &peer.properties[4]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "*.com",
+                 &peer.properties[5]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.baz.com",
+                 &peer.properties[6]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: UNAUTHENTICATED: Hostname "
+      "Verification "
+      "Check failed.";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
+      grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
+}
+
+//
+// Tests for Certificate Providers in ServerSecurityConnector.
+//
+
 TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -691,8 +948,147 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
 }
 
+//
+// Tests for Certificate Verifier in ServerSecurityConnector.
+//
+
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithSyncExternalVerifierSucceeds) {
+  auto* sync_verifier = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  auto provider =
+      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+          "", grpc_core::PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithSyncExternalVerifierFails) {
+  auto* sync_verifier = new SyncExternalVerifier(false);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  auto provider =
+      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+          "", grpc_core::PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: UNAUTHENTICATED: "
+      "SyncExternalVerifier failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
+      grpc_schedule_on_exec_ctx);
+  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithAsyncExternalVerifierSucceeds) {
+  auto* async_verifier = new AsyncExternalVerifier(true);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier->Ref());
+  auto provider =
+      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+          "", grpc_core::PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
+  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  core_external_verifier->Unref();
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithAsyncExternalVerifierFails) {
+  auto* async_verifier = new AsyncExternalVerifier(false);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier->Ref());
+  auto provider =
+      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+          "", grpc_core::PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: UNAUTHENTICATED: "
+      "AsyncExternalVerifier failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
+      VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
+      grpc_schedule_on_exec_ctx);
+  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  core_external_verifier->Unref();
+}
+
 }  // namespace testing
-}  // namespace grpc
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
