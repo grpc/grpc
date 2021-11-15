@@ -121,6 +121,8 @@ UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_set_value(xds_d
   _upb_msg_map_set_value(msg, &value, sizeof(double));
 }
 
+extern const upb_msglayout_file xds_data_orca_v3_orca_load_report_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

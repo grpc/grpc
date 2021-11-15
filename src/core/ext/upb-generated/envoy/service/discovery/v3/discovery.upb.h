@@ -526,6 +526,8 @@ UPB_INLINE void envoy_service_discovery_v3_Resource_CacheControl_set_do_not_cach
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
 }
 
+extern const upb_msglayout_file envoy_service_discovery_v3_discovery_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

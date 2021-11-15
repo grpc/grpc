@@ -1080,6 +1080,8 @@ UPB_INLINE void envoy_config_core_v3_SchemeHeaderTransformation_set_scheme_to_ov
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 1);
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_protocol_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -1776,6 +1776,8 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
   return sub;
 }
 
+extern const upb_msglayout_file envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
