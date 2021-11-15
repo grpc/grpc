@@ -78,6 +78,43 @@ char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
 
+class XdsClient::Notifier {
+ public:
+  // Helper template function to invoke `OnError()` on a list of watchers \a
+  // watchers_list within \a work_serializer. Works with all 4 resource types.
+  template <class T>
+  static void ScheduleNotifyWatchersOnErrorInWorkSerializer(
+      XdsClient* xds_client, const T& watchers_list, grpc_error_handle error,
+      const grpc_core::DebugLocation& location) {
+    xds_client->work_serializer_.Schedule(
+        [watchers_list, error]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnError(GRPC_ERROR_REF(error));
+              }
+              GRPC_ERROR_UNREF(error);
+            },
+        location);
+  }
+
+  // Helper template function to invoke `OnResourceDoesNotExist()` on a list of
+  // watchers \a watchers_list within \a work_serializer. Works with all 4
+  // resource types.
+  template <class T>
+  static void ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+      XdsClient* xds_client, const T& watchers_list,
+      const grpc_core::DebugLocation& location) {
+    xds_client->work_serializer_.Schedule(
+        [watchers_list]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnResourceDoesNotExist();
+              }
+            },
+        location);
+  }
+};
+
 //
 // Internal class declarations
 //
@@ -189,6 +226,7 @@ class XdsClient::ChannelState::AdsCallState
         MutexLock lock(&self->ads_calld_->xds_client()->mu_);
         self->OnTimerLocked(GRPC_ERROR_REF(error));
       }
+      self->ads_calld_->xds_client()->work_serializer_.DrainQueue();
       self->ads_calld_.reset();
       self->Unref(DEBUG_LOCATION, "timer");
     }
@@ -214,28 +252,28 @@ class XdsClient::ChannelState::AdsCallState
         if (type_url_ == XdsApi::kLdsTypeUrl) {
           ListenerState& state = authority_state.listener_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
-          }
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
+              GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else if (type_url_ == XdsApi::kRdsTypeUrl) {
           RouteConfigState& state =
               authority_state.route_config_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
-          }
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
+              GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else if (type_url_ == XdsApi::kCdsTypeUrl) {
           ClusterState& state = authority_state.cluster_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
-          }
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
+              GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else if (type_url_ == XdsApi::kEdsTypeUrl) {
           EndpointState& state = authority_state.endpoint_map[resource_.id];
           state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-          for (const auto& p : state.watchers) {
-            p.first->OnError(GRPC_ERROR_REF(watcher_error));
-          }
+          Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+              ads_calld_->xds_client(), state.watchers,
+              GRPC_ERROR_REF(watcher_error), DEBUG_LOCATION);
         } else {
           GPR_UNREACHABLE_CODE(return );
         }
@@ -464,18 +502,21 @@ class XdsClient::ChannelState::StateWatcher
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
-    MutexLock lock(&parent_->xds_client_->mu_);
-    if (!parent_->shutting_down_ &&
-        new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      // In TRANSIENT_FAILURE.  Notify all watchers of error.
-      gpr_log(GPR_INFO,
-              "[xds_client %p] xds channel in state:TRANSIENT_FAILURE "
-              "status_message:(%s)",
-              parent_->xds_client(), status.ToString().c_str());
-      parent_->xds_client_->NotifyOnErrorLocked(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "xds channel in TRANSIENT_FAILURE"));
+    {
+      MutexLock lock(&parent_->xds_client_->mu_);
+      if (!parent_->shutting_down_ &&
+          new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // In TRANSIENT_FAILURE.  Notify all watchers of error.
+        gpr_log(GPR_INFO,
+                "[xds_client %p] xds channel in state:TRANSIENT_FAILURE "
+                "status_message:(%s)",
+                parent_->xds_client(), status.ToString().c_str());
+        parent_->xds_client_->NotifyOnErrorLocked(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "xds channel in TRANSIENT_FAILURE"));
+      }
     }
+    parent_->xds_client()->work_serializer_.DrainQueue();
   }
 
   WeakRefCountedPtr<ChannelState> parent_;
@@ -1000,9 +1041,16 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     listener_state.meta = CreateResourceMetadataAcked(
         std::move(p.second.serialized_proto), version, update_time);
     // Notify watchers.
-    for (const auto& p : listener_state.watchers) {
-      p.first->OnListenerChanged(*listener_state.update);
-    }
+    auto& watchers_list = listener_state.watchers;
+    auto& value = listener_state.update.value();
+    xds_client()->work_serializer_.Schedule(
+        [watchers_list, value]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnListenerChanged(value);
+              }
+            },
+        DEBUG_LOCATION);
   }
   // For invalid resources in the update, if they are already in the
   // cache, pretend that they are present in the update, so that we
@@ -1041,9 +1089,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
         // For that case, we rely on the request timeout instead.
         if (!listener_state.update.has_value()) continue;
         listener_state.update.reset();
-        for (const auto& p : listener_state.watchers) {
-          p.first->OnResourceDoesNotExist();
-        }
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), listener_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1063,9 +1110,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
                 ->authority_state_map_[authority_name]
                 .route_config_map[listener_name];
         route_config_state.update.reset();
-        for (const auto& p : route_config_state.watchers) {
-          p.first->OnResourceDoesNotExist();
-        }
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), route_config_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1110,9 +1156,16 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
     route_config_state.meta = CreateResourceMetadataAcked(
         std::move(p.second.serialized_proto), version, update_time);
     // Notify all watchers.
-    for (const auto& p : route_config_state.watchers) {
-      p.first->OnRouteConfigChanged(*route_config_state.update);
-    }
+    auto& watchers_list = route_config_state.watchers;
+    auto& value = route_config_state.update.value();
+    xds_client()->work_serializer_.Schedule(
+        [watchers_list, value]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnRouteConfigChanged(value);
+              }
+            },
+        DEBUG_LOCATION);
   }
 }
 
@@ -1165,9 +1218,16 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
     cluster_state.meta = CreateResourceMetadataAcked(
         std::move(p.second.serialized_proto), version, update_time);
     // Notify all watchers.
-    for (const auto& p : cluster_state.watchers) {
-      p.first->OnClusterChanged(cluster_state.update.value());
-    }
+    auto& watchers_list = cluster_state.watchers;
+    auto& value = cluster_state.update.value();
+    xds_client()->work_serializer_.Schedule(
+        [watchers_list, value]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnClusterChanged(value);
+              }
+            },
+        DEBUG_LOCATION);
   }
   // For invalid resources in the update, if they are already in the
   // cache, pretend that they are present in the update, so that we
@@ -1206,9 +1266,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
         // For that case, we rely on the request timeout instead.
         if (!cluster_state.update.has_value()) continue;
         cluster_state.update.reset();
-        for (const auto& p : cluster_state.watchers) {
-          p.first->OnResourceDoesNotExist();
-        }
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), cluster_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1227,9 +1286,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
                                             ->authority_state_map_[authority]
                                             .endpoint_map[eds_resource_name];
         endpoint_state.update.reset();
-        for (const auto& p : endpoint_state.watchers) {
-          p.first->OnResourceDoesNotExist();
-        }
+        Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+            xds_client(), endpoint_state.watchers, DEBUG_LOCATION);
       }
     }
   }
@@ -1277,9 +1335,16 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
     endpoint_state.meta = CreateResourceMetadataAcked(
         std::move(p.second.serialized_proto), version, update_time);
     // Notify all watchers.
-    for (const auto& p : endpoint_state.watchers) {
-      p.first->OnEndpointChanged(endpoint_state.update.value());
-    }
+    auto& watchers_list = endpoint_state.watchers;
+    auto& value = endpoint_state.update.value();
+    xds_client()->work_serializer_.Schedule(
+        [watchers_list, value]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
+              for (const auto& p : watchers_list) {
+                p.first->OnEndpointChanged(value);
+              }
+            },
+        DEBUG_LOCATION);
   }
 }
 
@@ -1306,9 +1371,9 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateHelperLocked(
   auto it = state_map->find(resource_name);
   if (it == state_map->end()) return;
   auto& state = it->second;
-  for (const auto& p : state.watchers) {
-    p.first->OnError(GRPC_ERROR_REF(result.parse_error));
-  }
+  Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
+      xds_client(), state.watchers, GRPC_ERROR_REF(result.parse_error),
+      DEBUG_LOCATION);
   UpdateResourceMetadataNacked(result.version, error_details, update_time,
                                &state.meta);
 }
@@ -1388,6 +1453,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
     MutexLock lock(&ads_calld->xds_client()->mu_);
     done = ads_calld->OnResponseReceivedLocked();
   }
+  ads_calld->xds_client()->work_serializer_.DrainQueue();
   if (done) ads_calld->Unref(DEBUG_LOCATION, "ADS+OnResponseReceivedLocked");
 }
 
@@ -1494,6 +1560,7 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
     MutexLock lock(&ads_calld->xds_client()->mu_);
     ads_calld->OnStatusReceivedLocked(GRPC_ERROR_REF(error));
   }
+  ads_calld->xds_client()->work_serializer_.DrainQueue();
   ads_calld->Unref(DEBUG_LOCATION, "ADS+OnStatusReceivedLocked");
 }
 
@@ -2081,37 +2148,58 @@ RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
 
 void XdsClient::WatchListenerData(
     absl::string_view listener_name,
-    std::unique_ptr<ListenerWatcherInterface> watcher) {
+    RefCountedPtr<ListenerWatcherInterface> watcher) {
   std::string listener_name_str = std::string(listener_name);
-  MutexLock lock(&mu_);
   ListenerWatcherInterface* w = watcher.get();
   auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
   if (!resource.ok()) {
-    invalid_listener_watchers_[w] = std::move(watcher);
+    {
+      MutexLock lock(&mu_);
+      invalid_listener_watchers_[w] = watcher;
+    }
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
         "Unable to parse resource name for listener %s", listener_name));
-    w->OnError(GRPC_ERROR_REF(error));
+    work_serializer_.Run(
+        // TODO(yashykt): When we move to C++14, capture watcher using
+        // std::move()
+        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+          watcher->OnError(error);
+        },
+        DEBUG_LOCATION);
     return;
   }
-  AuthorityState& authority_state = authority_state_map_[resource->authority];
-  ListenerState& listener_state = authority_state.listener_map[resource->id];
-  listener_state.watchers[w] = std::move(watcher);
-  // If we've already received an LDS update, notify the new watcher
-  // immediately.
-  if (listener_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] returning cached listener data for %s",
-              this, listener_name_str.c_str());
+  {
+    MutexLock lock(&mu_);
+    AuthorityState& authority_state = authority_state_map_[resource->authority];
+    ListenerState& listener_state = authority_state.listener_map[resource->id];
+    listener_state.watchers[w] = watcher;
+    // If we've already received an LDS update, notify the new watcher
+    // immediately.
+    if (listener_state.update.has_value()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] returning cached listener data for %s", this,
+                listener_name_str.c_str());
+      }
+      auto& value = listener_state.update.value();
+      work_serializer_.Schedule(
+          // TODO(yashykt): When we move to C++14, capture watcher using
+          // std::move()
+          [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
+            watcher->OnListenerChanged(value);
+          },
+          DEBUG_LOCATION);
     }
-    w->OnListenerChanged(*listener_state.update);
+    // If the authority doesn't yet have a channel, set it, creating it if
+    // needed.
+    if (authority_state.channel_state == nullptr) {
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(bootstrap_->server());
+    }
+    authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
+                                                   *resource);
   }
-  // If the authority doesn't yet have a channel, set it, creating it if needed.
-  if (authority_state.channel_state == nullptr) {
-    authority_state.channel_state =
-        GetOrCreateChannelStateLocked(bootstrap_->server());
-  }
-  authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
-                                                 *resource);
+  work_serializer_.DrainQueue();
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
@@ -2140,40 +2228,58 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
 
 void XdsClient::WatchRouteConfigData(
     absl::string_view route_config_name,
-    std::unique_ptr<RouteConfigWatcherInterface> watcher) {
+    RefCountedPtr<RouteConfigWatcherInterface> watcher) {
   std::string route_config_name_str = std::string(route_config_name);
-  MutexLock lock(&mu_);
   RouteConfigWatcherInterface* w = watcher.get();
   auto resource = XdsApi::ParseResourceName(route_config_name, XdsApi::IsRds);
   if (!resource.ok()) {
-    invalid_route_config_watchers_[w] = std::move(watcher);
+    {
+      MutexLock lock(&mu_);
+      invalid_route_config_watchers_[w] = watcher;
+    }
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Unable to parse resource name for route config %s",
                         route_config_name));
-    w->OnError(GRPC_ERROR_REF(error));
+    work_serializer_.Run(
+        // TODO(yashykt): When we move to C++14, capture watcher using
+        // std::move()
+        [watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+          watcher->OnError(error);
+        },
+        DEBUG_LOCATION);
     return;
   }
-  auto& authority_state = authority_state_map_[resource->authority];
-  RouteConfigState& route_config_state =
-      authority_state.route_config_map[resource->id];
-  route_config_state.watchers[w] = std::move(watcher);
-  // If we've already received an RDS update, notify the new watcher
-  // immediately.
-  if (route_config_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] returning cached route config data for %s", this,
-              route_config_name_str.c_str());
+  {
+    MutexLock lock(&mu_);
+    auto& authority_state = authority_state_map_[resource->authority];
+    RouteConfigState& route_config_state =
+        authority_state.route_config_map[resource->id];
+    route_config_state.watchers[w] = watcher;
+    // If we've already received an RDS update, notify the new watcher
+    // immediately.
+    if (route_config_state.update.has_value()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] returning cached route config data for %s",
+                this, route_config_name_str.c_str());
+      }
+      auto& value = route_config_state.update.value();
+      work_serializer_.Schedule(
+          [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
+            watcher->OnRouteConfigChanged(value);
+          },
+          DEBUG_LOCATION);
     }
-    w->OnRouteConfigChanged(*route_config_state.update);
+    // If the authority doesn't yet have a channel, set it, creating it if
+    // needed.
+    if (authority_state.channel_state == nullptr) {
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(bootstrap_->server());
+    }
+    authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
+                                                   *resource);
   }
-  // If the authority doesn't yet have a channel, set it, creating it if needed.
-  if (authority_state.channel_state == nullptr) {
-    authority_state.channel_state =
-        GetOrCreateChannelStateLocked(bootstrap_->server());
-  }
-  authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
-                                                 *resource);
+  work_serializer_.DrainQueue();
 }
 
 void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
@@ -2203,37 +2309,54 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
 
 void XdsClient::WatchClusterData(
     absl::string_view cluster_name,
-    std::unique_ptr<ClusterWatcherInterface> watcher) {
+    RefCountedPtr<ClusterWatcherInterface> watcher) {
   std::string cluster_name_str = std::string(cluster_name);
-  MutexLock lock(&mu_);
   ClusterWatcherInterface* w = watcher.get();
   auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
   if (!resource.ok()) {
-    invalid_cluster_watchers_[w] = std::move(watcher);
+    {
+      MutexLock lock(&mu_);
+      invalid_cluster_watchers_[w] = watcher;
+    }
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
         "Unable to parse resource name for cluster %s", cluster_name));
-    w->OnError(GRPC_ERROR_REF(error));
+    work_serializer_.Run([watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                             work_serializer_) { watcher->OnError(error); },
+                         DEBUG_LOCATION);
     return;
   }
-  auto& authority_state = authority_state_map_[resource->authority];
-  ClusterState& cluster_state = authority_state.cluster_map[resource->id];
-  cluster_state.watchers[w] = std::move(watcher);
-  // If we've already received a CDS update, notify the new watcher
-  // immediately.
-  if (cluster_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] returning cached cluster data for %s",
-              this, cluster_name_str.c_str());
+  {
+    MutexLock lock(&mu_);
+    auto& authority_state = authority_state_map_[resource->authority];
+    ClusterState& cluster_state = authority_state.cluster_map[resource->id];
+    cluster_state.watchers[w] = watcher;
+    // If we've already received a CDS update, notify the new watcher
+    // immediately.
+    if (cluster_state.update.has_value()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] returning cached cluster data for %s", this,
+                cluster_name_str.c_str());
+      }
+      auto& value = cluster_state.update.value();
+      work_serializer_.Schedule(
+          // TODO(yashykt): When we move to C++14, capture watcher using
+          // std::move()
+          [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
+            watcher->OnClusterChanged(value);
+          },
+          DEBUG_LOCATION);
     }
-    w->OnClusterChanged(cluster_state.update.value());
+    // If the authority doesn't yet have a channel, set it, creating it if
+    // needed.
+    if (authority_state.channel_state == nullptr) {
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(bootstrap_->server());
+    }
+    authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
+                                                   *resource);
   }
-  // If the authority doesn't yet have a channel, set it, creating it if needed.
-  if (authority_state.channel_state == nullptr) {
-    authority_state.channel_state =
-        GetOrCreateChannelStateLocked(bootstrap_->server());
-  }
-  authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
-                                                 *resource);
+  work_serializer_.DrainQueue();
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
@@ -2262,38 +2385,53 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
 
 void XdsClient::WatchEndpointData(
     absl::string_view eds_service_name,
-    std::unique_ptr<EndpointWatcherInterface> watcher) {
+    RefCountedPtr<EndpointWatcherInterface> watcher) {
   std::string eds_service_name_str = std::string(eds_service_name);
-  MutexLock lock(&mu_);
   EndpointWatcherInterface* w = watcher.get();
   auto resource = XdsApi::ParseResourceName(eds_service_name, XdsApi::IsEds);
   if (!resource.ok()) {
-    invalid_endpoint_watchers_[w] = std::move(watcher);
+    {
+      MutexLock lock(&mu_);
+      invalid_endpoint_watchers_[w] = watcher;
+    }
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("Unable to parse resource name for endpoint service %s",
                         eds_service_name));
-    w->OnError(GRPC_ERROR_REF(error));
+    work_serializer_.Run([watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                             work_serializer_) { watcher->OnError(error); },
+                         DEBUG_LOCATION);
     return;
   }
-  auto& authority_state = authority_state_map_[resource->authority];
-  EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
-  endpoint_state.watchers[w] = std::move(watcher);
-  // If we've already received an EDS update, notify the new watcher
-  // immediately.
-  if (endpoint_state.update.has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "[xds_client %p] returning cached endpoint data for %s",
-              this, eds_service_name_str.c_str());
+  {
+    MutexLock lock(&mu_);
+    auto& authority_state = authority_state_map_[resource->authority];
+    EndpointState& endpoint_state = authority_state.endpoint_map[resource->id];
+    endpoint_state.watchers[w] = watcher;
+    // If we've already received an EDS update, notify the new watcher
+    // immediately.
+    if (endpoint_state.update.has_value()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] returning cached endpoint data for %s", this,
+                eds_service_name_str.c_str());
+      }
+      auto& value = endpoint_state.update.value();
+      work_serializer_.Schedule(
+          [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
+            watcher->OnEndpointChanged(value);
+          },
+          DEBUG_LOCATION);
     }
-    w->OnEndpointChanged(endpoint_state.update.value());
+    // If the authority doesn't yet have a channel, set it, creating it if
+    // needed.
+    if (authority_state.channel_state == nullptr) {
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(bootstrap_->server());
+    }
+    authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
+                                                   *resource);
   }
-  // If the authority doesn't yet have a channel, set it, creating it if needed.
-  if (authority_state.channel_state == nullptr) {
-    authority_state.channel_state =
-        GetOrCreateChannelStateLocked(bootstrap_->server());
-  }
-  authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
-                                                 *resource);
+  work_serializer_.DrainQueue();
 }
 
 void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
@@ -2453,33 +2591,57 @@ void XdsClient::ResetBackoff() {
 }
 
 void XdsClient::NotifyOnErrorLocked(grpc_error_handle error) {
+  std::set<RefCountedPtr<ListenerWatcherInterface>> listener_watchers;
+  std::set<RefCountedPtr<RouteConfigWatcherInterface>> route_config_watchers;
+  std::set<RefCountedPtr<ClusterWatcherInterface>> cluster_watchers;
+  std::set<RefCountedPtr<EndpointWatcherInterface>> endpoint_watchers;
   for (const auto& a : authority_state_map_) {
     for (const auto& p : a.second.listener_map) {
       const ListenerState& listener_state = p.second;
-      for (const auto& p : listener_state.watchers) {
-        p.first->OnError(GRPC_ERROR_REF(error));
+      for (const auto& q : listener_state.watchers) {
+        listener_watchers.insert(q.second);
       }
     }
     for (const auto& p : a.second.route_config_map) {
       const RouteConfigState& route_config_state = p.second;
-      for (const auto& p : route_config_state.watchers) {
-        p.first->OnError(GRPC_ERROR_REF(error));
+      for (const auto& q : route_config_state.watchers) {
+        route_config_watchers.insert(q.second);
       }
     }
     for (const auto& p : a.second.cluster_map) {
       const ClusterState& cluster_state = p.second;
-      for (const auto& p : cluster_state.watchers) {
-        p.first->OnError(GRPC_ERROR_REF(error));
+      for (const auto& q : cluster_state.watchers) {
+        cluster_watchers.insert(q.second);
       }
     }
     for (const auto& p : a.second.endpoint_map) {
       const EndpointState& endpoint_state = p.second;
-      for (const auto& p : endpoint_state.watchers) {
-        p.first->OnError(GRPC_ERROR_REF(error));
+      for (const auto& q : endpoint_state.watchers) {
+        endpoint_watchers.insert(q.second);
       }
     }
   }
-  GRPC_ERROR_UNREF(error);
+  work_serializer_.Schedule(
+      // TODO(yashykt): When we move to C++14, capture *_watchers using
+      // std::move()
+      [listener_watchers, route_config_watchers, cluster_watchers,
+       endpoint_watchers, error]()
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
+            for (const auto& watcher : listener_watchers) {
+              watcher->OnError(GRPC_ERROR_REF(error));
+            }
+            for (const auto& watcher : route_config_watchers) {
+              watcher->OnError(GRPC_ERROR_REF(error));
+            }
+            for (const auto& watcher : cluster_watchers) {
+              watcher->OnError(GRPC_ERROR_REF(error));
+            }
+            for (const auto& watcher : endpoint_watchers) {
+              watcher->OnError(GRPC_ERROR_REF(error));
+            }
+            GRPC_ERROR_UNREF(error);
+          },
+      DEBUG_LOCATION);
 }
 
 XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(

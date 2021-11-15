@@ -35,6 +35,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -131,9 +132,7 @@ class Server : public InternallyRefCounted<Server> {
   grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
       const grpc_channel_args* args,
-      const RefCountedPtr<channelz::SocketNode>& socket_node,
-      grpc_resource_user* resource_user = nullptr,
-      size_t preallocated_bytes = 0);
+      const RefCountedPtr<channelz::SocketNode>& socket_node);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 

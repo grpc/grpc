@@ -428,7 +428,7 @@ void XdsServerConfigFetcher::StartWatch(
     std::string listening_address,
     std::unique_ptr<grpc_server_config_fetcher::WatcherInterface> watcher) {
   grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
-  auto listener_watcher = absl::make_unique<ListenerWatcher>(
+  auto listener_watcher = MakeRefCounted<ListenerWatcher>(
       xds_client_, std::move(watcher), serving_status_notifier_,
       listening_address);
   auto* listener_watcher_ptr = listener_watcher.get();
@@ -643,7 +643,7 @@ XdsServerConfigFetcher::FilterChainMatchManager::FilterChainMatchManager(
     for (const auto& resource_name : resource_names) {
       ++rds_resources_yet_to_fetch_;
       auto route_config_watcher =
-          absl::make_unique<RouteConfigWatcher>(resource_name, WeakRef());
+          MakeRefCounted<RouteConfigWatcher>(resource_name, WeakRef());
       rds_map_.emplace(resource_name, RdsUpdateState{route_config_watcher.get(),
                                                      absl::nullopt});
       xds_client_->WatchRouteConfigData(resource_name,
@@ -1106,7 +1106,7 @@ XdsServerConfigFetcher::FilterChainMatchManager::
       http_filters_(std::move(http_filters)),
       resource_(std::move(initial_resource)) {
   GPR_ASSERT(!resource_name_.empty());
-  auto route_config_watcher = absl::make_unique<RouteConfigWatcher>(this);
+  auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(this);
   route_config_watcher_ = route_config_watcher.get();
   xds_client_->WatchRouteConfigData(resource_name_,
                                     std::move(route_config_watcher));
