@@ -14,15 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
-
-package(
-    default_testonly = 1,
-    default_visibility = ["//:__subpackages__"],
+proto_library(
+    name = "my_proto",
+    srcs = ["my.proto"],
+    visibility = ["//visibility:public"],
 )
 
-proto_library(
-    name = "subpackage_proto",
-    srcs = ["subpackage.proto"],
-    deps = ["@some_other_repo//proto:my_proto"],
+genrule(
+    name = "make_my_proto",
+    outs = ["my.proto"],
+    cmd = """
+      echo -e "syntax = \\"proto3\\";\npackage somewhere_else;\nmessage MyMessage {};" > $@
+    """,
 )
