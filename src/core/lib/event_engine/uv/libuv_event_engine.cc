@@ -48,11 +48,11 @@ struct SchedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
 }  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
-/// The LibuvTask class will be used for Run and RunAt from LibuvEventEngine,
-/// and will be internally what's allocated for the returned TaskHandle.
+/// The LibuvTask class is used for Run and RunAt from LibuvEventEngine, and is
+/// allocated internally for the returned TaskHandle.
 ///
-/// Its API is to be used solely by the Run and RunAt functions, while in the
-/// libuv loop thread.
+/// Its API is used solely by the Run and RunAt functions, while in the libuv
+/// loop thread.
 ////////////////////////////////////////////////////////////////////////////////
 class LibuvTask {
  public:
@@ -65,12 +65,12 @@ class LibuvTask {
   /// Must be called from within the libuv thread.
   /// Precondition: the EventEngine must be tracking this task.
   void Cancel(Promise<bool>& will_be_cancelled);
-  // A callback passed to uv_close to erase the timer from the EventEngine
+  /// A callback passed to uv_close to erase the timer from the EventEngine
   static void Erase(uv_handle_t* handle);
-  // A callback passed to uv_close to coordinate running the task then erase the
-  // timer from the EventEngine. This helps avoid race conditions where the
-  // timer handle is open after the function is run and the EventEngine is being
-  // destroyed.
+  /// A callback passed to uv_close to coordinate running the task then erasing
+  /// the timer from the EventEngine. This helps avoid race conditions where the
+  /// timer handle is open after the function is run and the EventEngine is
+  /// being destroyed.
   static void RunAndErase(uv_handle_t* handle);
   intptr_t Key() { return key_; }
 
@@ -81,7 +81,7 @@ class LibuvTask {
   const intptr_t key_;
 };
 
-// TODO(hork): keys need to be recycled.
+// TODO(hork): keys should be recycled.
 LibuvTask::LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn)
     : fn_(std::move(fn)), key_(engine->task_key_.fetch_add(1)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -120,8 +120,10 @@ void LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, cancelled: key = %" PRIiPTR, this, key_);
   }
   if (uv_is_closing(reinterpret_cast<uv_handle_t*>(&timer_)) != 0) {
-    // TODO(hork): check if this can be called on uv shutdown
-    GPR_ASSERT(ran_);
+    // TODO(hork): check if this can be called on uv shutdown instead
+#ifndef NDEBUG
+    GPR_ASSERT(GPR_LIKELY(ran_));
+#endif
     will_be_cancelled.Set(false);
     return;
   }
@@ -153,7 +155,6 @@ LibuvEventEngine::LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine:%p created", this);
   }
-  // Why isn't grpc_core::Thread accepting a lambda?
   thread_ = grpc_core::Thread(
       "uv loop",
       [](void* arg) {
@@ -186,8 +187,6 @@ LibuvEventEngine::~LibuvEventEngine() {
     // undefined behavior, which is in line with our surface API contracts,
     // which stipulate the same thing.
     uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
-    // TODO(hork): continue shutdown in uv_close_cb below if race conditions
-    // appear here.
     uv_close(reinterpret_cast<uv_handle_t*>(&engine->kicker_), nullptr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_map_.size=%zu", engine,
@@ -334,8 +333,8 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
   if (now >= when) {
     timeout = 0;
   } else {
-    // absl tends to round down time conversions, so we add 1 milli to the
-    // timeout for safety. Better to err on the side of a timer firing late.
+    // absl tends to round down time conversions, so we add 1ms to the timeout
+    // for safety. Better to err on the side of a timer firing late.
     timeout = std::ceil(absl::ToUnixMicros(when) / 1000.0) -
               absl::ToUnixMillis(now) + 1;
   }
@@ -350,7 +349,6 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
     engine->task_map_[key] = task;
     task->Start(engine, timeout);
   });
-
   return {task_key};
 }
 
@@ -370,7 +368,7 @@ bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
 
 void LibuvEventEngine::EraseTask(intptr_t taskKey) {
   auto it = task_map_.find(taskKey);
-  GPR_ASSERT(it != task_map_.end());
+  GPR_ASSERT(GPR_LIKELY(it != task_map_.end()));
   delete it->second;
   task_map_.erase(it);
 }
@@ -381,26 +379,24 @@ void LibuvEventEngine::EraseTask(intptr_t taskKey) {
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 LibuvEventEngine::CreateListener(
-    /*on_accept=*/Listener::AcceptCallback,
-    /*on_shutdown=*/std::function<void(absl::Status)>,
-    /*args=*/const EndpointConfig&,
-    /*memory_allocator_factory=*/
-    std::unique_ptr<MemoryAllocatorFactory>) {
+    Listener::AcceptCallback /* on_accept */,
+    std::function<void(absl::Status)> /* on_shutdown */,
+    const EndpointConfig& /* args */,
+    std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */) {
   GPR_ASSERT(false && "LibuvEventEngine::CreateListener is unimplemented.");
   return absl::UnimplementedError(
       "LibuvEventEngine::CreateListener is unimplemented.");
 }
 
 EventEngine::ConnectionHandle LibuvEventEngine::Connect(
-    /*on_connect=*/OnConnectCallback,
-    /*addr=*/const ResolvedAddress&,
-    /*args=*/const EndpointConfig&,
-    /*memory_allocator=*/MemoryAllocator,
-    /*deadline=*/absl::Time) {
+    OnConnectCallback /* on_connect */, const ResolvedAddress& /* addr */,
+    const EndpointConfig& /* args */, MemoryAllocator /* memory_allocator */,
+    absl::Time /* deadline */) {
   GPR_ASSERT(false && "LibuvEventEngine::Connect is unimplemented.");
 }
 
-bool LibuvEventEngine::CancelConnect(/*handle=*/EventEngine::ConnectionHandle) {
+bool LibuvEventEngine::CancelConnect(
+    EventEngine::ConnectionHandle /* handle */) {
   GPR_ASSERT(false && "LibuvEventEngine::CancelConnect is unimplemented.");
 }
 
@@ -409,12 +405,12 @@ std::unique_ptr<EventEngine::DNSResolver> LibuvEventEngine::GetDNSResolver() {
   return nullptr;
 }
 
-void LibuvEventEngine::Run(/*closure=*/Closure*) {
+void LibuvEventEngine::Run(Closure* /* closure */) {
   GPR_ASSERT(false && "LibuvEventEngine::Run(Closure*) not implemented");
 }
 
-EventEngine::TaskHandle LibuvEventEngine::RunAt(/*when=*/absl::Time,
-                                                /*closure=*/Closure*) {
+EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time /* when */,
+                                                Closure* /* closure */) {
   GPR_ASSERT(false &&
              "LibuvEventEngine::RunAt(absl::Time, Closure*) not implemented");
 }
