@@ -44,7 +44,7 @@ fi
 
 if [ "$TEST" == "" ]
 then
-  echo $files | xargs -P $CPU_COUNT $CLANG_FORMAT -i
+  echo $files | xargs -P $CPU_COUNT -n 10 $CLANG_FORMAT -i
 else
   ok=yes
   for file in $files
