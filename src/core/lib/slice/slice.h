@@ -276,7 +276,8 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(grpc_slice_ref_internal(c_slice()));
   }
 
-  // TakeMutable returns a MutableSlice, and leaves the current slice empty.
+  // TakeMutable returns a MutableSlice, and leaves the current slice in an
+  // indeterminate but valid state.
   // A mutable slice requires only one reference to the bytes of the slice -
   // this can be achieved either with inlined storage or with a single
   // reference.
