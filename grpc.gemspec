@@ -739,7 +739,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/address_utils/parse_address.h )
   s.files += %w( src/core/lib/address_utils/sockaddr_utils.cc )
   s.files += %w( src/core/lib/address_utils/sockaddr_utils.h )
-  s.files += %w( src/core/lib/avl/avl.cc )
   s.files += %w( src/core/lib/avl/avl.h )
   s.files += %w( src/core/lib/backoff/backoff.cc )
   s.files += %w( src/core/lib/backoff/backoff.h )

@@ -217,7 +217,7 @@ def diff(bms, loops, regex, track, old, new, counters):
     for bm in benchmarks.values():
         if bm.skip():
             continue
-        d = bm.speedup('cpu_time')
+        d = bm.speedup['cpu_time']
         if d is None:
             continue
         histogram.append(d)

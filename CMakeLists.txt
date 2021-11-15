@@ -560,7 +560,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c alts_zero_copy_grpc_protector_test)
   add_dependencies(buildtests_c arena_test)
   add_dependencies(buildtests_c auth_context_test)
-  add_dependencies(buildtests_c avl_test)
   add_dependencies(buildtests_c b64_test)
   add_dependencies(buildtests_c bad_server_response_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -740,6 +739,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
+  add_dependencies(buildtests_cxx avl_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
   add_dependencies(buildtests_cxx backoff_test)
   add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
@@ -1806,7 +1806,6 @@ add_library(grpc
   src/core/ext/xds/xds_server_config_fetcher.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -2452,7 +2451,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -4444,33 +4442,6 @@ target_include_directories(auth_context_test
 )
 
 target_link_libraries(auth_context_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(avl_test
-  test/core/avl/avl_test.cc
-)
-
-target_include_directories(avl_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -8039,6 +8010,40 @@ target_link_libraries(authorization_policy_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(avl_test
+  test/core/avl/avl_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(avl_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(avl_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 

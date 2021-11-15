@@ -341,7 +341,9 @@ static double AdjustForMemoryPressure(double memory_pressure, double target) {
 }
 
 double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(t_->memory_owner.InstantaneousPressure(),
+  return AdjustForMemoryPressure(t_->memory_owner.is_valid()
+                                     ? t_->memory_owner.InstantaneousPressure()
+                                     : 0.0,
                                  1 + log2(bdp_estimator_.EstimateBdp()));
 }
 

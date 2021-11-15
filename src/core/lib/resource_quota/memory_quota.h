@@ -363,6 +363,9 @@ class MemoryOwner final : public MemoryAllocator {
   // Name of this object
   absl::string_view name() const { return impl()->name(); }
 
+  // Is this object valid (ie has not been moved out of or reset)
+  bool is_valid() const { return impl() != nullptr; }
+
  private:
   const GrpcMemoryAllocatorImpl* impl() const {
     return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
