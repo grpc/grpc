@@ -41,6 +41,9 @@ class LibuvTask;
 class LibuvEventEngine final
     : public grpc_event_engine::experimental::EventEngine {
  public:
+  /// Default EventEngine factory method
+  static std::unique_ptr<EventEngine> Create();
+
   LibuvEventEngine();
   ~LibuvEventEngine() override;
 

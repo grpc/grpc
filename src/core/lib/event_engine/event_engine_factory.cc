@@ -15,6 +15,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -39,8 +40,7 @@ void SetDefaultEventEngineFactory(
 std::unique_ptr<EventEngine> CreateEventEngine() {
   grpc_core::MutexLock lock(g_mu);
   if (g_event_engine_factory == nullptr) {
-    // TODO(hork): call LibuvEventEngineFactory
-    abort();
+    return LibuvEventEngine::Create();
   }
   return (*g_event_engine_factory)();
 }

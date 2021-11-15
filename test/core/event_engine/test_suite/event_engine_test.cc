@@ -17,12 +17,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
-    g_ee_factory = nullptr;
+using ::grpc_event_engine::experimental::EventEngine;
+
+std::function<std::unique_ptr<EventEngine>()>* g_ee_factory;
 
 void SetEventEngineFactory(
-    std::function<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-        factory) {
+    std::function<std::unique_ptr<EventEngine>()> factory) {
   testing::AddGlobalTestEnvironment(new EventEngineTestEnvironment(factory));
 }

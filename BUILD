@@ -1649,13 +1649,19 @@ grpc_cc_library(
     name = "default_event_engine_factory",
     srcs = [
         "src/core/lib/event_engine/event_engine_factory.cc",
+        "src/core/lib/event_engine/uv/libuv_event_engine.cc",
     ],
-    hdrs = [],
+    hdrs = [
+        "src/core/lib/event_engine/uv/libuv_event_engine.h",
+        "src/core/lib/iomgr/event_engine/promise.h",
+    ],
     external_deps = [
-        # TODO(hork): uv, in a subsequent PR
+        "absl/strings:str_format",
+        "uv",
     ],
     deps = [
         "event_engine_base",
+        "exec_ctx",
         "gpr_base",
         "gpr_platform",
     ],
@@ -1687,7 +1693,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/channel_args_endpoint_config.cc",
         "src/core/lib/event_engine/sockaddr.cc",
-        "src/core/lib/event_engine/uv/libuv_event_engine.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
@@ -1852,7 +1857,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/event_engine/sockaddr.h",
-        "src/core/lib/event_engine/uv/libuv_event_engine.h",
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
@@ -1985,7 +1989,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "madler_zlib",
-        "uv",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,

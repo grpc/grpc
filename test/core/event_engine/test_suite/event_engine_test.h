@@ -20,17 +20,15 @@
 
 #include "src/core/lib/gprpp/sync.h"
 
-extern std::function<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
-    g_ee_factory;
+using ::grpc_event_engine::experimental::EventEngine;
+
+extern std::function<std::unique_ptr<EventEngine>()>* g_ee_factory;
 
 // Manages the lifetime of the global EventEngine factory.
 class EventEngineTestEnvironment : public testing::Environment {
  public:
   explicit EventEngineTestEnvironment(
-      std::function<
-          std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-          factory)
+      std::function<std::unique_ptr<EventEngine>()> factory)
       : factory_(factory) {}
 
   void SetUp() override { g_ee_factory = &factory_; }
@@ -38,14 +36,12 @@ class EventEngineTestEnvironment : public testing::Environment {
   void TearDown() override { g_ee_factory = nullptr; }
 
  private:
-  std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-      factory_;
+  std::function<std::unique_ptr<EventEngine>()> factory_;
 };
 
 class EventEngineTest : public testing::Test {
  protected:
-  std::unique_ptr<grpc_event_engine::experimental::EventEngine>
-  NewEventEngine() {
+  std::unique_ptr<EventEngine> NewEventEngine() {
     GPR_ASSERT(g_ee_factory != nullptr);
     return (*g_ee_factory)();
   }
@@ -53,8 +49,6 @@ class EventEngineTest : public testing::Test {
 
 // Set a custom factory for the EventEngine test suite.
 void SetEventEngineFactory(
-    std::function<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-        factory);
+    std::function<std::unique_ptr<EventEngine>()> factory);
 
 #endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H

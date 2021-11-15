@@ -19,17 +19,17 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/util/test_config.h"
+
+using ::grpc_event_engine::experimental::LibuvEventEngine;
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  SetEventEngineFactory([]() {
-    return absl::make_unique<
-        grpc_event_engine::experimental::LibuvEventEngine>();
-  });
+  SetEventEngineFactory(LibuvEventEngine::Create);
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
