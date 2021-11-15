@@ -12,22 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_TRACE_H
+#define GRPC_CORE_LIB_RESOURCE_QUOTA_TRACE_H
+
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/debug/trace.h"
 
-namespace grpc_core {
+extern grpc_core::TraceFlag grpc_resource_quota_trace;
 
-ResourceQuota::ResourceQuota(std::string name)
-    : memory_quota_(MakeMemoryQuota(std::move(name))),
-      thread_quota_(MakeRefCounted<ThreadQuota>()) {}
-
-ResourceQuota::~ResourceQuota() = default;
-
-ResourceQuotaRefPtr ResourceQuota::Default() {
-  static auto default_resource_quota =
-      MakeResourceQuota("default_resource_quota").release();
-  return default_resource_quota->Ref();
-}
-
-}  // namespace grpc_core
+#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_TRACE_H

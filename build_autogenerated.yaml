@@ -421,6 +421,7 @@ libs:
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
   - include/grpc/event_engine/memory_allocator.h
+  - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
@@ -756,6 +757,7 @@ libs:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -815,7 +817,6 @@ libs:
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
-  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -845,6 +846,24 @@ libs:
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/api.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
@@ -1298,6 +1317,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
+  - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -1362,7 +1382,6 @@ libs:
   - src/core/lib/iomgr/resolve_address_custom.cc
   - src/core/lib/iomgr/resolve_address_posix.cc
   - src/core/lib/iomgr/resolve_address_windows.cc
-  - src/core/lib/iomgr/resource_quota.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
   - src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -1402,6 +1421,12 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/api.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/sdk_server_authz_filter.cc
@@ -1572,7 +1597,6 @@ libs:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -1594,7 +1618,6 @@ libs:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
@@ -1627,7 +1650,6 @@ libs:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -1648,7 +1670,6 @@ libs:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
@@ -1673,6 +1694,7 @@ libs:
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
   - include/grpc/event_engine/memory_allocator.h
+  - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
@@ -1808,6 +1830,7 @@ libs:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
@@ -1867,7 +1890,6 @@ libs:
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
-  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -1896,6 +1918,24 @@ libs:
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/api.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_internal.h
@@ -2070,6 +2110,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
+  - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -2133,7 +2174,6 @@ libs:
   - src/core/lib/iomgr/resolve_address_custom.cc
   - src/core/lib/iomgr/resolve_address_posix.cc
   - src/core/lib/iomgr/resolve_address_windows.cc
-  - src/core/lib/iomgr/resource_quota.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
   - src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -2172,6 +2212,12 @@ libs:
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/api.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -3680,10 +3726,12 @@ targets:
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -3700,6 +3748,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -4166,14 +4215,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: test_core_iomgr_resource_quota_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resource_quota_test.cc
-  deps:
-  - grpc_test_util
 - name: test_core_security_credentials_test
   build: test
   language: c
@@ -5395,6 +5436,16 @@ targets:
   - absl/time:time
   - absl/types:optional
   - upb
+  uses_polling: false
+- name: cpp_impl_of_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/cpp_impl_of.h
+  src:
+  - test/core/gprpp/cpp_impl_of_test.cc
+  deps: []
   uses_polling: false
 - name: delegating_channel_test
   gtest: true
@@ -6750,10 +6801,12 @@ targets:
   - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -6771,6 +6824,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -7440,6 +7494,71 @@ targets:
   - linux
   - posix
   - mac
+- name: resource_quota_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_internal.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
+  - src/core/lib/slice/static_slice.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/slice/static_slice.cc
+  - test/core/resource_quota/resource_quota_test.cc
+  deps:
+  - absl/status:statusor
+  - absl/types:variant
+  - gpr
+  uses_polling: false
 - name: retry_throttle_test
   gtest: true
   build: test
@@ -7866,67 +7985,6 @@ targets:
   deps:
   - absl/types:optional
   - absl/utility:utility
-  uses_polling: false
-- name: test_core_resource_quota_resource_quota_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/debug/trace.h
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/iomgr/closure.h
-  - src/core/lib/iomgr/combiner.h
-  - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
-  - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/resource_quota/memory_quota.h
-  - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
-  src:
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/event_engine/memory_allocator.cc
-  - src/core/lib/iomgr/combiner.cc
-  - src/core/lib/iomgr/error.cc
-  - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/resource_quota/memory_quota.cc
-  - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
-  - test/core/resource_quota/resource_quota_test.cc
-  deps:
-  - absl/status:statusor
-  - absl/types:variant
-  - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
@@ -8492,7 +8550,6 @@ targets:
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/resource_user_util.h
   - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
@@ -8516,7 +8573,6 @@ targets:
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/resource_user_util.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
