@@ -29,14 +29,44 @@
 
 #include "src/core/lib/json/json.h"
 
+// Provides a means to load JSON objects into C++ objects, with the aim of
+// minimizing object code size.
+//
+// Usage:
+// Given struct Foo:
+//   struct Foo {
+//     int a;
+//     int b;
+//   };
+// We add a member to Foo to declare how to load the object from JSON:
+//   struct Foo {
+//     int a;
+//     int b;
+//     static const JsonLoaderInterface* JsonLoader() {
+//       static const auto loader = JsonObjectLoader<Foo>()
+//           .Field("a", &Foo::a)
+//           .Field("b", &Foo::b)
+//           .Finish();
+//       return &loader;
+//     }
+//   };
+// Now we can load Foo objects from JSON:
+//   ErrorList errors;
+//   Foo foo = LoadFromJson<Foo>(json, &errors);
 namespace grpc_core {
 
+// A list of errors that occurred during JSON parsing.
+// If a non-empty list occurs during parsing, the parsing failed.
 class ErrorList {
  public:
+  // Record that we're reading some field.
   void PushField(absl::string_view ext) GPR_ATTRIBUTE_NOINLINE;
+  // Record that we've finished reading that field.
   void PopField() GPR_ATTRIBUTE_NOINLINE;
+  // Record that we've encountered an error.
   void AddError(absl::string_view error) GPR_ATTRIBUTE_NOINLINE;
 
+  // Return the list of errors.
   const std::vector<std::string>& errors() const { return errors_; }
 
  private:
@@ -44,6 +74,7 @@ class ErrorList {
   std::vector<std::string> fields_;
 };
 
+// Note that we're reading a field, and remove it at the end of the scope.
 class ScopedField {
  public:
   ScopedField(ErrorList* error_list, absl::string_view field_name)
@@ -58,34 +89,37 @@ class ScopedField {
 
 namespace json_detail {
 
+// An un-typed JSON loader.
 class LoaderInterface {
  public:
+  // Convert json value to whatever type we're loading at dst.
+  // If errors occur, add them to error_list.
   virtual void LoadInto(const Json& json, void* dst,
                         ErrorList* errors) const = 0;
 };
 
+// Loads a scalar (string or number).
 class LoadScalar : public LoaderInterface {
  public:
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  private:
+  // true if we're loading a number, false if we're loading a string.
+  // We use a virtual function to store this decision in a vtable instead of
+  // needing an instance variable.
   virtual bool IsNumber() const = 0;
 
   virtual void LoadInto(const std::string& json, void* dst,
                         ErrorList* errors) const = 0;
 };
 
+// Load a number.
 class LoadNumber : public LoadScalar {
  private:
   bool IsNumber() const override;
 };
 
-template <typename T>
-class LoadContainer : public LoaderInterface {
- protected:
-  virtual void LoadOne(const Json& json, T* dst) = 0;
-};
-
+// Load a number of type T.
 template <typename T>
 class TypedLoadNumber : public LoadNumber {
  private:
@@ -97,11 +131,13 @@ class TypedLoadNumber : public LoadNumber {
   }
 };
 
+// Load a string.
 class LoadString : public LoadScalar {
  private:
   bool IsNumber() const override;
 };
 
+// Load a vector of some type.
 class LoadVector : public LoaderInterface {
  public:
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
@@ -111,6 +147,7 @@ class LoadVector : public LoaderInterface {
                        ErrorList* errors) const = 0;
 };
 
+// Load a map of string->some type.
 class LoadMap : public LoaderInterface {
  public:
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
@@ -120,9 +157,14 @@ class LoadMap : public LoaderInterface {
                        ErrorList* errors) const = 0;
 };
 
+// Fetch a LoaderInterface for some type.
 template <typename T>
 const LoaderInterface* LoaderForType();
 
+// AutoLoader implements LoaderInterface for a type.
+// The default asks the type for its LoaderInterface and then uses that.
+// Classes that load from objects should provide a:
+// static const JsonLoaderInterface* JsonLoader();
 template <typename T>
 class AutoLoader final : public LoaderInterface {
  public:
@@ -131,14 +173,15 @@ class AutoLoader final : public LoaderInterface {
   }
 };
 
+// Specializations of AutoLoader for basic types.
 template <>
 class AutoLoader<int32_t> final : public TypedLoadNumber<int32_t> {};
 template <>
 class AutoLoader<uint32_t> final : public TypedLoadNumber<uint32_t> {};
 template <>
-class AutoLoader<int64_t> final : public TypedLoadNumber<int32_t> {};
+class AutoLoader<int64_t> final : public TypedLoadNumber<int64_t> {};
 template <>
-class AutoLoader<uint64_t> final : public TypedLoadNumber<uint32_t> {};
+class AutoLoader<uint64_t> final : public TypedLoadNumber<uint64_t> {};
 template <>
 class AutoLoader<std::string> final : public LoadString {
  private:
@@ -148,6 +191,7 @@ class AutoLoader<std::string> final : public LoadString {
   }
 };
 
+// Specializations of AutoLoader for vectors.
 template <typename T>
 class AutoLoader<std::vector<T>> final : public LoadVector {
  private:
@@ -159,6 +203,7 @@ class AutoLoader<std::vector<T>> final : public LoadVector {
   }
 };
 
+// Specializations of AutoLoader for maps.
 template <typename T>
 class AutoLoader<std::map<std::string, T>> final : public LoadMap {
  private:
@@ -171,12 +216,15 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
   }
 };
 
+// Implementation of aforementioned LoaderForType.
+// Simply keeps a static AutoLoader<T> and returns a pointer to that.
 template <typename T>
 const LoaderInterface* LoaderForType() {
   static const AutoLoader<T> loader;
   return &loader;
 }
 
+// Element describes one typed field to be loaded from a JSON object.
 struct Element {
   Element() = default;
   template <typename A, typename B>
@@ -189,9 +237,13 @@ struct Element {
         name{} {
     strcpy(this->name, name);
   }
+  // The loader for this field.
   const LoaderInterface* loader;
+  // Offset into the destination object to store the field.
   uint16_t member_offset;
+  // Is this field optional?
   bool optional;
+  // The name of the field.
   char name[13];
 };
 
@@ -220,9 +272,13 @@ class Vec<T, 0> {
   size_t size() const { return 0; }
 };
 
+// Given a list of elements, and a destination object, load the elements into
+// the object from some parsed JSON.
 void LoadObject(const Json& json, const Element* elements, size_t num_elements,
                 void* dst, ErrorList* errors);
 
+// Adaptor type - takes a compile time computed list of elements and implements
+// LoaderInterface by calling LoadObject.
 template <typename T, size_t kElemCount>
 class FinishedJsonObjectLoader final : public LoaderInterface {
  public:
@@ -237,6 +293,9 @@ class FinishedJsonObjectLoader final : public LoaderInterface {
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
 };
 
+// Builder type for JSON object loaders.
+// Concatenate fields with Field, OptionalField, and then call Finish to obtain
+// an object that implements LoaderInterface.
 template <typename T, size_t kElemCount = 0>
 class JsonObjectLoader final {
  public:
