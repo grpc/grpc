@@ -82,6 +82,8 @@ UPB_INLINE struct xds_core_v3_ContextParams* xds_core_v3_ResourceName_mutable_co
   return sub;
 }
 
+extern const upb_msglayout_file xds_core_v3_resource_name_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -123,7 +123,7 @@ const int kEventListMemoryLimit = 1024 * 1024;
 // Tests basic ChannelTrace functionality like construction, adding trace, and
 // lookups by uuid.
 TEST(ChannelTracerTest, BasicTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -146,7 +146,7 @@ TEST(ChannelTracerTest, BasicTest) {
 // subchannles. This exercises the ref/unref patterns since the parent tracer
 // and this function will both hold refs to the subchannel.
 TEST(ChannelTracerTest, ComplexTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -193,7 +193,7 @@ TEST(ChannelTracerTest, ComplexTest) {
 // have connections. Ensures that everything lives as long as it should then
 // gets deleted.
 TEST(ChannelTracerTest, TestNesting) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -240,7 +240,7 @@ TEST(ChannelTracerTest, TestNesting) {
 }
 
 TEST(ChannelTracerTest, TestSmallMemoryLimit) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // doesn't make sense, but serves a testing purpose for the channel tracing
   // bookkeeping. All tracing events added should will get immediately garbage
   // collected.
@@ -264,7 +264,7 @@ TEST(ChannelTracerTest, TestSmallMemoryLimit) {
 }
 
 TEST(ChannelTracerTest, TestEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -281,7 +281,7 @@ TEST(ChannelTracerTest, TestEviction) {
 }
 
 TEST(ChannelTracerTest, TestMultipleEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -300,7 +300,7 @@ TEST(ChannelTracerTest, TestMultipleEviction) {
 }
 
 TEST(ChannelTracerTest, TestTotalEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);

@@ -139,7 +139,7 @@ class NewWithLenSliceRefcount {
 /** grpc_slice_from_moved_(string|buffer) ref count .*/
 class MovedStringSliceRefCount {
  public:
-  explicit MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
+  explicit MovedStringSliceRefCount(UniquePtr<char>&& str)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         str_(std::move(str)) {}
@@ -153,7 +153,7 @@ class MovedStringSliceRefCount {
 
   grpc_slice_refcount base_;
   std::atomic<size_t> refs_{1};
-  grpc_core::UniquePtr<char> str_;
+  UniquePtr<char> str_;
 };
 
 // grpc_slice_from_cpp_string() ref count.

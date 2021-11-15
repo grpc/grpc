@@ -1909,7 +1909,6 @@ grpc_error_handle RouteConfigParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     bool /*is_v2*/, XdsApi::RdsUpdate* rds_update) {
-  MaybeLogRouteConfiguration(context, route_config);
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =

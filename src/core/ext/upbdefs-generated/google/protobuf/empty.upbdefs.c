@@ -8,12 +8,7 @@
 
 #include "upb/def.h"
 #include "google/protobuf/empty.upbdefs.h"
-
-extern const upb_msglayout google_protobuf_Empty_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &google_protobuf_Empty_msginit,
-};
+#include "google/protobuf/empty.upb.h"
 
 static const char descriptor[190] = {'\n', '\033', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'e', 'm', 'p', 't', 'y', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '\"', '\007', '\n', '\005', 
@@ -31,7 +26,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init google_protobuf_empty_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_protobuf_empty_proto_upb_file_layout,
   "google/protobuf/empty.proto",
   UPB_STRVIEW_INIT(descriptor, 190)
 };

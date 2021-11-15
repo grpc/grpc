@@ -25,16 +25,16 @@
 namespace grpc_core {
 
 TEST(UsefulTest, ClampWorks) {
-  EXPECT_EQ(grpc_core::Clamp(1, 0, 2), 1);
-  EXPECT_EQ(grpc_core::Clamp(0, 0, 2), 0);
-  EXPECT_EQ(grpc_core::Clamp(2, 0, 2), 2);
-  EXPECT_EQ(grpc_core::Clamp(-1, 0, 2), 0);
-  EXPECT_EQ(grpc_core::Clamp(3, 0, 2), 2);
+  EXPECT_EQ(Clamp(1, 0, 2), 1);
+  EXPECT_EQ(Clamp(0, 0, 2), 0);
+  EXPECT_EQ(Clamp(2, 0, 2), 2);
+  EXPECT_EQ(Clamp(-1, 0, 2), 0);
+  EXPECT_EQ(Clamp(3, 0, 2), 2);
 }
 
 TEST(UsefulTest, Rotate) {
-  EXPECT_EQ(grpc_core::RotateLeft(0x80000001u, 1u), 3);
-  EXPECT_EQ(grpc_core::RotateRight(0x80000001u, 1u), 0xc0000000);
+  EXPECT_EQ(RotateLeft(0x80000001u, 1u), 3);
+  EXPECT_EQ(RotateRight(0x80000001u, 1u), 0xc0000000);
 }
 
 TEST(UsefulTest, ArraySize) {
@@ -48,18 +48,18 @@ TEST(UsefulTest, ArraySize) {
 TEST(UsefulTest, BitOps) {
   uint32_t bitset = 0;
 
-  EXPECT_EQ(grpc_core::BitCount((1u << 31) - 1), 31);
-  EXPECT_EQ(grpc_core::BitCount(1u << 3), 1);
-  EXPECT_EQ(grpc_core::BitCount(0), 0);
-  EXPECT_EQ(grpc_core::SetBit(&bitset, 3), 8);
-  EXPECT_EQ(grpc_core::BitCount(bitset), 1);
-  EXPECT_EQ(grpc_core::GetBit(bitset, 3), 1);
-  EXPECT_EQ(grpc_core::SetBit(&bitset, 1), 10);
-  EXPECT_EQ(grpc_core::BitCount(bitset), 2);
-  EXPECT_EQ(grpc_core::ClearBit(&bitset, 3), 2);
-  EXPECT_EQ(grpc_core::BitCount(bitset), 1);
-  EXPECT_EQ(grpc_core::GetBit(bitset, 3), 0);
-  EXPECT_EQ(grpc_core::BitCount(std::numeric_limits<uint64_t>::max()), 64);
+  EXPECT_EQ(BitCount((1u << 31) - 1), 31);
+  EXPECT_EQ(BitCount(1u << 3), 1);
+  EXPECT_EQ(BitCount(0), 0);
+  EXPECT_EQ(SetBit(&bitset, 3), 8);
+  EXPECT_EQ(BitCount(bitset), 1);
+  EXPECT_EQ(GetBit(bitset, 3), 1);
+  EXPECT_EQ(SetBit(&bitset, 1), 10);
+  EXPECT_EQ(BitCount(bitset), 2);
+  EXPECT_EQ(ClearBit(&bitset, 3), 2);
+  EXPECT_EQ(BitCount(bitset), 1);
+  EXPECT_EQ(GetBit(bitset, 3), 0);
+  EXPECT_EQ(BitCount(std::numeric_limits<uint64_t>::max()), 64);
 }
 
 }  // namespace grpc_core

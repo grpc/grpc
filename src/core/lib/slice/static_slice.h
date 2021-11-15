@@ -37,7 +37,7 @@
 
 static_assert(
     std::is_trivially_destructible<grpc_core::StaticMetadataSlice>::value,
-    "grpc_core::StaticMetadataSlice must be trivially destructible.");
+    "StaticMetadataSlice must be trivially destructible.");
 #define GRPC_STATIC_MDSTR_COUNT 110
 /* ":path" */
 #define GRPC_MDSTR_PATH (::grpc_core::g_static_metadata_slice_table[0])
@@ -324,8 +324,9 @@ extern const uint8_t g_static_metadata_bytes[];
   ((slice).refcount != NULL &&                \
    (slice).refcount->GetType() == grpc_slice_refcount::Type::STATIC)
 
-#define GRPC_STATIC_METADATA_INDEX(static_slice)                              \
-  (reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount) \
+#define GRPC_STATIC_METADATA_INDEX(static_slice)        \
+  (reinterpret_cast<::grpc_core::StaticSliceRefcount*>( \
+       (static_slice).refcount)                         \
        ->index)
 
 #endif /* GRPC_CORE_LIB_SLICE_STATIC_SLICE_H */

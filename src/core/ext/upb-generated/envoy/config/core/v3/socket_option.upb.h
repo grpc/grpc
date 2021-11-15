@@ -92,6 +92,8 @@ UPB_INLINE void envoy_config_core_v3_SocketOption_set_state(envoy_config_core_v3
   *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = value;
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_socket_option_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

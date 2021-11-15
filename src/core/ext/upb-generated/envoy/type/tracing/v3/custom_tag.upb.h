@@ -304,6 +304,8 @@ UPB_INLINE void envoy_type_tracing_v3_CustomTag_Metadata_set_default_value(envoy
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 
+extern const upb_msglayout_file envoy_type_tracing_v3_custom_tag_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

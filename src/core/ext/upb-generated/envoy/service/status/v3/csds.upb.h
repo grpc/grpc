@@ -459,6 +459,8 @@ UPB_INLINE struct envoy_service_status_v3_ClientConfig* envoy_service_status_v3_
   return sub;
 }
 
+extern const upb_msglayout_file envoy_service_status_v3_csds_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

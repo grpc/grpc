@@ -1286,6 +1286,8 @@ UPB_INLINE void envoy_config_core_v3_ControlPlane_set_identifier(envoy_config_co
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_base_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

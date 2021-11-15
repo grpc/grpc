@@ -8,36 +8,9 @@
 
 #include "upb/def.h"
 #include "src/proto/grpc/gcp/handshaker.upbdefs.h"
+#include "src/proto/grpc/gcp/handshaker.upb.h"
 
 extern upb_def_init src_proto_grpc_gcp_transport_security_common_proto_upbdefinit;
-extern const upb_msglayout grpc_gcp_Endpoint_msginit;
-extern const upb_msglayout grpc_gcp_Identity_msginit;
-extern const upb_msglayout grpc_gcp_Identity_AttributesEntry_msginit;
-extern const upb_msglayout grpc_gcp_StartClientHandshakeReq_msginit;
-extern const upb_msglayout grpc_gcp_ServerHandshakeParameters_msginit;
-extern const upb_msglayout grpc_gcp_StartServerHandshakeReq_msginit;
-extern const upb_msglayout grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_msginit;
-extern const upb_msglayout grpc_gcp_NextHandshakeMessageReq_msginit;
-extern const upb_msglayout grpc_gcp_HandshakerReq_msginit;
-extern const upb_msglayout grpc_gcp_HandshakerResult_msginit;
-extern const upb_msglayout grpc_gcp_HandshakerStatus_msginit;
-extern const upb_msglayout grpc_gcp_HandshakerResp_msginit;
-
-static const upb_msglayout *layouts[12] = {
-  &grpc_gcp_Endpoint_msginit,
-  &grpc_gcp_Identity_msginit,
-  &grpc_gcp_Identity_AttributesEntry_msginit,
-  &grpc_gcp_StartClientHandshakeReq_msginit,
-  &grpc_gcp_ServerHandshakeParameters_msginit,
-  &grpc_gcp_StartServerHandshakeReq_msginit,
-  &grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_msginit,
-  &grpc_gcp_NextHandshakeMessageReq_msginit,
-  &grpc_gcp_HandshakerReq_msginit,
-  &grpc_gcp_HandshakerResult_msginit,
-  &grpc_gcp_HandshakerStatus_msginit,
-  &grpc_gcp_HandshakerResp_msginit,
-};
-
 static const char descriptor[3053] = {'\n', '#', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'g', 'c', 'p', '/', 'h', 'a', 'n', 'd', 
 's', 'h', 'a', 'k', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\010', 'g', 'r', 'p', 'c', '.', 'g', 'c', 'p', '\032', '2', 's', 
 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'g', 'c', 'p', '/', 't', 'r', 'a', 'n', 's', 'p', 'o', 
@@ -170,7 +143,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init src_proto_grpc_gcp_handshaker_proto_upbdefinit = {
   deps,
-  layouts,
+  &src_proto_grpc_gcp_handshaker_proto_upb_file_layout,
   "src/proto/grpc/gcp/handshaker.proto",
   UPB_STRVIEW_INIT(descriptor, 3053)
 };

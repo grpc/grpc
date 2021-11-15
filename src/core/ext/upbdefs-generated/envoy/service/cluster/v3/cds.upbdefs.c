@@ -8,18 +8,13 @@
 
 #include "upb/def.h"
 #include "envoy/service/cluster/v3/cds.upbdefs.h"
+#include "envoy/service/cluster/v3/cds.upb.h"
 
 extern upb_def_init envoy_service_discovery_v3_discovery_proto_upbdefinit;
 extern upb_def_init google_api_annotations_proto_upbdefinit;
 extern upb_def_init envoy_annotations_resource_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_service_cluster_v3_CdsDummy_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_service_cluster_v3_CdsDummy_msginit,
-};
-
 static const char descriptor[815] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', 
 '3', '/', 'c', 'd', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 
 'e', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', '\032', '*', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 
@@ -66,7 +61,7 @@ static upb_def_init *deps[6] = {
 
 upb_def_init envoy_service_cluster_v3_cds_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_service_cluster_v3_cds_proto_upb_file_layout,
   "envoy/service/cluster/v3/cds.proto",
   UPB_STRVIEW_INIT(descriptor, 815)
 };

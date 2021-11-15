@@ -120,6 +120,8 @@ UPB_INLINE bool google_security_meshca_v1_MeshCertificateResponse_add_cert_chain
       arena);
 }
 
+extern const upb_msglayout_file third_party_istio_security_proto_providers_google_meshca_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
