@@ -18,26 +18,21 @@
 
 #include <grpcpp/create_channel_binder.h>
 
-// The interface is only defined if GPR_ANDROID is defined, because some
-// arguments requires JNI.
-// Furthermore, the interface is non-phony only when
-// GPR_SUPPORT_BINDER_TRANSPORT is true because actual implementation of binder
-// transport requires newer version of NDK API
-
-#ifdef GPR_ANDROID
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/support/log.h>
+// The interface is non-phony only when GPR_SUPPORT_BINDER_TRANSPORT is defined
+// because actual implementation of binder transport requires JNI and newer
+// version of NDK API
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
-#include <grpc/support/port_platform.h>
+#include <jni.h>
 
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
+#include <grpc/support/log.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -58,24 +53,24 @@ namespace grpc {
 namespace experimental {
 
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void* jni_env_void, jobject application, absl::string_view package_name,
+    void* jni_env, void* context, absl::string_view package_name,
     absl::string_view class_name,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy) {
-  return CreateCustomBinderChannel(jni_env_void, application, package_name,
-                                   class_name, security_policy,
-                                   ChannelArguments());
+  return CreateCustomBinderChannel(jni_env, context, package_name, class_name,
+                                   security_policy, ChannelArguments());
 }
 
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void* jni_env_void, jobject application, absl::string_view package_name,
+    void* jni_env, void* context, absl::string_view package_name,
     absl::string_view class_name,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const ChannelArguments& args) {
   grpc::internal::GrpcLibrary init_lib;
   init_lib.init();
 
-  GPR_ASSERT(jni_env_void != nullptr);
+  GPR_ASSERT(jni_env != nullptr);
+  GPR_ASSERT(context != nullptr);
   GPR_ASSERT(security_policy != nullptr);
 
   std::string connection_id = grpc_binder::GetConnectionIdGenerator()->Generate(
@@ -86,9 +81,9 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   // TODO(mingcl): Consider if we want to delay the connection establishment
   // until SubchannelConnector start establishing connection. For now we don't
   // see any benifits doing that.
-  grpc_binder::TryEstablishConnection(static_cast<JNIEnv*>(jni_env_void),
-                                      application, package_name, class_name,
-                                      connection_id);
+  grpc_binder::TryEstablishConnection(static_cast<JNIEnv*>(jni_env),
+                                      static_cast<jobject>(context),
+                                      package_name, class_name, connection_id);
 
   // Set server URI to a URI that contains connection id. The URI will be used
   // by subchannel connector to obtain correct endpoint binder from
@@ -117,9 +112,9 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   return channel;
 }
 
-bool InitializeBinderChannelJavaClass(void* jni_env_void) {
+bool InitializeBinderChannelJavaClass(void* jni_env) {
   return grpc_binder::FindNativeConnectionHelper(
-             static_cast<JNIEnv*>(jni_env_void)) != nullptr;
+             static_cast<JNIEnv*>(jni_env)) != nullptr;
 }
 
 }  // namespace experimental
@@ -127,38 +122,43 @@ bool InitializeBinderChannelJavaClass(void* jni_env_void) {
 
 #else  // !GPR_SUPPORT_BINDER_TRANSPORT
 
+#include <grpc/support/log.h>
+
 namespace grpc {
 namespace experimental {
 
-std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void*, jobject, absl::string_view, absl::string_view,
-    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>) {
+namespace {
+void ApiUnavailableAbort() {
+#ifdef GPR_ANDROID
   gpr_log(GPR_ERROR,
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
+#else
+  gpr_log(GPR_ERROR,
+          "Attempt to use BinderTransport API in non-Android build.");
+#endif
   GPR_ASSERT(0);
+}
+}  // namespace
+
+std::shared_ptr<grpc::Channel> CreateBinderChannel(
+    void*, void*, absl::string_view, absl::string_view,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>) {
+  ApiUnavailableAbort();
   return {};
 }
 
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void*, jobject, absl::string_view, absl::string_view,
+    void*, void*, absl::string_view, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>,
     const ChannelArguments&) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
-  GPR_ASSERT(0);
+  ApiUnavailableAbort();
   return {};
 }
 
-bool InitializeBinderChannelJavaClass(void* jni_env_void) {
-  gpr_log(GPR_ERROR,
-          "This APK is compiled with Android API level = %d, which is not "
-          "supported. See port_platform.h for supported versions.",
-          __ANDROID_API__);
-  GPR_ASSERT(0);
+bool InitializeBinderChannelJavaClass(void*) {
+  ApiUnavailableAbort();
   return {};
 }
 
@@ -166,7 +166,5 @@ bool InitializeBinderChannelJavaClass(void* jni_env_void) {
 }  // namespace grpc
 
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
-
-#endif  // GPR_ANDROID
 
 #endif  // GRPC_NO_BINDER

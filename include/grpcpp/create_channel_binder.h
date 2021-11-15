@@ -17,10 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_ANDROID
-
-#include <jni.h>
-
 #include <memory>
 
 #include "absl/strings/string_view.h"
@@ -37,7 +33,7 @@ namespace experimental {
 /// to connect to.
 ///
 /// \param jni_env Pointer to a JNIEnv structure
-/// \param context The context that we will use to invoke \a bindService See
+/// \param context A jobject that we will use to invoke \a bindService See
 /// https://developer.android.com/reference/android/content/Context#bindService(android.content.Intent,%20android.content.ServiceConnection,%20int)
 /// for detail.
 /// \param package_name Package name of the component to be connected to
@@ -45,7 +41,7 @@ namespace experimental {
 /// \param security_policy Used for checking if remote component is allowed to
 /// connect
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
-    void* jni_env, jobject context, absl::string_view package_name,
+    void* jni_env, void* context, absl::string_view package_name,
     absl::string_view class_name,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy);
@@ -55,7 +51,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 /// to connect to.
 ///
 /// \param jni_env Pointer to a JNIEnv structure
-/// \param context The context that we will use to invoke \a bindService See
+/// \param context A jobject that we will use to invoke \a bindService See
 /// https://developer.android.com/reference/android/content/Context#bindService(android.content.Intent,%20android.content.ServiceConnection,%20int)
 /// for detail.
 /// \param package_name Package name of the component to be connected to
@@ -64,7 +60,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
 /// connect
 /// \param args Options for channel creation.
 std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
-    void* jni_env_void, jobject application, absl::string_view package_name,
+    void* jni_env, void* context, absl::string_view package_name,
     absl::string_view class_name,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const ChannelArguments& args);
@@ -76,11 +72,9 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 /// https://developer.android.com/training/articles/perf-jni#faq:-why-didnt-findclass-find-my-class
 /// for details of this limitation.
 /// Returns true when the initialization is successful.
-bool InitializeBinderChannelJavaClass(void* jni_env_void);
+bool InitializeBinderChannelJavaClass(void* jni_env);
 
 }  // namespace experimental
 }  // namespace grpc
-
-#endif
 
 #endif  // GRPCPP_CREATE_CHANNEL_BINDER_H
