@@ -158,6 +158,19 @@ class PythonArtifact:
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
                 timeout_seconds=60 * 60 * 2)
+        elif 'musllinux' in self.platform:
+            environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
+                self.py_version)
+            environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
+            environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
+            environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/grpc_artifact_python_%s_%s' %
+                (self.platform, self.arch),
+                'tools/run_tests/artifacts/build_artifact_python.sh',
+                environ=environ,
+                timeout_seconds=60 * 60 * 2)
         elif self.platform == 'windows':
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
@@ -386,6 +399,21 @@ def targets():
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
         PythonArtifact('linux_extra', 'armv7', 'cp310-cp310'),
+        PythonArtifact('musllinux_1_1', 'aarch64', 'cp310-cp310'),
+        PythonArtifact('musllinux_1_1', 'aarch64', 'cp36-cp36m'),
+        PythonArtifact('musllinux_1_1', 'aarch64', 'cp37-cp37m'),
+        PythonArtifact('musllinux_1_1', 'aarch64', 'cp38-cp38'),
+        PythonArtifact('musllinux_1_1', 'aarch64', 'cp39-cp39'),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp310-cp310'),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp36-cp36m'),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp37-cp37m'),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp38-cp38'),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp39-cp39'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp310-cp310'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp36-cp36m'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp37-cp37m'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp38-cp38'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp39-cp39'),
         PythonArtifact('macos', 'x64', 'python3.6'),
         PythonArtifact('macos', 'x64', 'python3.7'),
         PythonArtifact('macos', 'x64', 'python3.8'),

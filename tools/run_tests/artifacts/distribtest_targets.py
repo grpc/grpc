@@ -350,6 +350,7 @@ def targets():
         PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
+        PythonDistribTest('linux', 'x64', 'alpine'),
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
         PythonDistribTest('linux', 'aarch64', 'python38_buster'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
