@@ -745,7 +745,6 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
-  - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
@@ -812,7 +811,6 @@ libs:
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
   - src/core/lib/iomgr/resolved_address.h
-  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -1313,7 +1311,6 @@ libs:
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
-  - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -1822,7 +1819,6 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
-  - src/core/lib/event_engine/endpoint_config_internal.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
@@ -1889,7 +1885,6 @@ libs:
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
   - src/core/lib/iomgr/resolved_address.h
-  - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -2110,7 +2105,6 @@ libs:
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
-  - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
