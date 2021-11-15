@@ -104,4 +104,4 @@ class TlsSessionKeyLoggerCache::TlsSessionKeyLogger :
 
 }  // namespace tsi
 
-#endif // GRPC_CORE_TSI_SSL_KEY_LOGGING_SSL_KEY_LOGGING_H
+#endif  // GRPC_CORE_TSI_SSL_KEY_LOGGING_SSL_KEY_LOGGING_H
