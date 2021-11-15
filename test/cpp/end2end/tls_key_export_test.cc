@@ -40,7 +40,7 @@ extern "C" {
 #include <openssl/ssl.h>
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
 #define TLS_KEY_LOGGING_AVAILABLE
 #endif
 
