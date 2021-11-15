@@ -79,7 +79,7 @@ void LoadMap::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
 void LoadObject(const Json& json, const Element* elements, size_t num_elements,
                 void* dst, ErrorList* errors) {
   if (json.type() != Json::Type::OBJECT) {
-    errors->AddError("expected type: object");
+    errors->AddError("is not an object.");
     return;
   }
   for (size_t i = 0; i < num_elements; ++i) {
