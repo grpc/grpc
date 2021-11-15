@@ -175,6 +175,7 @@ cdef class _ServicerContext:
             if trailing_metadata == _IMMUTABLE_EMPTY_METADATA and self._rpc_state.trailing_metadata:
                 trailing_metadata = self._rpc_state.trailing_metadata
             else:
+                raise_if_not_valid_trailing_metadata(trailing_metadata)
                 self._rpc_state.trailing_metadata = trailing_metadata
 
             if details == '' and self._rpc_state.status_details:
@@ -201,6 +202,7 @@ cdef class _ServicerContext:
         await self.abort(status.code, status.details, status.trailing_metadata)
 
     def set_trailing_metadata(self, object metadata):
+        raise_if_not_valid_trailing_metadata(metadata)
         self._rpc_state.trailing_metadata = tuple(metadata)
 
     def trailing_metadata(self):

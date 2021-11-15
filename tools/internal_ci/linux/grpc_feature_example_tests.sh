@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#!/usr/bin/env bash
+#
+# NOTE: No empty lines should appear in this file before igncr is set!
+set -ex -o igncr || set -ex
 
-set -ex
+mkdir -p /var/local/git
+git clone /var/local/jenkins/grpc /var/local/git/grpc
+(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
+&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+${name}')
+cd /var/local/git/grpc
 
-cd $(dirname $0)/../..
+apt-get install -y lsof
 
-tools/buildgen/generate_projects.sh
-tools/distrib/check_include_guards.py --fix
-tools/distrib/check_copyright.py --fix
-tools/distrib/add-iwyu.py
-tools/distrib/check_trailing_newlines.sh --fix
-tools/run_tests/sanity/check_port_platform.py --fix
-tools/run_tests/sanity/check_include_style.py --fix || true
-tools/distrib/yapf_code.sh
-tools/distrib/isort_code.sh
-tools/distrib/clang_format_code.sh
-tools/distrib/buildifier_format_code_strict.sh || true
-
+./examples/cpp/features/run_tests.sh

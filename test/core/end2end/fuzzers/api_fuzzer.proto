@@ -110,7 +110,7 @@ message SendInitialMetadata {
 }
 
 message SendMessage {
-    ByteSlice message = 1;
+    repeated ByteSlice message = 1;
 }
 
 message SendCloseFromClient {

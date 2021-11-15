@@ -1291,7 +1291,6 @@ libs:
   - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
-  - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
@@ -2087,7 +2086,6 @@ libs:
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
-  - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
@@ -3132,15 +3130,6 @@ targets:
   headers: []
   src:
   - test/core/security/auth_context_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: avl_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/avl/avl_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4629,6 +4618,16 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: avl_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/avl/avl.h
+  src:
+  - test/core/avl/avl_test.cc
+  deps: []
+  uses_polling: false
 - name: aws_request_signer_test
   gtest: true
   build: test

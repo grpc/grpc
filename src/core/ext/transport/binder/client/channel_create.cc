@@ -28,6 +28,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
+#include <grpc/support/log.h>
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
@@ -37,7 +38,6 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -130,14 +130,13 @@ bool InitializeBinderChannelJavaClass(void* jni_env_void) {
 namespace grpc {
 namespace experimental {
 
-void BindToOnDeviceServerService(void*, jobject, absl::string_view,
-                                 absl::string_view) {
-  GPR_ASSERT(0);
-}
-
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>) {
+  gpr_log(GPR_ERROR,
+          "This APK is compiled with Android API level = %d, which is not "
+          "supported. See port_platform.h for supported versions.",
+          __ANDROID_API__);
   GPR_ASSERT(0);
   return {};
 }
@@ -146,11 +145,19 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>,
     const ChannelArguments&) {
+  gpr_log(GPR_ERROR,
+          "This APK is compiled with Android API level = %d, which is not "
+          "supported. See port_platform.h for supported versions.",
+          __ANDROID_API__);
   GPR_ASSERT(0);
   return {};
 }
 
 bool InitializeBinderChannelJavaClass(void* jni_env_void) {
+  gpr_log(GPR_ERROR,
+          "This APK is compiled with Android API level = %d, which is not "
+          "supported. See port_platform.h for supported versions.",
+          __ANDROID_API__);
   GPR_ASSERT(0);
   return {};
 }
