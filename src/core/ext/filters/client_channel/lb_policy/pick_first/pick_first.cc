@@ -266,9 +266,8 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
               "Pick First %p received update with %" PRIuPTR " addresses", this,
               args.addresses->size());
     } else {
-      gpr_log(GPR_INFO,
-              "Pick First %p received update with address error: %s", this,
-              args.addresses.status().ToString().c_str());
+      gpr_log(GPR_INFO, "Pick First %p received update with address error: %s",
+              this, args.addresses.status().ToString().c_str());
     }
   }
   // Add GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.

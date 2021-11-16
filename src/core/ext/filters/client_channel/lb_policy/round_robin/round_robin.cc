@@ -429,8 +429,8 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     addresses = std::move(*args.addresses);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO, "[RR %p] received update with address error: %s",
-              this, args.addresses.status().ToString().c_str());
+      gpr_log(GPR_INFO, "[RR %p] received update with address error: %s", this,
+              args.addresses.status().ToString().c_str());
     }
     // If we already have a subchannel list, then ignore the resolver
     // failure and keep using the existing list.
@@ -449,10 +449,9 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.
     absl::Status status =
-        args.addresses.ok()
-            ? absl::UnavailableError(
-                  absl::StrCat("empty address list: ", args.resolution_note))
-            : args.addresses.status();
+        args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
+                                  "empty address list: ", args.resolution_note))
+                            : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));

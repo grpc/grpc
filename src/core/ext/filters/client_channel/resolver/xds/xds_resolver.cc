@@ -894,7 +894,8 @@ void XdsResolver::OnResourceDoesNotExist() {
   result_handler_->ReportResult(std::move(result));
 }
 
-absl::StatusOr<RefCountedPtr<ServiceConfig>> XdsResolver::CreateServiceConfig() {
+absl::StatusOr<RefCountedPtr<ServiceConfig>>
+XdsResolver::CreateServiceConfig() {
   std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
     clusters.push_back(

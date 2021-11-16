@@ -478,7 +478,8 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 void WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    absl::StatusOr<ServerAddressList> addresses, const grpc_channel_args* args) {
+    absl::StatusOr<ServerAddressList> addresses,
+    const grpc_channel_args* args) {
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;

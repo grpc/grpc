@@ -1688,10 +1688,11 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // returned by the resolver. Note that the fallback backend list may be
     // empty, in which case the new child policy will fail the picks.
     update_args.addresses = fallback_backend_addresses_;
-    if (fallback_backend_addresses_.ok() && fallback_backend_addresses_->empty()) {
-      update_args.resolution_note =
-          absl::StrCat("grpclb in fallback mode without any balancer addresses: ",
-                       resolution_note_);
+    if (fallback_backend_addresses_.ok() &&
+        fallback_backend_addresses_->empty()) {
+      update_args.resolution_note = absl::StrCat(
+          "grpclb in fallback mode without any balancer addresses: ",
+          resolution_note_);
     }
   } else {
     update_args.addresses = serverlist_->GetServerAddressList(

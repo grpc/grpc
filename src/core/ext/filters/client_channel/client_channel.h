@@ -288,7 +288,8 @@ class ClientChannel {
   ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
       nullptr;
   // Data from service config.
-  absl::Status resolver_transient_failure_error_ ABSL_GUARDED_BY(resolution_mu_);
+  absl::Status resolver_transient_failure_error_
+      ABSL_GUARDED_BY(resolution_mu_);
   bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) = false;
   RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
   RefCountedPtr<ConfigSelector> config_selector_

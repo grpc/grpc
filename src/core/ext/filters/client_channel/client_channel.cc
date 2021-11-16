@@ -1199,7 +1199,8 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   absl::InlinedVector<const char*, 3> trace_strings;
   const bool resolution_contains_addresses =
       result.addresses.ok() && !result.addresses->empty();
-  if (!resolution_contains_addresses && previous_resolution_contained_addresses_) {
+  if (!resolution_contains_addresses &&
+      previous_resolution_contained_addresses_) {
     trace_strings.push_back("Address list became empty");
   } else if (resolution_contains_addresses &&
              !previous_resolution_contained_addresses_) {
@@ -2345,9 +2346,8 @@ bool ClientChannel::CallData::CheckResolutionLocked(grpc_call_element* elem,
     // If the resolver returned transient failure before returning the
     // first service config, fail any non-wait_for_ready calls.
     absl::Status resolver_error = chand->resolver_transient_failure_error_;
-    if (!resolver_error.ok() &&
-        (send_initial_metadata_flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) ==
-            0) {
+    if (!resolver_error.ok() && (send_initial_metadata_flags &
+                                 GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
       MaybeRemoveCallFromResolverQueuedCallsLocked(elem);
       *error = absl_status_to_grpc_error(resolver_error);
       return true;

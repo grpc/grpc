@@ -542,7 +542,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 }
 
 void XdsClusterImplLb::UpdateChildPolicyLocked(
-    absl::StatusOr<ServerAddressList> addresses, const grpc_channel_args* args) {
+    absl::StatusOr<ServerAddressList> addresses,
+    const grpc_channel_args* args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);

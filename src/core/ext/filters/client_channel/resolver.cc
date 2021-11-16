@@ -38,9 +38,7 @@ Resolver::Resolver()
 // Resolver::Result
 //
 
-Resolver::Result::~Result() {
-  grpc_channel_args_destroy(args);
-}
+Resolver::Result::~Result() { grpc_channel_args_destroy(args); }
 
 Resolver::Result::Result(const Result& other)
     : addresses(other.addresses),

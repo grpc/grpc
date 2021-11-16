@@ -97,9 +97,8 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
-    addresses.emplace_back(
-        address.addr, address.len,
-        grpc_channel_args_copy_and_add(nullptr, nullptr, 0));
+    addresses.emplace_back(address.addr, address.len,
+                           grpc_channel_args_copy_and_add(nullptr, nullptr, 0));
   }
   ++test_counter;
   grpc_core::Resolver::Result result;

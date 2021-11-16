@@ -179,8 +179,8 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   if (addresses_ != nullptr) {
     ServerAddressList addresses;
     for (size_t i = 0; i < addresses_->naddrs; ++i) {
-      addresses.emplace_back(&addresses_->addrs[i].addr, addresses_->addrs[i].len,
-                             nullptr /* args */);
+      addresses.emplace_back(&addresses_->addrs[i].addr,
+                             addresses_->addrs[i].len, nullptr /* args */);
     }
     grpc_resolved_addresses_destroy(addresses_);
     Result result;
@@ -197,9 +197,8 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     std::string error_message;
     grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
     Result result;
-    result.addresses = absl::UnavailableError(
-        absl::StrCat("DNS resolution failed for ", name_to_resolve_, ": ",
-                     error_message));
+    result.addresses = absl::UnavailableError(absl::StrCat(
+        "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
     result_handler_->ReportResult(std::move(result));
     // Set up for retry.
     // InvalidateNow to avoid getting stuck re-initializing this timer

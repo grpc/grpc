@@ -364,9 +364,8 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
                          grpc_error_std_string(error).c_str());
     std::string error_message;
     grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
-    absl::Status status = absl::UnavailableError(
-        absl::StrCat("DNS resolution failed for ", name_to_resolve_, ": ",
-                     error_message));
+    absl::Status status = absl::UnavailableError(absl::StrCat(
+        "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
     Result result;
     result.addresses = status;
     result.service_config = status;

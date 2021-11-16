@@ -501,7 +501,8 @@ class CheckingResultHandler : public ResultHandler {
           *result.service_config == nullptr
               ? nullptr
               : (*result.service_config)->json_string().c_str();
-      CheckServiceConfigResultLocked(service_config_json, absl::OkStatus(), args);
+      CheckServiceConfigResultLocked(service_config_json, absl::OkStatus(),
+                                     args);
     }
     if (args->expected_service_config_string.empty()) {
       CheckLBPolicyResultLocked(result.args, args);

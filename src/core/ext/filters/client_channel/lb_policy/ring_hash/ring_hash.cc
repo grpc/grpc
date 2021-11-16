@@ -716,10 +716,9 @@ void RingHash::UpdateLocked(UpdateArgs args) {
   if (subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately transition to TRANSIENT_FAILURE.
     absl::Status status =
-        args.addresses.ok()
-            ? absl::UnavailableError(absl::StrCat(
-                  "empty address list: ", args.resolution_note))
-            : args.addresses.status();
+        args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
+                                  "empty address list: ", args.resolution_note))
+                            : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
