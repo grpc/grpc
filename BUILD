@@ -1487,9 +1487,9 @@ grpc_cc_library(
         "src/core/lib/resource_quota/arena.h",
     ],
     deps = [
-        "memory_quota",
         "gpr_base",
-    ]
+        "memory_quota",
+    ],
 )
 
 grpc_cc_library(
@@ -1629,6 +1629,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "avl",
+    hdrs = [
+        "src/core/lib/avl/avl.h",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
@@ -1669,7 +1679,6 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/address_utils/sockaddr_utils.cc",
-        "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -1831,7 +1840,6 @@ grpc_cc_library(
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/address_utils/sockaddr_utils.h",
-        "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_args.h",
@@ -1994,6 +2002,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "arena",
+        "avl",
         "bitset",
         "channel_stack_type",
         "chunked_vector",

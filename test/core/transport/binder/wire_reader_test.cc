@@ -114,7 +114,7 @@ TEST_F(WireReaderTest, SetupTransport) {
   EXPECT_CALL(mock_binder_ref, GetWritableParcel);
 
   // Write version.
-  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteInt32(77));
+  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteInt32(1));
 
   // The transaction receiver immediately informs the wire writer that the
   // transport has been successfully set up.

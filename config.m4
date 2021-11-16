@@ -365,7 +365,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -424,7 +423,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
-    src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
@@ -542,6 +540,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/profiling/stap_timers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/resource_quota/api.cc \
+    src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
@@ -1196,7 +1195,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)

@@ -560,7 +560,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c alts_zero_copy_grpc_protector_test)
   add_dependencies(buildtests_c arena_test)
   add_dependencies(buildtests_c auth_context_test)
-  add_dependencies(buildtests_c avl_test)
   add_dependencies(buildtests_c b64_test)
   add_dependencies(buildtests_c bad_server_response_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -742,6 +741,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
+  add_dependencies(buildtests_cxx avl_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
   add_dependencies(buildtests_cxx backoff_test)
   add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
@@ -1368,7 +1368,6 @@ add_library(gpr
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
@@ -1807,7 +1806,6 @@ add_library(grpc
   src/core/ext/xds/xds_server_config_fetcher.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -1939,6 +1937,7 @@ add_library(grpc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/api.cc
+  src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
@@ -2451,7 +2450,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
@@ -2581,6 +2579,7 @@ add_library(grpc_unsecure
   src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/api.cc
+  src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
@@ -4443,33 +4442,6 @@ target_include_directories(auth_context_test
 )
 
 target_link_libraries(auth_context_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(avl_test
-  test/core/avl/avl_test.cc
-)
-
-target_include_directories(avl_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7614,7 +7586,6 @@ add_executable(activity_test
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
@@ -8097,6 +8068,40 @@ target_link_libraries(authorization_policy_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(avl_test
+  test/core/avl/avl_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(avl_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(avl_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 
@@ -9070,62 +9075,23 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(chunked_vector_test
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/lib/gpr/alloc.cc
-  src/core/lib/gpr/atm.cc
-  src/core/lib/gpr/cpu_iphone.cc
-  src/core/lib/gpr/cpu_linux.cc
-  src/core/lib/gpr/cpu_posix.cc
-  src/core/lib/gpr/cpu_windows.cc
-  src/core/lib/gpr/env_linux.cc
-  src/core/lib/gpr/env_posix.cc
-  src/core/lib/gpr/env_windows.cc
-  src/core/lib/gpr/log.cc
-  src/core/lib/gpr/log_android.cc
-  src/core/lib/gpr/log_linux.cc
-  src/core/lib/gpr/log_posix.cc
-  src/core/lib/gpr/log_windows.cc
-  src/core/lib/gpr/murmur_hash.cc
-  src/core/lib/gpr/string.cc
-  src/core/lib/gpr/string_posix.cc
-  src/core/lib/gpr/string_util_windows.cc
-  src/core/lib/gpr/string_windows.cc
-  src/core/lib/gpr/sync.cc
-  src/core/lib/gpr/sync_abseil.cc
-  src/core/lib/gpr/sync_posix.cc
-  src/core/lib/gpr/sync_windows.cc
-  src/core/lib/gpr/time.cc
-  src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
-  src/core/lib/gpr/time_windows.cc
-  src/core/lib/gpr/tmpfile_msys.cc
-  src/core/lib/gpr/tmpfile_posix.cc
-  src/core/lib/gpr/tmpfile_windows.cc
-  src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
-  src/core/lib/gprpp/examine_stack.cc
-  src/core/lib/gprpp/fork.cc
-  src/core/lib/gprpp/global_config_env.cc
-  src/core/lib/gprpp/host_port.cc
-  src/core/lib/gprpp/mpscq.cc
-  src/core/lib/gprpp/stat_posix.cc
-  src/core/lib/gprpp/stat_windows.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/thd_posix.cc
-  src/core/lib/gprpp/thd_windows.cc
-  src/core/lib/gprpp/time_util.cc
-  src/core/lib/profiling/basic_timers.cc
-  src/core/lib/profiling/stap_timers.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/slice/static_slice.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -9153,18 +9119,10 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::base
-  absl::core_headers
-  absl::memory
-  absl::status
-  absl::cord
-  absl::str_format
-  absl::strings
-  absl::synchronization
-  absl::time
-  absl::optional
+  absl::statusor
+  absl::variant
   absl::utility
-  upb
+  gpr
 )
 
 
@@ -9785,7 +9743,6 @@ add_executable(core_configuration_test
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
@@ -10852,7 +10809,6 @@ add_executable(for_each_test
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
@@ -12604,7 +12560,6 @@ add_executable(latch_test
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
@@ -13275,7 +13230,6 @@ add_executable(observable_test
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
@@ -13556,7 +13510,6 @@ add_executable(pipe_test
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
-  src/core/lib/gprpp/arena.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc

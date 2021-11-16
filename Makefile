@@ -947,7 +947,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
-    src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
@@ -1357,7 +1356,6 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -1489,6 +1487,7 @@ LIBGRPC_SRC = \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/resource_quota/api.cc \
+    src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
@@ -1851,7 +1850,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -1981,6 +1979,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_writer.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/resource_quota/api.cc \
+    src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
