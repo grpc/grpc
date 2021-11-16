@@ -2428,9 +2428,16 @@ class ClientChannel::LoadBalancedCall::Metadata
 
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
       override {
-    Encoder encoder;
-    batch_->Encode(&encoder);
-    return encoder.Take();
+    std::vector<std::pair<std::string, std::string>> result;
+    batch_->ForEach([&](grpc_mdelem md) {
+      auto key = std::string(StringViewFromSlice(GRPC_MDKEY(md)));
+      if (key != ":path") {
+        result.push_back(
+            std::make_pair(std::move(key),
+                           std::string(StringViewFromSlice(GRPC_MDVALUE(md)))));
+      }
+    });
+    return result;
   }
 
   absl::optional<absl::string_view> Lookup(absl::string_view key,
@@ -2439,33 +2446,6 @@ class ClientChannel::LoadBalancedCall::Metadata
   }
 
  private:
-  class Encoder {
-   public:
-    void Encode(grpc_mdelem md) {
-      auto key = StringViewFromSlice(GRPC_MDKEY(md));
-      if (key != ":path") {
-        out_.emplace_back(std::string(key),
-                          std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
-      }
-    }
-
-    template <class Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      auto value_slice = Which::Encode(value);
-      out_.emplace_back(std::string(Which::key()),
-                        std::string(value_slice.as_string_view()));
-    }
-
-    void Encode(GrpcTimeoutMetadata, grpc_millis) {}
-
-    std::vector<std::pair<std::string, std::string>> Take() {
-      return std::move(out_);
-    }
-
-   private:
-    std::vector<std::pair<std::string, std::string>> out_;
-  };
-
   LoadBalancedCall* lb_call_;
   grpc_metadata_batch* batch_;
 };

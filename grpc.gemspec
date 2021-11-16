@@ -1196,7 +1196,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/percent_encoding.cc )
   s.files += %w( src/core/lib/slice/percent_encoding.h )
   s.files += %w( src/core/lib/slice/slice.cc )
-  s.files += %w( src/core/lib/slice/slice.h )
   s.files += %w( src/core/lib/slice/slice_api.cc )
   s.files += %w( src/core/lib/slice/slice_buffer.cc )
   s.files += %w( src/core/lib/slice/slice_intern.cc )

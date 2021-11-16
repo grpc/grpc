@@ -61,6 +61,25 @@ void slice_stream_destroy(void* arg) {
   grpc_stream_destroy(static_cast<grpc_stream_refcount*>(arg));
 }
 
+#define STREAM_REF_FROM_SLICE_REF(p)         \
+  ((grpc_stream_refcount*)(((uint8_t*)(p)) - \
+                           offsetof(grpc_stream_refcount, slice_refcount)))
+
+grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
+                                               void* buffer, size_t length) {
+#ifndef NDEBUG
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(&refcount->slice_refcount),
+                  "slice");
+#else
+  grpc_stream_ref(STREAM_REF_FROM_SLICE_REF(&refcount->slice_refcount));
+#endif
+  grpc_slice res;
+  res.refcount = &refcount->slice_refcount;
+  res.data.refcounted.bytes = static_cast<uint8_t*>(buffer);
+  res.data.refcounted.length = length;
+  return res;
+}
+
 #ifndef NDEBUG
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
                           grpc_iomgr_cb_func cb, void* cb_arg,
@@ -75,6 +94,9 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
   new (&refcount->refs) grpc_core::RefCount(
       1, GRPC_TRACE_FLAG_ENABLED(grpc_trace_stream_refcount) ? "stream_refcount"
                                                              : nullptr);
+  new (&refcount->slice_refcount) grpc_slice_refcount(
+      grpc_slice_refcount::Type::REGULAR, &refcount->refs, slice_stream_destroy,
+      refcount, &refcount->slice_refcount);
 }
 
 static void move64(uint64_t* from, uint64_t* to) {

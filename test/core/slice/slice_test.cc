@@ -18,14 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice.h"
-
 #include <inttypes.h>
 #include <string.h>
-
-#include <random>
-
-#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -34,24 +28,27 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/build.h"
 
-TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
+#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
+
+static void test_slice_malloc_returns_something_sensible(void) {
   /* Calls grpc_slice_create for various lengths and verifies the internals for
      consistency. */
   size_t length;
   size_t i;
   grpc_slice slice;
 
+  LOG_TEST_NAME("test_slice_malloc_returns_something_sensible");
+
   for (length = 0; length <= 1024; length++) {
     slice = grpc_slice_malloc(length);
     /* If there is a length, slice.data must be non-NULL. If length is zero
        we don't care. */
     if (length > GRPC_SLICE_INLINED_SIZE) {
-      EXPECT_NE(slice.data.refcounted.bytes, nullptr);
+      GPR_ASSERT(slice.data.refcounted.bytes);
     }
     /* Returned slice length must be what was requested. */
-    EXPECT_EQ(GRPC_SLICE_LENGTH(slice), length);
+    GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == length);
     /* We must be able to write to every byte of the data */
     for (i = 0; i < length; i++) {
       GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
@@ -63,20 +60,20 @@ TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
 
 static void do_nothing(void* /*ignored*/) {}
 
-TEST(GrpcSliceTest, SliceNewReturnsSomethingSensible) {
+static void test_slice_new_returns_something_sensible(void) {
   uint8_t x;
 
   grpc_slice slice = grpc_slice_new(&x, 1, do_nothing);
-  EXPECT_NE(slice.refcount, nullptr);
-  EXPECT_EQ(slice.data.refcounted.bytes, &x);
-  EXPECT_EQ(slice.data.refcounted.length, 1);
+  GPR_ASSERT(slice.refcount);
+  GPR_ASSERT(slice.data.refcounted.bytes == &x);
+  GPR_ASSERT(slice.data.refcounted.length == 1);
   grpc_slice_unref_internal(slice);
 }
 
 /* destroy function that sets a mark to indicate it was called. */
 static void set_mark(void* p) { *(static_cast<int*>(p)) = 1; }
 
-TEST(GrpcSliceTest, SliceNewWithUserData) {
+static void test_slice_new_with_user_data(void) {
   int marker = 0;
   uint8_t buf[2];
   grpc_slice slice;
@@ -84,34 +81,33 @@ TEST(GrpcSliceTest, SliceNewWithUserData) {
   buf[0] = 0;
   buf[1] = 1;
   slice = grpc_slice_new_with_user_data(buf, 2, set_mark, &marker);
-  EXPECT_EQ(marker, 0);
-  EXPECT_EQ(GRPC_SLICE_LENGTH(slice), 2);
-  EXPECT_EQ(GRPC_SLICE_START_PTR(slice)[0], 0);
-  EXPECT_EQ(GRPC_SLICE_START_PTR(slice)[1], 1);
+  GPR_ASSERT(marker == 0);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == 2);
+  GPR_ASSERT(GRPC_SLICE_START_PTR(slice)[0] == 0);
+  GPR_ASSERT(GRPC_SLICE_START_PTR(slice)[1] == 1);
 
   /* unref should cause destroy function to run. */
   grpc_slice_unref_internal(slice);
-  EXPECT_EQ(marker, 1);
+  GPR_ASSERT(marker == 1);
 }
 
 static int do_nothing_with_len_1_calls = 0;
 
 static void do_nothing_with_len_1(void* /*ignored*/, size_t len) {
-  EXPECT_EQ(len, 1);
+  GPR_ASSERT(len == 1);
   do_nothing_with_len_1_calls++;
 }
 
-TEST(GrpcSliceTest, SliceNewWithLenReturnsSomethingSensible) {
+static void test_slice_new_with_len_returns_something_sensible(void) {
   uint8_t x;
   int num_refs = 5; /* To test adding/removing an arbitrary number of refs */
   int i;
 
   grpc_slice slice = grpc_slice_new_with_len(&x, 1, do_nothing_with_len_1);
-  EXPECT_NE(slice.refcount,
-            nullptr); /* ref count is initialized to 1 at this point */
-  EXPECT_EQ(slice.data.refcounted.bytes, &x);
-  EXPECT_EQ(slice.data.refcounted.length, 1);
-  EXPECT_EQ(do_nothing_with_len_1_calls, 0);
+  GPR_ASSERT(slice.refcount); /* ref count is initialized to 1 at this point */
+  GPR_ASSERT(slice.data.refcounted.bytes == &x);
+  GPR_ASSERT(slice.data.refcounted.length == 1);
+  GPR_ASSERT(do_nothing_with_len_1_calls == 0);
 
   /* Add an arbitrary number of refs to the slice and remoe the refs. This is to
      make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
@@ -122,21 +118,20 @@ TEST(GrpcSliceTest, SliceNewWithLenReturnsSomethingSensible) {
   for (i = 0; i < num_refs; i++) {
     grpc_slice_unref_internal(slice);
   }
-  EXPECT_EQ(do_nothing_with_len_1_calls, 0); /* Shouldn't be called yet */
+  GPR_ASSERT(do_nothing_with_len_1_calls == 0); /* Shouldn't be called yet */
 
   /* last unref */
   grpc_slice_unref_internal(slice);
-  EXPECT_EQ(do_nothing_with_len_1_calls, 1);
+  GPR_ASSERT(do_nothing_with_len_1_calls == 1);
 }
 
-class GrpcSliceSizedTest : public ::testing::TestWithParam<size_t> {};
-
-TEST_P(GrpcSliceSizedTest, SliceSubWorks) {
-  const auto length = GetParam();
-
+static void test_slice_sub_works(unsigned length) {
   grpc_slice slice;
   grpc_slice sub;
   unsigned i, j, k;
+
+  LOG_TEST_NAME("test_slice_sub_works");
+  gpr_log(GPR_INFO, "length=%d", length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
      beginning of the slice. */
@@ -150,9 +145,9 @@ TEST_P(GrpcSliceSizedTest, SliceSubWorks) {
   for (i = 0; i < length; i++) {
     for (j = i; j < length; j++) {
       sub = grpc_slice_sub(slice, i, j);
-      EXPECT_EQ(GRPC_SLICE_LENGTH(sub), j - i);
+      GPR_ASSERT(GRPC_SLICE_LENGTH(sub) == j - i);
       for (k = 0; k < j - i; k++) {
-        EXPECT_EQ(GRPC_SLICE_START_PTR(sub)[k], (uint8_t)(i + k));
+        GPR_ASSERT(GRPC_SLICE_START_PTR(sub)[k] == (uint8_t)(i + k));
       }
       grpc_slice_unref_internal(sub);
     }
@@ -162,21 +157,20 @@ TEST_P(GrpcSliceSizedTest, SliceSubWorks) {
 
 static void check_head_tail(grpc_slice slice, grpc_slice head,
                             grpc_slice tail) {
-  EXPECT_EQ(GRPC_SLICE_LENGTH(slice),
-            GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
-  EXPECT_EQ(0, memcmp(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_START_PTR(head),
-                      GRPC_SLICE_LENGTH(head)));
-  EXPECT_EQ(0, memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
-                      GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(slice) ==
+             GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
+  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice),
+                         GRPC_SLICE_START_PTR(head), GRPC_SLICE_LENGTH(head)));
+  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
+                         GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
 }
 
-TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
-  const auto length = GetParam();
-
+static void test_slice_split_head_works(size_t length) {
   grpc_slice slice;
   grpc_slice head, tail;
   size_t i;
 
+  LOG_TEST_NAME("test_slice_split_head_works");
   gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
@@ -199,13 +193,12 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
   grpc_slice_unref_internal(slice);
 }
 
-TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
-  const auto length = GetParam();
-
+static void test_slice_split_tail_works(size_t length) {
   grpc_slice slice;
   grpc_slice head, tail;
   size_t i;
 
+  LOG_TEST_NAME("test_slice_split_tail_works");
   gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
@@ -228,37 +221,30 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   grpc_slice_unref_internal(slice);
 }
 
-INSTANTIATE_TEST_SUITE_P(GrpcSliceSizedTest, GrpcSliceSizedTest,
-                         ::testing::ValuesIn([] {
-                           std::vector<size_t> out;
-                           for (size_t i = 0; i < 128; i++) {
-                             out.push_back(i);
-                           }
-                           return out;
-                         }()),
-                         [](const testing::TestParamInfo<size_t>& info) {
-                           return std::to_string(info.param);
-                         });
-
-TEST(GrpcSliceTest, SliceFromCopiedString) {
+static void test_slice_from_copied_string_works(void) {
   static const char* text = "HELLO WORLD!";
   grpc_slice slice;
 
+  LOG_TEST_NAME("test_slice_from_copied_string_works");
+
   slice = grpc_slice_from_copied_string(text);
-  EXPECT_EQ(strlen(text), GRPC_SLICE_LENGTH(slice));
-  EXPECT_EQ(
-      0, memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
+  GPR_ASSERT(strlen(text) == GRPC_SLICE_LENGTH(slice));
+  GPR_ASSERT(
+      0 == memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
   grpc_slice_unref_internal(slice);
 }
 
-TEST(GrpcSliceTest, MovedStringSlice) {
+static void test_moved_string_slice(void) {
+  LOG_TEST_NAME("test_moved_string_slice");
+
   // Small string should be inlined.
   constexpr char kSmallStr[] = "hello12345";
   char* small_ptr = strdup(kSmallStr);
   grpc_slice small =
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
-  EXPECT_EQ(GRPC_SLICE_LENGTH(small), strlen(kSmallStr));
-  EXPECT_NE(GRPC_SLICE_START_PTR(small), reinterpret_cast<uint8_t*>(small_ptr));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
+             reinterpret_cast<uint8_t*>(small_ptr));
   grpc_slice_unref_internal(small);
 
   // Large string should be move the reference.
@@ -266,8 +252,9 @@ TEST(GrpcSliceTest, MovedStringSlice) {
   char* large_ptr = strdup(kSLargeStr);
   grpc_slice large =
       grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
-  EXPECT_EQ(GRPC_SLICE_LENGTH(large), strlen(kSLargeStr));
-  EXPECT_EQ(GRPC_SLICE_START_PTR(large), reinterpret_cast<uint8_t*>(large_ptr));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(large) == strlen(kSLargeStr));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(large) ==
+             reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref_internal(large);
 
   // Moved buffer must respect the provided length not the actual length of the
@@ -275,167 +262,32 @@ TEST(GrpcSliceTest, MovedStringSlice) {
   large_ptr = strdup(kSLargeStr);
   small = grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char>(large_ptr),
                                        strlen(kSmallStr));
-  EXPECT_EQ(GRPC_SLICE_LENGTH(small), strlen(kSmallStr));
-  EXPECT_NE(GRPC_SLICE_START_PTR(small), reinterpret_cast<uint8_t*>(large_ptr));
+  GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
+             reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref_internal(small);
 }
 
-TEST(GrpcSliceTest, StringViewFromSlice) {
+void test_string_view_from_slice() {
   constexpr char kStr[] = "foo";
   absl::string_view sv(
       grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
-  EXPECT_EQ(sv, kStr);
+  GPR_ASSERT(std::string(sv) == kStr);
 }
 
-namespace grpc_core {
-namespace {
-
-TEST(SliceTest, FromSmallCopiedString) {
-  Slice slice = Slice::FromCopiedString("hello");
-  EXPECT_EQ(slice[0], 'h');
-  EXPECT_EQ(slice[1], 'e');
-  EXPECT_EQ(slice[2], 'l');
-  EXPECT_EQ(slice[3], 'l');
-  EXPECT_EQ(slice[4], 'o');
-  EXPECT_EQ(slice.size(), 5);
-  EXPECT_EQ(slice.length(), 5);
-  EXPECT_EQ(slice.as_string_view(), "hello");
-  EXPECT_EQ(0, memcmp(slice.data(), "hello", 5));
-}
-
-class SliceSizedTest : public ::testing::TestWithParam<size_t> {};
-
-std::string RandomString(size_t length) {
-  std::string str;
-  std::random_device r;
-  for (size_t i = 0; i < length; ++i) {
-    str.push_back(char(r()));
+int main(int, char**) {
+  unsigned length;
+  test_slice_malloc_returns_something_sensible();
+  test_slice_new_returns_something_sensible();
+  test_slice_new_with_user_data();
+  test_slice_new_with_len_returns_something_sensible();
+  for (length = 0; length < 128; length++) {
+    test_slice_sub_works(length);
+    test_slice_split_head_works(length);
+    test_slice_split_tail_works(length);
   }
-  return str;
-}
-
-TEST_P(SliceSizedTest, FromCopiedString) {
-  const std::string str = RandomString(GetParam());
-  Slice slice = Slice::FromCopiedString(str);
-
-  EXPECT_EQ(slice.size(), str.size());
-  EXPECT_EQ(slice.length(), str.size());
-  EXPECT_EQ(slice.as_string_view(), str);
-  EXPECT_EQ(0, memcmp(slice.data(), str.data(), str.size()));
-  for (size_t i = 0; i < str.size(); ++i) {
-    EXPECT_EQ(slice[i], uint8_t(str[i]));
-  }
-
-  EXPECT_TRUE(slice.is_equivalent(slice.Ref()));
-  EXPECT_TRUE(slice.is_equivalent(slice.AsOwned()));
-  EXPECT_TRUE(slice.is_equivalent(slice.Ref().TakeOwned()));
-}
-
-INSTANTIATE_TEST_SUITE_P(SliceSizedTest, SliceSizedTest,
-                         ::testing::ValuesIn([] {
-                           std::vector<size_t> out;
-                           size_t i = 1;
-                           size_t j = 1;
-                           while (i < 1024 * 1024) {
-                             out.push_back(j);
-                             size_t n = i + j;
-                             i = j;
-                             j = n;
-                           }
-                           return out;
-                         }()),
-                         [](const testing::TestParamInfo<size_t>& info) {
-                           return std::to_string(info.param);
-                         });
-
-size_t SumSlice(const Slice& slice) {
-  size_t x = 0;
-  for (size_t i = 0; i < slice.size(); ++i) {
-    x += slice[i];
-  }
-  return x;
-}
-
-TEST(SliceTest, ExternalAsOwned) {
-  auto external_string = absl::make_unique<std::string>(RandomString(1024));
-  Slice slice(ExternallyManagedSlice(external_string->data(),
-                                     external_string->length()));
-  const auto initial_sum = SumSlice(slice);
-  Slice owned = slice.AsOwned();
-  EXPECT_EQ(initial_sum, SumSlice(owned));
-  external_string.reset();
-  // In ASAN (where we can be sure that it'll crash), go ahead and read the
-  // bytes we just deleted.
-  if (BuiltUnderAsan()) {
-    ASSERT_DEATH({ SumSlice(slice); }, "");
-  }
-  EXPECT_EQ(initial_sum, SumSlice(owned));
-}
-
-TEST(SliceTest, ExternalTakeOwned) {
-  std::unique_ptr<std::string> external_string(
-      new std::string(RandomString(1024)));
-  SumSlice(Slice(ExternallyManagedSlice(external_string->data(),
-                                        external_string->length()))
-               .TakeOwned());
-}
-
-TEST(SliceTest, StaticSlice) {
-  static const char* hello = "hello";
-  StaticSlice slice = StaticSlice::FromStaticString(hello);
-  EXPECT_EQ(slice[0], 'h');
-  EXPECT_EQ(slice[1], 'e');
-  EXPECT_EQ(slice[2], 'l');
-  EXPECT_EQ(slice[3], 'l');
-  EXPECT_EQ(slice[4], 'o');
-  EXPECT_EQ(slice.size(), 5);
-  EXPECT_EQ(slice.length(), 5);
-  EXPECT_EQ(slice.as_string_view(), "hello");
-  EXPECT_EQ(0, memcmp(slice.data(), "hello", 5));
-  EXPECT_EQ(reinterpret_cast<const uint8_t*>(hello), slice.data());
-}
-
-TEST(SliceTest, SliceEquality) {
-  auto a = Slice::FromCopiedString(
-      "hello world 123456789123456789123456789123456789123456789");
-  auto b = Slice::FromCopiedString(
-      "hello world 123456789123456789123456789123456789123456789");
-  auto c = Slice::FromCopiedString(
-      "this is not the same as the other two strings!!!!!!!!!!!!");
-  EXPECT_FALSE(a.is_equivalent(b));
-  EXPECT_FALSE(b.is_equivalent(a));
-  EXPECT_EQ(a, b);
-  EXPECT_NE(a, c);
-  EXPECT_NE(b, c);
-  EXPECT_EQ(a, "hello world 123456789123456789123456789123456789123456789");
-  EXPECT_NE(a, "pfoooey");
-  EXPECT_EQ(c, "this is not the same as the other two strings!!!!!!!!!!!!");
-  EXPECT_EQ("hello world 123456789123456789123456789123456789123456789", a);
-  EXPECT_NE("pfoooey", a);
-  EXPECT_EQ("this is not the same as the other two strings!!!!!!!!!!!!", c);
-}
-
-TEST(SliceTest, LetsGetMutable) {
-  auto slice = MutableSlice::FromCopiedString("hello");
-  EXPECT_EQ(slice[0], 'h');
-  EXPECT_EQ(slice[1], 'e');
-  EXPECT_EQ(slice[2], 'l');
-  EXPECT_EQ(slice[3], 'l');
-  EXPECT_EQ(slice[4], 'o');
-  EXPECT_EQ(slice.size(), 5);
-  EXPECT_EQ(slice.length(), 5);
-  EXPECT_EQ(slice.as_string_view(), "hello");
-  EXPECT_EQ(0, memcmp(slice.data(), "hello", 5));
-  slice[2] = 'm';
-  EXPECT_EQ(slice.as_string_view(), "hemlo");
-  for (auto& c : slice) c++;
-  EXPECT_EQ(slice.as_string_view(), "ifnmp");
-}
-
-}  // namespace
-}  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  test_slice_from_copied_string_works();
+  test_moved_string_slice();
+  test_string_view_from_slice();
+  return 0;
 }

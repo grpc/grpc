@@ -69,7 +69,7 @@ class NewSliceRefcount {
 
  private:
   grpc_slice_refcount base_;
-  std::atomic<size_t> refs_{1};
+  RefCount refs_;
   void (*user_destroy_)(void*);
   void* user_data_;
 };
@@ -130,7 +130,7 @@ class NewWithLenSliceRefcount {
 
  private:
   grpc_slice_refcount base_;
-  std::atomic<size_t> refs_{1};
+  RefCount refs_;
   void* user_data_;
   size_t user_length_;
   void (*user_destroy_)(void*, size_t);
@@ -152,7 +152,7 @@ class MovedStringSliceRefCount {
   }
 
   grpc_slice_refcount base_;
-  std::atomic<size_t> refs_{1};
+  RefCount refs_;
   UniquePtr<char> str_;
 };
 
@@ -172,7 +172,7 @@ class MovedCppStringSliceRefCount {
   }
 
   grpc_slice_refcount base_;
-  std::atomic<size_t> refs_{1};
+  RefCount refs_;
   std::string str_;
 };
 
@@ -281,7 +281,7 @@ class MallocRefCount {
 
  private:
   grpc_slice_refcount base_;
-  std::atomic<size_t> refs_{1};
+  grpc_core::RefCount refs_;
 };
 
 }  // namespace

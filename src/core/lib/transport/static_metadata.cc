@@ -255,8 +255,8 @@ StaticMetadata g_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
                             g_static_metadata_bytes + 371),
         36),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[18].base, 4,
-                            g_static_metadata_bytes + 266),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[19].base, 4,
+                            g_static_metadata_bytes + 276),
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[28].base, 0,
                             g_static_metadata_bytes + 371),
         37),
@@ -375,8 +375,8 @@ StaticMetadata g_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
                             g_static_metadata_bytes + 371),
         56),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[23].base, 10,
-                            g_static_metadata_bytes + 357),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[18].base, 10,
+                            g_static_metadata_bytes + 266),
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[28].base, 0,
                             g_static_metadata_bytes + 371),
         57),
@@ -979,11 +979,11 @@ uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {
 
 static const int8_t elems_r[] = {
     18, 11, -8, 0,  3,  -75, -51, 0,  7,  -4,  0,   0,   0,   12,  -1,  -2,
-    0,  0,  7,  0,  0,  0,   0,   -2, 0,  0,   0,   0,   0,   0,   0,   0,
+    0,  0,  7,  6,  0,  0,   0,   0,  0,  0,   0,   0,   0,   0,   0,   0,
     0,  0,  0,  0,  0,  0,   0,   0,  0,  0,   0,   0,   0,   0,   0,   0,
     0,  0,  0,  0,  0,  0,   0,   0,  0,  -50, 0,   -55, -75, -76, -77, 0,
-    30, 29, 28, 27, 26, 25,  48,  22, 21, 20,  19,  19,  18,  17,  16,  17,
-    16, 15, 14, 13, 12, 11,  10,  9,  8,  7,   6,   5,   5,   4,   3,   2,
+    30, 29, 28, 27, 26, 25,  24,  23, 22, 21,  28,  19,  18,  17,  16,  17,
+    17, 16, 15, 14, 13, 12,  11,  10, 9,  8,   7,   6,   5,   4,   3,   2,
     1,  0,  -1, 0,  0,  0,   0,   0,  0,  0,   -11, 0};
 static uint32_t elems_phash(uint32_t i) {
   i -= 46;
@@ -1000,18 +1000,18 @@ static uint32_t elems_phash(uint32_t i) {
 static const uint16_t elem_keys[] = {
     270,   271,   272,  273,  274,   275,  276,   1029,  1030,  1568,  1678,
     154,   155,   488,  489,  760,   919,  920,   46,    47,    1458,  1580,
-    1690,  684,   685,  2008, 2558,  6628, 6738,  6848,  6958,  7068,  7178,
-    7288,  7398,  7508, 7728, 7838,  7948, 8058,  1708,  8168,  8278,  8388,
-    8498,  6518,  6298, 8608, 8718,  8828, 8938,  9048,  9158,  9268,  9378,
-    9488,  9598,  9708, 9818, 9928,  7618, 10038, 10148, 10258, 10368, 10478,
+    1690,  684,   685,  2008, 2118,  6628, 6738,  6848,  6958,  7068,  7178,
+    7288,  7398,  7508, 7618, 7728,  7838, 7948,  1708,  8168,  8278,  8388,
+    8498,  6518,  6298, 8608, 8058,  8718, 8828,  8938,  9048,  9158,  9268,
+    9378,  9488,  9598, 9708, 9818,  9928, 10038, 10148, 10258, 10368, 10478,
     10588, 10698, 543,  1091, 10808, 214,  10918, 11578, 1096,  1097,  1098,
     1099,  981,   0,    0,    0,     1641, 1751,  0,     0,     0,     0,
     358,   1757,  0,    0,    0,     0,    1532};
 static const uint8_t elem_idxs[] = {
     7,   8,   9,  10, 11,  12,  13,  75,  77, 25, 70,  1,   2,   5,   6,  61,
-    66,  65,  3,  4,  30,  72,  82,  62,  63, 37, 57,  17,  18,  19,  20, 21,
-    22,  23,  24, 26, 28,  29,  31,  32,  15, 33, 34,  35,  36,  16,  14, 38,
-    39,  40,  41, 42, 43,  44,  45,  46,  47, 48, 49,  50,  27,  51,  52, 53,
+    66,  65,  3,  4,  30,  72,  82,  62,  63, 57, 37,  17,  18,  19,  20, 21,
+    22,  23,  24, 26, 27,  28,  29,  31,  15, 33, 34,  35,  36,  16,  14, 38,
+    32,  39,  40, 41, 42,  43,  44,  45,  46, 47, 48,  49,  50,  51,  52, 53,
     54,  55,  56, 58, 68,  74,  59,  69,  60, 73, 76,  78,  79,  80,  64, 255,
     255, 255, 71, 81, 255, 255, 255, 255, 0,  83, 255, 255, 255, 255, 67};
 

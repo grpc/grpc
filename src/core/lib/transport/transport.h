@@ -59,6 +59,7 @@ typedef struct grpc_stream_refcount {
 #ifndef NDEBUG
   const char* object_type;
 #endif
+  grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
 #ifndef NDEBUG
