@@ -27,25 +27,27 @@ namespace testing {
 
 struct CharTrait {
   using MementoType = char;
-  static absl::string_view key() { return "key"; }
+  static const char* key() { return "key"; }
   static char test_memento() { return 'a'; }
   static char test_value() { return 'a'; }
   static size_t test_memento_transport_size() { return 34; }
   static char MementoToValue(char memento) { return memento; }
-  static char ParseMemento(Slice slice) { return slice[0]; }
+  static char ParseMemento(const grpc_slice& slice) {
+    return *GRPC_SLICE_START_PTR(slice);
+  }
   static std::string DisplayValue(char value) { return std::string(1, value); }
 };
 
 struct Int32Trait {
   using MementoType = int32_t;
-  static absl::string_view key() { return "key2"; }
+  static const char* key() { return "key2"; }
   static int32_t test_memento() { return -1; }
   static int32_t test_value() { return -1; }
   static size_t test_memento_transport_size() { return 478; }
   static int32_t MementoToValue(int32_t memento) { return memento; }
-  static int32_t ParseMemento(Slice slice) {
+  static int32_t ParseMemento(const grpc_slice& slice) {
     int32_t out;
-    GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
+    GPR_ASSERT(absl::SimpleAtoi(StringViewFromSlice(slice), &out));
     return out;
   }
   static std::string DisplayValue(int32_t value) {
@@ -55,14 +57,14 @@ struct Int32Trait {
 
 struct Int64Trait {
   using MementoType = int64_t;
-  static absl::string_view key() { return "key3"; }
+  static const char* key() { return "key3"; }
   static int64_t test_memento() { return 83481847284179298; }
   static int64_t test_value() { return -83481847284179298; }
   static size_t test_memento_transport_size() { return 87; }
   static int64_t MementoToValue(int64_t memento) { return -memento; }
-  static int64_t ParseMemento(Slice slice) {
+  static int64_t ParseMemento(const grpc_slice& slice) {
     int64_t out;
-    GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
+    GPR_ASSERT(absl::SimpleAtoi(StringViewFromSlice(slice), &out));
     return out;
   }
   static std::string DisplayValue(int64_t value) {
@@ -72,14 +74,14 @@ struct Int64Trait {
 
 struct IntptrTrait {
   using MementoType = intptr_t;
-  static absl::string_view key() { return "key4"; }
+  static const char* key() { return "key4"; }
   static intptr_t test_memento() { return 8374298; }
   static intptr_t test_value() { return test_memento() / 2; }
   static size_t test_memento_transport_size() { return 800; }
   static intptr_t MementoToValue(intptr_t memento) { return memento / 2; }
-  static intptr_t ParseMemento(Slice slice) {
+  static intptr_t ParseMemento(const grpc_slice& slice) {
     intptr_t out;
-    GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
+    GPR_ASSERT(absl::SimpleAtoi(StringViewFromSlice(slice), &out));
     return out;
   }
   static std::string DisplayValue(intptr_t value) {
@@ -89,15 +91,15 @@ struct IntptrTrait {
 
 struct StringTrait {
   using MementoType = std::string;
-  static absl::string_view key() { return "key5-bin"; }
+  static const char* key() { return "key5-bin"; }
   static std::string test_memento() { return "hello"; }
   static std::string test_value() { return "hi hello"; }
   static size_t test_memento_transport_size() { return 599; }
   static std::string MementoToValue(std::string memento) {
     return "hi " + memento;
   }
-  static std::string ParseMemento(Slice slice) {
-    auto view = slice.as_string_view();
+  static std::string ParseMemento(const grpc_slice& slice) {
+    auto view = StringViewFromSlice(slice);
     return std::string(view.begin(), view.end());
   }
   static std::string DisplayValue(const std::string& value) { return value; }

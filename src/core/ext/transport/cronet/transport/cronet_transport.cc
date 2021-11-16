@@ -417,7 +417,7 @@ static void convert_cronet_array_to_metadata(
       value = grpc_slice_intern(
           grpc_slice_from_static_string(header_array->headers[i].value));
     }
-    mds->Append(header_array->headers[i].key, grpc_core::Slice(value));
+    mds->Append(header_array->headers[i].key, value);
   }
 }
 
@@ -714,11 +714,10 @@ class CronetMetadataEncoder {
   CronetMetadataEncoder& operator=(const CronetMetadataEncoder&) = delete;
 
   template <class T, class V>
-  void Encode(T, const V& value) {
+  void Encode(T, V value) {
     auto value_slice = T::Encode(value);
-    auto key_slice =
-        grpc_core::ExternallyManagedSlice(T::key().data(), T::key().length());
-    auto mdelem = grpc_mdelem_from_slices(key_slice, value_slice.TakeCSlice());
+    auto key_slice = grpc_slice_from_static_string(T::key());
+    auto mdelem = grpc_mdelem_from_slices(key_slice, value_slice);
     Encode(mdelem);
     GRPC_MDELEM_UNREF(mdelem);
   }

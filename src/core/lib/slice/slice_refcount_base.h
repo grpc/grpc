@@ -17,10 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
-
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/ref_counted.h"
 
 // grpc_slice_refcount : A reference count for grpc_slice.
 //
@@ -104,10 +103,11 @@ struct grpc_slice_refcount {
   //  Whether we are the refcount for a static
   //  metadata slice, an interned slice, or any other kind of slice.
   //
-  //  2. std::atomic<size_t>* ref
-  //  The pointer to the actual underlying grpc_core::RefCount.
-  //  TODO(ctiller): remove the pointer indirection and just put the refcount on
-  //  this object once we remove interning.
+  //  2. RefCount* ref
+  //  The pointer to the actual underlying grpc_core::RefCount. Rather than
+  //  performing struct offset computations as in the original implementation to
+  //  get to the refcount, which requires a virtual method, we devirtualize by
+  //  using a nullable pointer to allow a single pair of Ref/Unref methods.
   //
   //  3. DestroyerFn destroyer_fn
   //  Called when the refcount goes to 0, with destroyer_arg as parameter.
@@ -117,7 +117,7 @@ struct grpc_slice_refcount {
   //
   //  5. grpc_slice_refcount* sub
   //  Argument used for interned slices.
-  grpc_slice_refcount(grpc_slice_refcount::Type type, std::atomic<size_t>* ref,
+  grpc_slice_refcount(grpc_slice_refcount::Type type, grpc_core::RefCount* ref,
                       DestroyerFn destroyer_fn, void* destroyer_arg,
                       grpc_slice_refcount* sub)
       : ref_(ref),
@@ -136,27 +136,19 @@ struct grpc_slice_refcount {
   uint32_t Hash(const grpc_slice& slice);
   void Ref() {
     if (ref_ == nullptr) return;
-    ref_->fetch_add(1, std::memory_order_relaxed);
+    ref_->RefNonZero();
   }
   void Unref() {
     if (ref_ == nullptr) return;
-    if (ref_->fetch_sub(1, std::memory_order_acq_rel) == 1) {
+    if (ref_->Unref()) {
       dest_fn_(destroy_fn_arg_);
     }
-  }
-
-  // Only for type REGULAR, is this the only instance?
-  // For this to be useful the caller needs to ensure that if this is the only
-  // instance, no other instance could be created during this call.
-  bool IsRegularUnique() {
-    GPR_DEBUG_ASSERT(ref_type_ == Type::REGULAR);
-    return ref_->load(std::memory_order_relaxed) == 1;
   }
 
   grpc_slice_refcount* sub_refcount() const { return sub_refcount_; }
 
  private:
-  std::atomic<size_t>* ref_ = nullptr;
+  grpc_core::RefCount* ref_ = nullptr;
   const Type ref_type_ = Type::REGULAR;
   grpc_slice_refcount* sub_refcount_ = this;
   DestroyerFn dest_fn_ = nullptr;

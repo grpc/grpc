@@ -17,8 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/slice/slice_refcount_base.h"
 #include "src/core/lib/slice/static_slice.h"
 
@@ -30,8 +28,6 @@ namespace grpc_core {
 
 extern grpc_slice_refcount kNoopRefcount;
 
-// TODO(ctiller): when this is removed, remove the std::atomic* in
-// grpc_slice_refcount and just put it there directly.
 struct InternedSliceRefcount {
   static void Destroy(void* arg) {
     auto* rc = static_cast<InternedSliceRefcount*>(arg);
@@ -52,7 +48,7 @@ struct InternedSliceRefcount {
   grpc_slice_refcount base;
   grpc_slice_refcount sub;
   const size_t length;
-  std::atomic<size_t> refcnt{1};
+  RefCount refcnt;
   const uint32_t hash;
   InternedSliceRefcount* bucket_next;
 };

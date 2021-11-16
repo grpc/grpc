@@ -656,19 +656,15 @@ class HPackParser::String {
 
  private:
   // Forward declare take functions... we'll need them in the public interface
-  Slice Take(Extern);
-  Slice Take(Intern);
+  UnmanagedMemorySlice Take(Extern);
+  ManagedMemorySlice Take(Intern);
 
  public:
-  String(const String&) = delete;
-  String& operator=(const String&) = delete;
-  String(String&& other) noexcept : value_(std::move(other.value_)) {
-    other.value_ = absl::Span<const uint8_t>();
-  }
-  String& operator=(String&& other) noexcept {
-    value_ = std::move(other.value_);
-    other.value_ = absl::Span<const uint8_t>();
-    return *this;
+  // If a String is a Slice then unref
+  ~String() {
+    if (auto* p = absl::get_if<grpc_slice>(&value_)) {
+      grpc_slice_unref_internal(*p);
+    }
   }
 
   // Take the value and leave this empty
@@ -678,18 +674,15 @@ class HPackParser::String {
     return Take(T());
   }
 
-  // Return a reference to the value as a string view
-  absl::string_view string_view() const {
-    return Match(
-        value_, [](const Slice& slice) { return slice.as_string_view(); },
-        [](absl::Span<const uint8_t> span) {
-          return absl::string_view(reinterpret_cast<const char*>(span.data()),
-                                   span.size());
-        },
-        [](const std::vector<uint8_t>& v) {
-          return absl::string_view(reinterpret_cast<const char*>(v.data()),
-                                   v.size());
-        });
+  String(const String&) = delete;
+  String& operator=(const String&) = delete;
+  String(String&& other) noexcept : value_(std::move(other.value_)) {
+    other.value_ = absl::Span<const uint8_t>();
+  }
+  String& operator=(String&& other) noexcept {
+    value_ = std::move(other.value_);
+    other.value_ = absl::Span<const uint8_t>();
+    return *this;
   }
 
   // Parse a non-binary string
@@ -765,7 +758,18 @@ class HPackParser::String {
   explicit String(std::vector<uint8_t> v) : value_(std::move(v)) {}
   explicit String(absl::Span<const uint8_t> v) : value_(v) {}
   String(grpc_slice_refcount* r, const uint8_t* begin, const uint8_t* end)
-      : value_(Slice::FromRefcountAndBytes(r, begin, end)) {}
+      : value_(MakeSlice(r, begin, end)) {}
+
+  // Given a refcount and a byte range, make a slice
+  static grpc_slice MakeSlice(grpc_slice_refcount* r, const uint8_t* begin,
+                              const uint8_t* end) {
+    grpc_slice out;
+    out.refcount = r;
+    r->Ref();
+    out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
+    out.data.refcounted.length = end - begin;
+    return out;
+  }
 
   // Parse some huffman encoded bytes, using output(uint8_t b) to emit each
   // decoded byte.
@@ -927,7 +931,8 @@ class HPackParser::String {
     GPR_UNREACHABLE_CODE(return out;);
   }
 
-  absl::variant<Slice, absl::Span<const uint8_t>, std::vector<uint8_t>> value_;
+  absl::variant<grpc_slice, absl::Span<const uint8_t>, std::vector<uint8_t>>
+      value_;
 };
 
 // Parser parses one key/value pair from a byte stream.
@@ -1124,16 +1129,14 @@ class HPackParser::Parser {
   absl::optional<HPackTable::Memento> ParseLiteralKey() {
     auto key = String::Parse(input_);
     if (!key.has_value()) return {};
-    auto value = ParseValueString(absl::EndsWith(key->string_view(), "-bin"));
+    auto key_slice = key->Take<String::Intern>();
+    auto value =
+        ParseValueString(grpc_is_refcounted_slice_binary_header(key_slice));
     if (GPR_UNLIKELY(!value.has_value())) {
+      grpc_slice_unref_internal(key_slice);
       return {};
     }
-    auto key_string = key->string_view();
-    auto value_slice = value->Take<TakeValueType>();
-    const auto transport_size = key_string.size() + value_slice.size() +
-                                hpack_constants::kEntryOverhead;
-    return grpc_metadata_batch::Parse(key->string_view(),
-                                      std::move(value_slice), transport_size);
+    return grpc_metadata_batch::Parse(key_slice, value->Take<TakeValueType>());
   }
 
   // Parse an index encoded key and a string encoded value
@@ -1241,7 +1244,7 @@ class HPackParser::Parser {
   const LogInfo log_info_;
 };
 
-Slice HPackParser::String::Take(Extern) {
+UnmanagedMemorySlice HPackParser::String::Take(Extern) {
   auto s = Match(
       value_,
       [](const grpc_slice& slice) {
@@ -1261,10 +1264,10 @@ Slice HPackParser::String::Take(Extern) {
                                     v.size());
       });
   value_ = absl::Span<const uint8_t>();
-  return Slice(s);
+  return s;
 }
 
-Slice HPackParser::String::Take(Intern) {
+ManagedMemorySlice HPackParser::String::Take(Intern) {
   auto s = Match(
       value_,
       [](const grpc_slice& slice) {
@@ -1282,7 +1285,7 @@ Slice HPackParser::String::Take(Intern) {
                                   v.size());
       });
   value_ = absl::Span<const uint8_t>();
-  return Slice(s);
+  return s;
 }
 
 /* PUBLIC INTERFACE */

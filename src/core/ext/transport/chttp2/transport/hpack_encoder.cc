@@ -476,20 +476,12 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
 
 void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
   GPR_ASSERT(value == TeMetadata::ValueType::kTrailers);
-  EncodeAlwaysIndexed(
-      &compressor_->te_index_, GRPC_MDSTR_TE, GRPC_MDSTR_TRAILERS,
-      2 /* te */ + 8 /* trailers */ + hpack_constants::kEntryOverhead);
-}
-
-void HPackCompressor::Framer::EncodeAlwaysIndexed(uint32_t* index,
-                                                  const grpc_slice& key,
-                                                  const grpc_slice& value,
-                                                  uint32_t transport_length) {
-  if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
-    EmitIndexed(compressor_->table_.DynamicIndex(*index));
+  if (compressor_->table_.ConvertableToDynamicIndex(compressor_->te_index_)) {
+    EmitIndexed(compressor_->table_.DynamicIndex(compressor_->te_index_));
   } else {
-    *index = compressor_->table_.AllocateIndex(transport_length);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value);
+    compressor_->te_index_ = compressor_->table_.AllocateIndex(
+        2 /* te */ + 8 /* trailers */ + hpack_constants::kEntryOverhead);
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(GRPC_MDSTR_TE, GRPC_MDSTR_TRAILERS);
   }
 }
 
@@ -502,16 +494,6 @@ void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
                                    UnmanagedMemorySlice(timeout_str));
   EncodeDynamic(mdelem);
   GRPC_MDELEM_UNREF(mdelem);
-}
-
-void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
-  if (!slice.is_equivalent(compressor_->user_agent_)) {
-    compressor_->user_agent_ = slice.Ref();
-    compressor_->user_agent_index_ = 0;
-  }
-  EncodeAlwaysIndexed(
-      &compressor_->user_agent_index_, GRPC_MDSTR_USER_AGENT, slice.c_slice(),
-      10 /* user-agent */ + slice.size() + hpack_constants::kEntryOverhead);
 }
 
 void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {

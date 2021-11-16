@@ -47,7 +47,7 @@ class SliceRefCount {
 
  private:
   grpc_slice_refcount base_;
-  std::atomic<size_t> refs_{1};
+  grpc_core::RefCount refs_;
   std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
   size_t size_;
 };

@@ -37,7 +37,7 @@
 
 static_assert(
     std::is_trivially_destructible<grpc_core::StaticMetadataSlice>::value,
-    "StaticMetadataSlice must be trivially destructible.");
+    "grpc_core::StaticMetadataSlice must be trivially destructible.");
 #define GRPC_STATIC_MDSTR_COUNT 110
 /* ":path" */
 #define GRPC_MDSTR_PATH (::grpc_core::g_static_metadata_slice_table[0])
@@ -84,21 +84,21 @@ static_assert(
 /* "grpc-internal-stream-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST \
   (::grpc_core::g_static_metadata_slice_table[17])
+/* "user-agent" */
+#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[18])
 /* "host" */
-#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[18])
+#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[19])
 /* "grpc-previous-rpc-attempts" */
 #define GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS \
-  (::grpc_core::g_static_metadata_slice_table[19])
+  (::grpc_core::g_static_metadata_slice_table[20])
 /* "grpc-retry-pushback-ms" */
 #define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS \
-  (::grpc_core::g_static_metadata_slice_table[20])
+  (::grpc_core::g_static_metadata_slice_table[21])
 /* "x-endpoint-load-metrics-bin" */
 #define GRPC_MDSTR_X_ENDPOINT_LOAD_METRICS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[21])
+  (::grpc_core::g_static_metadata_slice_table[22])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[22])
-/* "user-agent" */
-#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[23])
+#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[23])
 /* "1" */
 #define GRPC_MDSTR_1 (::grpc_core::g_static_metadata_slice_table[24])
 /* "2" */
@@ -324,9 +324,8 @@ extern const uint8_t g_static_metadata_bytes[];
   ((slice).refcount != NULL &&                \
    (slice).refcount->GetType() == grpc_slice_refcount::Type::STATIC)
 
-#define GRPC_STATIC_METADATA_INDEX(static_slice)        \
-  (reinterpret_cast<::grpc_core::StaticSliceRefcount*>( \
-       (static_slice).refcount)                         \
+#define GRPC_STATIC_METADATA_INDEX(static_slice)                              \
+  (reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount) \
        ->index)
 
 #endif /* GRPC_CORE_LIB_SLICE_STATIC_SLICE_H */
