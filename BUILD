@@ -5143,6 +5143,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "google_api_upb",
         "protobuf_any_upbdefs",
         "protobuf_duration_upbdefs",
         "protobuf_empty_upbdefs",
