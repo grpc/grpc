@@ -145,11 +145,9 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_mu_unlock(args_->mu);
   }
 
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {
     GPR_ASSERT(false);
   }
-
-  void ReturnError(grpc_error_handle /*error*/) override { GPR_ASSERT(false); }
 
  private:
   ArgsStruct* args_;

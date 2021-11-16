@@ -45,20 +45,19 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     ev_ = ev;
   }
 
-  void ReturnResult(grpc_core::Resolver::Result actual) override {
+  void ReportResult(grpc_core::Resolver::Result actual) override {
     GPR_ASSERT(ev_ != nullptr);
     // We only check the addresses, because that's the only thing
     // explicitly set by the test via
     // FakeResolverResponseGenerator::SetResponse().
-    GPR_ASSERT(actual.addresses.size() == expected_.addresses.size());
-    for (size_t i = 0; i < expected_.addresses.size(); ++i) {
-      GPR_ASSERT(actual.addresses[i] == expected_.addresses[i]);
+    GPR_ASSERT(actual.addresses.ok());
+    GPR_ASSERT(actual.addresses->size() == expected_.addresses->size());
+    for (size_t i = 0; i < expected_.addresses->size(); ++i) {
+      GPR_ASSERT((*actual.addresses)[i] == (*expected_.addresses)[i]);
     }
     gpr_event_set(ev_, reinterpret_cast<void*>(1));
     ev_ = nullptr;
   }
-
-  void ReturnError(grpc_error_handle /*error*/) override {}
 
  private:
   grpc_core::Resolver::Result expected_;
@@ -89,7 +88,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
   static size_t test_counter = 0;
   const size_t num_addresses = 2;
   // Create address list.
-  grpc_core::Resolver::Result result;
+  grpc_core::ServerAddressList addresses;
   for (size_t i = 0; i < num_addresses; ++i) {
     std::string uri_string = absl::StrFormat("ipv4:127.0.0.1:100%" PRIuPTR,
                                              test_counter * num_addresses + i);
@@ -98,11 +97,13 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
-    result.addresses.emplace_back(
+    addresses.emplace_back(
         address.addr, address.len,
         grpc_channel_args_copy_and_add(nullptr, nullptr, 0));
   }
   ++test_counter;
+  grpc_core::Resolver::Result result;
+  result.addresses = std::move(addresses);
   return result;
 }
 
