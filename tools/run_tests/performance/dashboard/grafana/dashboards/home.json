@@ -1,0 +1,1331 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Postgres",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_sync_unary_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "csharp_protobuf_sync_to_async_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C#"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "palette-classic"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "go_protobuf_sync_unary_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Go"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "java_protobuf_unary_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Java"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "python_protobuf_sync_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Python"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ruby_protobuf_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ruby"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "queryType": "randomWalk",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  (metadata->>'created')::timestamp AS time,\n  (scenario->>'name') AS metric,\n  MAX(CAST(summary->>'latency50' AS DOUBLE PRECISION) / 1000) as latency_us\nFROM\n ci_master_results_8core\nWHERE\n $__timeFilter(metadata->>'created') AND\n scenario->>'name' IN (\n   'java_protobuf_unary_ping_pong_secure',\n   'ruby_protobuf_unary_ping_pong',\n   'node_to_node_protobuf_async_unary_ping_pong_secure',\n   'node_purejs_to_node_protobuf_async_unary_ping_pong_secure',\n   'csharp_protobuf_sync_to_async_unary_ping_pong',\n   'cpp_protobuf_sync_unary_ping_pong_secure',\n   'go_protobuf_sync_unary_ping_pong_secure',\n   'python_protobuf_sync_unary_ping_pong',\n   'netperf_tcp_rr'\n )\n \n GROUP BY\n     time, metric;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "servercpuusage"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "ci_master_results_8core",
+          "timeColumn": "metadata->>'created'",
+          "timeColumnType": "float8",
+          "where": [
+            {
+              "name": "$__unixEpochFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Unary secure ping pong median latency - Language comparison (in microsec)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Postgres",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "python_to_cpp_protobuf_sync_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Python"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ruby_to_cpp_protobuf_sync_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ruby"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_sync_unary_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "csharp_to_cpp_protobuf_sync_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C#"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf php)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf c)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "μs"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "scenario",
+          "queryType": "randomWalk",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    (metadata->>'created')::timestamp AS \"time\",\n    scenario->>'name' as metric,\n    MAX(CAST(summary->>'latency50' AS DOUBLE PRECISION) / 1000) as latency_us\nFROM ci_master_results_8core\nWHERE\n  $__timeFilter(metadata->>'created') AND\n  scenario->>'name' IN (\n    'csharp_to_cpp_protobuf_sync_unary_ping_pong',\n    'ruby_to_cpp_protobuf_sync_unary_ping_pong',\n    'cpp_protobuf_sync_unary_ping_pong_secure',\n    'python_to_cpp_protobuf_sync_unary_ping_pong',\n    'php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_ping_pong',\n    'php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_ping_pong',\n    'netperf_tcp_rr'\n  )\n\nGROUP BY\n  \"time\", metric;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "ci_master_results_8core",
+          "timeColumn": "date",
+          "timeColumnType": "timestamptz",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Unary secure ping pong median latency - Language-specific clients against C++ server (in microsec)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Postgres",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "python_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Python"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ruby_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ruby"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_sync_unary_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "csharp_protobuf_async_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C#"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_php_extension_to_cpp_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf php)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_c_extension_to_cpp_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf c)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "μs"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_async_streaming_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "go_protobuf_sync_streaming_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Go"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "java_protobuf_async_streaming_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Java"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 8,
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "scenario",
+          "queryType": "randomWalk",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    (metadata->>'created')::timestamp AS \"time\",\n    scenario->>'name' as metric,\n    MAX(CAST(summary->>'latency50' AS DOUBLE PRECISION) / 1000) as latency_us\nFROM ci_master_results_8core\nWHERE\n  $__timeFilter(metadata->>'created') AND\n  scenario->>'name' IN (\n    'cpp_protobuf_async_streaming_ping_pong_secure',\n    'csharp_protobuf_async_streaming_ping_pong',\n    'ruby_protobuf_sync_streaming_ping_pong',\n    'node_to_node_protobuf_async_streaming_ping_pong_secure',\n    'node_purejs_to_node_protobuf_async_streaming_ping_pong_secure',\n    'java_protobuf_async_streaming_ping_pong_secure',\n    'go_protobuf_sync_streaming_ping_pong_secure',\n    'python_protobuf_sync_streaming_ping_pong',\n    'php7_protobuf_c_extension_to_cpp_protobuf_sync_streaming_ping_pong',\n    'php7_protobuf_php_extension_to_cpp_protobuf_sync_streaming_ping_pong',\n    'netperf_tcp_rr'\n  )\n\nGROUP BY\n  \"time\", metric;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "ci_master_results_8core",
+          "timeColumn": "date",
+          "timeColumnType": "timestamptz",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Streaming secure ping pong median latency (in microsec)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Postgres",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "python_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Python"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ruby_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ruby"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_sync_unary_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "csharp_protobuf_async_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C#"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf php)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf c)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "μs"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_async_unary_qps_unconstrained_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "go_protobuf_sync_unary_qps_unconstrained_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Go"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "java_protobuf_async_unary_qps_unconstrained_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Java"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 27
+      },
+      "id": 6,
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "scenario",
+          "queryType": "randomWalk",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    (metadata->>'created')::timestamp AS \"time\",\n    scenario->>'name' as metric,\n    MIN(ROUND(CAST(summary->>'qps' AS DOUBLE PRECISION))) as throughput_qps\nFROM ci_master_results_8core\nWHERE\n  $__timeFilter(metadata->>'created') AND\n  scenario->>'name' IN (\n     'cpp_protobuf_async_unary_qps_unconstrained_secure',\n     'java_protobuf_async_unary_qps_unconstrained_secure',\n     'csharp_protobuf_async_unary_qps_unconstrained',\n     'node_protobuf_unary_qps_unconstrained',\n     'ruby_protobuf_sync_unary_qps_unconstrained',\n     'python_protobuf_sync_unary_qps_unconstrained',\n     'php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_qps_unconstrained',\n     'php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_qps_unconstrained',\n     'go_protobuf_sync_unary_qps_unconstrained_secure'\n  )\n\nGROUP BY\n  \"time\", metric;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "ci_master_results_8core",
+          "timeColumn": "date",
+          "timeColumnType": "timestamptz",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Unary secure throughput QPS (8 core client to 8 core server)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Postgres",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "python_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Python"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ruby_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ruby"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_sync_unary_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "csharp_protobuf_async_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C#"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_php_extension_to_cpp_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf php)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_c_extension_to_cpp_protobuf_sync_streaming_ping_pong"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf c)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "μs"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_async_streaming_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "go_protobuf_sync_streaming_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Go"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "java_protobuf_async_streaming_ping_pong_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Java"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 27
+      },
+      "id": 10,
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "scenario",
+          "queryType": "randomWalk",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    (metadata->>'created')::timestamp AS \"time\",\n    (scenario->>'name') as metric,\n    MAX(ROUND(CAST(summary->>'serverSystemTime' AS DOUBLE PRECISION) + CAST(summary->>'serverUserTime' AS DOUBLE PRECISION))) / 100 as server_cpu\nFROM ci_master_results_8core\nWHERE\n  $__timeFilter(metadata->>'created') AND\n  scenario->>'name' IN (\n    'cpp_protobuf_async_streaming_ping_pong_secure',\n    'csharp_protobuf_async_streaming_ping_pong',\n    'ruby_protobuf_sync_streaming_ping_pong',\n    'node_to_node_protobuf_async_streaming_ping_pong_secure',\n    'node_purejs_to_node_protobuf_async_streaming_ping_pong_secure',\n    'java_protobuf_async_streaming_ping_pong_secure',\n    'go_protobuf_sync_streaming_ping_pong_secure',\n    'python_protobuf_sync_streaming_ping_pong',\n    'php7_protobuf_c_extension_to_cpp_protobuf_sync_streaming_ping_pong',\n    'php7_protobuf_php_extension_to_cpp_protobuf_sync_streaming_ping_pong',\n    'netperf_tcp_rr'\n  )\n\nGROUP BY\n  \"time\", metric;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "ci_master_results_8core",
+          "timeColumn": "date",
+          "timeColumnType": "timestamptz",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Unary secure server CPU (8 core client to 8 core server)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Postgres",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "python_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Python"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ruby_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Ruby"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_async_unary_qps_unconstrained_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "csharp_protobuf_async_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C#"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf php)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_qps_unconstrained"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "PHP Sync (protobuf c)"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "μs"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cpp_protobuf_async_unary_qps_unconstrained_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "C++"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "go_protobuf_sync_unary_qps_unconstrained_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Go"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "java_protobuf_async_unary_qps_unconstrained_secure"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Java"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 27
+      },
+      "id": 12,
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltipOptions": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.5.5",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "scenario",
+          "queryType": "randomWalk",
+          "rawQuery": true,
+          "rawSql": "SELECT\n    (metadata->>'created')::timestamp AS \"time\",\n    scenario->>'name' as metric,\n    MAX(ROUND(CAST(summary->>'clientSystemTime' AS DOUBLE PRECISION) + CAST(summary->>'clientUserTime' AS DOUBLE PRECISION)) / 100) as client_cpu\nFROM ci_master_results_8core\nWHERE\n  $__timeFilter(metadata->>'created') AND\n  scenario->>'name' IN (\n     'cpp_protobuf_async_unary_qps_unconstrained_secure',\n     'java_protobuf_async_unary_qps_unconstrained_secure',\n     'csharp_protobuf_async_unary_qps_unconstrained',\n     'node_protobuf_unary_qps_unconstrained',\n     'ruby_protobuf_sync_unary_qps_unconstrained',\n     'python_protobuf_sync_unary_qps_unconstrained',\n     'php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_qps_unconstrained',\n     'php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_qps_unconstrained',\n     'go_protobuf_sync_unary_qps_unconstrained_secure'\n  )\n\nGROUP BY\n  \"time\", metric;",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "ci_master_results_8core",
+          "timeColumn": "date",
+          "timeColumnType": "timestamptz",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Unary secure client CPU (8 core client to 8 core server)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-14d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "gRPC Performance Multi-language on GKE (@upstream/master)",
+  "uid": "18sWlbd7z",
+  "version": 1
+}

@@ -1,0 +1,15 @@
+runtime: custom
+env: flexible
+service: ${GCP_GRAFANA_SERVICE}
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 2
+resources:
+  cpu: 1
+  memory_gb: 1
+beta_settings:
+  cloud_sql_instances: ${CLOUD_SQL_INSTANCE}=tcp:5432
+liveness_check:
+  path: "/"
+readiness_check:
+  path: "/"
