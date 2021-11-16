@@ -82,17 +82,17 @@ static_assert(
 /* "grpc-internal-stream-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST \
   (::grpc_core::g_static_metadata_slice_table[16])
-/* "host" */
-#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[17])
 /* "grpc-previous-rpc-attempts" */
 #define GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS \
-  (::grpc_core::g_static_metadata_slice_table[18])
+  (::grpc_core::g_static_metadata_slice_table[17])
 /* "grpc-retry-pushback-ms" */
 #define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS \
-  (::grpc_core::g_static_metadata_slice_table[19])
+  (::grpc_core::g_static_metadata_slice_table[18])
 /* "x-endpoint-load-metrics-bin" */
 #define GRPC_MDSTR_X_ENDPOINT_LOAD_METRICS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[20])
+  (::grpc_core::g_static_metadata_slice_table[19])
+/* "host" */
+#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[20])
 /* "grpc-timeout" */
 #define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[21])
 /* "user-agent" */

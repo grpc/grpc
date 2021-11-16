@@ -255,8 +255,8 @@ StaticMetadata g_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
                             g_static_metadata_bytes + 371),
         36),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[17].base, 4,
-                            g_static_metadata_bytes + 254),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[20].base, 4,
+                            g_static_metadata_bytes + 329),
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[28].base, 0,
                             g_static_metadata_bytes + 371),
         37),
@@ -979,7 +979,7 @@ uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {
 
 static const int8_t elems_r[] = {
     18, 12, -8, 0,  -1, -44, 0,  9,  -2, 0,   0,   0,   9,   6,   1,   0,
-    0,  5,  0,  0,  0,  0,   -4, 0,  0,  0,   0,   0,   0,   0,   0,   0,
+    0,  0,  0,  0,  -1, 0,   -4, 0,  0,  0,   0,   0,   0,   0,   0,   0,
     0,  0,  0,  0,  0,  0,   0,  0,  0,  0,   0,   0,   0,   0,   0,   0,
     0,  0,  0,  0,  0,  0,   0,  0,  0,  -72, 0,   -75, -75, -76, -77, 0,
     30, 29, 28, 27, 26, 25,  24, 23, 22, 21,  20,  20,  19,  18,  17,  16,
@@ -999,7 +999,7 @@ static uint32_t elems_phash(uint32_t i) {
 
 static const uint16_t elem_keys[] = {
     270,   271,   272,   273,  274,   275,   276,   919,   920,   488,  489,
-    1568,  154,   155,   1458, 1348,  809,   810,   46,    47,    650,  1898,
+    1568,  154,   155,   1458, 1348,  809,   810,   46,    47,    650,  2228,
     2448,  1580,  6298,  6518, 1470,  6628,  6738,  6848,  6958,  7068, 7178,
     7288,  7398,  7508,  7618, 7728,  7838,  7948,  8058,  1598,  8168, 8278,
     8388,  8498,  8608,  8718, 8828,  8938,  9048,  9158,  9268,  9378, 9488,

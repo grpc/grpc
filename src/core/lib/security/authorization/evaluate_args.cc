@@ -91,11 +91,10 @@ absl::string_view EvaluateArgs::GetPath() const {
 
 absl::string_view EvaluateArgs::GetHost() const {
   absl::string_view host;
-  if (metadata_ != nullptr &&
-      metadata_->legacy_index()->named.host != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.host;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    host = StringViewFromSlice(val);
+  if (metadata_ != nullptr) {
+    if (auto* host_md = metadata_->get_pointer(HostMetadata())) {
+      host = host_md->as_string_view();
+    }
   }
   return host;
 }

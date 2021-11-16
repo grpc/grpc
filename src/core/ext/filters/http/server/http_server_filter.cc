@@ -298,19 +298,11 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     }
   }
 
-  if (b->legacy_index()->named.host != nullptr &&
-      b->legacy_index()->named.authority == nullptr) {
-    grpc_linked_mdelem* el = b->legacy_index()->named.host;
-    grpc_mdelem md = GRPC_MDELEM_REF(el->md);
-    b->Remove(el);
-    hs_add_error(
-        error_name, &error,
-        grpc_metadata_batch_add_head(
-            b, el,
-            grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                    grpc_slice_ref_internal(GRPC_MDVALUE(md))),
-            GRPC_BATCH_AUTHORITY));
-    GRPC_MDELEM_UNREF(md);
+  if (b->legacy_index()->named.authority == nullptr) {
+    absl::optional<grpc_core::Slice> host = b->Take(grpc_core::HostMetadata());
+    if (host.has_value()) {
+      b->Append(":authority", std::move(*host));
+    }
   }
 
   if (b->legacy_index()->named.authority == nullptr) {

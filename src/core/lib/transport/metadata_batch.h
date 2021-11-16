@@ -159,6 +159,11 @@ struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-message"; }
 };
 
+// host metadata trait.
+struct HostMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "host"; }
+};
+
 namespace metadata_detail {
 
 // Inner implementation of MetadataMap<Container>::Parse()
@@ -922,7 +927,8 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 using grpc_metadata_batch =
     grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata,
                            grpc_core::TeMetadata, grpc_core::UserAgentMetadata,
-                           grpc_core::GrpcMessageMetadata>;
+                           grpc_core::GrpcMessageMetadata,
+                           grpc_core::HostMetadata>;
 
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
   batch->Clear();
