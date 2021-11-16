@@ -824,15 +824,14 @@ class HPackParser::String {
   static absl::optional<String> Unbase64(Input* input, String s) {
     auto v = Match(
         s.value_,
-        [](const grpc_slice& slice) {
-          return Unbase64Loop(GRPC_SLICE_START_PTR(slice),
-                              GRPC_SLICE_END_PTR(slice));
-        },
         [](absl::Span<const uint8_t> span) {
           return Unbase64Loop(span.begin(), span.end());
         },
         [](const std::vector<uint8_t>& vec) {
           return Unbase64Loop(vec.data(), vec.data() + vec.size());
+        },
+        [](const Slice& slice) {
+          return Unbase64Loop(slice.begin(), slice.end());
         });
     if (!v.has_value()) {
       return input->MaybeSetErrorAndReturn(
@@ -1244,11 +1243,10 @@ class HPackParser::Parser {
 Slice HPackParser::String::Take(Extern) {
   auto s = Match(
       value_,
-      [](const grpc_slice& slice) {
+      [](const Slice& slice) {
         // TODO(ctiller): Think about this before submission.
-        GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
-        auto out_slice = grpc_slice_copy(slice);
-        grpc_slice_unref_internal(slice);
+        GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice.c_slice()));
+        auto out_slice = grpc_slice_copy(slice.c_slice());
         return static_cast<const UnmanagedMemorySlice&>(out_slice);
       },
       [](absl::Span<const uint8_t> span) {
