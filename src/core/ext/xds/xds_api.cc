@@ -2310,7 +2310,10 @@ grpc_error_handle HttpConnectionManagerParse(
         XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
             "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
-  if (XdsRbacEnabled()) {
+  // Guarding parsing of RouteConfig on the server side with the environmental
+  // variable since that's the first feature on the server side that will be
+  // using this.
+  if (is_client || XdsRbacEnabled()) {
     // Found inlined route_config. Parse it to find the cluster_name.
     if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(
             http_connection_manager_proto)) {
