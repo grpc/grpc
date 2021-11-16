@@ -498,6 +498,8 @@ UPB_INLINE char *grpc_lb_v1_FallbackResponse_serialize(const grpc_lb_v1_Fallback
 
 
 
+extern const upb_msglayout_file src_proto_grpc_lb_v1_load_balancer_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -631,6 +631,8 @@ UPB_INLINE char *envoy_config_listener_v3_Listener_InternalListenerConfig_serial
 
 
 
+extern const upb_msglayout_file envoy_config_listener_v3_listener_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

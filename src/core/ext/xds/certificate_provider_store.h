@@ -74,7 +74,7 @@ class CertificateProviderStore
       store_->ReleaseCertificateProvider(key_, this);
     }
 
-    grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
+    RefCountedPtr<grpc_tls_certificate_distributor> distributor()
         const override {
       return certificate_provider_->distributor();
     }

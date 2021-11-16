@@ -60,13 +60,13 @@ class GrpcPolledFdFactory {
   /* Creates a new wrapped fd for the current platform */
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      std::shared_ptr<grpc_core::WorkSerializer> work_serializer) = 0;
+      std::shared_ptr<WorkSerializer> work_serializer) = 0;
   /* Optionally configures the ares channel after creation */
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
+    std::shared_ptr<WorkSerializer> work_serializer);
 
 }  // namespace grpc_core
 
