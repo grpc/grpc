@@ -85,7 +85,7 @@ class ArenaPromise {
     return *this;
   }
 
-  ~ArenaPromise() { impl_->~ImplInterface(); }
+  ~ArenaPromise() { impl_->Destroy(); }
 
   Poll<T> operator()() { return impl_->Poll(); }
 
@@ -93,7 +93,10 @@ class ArenaPromise {
   class ImplInterface {
    public:
     virtual Poll<T> Poll() = 0;
-    virtual ~ImplInterface() = default;
+    virtual void Destroy() = 0;
+
+   protected:
+    ~ImplInterface() = default;
   };
 
   class NullImpl final : public ImplInterface {
@@ -102,6 +105,7 @@ class ArenaPromise {
       abort();
       GPR_UNREACHABLE_CODE(return Pending{});
     }
+    void Destroy() override {}
   };
 
   template <typename Callable>
@@ -110,6 +114,7 @@ class ArenaPromise {
     explicit CallableImpl(Callable&& callable)
         : callable_(std::move(callable)) {}
     Poll<T> Poll() override { return callable_(); }
+    void Destroy() override { this->~CallableImpl(); }
 
    private:
     Callable callable_;
@@ -119,6 +124,7 @@ class ArenaPromise {
   class SharedImpl final : public ImplInterface {
    public:
     Poll<T> Poll() override { return (*static_cast<Callable*>(nullptr))(); }
+    void Destroy() override {}
     static SharedImpl* Get() { return &impl_; }
 
    private:
