@@ -57,7 +57,7 @@ class ArenaPromise {
   // allocating memory for the promise.
   template <typename Callable>
   explicit ArenaPromise(
-      Callable&& callable,
+      Callable&&,
       absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
                         arena_promise_detail::UsersShouldNotTypeThis> =
           arena_promise_detail::UsersShouldNotTypeThis())
@@ -69,9 +69,8 @@ class ArenaPromise {
   template <typename Callable>
   explicit ArenaPromise(
       absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
-                        Arena*>
-          arena,
-      Callable&& callable)
+                        Arena*>,
+      Callable&&)
       : impl_(SharedImpl<Callable>::Get()) {}
 
   ArenaPromise(const ArenaPromise&) = delete;
@@ -87,12 +86,12 @@ class ArenaPromise {
 
   ~ArenaPromise() { impl_->Destroy(); }
 
-  Poll<T> operator()() { return impl_->Poll(); }
+  Poll<T> operator()() { return impl_->PollOnce(); }
 
  private:
   class ImplInterface {
    public:
-    virtual Poll<T> Poll() = 0;
+    virtual Poll<T> PollOnce() = 0;
     virtual void Destroy() = 0;
 
    protected:
@@ -101,7 +100,7 @@ class ArenaPromise {
 
   class NullImpl final : public ImplInterface {
    public:
-    Poll<T> Poll() override {
+    Poll<T> PollOnce() override {
       abort();
       GPR_UNREACHABLE_CODE(return Pending{});
     }
@@ -113,7 +112,7 @@ class ArenaPromise {
    public:
     explicit CallableImpl(Callable&& callable)
         : callable_(std::move(callable)) {}
-    Poll<T> Poll() override { return callable_(); }
+    Poll<T> PollOnce() override { return callable_(); }
     void Destroy() override { this->~CallableImpl(); }
 
    private:
@@ -123,7 +122,7 @@ class ArenaPromise {
   template <typename Callable>
   class SharedImpl final : public ImplInterface {
    public:
-    Poll<T> Poll() override { return (*static_cast<Callable*>(nullptr))(); }
+    Poll<T> PollOnce() override { return (*static_cast<Callable*>(nullptr))(); }
     void Destroy() override {}
     static SharedImpl* Get() { return &impl_; }
 
