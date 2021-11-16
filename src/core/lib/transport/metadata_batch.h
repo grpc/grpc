@@ -164,6 +164,26 @@ struct HostMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "host"; }
 };
 
+// x-endpoint-load-metrics-bin metadata trait.
+struct XEndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
+};
+
+// grpc-server-stats-bin metadata trait.
+struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "grpc-server-stats-bin"; }
+};
+
+// grpc-trace-bin metadata trait.
+struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "grpc-trace-bin"; }
+};
+
+// grpc-tags-bin metadata trait.
+struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "grpc-tags-bin"; }
+};
+
 namespace metadata_detail {
 
 // Inner implementation of MetadataMap<Container>::Parse()
@@ -924,11 +944,12 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 
 }  // namespace grpc_core
 
-using grpc_metadata_batch =
-    grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata,
-                           grpc_core::TeMetadata, grpc_core::UserAgentMetadata,
-                           grpc_core::GrpcMessageMetadata,
-                           grpc_core::HostMetadata>;
+using grpc_metadata_batch = grpc_core::MetadataMap<
+    grpc_core::GrpcTimeoutMetadata, grpc_core::TeMetadata,
+    grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata,
+    grpc_core::HostMetadata, grpc_core::XEndpointLoadMetricsBinMetadata,
+    grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
+    grpc_core::GrpcTagsBinMetadata>;
 
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
   batch->Clear();

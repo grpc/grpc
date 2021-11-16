@@ -44,39 +44,27 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
   gpr_free(raw_msg);
   gpr_free(encoded_msg);
 
-  grpc_slice raw_slice = grpc_slice_from_copied_buffer(raw, raw_length);
-  grpc_slice encoded_slice =
-      grpc_slice_from_copied_buffer(encoded, encoded_length);
-  grpc_slice raw2encoded_slice = grpc_core::PercentEncodeSlice(raw_slice, type);
-  absl::optional<grpc_slice> encoded2raw_slice =
-      grpc_core::PercentDecodeSlice(encoded_slice, type);
-  GPR_ASSERT(encoded2raw_slice.has_value());
-  grpc_slice encoded2raw_permissive_slice =
-      grpc_core::PermissivePercentDecodeSlice(encoded_slice);
+  auto raw_slice = grpc_core::Slice::FromCopiedBuffer(raw, raw_length);
+  auto encoded_slice =
+      grpc_core::Slice::FromCopiedBuffer(encoded, encoded_length);
+  auto raw2encoded_slice =
+      grpc_core::PercentEncodeSlice(std::move(raw_slice), type);
+  auto encoded2raw_permissive_slice =
+      grpc_core::PermissivePercentDecodeSlice(std::move(encoded_slice));
 
-  char* raw2encoded_msg =
-      grpc_dump_slice(raw2encoded_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  char* encoded2raw_msg =
-      grpc_dump_slice(*encoded2raw_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  char* raw2encoded_msg = grpc_dump_slice(raw2encoded_slice.c_slice(),
+                                          GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char* encoded2raw_permissive_msg = grpc_dump_slice(
-      encoded2raw_permissive_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      encoded2raw_permissive_slice.c_slice(), GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG,
-          "Result:\nraw2encoded = %s\nencoded2raw = %s\nencoded2raw_permissive "
+          "Result:\nraw2encoded = %s\nencoded2raw_permissive "
           "= %s",
-          raw2encoded_msg, encoded2raw_msg, encoded2raw_permissive_msg);
+          raw2encoded_msg, encoded2raw_permissive_msg);
   gpr_free(raw2encoded_msg);
-  gpr_free(encoded2raw_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(grpc_slice_eq(raw_slice, *encoded2raw_slice));
-  GPR_ASSERT(grpc_slice_eq(raw_slice, encoded2raw_permissive_slice));
-  GPR_ASSERT(grpc_slice_eq(encoded_slice, raw2encoded_slice));
-
-  grpc_slice_unref(*encoded2raw_slice);
-  grpc_slice_unref(encoded2raw_permissive_slice);
-  grpc_slice_unref(raw2encoded_slice);
-  grpc_slice_unref(raw_slice);
-  grpc_slice_unref(encoded_slice);
+  GPR_ASSERT(raw_slice == encoded2raw_permissive_slice);
+  GPR_ASSERT(encoded_slice == raw2encoded_slice);
 }
 
 static void test_nonconformant_vector(const char* encoded,
@@ -94,28 +82,20 @@ static void test_nonconformant_vector(const char* encoded,
   gpr_free(permissive_unencoded_msg);
   gpr_free(encoded_msg);
 
-  grpc_slice permissive_unencoded_slice = grpc_slice_from_copied_buffer(
+  auto permissive_unencoded_slice = grpc_core::Slice::FromCopiedBuffer(
       permissive_unencoded, permissive_unencoded_length);
-  grpc_slice encoded_slice =
-      grpc_slice_from_copied_buffer(encoded, encoded_length);
-  absl::optional<grpc_slice> encoded2raw_slice =
-      grpc_core::PercentDecodeSlice(encoded_slice, type);
-  GPR_ASSERT(!encoded2raw_slice.has_value());
-  grpc_slice encoded2raw_permissive_slice =
-      grpc_core::PermissivePercentDecodeSlice(encoded_slice);
+  auto encoded_slice =
+      grpc_core::Slice::FromCopiedBuffer(encoded, encoded_length);
+  auto encoded2raw_permissive_slice =
+      grpc_core::PermissivePercentDecodeSlice(std::move(encoded_slice));
 
   char* encoded2raw_permissive_msg = grpc_dump_slice(
-      encoded2raw_permissive_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      encoded2raw_permissive_slice.c_slice(), GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG, "Result:\nencoded2raw_permissive = %s",
           encoded2raw_permissive_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(
-      grpc_slice_eq(permissive_unencoded_slice, encoded2raw_permissive_slice));
-
-  grpc_slice_unref(permissive_unencoded_slice);
-  grpc_slice_unref(encoded2raw_permissive_slice);
-  grpc_slice_unref(encoded_slice);
+  GPR_ASSERT(permissive_unencoded_slice == encoded2raw_permissive_slice);
 }
 
 int main(int argc, char** argv) {

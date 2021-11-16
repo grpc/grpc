@@ -162,6 +162,9 @@ struct CopyConstructors {
   static Out FromCopiedString(std::string s) {
     return Out(grpc_slice_from_cpp_string(std::move(s)));
   }
+  static Out FromCopiedBuffer(const char* p, size_t len) {
+    return Out(grpc_slice_from_copied_buffer(p, len));
+  }
 };
 
 }  // namespace slice_detail
@@ -180,6 +183,10 @@ class StaticSlice : public slice_detail::BaseSlice {
 
   static StaticSlice FromStaticString(const char* s) {
     return StaticSlice(grpc_slice_from_static_string(s));
+  }
+
+  static StaticSlice FromStaticString(absl::string_view s) {
+    return StaticSlice(UnmanagedMemorySlice(s.data(), s.size()));
   }
 
   StaticSlice(const StaticSlice& other)

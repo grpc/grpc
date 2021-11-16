@@ -2506,11 +2506,10 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
 
   const BackendMetricData* GetBackendMetricData() override {
     if (lb_call_->backend_metric_data_ == nullptr) {
-      grpc_linked_mdelem* md = lb_call_->recv_trailing_metadata_->legacy_index()
-                                   ->named.x_endpoint_load_metrics_bin;
-      if (md != nullptr) {
+      if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
+              XEndpointLoadMetricsBinMetadata())) {
         lb_call_->backend_metric_data_ =
-            ParseBackendMetricData(GRPC_MDVALUE(md->md), lb_call_->arena_);
+            ParseBackendMetricData(*md, lb_call_->arena_);
       }
     }
     return lb_call_->backend_metric_data_;

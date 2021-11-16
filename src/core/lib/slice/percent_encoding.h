@@ -49,7 +49,7 @@ enum class PercentEncodingType {
 // Percent-encode a slice, returning the new slice (this cannot fail):
 // unreserved_bytes is a bitfield indicating which bytes are considered
 // unreserved and thus do not need percent encoding
-Slice PercentEncodeSlice(const Slice& slice, PercentEncodingType type);
+Slice PercentEncodeSlice(Slice slice, PercentEncodingType type);
 // Percent-decode a slice, permissively.
 // If a % triplet can not be decoded, pass it through verbatim.
 // This cannot fail.

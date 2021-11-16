@@ -129,14 +129,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
 namespace {
 
 void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
-  if (b->legacy_index()->named.grpc_server_stats_bin != nullptr) {
+  absl::optional<grpc_core::Slice> grpc_server_stats_bin =
+      b->Take(grpc_core::GrpcServerStatsBinMetadata());
+  if (grpc_server_stats_bin.has_value()) {
     ServerStatsDeserialize(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
-            GRPC_MDVALUE(b->legacy_index()->named.grpc_server_stats_bin->md))),
-        GRPC_SLICE_LENGTH(
-            GRPC_MDVALUE(b->legacy_index()->named.grpc_server_stats_bin->md)),
-        elapsed_time);
-    b->Remove(b->legacy_index()->named.grpc_server_stats_bin);
+        reinterpret_cast<const char*>(grpc_server_stats_bin->data()),
+        grpc_server_stats_bin->size(), elapsed_time);
   }
 }
 
