@@ -8,14 +8,7 @@
 
 #include "upb/def.h"
 #include "src/proto/grpc/health/v1/health.upbdefs.h"
-
-extern const upb_msglayout grpc_health_v1_HealthCheckRequest_msginit;
-extern const upb_msglayout grpc_health_v1_HealthCheckResponse_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &grpc_health_v1_HealthCheckRequest_msginit,
-  &grpc_health_v1_HealthCheckResponse_msginit,
-};
+#include "src/proto/grpc/health/v1/health.upb.h"
 
 static const char descriptor[567] = {'\n', '%', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'h', 'e', 'a', 'l', 't', 'h', '/', 'v', 
 '1', '/', 'h', 'e', 'a', 'l', 't', 'h', '.', 'p', 'r', 'o', 't', 'o', '\022', '\016', 'g', 'r', 'p', 'c', '.', 'h', 'e', 'a', 'l', 
@@ -48,7 +41,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init src_proto_grpc_health_v1_health_proto_upbdefinit = {
   deps,
-  layouts,
+  &src_proto_grpc_health_v1_health_proto_upb_file_layout,
   "src/proto/grpc/health/v1/health.proto",
   UPB_STRVIEW_INIT(descriptor, 567)
 };

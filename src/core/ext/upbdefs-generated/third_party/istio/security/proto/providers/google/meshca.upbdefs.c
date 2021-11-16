@@ -8,16 +8,9 @@
 
 #include "upb/def.h"
 #include "third_party/istio/security/proto/providers/google/meshca.upbdefs.h"
+#include "third_party/istio/security/proto/providers/google/meshca.upb.h"
 
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern const upb_msglayout google_security_meshca_v1_MeshCertificateRequest_msginit;
-extern const upb_msglayout google_security_meshca_v1_MeshCertificateResponse_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &google_security_meshca_v1_MeshCertificateRequest_msginit,
-  &google_security_meshca_v1_MeshCertificateResponse_msginit,
-};
-
 static const char descriptor[521] = {'\n', '>', 't', 'h', 'i', 'r', 'd', '_', 'p', 'a', 'r', 't', 'y', '/', 'i', 's', 't', 'i', 'o', '/', 's', 'e', 'c', 'u', 'r', 
 'i', 't', 'y', '/', 'p', 'r', 'o', 't', 'o', '/', 'p', 'r', 'o', 'v', 'i', 'd', 'e', 'r', 's', '/', 'g', 'o', 'o', 'g', 'l', 
 'e', '/', 'm', 'e', 's', 'h', 'c', 'a', '.', 'p', 'r', 'o', 't', 'o', '\022', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '.', 's', 'e', 
@@ -48,7 +41,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init third_party_istio_security_proto_providers_google_meshca_proto_upbdefinit = {
   deps,
-  layouts,
+  &third_party_istio_security_proto_providers_google_meshca_proto_upb_file_layout,
   "third_party/istio/security/proto/providers/google/meshca.proto",
   UPB_STRVIEW_INIT(descriptor, 521)
 };

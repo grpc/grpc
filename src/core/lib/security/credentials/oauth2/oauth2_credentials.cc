@@ -584,8 +584,8 @@ class StsTokenFetcherCredentials
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
     grpc_httpcli_post(
-        http_context, pollent, grpc_core::ResourceQuota::Default(), &request,
-        body, body_length, deadline,
+        http_context, pollent, ResourceQuota::Default(), &request, body,
+        body_length, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
@@ -636,14 +636,14 @@ class StsTokenFetcherCredentials
 
   URI sts_url_;
   grpc_closure http_post_cb_closure_;
-  grpc_core::UniquePtr<char> resource_;
-  grpc_core::UniquePtr<char> audience_;
-  grpc_core::UniquePtr<char> scope_;
-  grpc_core::UniquePtr<char> requested_token_type_;
-  grpc_core::UniquePtr<char> subject_token_path_;
-  grpc_core::UniquePtr<char> subject_token_type_;
-  grpc_core::UniquePtr<char> actor_token_path_;
-  grpc_core::UniquePtr<char> actor_token_type_;
+  UniquePtr<char> resource_;
+  UniquePtr<char> audience_;
+  UniquePtr<char> scope_;
+  UniquePtr<char> requested_token_type_;
+  UniquePtr<char> subject_token_path_;
+  UniquePtr<char> subject_token_type_;
+  UniquePtr<char> actor_token_path_;
+  UniquePtr<char> actor_token_type_;
 };
 
 }  // namespace

@@ -87,6 +87,8 @@ UPB_INLINE struct envoy_type_matcher_v3_StructMatcher* envoy_type_matcher_v3_Nod
   return sub;
 }
 
+extern const upb_msglayout_file envoy_type_matcher_v3_node_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

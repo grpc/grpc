@@ -1582,6 +1582,8 @@ UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_cli
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
+extern const upb_msglayout_file envoy_admin_v3_config_dump_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

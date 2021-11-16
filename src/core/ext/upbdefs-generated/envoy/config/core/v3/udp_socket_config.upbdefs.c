@@ -8,16 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/udp_socket_config.upbdefs.h"
+#include "envoy/config/core/v3/udp_socket_config.upb.h"
 
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_UdpSocketConfig_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_core_v3_UdpSocketConfig_msginit,
-};
-
 static const char descriptor[405] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'u', 'd', 
 'p', '_', 's', 'o', 'c', 'k', 'e', 't', '_', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 
 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\036', 'g', 'o', 'o', 'g', 'l', 
@@ -46,7 +41,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_config_core_v3_udp_socket_config_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_udp_socket_config_proto_upb_file_layout,
   "envoy/config/core/v3/udp_socket_config.proto",
   UPB_STRVIEW_INIT(descriptor, 405)
 };

@@ -8,16 +8,9 @@
 
 #include "upb/def.h"
 #include "xds/core/v3/context_params.upbdefs.h"
+#include "xds/core/v3/context_params.upb.h"
 
 extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern const upb_msglayout xds_core_v3_ContextParams_msginit;
-extern const upb_msglayout xds_core_v3_ContextParams_ParamsEntry_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &xds_core_v3_ContextParams_msginit,
-  &xds_core_v3_ContextParams_ParamsEntry_msginit,
-};
-
 static const char descriptor[321] = {'\n', ' ', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'c', 'o', 'n', 't', 'e', 'x', 't', '_', 'p', 'a', 'r', 
 'a', 'm', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\037', 'x', 
 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 's', 't', 'a', 't', 'u', 's', '.', 
@@ -40,7 +33,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init xds_core_v3_context_params_proto_upbdefinit = {
   deps,
-  layouts,
+  &xds_core_v3_context_params_proto_upb_file_layout,
   "xds/core/v3/context_params.proto",
   UPB_STRVIEW_INIT(descriptor, 321)
 };

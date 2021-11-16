@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upbdefs.h"
+#include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 
 extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
@@ -17,22 +18,6 @@ extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_endpoint_v3_Endpoint_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_LbEndpoint_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_LedsClusterLocalityConfig_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_LocalityLbEndpoints_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_msginit;
-
-static const upb_msglayout *layouts[6] = {
-  &envoy_config_endpoint_v3_Endpoint_msginit,
-  &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit,
-  &envoy_config_endpoint_v3_LbEndpoint_msginit,
-  &envoy_config_endpoint_v3_LedsClusterLocalityConfig_msginit,
-  &envoy_config_endpoint_v3_LocalityLbEndpoints_msginit,
-  &envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_msginit,
-};
-
 static const char descriptor[2119] = {'\n', '2', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/', 'v', 
 '3', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '_', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 
 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', 
@@ -134,7 +119,7 @@ static upb_def_init *deps[9] = {
 
 upb_def_init envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_endpoint_v3_endpoint_components_proto_upb_file_layout,
   "envoy/config/endpoint/v3/endpoint_components.proto",
   UPB_STRVIEW_INIT(descriptor, 2119)
 };

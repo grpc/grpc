@@ -5051,6 +5051,7 @@ grpc_cc_library(
     deps = [
         "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
+        "xds_type_upb",
     ],
 )
 

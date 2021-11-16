@@ -32,6 +32,15 @@ extern const upb_msglayout xds_annotations_v3_FileStatusAnnotation_msginit;
 extern const upb_msglayout xds_annotations_v3_MessageStatusAnnotation_msginit;
 extern const upb_msglayout xds_annotations_v3_FieldStatusAnnotation_msginit;
 extern const upb_msglayout xds_annotations_v3_StatusAnnotation_msginit;
+extern const upb_msglayout_ext xds_annotations_v3_file_status_ext;
+extern const upb_msglayout_ext xds_annotations_v3_message_status_ext;
+extern const upb_msglayout_ext xds_annotations_v3_field_status_ext;
+struct google_protobuf_FieldOptions;
+struct google_protobuf_FileOptions;
+struct google_protobuf_MessageOptions;
+extern const upb_msglayout google_protobuf_FieldOptions_msginit;
+extern const upb_msglayout google_protobuf_FileOptions_msginit;
+extern const upb_msglayout google_protobuf_MessageOptions_msginit;
 
 typedef enum {
   xds_annotations_v3_UNKNOWN = 0,
@@ -172,6 +181,14 @@ UPB_INLINE void xds_annotations_v3_StatusAnnotation_set_work_in_progress(xds_ann
 UPB_INLINE void xds_annotations_v3_StatusAnnotation_set_package_version_status(xds_annotations_v3_StatusAnnotation *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
+
+UPB_INLINE bool xds_annotations_v3_has_file_status(const struct google_protobuf_FileOptions *msg) { return _upb_msg_getext(msg, &xds_annotations_v3_file_status_ext) != NULL; }
+UPB_INLINE const xds_annotations_v3_FileStatusAnnotation* xds_annotations_v3_file_status(const struct google_protobuf_FileOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &xds_annotations_v3_file_status_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FileStatusAnnotation*); }
+UPB_INLINE bool xds_annotations_v3_has_message_status(const struct google_protobuf_MessageOptions *msg) { return _upb_msg_getext(msg, &xds_annotations_v3_message_status_ext) != NULL; }
+UPB_INLINE const xds_annotations_v3_MessageStatusAnnotation* xds_annotations_v3_message_status(const struct google_protobuf_MessageOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &xds_annotations_v3_message_status_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_MessageStatusAnnotation*); }
+UPB_INLINE bool xds_annotations_v3_has_field_status(const struct google_protobuf_FieldOptions *msg) { return _upb_msg_getext(msg, &xds_annotations_v3_field_status_ext) != NULL; }
+UPB_INLINE const xds_annotations_v3_FieldStatusAnnotation* xds_annotations_v3_field_status(const struct google_protobuf_FieldOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &xds_annotations_v3_field_status_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FieldStatusAnnotation*); }
+extern const upb_msglayout_file xds_annotations_v3_status_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
