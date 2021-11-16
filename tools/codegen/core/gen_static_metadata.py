@@ -165,12 +165,8 @@ METADATA_BATCH_CALLOUTS = [
     ':authority',
     ':scheme',
     'grpc-status',
-    'grpc-payload-bin',
     'grpc-encoding',
     'grpc-accept-encoding',
-    'grpc-server-stats-bin',
-    'grpc-tags-bin',
-    'grpc-trace-bin',
     'content-type',
     'content-encoding',
     'accept-encoding',
@@ -178,7 +174,6 @@ METADATA_BATCH_CALLOUTS = [
     'grpc-internal-stream-encoding-request',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
-    'x-endpoint-load-metrics-bin',
 ]
 
 COMPRESSION_ALGORITHMS = [

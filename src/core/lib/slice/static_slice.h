@@ -51,64 +51,64 @@ static_assert(
 #define GRPC_MDSTR_SCHEME (::grpc_core::g_static_metadata_slice_table[4])
 /* "grpc-status" */
 #define GRPC_MDSTR_GRPC_STATUS (::grpc_core::g_static_metadata_slice_table[5])
-/* "grpc-payload-bin" */
-#define GRPC_MDSTR_GRPC_PAYLOAD_BIN \
-  (::grpc_core::g_static_metadata_slice_table[6])
 /* "grpc-encoding" */
-#define GRPC_MDSTR_GRPC_ENCODING (::grpc_core::g_static_metadata_slice_table[7])
+#define GRPC_MDSTR_GRPC_ENCODING (::grpc_core::g_static_metadata_slice_table[6])
 /* "grpc-accept-encoding" */
 #define GRPC_MDSTR_GRPC_ACCEPT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[8])
-/* "grpc-server-stats-bin" */
-#define GRPC_MDSTR_GRPC_SERVER_STATS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[9])
-/* "grpc-tags-bin" */
-#define GRPC_MDSTR_GRPC_TAGS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[10])
-/* "grpc-trace-bin" */
-#define GRPC_MDSTR_GRPC_TRACE_BIN \
-  (::grpc_core::g_static_metadata_slice_table[11])
+  (::grpc_core::g_static_metadata_slice_table[7])
 /* "content-type" */
-#define GRPC_MDSTR_CONTENT_TYPE (::grpc_core::g_static_metadata_slice_table[12])
+#define GRPC_MDSTR_CONTENT_TYPE (::grpc_core::g_static_metadata_slice_table[8])
 /* "content-encoding" */
 #define GRPC_MDSTR_CONTENT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[13])
+  (::grpc_core::g_static_metadata_slice_table[9])
 /* "accept-encoding" */
 #define GRPC_MDSTR_ACCEPT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[14])
+  (::grpc_core::g_static_metadata_slice_table[10])
 /* "grpc-internal-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST \
-  (::grpc_core::g_static_metadata_slice_table[15])
+  (::grpc_core::g_static_metadata_slice_table[11])
 /* "grpc-internal-stream-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST \
-  (::grpc_core::g_static_metadata_slice_table[16])
+  (::grpc_core::g_static_metadata_slice_table[12])
 /* "grpc-previous-rpc-attempts" */
 #define GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS \
-  (::grpc_core::g_static_metadata_slice_table[17])
+  (::grpc_core::g_static_metadata_slice_table[13])
 /* "grpc-retry-pushback-ms" */
 #define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS \
-  (::grpc_core::g_static_metadata_slice_table[18])
+  (::grpc_core::g_static_metadata_slice_table[14])
+/* "host" */
+#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[15])
+/* "grpc-timeout" */
+#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[16])
+/* "grpc-payload-bin" */
+#define GRPC_MDSTR_GRPC_PAYLOAD_BIN \
+  (::grpc_core::g_static_metadata_slice_table[17])
+/* "user-agent" */
+#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[18])
+/* "grpc-message" */
+#define GRPC_MDSTR_GRPC_MESSAGE (::grpc_core::g_static_metadata_slice_table[19])
+/* "grpc-server-stats-bin" */
+#define GRPC_MDSTR_GRPC_SERVER_STATS_BIN \
+  (::grpc_core::g_static_metadata_slice_table[20])
+/* "grpc-tags-bin" */
+#define GRPC_MDSTR_GRPC_TAGS_BIN \
+  (::grpc_core::g_static_metadata_slice_table[21])
+/* "grpc-trace-bin" */
+#define GRPC_MDSTR_GRPC_TRACE_BIN \
+  (::grpc_core::g_static_metadata_slice_table[22])
+/* "1" */
+#define GRPC_MDSTR_1 (::grpc_core::g_static_metadata_slice_table[23])
+/* "2" */
+#define GRPC_MDSTR_2 (::grpc_core::g_static_metadata_slice_table[24])
+/* "3" */
+#define GRPC_MDSTR_3 (::grpc_core::g_static_metadata_slice_table[25])
+/* "4" */
+#define GRPC_MDSTR_4 (::grpc_core::g_static_metadata_slice_table[26])
+/* "" */
+#define GRPC_MDSTR_EMPTY (::grpc_core::g_static_metadata_slice_table[27])
 /* "x-endpoint-load-metrics-bin" */
 #define GRPC_MDSTR_X_ENDPOINT_LOAD_METRICS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[19])
-/* "host" */
-#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[20])
-/* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[21])
-/* "user-agent" */
-#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[22])
-/* "grpc-message" */
-#define GRPC_MDSTR_GRPC_MESSAGE (::grpc_core::g_static_metadata_slice_table[23])
-/* "1" */
-#define GRPC_MDSTR_1 (::grpc_core::g_static_metadata_slice_table[24])
-/* "2" */
-#define GRPC_MDSTR_2 (::grpc_core::g_static_metadata_slice_table[25])
-/* "3" */
-#define GRPC_MDSTR_3 (::grpc_core::g_static_metadata_slice_table[26])
-/* "4" */
-#define GRPC_MDSTR_4 (::grpc_core::g_static_metadata_slice_table[27])
-/* "" */
-#define GRPC_MDSTR_EMPTY (::grpc_core::g_static_metadata_slice_table[28])
+  (::grpc_core::g_static_metadata_slice_table[28])
 /* "grpc.wait_for_ready" */
 #define GRPC_MDSTR_GRPC_DOT_WAIT_FOR_READY \
   (::grpc_core::g_static_metadata_slice_table[29])

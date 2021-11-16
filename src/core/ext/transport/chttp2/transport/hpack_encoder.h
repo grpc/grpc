@@ -120,6 +120,8 @@ class HPackCompressor {
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(UserAgentMetadata, const Slice& slice);
+    template <typename Which>
+    void Encode(Which, const Slice& slice);
 
    private:
     struct FramePrefix {
