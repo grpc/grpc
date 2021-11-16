@@ -60,7 +60,7 @@ static void destroy_channel(void* arg, grpc_error_handle error);
 grpc_channel* grpc_channel_create_with_builder(
     grpc_channel_stack_builder* builder,
     grpc_channel_stack_type channel_stack_type, grpc_error_handle* error) {
-  char* target = gpr_strdup(grpc_channel_stack_builder_get_target(builder));
+  std::string target = grpc_channel_stack_builder_get_target(builder);
   grpc_channel_args* args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
   grpc_channel* channel;
@@ -82,11 +82,10 @@ grpc_channel* grpc_channel_create_with_builder(
     } else {
       GRPC_ERROR_UNREF(builder_error);
     }
-    gpr_free(target);
     grpc_channel_args_destroy(args);
     return nullptr;
   }
-  channel->target = target;
+  channel->target.Init(std::move(target));
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   channel->registration_table.Init();
   channel->allocator.Init(grpc_core::ResourceQuotaFromChannelArgs(args)
@@ -202,11 +201,10 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   const bool is_internal_channel = grpc_channel_args_find_bool(
       args, GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, false);
   // Create the channelz node.
-  const char* target = grpc_channel_stack_builder_get_target(builder);
+  std::string target = grpc_channel_stack_builder_get_target(builder);
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
       grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
-          target != nullptr ? target : "", channel_tracer_max_memory,
-          is_internal_channel);
+          target.c_str(), channel_tracer_max_memory, is_internal_channel);
   channelz_node->AddTraceEvent(
       grpc_core::channelz::ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("Channel created"));
@@ -318,7 +316,7 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel,
 
 char* grpc_channel_get_target(grpc_channel* channel) {
   GRPC_API_TRACE("grpc_channel_get_target(channel=%p)", 1, (channel));
-  return gpr_strdup(channel->target);
+  return gpr_strdup(channel->target->c_str());
 }
 
 void grpc_channel_get_info(grpc_channel* channel,
@@ -492,7 +490,7 @@ static void destroy_channel(void* arg, grpc_error_handle /*error*/) {
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   channel->registration_table.Destroy();
   channel->allocator.Destroy();
-  gpr_free(channel->target);
+  channel->target.Destroy();
   gpr_free(channel);
   // See comment in grpc_channel_create() for why we do this.
   grpc_shutdown();
