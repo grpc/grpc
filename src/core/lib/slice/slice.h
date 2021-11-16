@@ -216,6 +216,16 @@ class MutableSlice : public slice_detail::BaseSlice,
     return *this;
   }
 
+  static MutableSlice CreateUninitialized(size_t length) {
+    return MutableSlice(grpc_slice_malloc(length));
+  }
+
+  // Return a sub slice of this one. Leaves this slice in an indeterminate but
+  // valid state.
+  MutableSlice TakeSubSlice(size_t pos, size_t n) {
+    return MutableSlice(grpc_slice_sub_no_ref(TakeCSlice(), pos, pos + n));
+  }
+
   // Iterator access to the underlying bytes
   uint8_t* begin() { return mutable_data(); }
   uint8_t* end() { return mutable_data() + size(); }
@@ -230,10 +240,7 @@ class Slice : public slice_detail::BaseSlice,
   Slice() = default;
   ~Slice() { grpc_slice_unref_internal(c_slice()); }
   explicit Slice(const grpc_slice& slice) : slice_detail::BaseSlice(slice) {}
-  template <class SliceType>
-  explicit Slice(absl::enable_if_t<
-                 std::is_base_of<slice_detail::BaseSlice, SliceType>::value,
-                 SliceType>&& other)
+  explicit Slice(slice_detail::BaseSlice&& other)
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
 
   Slice(const Slice&) = delete;
@@ -293,6 +300,12 @@ class Slice : public slice_detail::BaseSlice,
       return MutableSlice(TakeCSlice());
     }
     return MutableSlice(grpc_slice_copy(c_slice()));
+  }
+
+  // Return a sub slice of this one. Leaves this slice in an indeterminate but
+  // valid state.
+  Slice TakeSubSlice(size_t pos, size_t n) {
+    return Slice(grpc_slice_sub_no_ref(TakeCSlice(), pos, pos + n));
   }
 
   Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }

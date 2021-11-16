@@ -49,56 +49,56 @@ static_assert(
 #define GRPC_MDSTR_AUTHORITY (::grpc_core::g_static_metadata_slice_table[3])
 /* ":scheme" */
 #define GRPC_MDSTR_SCHEME (::grpc_core::g_static_metadata_slice_table[4])
-/* "grpc-message" */
-#define GRPC_MDSTR_GRPC_MESSAGE (::grpc_core::g_static_metadata_slice_table[5])
 /* "grpc-status" */
-#define GRPC_MDSTR_GRPC_STATUS (::grpc_core::g_static_metadata_slice_table[6])
+#define GRPC_MDSTR_GRPC_STATUS (::grpc_core::g_static_metadata_slice_table[5])
 /* "grpc-payload-bin" */
 #define GRPC_MDSTR_GRPC_PAYLOAD_BIN \
-  (::grpc_core::g_static_metadata_slice_table[7])
+  (::grpc_core::g_static_metadata_slice_table[6])
 /* "grpc-encoding" */
-#define GRPC_MDSTR_GRPC_ENCODING (::grpc_core::g_static_metadata_slice_table[8])
+#define GRPC_MDSTR_GRPC_ENCODING (::grpc_core::g_static_metadata_slice_table[7])
 /* "grpc-accept-encoding" */
 #define GRPC_MDSTR_GRPC_ACCEPT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[9])
+  (::grpc_core::g_static_metadata_slice_table[8])
 /* "grpc-server-stats-bin" */
 #define GRPC_MDSTR_GRPC_SERVER_STATS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[10])
+  (::grpc_core::g_static_metadata_slice_table[9])
 /* "grpc-tags-bin" */
 #define GRPC_MDSTR_GRPC_TAGS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[11])
+  (::grpc_core::g_static_metadata_slice_table[10])
 /* "grpc-trace-bin" */
 #define GRPC_MDSTR_GRPC_TRACE_BIN \
-  (::grpc_core::g_static_metadata_slice_table[12])
+  (::grpc_core::g_static_metadata_slice_table[11])
 /* "content-type" */
-#define GRPC_MDSTR_CONTENT_TYPE (::grpc_core::g_static_metadata_slice_table[13])
+#define GRPC_MDSTR_CONTENT_TYPE (::grpc_core::g_static_metadata_slice_table[12])
 /* "content-encoding" */
 #define GRPC_MDSTR_CONTENT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[14])
+  (::grpc_core::g_static_metadata_slice_table[13])
 /* "accept-encoding" */
 #define GRPC_MDSTR_ACCEPT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[15])
+  (::grpc_core::g_static_metadata_slice_table[14])
 /* "grpc-internal-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST \
-  (::grpc_core::g_static_metadata_slice_table[16])
+  (::grpc_core::g_static_metadata_slice_table[15])
 /* "grpc-internal-stream-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST \
-  (::grpc_core::g_static_metadata_slice_table[17])
+  (::grpc_core::g_static_metadata_slice_table[16])
 /* "host" */
-#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[18])
+#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[17])
 /* "grpc-previous-rpc-attempts" */
 #define GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS \
-  (::grpc_core::g_static_metadata_slice_table[19])
+  (::grpc_core::g_static_metadata_slice_table[18])
 /* "grpc-retry-pushback-ms" */
 #define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS \
-  (::grpc_core::g_static_metadata_slice_table[20])
+  (::grpc_core::g_static_metadata_slice_table[19])
 /* "x-endpoint-load-metrics-bin" */
 #define GRPC_MDSTR_X_ENDPOINT_LOAD_METRICS_BIN \
-  (::grpc_core::g_static_metadata_slice_table[21])
+  (::grpc_core::g_static_metadata_slice_table[20])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[22])
+#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[21])
 /* "user-agent" */
-#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[23])
+#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[22])
+/* "grpc-message" */
+#define GRPC_MDSTR_GRPC_MESSAGE (::grpc_core::g_static_metadata_slice_table[23])
 /* "1" */
 #define GRPC_MDSTR_1 (::grpc_core::g_static_metadata_slice_table[24])
 /* "2" */

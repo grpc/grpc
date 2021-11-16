@@ -264,7 +264,6 @@ typedef enum {
   GRPC_BATCH_STATUS,
   GRPC_BATCH_AUTHORITY,
   GRPC_BATCH_SCHEME,
-  GRPC_BATCH_GRPC_MESSAGE,
   GRPC_BATCH_GRPC_STATUS,
   GRPC_BATCH_GRPC_PAYLOAD_BIN,
   GRPC_BATCH_GRPC_ENCODING,
@@ -292,7 +291,6 @@ typedef union {
     struct grpc_linked_mdelem* status;
     struct grpc_linked_mdelem* authority;
     struct grpc_linked_mdelem* scheme;
-    struct grpc_linked_mdelem* grpc_message;
     struct grpc_linked_mdelem* grpc_status;
     struct grpc_linked_mdelem* grpc_payload_bin;
     struct grpc_linked_mdelem* grpc_encoding;

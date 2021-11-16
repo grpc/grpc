@@ -164,7 +164,6 @@ METADATA_BATCH_CALLOUTS = [
     ':status',
     ':authority',
     ':scheme',
-    'grpc-message',
     'grpc-status',
     'grpc-payload-bin',
     'grpc-encoding',

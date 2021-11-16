@@ -2877,14 +2877,15 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
       status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
       // Get status from headers.
-      const auto& fields = self->recv_trailing_metadata_->legacy_index()->named;
+      const auto& md = *self->recv_trailing_metadata_;
+      const auto& fields = md.legacy_index()->named;
       GPR_ASSERT(fields.grpc_status != nullptr);
       grpc_status_code code =
           grpc_get_status_code_from_metadata(fields.grpc_status->md);
       if (code != GRPC_STATUS_OK) {
         absl::string_view message;
-        if (fields.grpc_message != nullptr) {
-          message = StringViewFromSlice(GRPC_MDVALUE(fields.grpc_message->md));
+        if (const auto* grpc_message = md.get_pointer(GrpcMessageMetadata())) {
+          message = grpc_message->as_string_view();
         }
         status = absl::Status(static_cast<absl::StatusCode>(code), message);
       }

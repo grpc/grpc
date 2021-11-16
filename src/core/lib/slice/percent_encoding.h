@@ -34,32 +34,26 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/lib/slice/slice.h"
+
 namespace grpc_core {
 
 enum class PercentEncodingType {
   // Flags [A-Za-z0-9-_.~] as unreserved bytes for the percent encoding routines
   URL,
   // Flags ascii7 non-control characters excluding '%' as unreserved bytes for
-  // the
-  // percent encoding routines
+  // the percent encoding routines
   Compatible
 };
 
 // Percent-encode a slice, returning the new slice (this cannot fail):
 // unreserved_bytes is a bitfield indicating which bytes are considered
 // unreserved and thus do not need percent encoding
-grpc_slice PercentEncodeSlice(const grpc_slice& slice,
-                              PercentEncodingType type);
-// Percent-decode a slice, strictly.
-// If the input is legal (contains no unreserved bytes, and legal % encodings),
-// returns the decoded slice.
-// If the input is not legal, returns {}.
-absl::optional<grpc_slice> PercentDecodeSlice(const grpc_slice& slice_in,
-                                              PercentEncodingType type);
+Slice PercentEncodeSlice(const Slice& slice, PercentEncodingType type);
 // Percent-decode a slice, permissively.
 // If a % triplet can not be decoded, pass it through verbatim.
 // This cannot fail.
-grpc_slice PermissivePercentDecodeSlice(const grpc_slice& slice_in);
+Slice PermissivePercentDecodeSlice(Slice slice_in);
 
 }  // namespace grpc_core
 

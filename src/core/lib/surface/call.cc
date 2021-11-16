@@ -1089,15 +1089,10 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
                                  static_cast<intptr_t>(status_code));
       gpr_free(peer);
     }
-    if (b->legacy_index()->named.grpc_message != nullptr) {
-      error = grpc_error_set_str(
-          error, GRPC_ERROR_STR_GRPC_MESSAGE,
-          grpc_core::StringViewFromSlice(
-              GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md)));
-      b->Remove(GRPC_BATCH_GRPC_MESSAGE);
-    } else if (error != GRPC_ERROR_NONE) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
-    }
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                               b->Take(grpc_core::GrpcMessageMetadata())
+                                   .value_or(grpc_core::Slice())
+                                   .as_string_view());
     set_final_status(call, GRPC_ERROR_REF(error));
     b->Remove(GRPC_BATCH_GRPC_STATUS);
     GRPC_ERROR_UNREF(error);

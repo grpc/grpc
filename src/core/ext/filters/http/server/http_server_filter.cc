@@ -104,18 +104,10 @@ struct channel_data {
 }  // namespace
 
 static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
-  if (b->legacy_index()->named.grpc_message != nullptr) {
-    grpc_slice pct_encoded_msg = grpc_core::PercentEncodeSlice(
-        GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md),
-        grpc_core::PercentEncodingType::Compatible);
-    if (grpc_slice_is_equivalent(
-            pct_encoded_msg,
-            GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md))) {
-      grpc_slice_unref_internal(pct_encoded_msg);
-    } else {
-      grpc_metadata_batch_set_value(b->legacy_index()->named.grpc_message,
-                                    pct_encoded_msg);
-    }
+  if (grpc_core::Slice* grpc_message =
+          b->get_pointer(grpc_core::GrpcMessageMetadata())) {
+    *grpc_message = grpc_core::PercentEncodeSlice(
+        std::move(*grpc_message), grpc_core::PercentEncodingType::Compatible);
   }
   return GRPC_ERROR_NONE;
 }

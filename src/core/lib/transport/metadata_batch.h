@@ -138,17 +138,25 @@ struct TeMetadata {
   }
 };
 
-// user-agent metadata trait.
-struct UserAgentMetadata {
+struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
-  static absl::string_view key() { return "user-agent"; }
   static MementoType ParseMemento(Slice value) { return value.TakeOwned(); }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(const ValueType& x) { return x.Ref(); }
   static absl::string_view DisplayValue(const MementoType& value) {
     return value.as_string_view();
   }
+};
+
+// user-agent metadata trait.
+struct UserAgentMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "user-agent"; }
+};
+
+// grpc-message metadata trait.
+struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "grpc-message"; }
 };
 
 namespace metadata_detail {
@@ -352,9 +360,12 @@ class MetadataMap {
   //  m.Remove(T());
   template <typename Which>
   absl::optional<typename Which::ValueType> Take(Which which) {
-    auto value = get(which);
-    Remove(which);
-    return value;
+    if (auto* p = get_pointer(which)) {
+      absl::optional<typename Which::ValueType> value(std::move(*p));
+      Remove(which);
+      return value;
+    }
+    return {};
   }
 
   // Parse metadata from a key/value pair, and return an object representing
@@ -910,7 +921,8 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 
 using grpc_metadata_batch =
     grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata,
-                           grpc_core::TeMetadata, grpc_core::UserAgentMetadata>;
+                           grpc_core::TeMetadata, grpc_core::UserAgentMetadata,
+                           grpc_core::GrpcMessageMetadata>;
 
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
   batch->Clear();
