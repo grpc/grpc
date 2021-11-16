@@ -988,27 +988,50 @@ static grpc_stream_compression_algorithm decode_stream_compression(
   return algorithm;
 }
 
+namespace {
+class PublishToAppEncoder {
+ public:
+  explicit PublishToAppEncoder(grpc_metadata_array* dest) : dest_(dest) {}
+
+  void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
+
+  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis) {}
+  void Encode(grpc_core::TeMetadata, grpc_core::TeMetadata::ValueType) {}
+
+  template <typename Which>
+  void Encode(Which, const grpc_core::Slice& value) {
+    const auto key = Which::key();
+    Append(grpc_core::ExternallyManagedSlice(key.data(), key.length()),
+           value.c_slice());
+  }
+
+ private:
+  void Append(grpc_slice key, grpc_slice value) {
+    auto* mdusr = &dest_->metadata[dest_->count++];
+    mdusr->key = key;
+    mdusr->value = value;
+  }
+
+  grpc_metadata_array* const dest_;
+};
+}  // namespace
+
 static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
                                  int is_trailing) {
-  if (b->non_deadline_count() == 0) return;
+  if (b->count() == 0) return;
   if (!call->is_client && is_trailing) return;
   if (is_trailing && call->buffered_metadata[1] == nullptr) return;
   GPR_TIMER_SCOPE("publish_app_metadata", 0);
   grpc_metadata_array* dest;
-  grpc_metadata* mdusr;
   dest = call->buffered_metadata[is_trailing];
-  if (dest->count + b->non_deadline_count() > dest->capacity) {
-    dest->capacity = std::max(dest->capacity + b->non_deadline_count(),
-                              dest->capacity * 3 / 2);
+  if (dest->count + b->count() > dest->capacity) {
+    dest->capacity =
+        std::max(dest->capacity + b->count(), dest->capacity * 3 / 2);
     dest->metadata = static_cast<grpc_metadata*>(
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity));
   }
-  b->ForEach([&](grpc_mdelem md) {
-    mdusr = &dest->metadata[dest->count++];
-    /* we pass back borrowed slices that are valid whilst the call is valid */
-    mdusr->key = GRPC_MDKEY(md);
-    mdusr->value = GRPC_MDVALUE(md);
-  });
+  PublishToAppEncoder encoder(dest);
+  b->Encode(&encoder);
 }
 
 static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
