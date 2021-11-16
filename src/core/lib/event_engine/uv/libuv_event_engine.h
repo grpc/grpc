@@ -67,18 +67,17 @@ class LibuvEventEngine final
 
   // Unimplemented methods
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
-      /*on_accept=*/Listener::AcceptCallback,
-      /*on_shutdown=*/std::function<void(absl::Status)>,
-      /*args=*/const EndpointConfig&,
-      /*memory_allocator_factory=*/
-      std::unique_ptr<MemoryAllocatorFactory>) override;
-  ConnectionHandle Connect(
-      /*on_connect=*/OnConnectCallback,
-      /*addr=*/const ResolvedAddress&,
-      /*args=*/const EndpointConfig&,
-      /*memory_allocator=*/MemoryAllocator,
-      /*deadline=*/absl::Time) override;
-  bool CancelConnect(/*handle=*/ConnectionHandle) override;
+      Listener::AcceptCallback /* on_accept */,
+      std::function<void(absl::Status)> /* on_shutdown */,
+      const EndpointConfig& /* args */,
+      std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */)
+      override;
+  ConnectionHandle Connect(OnConnectCallback /* on_connect */,
+                           const ResolvedAddress& /* addr */,
+                           const EndpointConfig& /* args */,
+                           MemoryAllocator /* memory_allocator */,
+                           absl::Time /* deadline */) override;
+  bool CancelConnect(ConnectionHandle /* handle */) override;
   std::unique_ptr<DNSResolver> GetDNSResolver() override;
   void Run(Closure* fn) override;
   TaskHandle RunAt(absl::Time when, Closure* fn) override;
@@ -108,10 +107,6 @@ class LibuvEventEngine final
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
   gpr_thd_id worker_thread_id_;
-
-  // Set by the destructor on shutdown to ensure there's no race contention
-  // around the kicker_ upon EventEngine destruction and uv_loop shutdown.
-  grpc_event_engine::experimental::Promise<bool> uv_shutdown_can_proceed_;
 
   friend class LibuvTask;
 };

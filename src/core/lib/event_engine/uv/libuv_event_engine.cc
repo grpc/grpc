@@ -121,9 +121,7 @@ void LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
   }
   if (uv_is_closing(reinterpret_cast<uv_handle_t*>(&timer_)) != 0) {
     // TODO(hork): check if this can be called on uv shutdown instead
-#ifndef NDEBUG
     GPR_ASSERT(GPR_LIKELY(ran_));
-#endif
     will_be_cancelled.Set(false);
     return;
   }
@@ -174,13 +172,14 @@ LibuvEventEngine::~LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::~LibuvEventEngine", this);
   }
-  RunInLibuvThread([](LibuvEventEngine* engine) {
+  Promise<bool> uv_shutdown_can_proceed;
+  RunInLibuvThread([&uv_shutdown_can_proceed](LibuvEventEngine* engine) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG,
               "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
               engine);
     }
-    GPR_ASSERT(engine->uv_shutdown_can_proceed_.Get());
+    GPR_ASSERT(uv_shutdown_can_proceed.Get());
     // Shutting down at this point is essentially just this unref call here.
     // After it, the libuv loop will continue working until it has no more
     // events to monitor. It means that scheduling new work becomes essentially
@@ -210,7 +209,7 @@ LibuvEventEngine::~LibuvEventEngine() {
           nullptr);
     }
   });
-  uv_shutdown_can_proceed_.Set(true);
+  uv_shutdown_can_proceed.Set(true);
   thread_.Join();
   GPR_ASSERT(GPR_LIKELY(task_map_.empty()));
 }
@@ -387,6 +386,7 @@ LibuvEventEngine::CreateListener(
     std::function<void(absl::Status)> /* on_shutdown */,
     const EndpointConfig& /* args */,
     std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */) {
+  // TODO(hork): implement
   GPR_ASSERT(false && "LibuvEventEngine::CreateListener is unimplemented.");
   return absl::UnimplementedError(
       "LibuvEventEngine::CreateListener is unimplemented.");
@@ -396,25 +396,30 @@ EventEngine::ConnectionHandle LibuvEventEngine::Connect(
     OnConnectCallback /* on_connect */, const ResolvedAddress& /* addr */,
     const EndpointConfig& /* args */, MemoryAllocator /* memory_allocator */,
     absl::Time /* deadline */) {
+  // TODO(hork): implement
   GPR_ASSERT(false && "LibuvEventEngine::Connect is unimplemented.");
 }
 
 bool LibuvEventEngine::CancelConnect(
     EventEngine::ConnectionHandle /* handle */) {
+  // TODO(hork): implement
   GPR_ASSERT(false && "LibuvEventEngine::CancelConnect is unimplemented.");
 }
 
 std::unique_ptr<EventEngine::DNSResolver> LibuvEventEngine::GetDNSResolver() {
+  // TODO(hork): implement
   GPR_ASSERT(false && "LibuvEventEngine::GetDNSResolver not implemented");
   return nullptr;
 }
 
 void LibuvEventEngine::Run(Closure* /* closure */) {
+  // TODO(hork): implement
   GPR_ASSERT(false && "LibuvEventEngine::Run(Closure*) not implemented");
 }
 
 EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time /* when */,
                                                 Closure* /* closure */) {
+  // TODO(hork): implement
   GPR_ASSERT(false &&
              "LibuvEventEngine::RunAt(absl::Time, Closure*) not implemented");
 }
