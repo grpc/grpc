@@ -112,7 +112,7 @@ class CertificateVerifier {
   void Cancel(TlsCustomVerificationCheckRequest* request);
 
   // Gets the core verifier used internally.
-  grpc_tls_certificate_verifier* c_verifier() { return verifier_; };
+  grpc_tls_certificate_verifier* c_verifier() { return verifier_; }
 
  private:
   static void AsyncCheckDone(

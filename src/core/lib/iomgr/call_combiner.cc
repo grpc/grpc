@@ -91,8 +91,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   } else {
     lock.reset();
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, self->original_closure_,
-                          GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, self->original_closure_, GRPC_ERROR_REF(error));
   if (lock != nullptr) {
     TSAN_ANNOTATE_RWLOCK_RELEASED(&lock->taken, true);
     bool prev = true;

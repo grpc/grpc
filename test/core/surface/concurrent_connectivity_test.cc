@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -131,10 +132,10 @@ void bad_server_thread(void* vargs) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
-  grpc_error_handle error = grpc_tcp_server_create(
-      nullptr, nullptr,
-      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
-      &s);
+  grpc_channel_args* channel_args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
+  grpc_channel_args_destroy(channel_args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;

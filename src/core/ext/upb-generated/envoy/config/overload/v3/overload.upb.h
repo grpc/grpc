@@ -541,6 +541,8 @@ UPB_INLINE struct envoy_config_overload_v3_BufferFactoryConfig* envoy_config_ove
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_overload_v3_overload_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -118,6 +118,8 @@ UPB_INLINE void grpc_gcp_AltsContext_PeerAttributesEntry_set_value(grpc_gcp_Alts
   _upb_msg_map_set_value(msg, &value, 0);
 }
 
+extern const upb_msglayout_file src_proto_grpc_gcp_altscontext_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

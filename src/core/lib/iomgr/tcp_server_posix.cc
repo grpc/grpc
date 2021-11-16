@@ -59,12 +59,12 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resource_quota/api.h"
 
-static grpc_error_handle tcp_server_create(
-    grpc_closure* shutdown_complete, const grpc_channel_args* args,
-    grpc_slice_allocator_factory* slice_allocator_factory,
-    grpc_tcp_server** server) {
-  grpc_tcp_server* s = grpc_core::Zalloc<grpc_tcp_server>();
+static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
+                                           const grpc_channel_args* args,
+                                           grpc_tcp_server** server) {
+  grpc_tcp_server* s = new grpc_tcp_server;
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
@@ -74,7 +74,6 @@ static grpc_error_handle tcp_server_create(
                           (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
-        grpc_slice_allocator_factory_destroy(slice_allocator_factory);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
                                                     " must be an integer");
       }
@@ -83,7 +82,6 @@ static grpc_error_handle tcp_server_create(
         s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
-        grpc_slice_allocator_factory_destroy(slice_allocator_factory);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
       }
@@ -104,7 +102,8 @@ static grpc_error_handle tcp_server_create(
   s->nports = 0;
   s->channel_args = grpc_channel_args_copy(args);
   s->fd_handler = nullptr;
-  s->slice_allocator_factory = slice_allocator_factory;
+  s->memory_quota =
+      grpc_core::ResourceQuotaFromChannelArgs(args)->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return GRPC_ERROR_NONE;
@@ -124,10 +123,9 @@ static void finish_shutdown(grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
-  grpc_slice_allocator_factory_destroy(s->slice_allocator_factory);
   grpc_channel_args_destroy(s->channel_args);
   delete s->fd_handler;
-  gpr_free(s);
+  delete s;
 }
 
 static void destroyed_port(void* server, grpc_error_handle /*error*/) {
@@ -222,6 +220,12 @@ static void on_read(void* arg, grpc_error_handle err) {
       }
     }
 
+    if (sp->server->memory_quota->IsMemoryPressureHigh()) {
+      gpr_log(GPR_INFO, "Drop incoming connection: high memory pressure");
+      close(fd);
+      continue;
+    }
+
     /* For UNIX sockets, the accept call might not fill up the member sun_path
      * of sockaddr_un, so explicitly call getsockname to get it. */
     if (grpc_is_unix_socket(&addr)) {
@@ -268,11 +272,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->external_connection = false;
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str,
-                        grpc_slice_allocator_factory_create_slice_allocator(
-                            sp->server->slice_allocator_factory,
-                            absl::StrCat("tcp_server_posix:", addr_str),
-                            sp->server->channel_args)),
+        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str),
         read_notifier_pollset, acceptor);
   }
 
@@ -615,13 +615,9 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->external_connection = true;
     acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
-    s_->on_accept_cb(
-        s_->on_accept_cb_arg,
-        grpc_tcp_create(
-            fdobj, s_->channel_args, addr_str,
-            grpc_slice_allocator_factory_create_slice_allocator(
-                s_->slice_allocator_factory, addr_str, s_->channel_args)),
-        read_notifier_pollset, acceptor);
+    s_->on_accept_cb(s_->on_accept_cb_arg,
+                     grpc_tcp_create(fdobj, s_->channel_args, addr_str),
+                     read_notifier_pollset, acceptor);
   }
 
  private:

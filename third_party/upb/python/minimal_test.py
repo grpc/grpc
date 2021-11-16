@@ -23,24 +23,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 
-licenses(["notice"])
+"""A bare-bones unit test that doesn't load any generated code."""
 
-proto_library(
-    name = "foo_proto",
-    srcs = ["foo.proto"],
-)
 
-upb_proto_library(
-    name = "foo_upbproto",
-    deps = [":foo_proto"],
-)
+import unittest
+from google.protobuf.pyext import _message
 
-cc_binary(
-    name = "test_binary",
-    srcs = ["test_binary.c"],
-    copts = ["-std=c99"],
-    deps = [":foo_upbproto"],
-)
+class TestMessageExtension(unittest.TestCase):
+
+    def test_descriptor_pool(self):
+        serialized_desc = b'\n\ntest.proto\"\x0e\n\x02M1*\x08\x08\x01\x10\x80\x80\x80\x80\x02:\x15\n\x08test_ext\x12\x03.M1\x18\x01 \x01(\x05'
+        pool = _message.DescriptorPool()
+        file_desc = pool.AddSerializedFile(serialized_desc)
+        self.assertEqual("test.proto", file_desc.name)
+        ext_desc = pool.FindExtensionByName("test_ext")
+        self.assertEqual(1, ext_desc.number)
+
+        # Test object cache: repeatedly retrieving the same descriptor
+        # should result in the same object
+        self.assertIs(ext_desc, pool.FindExtensionByName("test_ext"))
+
+
+    def test_lib_is_upb(self):
+        # Ensure we are not pulling in a different protobuf library on the
+        # system.
+        self.assertTrue(_message._IS_UPB)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -128,9 +128,8 @@ void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
   // Spawn a detached thread to destroy the verifier, to make sure that we don't
   // try to join the worker thread from within the worker thread.
-  grpc_core::Thread destroy_thread(
-      "DestroyExternalVerifier", DestroyExternalVerifier, self, nullptr,
-      grpc_core::Thread::Options().set_joinable(false));
+  Thread destroy_thread("DestroyExternalVerifier", DestroyExternalVerifier,
+                        self, nullptr, Thread::Options().set_joinable(false));
   destroy_thread.Start();
 }
 

@@ -70,6 +70,8 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_ApiListener_muta
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_listener_v3_api_listener_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -8,19 +8,10 @@
 
 #include "upb/def.h"
 #include "envoy/type/v3/range.upbdefs.h"
+#include "envoy/type/v3/range.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_type_v3_Int64Range_msginit;
-extern const upb_msglayout envoy_type_v3_Int32Range_msginit;
-extern const upb_msglayout envoy_type_v3_DoubleRange_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &envoy_type_v3_Int64Range_msginit,
-  &envoy_type_v3_Int32Range_msginit,
-  &envoy_type_v3_DoubleRange_msginit,
-};
-
 static const char descriptor[423] = {'\n', '\031', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'v', '3', '/', 'r', 'a', 'n', 'g', 'e', '.', 'p', 'r', 'o', 
 't', 'o', '\022', '\r', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 
 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '!', 
@@ -48,7 +39,7 @@ static upb_def_init *deps[3] = {
 
 upb_def_init envoy_type_v3_range_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_type_v3_range_proto_upb_file_layout,
   "envoy/type/v3/range.proto",
   UPB_STRVIEW_INIT(descriptor, 423)
 };

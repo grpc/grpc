@@ -118,6 +118,8 @@ UPB_INLINE char *envoy_config_listener_v3_ActiveRawUdpListenerConfig_serialize(c
 
 
 
+extern const upb_msglayout_file envoy_config_listener_v3_udp_listener_config_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

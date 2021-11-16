@@ -56,9 +56,10 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
   grpc_channel_args* final_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create(
-      "binder_target_placeholder", final_args, GRPC_CLIENT_DIRECT_CHANNEL,
-      transport, nullptr, 0, &error);
+  grpc_channel* channel =
+      grpc_channel_create("binder_target_placeholder", final_args,
+                          GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
+  // TODO(mingcl): Handle error properly
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_channel_args_destroy(final_args);
   return channel;
@@ -80,7 +81,7 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
 
   grpc_channel* channel =
       grpc_channel_create("binder_channel_target_placeholder", new_args,
-                          GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, &error);
+                          GRPC_CLIENT_CHANNEL, nullptr, &error);
 
   // Clean up.
   grpc_channel_args_destroy(new_args);
