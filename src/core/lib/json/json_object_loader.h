@@ -319,6 +319,11 @@ class JsonObjectLoader final {
     return Field(name, true, p);
   }
 
+  JsonObjectLoader(const Vec<Element, kElemCount - 1>& elements,
+                   Element new_element)
+      : elements_(elements, new_element) {}
+
+ private:
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> Field(const char* name, bool optional,
                                             U T::*p) const {
@@ -326,11 +331,6 @@ class JsonObjectLoader final {
         elements_, Element(name, optional, p, LoaderForType<U>()));
   }
 
-  JsonObjectLoader(const Vec<Element, kElemCount - 1>& elements,
-                   Element new_element)
-      : elements_(elements, new_element) {}
-
- private:
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
 };
 
