@@ -1906,5 +1906,4 @@ else:
         exit_code |= 2
     if BuildAndRunError.POST_TEST in errors:
         exit_code |= 4
-    while True: time.sleep(1) # DO NOT SUBMIT
     sys.exit(exit_code)
