@@ -31,7 +31,8 @@ from typing import Any, Dict, Iterable, List, Mapping, Type
 
 import yaml
 
-from . import loadtest_config
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import loadtest_config
 
 TEMPLATE_FILE_HEADER_COMMENT = """
 # Template generated from load test configurations by loadtest_template.py.

@@ -31,7 +31,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/resource_user_util.h"
 
 typedef struct passthru_endpoint passthru_endpoint;
 
@@ -57,7 +56,6 @@ typedef struct {
   grpc_slice_buffer write_buffer;
   grpc_slice_buffer* on_read_out;
   grpc_closure* on_read;
-  grpc_slice_allocator* slice_allocator;
   pending_op pending_read_op;
   pending_op pending_write_op;
   uint64_t bytes_read_so_far;
@@ -328,8 +326,6 @@ void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
   delete p->channel_effects;
   grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
   grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
-  grpc_slice_allocator_destroy(p->client.slice_allocator);
-  grpc_slice_allocator_destroy(p->server.slice_allocator);
   grpc_slice_buffer_destroy_internal(&p->client.write_buffer);
   grpc_slice_buffer_destroy_internal(&p->server.write_buffer);
   gpr_free(p);
@@ -383,7 +379,6 @@ static const grpc_endpoint_vtable vtable = {
 };
 
 static void half_init(half* m, passthru_endpoint* parent,
-                      grpc_slice_allocator* slice_allocator,
                       const char* half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
@@ -397,7 +392,6 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->pending_read_op.is_armed = false;
   std::string name =
       absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
-  m->slice_allocator = slice_allocator;
 }
 
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
@@ -420,8 +414,8 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
     m->channel_effects->allowed_read_bytes = UINT64_MAX;
     m->channel_effects->allowed_write_bytes = UINT64_MAX;
   }
-  half_init(&m->client, m, grpc_slice_allocator_create_unlimited(), "client");
-  half_init(&m->server, m, grpc_slice_allocator_create_unlimited(), "server");
+  half_init(&m->client, m, "client");
+  half_init(&m->server, m, "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

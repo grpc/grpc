@@ -17,12 +17,12 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/endpoint_config_internal.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
-#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -35,6 +35,7 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToStatusCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
@@ -152,7 +153,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
   ChannelArgsEndpointConfig endpoint_config(channel_args);
-  absl::Status connected = grpc_iomgr_event_engine()->Connect(
+  absl::Status connected = GetDefaultEventEngine()->Connect(
       ee_on_connect, ra, endpoint_config, std::move(ee_slice_allocator),
       ee_deadline);
   if (!connected.ok()) {
@@ -172,7 +173,7 @@ grpc_error_handle tcp_server_create(
   auto ee_slice_allocator_factory =
       absl::make_unique<WrappedInternalSliceAllocatorFactory>(
           slice_allocator_factory);
-  EventEngine* event_engine = grpc_iomgr_event_engine();
+  EventEngine* event_engine = GetDefaultEventEngine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(
           [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint,

@@ -26,17 +26,14 @@ DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 
 class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
-  void Run(std::function<void()> callback,
-           const grpc_core::DebugLocation& location);
-  void Schedule(std::function<void()> callback,
-                const grpc_core::DebugLocation& location);
+  void Run(std::function<void()> callback, const DebugLocation& location);
+  void Schedule(std::function<void()> callback, const DebugLocation& location);
   void DrainQueue();
   void Orphan() override;
 
  private:
   struct CallbackWrapper {
-    CallbackWrapper(std::function<void()> cb,
-                    const grpc_core::DebugLocation& loc)
+    CallbackWrapper(std::function<void()> cb, const DebugLocation& loc)
         : callback(std::move(cb)), location(loc) {}
 
     MultiProducerSingleConsumerQueue::Node mpscq_node;
@@ -75,8 +72,8 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   MultiProducerSingleConsumerQueue queue_;
 };
 
-void WorkSerializer::WorkSerializerImpl::Run(
-    std::function<void()> callback, const grpc_core::DebugLocation& location) {
+void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
+                                             const DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
@@ -108,7 +105,7 @@ void WorkSerializer::WorkSerializerImpl::Run(
 }
 
 void WorkSerializer::WorkSerializerImpl::Schedule(
-    std::function<void()> callback, const grpc_core::DebugLocation& location) {
+    std::function<void()> callback, const DebugLocation& location) {
   CallbackWrapper* cb_wrapper =
       new CallbackWrapper(std::move(callback), location);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
@@ -215,12 +212,12 @@ WorkSerializer::WorkSerializer()
 WorkSerializer::~WorkSerializer() {}
 
 void WorkSerializer::Run(std::function<void()> callback,
-                         const grpc_core::DebugLocation& location) {
+                         const DebugLocation& location) {
   impl_->Run(std::move(callback), location);
 }
 
 void WorkSerializer::Schedule(std::function<void()> callback,
-                              const grpc_core::DebugLocation& location) {
+                              const DebugLocation& location) {
   impl_->Schedule(std::move(callback), location);
 }
 

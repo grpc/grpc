@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/overload/v3/overload.upbdefs.h"
+#include "envoy/config/overload/v3/overload.upb.h"
 
 extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
@@ -15,28 +16,6 @@ extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_overload_v3_ResourceMonitor_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ThresholdTrigger_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ScaledTrigger_msginit;
-extern const upb_msglayout envoy_config_overload_v3_Trigger_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit;
-extern const upb_msglayout envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit;
-extern const upb_msglayout envoy_config_overload_v3_OverloadAction_msginit;
-extern const upb_msglayout envoy_config_overload_v3_BufferFactoryConfig_msginit;
-extern const upb_msglayout envoy_config_overload_v3_OverloadManager_msginit;
-
-static const upb_msglayout *layouts[9] = {
-  &envoy_config_overload_v3_ResourceMonitor_msginit,
-  &envoy_config_overload_v3_ThresholdTrigger_msginit,
-  &envoy_config_overload_v3_ScaledTrigger_msginit,
-  &envoy_config_overload_v3_Trigger_msginit,
-  &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit,
-  &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit,
-  &envoy_config_overload_v3_OverloadAction_msginit,
-  &envoy_config_overload_v3_BufferFactoryConfig_msginit,
-  &envoy_config_overload_v3_OverloadManager_msginit,
-};
-
 static const char descriptor[2358] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '/', 'v', 
 '3', '/', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
 'o', 'n', 'f', 'i', 'g', '.', 'o', 'v', 'e', 'r', 'l', 'o', 'a', 'd', '.', 'v', '3', '\032', '\033', 'e', 'n', 'v', 'o', 'y', '/', 
@@ -146,7 +125,7 @@ static upb_def_init *deps[7] = {
 
 upb_def_init envoy_config_overload_v3_overload_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_overload_v3_overload_proto_upb_file_layout,
   "envoy/config/overload/v3/overload.proto",
   UPB_STRVIEW_INIT(descriptor, 2358)
 };

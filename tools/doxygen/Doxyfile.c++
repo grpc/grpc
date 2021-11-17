@@ -885,6 +885,7 @@ include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/internal/memory_allocator_impl.h \
 include/grpc/event_engine/memory_allocator.h \
+include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
@@ -1021,6 +1022,7 @@ include/grpcpp/security/binder_security_policy.h \
 include/grpcpp/security/credentials.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \
+include/grpcpp/security/tls_certificate_verifier.h \
 include/grpcpp/security/tls_credentials_options.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \

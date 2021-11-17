@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/bootstrap/v3/bootstrap.upbdefs.h"
+#include "envoy/config/bootstrap/v3/bootstrap.upb.h"
 
 extern upb_def_init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
 extern upb_def_init envoy_config_cluster_v3_cluster_proto_upbdefinit;
@@ -33,46 +34,6 @@ extern upb_def_init udpa_annotations_security_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Bootstrap_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Bootstrap_StaticResources_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Bootstrap_DynamicResources_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Admin_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_ClusterManager_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_ClusterManager_OutlierDetection_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Watchdogs_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Watchdog_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Watchdog_WatchdogAction_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_FatalAction_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_Runtime_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_AdminLayer_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_LayeredRuntime_msginit;
-extern const upb_msglayout envoy_config_bootstrap_v3_CustomInlineHeader_msginit;
-
-static const upb_msglayout *layouts[18] = {
-  &envoy_config_bootstrap_v3_Bootstrap_msginit,
-  &envoy_config_bootstrap_v3_Bootstrap_StaticResources_msginit,
-  &envoy_config_bootstrap_v3_Bootstrap_DynamicResources_msginit,
-  &envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_msginit,
-  &envoy_config_bootstrap_v3_Admin_msginit,
-  &envoy_config_bootstrap_v3_ClusterManager_msginit,
-  &envoy_config_bootstrap_v3_ClusterManager_OutlierDetection_msginit,
-  &envoy_config_bootstrap_v3_Watchdogs_msginit,
-  &envoy_config_bootstrap_v3_Watchdog_msginit,
-  &envoy_config_bootstrap_v3_Watchdog_WatchdogAction_msginit,
-  &envoy_config_bootstrap_v3_FatalAction_msginit,
-  &envoy_config_bootstrap_v3_Runtime_msginit,
-  &envoy_config_bootstrap_v3_RuntimeLayer_msginit,
-  &envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer_msginit,
-  &envoy_config_bootstrap_v3_RuntimeLayer_AdminLayer_msginit,
-  &envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_msginit,
-  &envoy_config_bootstrap_v3_LayeredRuntime_msginit,
-  &envoy_config_bootstrap_v3_CustomInlineHeader_msginit,
-};
-
 static const char descriptor[7815] = {'\n', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'b', 'o', 'o', 't', 's', 't', 'r', 'a', 'p', '/', 
 'v', '3', '/', 'b', 'o', 'o', 't', 's', 't', 'r', 'a', 'p', '.', 'p', 'r', 'o', 't', 'o', '\022', '\031', 'e', 'n', 'v', 'o', 'y', 
 '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'b', 'o', 'o', 't', 's', 't', 'r', 'a', 'p', '.', 'v', '3', '\032', ')', 'e', 'n', 'v', 
@@ -418,7 +379,7 @@ static upb_def_init *deps[25] = {
 
 upb_def_init envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_bootstrap_v3_bootstrap_proto_upb_file_layout,
   "envoy/config/bootstrap/v3/bootstrap.proto",
   UPB_STRVIEW_INIT(descriptor, 7815)
 };

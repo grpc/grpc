@@ -19,7 +19,7 @@ _AVAILABLE_BENCHMARK_TESTS = [
     'bm_fullstack_unary_ping_pong', 'bm_fullstack_streaming_ping_pong',
     'bm_fullstack_streaming_pump', 'bm_closure', 'bm_cq', 'bm_call_create',
     'bm_error', 'bm_chttp2_hpack', 'bm_chttp2_transport', 'bm_pollset',
-    'bm_metadata', 'bm_fullstack_trickle'
+    'bm_metadata'
 ]
 
 _INTERESTING = ('cpu_time', 'real_time', 'locks_per_iteration',

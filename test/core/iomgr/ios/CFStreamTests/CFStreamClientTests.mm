@@ -24,16 +24,16 @@
 
 #include <netinet/in.h>
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "test/core/util/resource_user_util.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/test_config.h"
 
-// static int g_connections_complete = 0;
 static gpr_mu g_mu;
 static int g_connections_complete = 0;
 static grpc_endpoint* g_connecting = nullptr;
@@ -103,8 +103,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, grpc_slice_allocator_create_unlimited(), nullptr,
-                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args* args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
+                          GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args_destroy(args);
 
   /* await the connection */
   do {
@@ -158,8 +160,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, grpc_slice_allocator_create_unlimited(), nullptr,
-                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args* args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
+                          GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args_destroy(args);
 
   grpc_core::ExecCtx::Get()->Flush();
 

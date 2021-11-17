@@ -52,7 +52,7 @@
 namespace grpc_core {
 namespace {
 
-static GPR_THREAD_LOCAL(ThreadState*) g_this_thread_state;
+GPR_THREAD_LOCAL(ThreadState*) g_this_thread_state;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
@@ -108,7 +108,7 @@ size_t Executor::RunClosures(const char* executor_name,
   // invoked on its destruction, which will be after completing any closures in
   // the executor's closure list (which were explicitly scheduled onto the
   // executor).
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
+  ApplicationCallbackExecCtx callback_exec_ctx(
       GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
   grpc_closure* c = list.head;
@@ -126,7 +126,7 @@ size_t Executor::RunClosures(const char* executor_name,
     GRPC_ERROR_UNREF(error);
     c = next;
     n++;
-    grpc_core::ExecCtx::Get()->Flush();
+    ExecCtx::Get()->Flush();
   }
 
   return n;
@@ -156,12 +156,11 @@ void Executor::SetThreading(bool threading) {
       gpr_cv_init(&thd_state_[i].cv);
       thd_state_[i].id = i;
       thd_state_[i].name = name_;
-      thd_state_[i].thd = grpc_core::Thread();
+      thd_state_[i].thd = Thread();
       thd_state_[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
-    thd_state_[0].thd =
-        grpc_core::Thread(name_, &Executor::ThreadMain, &thd_state_[0]);
+    thd_state_[0].thd = Thread(name_, &Executor::ThreadMain, &thd_state_[0]);
     thd_state_[0].thd.Start();
   } else {  // !threading
     if (curr_num_threads == 0) {
@@ -202,7 +201,7 @@ void Executor::SetThreading(bool threading) {
     // finish. Thus, never call Executor::SetThreading(false) in the middle of
     // an application.
     // TODO(guantaol): create another method to finish all the pending closures
-    // registered in the background poller by grpc_core::Executor.
+    // registered in the background poller by Executor.
     grpc_iomgr_platform_shutdown_background_closure();
   }
 
@@ -215,7 +214,7 @@ void Executor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
   g_this_thread_state = ts;
 
-  grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
+  ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
   size_t subtract_depth = 0;
   for (;;) {
@@ -242,7 +241,7 @@ void Executor::ThreadMain(void* arg) {
 
     EXECUTOR_TRACE("(%s) [%" PRIdPTR "]: execute", ts->name, ts->id);
 
-    grpc_core::ExecCtx::Get()->InvalidateNow();
+    ExecCtx::Get()->InvalidateNow();
     subtract_depth = RunClosures(ts->name, closures);
   }
 
@@ -267,8 +266,7 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
 #else
       EXECUTOR_TRACE("(%s) schedule %p inline", name_, closure);
 #endif
-      grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(),
-                               closure, error);
+      grpc_closure_list_append(ExecCtx::Get()->closure_list(), closure, error);
       return;
     }
 
@@ -278,8 +276,7 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
 
     ThreadState* ts = g_this_thread_state;
     if (ts == nullptr) {
-      ts = &thd_state_[grpc_core::HashPointer(grpc_core::ExecCtx::Get(),
-                                              cur_thread_count)];
+      ts = &thd_state_[HashPointer(ExecCtx::Get(), cur_thread_count)];
     }
 
     ThreadState* orig_ts = ts;
@@ -356,8 +353,8 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
         // always increment num_threads under the 'adding_thread_lock')
         gpr_atm_rel_store(&num_threads_, cur_thread_count + 1);
 
-        thd_state_[cur_thread_count].thd = grpc_core::Thread(
-            name_, &Executor::ThreadMain, &thd_state_[cur_thread_count]);
+        thd_state_[cur_thread_count].thd =
+            Thread(name_, &Executor::ThreadMain, &thd_state_[cur_thread_count]);
         thd_state_[cur_thread_count].thd.Start();
       }
       gpr_spinlock_unlock(&adding_thread_lock_);

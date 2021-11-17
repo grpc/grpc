@@ -25,8 +25,7 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
-ABSL_CONST_INIT GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_ =
-    nullptr;
+GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
 Waker::Unwakeable Waker::unwakeable_;
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -103,6 +103,7 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/util/test_config.h"
+#include "test/cpp/util/tls_test_utils.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 #include "src/cpp/server/csds/csds.h"
@@ -139,6 +140,9 @@ using ::envoy::type::matcher::v3::StringMatcher;
 using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
+using ::grpc::experimental::ExternalCertificateVerifier;
+using ::grpc::experimental::IdentityKeyCertPair;
+using ::grpc::experimental::StaticDataCertificateProvider;
 
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
@@ -538,34 +542,25 @@ class FakeCertificateProviderFactory
 FakeCertificateProvider::CertDataMap* g_fake1_cert_data_map = nullptr;
 FakeCertificateProvider::CertDataMap* g_fake2_cert_data_map = nullptr;
 
-int ServerAuthCheckSchedule(void* /* config_user_data */,
-                            grpc_tls_server_authorization_check_arg* arg) {
-  arg->success = 1;
-  arg->status = GRPC_STATUS_OK;
-  return 0; /* synchronous check */
-}
-
 std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
-  // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
-  grpc_tls_credentials_options_set_server_verification_option(
-      options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-  grpc_tls_credentials_options_set_certificate_provider(
-      options,
-      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath),
-          ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
-          .get());
-  grpc_tls_credentials_options_watch_root_certs(options);
-  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
-  grpc_tls_server_authorization_check_config* check_config =
-      grpc_tls_server_authorization_check_config_create(
-          nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
-  grpc_tls_credentials_options_set_server_authorization_check_config(
-      options, check_config);
-  auto channel_creds = std::make_shared<SecureChannelCredentials>(
-      grpc_tls_credentials_create(options));
-  grpc_tls_server_authorization_check_config_release(check_config);
+  IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = ReadFile(kServerKeyPath);
+  key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
+  std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+      ReadFile(kCaCertPath), identity_key_cert_pairs);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(std::move(certificate_provider));
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  auto verifier =
+      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+  options.set_certificate_verifier(std::move(verifier));
+  options.set_verify_server_certs(true);
+  options.set_check_call_host(false);
+  auto channel_creds = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_creds.get() != nullptr);
   return channel_creds;
 }
 
@@ -1004,11 +999,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                        EchoResponse* response) {
     switch (rpc_options.method) {
       case METHOD_ECHO:
-        return (*stub)->Echo(context, request, response);
+        return stub->Echo(context, request, response);
       case METHOD_ECHO1:
-        return (*stub)->Echo1(context, request, response);
+        return stub->Echo1(context, request, response);
       case METHOD_ECHO2:
-        return (*stub)->Echo2(context, request, response);
+        return stub->Echo2(context, request, response);
     }
     GPR_UNREACHABLE_CODE();
   }
@@ -1245,16 +1240,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     Status status;
     switch (rpc_options.service) {
       case SERVICE_ECHO:
-        status =
-            SendRpcMethod(&stub_, rpc_options, &context, request, response);
+        status = SendRpcMethod(stub_.get(), rpc_options, &context, request,
+                               response);
         break;
       case SERVICE_ECHO1:
-        status =
-            SendRpcMethod(&stub1_, rpc_options, &context, request, response);
+        status = SendRpcMethod(stub1_.get(), rpc_options, &context, request,
+                               response);
         break;
       case SERVICE_ECHO2:
-        status =
-            SendRpcMethod(&stub2_, rpc_options, &context, request, response);
+        status = SendRpcMethod(stub2_.get(), rpc_options, &context, request,
+                               response);
         break;
     }
     if (local_response) delete response;
@@ -8502,27 +8497,23 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
-    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-    grpc_tls_credentials_options* options =
-        grpc_tls_credentials_options_create();
-    grpc_tls_credentials_options_set_server_verification_option(
-        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-    grpc_tls_credentials_options_set_certificate_provider(
-        options,
-        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
-            ReadFile(kCaCertPath),
-            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
-            .get());
-    grpc_tls_credentials_options_watch_root_certs(options);
-    grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
-    grpc_tls_server_authorization_check_config* check_config =
-        grpc_tls_server_authorization_check_config_create(
-            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
-    grpc_tls_credentials_options_set_server_authorization_check_config(
-        options, check_config);
-    auto channel_creds = std::make_shared<SecureChannelCredentials>(
-        grpc_tls_credentials_create(options));
-    grpc_tls_server_authorization_check_config_release(check_config);
+    IdentityKeyCertPair key_cert_pair;
+    key_cert_pair.private_key = ReadFile(kServerKeyPath);
+    key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
+    std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
+    identity_key_cert_pairs.emplace_back(key_cert_pair);
+    auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+        ReadFile(kCaCertPath), identity_key_cert_pairs);
+    grpc::experimental::TlsChannelCredentialsOptions options;
+    options.set_certificate_provider(std::move(certificate_provider));
+    options.watch_root_certs();
+    options.watch_identity_key_cert_pairs();
+    auto verifier =
+        ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+    options.set_verify_server_certs(true);
+    options.set_certificate_verifier(std::move(verifier));
+    auto channel_creds = grpc::experimental::TlsCredentials(options);
+    GPR_ASSERT(channel_creds.get() != nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -8534,26 +8525,17 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
-    // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
-    grpc_tls_credentials_options* options =
-        grpc_tls_credentials_options_create();
-    grpc_tls_credentials_options_set_server_verification_option(
-        options, GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-    grpc_tls_credentials_options_set_certificate_provider(
-        options,
-        grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
-            ReadFile(kCaCertPath),
-            ReadTlsIdentityPair(kServerKeyPath, kServerCertPath))
-            .get());
-    grpc_tls_credentials_options_watch_root_certs(options);
-    grpc_tls_server_authorization_check_config* check_config =
-        grpc_tls_server_authorization_check_config_create(
-            nullptr, ServerAuthCheckSchedule, nullptr, nullptr);
-    grpc_tls_credentials_options_set_server_authorization_check_config(
-        options, check_config);
-    auto channel_creds = std::make_shared<SecureChannelCredentials>(
-        grpc_tls_credentials_create(options));
-    grpc_tls_server_authorization_check_config_release(check_config);
+    auto certificate_provider =
+        std::make_shared<StaticDataCertificateProvider>(ReadFile(kCaCertPath));
+    grpc::experimental::TlsChannelCredentialsOptions options;
+    options.set_certificate_provider(std::move(certificate_provider));
+    options.watch_root_certs();
+    auto verifier =
+        ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+    options.set_verify_server_certs(true);
+    options.set_certificate_verifier(std::move(verifier));
+    auto channel_creds = grpc::experimental::TlsCredentials(options);
+    GPR_ASSERT(channel_creds.get() != nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -9883,37 +9865,196 @@ class TimeoutTest : public XdsEnd2endTest {
       : XdsEnd2endTest(/* num_backends= */ 4, /* num_balancers= */ 1,
                        /*client_load_reporting_interval_seconds= */ 100,
                        /* xds_resource_does_not_exist_timeout_ms */ 500,
-                       /* use_xds_enabled_server= */ false) {}
+                       /* use_xds_enabled_server= */ false) {
+    StartAllBackends();
+  }
 };
 
-// Tests that LDS client times out when no response received.
-TEST_P(TimeoutTest, Lds) {
+TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kLdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
-TEST_P(TimeoutTest, Rds) {
+TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
+  balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
+  ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
+      << "This test cannot use bootstrap from channel args, because it "
+         "needs two channels to use the same XdsClient instance.";
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // Create second channel for a new server name.
+  // This should fail because there is no LDS resource for this server name.
+  auto channel2 =
+      CreateChannel(/*failover_timeout=*/0, "new-server.example.com");
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  RpcOptions rpc_options;
+  rpc_options.SetupRpc(&context, &request);
+  auto status =
+      SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+}
+
+TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kRdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
-// Tests that CDS client times out when no response received.
-TEST_P(TimeoutTest, Cds) {
+TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
+  balancers_[0]->ads_service()->UnsetResource(kRdsTypeUrl,
+                                              kDefaultRouteConfigurationName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
+  ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
+      << "This test cannot use bootstrap from channel args, because it "
+         "needs two channels to use the same XdsClient instance.";
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Add listener for 2nd channel, but no RDS resource.
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = default_listener_;
+  listener.set_name(kNewServerName);
+  HttpConnectionManager http_connection_manager =
+      ClientHcmAccessor().Unpack(listener);
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name("rds_resource_does_not_exist");
+  rds->mutable_config_source()->mutable_ads();
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // Create second channel for a new server name.
+  // This should fail because the LDS resource points to a non-existent RDS
+  // resource.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  RpcOptions rpc_options;
+  rpc_options.SetupRpc(&context, &request);
+  auto status =
+      SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+}
+
+TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
-TEST_P(TimeoutTest, Eds) {
+TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
+  balancers_[0]->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // Change route config to point to non-existing cluster.
+  const char* kNewClusterName = "new_cluster_name";
+  RouteConfiguration route_config = default_route_config_;
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  balancers_[0]->ads_service()->SetRdsResource(route_config);
+  // New cluster times out.
+  // May need to wait a bit for the change to propagate to the client.
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  bool error_seen = false;
+  do {
+    auto status = SendRpc();
+    if (status.error_code() == StatusCode::UNAVAILABLE) {
+      error_seen = true;
+      break;
+    }
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+  EXPECT_TRUE(error_seen);
+}
+
+TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
+  // No need to remove EDS resource, since the test suite does not add it
+  // by default.
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // New cluster that points to a non-existant EDS resource.
+  const char* kNewClusterName = "new_cluster_name";
+  Cluster cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      "eds_service_name_does_not_exist");
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Now add a route pointing to the new cluster.
+  RouteConfiguration route_config = default_route_config_;
+  auto* route = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  *route_config.mutable_virtual_hosts(0)->add_routes() = *route;
+  route->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo1");
+  route->mutable_route()->set_cluster(kNewClusterName);
+  balancers_[0]->ads_service()->SetRdsResource(route_config);
+  // New EDS resource times out.
+  // May need to wait a bit for the RDS change to propagate to the client.
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  bool error_seen = false;
+  do {
+    auto status = SendRpc(RpcOptions().set_rpc_method(METHOD_ECHO1));
+    if (status.error_code() == StatusCode::UNAVAILABLE) {
+      error_seen = true;
+      break;
+    }
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+  EXPECT_TRUE(error_seen);
 }
 
 using LocalityMapTest = BasicTest;
@@ -12416,9 +12557,13 @@ INSTANTIATE_TEST_SUITE_P(
 // Do this only for XdsResolver with RDS enabled, so that we can test
 // all resource types.
 // Run with V3 only, since the functionality is no different in V2.
-INSTANTIATE_TEST_SUITE_P(XdsTest, TimeoutTest,
-                         ::testing::Values(TestType().set_enable_rds_testing()),
-                         &TestTypeName);
+// Run with bootstrap from env var so that multiple channels share the same
+// XdsClient (needed for testing the timeout for the 2nd LDS and RDS resource).
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, TimeoutTest,
+    ::testing::Values(TestType().set_enable_rds_testing().set_bootstrap_source(
+        TestType::kBootstrapFromEnvVar)),
+    &TestTypeName);
 
 // XdsResolverOnlyTest depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(

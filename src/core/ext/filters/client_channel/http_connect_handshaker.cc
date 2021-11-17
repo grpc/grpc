@@ -139,12 +139,11 @@ void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
 void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
                                                  grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
-  grpc_core::ExecCtx::Run(
-      DEBUG_LOCATION,
-      GRPC_CLOSURE_INIT(&handshaker->request_done_closure_,
-                        &HttpConnectHandshaker::OnWriteDone, handshaker,
-                        grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_REF(error));
+  ExecCtx::Run(DEBUG_LOCATION,
+               GRPC_CLOSURE_INIT(&handshaker->request_done_closure_,
+                                 &HttpConnectHandshaker::OnWriteDone,
+                                 handshaker, grpc_schedule_on_exec_ctx),
+               GRPC_ERROR_REF(error));
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
@@ -174,12 +173,11 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error_handle error) {
 void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
                                                 grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
-  grpc_core::ExecCtx::Run(
-      DEBUG_LOCATION,
-      GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
-                        &HttpConnectHandshaker::OnReadDone, handshaker,
-                        grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_REF(error));
+  ExecCtx::Run(DEBUG_LOCATION,
+               GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
+                                 &HttpConnectHandshaker::OnReadDone, handshaker,
+                                 grpc_schedule_on_exec_ctx),
+               GRPC_ERROR_REF(error));
 }
 
 // Callback invoked for reading HTTP CONNECT response.
@@ -385,8 +383,8 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, grpc_core::HANDSHAKER_CLIENT,
-      absl::make_unique<grpc_core::HttpConnectHandshakerFactory>());
+      true /* at_start */, HANDSHAKER_CLIENT,
+      absl::make_unique<HttpConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

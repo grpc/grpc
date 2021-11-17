@@ -1553,6 +1553,14 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   grpc_call_error error = GRPC_CALL_OK;
   grpc_transport_stream_op_batch* stream_op;
   grpc_transport_stream_op_batch_payload* stream_op_payload;
+  uint32_t seen_ops = 0;
+
+  for (i = 0; i < nops; i++) {
+    if (seen_ops & (1u << ops[i].op)) {
+      return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    }
+    seen_ops |= (1u << ops[i].op);
+  }
 
   GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
 

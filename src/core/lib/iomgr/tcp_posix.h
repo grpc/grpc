@@ -36,15 +36,13 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/resource_quota.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
 /// Create a tcp endpoint given a file desciptor and a read slice size.
 /// Takes ownership of \a fd. Takes ownership of the \a slice_allocator.
 grpc_endpoint* grpc_tcp_create(grpc_fd* fd, const grpc_channel_args* args,
-                               absl::string_view peer_string,
-                               grpc_slice_allocator* slice_allocator);
+                               absl::string_view peer_string);
 
 /// Return the tcp endpoint's fd, or -1 if this is not available. Does not
 /// release the fd. Requires: \a ep must be a tcp endpoint.

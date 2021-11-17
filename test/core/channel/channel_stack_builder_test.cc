@@ -99,7 +99,7 @@ const grpc_channel_filter original_filter = {
     grpc_channel_next_get_info,
     "filter_name"};
 
-static bool AddReplacementFilter(grpc_channel_stack_builder* builder) {
+bool AddReplacementFilter(grpc_channel_stack_builder* builder) {
   // Get rid of any other version of the filter, as determined by having the
   // same name.
   GPR_ASSERT(grpc_channel_stack_builder_remove_filter(builder,
