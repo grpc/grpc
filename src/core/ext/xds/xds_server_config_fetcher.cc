@@ -111,6 +111,8 @@ class XdsServerConfigFetcher::ListenerWatcher
   // pending_filter_chain_match_manager_, it is promoted to be the
   // filter_chain_match_manager_ in use.
   void PendingFilterChainMatchManagerReady(
+      FilterChainMatchManager* filter_chain_match_manager);
+  void PendingFilterChainMatchManagerReadyLocked(
       FilterChainMatchManager* filter_chain_match_manager)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
@@ -228,7 +230,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     // Promote the filter chain match manager object if all the referenced
     // resources are fetched.
     if (listener_watcher != nullptr) {
-      MutexLock lock(&listener_watcher->mu_);
       listener_watcher->PendingFilterChainMatchManagerReady(
           filter_chain_match_manager_.get());
     }
@@ -255,7 +256,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     // Promote the filter chain match manager object if all the referenced
     // resources are fetched.
     if (listener_watcher != nullptr) {
-      MutexLock lock(&listener_watcher->mu_);
       listener_watcher->PendingFilterChainMatchManagerReady(
           filter_chain_match_manager_.get());
     }
@@ -279,7 +279,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     // Promote the filter chain match manager object if all the referenced
     // resources are fetched.
     if (listener_watcher != nullptr) {
-      MutexLock lock(&listener_watcher->mu_);
       listener_watcher->PendingFilterChainMatchManagerReady(
           filter_chain_match_manager_.get());
     }
@@ -336,7 +335,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
   class VirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
    public:
-    VirtualHostListIterator(const std::vector<VirtualHost>* virtual_hosts)
+    explicit VirtualHostListIterator(
+        const std::vector<VirtualHost>* virtual_hosts)
         : virtual_hosts_(virtual_hosts) {}
 
     size_t Size() const override { return virtual_hosts_->size(); }
@@ -408,6 +408,10 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
  private:
   class RouteConfigWatcher;
 
+  void OnRouteConfigChanged(XdsApi::RdsUpdate rds_update);
+  void OnError(grpc_error_handle error);
+  void OnResourceDoesNotExist();
+
   RefCountedPtr<XdsClient> xds_client_;
   std::string resource_name_;
   std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>
@@ -430,41 +434,12 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       : parent_(std::move(parent)) {}
 
   void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override {
-    MutexLock lock(&parent_->mu_);
-    parent_->resource_ = std::move(route_config);
-    if (parent_->watcher_ == nullptr) {
-      return;
-    }
-    parent_->watcher_->OnServerConfigSelectorUpdate(
-        XdsServerConfigSelector::Create(*parent_->resource_,
-                                        parent_->http_filters_));
+    parent_->OnRouteConfigChanged(std::move(route_config));
   }
 
-  void OnError(grpc_error_handle error) override {
-    MutexLock lock(&parent_->mu_);
-    // Prefer existing update, if any.
-    if (parent_->resource_.ok()) {
-      return;
-    }
-    parent_->resource_ = grpc_error_to_absl_status(error);
-    GRPC_ERROR_UNREF(error);
-    if (parent_->watcher_ == nullptr) {
-      return;
-    }
-    parent_->watcher_->OnServerConfigSelectorUpdate(
-        parent_->resource_.status());
-  }
+  void OnError(grpc_error_handle error) override { parent_->OnError(error); }
 
-  void OnResourceDoesNotExist() override {
-    MutexLock lock(&parent_->mu_);
-    parent_->resource_ =
-        absl::NotFoundError("Requested route config does not exist");
-    if (parent_->watcher_ == nullptr) {
-      return;
-    }
-    parent_->watcher_->OnServerConfigSelectorUpdate(
-        parent_->resource_.status());
-  }
+  void OnResourceDoesNotExist() override { parent_->OnResourceDoesNotExist(); }
 
  private:
   RefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent_;
@@ -556,7 +531,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
     if (XdsRbacEnabled()) {
       pending_filter_chain_match_manager_->StartRdsWatch(Ref());
     } else {
-      PendingFilterChainMatchManagerReady(
+      PendingFilterChainMatchManagerReadyLocked(
           pending_filter_chain_match_manager_.get());
     }
   }
@@ -615,6 +590,14 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceDoesNotExist() {
 
 void XdsServerConfigFetcher::ListenerWatcher::
     PendingFilterChainMatchManagerReady(
+        XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager*
+            filter_chain_match_manager) {
+  MutexLock lock(&mu_);
+  PendingFilterChainMatchManagerReadyLocked(filter_chain_match_manager);
+}
+
+void XdsServerConfigFetcher::ListenerWatcher::
+    PendingFilterChainMatchManagerReadyLocked(
         XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager*
             filter_chain_match_manager) {
   if (pending_filter_chain_match_manager_ != filter_chain_match_manager) {
@@ -699,7 +682,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   // Promote this filter chain match manager if all referenced resources are
   // fetched.
   if (listener_watcher != nullptr) {
-    listener_watcher->PendingFilterChainMatchManagerReady(this);
+    listener_watcher->PendingFilterChainMatchManagerReadyLocked(this);
   }
 }
 
@@ -1188,6 +1171,44 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                                           false /* delay_unsubscription */);
   MutexLock lock(&mu_);
   watcher_.reset();
+}
+
+void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    DynamicXdsServerConfigSelectorProvider::OnRouteConfigChanged(
+        XdsApi::RdsUpdate rds_update) {
+  MutexLock lock(&mu_);
+  resource_ = std::move(rds_update);
+  if (watcher_ == nullptr) {
+    return;
+  }
+  watcher_->OnServerConfigSelectorUpdate(
+      XdsServerConfigSelector::Create(*resource_, http_filters_));
+}
+
+void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    DynamicXdsServerConfigSelectorProvider::OnError(grpc_error_handle error) {
+  MutexLock lock(&mu_);
+  // Prefer existing good update.
+  if (resource_.ok()) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+  resource_ = grpc_error_to_absl_status(error);
+  GRPC_ERROR_UNREF(error);
+  if (watcher_ == nullptr) {
+    return;
+  }
+  watcher_->OnServerConfigSelectorUpdate(resource_.status());
+}
+
+void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    DynamicXdsServerConfigSelectorProvider::OnResourceDoesNotExist() {
+  MutexLock lock(&mu_);
+  resource_ = absl::NotFoundError("Requested route config does not exist");
+  if (watcher_ == nullptr) {
+    return;
+  }
+  watcher_->OnServerConfigSelectorUpdate(resource_.status());
 }
 
 }  // namespace

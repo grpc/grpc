@@ -1353,6 +1353,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     });
   }
 
+  bool WaitForRouteConfigNack(
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
+    if (GetParam().enable_rds_testing()) {
+      return WaitForRdsNack(expected_status);
+    }
+    return WaitForLdsNack(expected_status);
+  }
+
   AdsServiceImpl::ResponseState RouteConfigurationResponseState(int idx) const {
     AdsServiceImpl* ads_service = balancers_[idx]->ads_service();
     if (GetParam().enable_rds_testing()) {
@@ -9768,14 +9776,6 @@ class XdsServerRdsTest : public XdsEnabledServerStatusNotificationTest {
   static void TearDownTestSuite() {
     gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_RBAC");
   }
-
-  bool WaitForRouteConfigNack(
-      StatusCode expected_status = StatusCode::UNAVAILABLE) {
-    if (GetParam().enable_rds_testing()) {
-      return WaitForRdsNack(expected_status);
-    }
-    return WaitForLdsNack(expected_status);
-  }
 };
 
 TEST_P(XdsServerRdsTest, Basic) {
@@ -9898,6 +9898,9 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
           true /* test_expects_failure */);
 }
 
+// TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
+// should add tests that make sure that different route configs are used for
+// incoming connections with a different match.
 TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
   Listener listener = default_server_listener_;
   // Set a filter chain with a new route config name

@@ -75,24 +75,6 @@ MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
   return INVALID_MATCH;
 }
 
-bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
-                  grpc_metadata_batch* initial_metadata) {
-  for (const auto& header_matcher : header_matchers) {
-    std::string concatenated_value;
-    if (!header_matcher.Match(XdsRouting::GetHeaderValue(
-            initial_metadata, header_matcher.name(), &concatenated_value))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool UnderFraction(const uint32_t fraction_per_million) {
-  // Generate a random number in [0, 1000000).
-  const uint32_t random_number = rand() % 1000000;
-  return random_number < fraction_per_million;
-}
-
 }  // namespace
 
 absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
@@ -136,6 +118,28 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
   }
   return target_index;
 }
+
+namespace {
+
+bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
+                  grpc_metadata_batch* initial_metadata) {
+  for (const auto& header_matcher : header_matchers) {
+    std::string concatenated_value;
+    if (!header_matcher.Match(XdsRouting::GetHeaderValue(
+            initial_metadata, header_matcher.name(), &concatenated_value))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool UnderFraction(const uint32_t fraction_per_million) {
+  // Generate a random number in [0, 1000000).
+  const uint32_t random_number = rand() % 1000000;
+  return random_number < fraction_per_million;
+}
+
+}  // namespace
 
 absl::optional<size_t> XdsRouting::GetRouteForRequest(
     const RouteListIterator& route_list_iterator, absl::string_view path,
