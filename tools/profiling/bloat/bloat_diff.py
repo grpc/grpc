@@ -114,15 +114,16 @@ for lib in LIBS:
     if old_version:
         assert len(old_version) == 1
         text += subprocess.check_output(
-            '%s -n 0 --debug-file=%s --debug-file=%s %s.stripped -- %s.stripped' %
-            (cmd, new_version[0], old_version[0], new_version[0],
-             old_version[0]),
+            '%s -n 0 --debug-file=%s --debug-file=%s %s.stripped -- %s.stripped'
+            % (cmd, new_version[0], old_version[0], new_version[0],
+               old_version[0]),
             shell=True).decode()
         sections = [
             x for x in csv.reader(
-                subprocess.check_output('bloaty-build/bloaty -n 0 --csv %s -- %s' %
-                                        (new_version[0], old_version[0]),
-                                        shell=True).decode().splitlines())
+                subprocess.check_output(
+                    'bloaty-build/bloaty -n 0 --csv %s -- %s' %
+                    (new_version[0], old_version[0]),
+                    shell=True).decode().splitlines())
         ]
         print(sections)
         for section in sections[1:]:
