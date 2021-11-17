@@ -302,6 +302,8 @@ class Slice : public slice_detail::BaseSlice,
 
   Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }
 
+  Slice Copy() const { return Slice(grpc_slice_copy(c_slice())); }
+
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
                                     const uint8_t* begin, const uint8_t* end) {
     grpc_slice out;

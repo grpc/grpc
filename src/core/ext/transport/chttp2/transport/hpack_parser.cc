@@ -1243,7 +1243,7 @@ class HPackParser::Parser {
 
 Slice HPackParser::String::Take(Extern) {
   if (auto* p = absl::get_if<Slice>(&value_)) {
-    return std::move(*p);
+    return p->Copy();
   }
   if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
     return Slice::FromCopiedBuffer(*p);
