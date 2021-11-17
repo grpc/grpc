@@ -27,46 +27,32 @@ echo "TIME:  $(date)"
 
 echo "TIME:  $(date)"
 
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
 xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests \
     -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+    test
 
 echo "TIME:  $(date)"
 
-xcodebuild \
-    -workspace CFStreamTests.xcworkspace \
-    -scheme CFStreamTests_Asan \
-    -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+# xcodebuild \
+#     -workspace CFStreamTests.xcworkspace \
+#     -scheme CFStreamTests_Asan \
+#     -destination name="iPhone 8" \
+#     test
 
-echo "TIME:  $(date)"
+# echo "TIME:  $(date)"
 
-xcodebuild \
-    -workspace CFStreamTests.xcworkspace \
-    -scheme CFStreamTests_Tsan \
-    -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+# xcodebuild \
+#     -workspace CFStreamTests.xcworkspace \
+#     -scheme CFStreamTests_Tsan \
+#     -destination name="iPhone 8" \
+#     test
 
-echo "TIME:  $(date)"
+# echo "TIME:  $(date)"
 
-xcodebuild \
-    -workspace CFStreamTests.xcworkspace \
-    -scheme CFStreamTests_Msan \
-    -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+# xcodebuild \
+#     -workspace CFStreamTests.xcworkspace \
+#     -scheme CFStreamTests_Msan \
+#     -destination name="iPhone 8" \
+#     test

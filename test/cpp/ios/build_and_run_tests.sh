@@ -22,19 +22,14 @@ cd "$(dirname "$0")"
 
 echo "TIME:  $(date)"
 
-./build_tests.sh | ./verbose_time.sh
+./build_tests.sh
 
 echo "TIME:  $(date)"
 
 set -o pipefail
 
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetTests \
     -destination name="iPhone 8" \
-    test \
-    | ./verbose_time.sh \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' -
+    test

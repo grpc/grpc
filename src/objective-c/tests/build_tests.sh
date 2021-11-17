@@ -35,7 +35,7 @@ rm -f RemoteTestClient/*.{h,m}
 pod cache clean --all
 
 echo "TIME:  $(date)"
-pod install --verbose | ./verbose_time.sh
+pod install --verbose
 
 # verify pod header installation
 if [ -d "./Pods/Headers/Public/gRPC-Core/grpc/impl/codegen" ]

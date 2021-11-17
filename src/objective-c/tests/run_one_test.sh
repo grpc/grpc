@@ -65,8 +65,6 @@ trap finish EXIT
 
 set -o pipefail
 
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
 if [ -z $PLATFORM ]; then
 DESTINATION='name=iPhone 8'
 elif [ $PLATFORM == ios ]; then
@@ -77,7 +75,6 @@ elif [ $PLATFORM == tvos ]; then
 DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
 
-
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
@@ -86,9 +83,4 @@ xcodebuild \
     HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     GCC_OPTIMIZATION_LEVEL=s \
-    test \
-    | ./verbose_time.sh \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
+    test

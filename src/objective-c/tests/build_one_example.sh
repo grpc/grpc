@@ -36,10 +36,9 @@ rm -rf Pods
 rm -rf *.xcworkspace
 rm -f Podfile.lock
 
-pod install | $TEST_PATH/verbose_time.sh
+pod install
 
 set -o pipefail
-XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
 if [ "$SCHEME" == "tvOS-sample" ]; then
   xcodebuild \
     build \
@@ -49,10 +48,7 @@ if [ "$SCHEME" == "tvOS-sample" ]; then
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
-    CODE_SIGNING_ALLOWED=NO \
-    | $TEST_PATH/verbose_time.sh \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v "^$" -
+    CODE_SIGNING_ALLOWED=NO
 else
   xcodebuild \
     build \
@@ -62,9 +58,6 @@ else
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
-    CODE_SIGNING_ALLOWED=NO \
-    | $TEST_PATH/verbose_time.sh \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v "^$" -
+    CODE_SIGNING_ALLOWED=NO
 fi
 
