@@ -114,13 +114,13 @@ for lib in LIBS:
     if old_version:
         assert len(old_version) == 1
         text += subprocess.check_output(
-            '%s --debug-file=%s --debug-file=%s %s.stripped -- %s.stripped' %
+            '%s -n 0 --debug-file=%s --debug-file=%s %s.stripped -- %s.stripped' %
             (cmd, new_version[0], old_version[0], new_version[0],
              old_version[0]),
             shell=True).decode()
         sections = [
             x for x in csv.reader(
-                subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' %
+                subprocess.check_output('bloaty-build/bloaty -n 0 --csv %s -- %s' %
                                         (new_version[0], old_version[0]),
                                         shell=True).decode().splitlines())
         ]
@@ -130,7 +130,7 @@ for lib in LIBS:
                 continue
             diff_size += int(section[2])
     else:
-        text += subprocess.check_output('%s %s.stripped --debug-file=%s' %
+        text += subprocess.check_output('%s %s.stripped -n 0 --debug-file=%s' %
                                         (cmd, new_version[0], new_version[0]),
                                         shell=True).decode()
     text += '\n\n'
