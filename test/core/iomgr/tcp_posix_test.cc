@@ -203,7 +203,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_endpoint* ep;
   struct read_socket_state state;
   size_t written_bytes;
-  grpc_millis deadline =
+  grpc_core::Timestamp deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
 
@@ -261,7 +261,7 @@ static void large_read_test(size_t slice_size) {
   grpc_endpoint* ep;
   struct read_socket_state state;
   ssize_t written_bytes;
-  grpc_millis deadline =
+  grpc_core::Timestamp deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
 
@@ -418,7 +418,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   uint8_t current_data = 0;
   grpc_slice_buffer outgoing;
   grpc_closure write_done_closure;
-  grpc_millis deadline =
+  grpc_core::Timestamp deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
 
@@ -505,7 +505,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   struct read_socket_state state;
   size_t written_bytes;
   int fd;
-  grpc_millis deadline =
+  grpc_core::Timestamp deadline =
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
   grpc_closure fd_released_cb;

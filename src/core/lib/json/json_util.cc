@@ -26,7 +26,7 @@
 
 namespace grpc_core {
 
-bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
+bool ParseDurationFromJson(const Json& field, Timestamp* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();
   if (field.string_value()[len - 1] != 's') return false;
@@ -99,7 +99,7 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
 
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     absl::string_view field_name,
-                                    grpc_millis* output,
+                                    Timestamp* output,
                                     std::vector<grpc_error_handle>* error_list,
                                     bool required) {
   // TODO(roth): Once we can use C++14 heterogenous lookups, stop
@@ -113,7 +113,7 @@ bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
     return false;
   }
   if (!ParseDurationFromJson(it->second, output)) {
-    *output = GRPC_MILLIS_INF_PAST;
+    *output = Timestamp_INF_PAST;
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("field:", field_name,
                      " error:type should be STRING of the form given by "

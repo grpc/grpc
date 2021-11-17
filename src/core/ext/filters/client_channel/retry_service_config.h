@@ -24,7 +24,7 @@
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
+#include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_core::Timestamp
 
 namespace grpc_core {
 namespace internal {
@@ -45,10 +45,10 @@ class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
 
 class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  RetryMethodConfig(int max_attempts, grpc_millis initial_backoff,
-                    grpc_millis max_backoff, float backoff_multiplier,
+  RetryMethodConfig(int max_attempts, Timestamp initial_backoff,
+                    Timestamp max_backoff, float backoff_multiplier,
                     StatusCodeSet retryable_status_codes,
-                    absl::optional<grpc_millis> per_attempt_recv_timeout)
+                    absl::optional<Timestamp> per_attempt_recv_timeout)
       : max_attempts_(max_attempts),
         initial_backoff_(initial_backoff),
         max_backoff_(max_backoff),
@@ -57,23 +57,23 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
         per_attempt_recv_timeout_(per_attempt_recv_timeout) {}
 
   int max_attempts() const { return max_attempts_; }
-  grpc_millis initial_backoff() const { return initial_backoff_; }
-  grpc_millis max_backoff() const { return max_backoff_; }
+  Timestamp initial_backoff() const { return initial_backoff_; }
+  Timestamp max_backoff() const { return max_backoff_; }
   float backoff_multiplier() const { return backoff_multiplier_; }
   StatusCodeSet retryable_status_codes() const {
     return retryable_status_codes_;
   }
-  absl::optional<grpc_millis> per_attempt_recv_timeout() const {
+  absl::optional<Timestamp> per_attempt_recv_timeout() const {
     return per_attempt_recv_timeout_;
   }
 
  private:
   int max_attempts_ = 0;
-  grpc_millis initial_backoff_ = 0;
-  grpc_millis max_backoff_ = 0;
+  Timestamp initial_backoff_;
+  Timestamp max_backoff_;
   float backoff_multiplier_ = 0;
   StatusCodeSet retryable_status_codes_;
-  absl::optional<grpc_millis> per_attempt_recv_timeout_;
+  absl::optional<Timestamp> per_attempt_recv_timeout_;
 };
 
 class RetryServiceConfigParser : public ServiceConfigParser::Parser {

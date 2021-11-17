@@ -138,10 +138,10 @@ void HealthCheckClient::StartCallLocked() {
 void HealthCheckClient::StartRetryTimerLocked() {
   SetHealthStatusLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                         "health check call failed; will retry after backoff");
-  grpc_millis next_try = retry_backoff_.NextAttemptTime();
+  Timestamp next_try = retry_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthCheckClient %p: health check call lost...", this);
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    Timestamp timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
       gpr_log(GPR_INFO,
               "HealthCheckClient %p: ... will retry in %" PRId64 "ms.", this,
@@ -289,7 +289,7 @@ void HealthCheckClient::CallState::StartCall() {
       &pollent_,
       GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH,
       gpr_get_cycle_counter(),  // start_time
-      GRPC_MILLIS_INF_FUTURE,   // deadline
+      Timestamp::InfFuture(),   // deadline
       arena_,
       context_,
       &call_combiner_,
@@ -555,7 +555,7 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
   // Get call status.
   grpc_status_code status = GRPC_STATUS_UNKNOWN;
   if (error != GRPC_ERROR_NONE) {
-    grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
+    grpc_error_get_status(error, Timestamp::InfFuture(), &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);
   } else if (self->recv_trailing_metadata_.legacy_index()->named.grpc_status !=

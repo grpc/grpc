@@ -37,7 +37,7 @@ class FaultInjectionMethodParsedConfig
     uint32_t abort_percentage_numerator = 0;
     uint32_t abort_percentage_denominator = 100;
 
-    grpc_millis delay = 0;
+    Timestamp delay;
     std::string delay_header;
     std::string delay_percentage_header;
     uint32_t delay_percentage_numerator = 0;

@@ -40,7 +40,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       grpc_polling_entity* pollent;
       grpc_slice path;
       gpr_cycle_counter start_time;
-      grpc_millis deadline;
+      Timestamp deadline;
       Arena* arena;
       grpc_call_context_element* context;
       CallCombiner* call_combiner;

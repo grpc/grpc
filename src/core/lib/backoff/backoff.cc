@@ -36,11 +36,11 @@ double generate_uniform_random_number(uint32_t* rng_state) {
   return *rng_state / static_cast<double>(two_raise_31);
 }
 
-double generate_uniform_random_number_between(uint32_t* rng_state, double a,
-                                              double b) {
+Duration generate_uniform_random_number_between(uint32_t* rng_state, Duration a,
+                                                Duration b) {
   if (a == b) return a;
   if (a > b) std::swap(a, b);  // make sure a < b
-  const double range = b - a;
+  const Duration range = b - a;
   return a + generate_uniform_random_number(rng_state) * range;
 }
 
@@ -52,19 +52,17 @@ BackOff::BackOff(const Options& options)
   Reset();
 }
 
-grpc_millis BackOff::NextAttemptTime() {
+Timestamp BackOff::NextAttemptTime() {
   if (initial_) {
     initial_ = false;
     return current_backoff_ + ExecCtx::Get()->Now();
   }
-  current_backoff_ = static_cast<grpc_millis>(
-      std::min(current_backoff_ * options_.multiplier(),
-               static_cast<double>(options_.max_backoff())));
-  const double jitter = generate_uniform_random_number_between(
+  current_backoff_ = std::min(current_backoff_ * options_.multiplier(),
+                              options_.max_backoff());
+  const Duration jitter = generate_uniform_random_number_between(
       &rng_state_, -options_.jitter() * current_backoff_,
       options_.jitter() * current_backoff_);
-  const grpc_millis next_timeout =
-      static_cast<grpc_millis>(current_backoff_ + jitter);
+  const Duration next_timeout = current_backoff_ + jitter;
   return next_timeout + ExecCtx::Get()->Now();
 }
 

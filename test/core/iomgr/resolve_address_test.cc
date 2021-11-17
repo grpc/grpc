@@ -79,7 +79,7 @@ void args_finish(args_struct* args) {
   gpr_free(args->pollset);
 }
 
-static grpc_millis n_sec_deadline(int seconds) {
+static grpc_core::Timestamp n_sec_deadline(int seconds) {
   return grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
 }
@@ -87,7 +87,7 @@ static grpc_millis n_sec_deadline(int seconds) {
 static void poll_pollset_until_request_done(args_struct* args) {
   // Try to give enough time for c-ares to run through its retries
   // a few times if needed.
-  grpc_millis deadline = n_sec_deadline(90);
+  grpc_core::Timestamp deadline = n_sec_deadline(90);
   while (true) {
     grpc_core::ExecCtx exec_ctx;
     {
@@ -95,7 +95,8 @@ static void poll_pollset_until_request_done(args_struct* args) {
       if (args->done) {
         break;
       }
-      grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+      grpc_core::Timestamp time_left =
+          deadline - grpc_core::ExecCtx::Get()->Now();
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
       GPR_ASSERT(time_left >= 0);
       grpc_pollset_worker* worker = nullptr;

@@ -129,7 +129,7 @@ class RlsServiceImpl : public RlsService {
   void Shutdown() {}
 
   void SetResponse(RouteLookupRequest request, RouteLookupResponse response,
-                   grpc_millis response_delay = 0) {
+                   grpc_core::Timestamp response_delay = 0) {
     grpc::internal::MutexLock lock(&mu_);
     responses_[std::move(request)] = {std::move(response), response_delay};
   }
@@ -162,7 +162,7 @@ class RlsServiceImpl : public RlsService {
 
   struct ResponseData {
     RouteLookupResponse response;
-    grpc_millis response_delay;
+    grpc_core::Timestamp response_delay;
   };
 
   grpc::internal::Mutex mu_;
@@ -402,7 +402,8 @@ class RlsEnd2endTest : public ::testing::Test {
     explicit ServiceConfigBuilder(int rls_server_port)
         : rls_server_port_(rls_server_port) {}
 
-    ServiceConfigBuilder& set_lookup_service_timeout(grpc_millis timeout) {
+    ServiceConfigBuilder& set_lookup_service_timeout(
+        grpc_core::Timestamp timeout) {
       lookup_service_timeout_ = timeout * grpc_test_slowdown_factor();
       return *this;
     }
@@ -412,12 +413,12 @@ class RlsEnd2endTest : public ::testing::Test {
       return *this;
     }
 
-    ServiceConfigBuilder& set_max_age(grpc_millis max_age) {
+    ServiceConfigBuilder& set_max_age(grpc_core::Timestamp max_age) {
       max_age_ = max_age * grpc_test_slowdown_factor();
       return *this;
     }
 
-    ServiceConfigBuilder& set_stale_age(grpc_millis stale_age) {
+    ServiceConfigBuilder& set_stale_age(grpc_core::Timestamp stale_age) {
       stale_age_ = stale_age * grpc_test_slowdown_factor();
       return *this;
     }
@@ -488,10 +489,10 @@ class RlsEnd2endTest : public ::testing::Test {
 
    private:
     int rls_server_port_;
-    grpc_millis lookup_service_timeout_ = 0;
+    grpc_core::Timestamp lookup_service_timeout_;
     std::string default_target_;
-    grpc_millis max_age_ = 0;
-    grpc_millis stale_age_ = 0;
+    grpc_core::Timestamp max_age_;
+    grpc_core::Timestamp stale_age_;
     int64_t cache_size_bytes_ = 10485760;
     std::vector<std::string> key_builders_;
   };

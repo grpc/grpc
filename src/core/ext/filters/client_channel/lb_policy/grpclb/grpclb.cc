@@ -217,7 +217,7 @@ class GrpcLb : public LoadBalancingPolicy {
     // The stats for client-side load reporting associated with this LB call.
     // Created after the first serverlist is received.
     RefCountedPtr<GrpcLbClientStats> client_stats_;
-    grpc_millis client_stats_report_interval_ = 0;
+    Timestamp client_stats_report_interval_;
     grpc_timer client_load_report_timer_;
     bool client_load_report_timer_callback_pending_ = false;
     bool last_client_load_report_counters_were_zero_ = false;
@@ -488,8 +488,8 @@ class GrpcLb : public LoadBalancingPolicy {
   bool child_policy_ready_ = false;
 
   // Deleted subchannel caching.
-  const grpc_millis subchannel_cache_interval_ms_;
-  std::map<grpc_millis /*deletion time*/,
+  const Timestamp subchannel_cache_interval_ms_;
+  std::map<Timestamp /*deletion time*/,
            std::vector<RefCountedPtr<SubchannelInterface>>>
       cached_subchannels_;
   grpc_timer subchannel_cache_timer_;
@@ -787,9 +787,9 @@ GrpcLb::BalancerCallState::BalancerCallState(
                     this, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,
                     this, grpc_schedule_on_exec_ctx);
-  const grpc_millis deadline =
+  const Timestamp deadline =
       grpclb_policy()->lb_call_timeout_ms_ == 0
-          ? GRPC_MILLIS_INF_FUTURE
+          ? Timestamp::InfFuture()
           : ExecCtx::Get()->Now() + grpclb_policy()->lb_call_timeout_ms_;
   lb_call_ = grpc_channel_create_pollset_set_call(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
@@ -917,7 +917,7 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   // in a loop while draining the currently-held WorkSerializer.
   // Also see https://github.com/grpc/grpc/issues/26079.
   ExecCtx::Get()->InvalidateNow();
-  const grpc_millis next_client_load_report_time =
+  const Timestamp next_client_load_report_time =
       ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,
                     this, grpc_schedule_on_exec_ctx);
@@ -1449,7 +1449,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
   if (is_initial_update) {
     fallback_at_startup_checks_pending_ = true;
     // Start timer.
-    grpc_millis deadline = ExecCtx::Get()->Now() + fallback_at_startup_timeout_;
+    Timestamp deadline = ExecCtx::Get()->Now() + fallback_at_startup_timeout_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
     grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
     // Start watching the channel's connectivity state.  If the channel
@@ -1548,10 +1548,10 @@ void GrpcLb::StartBalancerCallLocked() {
 }
 
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
-  grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
+  Timestamp next_try = lb_call_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    Timestamp timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
       gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout);
@@ -1717,7 +1717,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
 
 void GrpcLb::CacheDeletedSubchannelLocked(
     RefCountedPtr<SubchannelInterface> subchannel) {
-  grpc_millis deletion_time =
+  Timestamp deletion_time =
       ExecCtx::Get()->Now() + subchannel_cache_interval_ms_;
   cached_subchannels_[deletion_time].push_back(std::move(subchannel));
   if (!subchannel_cache_timer_pending_) {

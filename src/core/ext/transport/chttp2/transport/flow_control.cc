@@ -348,7 +348,7 @@ double TransportFlowControl::TargetLogBdp() {
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = static_cast<double>(now - last_pid_update_) * 1e-3;
   last_pid_update_ = now;

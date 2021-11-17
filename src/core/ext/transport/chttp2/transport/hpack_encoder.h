@@ -117,7 +117,7 @@ class HPackCompressor {
     Framer& operator=(const Framer&) = delete;
 
     void Encode(grpc_mdelem md);
-    void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
+    void Encode(GrpcTimeoutMetadata, Timestamp deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
 
    private:

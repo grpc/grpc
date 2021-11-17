@@ -52,7 +52,7 @@ class InternalRequest {
   InternalRequest(const grpc_slice& request_text,
                   grpc_httpcli_response* response,
                   ResourceQuotaRefPtr resource_quota, absl::string_view host,
-                  absl::string_view ssl_host_override, grpc_millis deadline,
+                  absl::string_view ssl_host_override, Timestamp deadline,
                   const grpc_httpcli_handshaker* handshaker,
                   grpc_closure* on_done, grpc_httpcli_context* context,
                   grpc_polling_entity* pollent, const char* name)
@@ -228,7 +228,7 @@ class InternalRequest {
   ResourceQuotaRefPtr resource_quota_;
   std::string host_;
   std::string ssl_host_override_;
-  grpc_millis deadline_;
+  Timestamp deadline_;
   int have_read_byte_ = 0;
   const grpc_httpcli_handshaker* handshaker_;
   grpc_closure* on_done_;
@@ -250,7 +250,8 @@ static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
 
 static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
-                                const char* /*host*/, grpc_millis /*deadline*/,
+                                const char* /*host*/,
+                                grpc_core::Timestamp /*deadline*/,
                                 void (*on_done)(void* arg,
                                                 grpc_endpoint* endpoint)) {
   on_done(arg, endpoint);
@@ -270,7 +271,7 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context) {
 static void internal_request_begin(
     grpc_httpcli_context* context, grpc_polling_entity* pollent,
     grpc_core::ResourceQuotaRefPtr resource_quota,
-    const grpc_httpcli_request* request, grpc_millis deadline,
+    const grpc_httpcli_request* request, grpc_core::Timestamp deadline,
     grpc_closure* on_done, grpc_httpcli_response* response, const char* name,
     const grpc_slice& request_text) {
   new grpc_core::InternalRequest(
@@ -283,8 +284,9 @@ static void internal_request_begin(
 void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_polling_entity* pollent,
                       grpc_core::ResourceQuotaRefPtr resource_quota,
-                      const grpc_httpcli_request* request, grpc_millis deadline,
-                      grpc_closure* on_done, grpc_httpcli_response* response) {
+                      const grpc_httpcli_request* request,
+                      grpc_core::Timestamp deadline, grpc_closure* on_done,
+                      grpc_httpcli_response* response) {
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
     return;
   }
@@ -300,7 +302,7 @@ void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_core::ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
-                       grpc_millis deadline, grpc_closure* on_done,
+                       grpc_core::Timestamp deadline, grpc_closure* on_done,
                        grpc_httpcli_response* response) {
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {

@@ -145,9 +145,9 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
   return true;
 }
 
-grpc_millis grpc_grpclb_duration_to_millis(
+Timestamp grpc_grpclb_duration_to_millis(
     const google_protobuf_Duration* duration_pb) {
-  return static_cast<grpc_millis>(
+  return static_cast<Timestamp>(
       (google_protobuf_Duration_seconds(duration_pb) * GPR_MS_PER_SEC) +
       (google_protobuf_Duration_nanos(duration_pb) / GPR_NS_PER_MS));
 }

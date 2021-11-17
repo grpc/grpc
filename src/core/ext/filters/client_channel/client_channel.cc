@@ -193,7 +193,7 @@ class ClientChannel::CallData {
 
   grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
@@ -375,7 +375,7 @@ class DynamicTerminationFilter::CallData {
   ~CallData() { grpc_slice_unref_internal(path_); }
 
   grpc_slice path_;  // Request path.
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
@@ -1852,7 +1852,7 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
     : deadline_state_(elem, args,
                       GPR_LIKELY(chand.deadline_checking_enabled_)
                           ? args.deadline
-                          : GRPC_MILLIS_INF_FUTURE),
+                          : Timestamp::InfFuture()),
       path_(grpc_slice_ref_internal(args.path)),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
@@ -2218,7 +2218,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
       // If the deadline from the service config is shorter than the one
       // from the client API, reset the deadline timer.
       if (chand->deadline_checking_enabled_ && method_params->timeout() != 0) {
-        const grpc_millis per_method_deadline =
+        const Timestamp per_method_deadline =
             grpc_cycle_counter_to_millis_round_up(call_start_time_) +
             method_params->timeout();
         if (per_method_deadline < deadline_) {

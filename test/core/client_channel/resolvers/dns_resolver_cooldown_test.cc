@@ -67,12 +67,12 @@ static void test_resolve_address_impl(const char* name,
   default_resolve_address->resolve_address(
       name, default_port, g_iomgr_args.pollset_set, on_done, addrs);
   ++g_resolution_count;
-  static grpc_millis last_resolution_time = 0;
+  static grpc_core::Timestamp last_resolution_time;
   if (last_resolution_time == 0) {
     last_resolution_time =
         grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
   } else {
-    grpc_millis now =
+    grpc_core::Timestamp now =
         grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
     GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
     last_resolution_time = now;
@@ -108,8 +108,8 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
       addresses, balancer_addresses, service_config_json, query_timeout_ms,
       std::move(work_serializer));
   ++g_resolution_count;
-  static grpc_millis last_resolution_time = 0;
-  grpc_millis now =
+  static grpc_core::Timestamp last_resolution_time;
+  grpc_core::Timestamp now =
       grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
   gpr_log(GPR_DEBUG,
           "last_resolution_time:%" PRId64 " now:%" PRId64
@@ -163,20 +163,21 @@ static void iomgr_args_finish(iomgr_args* args) {
   gpr_free(args->pollset);
 }
 
-static grpc_millis n_sec_deadline(int seconds) {
+static grpc_core::Timestamp n_sec_deadline(int seconds) {
   return grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void poll_pollset_until_request_done(iomgr_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = n_sec_deadline(10);
+  grpc_core::Timestamp deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
       break;
     }
-    grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+    grpc_core::Timestamp time_left =
+        deadline - grpc_core::ExecCtx::Get()->Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left);
     GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker* worker = nullptr;

@@ -77,17 +77,18 @@ static void enc_millis(char* buffer, int64_t x) {
   }
 }
 
-void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer) {
-  const grpc_millis kMaxTimeout = 99999999000;
-  if (timeout <= 0) {
+void grpc_http2_encode_timeout(grpc_core::Duration timeout, char* buffer) {
+  const int64_t kMaxTimeout = 99999999000;
+  int64_t timeout_ms = timeout.millis();
+  if (timeout_ms <= 0) {
     enc_tiny(buffer);
-  } else if (timeout < 1000 * GPR_MS_PER_SEC) {
-    enc_millis(buffer, timeout);
-  } else if (timeout >= kMaxTimeout) {
+  } else if (timeout_ms < 1000 * GPR_MS_PER_SEC) {
+    enc_millis(buffer, timeout_ms);
+  } else if (timeout_ms >= kMaxTimeout) {
     enc_huge(buffer);
   } else {
-    enc_seconds(buffer,
-                timeout / GPR_MS_PER_SEC + (timeout % GPR_MS_PER_SEC != 0));
+    enc_seconds(buffer, timeout_ms / GPR_MS_PER_SEC +
+                            (timeout_ms % GPR_MS_PER_SEC != 0));
   }
 }
 
@@ -96,8 +97,9 @@ static int is_all_whitespace(const char* p, const char* end) {
   return p == end;
 }
 
-int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout) {
-  grpc_millis x = 0;
+int grpc_http2_decode_timeout(const grpc_slice& text,
+                              grpc_core::Duration* timeout) {
+  grpc_core::Duration x;
   const uint8_t* p = GRPC_SLICE_START_PTR(text);
   const uint8_t* end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
@@ -111,7 +113,7 @@ int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout) {
     /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
     if (x >= (100 * 1000 * 1000)) {
       if (x != (100 * 1000 * 1000) || digit != 0) {
-        *timeout = GRPC_MILLIS_INF_FUTURE;
+        *timeout = grpc_core::Timestamp::InfFuture();
         return 1;
       }
     }

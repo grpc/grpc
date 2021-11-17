@@ -136,7 +136,7 @@ grpc_oauth2_token_fetcher_credentials::
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_millis* token_lifetime) {
+    grpc_core::Timestamp* token_lifetime) {
   char* null_terminated_body = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
   Json json;
@@ -234,7 +234,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
 void grpc_oauth2_token_fetcher_credentials::on_http_response(
     grpc_credentials_metadata_request* r, grpc_error_handle error) {
   grpc_mdelem access_token_md = GRPC_MDNULL;
-  grpc_millis token_lifetime = 0;
+  grpc_core::Timestamp token_lifetime;
   grpc_credentials_status status =
       error == GRPC_ERROR_NONE
           ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -280,7 +280,7 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error_handle* /*error*/) {
   // Check if we can use the cached token.
-  grpc_millis refresh_threshold =
+  grpc_core::Timestamp refresh_threshold =
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
   grpc_mdelem cached_access_token_md = GRPC_MDNULL;
   gpr_mu_lock(&mu_);
@@ -382,7 +382,7 @@ class grpc_compute_engine_token_fetcher_credentials
                     grpc_httpcli_context* http_context,
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
-                    grpc_millis deadline) override {
+                    grpc_core::Timestamp deadline) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_httpcli_request request;
@@ -436,7 +436,7 @@ grpc_google_refresh_token_credentials::
 void grpc_google_refresh_token_credentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
-    grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
+    grpc_iomgr_cb_func response_cb, grpc_core::Timestamp deadline) {
   grpc_http_header header = {
       const_cast<char*>("Content-Type"),
       const_cast<char*>("application/x-www-form-urlencoded")};
@@ -559,7 +559,7 @@ class StsTokenFetcherCredentials
                     grpc_httpcli_context* http_context,
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
-                    grpc_millis deadline) override {
+                    Timestamp deadline) override {
     char* body = nullptr;
     size_t body_length = 0;
     grpc_error_handle err = FillBody(&body, &body_length);

@@ -57,7 +57,7 @@ static void add_test(void) {
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
-  grpc_millis start = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp start = grpc_core::ExecCtx::Get()->Now();
 
   /* 10 ms timers.  will expire in the current epoch */
   for (i = 0; i < 10; i++) {
@@ -171,7 +171,7 @@ void long_running_service_cleanup_test(void) {
 
   gpr_log(GPR_INFO, "long_running_service_cleanup_test");
 
-  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
   GPR_ASSERT(now >= kMillisIn25Days);
   grpc_timer_list_init();
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
@@ -185,10 +185,10 @@ void long_running_service_cleanup_test(void) {
       &timers[1], now + 3,
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)1, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
-      &timers[2], GRPC_MILLIS_INF_FUTURE - 1,
+      &timers[2], grpc_core::Timestamp::InfFuture() - 1,
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)2, grpc_schedule_on_exec_ctx));
 
-  gpr_timespec deadline_spec = grpc_millis_to_timespec(
+  gpr_timespec deadline_spec = grpc_core::Timestamp_to_timespec(
       now + kMillisIn25Days, gpr_clock_type::GPR_CLOCK_MONOTONIC);
 
   /* grpc_timespec_to_millis_round_up is how users usually compute a millisecond

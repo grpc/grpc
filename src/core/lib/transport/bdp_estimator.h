@@ -72,7 +72,7 @@ class BdpEstimator {
   }
 
   // Completes a previously started ping, returns when to schedule the next one
-  grpc_millis CompletePing();
+  Timestamp CompletePing();
 
   int64_t accumulator() { return accumulator_; }
 

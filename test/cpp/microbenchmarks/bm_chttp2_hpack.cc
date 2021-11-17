@@ -67,7 +67,7 @@ BENCHMARK(BM_HpackEncoderInitDestroy);
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp saved_now = grpc_core::ExecCtx::Get()->Now();
 
   auto arena = grpc_core::MakeScopedArena(1024);
   grpc_metadata_batch b(arena.get());

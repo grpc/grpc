@@ -798,9 +798,9 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   *mu = &pollset->mu;
 }
 
-static int poll_deadline_to_millis_timeout(grpc_millis millis) {
-  if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
-  grpc_millis delta = millis - grpc_core::ExecCtx::Get()->Now();
+static int poll_deadline_to_millis_timeout(grpc_core::Timestamp millis) {
+  if (millis == grpc_core::Timestamp::InfFuture()) return -1;
+  grpc_core::Timestamp delta = millis - grpc_core::ExecCtx::Get()->Now();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {
@@ -926,7 +926,8 @@ static void pollset_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static grpc_error_handle pollable_epoll(pollable* p, grpc_millis deadline) {
+static grpc_error_handle pollable_epoll(pollable* p,
+                                        grpc_core::Timestamp deadline) {
   GPR_TIMER_SCOPE("pollable_epoll", 0);
   int timeout = poll_deadline_to_millis_timeout(deadline);
 
@@ -1001,7 +1002,7 @@ static worker_remove_result worker_remove(grpc_pollset_worker** root_worker,
 /* Return true if this thread should poll */
 static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
                          grpc_pollset_worker** worker_hdl,
-                         grpc_millis deadline) {
+                         grpc_core::Timestamp deadline) {
   GPR_TIMER_SCOPE("begin_worker", 0);
   bool do_poll =
       (pollset->shutdown_closure == nullptr && !pollset->already_shutdown);
@@ -1027,7 +1028,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
     }
     while (do_poll && worker->pollable_obj->root_worker != worker) {
       if (gpr_cv_wait(&worker->cv, &worker->pollable_obj->mu,
-                      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
+                      deadline.as_timespec(GPR_CLOCK_REALTIME))) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
           gpr_log(GPR_INFO, "PS:%p timeout_wait %p w=%p", pollset,
                   worker->pollable_obj, worker);
@@ -1099,7 +1100,7 @@ static long sys_gettid(void) { return syscall(__NR_gettid); }
    ensure that it is held by the time the function returns */
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker_hdl,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   GPR_TIMER_SCOPE("pollset_work", 0);
 #ifdef GRPC_EPOLLEX_CREATE_WORKERS_ON_HEAP
   grpc_pollset_worker* worker =

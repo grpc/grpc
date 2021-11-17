@@ -48,7 +48,7 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 
 namespace {
 
-grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
+Timestamp GetClientIdleTimeout(const grpc_channel_args* args) {
   return std::max(
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
@@ -87,7 +87,7 @@ class ChannelData {
   grpc_channel_stack* channel_stack_;
   // Timeout after the last RPC finishes on the client channel at which the
   // channel goes back into IDLE state.
-  const grpc_millis client_idle_timeout_;
+  const Timestamp client_idle_timeout_;
 
   // Member data used to track the state of channel.
   IdleFilterState idle_filter_state_{false};
@@ -149,7 +149,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
       client_idle_timeout_(GetClientIdleTimeout(args->channel_args)) {
   // If the idle filter is explicitly disabled in channel args, this ctor should
   // not get called.
-  GPR_ASSERT(client_idle_timeout_ != GRPC_MILLIS_INF_FUTURE);
+  GPR_ASSERT(client_idle_timeout_ != Timestamp::InfFuture());
   GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %" PRId64 " ms",
                        client_idle_timeout_);
   // Initialize the idle timer without setting it.

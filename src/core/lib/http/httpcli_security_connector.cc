@@ -179,7 +179,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
 }
 
 static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
-                          grpc_millis deadline,
+                          grpc_core::Timestamp deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
   auto* c = new on_done_closure();
   const char* pem_root_certs =

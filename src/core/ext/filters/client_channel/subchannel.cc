@@ -247,7 +247,7 @@ void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
 namespace {
 
 // Sets *status based on the rest of the parameters.
-void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
+void GetCallStatus(grpc_status_code* status, Timestamp deadline,
                    grpc_metadata_batch* md_batch, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
@@ -573,13 +573,13 @@ void Subchannel::HealthWatcherMap::ShutdownLocked() { map_.clear(); }
 
 namespace {
 
-BackOff::Options ParseArgsForBackoffValues(
-    const grpc_channel_args* args, grpc_millis* min_connect_timeout_ms) {
-  grpc_millis initial_backoff_ms =
+BackOff::Options ParseArgsForBackoffValues(const grpc_channel_args* args,
+                                           Timestamp* min_connect_timeout_ms) {
+  Timestamp initial_backoff_ms =
       GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
   *min_connect_timeout_ms =
       GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000;
-  grpc_millis max_backoff_ms =
+  Timestamp max_backoff_ms =
       GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
   bool fixed_reconnect_backoff = false;
   if (args != nullptr) {
@@ -883,7 +883,7 @@ void Subchannel::MaybeStartConnectingLocked() {
   } else {
     GPR_ASSERT(!have_retry_alarm_);
     have_retry_alarm_ = true;
-    const grpc_millis time_til_next =
+    const Timestamp time_til_next =
         next_attempt_deadline_ - ExecCtx::Get()->Now();
     if (time_til_next <= 0) {
       gpr_log(GPR_INFO, "subchannel %p %s: Retry immediately", this,
@@ -927,7 +927,7 @@ void Subchannel::ContinueConnectingLocked() {
   SubchannelConnector::Args args;
   args.address = &address_for_connect_;
   args.interested_parties = pollset_set_;
-  const grpc_millis min_deadline =
+  const Timestamp min_deadline =
       min_connect_timeout_ms_ + ExecCtx::Get()->Now();
   next_attempt_deadline_ = backoff_.NextAttemptTime();
   args.deadline = std::max(next_attempt_deadline_, min_deadline);

@@ -1593,6 +1593,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "time",
+    hdrs = [
+        "src/core/lib/gprpp/time.h",
+    ],
+    deps=["gpr"]
+)
+
+grpc_cc_library(
     name = "exec_ctx",
     srcs = [
         "src/core/lib/iomgr/combiner.cc",
@@ -1609,6 +1617,7 @@ grpc_cc_library(
     deps = [
         "closure",
         "error",
+        "time",
         "gpr_base",
         "gpr_tls",
         "useful",

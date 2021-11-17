@@ -112,7 +112,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* resolved_addr,
-                        grpc_millis deadline) {
+                        grpc_core::Timestamp deadline) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   (void)channel_args;
   (void)interested_parties;

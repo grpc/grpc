@@ -60,7 +60,7 @@ grpc_channel* grpc_channel_create_with_builder(
 grpc_call* grpc_channel_create_pollset_set_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_pollset_set* pollset_set, const grpc_slice& method,
-    const grpc_slice* host, grpc_millis deadline, void* reserved);
+    const grpc_slice* host, grpc_core::Timestamp deadline, void* reserved);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);

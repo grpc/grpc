@@ -28,7 +28,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
+#include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_core::Timestamp
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -66,16 +66,16 @@ class ClientChannelGlobalParsedConfig
 class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  ClientChannelMethodParsedConfig(grpc_millis timeout,
+  ClientChannelMethodParsedConfig(Timestamp timeout,
                                   const absl::optional<bool>& wait_for_ready)
       : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
 
-  grpc_millis timeout() const { return timeout_; }
+  Timestamp timeout() const { return timeout_; }
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
  private:
-  grpc_millis timeout_ = 0;
+  Timestamp timeout_;
   absl::optional<bool> wait_for_ready_;
 };
 

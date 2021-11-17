@@ -39,7 +39,7 @@ BdpEstimator::BdpEstimator(const char* name)
       bw_est_(0),
       name_(name) {}
 
-grpc_millis BdpEstimator::CompletePing() {
+Timestamp BdpEstimator::CompletePing() {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, ping_start_time_);
   double dt = static_cast<double>(dt_ts.tv_sec) +

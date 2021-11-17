@@ -86,7 +86,7 @@ void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
                                    grpc_pollset_set* interested_parties,
                                    const grpc_channel_args* channel_args,
                                    const grpc_resolved_address* addr,
-                                   grpc_millis deadline) {
+                                   grpc_core::Timestamp deadline) {
   const int delay_ms = gpr_atm_acq_load(&g_connection_delay_ms);
   if (delay_ms > 0) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
@@ -601,7 +601,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
   ASSERT_TRUE(channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 2)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
+  const grpc_core::Timestamp waited_ms =
+      gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
   // We should have waited at least kInitialBackOffMs. We substract one to
   // account for test and precision accuracy drift.
@@ -631,7 +632,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
+  const grpc_core::Timestamp waited_ms =
+      gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " ms", waited_ms);
   // We should have waited at least kMinReconnectBackOffMs. We substract one to
   // account for test and precision accuracy drift.
@@ -666,7 +668,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
   EXPECT_TRUE(
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(20)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
+  const grpc_core::Timestamp waited_ms =
+      gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
   // We should have waited less than kInitialBackOffMs.
   EXPECT_LT(waited_ms, kInitialBackOffMs);
@@ -713,7 +716,8 @@ TEST_F(ClientLbEnd2endTest,
   EXPECT_TRUE(channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kWaitMs)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
+  const grpc_core::Timestamp waited_ms =
+      gpr_time_to_millis(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
   EXPECT_LT(waited_ms, kWaitMs);
 }

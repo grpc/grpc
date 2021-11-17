@@ -142,7 +142,7 @@ class Client {
     bool retval = true;
     // Use a deadline of 3 seconds, which is a lot more than we should
     // need for a 1-second timeout, but this helps avoid flakes.
-    grpc_millis deadline = ExecCtx::Get()->Now() + 3000;
+    Timestamp deadline = ExecCtx::Get()->Now() + 3000;
     while (true) {
       EventState state;
       grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
@@ -202,7 +202,7 @@ class Client {
   };
 
   // Returns true if done, or false if deadline exceeded.
-  bool PollUntilDone(EventState* state, grpc_millis deadline) {
+  bool PollUntilDone(EventState* state, Timestamp deadline) {
     while (true) {
       grpc_pollset_worker* worker = nullptr;
       gpr_mu_lock(mu_);

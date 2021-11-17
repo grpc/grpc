@@ -62,7 +62,7 @@ class ExternalAccountCredentials
   // asynchronous calls.
   struct HTTPRequestContext {
     HTTPRequestContext(grpc_httpcli_context* httpcli_context,
-                       grpc_polling_entity* pollent, grpc_millis deadline)
+                       grpc_polling_entity* pollent, Timestamp deadline)
         : httpcli_context(httpcli_context),
           pollent(pollent),
           deadline(deadline) {}
@@ -72,7 +72,7 @@ class ExternalAccountCredentials
     // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().
     grpc_httpcli_context* httpcli_context;
     grpc_polling_entity* pollent;
-    grpc_millis deadline;
+    Timestamp deadline;
 
     // Reusable token fetch http response and closure.
     grpc_closure closure;
@@ -94,7 +94,7 @@ class ExternalAccountCredentials
   void fetch_oauth2(grpc_credentials_metadata_request* req,
                     grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                    grpc_millis deadline) override;
+                    Timestamp deadline) override;
 
   void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
                                       grpc_error_handle error);

@@ -532,7 +532,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   GPR_ASSERT(resolved_addresses->naddrs >= 1);
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
-  const grpc_millis deadline =
+  const grpc_core::Timestamp deadline =
       grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);

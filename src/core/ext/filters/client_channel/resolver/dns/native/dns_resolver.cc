@@ -90,9 +90,9 @@ class NativeDnsResolver : public Resolver {
   grpc_timer next_resolution_timer_;
   grpc_closure on_next_resolution_;
   /// min time between DNS requests
-  grpc_millis min_time_between_resolutions_;
+  Timestamp min_time_between_resolutions_;
   /// timestamp of last DNS request
-  grpc_millis last_resolution_timestamp_ = -1;
+  Timestamp last_resolution_timestamp_ = -1;
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
@@ -206,8 +206,8 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    grpc_millis next_try = backoff_.NextAttemptTime();
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    Timestamp next_try = backoff_.NextAttemptTime();
+    Timestamp timeout = next_try - ExecCtx::Get()->Now();
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
@@ -236,12 +236,12 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    const grpc_millis earliest_next_resolution =
+    const Timestamp earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
-    const grpc_millis ms_until_next_resolution =
+    const Timestamp ms_until_next_resolution =
         earliest_next_resolution - ExecCtx::Get()->Now();
     if (ms_until_next_resolution > 0) {
-      const grpc_millis last_resolution_ago =
+      const Timestamp last_resolution_ago =
           ExecCtx::Get()->Now() - last_resolution_timestamp_;
       gpr_log(GPR_DEBUG,
               "In cooldown from last resolution (from %" PRId64

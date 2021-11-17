@@ -120,14 +120,14 @@ static void test_create_channel_stack(void) {
   call_stack =
       static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
   const grpc_call_element_args args = {
-      call_stack,              /* call_stack */
-      nullptr,                 /* server_transport_data */
-      nullptr,                 /* context */
-      path,                    /* path */
-      gpr_get_cycle_counter(), /* start_time */
-      GRPC_MILLIS_INF_FUTURE,  /* deadline */
-      nullptr,                 /* arena */
-      nullptr,                 /* call_combiner */
+      call_stack,                        /* call_stack */
+      nullptr,                           /* server_transport_data */
+      nullptr,                           /* context */
+      path,                              /* path */
+      gpr_get_cycle_counter(),           /* start_time */
+      grpc_core::Timestamp::InfFuture(), /* deadline */
+      nullptr,                           /* arena */
+      nullptr,                           /* call_combiner */
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);

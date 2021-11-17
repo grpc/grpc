@@ -73,27 +73,27 @@ grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
 namespace grpc_core {
 
 // grpc-timeout metadata trait.
-// ValueType is defined as grpc_millis - an absolute timestamp (i.e. a
+// ValueType is defined as Timestamp - an absolute timestamp (i.e. a
 // deadline!), that is converted to a duration by transports before being
 // sent.
 // TODO(ctiller): Move this elsewhere. During the transition we need to be able
 // to name this in MetadataMap, but ultimately once the transition is done we
 // should not need to.
 struct GrpcTimeoutMetadata {
-  using ValueType = grpc_millis;
-  using MementoType = grpc_millis;
+  using ValueType = Timestamp;
+  using MementoType = Timestamp;
   static const char* key() { return "grpc-timeout"; }
   static MementoType ParseMemento(const grpc_slice& value) {
-    grpc_millis timeout;
+    Timestamp timeout;
     if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value, &timeout))) {
-      timeout = GRPC_MILLIS_INF_FUTURE;
+      timeout = Timestamp::InfFuture();
     }
     grpc_slice_unref_internal(value);
     return timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
-    if (timeout == GRPC_MILLIS_INF_FUTURE) {
-      return GRPC_MILLIS_INF_FUTURE;
+    if (timeout == Timestamp::InfFuture()) {
+      return Timestamp::InfFuture();
     }
     return ExecCtx::Get()->Now() + timeout;
   }
@@ -482,8 +482,8 @@ class MetadataMap {
 
   // TODO(ctiller): the following explicit deadline handling methods are
   // deprecated in terms of the traits based APIs.
-  grpc_millis deadline() const {
-    return get(GrpcTimeoutMetadata()).value_or(GRPC_MILLIS_INF_FUTURE);
+  Timestamp deadline() const {
+    return get(GrpcTimeoutMetadata()).value_or(Timestamp::InfFuture());
   };
 
   const grpc_metadata_batch_callouts* legacy_index() const { return &idx_; }

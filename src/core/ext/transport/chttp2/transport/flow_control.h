@@ -335,7 +335,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
 
   /* pid controller */
   PidController pid_controller_;
-  grpc_millis last_pid_update_ = 0;
+  Timestamp last_pid_update_;
 };
 
 // Fat interface with all methods a stream flow control implementation needs

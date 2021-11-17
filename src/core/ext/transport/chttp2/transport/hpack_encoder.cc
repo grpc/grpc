@@ -485,8 +485,7 @@ void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
   }
 }
 
-void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
-                                     grpc_millis deadline) {
+void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem mdelem;
   grpc_http2_encode_timeout(deadline - ExecCtx::Get()->Now(), timeout_str);

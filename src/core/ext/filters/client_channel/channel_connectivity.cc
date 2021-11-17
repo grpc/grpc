@@ -123,7 +123,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   // ClientChannel actually starts the watch.
   class WatcherTimerInitState {
    public:
-    WatcherTimerInitState(StateWatcher* state_watcher, grpc_millis deadline)
+    WatcherTimerInitState(StateWatcher* state_watcher, Timestamp deadline)
         : state_watcher_(state_watcher), deadline_(deadline) {
       GRPC_CLOSURE_INIT(&closure_, WatcherTimerInit, this, nullptr);
     }
@@ -138,11 +138,11 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     }
 
     StateWatcher* state_watcher_;
-    grpc_millis deadline_;
+    Timestamp deadline_;
     grpc_closure closure_;
   };
 
-  void StartTimer(grpc_millis deadline) {
+  void StartTimer(Timestamp deadline) {
     grpc_timer_init(&timer_, deadline, &on_timeout_);
   }
 

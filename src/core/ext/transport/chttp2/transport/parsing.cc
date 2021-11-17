@@ -406,7 +406,7 @@ error_handler:
     /* t->parser = grpc_chttp2_data_parser_parse;*/
     t->parser = grpc_chttp2_data_parser_parse;
     t->parser_data = &s->data_parser;
-    t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
+    t->ping_state.last_ping_sent_time = grpc_core::Timestamp_INF_PAST;
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
     /* handle stream errors by closing the stream */
@@ -446,7 +446,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                                  ? HPackParser::Priority::Included
                                  : HPackParser::Priority::None;
 
-  t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
+  t->ping_state.last_ping_sent_time = grpc_core::Timestamp_INF_PAST;
 
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);

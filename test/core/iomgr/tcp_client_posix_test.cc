@@ -46,7 +46,7 @@ static grpc_pollset* g_pollset;
 static int g_connections_complete = 0;
 static grpc_endpoint* g_connecting = nullptr;
 
-static grpc_millis test_deadline(void) {
+static grpc_core::Timestamp test_deadline(void) {
   return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
 }
 
@@ -109,7 +109,7 @@ void test_succeeds(void) {
   grpc_channel_args* args =
       grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
   grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, args,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+                          &resolved_addr, grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
   /* await the connection */
   do {
@@ -158,13 +158,13 @@ void test_fails(void) {
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+                          &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;
-    grpc_millis polling_deadline = test_deadline();
+    grpc_core::Timestamp polling_deadline = test_deadline();
     switch (grpc_timer_check(&polling_deadline)) {
       case GRPC_TIMERS_FIRED:
         break;
@@ -204,11 +204,11 @@ void test_fails_bad_addr_no_leak(void) {
   // connect to an invalid address.
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+                          &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;
-    grpc_millis polling_deadline = test_deadline();
+    grpc_core::Timestamp polling_deadline = test_deadline();
     switch (grpc_timer_check(&polling_deadline)) {
       case GRPC_TIMERS_FIRED:
         break;

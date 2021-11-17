@@ -209,9 +209,8 @@ static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
                                   grpc_pollset_set* /*interested_parties*/,
                                   const grpc_channel_args* /*channel_args*/,
                                   const grpc_resolved_address* /*addr*/,
-                                  grpc_millis deadline) {
-  sched_connect(closure, ep,
-                grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
+                                  grpc_core::Timestamp deadline) {
+  sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
 }
 
 grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};

@@ -229,13 +229,13 @@ static fd_node* pop_fd_node_locked(fd_node** head, ares_socket_t as) {
   return nullptr;
 }
 
-static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
+static grpc_core::Timestamp calculate_next_ares_backup_poll_alarm_ms(
     grpc_ares_ev_driver* driver) {
   // An alternative here could be to use ares_timeout to try to be more
   // accurate, but that would require using "struct timeval"'s, which just makes
   // things a bit more complicated. So just poll every second, as suggested
   // by the c-ares code comments.
-  grpc_millis ms_until_next_ares_backup_poll_alarm = 1000;
+  grpc_core::Timestamp ms_until_next_ares_backup_poll_alarm = 1000;
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p. next ares process poll time in "
       "%" PRId64 " ms",
@@ -312,7 +312,7 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
       // in a loop while draining the currently-held WorkSerializer.
       // Also see https://github.com/grpc/grpc/issues/26079.
       grpc_core::ExecCtx::Get()->InvalidateNow();
-      grpc_millis next_ares_backup_poll_alarm =
+      grpc_core::Timestamp next_ares_backup_poll_alarm =
           calculate_next_ares_backup_poll_alarm_ms(driver);
       grpc_ares_ev_driver_ref(driver);
       GRPC_CLOSURE_INIT(&driver->on_ares_backup_poll_alarm_locked,
@@ -469,9 +469,9 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
 void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
   grpc_ares_notify_on_event_locked(ev_driver);
   // Initialize overall DNS resolution timeout alarm
-  grpc_millis timeout =
+  grpc_core::Timestamp timeout =
       ev_driver->query_timeout_ms == 0
-          ? GRPC_MILLIS_INF_FUTURE
+          ? grpc_core::Timestamp::InfFuture()
           : ev_driver->query_timeout_ms + grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p grpc_ares_ev_driver_start_locked. timeout in "
@@ -483,7 +483,7 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
   grpc_timer_init(&ev_driver->query_timeout, timeout,
                   &ev_driver->on_timeout_locked);
   // Initialize the backup poll alarm
-  grpc_millis next_ares_backup_poll_alarm =
+  grpc_core::Timestamp next_ares_backup_poll_alarm =
       calculate_next_ares_backup_poll_alarm_ms(ev_driver);
   grpc_ares_ev_driver_ref(ev_driver);
   GRPC_CLOSURE_INIT(&ev_driver->on_ares_backup_poll_alarm_locked,

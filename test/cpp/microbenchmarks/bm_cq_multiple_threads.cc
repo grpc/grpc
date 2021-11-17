@@ -72,7 +72,7 @@ static void cq_done_cb(void* /*done_arg*/, grpc_cq_completion* cq_completion) {
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
 static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   if (deadline == 0) {
     gpr_log(GPR_DEBUG, "no-op");
     return GRPC_ERROR_NONE;

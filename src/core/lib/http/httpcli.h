@@ -45,7 +45,7 @@ typedef struct grpc_httpcli_context {
 struct grpc_httpcli_handshaker {
   const char* default_port;
   void (*handshake)(void* arg, grpc_endpoint* endpoint, const char* host,
-                    grpc_millis deadline,
+                    grpc_core::Timestamp deadline,
                     void (*on_done)(void* arg, grpc_endpoint* endpoint));
 };
 extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
@@ -85,8 +85,9 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
 void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_polling_entity* pollent,
                       grpc_core::ResourceQuotaRefPtr resource_quota,
-                      const grpc_httpcli_request* request, grpc_millis deadline,
-                      grpc_closure* on_done, grpc_httpcli_response* response);
+                      const grpc_httpcli_request* request,
+                      grpc_core::Timestamp deadline, grpc_closure* on_done,
+                      grpc_httpcli_response* response);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
@@ -109,18 +110,18 @@ void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_core::ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
-                       grpc_millis deadline, grpc_closure* on_done,
+                       grpc_core::Timestamp deadline, grpc_closure* on_done,
                        grpc_httpcli_response* response);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
-                                         grpc_millis deadline,
+                                         grpc_core::Timestamp deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
 typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
                                           const char* body_bytes,
                                           size_t body_size,
-                                          grpc_millis deadline,
+                                          grpc_core::Timestamp deadline,
                                           grpc_closure* on_complete,
                                           grpc_httpcli_response* response);
 

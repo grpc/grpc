@@ -60,7 +60,7 @@ class FakeEncoder {
                      " value=", StringViewFromSlice(GRPC_MDVALUE(md)), "\n");
   }
 
-  void Encode(GrpcTimeoutMetadata, grpc_millis deadline) {
+  void Encode(GrpcTimeoutMetadata, Timestamp deadline) {
     output_ += absl::StrCat("grpc-timeout: deadline=", deadline, "\n");
   }
 

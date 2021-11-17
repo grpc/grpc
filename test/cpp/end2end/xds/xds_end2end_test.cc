@@ -614,7 +614,7 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 // clock API. It's unclear if they are using the same syscall, but we do know
 // GPR round the number at millisecond-level. This creates a 1ms difference,
 // which could cause flake.
-grpc_millis NowFromCycleCounter() {
+grpc_core::Timestamp NowFromCycleCounter() {
   return grpc_timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
@@ -1873,7 +1873,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   struct ConcurrentRpc {
     ClientContext context;
     Status status;
-    grpc_millis elapsed_time;
+    grpc_core::Timestamp elapsed_time;
     EchoResponse response;
   };
 
@@ -1891,7 +1891,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     for (size_t i = 0; i < num_rpcs; i++) {
       ConcurrentRpc* rpc = &rpcs[i];
       rpc_options.SetupRpc(&rpc->context, &request);
-      grpc_millis t0 = NowFromCycleCounter();
+      grpc_core::Timestamp t0 = NowFromCycleCounter();
       stub->async()->Echo(&rpc->context, &request, &rpc->response,
                           [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
                             rpc->status = s;
@@ -4585,10 +4585,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   // Set listener and route config.
   SetListenerAndRouteConfiguration(0, std::move(listener), new_route_config);
   // Test grpc_timeout_header_max of 1.5 seconds applied
-  grpc_millis t0 = NowFromCycleCounter();
-  grpc_millis t1 =
+  grpc_core::Timestamp t0 = NowFromCycleCounter();
+  grpc_core::Timestamp t1 =
       t0 + kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis;
-  grpc_millis t2 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  grpc_core::Timestamp t2 =
+      t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(

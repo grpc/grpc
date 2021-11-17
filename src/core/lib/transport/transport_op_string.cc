@@ -56,7 +56,7 @@ class MetadataListEncoder {
     gpr_free(dump);
   }
 
-  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis deadline) {
+  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_core::Timestamp deadline) {
     MaybeAddComma();
     out_->push_back(absl::StrFormat("deadline=%" PRId64, deadline));
   }

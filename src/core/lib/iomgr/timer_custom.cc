@@ -43,17 +43,17 @@ void grpc_custom_timer_callback(grpc_custom_timer* t,
   gpr_free(t);
 }
 
-static void timer_init(grpc_timer* timer, grpc_millis deadline,
+static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
                        grpc_closure* closure) {
   uint64_t timeout;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= grpc_core::ExecCtx::Get()->Now()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     timer->pending = false;
     return;
   } else {
-    timeout = deadline - now;
+    timeout = (deadline - now).millis();
   }
   timer->pending = true;
   timer->closure = closure;
@@ -77,7 +77,7 @@ static void timer_cancel(grpc_timer* timer) {
   }
 }
 
-static grpc_timer_check_result timer_check(grpc_millis* /*next*/) {
+static grpc_timer_check_result timer_check(grpc_core::Timestamp* /*next*/) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 

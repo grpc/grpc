@@ -294,7 +294,7 @@ class Server : public InternallyRefCounted<Server>,
 
     absl::optional<grpc_slice> path_;
     absl::optional<grpc_slice> host_;
-    grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+    Timestamp deadline_ = Timestamp::InfFuture();
 
     grpc_completion_queue* cq_new_ = nullptr;
 

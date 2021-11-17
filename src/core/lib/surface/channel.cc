@@ -341,7 +341,7 @@ static grpc_call* grpc_channel_create_call_internal(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     grpc_mdelem path_mdelem, grpc_mdelem authority_mdelem,
-    grpc_millis deadline) {
+    grpc_core::Timestamp deadline) {
   grpc_mdelem send_metadata[2];
   size_t num_metadata = 0;
 
@@ -392,7 +392,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
 grpc_call* grpc_channel_create_pollset_set_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_pollset_set* pollset_set, const grpc_slice& method,
-    const grpc_slice* host, grpc_millis deadline, void* reserved) {
+    const grpc_slice* host, grpc_core::Timestamp deadline, void* reserved) {
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,

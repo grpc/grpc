@@ -221,7 +221,7 @@ static void pollset_global_shutdown(void) {
 /// these events will eventually trigger the kick.
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   GRPC_POLLING_TRACE("pollset work: %p, worker: %p, deadline: %" PRIu64,
                      pollset, worker, deadline);
   GrpcApplePollset* apple_pollset =
@@ -241,8 +241,9 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 
     while (!actual_worker.kicked && !apple_pollset->is_shutdown) {
       if (actual_worker.cv.WaitWithDeadline(
-              &apple_pollset->mu, grpc_core::ToAbslTime(grpc_millis_to_timespec(
-                                      deadline, GPR_CLOCK_REALTIME)))) {
+              &apple_pollset->mu,
+              grpc_core::ToAbslTime(grpc_core::Timestamp_to_timespec(
+                  deadline, GPR_CLOCK_REALTIME)))) {
         // timed out
         break;
       }

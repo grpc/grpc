@@ -314,7 +314,8 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                                    ? g_default_client_keepalive_time_ms
                                    : g_default_server_keepalive_time_ms,
                                1, INT_MAX});
-      t->keepalive_time = value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
+      t->keepalive_time =
+          value == INT_MAX ? grpc_core::Timestamp::InfFuture() : value;
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
       const int value = grpc_channel_arg_get_integer(
@@ -323,7 +324,8 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                                    ? g_default_client_keepalive_timeout_ms
                                    : g_default_server_keepalive_timeout_ms,
                                0, INT_MAX});
-      t->keepalive_timeout = value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
+      t->keepalive_timeout =
+          value == INT_MAX ? grpc_core::Timestamp::InfFuture() : value;
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
       t->keepalive_permit_without_calls = static_cast<uint32_t>(
@@ -399,19 +401,19 @@ static bool read_channel_args(grpc_chttp2_transport* t,
 static void init_transport_keepalive_settings(grpc_chttp2_transport* t) {
   if (t->is_client) {
     t->keepalive_time = g_default_client_keepalive_time_ms == INT_MAX
-                            ? GRPC_MILLIS_INF_FUTURE
+                            ? grpc_core::Timestamp::InfFuture()
                             : g_default_client_keepalive_time_ms;
     t->keepalive_timeout = g_default_client_keepalive_timeout_ms == INT_MAX
-                               ? GRPC_MILLIS_INF_FUTURE
+                               ? grpc_core::Timestamp::InfFuture()
                                : g_default_client_keepalive_timeout_ms;
     t->keepalive_permit_without_calls =
         g_default_client_keepalive_permit_without_calls;
   } else {
     t->keepalive_time = g_default_server_keepalive_time_ms == INT_MAX
-                            ? GRPC_MILLIS_INF_FUTURE
+                            ? grpc_core::Timestamp::InfFuture()
                             : g_default_server_keepalive_time_ms;
     t->keepalive_timeout = g_default_server_keepalive_timeout_ms == INT_MAX
-                               ? GRPC_MILLIS_INF_FUTURE
+                               ? grpc_core::Timestamp::InfFuture()
                                : g_default_server_keepalive_timeout_ms;
     t->keepalive_permit_without_calls =
         g_default_server_keepalive_permit_without_calls;
@@ -426,7 +428,7 @@ static void configure_transport_ping_policy(grpc_chttp2_transport* t) {
 }
 
 static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
-  if (t->keepalive_time != GRPC_MILLIS_INF_FUTURE) {
+  if (t->keepalive_time != grpc_core::Timestamp::InfFuture()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
@@ -516,9 +518,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   // No pings allowed before receiving a header or data frame.
   ping_state.pings_before_data_required = 0;
   ping_state.is_delayed_ping_timer_set = false;
-  ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
+  ping_state.last_ping_sent_time = grpc_core::Timestamp_INF_PAST;
 
-  ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
+  ping_recv_state.last_ping_recv_time = grpc_core::Timestamp_INF_PAST;
   ping_recv_state.ping_strikes = 0;
 
   init_keepalive_pings_if_enabled(this);
@@ -1108,9 +1110,10 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
         INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     t->keepalive_time =
         current_keepalive_time_ms > static_cast<double>(max_keepalive_time_ms)
-            ? GRPC_MILLIS_INF_FUTURE
-            : static_cast<grpc_millis>(current_keepalive_time_ms *
-                                       KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
+            ? grpc_core::Timestamp::InfFuture()
+            : static_cast<grpc_core::Timestamp>(
+                  current_keepalive_time_ms *
+                  KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
     status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
                       absl::Cord(std::to_string(t->keepalive_time)));
   }
@@ -1426,7 +1429,7 @@ static void perform_stream_op_locked(void* stream_op,
       s->deadline = std::min(
           s->deadline,
           s->send_initial_metadata->get(grpc_core::GrpcTimeoutMetadata())
-              .value_or(GRPC_MILLIS_INF_FUTURE));
+              .value_or(grpc_core::Timestamp::InfFuture()));
     }
     if (contains_non_ok_status(s->send_initial_metadata)) {
       s->seen_error = true;
@@ -1745,8 +1748,8 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error) {
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
   std::string message;
-  grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, nullptr, &message,
-                        &http_error, nullptr);
+  grpc_error_get_status(error, grpc_core::Timestamp::InfFuture(), nullptr,
+                        &message, &http_error, nullptr);
   grpc_chttp2_goaway_append(
       t->last_new_stream_id, static_cast<uint32_t>(http_error),
       grpc_slice_from_cpp_string(std::move(message)), &t->qbuf);
@@ -1771,7 +1774,7 @@ void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
 
 void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t) {
   if (!t->is_client) {
-    t->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
+    t->ping_recv_state.last_ping_recv_time = grpc_core::Timestamp_INF_PAST;
     t->ping_recv_state.ping_strikes = 0;
   }
   t->ping_state.pings_before_data_required =
@@ -2657,7 +2660,8 @@ static void finish_bdp_ping_locked(void* tp, grpc_error_handle error) {
     return;
   }
   t->bdp_ping_started = false;
-  grpc_millis next_ping = t->flow_control->bdp_estimator()->CompletePing();
+  grpc_core::Timestamp next_ping =
+      t->flow_control->bdp_estimator()->CompletePing();
   grpc_chttp2_act_on_flowctl_action(t->flow_control->PeriodicUpdate(), t,
                                     nullptr);
   GPR_ASSERT(!t->have_next_bdp_ping_timer);

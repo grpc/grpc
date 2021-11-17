@@ -160,39 +160,39 @@ BENCHMARK(BM_ErrorGetPresentInt);
 // Fixtures for tests: generate different kinds of errors
 class ErrorNone {
  public:
-  grpc_millis deadline() const { return deadline_; }
+  grpc_core::Timestamp deadline() const { return deadline_; }
   grpc_error_handle error() const { return GRPC_ERROR_NONE; }
 
  private:
-  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+  const grpc_core::Timestamp deadline_ = grpc_core::Timestamp::InfFuture();
 };
 
 class ErrorCancelled {
  public:
-  grpc_millis deadline() const { return deadline_; }
+  grpc_core::Timestamp deadline() const { return deadline_; }
   grpc_error_handle error() const { return GRPC_ERROR_CANCELLED; }
 
  private:
-  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+  const grpc_core::Timestamp deadline_ = grpc_core::Timestamp::InfFuture();
 };
 
 class SimpleError {
  public:
-  grpc_millis deadline() const { return deadline_; }
+  grpc_core::Timestamp deadline() const { return deadline_; }
   grpc_error_handle error() const { return error_.get(); }
 
  private:
-  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+  const grpc_core::Timestamp deadline_ = grpc_core::Timestamp::InfFuture();
   ErrorHandleHolder error_{GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error")};
 };
 
 class ErrorWithGrpcStatus {
  public:
-  grpc_millis deadline() const { return deadline_; }
+  grpc_core::Timestamp deadline() const { return deadline_; }
   grpc_error_handle error() const { return error_.get(); }
 
  private:
-  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+  const grpc_core::Timestamp deadline_ = grpc_core::Timestamp::InfFuture();
   ErrorHandleHolder error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
       GRPC_STATUS_UNIMPLEMENTED)};
@@ -200,11 +200,11 @@ class ErrorWithGrpcStatus {
 
 class ErrorWithHttpError {
  public:
-  grpc_millis deadline() const { return deadline_; }
+  grpc_core::Timestamp deadline() const { return deadline_; }
   grpc_error_handle error() const { return error_.get(); }
 
  private:
-  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+  const grpc_core::Timestamp deadline_ = grpc_core::Timestamp::InfFuture();
   ErrorHandleHolder error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_HTTP2_ERROR,
       GRPC_HTTP2_COMPRESSION_ERROR)};
@@ -212,11 +212,11 @@ class ErrorWithHttpError {
 
 class ErrorWithNestedGrpcStatus {
  public:
-  grpc_millis deadline() const { return deadline_; }
+  grpc_core::Timestamp deadline() const { return deadline_; }
   grpc_error_handle error() const { return error_.get(); }
 
  private:
-  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+  const grpc_core::Timestamp deadline_ = grpc_core::Timestamp::InfFuture();
   ErrorHandleHolder nested_error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
       GRPC_STATUS_UNIMPLEMENTED)};

@@ -32,7 +32,8 @@
 /* Encode/decode timeouts to the GRPC over HTTP/2 format;
    encoding may round up arbitrarily. If the timeout is larger than about 1157
    days, it will be capped and "99999999S" will be sent on the wire. */
-void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer);
-int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout);
+void grpc_http2_encode_timeout(grpc_core::Timestamp timeout, char* buffer);
+int grpc_http2_decode_timeout(const grpc_slice& text,
+                              grpc_core::Timestamp* timeout);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H */

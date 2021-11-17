@@ -101,7 +101,7 @@ class AresDnsResolver : public Resolver {
   // timeout in milliseconds for active DNS queries
   int query_timeout_ms_;
   /// min interval between DNS requests
-  grpc_millis min_time_between_resolutions_;
+  Timestamp min_time_between_resolutions_;
 
   /// closures used by the work_serializer
   grpc_closure on_next_resolution_;
@@ -114,7 +114,7 @@ class AresDnsResolver : public Resolver {
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
   /// timestamp of last DNS request
-  grpc_millis last_resolution_timestamp_ = -1;
+  Timestamp last_resolution_timestamp_ = -1;
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving backend addresses
@@ -364,8 +364,8 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    grpc_millis next_try = backoff_.NextAttemptTime();
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    Timestamp next_try = backoff_.NextAttemptTime();
+    Timestamp timeout = next_try - ExecCtx::Get()->Now();
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
                          this, grpc_error_std_string(error).c_str());
     GPR_ASSERT(!have_next_resolution_timer_);
@@ -395,12 +395,12 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    const grpc_millis earliest_next_resolution =
+    const Timestamp earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
-    const grpc_millis ms_until_next_resolution =
+    const Timestamp ms_until_next_resolution =
         earliest_next_resolution - ExecCtx::Get()->Now();
     if (ms_until_next_resolution > 0) {
-      const grpc_millis last_resolution_ago =
+      const Timestamp last_resolution_ago =
           ExecCtx::Get()->Now() - last_resolution_timestamp_;
       GRPC_CARES_TRACE_LOG(
           "resolver:%p In cooldown from last resolution (from %" PRId64

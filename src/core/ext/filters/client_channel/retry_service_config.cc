@@ -160,9 +160,9 @@ namespace {
 
 grpc_error_handle ParseRetryPolicy(
     const grpc_channel_args* args, const Json& json, int* max_attempts,
-    grpc_millis* initial_backoff, grpc_millis* max_backoff,
+    Timestamp* initial_backoff, Timestamp* max_backoff,
     float* backoff_multiplier, StatusCodeSet* retryable_status_codes,
-    absl::optional<grpc_millis>* per_attempt_recv_timeout) {
+    absl::optional<Timestamp>* per_attempt_recv_timeout) {
   if (json.type() != Json::Type::OBJECT) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:retryPolicy error:should be of type object");
@@ -255,7 +255,7 @@ grpc_error_handle ParseRetryPolicy(
                                   false)) {
     it = json.object_value().find("perAttemptRecvTimeout");
     if (it != json.object_value().end()) {
-      grpc_millis per_attempt_recv_timeout_value;
+      Timestamp per_attempt_recv_timeout_value;
       if (!ParseDurationFromJson(it->second, &per_attempt_recv_timeout_value)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:perAttemptRecvTimeout error:type must be STRING of the "
@@ -298,11 +298,11 @@ RetryServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
   auto it = json.object_value().find("retryPolicy");
   if (it == json.object_value().end()) return nullptr;
   int max_attempts = 0;
-  grpc_millis initial_backoff = 0;
-  grpc_millis max_backoff = 0;
+  Timestamp initial_backoff;
+  Timestamp max_backoff;
   float backoff_multiplier = 0;
   StatusCodeSet retryable_status_codes;
-  absl::optional<grpc_millis> per_attempt_recv_timeout;
+  absl::optional<Timestamp> per_attempt_recv_timeout;
   *error = ParseRetryPolicy(args, it->second, &max_attempts, &initial_backoff,
                             &max_backoff, &backoff_multiplier,
                             &retryable_status_codes, &per_attempt_recv_timeout);

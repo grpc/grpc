@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,
-                              GRPC_MILLIS_INF_FUTURE)))
+                              grpc_core::Timestamp::InfFuture())))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();

@@ -33,7 +33,7 @@ namespace grpc_core {
 // proto message, as per:
 //   https://developers.google.com/protocol-buffers/docs/proto3#json
 // Returns true on success, false otherwise.
-bool ParseDurationFromJson(const Json& field, grpc_millis* duration);
+bool ParseDurationFromJson(const Json& field, Timestamp* duration);
 
 //
 // Helper functions for extracting types from JSON.
@@ -145,7 +145,7 @@ bool ParseJsonObjectField(const Json::Object& object,
 // Alternative to ParseJsonObjectField() for duration-value fields.
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     absl::string_view field_name,
-                                    grpc_millis* output,
+                                    Timestamp* output,
                                     std::vector<grpc_error_handle>* error_list,
                                     bool required = true);
 

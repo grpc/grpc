@@ -370,7 +370,7 @@ void CallData::DecideWhetherToInjectFaults(
           (copied_policy == nullptr || copied_policy->delay == 0) &&
           key == fi_policy_->delay_header) {
         maybe_copy_policy_func();
-        copied_policy->delay = static_cast<grpc_millis>(
+        copied_policy->delay = static_cast<Timestamp>(
             std::max(GetMetadatumValueInt64(md), int64_t(0)));
       }
       if (!fi_policy_->delay_percentage_header.empty() &&
@@ -428,7 +428,7 @@ void CallData::DelayBatch(grpc_call_element* elem,
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
   resume_batch_canceller_ = new ResumeBatchCanceller(elem);
-  grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
+  Timestamp resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);

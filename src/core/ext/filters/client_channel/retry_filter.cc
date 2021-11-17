@@ -399,7 +399,7 @@ class RetryFilter::CallData {
     // If server_pushback_md is non-null, sets *server_pushback_ms.
     bool ShouldRetry(absl::optional<grpc_status_code> status, bool is_lb_drop,
                      grpc_mdelem* server_pushback_md,
-                     grpc_millis* server_pushback_ms);
+                     Timestamp* server_pushback_ms);
 
     // Abandons the call attempt.  Unrefs any deferred batches.
     void Abandon();
@@ -510,7 +510,7 @@ class RetryFilter::CallData {
 
   // Starts a timer to retry after appropriate back-off.
   // If server_pushback_ms is -1, retry_backoff_ is used.
-  void StartRetryTimer(grpc_millis server_pushback_ms);
+  void StartRetryTimer(Timestamp server_pushback_ms);
 
   static void OnRetryTimer(void* arg, grpc_error_handle error);
   static void OnRetryTimerLocked(void* arg, grpc_error_handle error);
@@ -527,7 +527,7 @@ class RetryFilter::CallData {
   BackOff retry_backoff_;
 
   grpc_slice path_;  // Request path.
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
@@ -677,7 +677,7 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
   // If per_attempt_recv_timeout is set, start a timer.
   if (calld->retry_policy_ != nullptr &&
       calld->retry_policy_->per_attempt_recv_timeout().has_value()) {
-    grpc_millis per_attempt_recv_deadline =
+    Timestamp per_attempt_recv_deadline =
         ExecCtx::Get()->Now() +
         *calld->retry_policy_->per_attempt_recv_timeout();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
@@ -1065,7 +1065,7 @@ void RetryFilter::CallData::CallAttempt::CancelFromSurface(
 
 bool RetryFilter::CallData::CallAttempt::ShouldRetry(
     absl::optional<grpc_status_code> status, bool is_lb_drop,
-    grpc_mdelem* server_pushback_md, grpc_millis* server_pushback_ms) {
+    grpc_mdelem* server_pushback_md, Timestamp* server_pushback_ms) {
   // LB drops always inhibit retries.
   if (is_lb_drop) return false;
   // TODO(roth): Handle transparent retries here.
@@ -1149,7 +1149,7 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
             "chand=%p calld=%p attempt=%p: server push-back: retry in %u ms",
             calld_->chand_, calld_, this, ms);
       }
-      *server_pushback_ms = static_cast<grpc_millis>(ms);
+      *server_pushback_ms = static_cast<Timestamp>(ms);
     }
   }
   // Check with call dispatch controller.
@@ -1536,7 +1536,7 @@ namespace {
 
 // Sets *status, *server_pushback_md, and *is_lb_drop based on md_batch
 // and error.
-void GetCallStatus(grpc_millis deadline, grpc_metadata_batch* md_batch,
+void GetCallStatus(Timestamp deadline, grpc_metadata_batch* md_batch,
                    grpc_error_handle error, grpc_status_code* status,
                    grpc_mdelem** server_pushback_md, bool* is_lb_drop) {
   if (error != GRPC_ERROR_NONE) {
@@ -1699,7 +1699,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
         is_lb_drop);
   }
   // Check if we should retry.
-  grpc_millis server_pushback_ms = -1;
+  Timestamp server_pushback_ms = -1;
   if (call_attempt->ShouldRetry(status, is_lb_drop, server_pushback_md,
                                 &server_pushback_ms)) {
     // Start retry timer.
@@ -2512,11 +2512,11 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
   }
 }
 
-void RetryFilter::CallData::StartRetryTimer(grpc_millis server_pushback_ms) {
+void RetryFilter::CallData::StartRetryTimer(Timestamp server_pushback_ms) {
   // Reset call attempt.
   call_attempt_.reset(DEBUG_LOCATION, "StartRetryTimer");
   // Compute backoff delay.
-  grpc_millis next_attempt_time;
+  Timestamp next_attempt_time;
   if (server_pushback_ms >= 0) {
     next_attempt_time = ExecCtx::Get()->Now() + server_pushback_ms;
     retry_backoff_.Reset();

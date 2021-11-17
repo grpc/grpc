@@ -78,15 +78,15 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   // in a loop while draining the currently-held combiner. Also see
   // https://github.com/grpc/grpc/issues/26079.
   grpc_core::ExecCtx::Get()->InvalidateNow();
-  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
 
-  grpc_millis next_allowed_ping_interval =
+  grpc_core::Timestamp next_allowed_ping_interval =
       (t->keepalive_permit_without_calls == 0 &&
        grpc_chttp2_stream_map_size(&t->stream_map) == 0)
           ? 7200 * GPR_MS_PER_SEC
           : (GPR_MS_PER_SEC); /* A second is added to deal with network delays
                                  and timing imprecision */
-  grpc_millis next_allowed_ping =
+  grpc_core::Timestamp next_allowed_ping =
       t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
 
   if (next_allowed_ping > now) {

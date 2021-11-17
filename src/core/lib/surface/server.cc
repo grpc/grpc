@@ -1126,7 +1126,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   args.server_transport_data = transport_server_data;
   args.add_initial_metadata = nullptr;
   args.add_initial_metadata_count = 0;
-  args.send_deadline = GRPC_MILLIS_INF_FUTURE;
+  args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
   grpc_call_element* elem =
@@ -1261,12 +1261,12 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       rc->data.batch.details->host = grpc_slice_ref_internal(*host_);
       rc->data.batch.details->method = grpc_slice_ref_internal(*path_);
       rc->data.batch.details->deadline =
-          grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
+          deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = recv_initial_metadata_flags_;
       break;
     case RequestedCall::Type::REGISTERED_CALL:
       *rc->data.registered.deadline =
-          grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
+          deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
       if (rc->data.registered.optional_payload != nullptr) {
         *rc->data.registered.optional_payload = payload_;
         payload_ = nullptr;

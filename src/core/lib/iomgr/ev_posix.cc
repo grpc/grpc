@@ -316,7 +316,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
 
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset,
                          deadline);
   grpc_error_handle err =
