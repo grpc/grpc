@@ -267,7 +267,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
                                     absl::Status service_config_error,
                                     ArgsStruct* args) {
   if (!args->expected_service_config_string.empty()) {
-    GPR_ASSERT(service_config_json != nullptr);
+    ASSERT_NE(service_config_json, nullptr);
     EXPECT_EQ(service_config_json, args->expected_service_config_string);
   }
   if (args->expected_service_config_error.empty()) {

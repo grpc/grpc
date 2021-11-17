@@ -325,6 +325,8 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     Result result;
     if (addresses_ != nullptr) {
       result.addresses = std::move(*addresses_);
+    } else {
+      result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
       grpc_error_handle service_config_error = GRPC_ERROR_NONE;
@@ -340,7 +342,9 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
             channel_args_, service_config_string, &service_config_error);
       }
       if (service_config_error != GRPC_ERROR_NONE) {
-        result.service_config = grpc_error_to_absl_status(service_config_error);
+        result.service_config = absl::UnavailableError(
+            absl::StrCat("failed to parse service config: ",
+                         grpc_error_std_string(service_config_error)));
         GRPC_ERROR_UNREF(service_config_error);
       } else {
         result.service_config = std::move(service_config);
