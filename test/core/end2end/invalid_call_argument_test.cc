@@ -607,8 +607,8 @@ static void test_invalid_initial_metadata_reserved_key() {
   cleanup_test();
 }
 
-static void test_multiple_recv_initial_metadata_in_a_single_batch() {
-  gpr_log(GPR_INFO, "test_multiple_recv_initial_metadata_in_a_single_batch");
+static void test_multiple_ops_in_a_single_batch() {
+  gpr_log(GPR_INFO, "test_multiple_ops_in_a_single_batch");
 
   grpc_op* op;
   prepare_test(1);
@@ -655,7 +655,7 @@ int main(int argc, char** argv) {
   test_send_server_status_twice();
   test_recv_close_on_server_with_invalid_flags();
   test_recv_close_on_server_twice();
-  test_multiple_recv_initial_metadata_in_a_single_batch();
+  test_multiple_ops_in_a_single_batch();
   grpc_shutdown();
 
   return 0;
