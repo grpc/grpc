@@ -162,6 +162,10 @@ struct CopyConstructors {
   static Out FromCopiedString(std::string s) {
     return Out(grpc_slice_from_cpp_string(std::move(s)));
   }
+  template <typename Buffer>
+  static Out FromCopiedBuffer(const Buffer& buffer) {
+    return Out(UnmanagedMemorySlice(reinterpret_cast<const char*>(buffer.data()), buffer.size()));
+  }
 };
 
 }  // namespace slice_detail

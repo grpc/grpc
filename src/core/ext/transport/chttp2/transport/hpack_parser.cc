@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -680,16 +679,17 @@ class HPackParser::String {
 
   // Return a reference to the value as a string view
   absl::string_view string_view() const {
-    return Match(
-        value_, [](const Slice& slice) { return slice.as_string_view(); },
-        [](absl::Span<const uint8_t> span) {
-          return absl::string_view(reinterpret_cast<const char*>(span.data()),
-                                   span.size());
-        },
-        [](const std::vector<uint8_t>& v) {
-          return absl::string_view(reinterpret_cast<const char*>(v.data()),
-                                   v.size());
-        });
+    if (auto* p = absl::get_if<Slice>(&value_)) {
+      return p->as_string_view();
+    }
+    if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+      return absl::string_view(reinterpret_cast<const char*>(p->data()), p->size());
+    }
+    if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+      return absl::string_view(reinterpret_cast<const char*>(p->data()), p->size());
+    }
+    abort();
+    GPR_UNREACHABLE_CODE(return absl::string_view());
   }
 
   // Parse a non-binary string
@@ -822,18 +822,17 @@ class HPackParser::String {
   // Turn base64 encoded bytes into not base64 encoded bytes.
   // Only takes input to set an error on failure.
   static absl::optional<String> Unbase64(Input* input, String s) {
-    auto v = Match(
-        s.value_,
-        [](absl::Span<const uint8_t> span) {
-          return Unbase64Loop(span.begin(), span.end());
-        },
-        [](const std::vector<uint8_t>& vec) {
-          return Unbase64Loop(vec.data(), vec.data() + vec.size());
-        },
-        [](const Slice& slice) {
-          return Unbase64Loop(slice.begin(), slice.end());
-        });
-    if (!v.has_value()) {
+    absl::optional<std::vector<uint8_t>> result;
+    if (auto* p = absl::get_if<Slice>(&s.value_)) {
+      result = Unbase64Loop(p->begin(), p->end());
+    }
+    if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&s.value_)) {
+      result = Unbase64Loop(p->begin(), p->end());
+    }
+    if (auto* p = absl::get_if<std::vector<uint8_t>>(&s.value_)) {
+      result = Unbase64Loop(p->data(), p->data() + p->size());
+    }
+    if (!result.has_value()) {
       return input->MaybeSetErrorAndReturn(
           [] {
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -841,7 +840,7 @@ class HPackParser::String {
           },
           absl::optional<String>());
     }
-    return String(std::move(*v));
+    return String(std::move(*result));
   }
 
   // Main loop for Unbase64
@@ -1241,44 +1240,31 @@ class HPackParser::Parser {
 };
 
 Slice HPackParser::String::Take(Extern) {
-  auto s = Match(
-      value_,
-      [](const Slice& slice) -> UnmanagedMemorySlice {
-        GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice.c_slice()));
-        auto out_slice = grpc_slice_copy(slice.c_slice());
-        return static_cast<const UnmanagedMemorySlice&>(out_slice);
-      },
-      [](absl::Span<const uint8_t> span) {
-        return UnmanagedMemorySlice(
-            reinterpret_cast<char*>(const_cast<uint8_t*>(span.begin())),
-            span.size());
-      },
-      [](const std::vector<uint8_t>& v) {
-        return UnmanagedMemorySlice(reinterpret_cast<const char*>(v.data()),
-                                    v.size());
-      });
-  value_ = absl::Span<const uint8_t>();
-  return Slice(s);
+    if (auto* p = absl::get_if<Slice>(&value_)) {
+      return std::move(*p);
+    }
+    if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+      return Slice::FromCopiedBuffer(*p);
+    }
+    if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+      return Slice::FromCopiedBuffer(*p);
+    }
+    abort();
+    GPR_UNREACHABLE_CODE(return Slice());
 }
 
 Slice HPackParser::String::Take(Intern) {
-  auto s = Match(
-      value_,
-      [](const Slice& slice) {
-        grpc_slice s = slice.c_slice();
-        return ManagedMemorySlice(&s);
-      },
-      [](absl::Span<const uint8_t> span) {
-        return ManagedMemorySlice(
-            reinterpret_cast<char*>(const_cast<uint8_t*>(span.data())),
-            span.size());
-      },
-      [](const std::vector<uint8_t>& v) {
-        return ManagedMemorySlice(reinterpret_cast<const char*>(v.data()),
-                                  v.size());
-      });
-  value_ = absl::Span<const uint8_t>();
-  return Slice(s);
+  ManagedMemorySlice m;  
+  if (auto* p = absl::get_if<Slice>(&value_)) {
+      m = ManagedMemorySlice(&p->c_slice());
+    }
+    if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+      m = ManagedMemorySlice(reinterpret_cast<const char*>(p->data()), p->size());
+    }
+    if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+      m = ManagedMemorySlice(reinterpret_cast<const char*>(p->data()), p->size());
+    }
+  return Slice(m);
 }
 
 /* PUBLIC INTERFACE */
