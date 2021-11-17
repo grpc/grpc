@@ -864,7 +864,7 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
     absl::string_view name,
     std::function<bool(absl::string_view, bool*)> is_expected_type) {
   // Old-style names use the empty string for authority.
-  // authoirty is prefixed with "old:" to indicate that it's an old-style name.
+  // authority is prefixed with "old:" to indicate that it's an old-style name.
   if (!absl::StartsWith(name, "xdstp:")) {
     return XdsApi::ResourceName{"old:", std::string(name)};
   }
@@ -971,9 +971,8 @@ absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
                                               absl::string_view resource_type,
                                               absl::string_view name) {
-  if (absl::StartsWith(authority, "xdstp:")) {
-    return absl::StrCat("xdstp://", absl::StripPrefix(authority, "xdstp:"), "/",
-                        resource_type, "/", name);
+  if (absl::ConsumePrefix(&authority, "xdstp:")) {
+    return absl::StrCat("xdstp://", authority, "/", resource_type, "/", name);
   } else {
     return std::string(absl::StripPrefix(name, "old:"));
   }
