@@ -1557,7 +1557,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
 
   for (i = 0; i < nops; i++) {
     if (seen_ops & (1u << ops[i].op)) {
-      return GRPC_CALL_ERROR;
+      return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
     }
     seen_ops |= (1u << ops[i].op);
   }
