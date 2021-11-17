@@ -29,6 +29,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -1282,34 +1283,36 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 
   grpc_core::ExecCtx exec_ctx;
 
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
   // Remove max_connection_idle and max_connection_age channel arguments since
   // those do not apply to inproc transports.
   const char* args_to_remove[] = {GRPC_ARG_MAX_CONNECTION_IDLE_MS,
                                   GRPC_ARG_MAX_CONNECTION_AGE_MS};
   const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
-      server->core_server->channel_args(), args_to_remove,
+      core_server->channel_args(), args_to_remove,
       GPR_ARRAY_SIZE(args_to_remove));
   // Add a default authority channel argument for the client
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
   default_authority_arg.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
   default_authority_arg.value.string = const_cast<char*>("inproc.authority");
+  args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   grpc_channel_args* client_args =
-      grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
-
+      grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  grpc_channel_args_destroy(args);
   grpc_transport* server_transport;
   grpc_transport* client_transport;
   inproc_transports_create(&server_transport, server_args, &client_transport,
                            client_args);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  grpc_error_handle error = server->core_server->SetupTransport(
+  grpc_error_handle error = core_server->SetupTransport(
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error == GRPC_ERROR_NONE) {
     channel =
         grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, nullptr, 0, &error);
+                            client_transport, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",

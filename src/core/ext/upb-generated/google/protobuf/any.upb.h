@@ -61,6 +61,8 @@ UPB_INLINE void google_protobuf_Any_set_value(google_protobuf_Any *msg, upb_strv
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 
+extern const upb_msglayout_file google_protobuf_any_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

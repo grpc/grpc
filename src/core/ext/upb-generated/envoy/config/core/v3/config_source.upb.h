@@ -409,6 +409,8 @@ UPB_INLINE struct xds_core_v3_Authority* envoy_config_core_v3_ConfigSource_add_a
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_config_source_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

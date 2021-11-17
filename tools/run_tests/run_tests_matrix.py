@@ -34,7 +34,7 @@ _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 _CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
-_OBJC_RUNTESTS_TIMEOUT = 90 * 60
+_OBJC_RUNTESTS_TIMEOUT = 2 * 60 * 60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2

@@ -102,6 +102,8 @@ UPB_INLINE void envoy_type_v3_FractionalPercent_set_denominator(envoy_type_v3_Fr
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
+extern const upb_msglayout_file envoy_type_v3_percent_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

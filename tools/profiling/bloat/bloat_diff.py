@@ -52,10 +52,12 @@ def _build(output_dir):
     """Perform the cmake build under the output_dir."""
     shutil.rmtree(output_dir, ignore_errors=True)
     subprocess.check_call('mkdir -p %s' % output_dir, shell=True, cwd='.')
-    subprocess.check_call(
-        'cmake -DgRPC_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo ..',
-        shell=True,
-        cwd=output_dir)
+    subprocess.check_call([
+        'cmake', '-DgRPC_BUILD_TESTS=OFF', '-DBUILD_SHARED_LIBS=ON',
+        '-DCMAKE_BUILD_TYPE=RelWithDebInfo', '-DCMAKE_C_FLAGS="-gsplit-dwarf"',
+        '-DCMAKE_CXX_FLAGS="-gsplit-dwarf"', '..'
+    ],
+                          cwd=output_dir)
     subprocess.check_call('make -j%d' % args.jobs, shell=True, cwd=output_dir)
 
 
@@ -102,15 +104,20 @@ for lib in LIBS:
     text += lib + '\n\n'
     old_version = glob.glob('bloat_diff_old/%s' % lib)
     new_version = glob.glob('bloat_diff_new/%s' % lib)
+    for filename in [old_version, new_version]:
+        if filename:
+            subprocess.check_call('strip %s -o %s.stripped' %
+                                  (filename[0], filename[0]),
+                                  shell=True)
     assert len(new_version) == 1
     cmd = 'bloaty-build/bloaty -d compileunits,symbols'
     if old_version:
         assert len(old_version) == 1
-        text += subprocess.check_output('%s %s -- %s' %
-                                        (cmd, new_version[0], old_version[0]),
-                                        shell=True).decode()
-        for filename in [old_version, new_version]:
-            subprocess.check_call('strip %s' % filename[0], shell=True)
+        text += subprocess.check_output(
+            '%s --debug-file=%s --debug-file=%s %s.stripped -- %s.stripped' %
+            (cmd, new_version[0], old_version[0], new_version[0],
+             old_version[0]),
+            shell=True).decode()
         sections = [
             x for x in csv.reader(
                 subprocess.check_output('bloaty-build/bloaty --csv %s -- %s' %
@@ -119,9 +126,12 @@ for lib in LIBS:
         ]
         print(sections)
         for section in sections[1:]:
+            if section[0].startswith(".debug"):
+                continue
             diff_size += int(section[2])
     else:
-        text += subprocess.check_output('%s %s' % (cmd, new_version[0]),
+        text += subprocess.check_output('%s %s.stripped --debug-file=%s' %
+                                        (cmd, new_version[0], new_version[0]),
                                         shell=True).decode()
     text += '\n\n'
 

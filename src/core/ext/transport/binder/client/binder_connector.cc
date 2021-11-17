@@ -62,7 +62,8 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 #else
     GPR_ASSERT(0);
 #endif
-    gpr_log(GPR_ERROR, "conn_id_ = %s", conn_id_.c_str());
+    gpr_log(GPR_INFO, "BinderConnector %p conn_id_ = %s", this,
+            conn_id_.c_str());
 
     args_ = args;
     GPR_ASSERT(notify_ == nullptr);
@@ -112,19 +113,17 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 
 namespace grpc_core {
 
-grpc_core::RefCountedPtr<grpc_core::Subchannel>
-BinderClientChannelFactory::CreateSubchannel(
+RefCountedPtr<Subchannel> BinderClientChannelFactory::CreateSubchannel(
     const grpc_resolved_address& address, const grpc_channel_args* args) {
-  gpr_log(GPR_ERROR, "BinderClientChannelFactory::CreateSubchannel called");
+  gpr_log(GPR_INFO, "BinderClientChannelFactory creating subchannel %p", this);
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>("binder.authority"));
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
-  grpc_core::RefCountedPtr<grpc_core::Subchannel> s =
-      grpc_core::Subchannel::Create(
-          grpc_core::MakeOrphanable<BinderConnector>(), address, new_args);
+  RefCountedPtr<Subchannel> s =
+      Subchannel::Create(MakeOrphanable<BinderConnector>(), address, new_args);
 
   return s;
 }
