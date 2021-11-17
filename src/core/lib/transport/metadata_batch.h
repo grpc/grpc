@@ -626,7 +626,7 @@ class MetadataMap {
 
 template <typename... Traits>
 void MetadataMap<Traits...>::AssertValidCallouts() {
-#ifndef NDEBUG
+#if 0
   for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
     grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
     grpc_metadata_batch_callouts_index callout_idx =
