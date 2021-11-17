@@ -181,10 +181,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   CreateOrGetXdsCertificateProviderFromFilterChainData(
       const XdsApi::LdsUpdate::FilterChainData* filter_chain);
 
-  void UpdateRouteConfig(std::string resource_name,
-                         absl::StatusOr<XdsApi::RdsUpdate> rds_update,
-                         bool prefer_existing_update);
-
   RefCountedPtr<XdsClient> xds_client_;
   // This ref is only kept around till the FilterChainMatchManager becomes
   // ready.
@@ -217,23 +213,76 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         filter_chain_match_manager_(std::move(filter_chain_match_manager)) {}
 
   void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) override {
-    filter_chain_match_manager_->UpdateRouteConfig(
-        resource_name_, std::move(route_config),
-        false /* prefer_existing_update */);
+    RefCountedPtr<ListenerWatcher> listener_watcher;
+    {
+      MutexLock lock(&filter_chain_match_manager_->mu_);
+      auto& state = filter_chain_match_manager_->rds_map_[resource_name_];
+      if (!state.rds_update.has_value()) {
+        if (--filter_chain_match_manager_->rds_resources_yet_to_fetch_ == 0) {
+          listener_watcher =
+              std::move(filter_chain_match_manager_->listener_watcher_);
+        }
+      }
+      state.rds_update = std::move(route_config);
+    }
+    // Promote the filter chain match manager object if all the referenced
+    // resources are fetched.
+    if (listener_watcher != nullptr) {
+      MutexLock lock(&listener_watcher->mu_);
+      listener_watcher->PendingFilterChainMatchManagerReady(
+          filter_chain_match_manager_.get());
+    }
   }
 
   void OnError(grpc_error_handle error) override {
-    filter_chain_match_manager_->UpdateRouteConfig(
-        resource_name_, grpc_error_to_absl_status(error),
-        true /* prefer_existing_update */);
+    RefCountedPtr<ListenerWatcher> listener_watcher;
+    {
+      MutexLock lock(&filter_chain_match_manager_->mu_);
+      auto& state = filter_chain_match_manager_->rds_map_[resource_name_];
+      if (!state.rds_update.has_value()) {
+        if (--filter_chain_match_manager_->rds_resources_yet_to_fetch_ == 0) {
+          listener_watcher =
+              std::move(filter_chain_match_manager_->listener_watcher_);
+        }
+        state.rds_update = grpc_error_to_absl_status(error);
+      } else {
+        // Prefer existing good version over current errored version
+        if (!state.rds_update->ok()) {
+          state.rds_update = grpc_error_to_absl_status(error);
+        }
+      }
+    }
+    // Promote the filter chain match manager object if all the referenced
+    // resources are fetched.
+    if (listener_watcher != nullptr) {
+      MutexLock lock(&listener_watcher->mu_);
+      listener_watcher->PendingFilterChainMatchManagerReady(
+          filter_chain_match_manager_.get());
+    }
     GRPC_ERROR_UNREF(error);
   }
 
   void OnResourceDoesNotExist() override {
-    filter_chain_match_manager_->UpdateRouteConfig(
-        resource_name_,
-        absl::NotFoundError("Requested route config does not exist"),
-        false /* prefer_existing_update */);
+    RefCountedPtr<ListenerWatcher> listener_watcher;
+    {
+      MutexLock lock(&filter_chain_match_manager_->mu_);
+      auto& state = filter_chain_match_manager_->rds_map_[resource_name_];
+      if (!state.rds_update.has_value()) {
+        if (--filter_chain_match_manager_->rds_resources_yet_to_fetch_ == 0) {
+          listener_watcher =
+              std::move(filter_chain_match_manager_->listener_watcher_);
+        }
+      }
+      state.rds_update =
+          absl::NotFoundError("Requested route config does not exist");
+    }
+    // Promote the filter chain match manager object if all the referenced
+    // resources are fetched.
+    if (listener_watcher != nullptr) {
+      MutexLock lock(&listener_watcher->mu_);
+      listener_watcher->PendingFilterChainMatchManagerReady(
+          filter_chain_match_manager_.get());
+    }
   }
 
  private:
@@ -258,13 +307,29 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
  private:
   struct VirtualHost {
-    class RouteListIterator;
     struct Route {
       // true if an action other than kNonForwardingAction is configured.
       bool unsupported_action;
       XdsApi::Route::Matchers matchers;
       RefCountedPtr<ServiceConfig> method_config;
     };
+
+    class RouteListIterator : public XdsRouting::RouteListIterator {
+     public:
+      explicit RouteListIterator(const std::vector<Route>* routes)
+          : routes_(routes) {}
+
+      size_t Size() const override { return routes_->size(); }
+
+      const XdsApi::Route::Matchers& GetMatchersForRoute(
+          size_t index) const override {
+        return (*routes_)[index].matchers;
+      }
+
+     private:
+      const std::vector<Route>* routes_;
+    };
+
     std::vector<std::string> domains;
     std::vector<Route> routes;
   };
@@ -286,23 +351,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   };
 
   std::vector<VirtualHost> virtual_hosts_;
-};
-
-class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    XdsServerConfigSelector::VirtualHost::RouteListIterator
-    : public XdsRouting::RouteListIterator {
- public:
-  RouteListIterator(const std::vector<Route>* routes) : routes_(routes) {}
-
-  size_t Size() const override { return routes_->size(); }
-
-  const XdsApi::Route::Matchers& GetMatchersForRoute(
-      size_t index) const override {
-    return (*routes_)[index].matchers;
-  }
-
- private:
-  const std::vector<Route>* routes_;
 };
 
 // An XdsServerConfigSelectorProvider implementation for when the
@@ -730,35 +778,6 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   certificate_providers_map_.emplace(filter_chain,
                                      std::move(certificate_providers));
   return xds_certificate_provider;
-}
-
-void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    UpdateRouteConfig(std::string resource_name,
-                      absl::StatusOr<XdsApi::RdsUpdate> rds_update,
-                      bool prefer_existing_update) {
-  RefCountedPtr<ListenerWatcher> listener_watcher;
-  {
-    MutexLock lock(&mu_);
-    auto& state = rds_map_[resource_name];
-    if (!state.rds_update.has_value()) {
-      if (--rds_resources_yet_to_fetch_ == 0) {
-        listener_watcher = std::move(listener_watcher_);
-      }
-      state.rds_update = std::move(rds_update);
-    } else {
-      // Prefer existing good version over current errored version
-      if (!(prefer_existing_update && !rds_update.ok() &&
-            state.rds_update.has_value() && state.rds_update->ok())) {
-        state.rds_update = std::move(rds_update);
-      }
-    }
-  }
-  // Promote the filter chain match manager object if all the referenced
-  // resources are fetched.
-  if (listener_watcher != nullptr) {
-    MutexLock lock(&listener_watcher->mu_);
-    listener_watcher->PendingFilterChainMatchManagerReady(this);
-  }
 }
 
 const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourcePort(
