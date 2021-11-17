@@ -89,6 +89,10 @@ RUN apt-get update && apt-get install -y \
       libtool \
       curl \
       shellcheck
+
+# otherwise clang-tidy will report missing <gtest/gtest.h> header
+RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
+
 RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
 
 # Upgrade Python's YAML library
@@ -98,7 +102,6 @@ RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 RUN apt-get update && apt-get install -y clang clang-format-11 clang-tidy-11 jq
 ENV CLANG_FORMAT=clang-format-11
 ENV CLANG_TIDY=clang-tidy-11
-
 
 #========================
 # Bazel installation
