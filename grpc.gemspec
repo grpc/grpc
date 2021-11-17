@@ -875,6 +875,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/gprpp/thd_posix.cc )
   s.files += %w( src/core/lib/gprpp/thd_windows.cc )
+  s.files += %w( src/core/lib/gprpp/time.h )
   s.files += %w( src/core/lib/gprpp/time_util.cc )
   s.files += %w( src/core/lib/gprpp/time_util.h )
   s.files += %w( src/core/lib/http/format_request.cc )

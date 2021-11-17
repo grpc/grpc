@@ -1597,7 +1597,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time.h",
     ],
-    deps=["gpr"]
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -1617,9 +1617,9 @@ grpc_cc_library(
     deps = [
         "closure",
         "error",
-        "time",
         "gpr_base",
         "gpr_tls",
+        "time",
         "useful",
     ],
 )
