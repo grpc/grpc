@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,7 +76,7 @@ def _docker_jobspec(name,
         timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
     shortname = 'run_tests_%s' % name
     test_job = jobset.JobSpec(cmdline=[
-        'python', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
+        'python3', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
         str(inner_jobs), '-x',
         'run_tests/%s' % _report_filename(name), '--report_suite_name',
         '%s' % _safe_report_name(name)
