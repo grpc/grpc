@@ -1243,8 +1243,7 @@ class HPackParser::Parser {
 Slice HPackParser::String::Take(Extern) {
   auto s = Match(
       value_,
-      [](const Slice& slice) {
-        // TODO(ctiller): Think about this before submission.
+      [](const Slice& slice) -> UnmanagedMemorySlice {
         GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice.c_slice()));
         auto out_slice = grpc_slice_copy(slice.c_slice());
         return static_cast<const UnmanagedMemorySlice&>(out_slice);
@@ -1265,10 +1264,9 @@ Slice HPackParser::String::Take(Extern) {
 Slice HPackParser::String::Take(Intern) {
   auto s = Match(
       value_,
-      [](const grpc_slice& slice) {
-        ManagedMemorySlice s(&slice);
-        grpc_slice_unref_internal(slice);
-        return s;
+      [](const Slice& slice) {
+        grpc_slice s = slice.c_slice();
+        return ManagedMemorySlice(&s);
       },
       [](absl::Span<const uint8_t> span) {
         return ManagedMemorySlice(
