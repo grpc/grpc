@@ -728,8 +728,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     default_server_listener_.mutable_address()
         ->mutable_socket_address()
         ->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-    *http_connection_manager.mutable_route_config() =
-        default_server_route_config_;
     default_server_listener_.mutable_default_filter_chain()
         ->add_filters()
         ->mutable_typed_config()
@@ -9770,6 +9768,14 @@ class XdsServerRdsTest : public XdsEnabledServerStatusNotificationTest {
   static void TearDownTestSuite() {
     gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_RBAC");
   }
+
+  bool WaitForRouteConfigNack(
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
+    if (GetParam().enable_rds_testing()) {
+      return WaitForRdsNack(expected_status);
+    }
+    return WaitForLdsNack(expected_status);
+  }
 };
 
 TEST_P(XdsServerRdsTest, Basic) {
@@ -9786,19 +9792,10 @@ TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  if (GetParam().enable_rds_testing()) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->rds_response_state().error_message,
-        ::testing::HasSubstr("Invalid domain pattern \"\""));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->lds_response_state().error_message,
-        ::testing::HasSubstr("Invalid domain pattern \"\""));
-  }
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
+              ::testing::HasSubstr("Invalid domain pattern \"\""));
 }
 
 TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
@@ -9807,19 +9804,10 @@ TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  if (GetParam().enable_rds_testing()) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->rds_response_state().error_message,
-        ::testing::HasSubstr("VirtualHost has no domains"));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->lds_response_state().error_message,
-        ::testing::HasSubstr("VirtualHost has no domains"));
-  }
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
+              ::testing::HasSubstr("VirtualHost has no domains"));
 }
 
 TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
@@ -9828,19 +9816,10 @@ TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  if (GetParam().enable_rds_testing()) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->rds_response_state().error_message,
-        ::testing::HasSubstr("No route found in the virtual host"));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->lds_response_state().error_message,
-        ::testing::HasSubstr("No route found in the virtual host"));
-  }
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
+              ::testing::HasSubstr("No route found in the virtual host"));
 }
 
 TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
@@ -9853,19 +9832,10 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  if (GetParam().enable_rds_testing()) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->rds_response_state().error_message,
-        ::testing::HasSubstr("Match can't be null"));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(
-        balancers_[0]->ads_service()->lds_response_state().error_message,
-        ::testing::HasSubstr("Match can't be null"));
-  }
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
+      << "timed out waiting for NACK";
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
+              ::testing::HasSubstr("Match can't be null"));
 }
 
 TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
@@ -9959,8 +9929,11 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
   // Add another filter chain with an inline route config
   filter_chain = listener.add_filter_chains();
   filter_chain->mutable_filter_chain_match()->add_source_ports(1234);
+  http_connection_manager = ServerHcmAccessor().Unpack(listener);
+  *http_connection_manager.mutable_route_config() =
+      default_server_route_config_;
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      http_connection_manager);
   // Set resources on the ADS service
   balancers_[0]->ads_service()->SetRdsResource(new_route_config);
   balancers_[0]->ads_service()->SetRdsResource(another_route_config);
@@ -12531,8 +12504,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
                          &TestTypeName);
 
 // We are only testing the server here.
-// TODO(yashykt): Also add a test type with set_enable_rds_testing() once we
-// start fetching non-inline resources.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
                          ::testing::Values(TestType()
                                                .set_use_fake_resolver()

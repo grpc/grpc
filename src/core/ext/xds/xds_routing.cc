@@ -95,22 +95,6 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 
 }  // namespace
 
-absl::optional<size_t> XdsRouting::GetRouteForRequest(
-    const RouteListIterator& route_list_iterator, absl::string_view path,
-    grpc_metadata_batch* initial_metadata) {
-  for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
-    const XdsApi::Route::Matchers& matchers =
-        route_list_iterator.GetMatchersForRoute(i);
-    if (matchers.path_matcher.Match(path) &&
-        HeadersMatch(matchers.header_matchers, initial_metadata) &&
-        (!matchers.fraction_per_million.has_value() ||
-         UnderFraction(*matchers.fraction_per_million))) {
-      return i;
-    }
-  }
-  return absl::nullopt;
-}
-
 absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
     const VirtualHostListIterator& vhost_iterator, absl::string_view domain) {
   // Find the best matched virtual host.
@@ -151,6 +135,22 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
     if (best_match_type == EXACT_MATCH) break;
   }
   return target_index;
+}
+
+absl::optional<size_t> XdsRouting::GetRouteForRequest(
+    const RouteListIterator& route_list_iterator, absl::string_view path,
+    grpc_metadata_batch* initial_metadata) {
+  for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
+    const XdsApi::Route::Matchers& matchers =
+        route_list_iterator.GetMatchersForRoute(i);
+    if (matchers.path_matcher.Match(path) &&
+        HeadersMatch(matchers.header_matchers, initial_metadata) &&
+        (!matchers.fraction_per_million.has_value() ||
+         UnderFraction(*matchers.fraction_per_million))) {
+      return i;
+    }
+  }
+  return absl::nullopt;
 }
 
 bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {

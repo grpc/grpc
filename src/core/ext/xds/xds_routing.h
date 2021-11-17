@@ -77,12 +77,11 @@ class XdsRouting {
       std::string* concatenated_value);
 
   struct GeneratePerHttpFilterConfigsResult {
-    std::map<std::string, std::vector<std::string>>
-        per_filter_configs;  // Map of field name to list of elements for that
-                             // field
+    // Map of field name to list of elements for that field
+    std::map<std::string, std::vector<std::string>> per_filter_configs;
     grpc_error_handle error = GRPC_ERROR_NONE;
-    grpc_channel_args* args =
-        nullptr;  // Guaranteed to be nullptr if error is GRPC_ERROR_NONE
+    // Guaranteed to be nullptr if error is GRPC_ERROR_NONE
+    grpc_channel_args* args = nullptr;
   };
 
   // Generates a map of per_filter_configs. \a args is consumed.
