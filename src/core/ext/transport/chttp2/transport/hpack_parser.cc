@@ -681,16 +681,13 @@ class HPackParser::String {
   absl::string_view string_view() const {
     if (auto* p = absl::get_if<Slice>(&value_)) {
       return p->as_string_view();
-    }
-    if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+    } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+      return absl::string_view(reinterpret_cast<const char*>(p->data()),
+                               p->size());
+    } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
       return absl::string_view(reinterpret_cast<const char*>(p->data()),
                                p->size());
     }
-    if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
-      return absl::string_view(reinterpret_cast<const char*>(p->data()),
-                               p->size());
-    }
-    abort();
     GPR_UNREACHABLE_CODE(return absl::string_view());
   }
 
@@ -1244,14 +1241,11 @@ class HPackParser::Parser {
 Slice HPackParser::String::Take(Extern) {
   if (auto* p = absl::get_if<Slice>(&value_)) {
     return p->Copy();
-  }
-  if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+  } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+    return Slice::FromCopiedBuffer(*p);
+  } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
     return Slice::FromCopiedBuffer(*p);
   }
-  if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
-    return Slice::FromCopiedBuffer(*p);
-  }
-  abort();
   GPR_UNREACHABLE_CODE(return Slice());
 }
 
@@ -1259,11 +1253,9 @@ Slice HPackParser::String::Take(Intern) {
   ManagedMemorySlice m;
   if (auto* p = absl::get_if<Slice>(&value_)) {
     m = ManagedMemorySlice(&p->c_slice());
-  }
-  if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+  } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
     m = ManagedMemorySlice(reinterpret_cast<const char*>(p->data()), p->size());
-  }
-  if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+  } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
     m = ManagedMemorySlice(reinterpret_cast<const char*>(p->data()), p->size());
   }
   return Slice(m);
