@@ -846,7 +846,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
           for (int i = 0; i < action.create_channel().channel_actions_size();
                i++) {
             const api_fuzzer::ChannelAction& channel_action =
-              action.create_channel().channel_actions(i);
+                action.create_channel().channel_actions(i);
             g_channel_actions.push_back({
                 std::min(channel_action.wait_ms(),
                          static_cast<uint64_t>(MAX_WAIT_MS)),
