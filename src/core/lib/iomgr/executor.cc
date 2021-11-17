@@ -52,7 +52,7 @@
 namespace grpc_core {
 namespace {
 
-static GPR_THREAD_LOCAL(ThreadState*) g_this_thread_state;
+GPR_THREAD_LOCAL(ThreadState*) g_this_thread_state;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 

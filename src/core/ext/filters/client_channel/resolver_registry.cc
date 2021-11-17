@@ -107,7 +107,7 @@ class RegistryState {
   UniquePtr<char> default_prefix_;
 };
 
-static RegistryState* g_state = nullptr;
+RegistryState* g_state = nullptr;
 
 }  // namespace
 

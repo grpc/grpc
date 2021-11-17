@@ -47,7 +47,6 @@
 # - readability-else-after-return
 # - readability-implicit-bool-conversion
 # - readability-redundant-declaration
-# - readability-static-definition-in-anonymous-namespace
 #
 Checks: '-*,
   abseil-*,
@@ -115,6 +114,7 @@ Checks: '-*,
   readability-redundant-function-ptr-dereference,
   readability-redundant-smartptr-get,
   readability-simplify-boolean-expr,
+  readability-static-definition-in-anonymous-namespace,
   readability-string-compare,
   readability-uniqueptr-delete-release'
 WarningsAsErrors: '*'
