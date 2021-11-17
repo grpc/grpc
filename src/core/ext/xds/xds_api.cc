@@ -857,9 +857,9 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
     absl::string_view name,
     std::function<bool(absl::string_view, bool*)> is_expected_type) {
   // Old-style names use the empty string for authority.
-  // ID is prefixed with "old:" to indicate that it's an old-style name.
+  // authority is prefixed with "old:" to indicate that it's an old-style name.
   if (!absl::StartsWith(name, "xdstp:")) {
-    return XdsApi::ResourceName{"", absl::StrCat("old:", name)};
+    return XdsApi::ResourceName{"old:", std::string(name)};
   }
   // New style name.  Parse URI.
   auto uri = URI::Parse(name);
@@ -875,9 +875,9 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
       uri->query_parameter_map().begin(), uri->query_parameter_map().end());
   std::sort(query_parameters.begin(), query_parameters.end());
   return XdsApi::ResourceName{
-      uri->authority(),
+      absl::StrCat("xdstp:", uri->authority()),
       absl::StrCat(
-          "xdstp:", path_parts.second, (query_parameters.empty() ? "?" : ""),
+          path_parts.second, (query_parameters.empty() ? "?" : ""),
           absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
 }
 
@@ -964,9 +964,8 @@ absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
                                               absl::string_view resource_type,
                                               absl::string_view name) {
-  if (absl::StartsWith(name, "xdstp:")) {
-    return absl::StrCat("xdstp://", authority, "/", resource_type,
-                        absl::StripPrefix(name, "xdstp:"));
+  if (absl::ConsumePrefix(&authority, "xdstp:")) {
+    return absl::StrCat("xdstp://", authority, "/", resource_type, "/", name);
   } else {
     return std::string(absl::StripPrefix(name, "old:"));
   }
