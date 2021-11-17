@@ -136,4 +136,4 @@ inline Duration operator*(double lhs, Duration rhs) { return rhs * lhs; }
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_TIME_H
