@@ -146,6 +146,9 @@ class ParsedMetadata {
     void (*const destroy)(const Buffer& value);
     grpc_error_handle (*const set)(const Buffer& value,
                                    MetadataContainer* container);
+    // TODO(ctiller): ideally we'd pass new_value by value here, but there was
+    // an apparent miscompile with gcc-4.9 and WithNewValue - passing a pointer
+    // here fixed it.
     ParsedMetadata (*const with_new_value)(const Buffer& value,
                                            Slice* new_value);
     std::string (*debug_string)(const Buffer& value);
