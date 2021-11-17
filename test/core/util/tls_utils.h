@@ -125,7 +125,7 @@ class AsyncExternalVerifier {
   static void WorkerThread(void* arg);
 
   bool success_ = false;
-  grpc_core::Thread thread_;
+  Thread thread_;
   grpc_tls_certificate_verifier_external base_;
   Mutex mu_;
   std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);

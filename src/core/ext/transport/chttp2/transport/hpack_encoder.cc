@@ -420,13 +420,11 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
   uint32_t elem_hash = 0;
   if (elem_interned) {
     // Update filter to see if we can perhaps add this elem.
-    elem_hash = GRPC_MDELEM_STORAGE(elem) == GRPC_MDELEM_STORAGE_INTERNED
-                    ? reinterpret_cast<grpc_core::InternedMetadata*>(
-                          GRPC_MDELEM_DATA(elem))
-                          ->hash()
-                    : reinterpret_cast<grpc_core::StaticMetadata*>(
-                          GRPC_MDELEM_DATA(elem))
-                          ->hash();
+    elem_hash =
+        GRPC_MDELEM_STORAGE(elem) == GRPC_MDELEM_STORAGE_INTERNED
+            ? reinterpret_cast<InternedMetadata*>(GRPC_MDELEM_DATA(elem))
+                  ->hash()
+            : reinterpret_cast<StaticMetadata*>(GRPC_MDELEM_DATA(elem))->hash();
     bool can_add_to_hashtable =
         compressor_->filter_elems_.AddElement(elem_hash % kNumFilterValues);
     /* is this elem currently in the decoders table? */
@@ -443,7 +441,7 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
 
   /* should this elem be in the table? */
   const size_t decoder_space_usage =
-      grpc_core::MetadataSizeInHPackTable(elem, use_true_binary_metadata_);
+      MetadataSizeInHPackTable(elem, use_true_binary_metadata_);
   const bool decoder_space_available =
       decoder_space_usage < kMaxDecoderSpaceUsage;
   const bool should_add_elem =
@@ -491,10 +489,9 @@ void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
                                      grpc_millis deadline) {
   char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem mdelem;
-  grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),
-                            timeout_str);
-  mdelem = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_TIMEOUT, grpc_core::UnmanagedMemorySlice(timeout_str));
+  grpc_http2_encode_timeout(deadline - ExecCtx::Get()->Now(), timeout_str);
+  mdelem = grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TIMEOUT,
+                                   UnmanagedMemorySlice(timeout_str));
   EncodeDynamic(mdelem);
   GRPC_MDELEM_UNREF(mdelem);
 }
@@ -533,8 +530,7 @@ HPackCompressor::Framer::Framer(const EncodeHeaderOptions& options,
 void HPackCompressor::Framer::Encode(grpc_mdelem md) {
   if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
     const uintptr_t static_index =
-        reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md))
-            ->StaticIndex();
+        reinterpret_cast<StaticMetadata*>(GRPC_MDELEM_DATA(md))->StaticIndex();
     if (static_index < hpack_constants::kLastStaticEntry) {
       EmitIndexed(static_cast<uint32_t>(static_index + 1));
       return;

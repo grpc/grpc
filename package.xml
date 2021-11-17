@@ -37,6 +37,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/memory_allocator_impl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_allocator.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/memory_request.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
@@ -771,6 +772,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
@@ -820,6 +822,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/chunked_vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/construct_destruct.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/cpp_impl_of.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
@@ -969,8 +972,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
@@ -1042,6 +1043,30 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/activity.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/activity.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/poll.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/race.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/trace.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider_vtable.cc" role="src" />

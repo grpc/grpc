@@ -24,7 +24,7 @@ class TraceFlag;
 
 namespace testing {
 // enables the TraceFlag passed to it. Used for testing purposes.
-void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
+void grpc_tracer_enable_flag(TraceFlag* flag);
 
 }  // namespace testing
 }  // namespace grpc_core

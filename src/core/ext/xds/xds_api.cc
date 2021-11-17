@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -821,23 +819,18 @@ std::string XdsApi::EdsUpdate::ToString() const {
 // XdsApi
 //
 
-const char* XdsApi::kLdsTypeUrl =
-    "type.googleapis.com/envoy.config.listener.v3.Listener";
-const char* XdsApi::kRdsTypeUrl =
-    "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
-const char* XdsApi::kCdsTypeUrl =
-    "type.googleapis.com/envoy.config.cluster.v3.Cluster";
+const char* XdsApi::kLdsTypeUrl = "envoy.config.listener.v3.Listener";
+const char* XdsApi::kRdsTypeUrl = "envoy.config.route.v3.RouteConfiguration";
+const char* XdsApi::kCdsTypeUrl = "envoy.config.cluster.v3.Cluster";
 const char* XdsApi::kEdsTypeUrl =
-    "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
+    "envoy.config.endpoint.v3.ClusterLoadAssignment";
 
 namespace {
 
-const char* kLdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Listener";
-const char* kRdsV2TypeUrl =
-    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
-const char* kCdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
-const char* kEdsV2TypeUrl =
-    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+const char* kLdsV2TypeUrl = "envoy.api.v2.Listener";
+const char* kRdsV2TypeUrl = "envoy.api.v2.RouteConfiguration";
+const char* kCdsV2TypeUrl = "envoy.api.v2.Cluster";
+const char* kEdsV2TypeUrl = "envoy.api.v2.ClusterLoadAssignment";
 
 bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
   if (type_url == XdsApi::kLdsTypeUrl) return true;
@@ -1210,8 +1203,10 @@ grpc_slice XdsApi::CreateAdsRequest(
   // Set type_url.
   absl::string_view real_type_url =
       TypeUrlExternalToInternal(server.ShouldUseV3(), type_url);
+  std::string real_type_url_str =
+      absl::StrCat("type.googleapis.com/", real_type_url);
   envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
-      request, StdStringToUpbString(real_type_url));
+      request, StdStringToUpbString(real_type_url_str));
   // Set version_info.
   if (!version.empty()) {
     envoy_service_discovery_v3_DiscoveryRequest_set_version_info(
@@ -1263,7 +1258,7 @@ grpc_slice XdsApi::CreateAdsRequest(
     for (const auto& p : a.second) {
       absl::string_view resource_id = p;
       resource_name_storage.push_back(
-          ConstructFullResourceName(authority, type_url, resource_id));
+          ConstructFullResourceName(authority, real_type_url, resource_id));
       envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
           request, StdStringToUpbString(resource_name_storage.back()),
           arena.ptr());
@@ -1909,7 +1904,6 @@ grpc_error_handle RouteConfigParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     bool /*is_v2*/, XdsApi::RdsUpdate* rds_update) {
-  MaybeLogRouteConfiguration(context, route_config);
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
@@ -3503,8 +3497,9 @@ grpc_error_handle AdsResponseParse(
       envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
   for (size_t i = 0; i < size; ++i) {
     // Check the type_url of the resource.
-    absl::string_view type_url =
-        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
+    absl::string_view type_url = absl::StripPrefix(
+        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i])),
+        "type.googleapis.com/");
     bool is_v2 = false;
     if (!resource_type_selector_function(type_url, &is_v2)) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -3637,8 +3632,10 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   }
   MaybeLogDiscoveryResponse(context, response);
   // Record the type_url, the version_info, and the nonce of the response.
-  result.type_url = TypeUrlInternalToExternal(UpbStringToAbsl(
-      envoy_service_discovery_v3_DiscoveryResponse_type_url(response)));
+  result.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
+      UpbStringToAbsl(
+          envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
+      "type.googleapis.com/"));
   result.version = UpbStringToStdString(
       envoy_service_discovery_v3_DiscoveryResponse_version_info(response));
   result.nonce = UpbStringToStdString(
@@ -3910,9 +3907,12 @@ std::string XdsApi::AssembleClientConfig(
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
   // Dump each resource.
+  std::vector<std::string> type_url_storage;
   for (const auto& p : resource_type_metadata_map) {
     absl::string_view type_url = p.first;
     const ResourceMetadataMap& resource_metadata_map = p.second;
+    type_url_storage.emplace_back(
+        absl::StrCat("type.googleapis.com/", type_url));
     for (const auto& q : resource_metadata_map) {
       absl::string_view resource_name = q.first;
       const ResourceMetadata& metadata = *q.second;
@@ -3920,7 +3920,7 @@ std::string XdsApi::AssembleClientConfig(
           envoy_service_status_v3_ClientConfig_add_generic_xds_configs(
               client_config, context.arena);
       envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(
-          entry, StdStringToUpbString(type_url));
+          entry, StdStringToUpbString(type_url_storage.back()));
       envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(
           entry, StdStringToUpbString(resource_name));
       envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(
@@ -3933,8 +3933,8 @@ std::string XdsApi::AssembleClientConfig(
         auto* any_field =
             envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
                 entry, context.arena);
-        google_protobuf_Any_set_type_url(any_field,
-                                         StdStringToUpbString(type_url));
+        google_protobuf_Any_set_type_url(
+            any_field, StdStringToUpbString(type_url_storage.back()));
         google_protobuf_Any_set_value(
             any_field, StdStringToUpbString(metadata.serialized_proto));
       }

@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -61,19 +62,19 @@ struct CallData {
   CallCombiner* call_combiner;
 };
 
-static void lame_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+void lame_start_transport_stream_op_batch(grpc_call_element* elem,
+                                          grpc_transport_stream_op_batch* op) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   grpc_transport_stream_op_batch_finish_with_failure(
       op, GRPC_ERROR_REF(chand->error), calld->call_combiner);
 }
 
-static void lame_get_channel_info(grpc_channel_element* /*elem*/,
-                                  const grpc_channel_info* /*channel_info*/) {}
+void lame_get_channel_info(grpc_channel_element* /*elem*/,
+                           const grpc_channel_info* /*channel_info*/) {}
 
-static void lame_start_transport_op(grpc_channel_element* elem,
-                                    grpc_transport_op* op) {
+void lame_start_transport_op(grpc_channel_element* elem,
+                             grpc_transport_op* op) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   {
     MutexLock lock(&chand->mu);
@@ -99,26 +100,26 @@ static void lame_start_transport_op(grpc_channel_element* elem,
   }
 }
 
-static grpc_error_handle lame_init_call_elem(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+grpc_error_handle lame_init_call_elem(grpc_call_element* elem,
+                                      const grpc_call_element_args* args) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
 }
 
-static void lame_destroy_call_elem(grpc_call_element* /*elem*/,
-                                   const grpc_call_final_info* /*final_info*/,
-                                   grpc_closure* then_schedule_closure) {
+void lame_destroy_call_elem(grpc_call_element* /*elem*/,
+                            const grpc_call_final_info* /*final_info*/,
+                            grpc_closure* then_schedule_closure) {
   ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
-static grpc_error_handle lame_init_channel_elem(
-    grpc_channel_element* elem, grpc_channel_element_args* args) {
+grpc_error_handle lame_init_channel_elem(grpc_channel_element* elem,
+                                         grpc_channel_element_args* args) {
   new (elem->channel_data) ChannelData(args);
   return GRPC_ERROR_NONE;
 }
 
-static void lame_destroy_channel_elem(grpc_channel_element* elem) {
+void lame_destroy_channel_elem(grpc_channel_element* elem) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->~ChannelData();
 }
@@ -140,7 +141,7 @@ void ErrorDestroy(void* p) {
     delete error;
   }
 }
-int ErrorCompare(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
+int ErrorCompare(void* p, void* q) { return QsortCompare(p, q); }
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
     ErrorCopy, ErrorDestroy, ErrorCompare};
 
@@ -184,9 +185,13 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
           GRPC_ERROR_INT_GRPC_STATUS, error_code),
       GRPC_ERROR_STR_GRPC_MESSAGE, error_message);
   grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(&error);
-  grpc_channel_args args = {1, &error_arg};
+  grpc_channel_args* args0 =
+      grpc_channel_args_copy_and_add(nullptr, &error_arg, 1);
+  grpc_channel_args* args = grpc_core::EnsureResourceQuotaInChannelArgs(args0);
+  grpc_channel_args_destroy(args0);
   grpc_channel* channel = grpc_channel_create(
-      target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr, 0, nullptr);
+      target, args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr);
+  grpc_channel_args_destroy(args);
   GRPC_ERROR_UNREF(error);
   return channel;
 }

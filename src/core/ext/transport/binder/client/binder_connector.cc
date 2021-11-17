@@ -113,8 +113,7 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 
 namespace grpc_core {
 
-grpc_core::RefCountedPtr<grpc_core::Subchannel>
-BinderClientChannelFactory::CreateSubchannel(
+RefCountedPtr<Subchannel> BinderClientChannelFactory::CreateSubchannel(
     const grpc_resolved_address& address, const grpc_channel_args* args) {
   gpr_log(GPR_INFO, "BinderClientChannelFactory creating subchannel %p", this);
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
@@ -123,9 +122,8 @@ BinderClientChannelFactory::CreateSubchannel(
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
-  grpc_core::RefCountedPtr<grpc_core::Subchannel> s =
-      grpc_core::Subchannel::Create(
-          grpc_core::MakeOrphanable<BinderConnector>(), address, new_args);
+  RefCountedPtr<Subchannel> s =
+      Subchannel::Create(MakeOrphanable<BinderConnector>(), address, new_args);
 
   return s;
 }

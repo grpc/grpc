@@ -25,19 +25,36 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <time.h>
+syntax = "proto2";
 
-#include "examples/bazel/foo.upb.h"
+import "src/google/protobuf/test_messages_proto3.proto";
 
-int main() {
-  upb_arena *arena = upb_arena_new();
-  Foo* foo = Foo_new(arena);
-  const char greeting[] = "Hello, World!\n";
+package upb_test;
 
-  Foo_set_time(foo, time(NULL));
-  /* Warning: the proto will not copy this, the string data must outlive
-   * the proto. */
-  Foo_set_greeting(foo, upb_strview_makez(greeting));
+message TestExtensions {
+  extensions 1000 to max;
+  extend TestExtensions {
+    optional int32 optional_int32_ext = 1000;
+  }
+  message Nested {
+    extend TestExtensions {
+      repeated int32 repeated_int32_ext = 1001;
+    }
+  }
+}
 
-  upb_arena_free(arena);
+extend TestExtensions {
+  optional protobuf_test_messages.proto3.TestAllTypesProto3 optional_msg_ext = 1002;
+}
+
+message TestMessageSet {
+  extensions 4 to max;
+  option message_set_wire_format = true;
+}
+
+message MessageSetMember {
+  optional int32 optional_int32 = 1;
+  extend TestMessageSet {
+    optional MessageSetMember message_set_extension = 4;
+  }
 }

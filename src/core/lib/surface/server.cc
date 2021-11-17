@@ -46,6 +46,7 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -600,13 +601,11 @@ void Server::Start() {
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
-    const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
-    grpc_resource_user* resource_user, size_t preallocated_bytes) {
+    const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel =
-      grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
-                          resource_user, preallocated_bytes, &error);
+  grpc_channel* channel = grpc_channel_create(
+      nullptr, args, GRPC_SERVER_CHANNEL, transport, &error);
   if (channel == nullptr) {
     return error;
   }
@@ -1477,10 +1476,12 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
   args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  grpc_server* c_server = new grpc_server;
-  c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
+  grpc_channel_args* new_args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  grpc_core::Server* server = new grpc_core::Server(new_args);
+  grpc_channel_args_destroy(new_args);
   grpc_channel_args_destroy(args);
-  return c_server;
+  return server->c_ptr();
 }
 
 void grpc_server_register_completion_queue(grpc_server* server,
@@ -1499,7 +1500,7 @@ void grpc_server_register_completion_queue(grpc_server* server,
     /* Ideally we should log an error and abort but ruby-wrapped-language API
        calls grpc_completion_queue_pluck() on server completion queues */
   }
-  server->core_server->RegisterCompletionQueue(cq);
+  grpc_core::Server::FromC(server)->RegisterCompletionQueue(cq);
 }
 
 void* grpc_server_register_method(
@@ -1510,14 +1511,14 @@ void* grpc_server_register_method(
       "grpc_server_register_method(server=%p, method=%s, host=%s, "
       "flags=0x%08x)",
       4, (server, method, host, flags));
-  return server->core_server->RegisterMethod(method, host, payload_handling,
-                                             flags);
+  return grpc_core::Server::FromC(server)->RegisterMethod(
+      method, host, payload_handling, flags);
 }
 
 void grpc_server_start(grpc_server* server) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
-  server->core_server->Start();
+  grpc_core::Server::FromC(server)->Start();
 }
 
 void grpc_server_shutdown_and_notify(grpc_server* server,
@@ -1526,21 +1527,21 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_shutdown_and_notify(server=%p, cq=%p, tag=%p)", 3,
                  (server, cq, tag));
-  server->core_server->ShutdownAndNotify(cq, tag);
+  grpc_core::Server::FromC(server)->ShutdownAndNotify(cq, tag);
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_cancel_all_calls(server=%p)", 1, (server));
-  server->core_server->CancelAllCalls();
+  grpc_core::Server::FromC(server)->CancelAllCalls();
 }
 
 void grpc_server_destroy(grpc_server* server) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_destroy(server=%p)", 1, (server));
-  delete server;
+  grpc_core::Server::FromC(server)->Orphan();
 }
 
 grpc_call_error grpc_server_request_call(
@@ -1558,9 +1559,9 @@ grpc_call_error grpc_server_request_call(
       7,
       (server, call, details, request_metadata, cq_bound_to_call,
        cq_for_notification, tag));
-  return server->core_server->RequestCall(call, details, request_metadata,
-                                          cq_bound_to_call, cq_for_notification,
-                                          tag);
+  return grpc_core::Server::FromC(server)->RequestCall(
+      call, details, request_metadata, cq_bound_to_call, cq_for_notification,
+      tag);
 }
 
 grpc_call_error grpc_server_request_registered_call(
@@ -1583,7 +1584,7 @@ grpc_call_error grpc_server_request_registered_call(
       9,
       (server, registered_method, call, deadline, request_metadata,
        optional_payload, cq_bound_to_call, cq_for_notification, tag_new));
-  return server->core_server->RequestRegisteredCall(
+  return grpc_core::Server::FromC(server)->RequestRegisteredCall(
       rm, call, deadline, request_metadata, optional_payload, cq_bound_to_call,
       cq_for_notification, tag_new);
 }
@@ -1594,7 +1595,7 @@ void grpc_server_set_config_fetcher(
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_set_config_fetcher(server=%p, config_fetcher=%p)",
                  2, (server, server_config_fetcher));
-  server->core_server->set_config_fetcher(
+  grpc_core::Server::FromC(server)->set_config_fetcher(
       std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
 }
 

@@ -821,6 +821,8 @@ UPB_INLINE bool envoy_config_core_v3_HealthCheck_TlsOptions_add_alpn_protocols(e
       arena);
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_health_check_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

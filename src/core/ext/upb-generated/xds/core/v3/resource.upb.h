@@ -91,6 +91,8 @@ UPB_INLINE struct google_protobuf_Any* xds_core_v3_Resource_mutable_resource(xds
   return sub;
 }
 
+extern const upb_msglayout_file xds_core_v3_resource_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -28,4 +28,5 @@ tools/distrib/yapf_code.sh
 tools/distrib/isort_code.sh
 tools/distrib/clang_format_code.sh
 tools/distrib/buildifier_format_code_strict.sh || true
+tools/distrib/check_redundant_namespace_qualifiers.py || true
 

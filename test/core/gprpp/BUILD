@@ -286,6 +286,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "cpp_impl_of_test",
+    srcs = ["cpp_impl_of_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:cpp_impl_of",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "chunked_vector_test",
     srcs = ["chunked_vector_test.cc"],
     external_deps = ["gtest"],

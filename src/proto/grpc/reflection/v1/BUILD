@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_xds_k8s.sh"
-timeout_mins: 180
-action {
-  define_artifacts {
-    regex: "artifacts/**/*sponge_log.xml"
-    regex: "artifacts/**/*sponge_log.log"
-    strip_prefix: "artifacts"
-  }
-}
+licenses(["notice"])
+
+grpc_package(
+    name = "reflection_v1",
+    visibility = "public",
+)
+
+grpc_proto_library(
+    name = "reflection_proto",
+    srcs = ["reflection.proto"],
+)
+
+proto_library(
+    name = "reflection_proto_descriptor",
+    srcs = ["reflection.proto"],
+)
+
+filegroup(
+    name = "reflection_proto_file",
+    srcs = [
+        "reflection.proto",
+    ],
+)

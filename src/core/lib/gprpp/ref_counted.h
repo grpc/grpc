@@ -208,7 +208,7 @@ class PolymorphicRefCount {
 };
 
 // NonPolymorphicRefCount does not enforce polymorphic destruction of
-// RefCounted. Please refer to grpc_core::RefCounted for more details, and
+// RefCounted. Please refer to RefCounted for more details, and
 // when in doubt use PolymorphicRefCount.
 class NonPolymorphicRefCount {
  public:
