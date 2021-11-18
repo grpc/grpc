@@ -73,11 +73,6 @@ Slice SliceFromBuffer(const Buffer& buffer);
 
 void DestroySliceValue(const Buffer& value);
 
-template <size_t N>
-size_t ConstantKeyLength(const Buffer&) {
-  return N;
-}
-
 }  // namespace metadata_detail
 
 // A parsed metadata value.
@@ -228,7 +223,7 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
       // debug_string
       [](const Buffer&) -> std::string { return "empty"; },
       // key_length
-      metadata_detail::ConstantKeyLength<0>,
+      [](const Buffer&) -> size_t { return 0; },
   };
   return &vtable;
 }
@@ -260,7 +255,8 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
             Which::DisplayValue);
       },
       // key_length
-      metadata_detail::ConstantKeyLength<Which::key().length()>};
+      [](const Buffer&) { return Which::key().size(); },
+  };
   return &vtable;
 }
 
@@ -293,7 +289,8 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
             Which::DisplayValue);
       },
       // key_length
-      metadata_detail::ConstantKeyLength<Which::key().length()>};
+      [](const Buffer&) { return Which::key().size(); },
+  };
   return &vtable;
 }
 
@@ -321,7 +318,8 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
             Which::DisplayValue);
       },
       // key_length
-      metadata_detail::ConstantKeyLength<Which::key().length()>};
+      [](const Buffer&) { return Which::key().size(); },
+  };
   return &vtable;
 }
 

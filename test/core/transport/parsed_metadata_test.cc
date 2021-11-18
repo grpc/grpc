@@ -27,7 +27,7 @@ namespace testing {
 
 struct CharTrait {
   using MementoType = char;
-  static constexpr absl::string_view key() { return "key"; }
+  static absl::string_view key() { return "key"; }
   static char test_memento() { return 'a'; }
   static char test_value() { return 'a'; }
   static size_t test_memento_transport_size() { return 34; }
@@ -38,7 +38,7 @@ struct CharTrait {
 
 struct Int32Trait {
   using MementoType = int32_t;
-  static constexpr absl::string_view key() { return "key2"; }
+  static absl::string_view key() { return "key2"; }
   static int32_t test_memento() { return -1; }
   static int32_t test_value() { return -1; }
   static size_t test_memento_transport_size() { return 478; }
@@ -55,7 +55,7 @@ struct Int32Trait {
 
 struct Int64Trait {
   using MementoType = int64_t;
-  static constexpr absl::string_view key() { return "key3"; }
+  static absl::string_view key() { return "key3"; }
   static int64_t test_memento() { return 83481847284179298; }
   static int64_t test_value() { return -83481847284179298; }
   static size_t test_memento_transport_size() { return 87; }
@@ -72,7 +72,7 @@ struct Int64Trait {
 
 struct IntptrTrait {
   using MementoType = intptr_t;
-  static constexpr absl::string_view key() { return "key4"; }
+  static absl::string_view key() { return "key4"; }
   static intptr_t test_memento() { return 8374298; }
   static intptr_t test_value() { return test_memento() / 2; }
   static size_t test_memento_transport_size() { return 800; }
@@ -89,7 +89,7 @@ struct IntptrTrait {
 
 struct StringTrait {
   using MementoType = std::string;
-  static constexpr absl::string_view key() { return "key5-bin"; }
+  static absl::string_view key() { return "key5-bin"; }
   static std::string test_memento() { return "hello"; }
   static std::string test_value() { return "hi hello"; }
   static size_t test_memento_transport_size() { return 599; }
