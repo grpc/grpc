@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/leporo/sqlf"
 	"google.golang.org/api/iterator"
 )
 
@@ -192,13 +193,13 @@ func (t *Transfer) transferToPostgres(tableName string, pgSchema *PostgresSchema
 		if err != nil {
 			return fmt.Errorf("Big query row error: %s", err)
 		}
-		insertSQL, err := createInsertSQL(tableName, pgSchema, row)
+		template, args, err := prepareInsertSQL(tableName, pgSchema, row)
 		if err != nil {
 			return fmt.Errorf("Could not construct insert SQL: %s", err)
 		}
-		_, err = tx.Exec(ctx, insertSQL)
+		_, err = tx.Exec(ctx, template, args...)
 		if err != nil {
-			return fmt.Errorf("Transaction exec error: %s, %s", err, insertSQL)
+			return fmt.Errorf("Transaction exec error: %s, %s, %s", err, template, args)
 		}
 	}
 
@@ -210,37 +211,18 @@ func (t *Transfer) transferToPostgres(tableName string, pgSchema *PostgresSchema
 	return nil
 }
 
-func createInsertSQL(tableName string, pgSchema *PostgresSchema, row map[string]bigquery.Value) (string, error) {
-	columnNames := ""
-	valuesString := ""
-
+func prepareInsertSQL(tableName string, pgSchema *PostgresSchema, row map[string]bigquery.Value) (string, []interface{}, error) {
+	sqlf.SetDialect(sqlf.PostgreSQL)
+	sqlBuilder := sqlf.InsertInto(tableName)
 	for colName := range pgSchema.schema {
-		if columnNames == "" {
-			columnNames = fmt.Sprintf("%s", colName)
-		} else {
-			columnNames = fmt.Sprintf("%s, %s", columnNames, colName)
+		value := row[colName]
+		if value == nil {
+			continue
 		}
-
-		colValue := row[colName]
 		if pgSchema.schema[colName] == "TIMESTAMPTZ" {
-			colValue = row[colName].(time.Time).Format(time.RFC3339)
+			value = value.(time.Time).Format(time.RFC3339)
 		}
-		if pgSchema.schema[colName] == "DOUBLE PRECISION" {
-			if colValue == nil {
-				// TODO: Change to "NULL" after addding support for nullable columns.
-				colValue = "0"
-			} else {
-				colValue = fmt.Sprintf("%f", row[colName])
-			}
-
-		}
-		if valuesString == "" {
-			valuesString = fmt.Sprintf(`'%s'`, colValue)
-		} else {
-			valuesString = fmt.Sprintf(`%s, '%s'`, valuesString, colValue)
-		}
+		sqlBuilder.Set(colName, value)
 	}
-
-	insertSQL := fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES (%s);`, tableName, columnNames, valuesString)
-	return insertSQL, nil
+	return sqlBuilder.String(), sqlBuilder.Args(), nil
 }

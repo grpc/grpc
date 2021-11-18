@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/leporo/sqlf"
 	"google.golang.org/api/iterator"
 )
 
@@ -52,36 +53,32 @@ func (bqc *BigQueryClient) ListTables() error {
 
 // GetDataAfterDatetime gets all data after the specified datetime.
 func (bqc *BigQueryClient) GetDataAfterDatetime(dataset, table, dateField, datetime string, bqSchema *BigQuerySchema) (*bigquery.RowIterator, error) {
-	selectStr := ""
+	sqlf.SetDialect(sqlf.PostgreSQL)
+	sqlBuilder := sqlf.New("SELECT").From(fmt.Sprintf("%s.%s", dataset, table))
+	if datetime != "" {
+		sqlBuilder.Where(fmt.Sprintf("%s > '%s'", dateField, datetime))
+	}
 	for columnName, dataType := range bqSchema.schema {
-		var selectCol string
 		if strings.Contains(dataType, "STRUCT") {
-			selectCol = fmt.Sprintf("TO_JSON_STRING(%s) AS %s", columnName, columnName)
+			sqlBuilder.Select(fmt.Sprintf("TO_JSON_STRING(%s) AS %s", columnName, columnName))
 		} else {
-			selectCol = fmt.Sprintf("%s", columnName)
-		}
-
-		if selectStr == "" {
-			selectStr = selectCol
-		} else {
-			selectStr = fmt.Sprintf("%s, %s", selectStr, selectCol)
+			sqlBuilder.Select(columnName)
 		}
 	}
-	querySQL := fmt.Sprintf("SELECT %s FROM `%s.%s` WHERE %s > \"%s\";", selectStr, dataset, table, dateField, datetime)
-	if datetime == "" {
-		querySQL = fmt.Sprintf("SELECT %s FROM `%s.%s`;", selectStr, dataset, table)
-	}
-
-	return bqc.bqClient.Query(querySQL).Read(bqc.ctx)
+	return bqc.bqClient.Query(sqlBuilder.String()).Read(bqc.ctx)
 }
 
 // GetTableSchema gets the schema for the specified BigQuery table.
 // It returns a map whose keys are column names and values are BigQuery types.
 func (bqc *BigQueryClient) GetTableSchema(dataset, table string) (*BigQuerySchema, error) {
-	bqSchema := &BigQuerySchema{make(map[string]string)}
+	sqlf.SetDialect(sqlf.PostgreSQL)
+	sqlBuilder := sqlf.New("SELECT").
+		Select("column_name, data_type").
+		From(fmt.Sprintf("%s.INFORMATION_SCHEMA.COLUMNS", dataset)).
+		Where(fmt.Sprintf("table_name='%s'", table))
 
-	colQuery := fmt.Sprintf("SELECT column_name, data_type FROM `%s.INFORMATION_SCHEMA.COLUMNS` WHERE table_name=\"%s\"", dataset, table)
-	query := bqc.bqClient.Query(colQuery)
+	bqSchema := &BigQuerySchema{make(map[string]string)}
+	query := bqc.bqClient.Query(sqlBuilder.String())
 	rows, err := query.Read(bqc.ctx)
 	if err != nil {
 		return nil, err
