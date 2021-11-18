@@ -43,6 +43,14 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
+#define MAX_ADVANCE_TIME_MICROS (24 * 3600 * 365 * 1000000)  // 1 year
+// Applicable when simulating channel actions. Prevents overflows.
+#define MAX_WAIT_MS (24 * 3600 * 365 * 1000)  // 1 year
+// Applicable when simulating channel actions. Prevents overflows.
+#define MAX_ADD_N_READABLE_BYTES (2 * 1024 * 1024)  // 2GB
+// Applicable when simulating channel actions. Prevents overflows.
+#define MAX_ADD_N_WRITABLE_BYTES (2 * 1024 * 1024)  // 2GB
+
 ////////////////////////////////////////////////////////////////////////////////
 // logging
 
@@ -58,6 +66,8 @@ static gpr_timespec g_now;
 static grpc_server* g_server;
 static grpc_channel* g_channel;
 static grpc_resource_quota* g_resource_quota;
+static std::vector<grpc_passthru_endpoint_channel_action> g_channel_actions;
+static std::atomic<bool> g_channel_force_delete{false};
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
@@ -146,7 +156,6 @@ grpc_ares_request* my_dns_lookup_ares_locked(
 static void my_cancel_ares_request_locked(grpc_ares_request* request) {
   GPR_ASSERT(request == nullptr);
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 // client connection
 
@@ -168,8 +177,10 @@ static void do_connect(void* arg, grpc_error_handle error) {
   } else if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;
-    grpc_passthru_endpoint_create(&client, &server, nullptr);
+    grpc_passthru_endpoint_create(&client, &server, nullptr, true);
     *fc->ep = client;
+    start_scheduling_grpc_passthru_endpoint_channel_effects(
+        client, g_channel_actions, [&]() { g_channel_force_delete = true; });
 
     grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(
@@ -267,7 +278,12 @@ enum class CallType { CLIENT, SERVER, PENDING_SERVER, TOMBSTONED };
 
 class Call : public std::enable_shared_from_this<Call> {
  public:
-  explicit Call(CallType type) : type_(type) {}
+  explicit Call(CallType type) : type_(type) {
+    grpc_metadata_array_init(&recv_initial_metadata_);
+    grpc_metadata_array_init(&recv_trailing_metadata_);
+    grpc_call_details_init(&call_details_);
+  }
+
   ~Call();
 
   CallType type() const { return type_; }
@@ -402,18 +418,30 @@ class Call : public std::enable_shared_from_this<Call> {
                 : nullptr;
       } break;
       case api_fuzzer::BatchOp::kReceiveInitialMetadata:
-        op.op = GRPC_OP_RECV_INITIAL_METADATA;
-        *batch_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
-        op.data.recv_initial_metadata.recv_initial_metadata =
-            &recv_initial_metadata_;
+        if (enqueued_recv_initial_metadata_) {
+          *batch_is_ok = false;
+        } else {
+          enqueued_recv_initial_metadata_ = true;
+          op.op = GRPC_OP_RECV_INITIAL_METADATA;
+          *batch_ops |= 1 << GRPC_OP_RECV_INITIAL_METADATA;
+          op.data.recv_initial_metadata.recv_initial_metadata =
+              &recv_initial_metadata_;
+        }
         break;
       case api_fuzzer::BatchOp::kReceiveMessage:
-        if (call_closed_) {
+        // Allow only one active pending_recv_message_op to exist. Otherwise if
+        // the previous enqueued recv_message_op is not complete by the time
+        // we get here, then under certain conditions, enqueing this op will
+        // over-write the internal call->receiving_buffer maintained by grpc
+        // leading to a memory leak.
+        if (call_closed_ || pending_recv_message_op_) {
           *batch_is_ok = false;
         } else {
           op.op = GRPC_OP_RECV_MESSAGE;
           *batch_ops |= 1 << GRPC_OP_RECV_MESSAGE;
+          pending_recv_message_op_ = true;
           op.data.recv_message.recv_message = &recv_message_;
+          unwinders->push_back([this]() { pending_recv_message_op_ = false; });
         }
         break;
       case api_fuzzer::BatchOp::kReceiveStatusOnClient:
@@ -422,6 +450,7 @@ class Call : public std::enable_shared_from_this<Call> {
         op.data.recv_status_on_client.trailing_metadata =
             &recv_trailing_metadata_;
         op.data.recv_status_on_client.status_details = &recv_status_details_;
+        *batch_ops |= 1 << GRPC_OP_RECV_STATUS_ON_CLIENT;
         break;
       case api_fuzzer::BatchOp::kReceiveCloseOnServer:
         op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -437,12 +466,14 @@ class Call : public std::enable_shared_from_this<Call> {
   Validator* FinishedBatchValidator(uint8_t has_ops) {
     ++pending_ops_;
     auto self = shared_from_this();
-    return MakeValidator([self, has_ops](bool) {
+    return MakeValidator([self, has_ops](bool /*success*/) {
       --self->pending_ops_;
-      if ((has_ops & (1u << GRPC_OP_RECV_MESSAGE) &&
-           self->recv_message_ != nullptr)) {
-        grpc_byte_buffer_destroy(self->recv_message_);
-        self->recv_message_ = nullptr;
+      if (has_ops & (1u << GRPC_OP_RECV_MESSAGE)) {
+        self->pending_recv_message_op_ = false;
+        if (self->recv_message_ != nullptr) {
+          grpc_byte_buffer_destroy(self->recv_message_);
+          self->recv_message_ = nullptr;
+        }
       }
       if ((has_ops & (1u << GRPC_OP_SEND_MESSAGE))) {
         grpc_byte_buffer_destroy(self->send_message_);
@@ -483,9 +514,11 @@ class Call : public std::enable_shared_from_this<Call> {
   int cancelled_;
   int pending_ops_ = 0;
   bool sent_initial_metadata_ = false;
+  bool enqueued_recv_initial_metadata_ = false;
   grpc_call_details call_details_{};
   grpc_byte_buffer* send_message_ = nullptr;
   bool call_closed_ = false;
+  bool pending_recv_message_op_ = false;
 
   std::vector<void*> free_pointers_;
   std::vector<grpc_slice> unref_slices_;
@@ -511,7 +544,6 @@ Call::~Call() {
   if (call_ != nullptr) {
     grpc_call_unref(call_);
   }
-
   grpc_slice_unref(recv_status_details_);
   grpc_call_details_destroy(&call_details_);
 
@@ -520,6 +552,11 @@ Call::~Call() {
   }
   for (auto s : unref_slices_) {
     grpc_slice_unref(s);
+  }
+
+  if (recv_message_ != nullptr) {
+    grpc_byte_buffer_destroy(recv_message_);
+    recv_message_ = nullptr;
   }
 
   grpc_metadata_array_destroy(&recv_initial_metadata_);
@@ -707,7 +744,6 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
   int action_index = 0;
   auto no_more_actions = [&]() { action_index = msg.actions_size(); };
-
   auto poll_cq = [&]() -> bool {
     grpc_event ev = grpc_completion_queue_next(
         cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
@@ -750,13 +786,23 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         call->Shutdown();
       }
 
-      g_now = gpr_time_add(g_now, gpr_time_from_seconds(1, GPR_TIMESPAN));
+      g_now = gpr_time_add(
+          g_now,
+          gpr_time_from_seconds(
+              std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS / 1000)),
+              GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
       continue;
     }
 
     grpc_timer_manager_tick();
+
+    if (g_channel_force_delete.exchange(false) && g_channel) {
+      grpc_channel_destroy(g_channel);
+      g_channel = nullptr;
+      g_channel_actions.clear();
+    }
 
     const api_fuzzer::Action& action = msg.actions(action_index);
     action_index++;
@@ -772,12 +818,18 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       // increment global time
       case api_fuzzer::Action::kAdvanceTime: {
         g_now = gpr_time_add(
-            g_now, gpr_time_from_micros(action.advance_time(), GPR_TIMESPAN));
+            g_now, gpr_time_from_micros(
+                       std::min(static_cast<uint64_t>(action.advance_time()),
+                                static_cast<uint64_t>(MAX_ADVANCE_TIME_MICROS)),
+                       GPR_TIMESPAN));
         break;
       }
       // create an insecure channel
       case api_fuzzer::Action::kCreateChannel: {
-        if (g_channel == nullptr) {
+        if (!action.create_channel().channel_actions_size() ||
+            g_channel != nullptr) {
+          no_more_actions();
+        } else {
           grpc_channel_args* args =
               ReadArgs(action.create_channel().channel_args());
           if (action.create_channel().has_channel_creds()) {
@@ -790,13 +842,26 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
             g_channel = grpc_insecure_channel_create(
                 action.create_channel().target().c_str(), args, nullptr);
           }
+          g_channel_actions.clear();
+          for (int i = 0; i < action.create_channel().channel_actions_size();
+               i++) {
+            const api_fuzzer::ChannelAction& channel_action =
+                action.create_channel().channel_actions(i);
+            g_channel_actions.push_back({
+                std::min(channel_action.wait_ms(),
+                         static_cast<uint64_t>(MAX_WAIT_MS)),
+                std::min(channel_action.add_n_bytes_writable(),
+                         static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTES)),
+                std::min(channel_action.add_n_bytes_readable(),
+                         static_cast<uint64_t>(MAX_ADD_N_READABLE_BYTES)),
+            });
+          }
           GPR_ASSERT(g_channel != nullptr);
+          g_channel_force_delete = false;
           {
             grpc_core::ExecCtx exec_ctx;
             grpc_channel_args_destroy(args);
           }
-        } else {
-          no_more_actions();
         }
         break;
       }
@@ -955,6 +1020,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
           if (!op.has_value()) continue;
           ops.push_back(*op);
         }
+
         if (g_channel == nullptr) ok = false;
         if (ok) {
           auto* v = active_call->FinishedBatchValidator(has_ops);
@@ -1061,6 +1127,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_completion_queue_destroy(cq);
 
   grpc_resource_quota_unref(g_resource_quota);
-
   grpc_shutdown_blocking();
 }
