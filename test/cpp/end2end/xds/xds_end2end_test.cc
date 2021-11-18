@@ -41,6 +41,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -266,19 +267,14 @@ constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
-char* g_bootstrap_file_v3;
-char* g_bootstrap_file_v2;
+char* g_bootstrap_file;
 
-void WriteBootstrapFiles() {
+void WriteBootstrapFiles(const std::string& bootstrap) {
   char* bootstrap_file;
   FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
-  fputs(kBootstrapFileV3, out);
+  fputs(bootstrap.c_str(), out);
   fclose(out);
-  g_bootstrap_file_v3 = bootstrap_file;
-  out = gpr_tmpfile("xds_bootstrap_v2", &bootstrap_file);
-  fputs(kBootstrapFileV2, out);
-  fclose(out);
-  g_bootstrap_file_v2 = bootstrap_file;
+  g_bootstrap_file = bootstrap_file;
 }
 
 template <typename RpcService>
@@ -790,13 +786,22 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // bootstrap config in each individual test instead of hard-coding
     // the contents here.  That would allow us to use an ipv4: or ipv6:
     // URI for the xDS server instead of using the fake resolver.
+    BootstrapBuilder builder;
+    if (GetParam().use_v2()) {
+      builder.SetV2();
+    }
+    gpr_log(GPR_INFO, "donna num of balancers is %d", num_balancers_);
+    if (num_balancers_ > 0 && !GetParam().use_fake_resolver()) {
+      builder.SetDefaultServer(
+          absl::StrCat("localhost:", balancers_[0]->port()));
+    }
+    bootstrap_ = builder.Build();
+    gpr_log(GPR_INFO, "donna the bootstrap built as %s", bootstrap_.c_str());
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
-      gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG",
-                 GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+      gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
-      gpr_setenv("GRPC_XDS_BOOTSTRAP", GetParam().use_v2()
-                                           ? g_bootstrap_file_v2
-                                           : g_bootstrap_file_v3);
+      grpc::testing::WriteBootstrapFiles(bootstrap_);
+      gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file);
     }
     if (GetParam().bootstrap_source() != TestType::kBootstrapFromChannelArg) {
       // If getting bootstrap from channel arg, we'll pass these args in
@@ -871,8 +876,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       // We're getting the bootstrap from a channel arg, so we do the
       // same thing for the response generator to use for the xDS
       // channel and the xDS resource-does-not-exist timeout value.
+      gpr_log(GPR_INFO, "donna the bootstrap rewritten as %s",
+              bootstrap_.c_str());
       args.SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-                     GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+                     bootstrap_.c_str());
       if (xds_channel_args == nullptr) xds_channel_args = &xds_channel_args_;
       args.SetPointerWithVtable(
           GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
@@ -1686,6 +1693,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           : test_obj_(test_obj) {}
 
       void UpdateArguments(grpc::ChannelArguments* args) override {
+        gpr_log(GPR_INFO, "donna did failed test call this?");
         args->SetString(
             GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
             GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
@@ -1919,6 +1927,37 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return rpcs;
   }
 
+  class BootstrapBuilder {
+   public:
+    BootstrapBuilder() {}
+    void SetV2() { v2_ = true; }
+    void SetDefaultServer(const std::string& server) {
+      if (top_servers_.empty()) {
+        top_servers_.emplace_back();
+      }
+      top_servers_[0] = server;
+    }
+    void SetAuthorityServer(const std::string& authority,
+                            const std::string& server) {
+      servers_map_[authority][0] = server;
+    }
+    std::string Build() {
+      if (top_servers_.empty()) {
+        return std::string((v2_ ? kBootstrapFileV2 : kBootstrapFileV3));
+      }
+      std::string bootstrap =
+          absl::StrReplaceAll((v2_ ? kBootstrapFileV2 : kBootstrapFileV3),
+                              {{"fake:///xds_server", top_servers_[0]}});
+      return bootstrap;
+    }
+
+   private:
+    bool v2_ = false;
+    absl::InlinedVector<std::string, 1> top_servers_;
+    std::map<std::string /*authority*/, absl::InlinedVector<std::string, 1>>
+        servers_map_;
+  };
+
   const size_t num_backends_;
   const size_t num_balancers_;
   const int client_load_reporting_interval_seconds_;
@@ -1946,6 +1985,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
   bool bootstrap_contents_from_env_var_;
+  std::string bootstrap_;
 };
 
 class BasicTest : public XdsEnd2endTest {
@@ -2745,8 +2785,10 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
 using SecureNamingTest = BasicTest;
 
 // Tests that secure naming check passes if target name is expected.
-TEST_P(SecureNamingTest, TargetNameIsExpected) {
+/*TEST_P(SecureNamingTest, TargetNameIsExpected) {
   SetNextResolution({});
+  //SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr,
+absl::StrCat("localhost:", balancers_[0]->port()).c_str());
   SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr, "xds_server");
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -2770,7 +2812,7 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
-}
+}*/
 
 using LdsTest = BasicTest;
 
@@ -10942,7 +10984,7 @@ TEST_P(BalancerUpdateTest, Repeated) {
 // Tests that if the balancer is down, the RPCs will still be sent to the
 // backends according to the last balancer response, until a new balancer is
 // reachable.
-TEST_P(BalancerUpdateTest, DeadUpdate) {
+/*TEST_P(BalancerUpdateTest, DeadUpdate) {
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -11018,7 +11060,7 @@ TEST_P(BalancerUpdateTest, DeadUpdate) {
             AdsServiceImpl::ResponseState::NOT_SENT)
       << "Error Message:"
       << balancers_[2]->ads_service()->eds_response_state().error_message;
-}
+}*/
 
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:
@@ -12421,7 +12463,9 @@ class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
+  gpr_log(GPR_INFO, "donna before unset");
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  gpr_log(GPR_INFO, "donna after unset");
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
@@ -12730,7 +12774,7 @@ INSTANTIATE_TEST_SUITE_P(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::WriteBootstrapFiles();
+  // grpc::testing::WriteBootstrapFiles();
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
