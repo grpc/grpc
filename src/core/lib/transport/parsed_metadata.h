@@ -123,7 +123,12 @@ class ParsedMetadata {
   uint32_t transport_size() const { return transport_size_; }
   // Create a new parsed metadata with the same key but a different value.
   ParsedMetadata WithNewValue(Slice value) const {
-    return vtable_->with_new_value(value_, &value);
+    ParsedMetadata result;
+    result.vtable_ = vtable_;
+    result.value_ = value_;
+    result.transport_size_ = transport_size_;
+    vtable_->with_new_value(&value, &result);
+    return result;
   }
   std::string DebugString() const { return vtable_->debug_string(value_); }
 
@@ -146,11 +151,8 @@ class ParsedMetadata {
     void (*const destroy)(const Buffer& value);
     grpc_error_handle (*const set)(const Buffer& value,
                                    MetadataContainer* container);
-    // TODO(ctiller): ideally we'd pass new_value by value here, but there was
-    // an apparent miscompile with gcc-4.9 and WithNewValue - passing a pointer
-    // here fixed it.
-    ParsedMetadata (*const with_new_value)(const Buffer& value,
-                                           Slice* new_value);
+    // result is a bitwise copy of the originating ParsedMetadata.
+    void (*const with_new_value)(Slice* new_value, ParsedMetadata* result);
     std::string (*debug_string)(const Buffer& value);
   };
 
@@ -186,7 +188,7 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
       // set
       [](const Buffer&, MetadataContainer*) { return GRPC_ERROR_NONE; },
       // with_new_value
-      [](const Buffer&, Slice*) { return ParsedMetadata(); },
+      [](Slice*, ParsedMetadata*) {},
       // debug_string
       [](const Buffer&) -> std::string { return "empty"; }};
   return &vtable;
@@ -208,10 +210,9 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
         return GRPC_ERROR_NONE;
       },
       // with_new_value
-      [](const Buffer&, Slice* value) {
-        const auto length = value->length();
-        return ParsedMetadata(Which(), Which::ParseMemento(std::move(*value)),
-                              TransportSize(Which::key().length(), length));
+      [](Slice* value, ParsedMetadata* result) {
+        result->transport_size_ = TransportSize(Which::key().length(), value->length());
+        result->value_.trivial = Which::ParseMemento(std::move(*value));
       },
       // debug_string
       [](const Buffer& value) {
@@ -238,10 +239,9 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
         return GRPC_ERROR_NONE;
       },
       // with_new_value
-      [](const Buffer&, Slice* value) {
-        const auto length = value->length();
-        return ParsedMetadata(Which(), Which::ParseMemento(std::move(*value)),
-                              TransportSize(Which::key().length(), length));
+      [](Slice* value, ParsedMetadata* result) {
+        result->transport_size_ = TransportSize(Which::key().length(), value->length());
+        result->value_.pointer = new typename Which::MementoType(Which::ParseMemento(std::move(*value)));
       },
       // debug_string
       [](const Buffer& value) {
@@ -265,10 +265,9 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
         return GRPC_ERROR_NONE;
       },
       // with_new_value
-      [](const Buffer&, Slice* value) {
-        const auto length = value->length();
-        return ParsedMetadata(Which(), Which::ParseMemento(std::move(*value)),
-                              TransportSize(Which::key().length(), length));
+      [](Slice* value, ParsedMetadata* result) {
+        result->transport_size_ = TransportSize(Which::key().length(), value->length());
+        result->value_.slice = Which::ParseMemento(std::move(*value)).TakeCSlice();
       },
       // debug_string
       [](const Buffer& value) {
@@ -298,11 +297,12 @@ ParsedMetadata<MetadataContainer>::MdelemVtable() {
         return err;
       },
       // with_new_value
-      [](const Buffer& value, Slice* value_slice) {
-        return ParsedMetadata(grpc_mdelem_from_slices(
+      [](Slice* value_slice, ParsedMetadata* result) {
+        result->value_.mdelem = grpc_mdelem_from_slices(
             static_cast<const ManagedMemorySlice&>(
-                grpc_slice_ref_internal(GRPC_MDKEY(value.mdelem))),
-            value_slice->TakeCSlice()));
+                grpc_slice_ref_internal(GRPC_MDKEY(result->value_.mdelem))),
+            value_slice->TakeCSlice());
+        result->transport_size_ = GRPC_MDELEM_LENGTH(result->value_.mdelem);
       },
       // debug_string
       [](const Buffer& value) {
