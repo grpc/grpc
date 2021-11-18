@@ -3527,9 +3527,9 @@ class ListenerResourceType : public XdsResourceType {
   absl::string_view type_url() const override { return XdsApi::kLdsTypeUrl; }
   absl::string_view v2_type_url() const override { return kLdsV2TypeUrl; }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const EncodingContext& context, absl::string_view serialized_resource,
-      bool is_v2) const override {
+  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
+                                      absl::string_view serialized_resource,
+                                      bool is_v2) const override {
     // Parse serialized proto.
     auto* resource = envoy_config_listener_v3_Listener_parse(
         serialized_resource.data(), serialized_resource.size(), context.arena);
@@ -3564,9 +3564,9 @@ class RouteConfigResourceType : public XdsResourceType {
   absl::string_view type_url() const override { return XdsApi::kRdsTypeUrl; }
   absl::string_view v2_type_url() const override { return kRdsV2TypeUrl; }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const EncodingContext& context, absl::string_view serialized_resource,
-      bool is_v2) const override {
+  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
+                                      absl::string_view serialized_resource,
+                                      bool is_v2) const override {
     // Parse serialized proto.
     auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
         serialized_resource.data(), serialized_resource.size(), context.arena);
@@ -3579,8 +3579,8 @@ class RouteConfigResourceType : public XdsResourceType {
     result.name = UpbStringToStdString(
         envoy_config_route_v3_RouteConfiguration_name(resource));
     auto route_config_data = absl::make_unique<RouteConfigData>();
-    grpc_error_handle error =
-        RouteConfigParse(context, resource, is_v2, &route_config_data->resource);
+    grpc_error_handle error = RouteConfigParse(context, resource, is_v2,
+                                               &route_config_data->resource);
     if (error != GRPC_ERROR_NONE) {
       result.resource =
           absl::InvalidArgumentError(grpc_error_std_string(error));
@@ -3601,9 +3601,9 @@ class ClusterResourceType : public XdsResourceType {
   absl::string_view type_url() const override { return XdsApi::kCdsTypeUrl; }
   absl::string_view v2_type_url() const override { return kCdsV2TypeUrl; }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const EncodingContext& context, absl::string_view serialized_resource,
-      bool is_v2) const override {
+  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
+                                      absl::string_view serialized_resource,
+                                      bool is_v2) const override {
     // Parse serialized proto.
     auto* resource = envoy_config_cluster_v3_Cluster_parse(
         serialized_resource.data(), serialized_resource.size(), context.arena);
@@ -3638,9 +3638,9 @@ class EndpointResourceType : public XdsResourceType {
   absl::string_view type_url() const override { return XdsApi::kEdsTypeUrl; }
   absl::string_view v2_type_url() const override { return kEdsV2TypeUrl; }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const EncodingContext& context, absl::string_view serialized_resource,
-      bool is_v2) const override {
+  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
+                                      absl::string_view serialized_resource,
+                                      bool is_v2) const override {
     // Parse serialized proto.
     auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
         serialized_resource.data(), serialized_resource.size(), context.arena);
@@ -3667,15 +3667,14 @@ class EndpointResourceType : public XdsResourceType {
 };
 
 grpc_error_handle AdsResourceParse(
-    const EncodingContext& context, XdsResourceType* type,
-    size_t idx, const google_protobuf_Any* resource_any,
+    const EncodingContext& context, XdsResourceType* type, size_t idx,
+    const google_protobuf_Any* resource_any,
     const std::map<absl::string_view /*authority*/,
                    std::set<absl::string_view /*name*/>>&
         subscribed_resource_names,
-    std::function<
-        grpc_error_handle(absl::string_view, XdsApi::ResourceName,
-                          std::unique_ptr<XdsResourceType::ResourceData>,
-                          std::string)>
+    std::function<grpc_error_handle(
+        absl::string_view, XdsApi::ResourceName,
+        std::unique_ptr<XdsResourceType::ResourceData>, std::string)>
         add_result_func,
     std::set<XdsApi::ResourceName>* resource_names_failed) {
   // Check the type_url of the resource.
@@ -3685,8 +3684,8 @@ grpc_error_handle AdsResourceParse(
   bool is_v2 = false;
   if (!type->IsType(type_url, &is_v2)) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("resource index ", idx, ": found resource type ",
-                     type_url, " in response for type ", type->type_url()));
+        absl::StrCat("resource index ", idx, ": found resource type ", type_url,
+                     " in response for type ", type->type_url()));
   }
   // Parse the resource.
   absl::string_view serialized_resource =
@@ -3694,13 +3693,12 @@ grpc_error_handle AdsResourceParse(
   absl::StatusOr<XdsResourceType::DecodeResult> result =
       type->Decode(context, serialized_resource, is_v2);
   if (!result.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "resource index ", idx, ": ", result.status().ToString()));
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("resource index ", idx, ": ", result.status().ToString()));
   }
   // Check the resource name.
   auto resource_name = ParseResourceNameInternal(
-      result->name,
-      [type](absl::string_view type_url, bool* is_v2) {
+      result->name, [type](absl::string_view type_url, bool* is_v2) {
         return type->IsType(type_url, is_v2);
       });
   if (!resource_name.ok()) {
@@ -3718,19 +3716,18 @@ grpc_error_handle AdsResourceParse(
   if (!result->resource.ok()) {
     resource_names_failed->insert(*resource_name);
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "resource index ", idx, ": ", result->name, ": validation error: ",
-        result->resource.status().ToString()));
+        "resource index ", idx, ": ", result->name,
+        ": validation error: ", result->resource.status().ToString()));
   }
   // Add result.
-  grpc_error_handle error = add_result_func(
-      result->name, *resource_name, std::move(*result->resource),
-      std::string(serialized_resource));
+  grpc_error_handle error = add_result_func(result->name, *resource_name,
+                                            std::move(*result->resource),
+                                            std::string(serialized_resource));
   if (error != GRPC_ERROR_NONE) {
     resource_names_failed->insert(*resource_name);
     return grpc_error_add_child(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("resource index ", idx, ": ", result->name,
-                         ": validation error")),
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "resource index ", idx, ": ", result->name, ": validation error")),
         error);
   }
   return GRPC_ERROR_NONE;
@@ -3829,7 +3826,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       RouteConfigResourceType resource_type;
       auto& update_map = result.rds_update_map;
       parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i], subscribed_route_config_names,
+          context, &resource_type, i, resources[i],
+          subscribed_route_config_names,
           [&update_map](absl::string_view resource_name_string,
                         XdsApi::ResourceName resource_name,
                         std::unique_ptr<XdsResourceType::ResourceData> resource,
@@ -3858,7 +3856,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       EndpointResourceType resource_type;
       auto& update_map = result.eds_update_map;
       parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i], subscribed_eds_service_names,
+          context, &resource_type, i, resources[i],
+          subscribed_eds_service_names,
           [&update_map](absl::string_view resource_name_string,
                         XdsApi::ResourceName resource_name,
                         std::unique_ptr<XdsResourceType::ResourceData> resource,
