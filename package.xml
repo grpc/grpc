@@ -2197,8 +2197,10 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/core.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/cygwin.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin-proctitle.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin-stub.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/dl.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/epoll.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/freebsd.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/fs.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/fsevents.c" role="src" />
@@ -2218,6 +2220,7 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/no-fsevents.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/no-proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/openbsd.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-syscalls.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-syscalls.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390.c" role="src" />
@@ -2229,6 +2232,7 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/procfs-exepath.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/pthread-fixes.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/qnx.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-devurandom.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-getentropy.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-getrandom.c" role="src" />

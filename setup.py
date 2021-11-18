@@ -330,6 +330,7 @@ if "win32" in sys.platform:
         'dbghelp',
         'psapi',
         'iphlpapi',
+        'user32',
         'userenv',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
