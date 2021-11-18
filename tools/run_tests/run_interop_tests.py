@@ -778,6 +778,8 @@ DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
     """Wraps given cmdline array to create 'docker run' cmdline from it."""
+
+    # TODO(jtattermusch): use "-it" when TTY is available to allow Ctrl-C to work
     docker_cmdline = ['docker', 'run', '-i', '--rm=true']
 
     # turn environ into -e docker args
@@ -1136,8 +1138,6 @@ def build_interop_image_jobspec(language, tag=None):
         'INTEROP_IMAGE': tag,
         'BASE_NAME': 'grpc_interop_%s' % language.safename
     }
-    if not args.travis:
-        env['TTY_FLAG'] = '-t'
     build_job = jobset.JobSpec(
         cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
         environ=env,
@@ -1239,11 +1239,14 @@ argp.add_argument(
     type=str,
     help='Default GCE service account email to use for some auth interop tests.',
     default='830293263384-compute@developer.gserviceaccount.com')
-argp.add_argument('-t',
-                  '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True)
+argp.add_argument(
+    '-t',
+    '--travis',
+    default=False,
+    action='store_const',
+    const=True,
+    help='When set, indicates that the script is running on CI (= not locally).'
+)
 argp.add_argument('-v',
                   '--verbose',
                   default=False,

@@ -72,7 +72,8 @@ argp.add_argument('-t',
                   '--travis',
                   default=False,
                   action='store_const',
-                  const=True)
+                  const=True,
+                  help='Deprecated. Has no effect.')
 argp.add_argument('-x',
                   '--xml_report',
                   default='report_taskrunner_sponge_log.xml',
