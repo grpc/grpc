@@ -89,19 +89,24 @@ const upb_msglayout grpc_lb_v1_LoadBalanceResponse_msginit = {
   UPB_SIZE(8, 16), 3, _UPB_MSGEXT_NONE, 3, 255,
 };
 
+const upb_msglayout grpc_lb_v1_FallbackResponse_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
+};
+
 static const upb_msglayout_sub grpc_lb_v1_InitialLoadBalanceResponse_submsgs[1] = {
   {.submsg = &google_protobuf_Duration_msginit},
 };
 
-static const upb_msglayout_field grpc_lb_v1_InitialLoadBalanceResponse__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_msglayout_field grpc_lb_v1_InitialLoadBalanceResponse__fields[1] = {
+  {2, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout grpc_lb_v1_InitialLoadBalanceResponse_msginit = {
   &grpc_lb_v1_InitialLoadBalanceResponse_submsgs[0],
   &grpc_lb_v1_InitialLoadBalanceResponse__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(8, 16), 1, _UPB_MSGEXT_NONE, 0, 255,
 };
 
 static const upb_msglayout_sub grpc_lb_v1_ServerList_submsgs[1] = {
@@ -131,22 +136,16 @@ const upb_msglayout grpc_lb_v1_Server_msginit = {
   UPB_SIZE(24, 48), 4, _UPB_MSGEXT_NONE, 4, 255,
 };
 
-const upb_msglayout grpc_lb_v1_FallbackResponse_msginit = {
-  NULL,
-  NULL,
-  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
-};
-
 static const upb_msglayout *messages_layout[9] = {
   &grpc_lb_v1_LoadBalanceRequest_msginit,
   &grpc_lb_v1_InitialLoadBalanceRequest_msginit,
   &grpc_lb_v1_ClientStatsPerToken_msginit,
   &grpc_lb_v1_ClientStats_msginit,
   &grpc_lb_v1_LoadBalanceResponse_msginit,
+  &grpc_lb_v1_FallbackResponse_msginit,
   &grpc_lb_v1_InitialLoadBalanceResponse_msginit,
   &grpc_lb_v1_ServerList_msginit,
   &grpc_lb_v1_Server_msginit,
-  &grpc_lb_v1_FallbackResponse_msginit,
 };
 
 const upb_msglayout_file src_proto_grpc_lb_v1_load_balancer_proto_upb_file_layout = {

@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -42,7 +43,8 @@ namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
 
-class Server : public InternallyRefCounted<Server> {
+class Server : public InternallyRefCounted<Server>,
+               public CppImplOf<Server, grpc_server> {
  public:
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
@@ -458,10 +460,6 @@ class Server : public InternallyRefCounted<Server> {
 };
 
 }  // namespace grpc_core
-
-struct grpc_server {
-  grpc_core::OrphanablePtr<grpc_core::Server> core_server;
-};
 
 struct grpc_server_config_fetcher {
  public:
