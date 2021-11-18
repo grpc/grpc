@@ -166,7 +166,9 @@ struct HostMetadata : public SimpleSliceBasedMetadata {
 
 // x-endpoint-load-metrics-bin metadata trait.
 struct XEndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
-  static constexpr absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
+  static constexpr absl::string_view key() {
+    return "x-endpoint-load-metrics-bin";
+  }
 };
 
 // grpc-server-stats-bin metadata trait.

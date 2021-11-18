@@ -126,7 +126,8 @@ class ParsedMetadata {
     ParsedMetadata result;
     result.vtable_ = vtable_;
     result.value_ = value_;
-    result.transport_size_ = TransportSize(vtable_->key_length(value_), value.length());
+    result.transport_size_ =
+        TransportSize(vtable_->key_length(value_), value.length());
     vtable_->with_new_value(&value, &result);
     return result;
   }
@@ -190,10 +191,11 @@ class ParsedMetadata {
 
 namespace parse_metadata_detail {
 template <typename T>
-static GPR_ATTRIBUTE_NOINLINE std::string MakeDebugString(absl::string_view key, T value) {
+static GPR_ATTRIBUTE_NOINLINE std::string MakeDebugString(absl::string_view key,
+                                                          T value) {
   return absl::StrCat(key, ": ", value);
 }
-}
+}  // namespace parse_metadata_detail
 
 template <typename MetadataContainer>
 const typename ParsedMetadata<MetadataContainer>::VTable*
@@ -216,7 +218,7 @@ template <typename Which>
 const typename ParsedMetadata<MetadataContainer>::VTable*
 ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
   static const VTable vtable = {
-    absl::EndsWith(Which::key(), "-bin"),
+      absl::EndsWith(Which::key(), "-bin"),
       // destroy
       [](const Buffer&) {},
       // set
@@ -232,12 +234,13 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return parse_metadata_detail::MakeDebugString(Which::key(), Which::DisplayValue(
+        return parse_metadata_detail::MakeDebugString(
+            Which::key(),
+            Which::DisplayValue(
                 static_cast<typename Which::MementoType>(value.trivial)));
       },
       // key_length
-      ConstantKeyLength<Which::key().length()>
-  };
+      ConstantKeyLength<Which::key().length()>};
   return &vtable;
 }
 
@@ -259,16 +262,17 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       },
       // with_new_value
       [](Slice* value, ParsedMetadata* result) {
-        result->value_.pointer = new typename Which::MementoType(Which::ParseMemento(std::move(*value)));
+        result->value_.pointer = new
+            typename Which::MementoType(Which::ParseMemento(std::move(*value)));
       },
       // debug_string
       [](const Buffer& value) {
         auto* p = static_cast<typename Which::MementoType*>(value.pointer);
-        return parse_metadata_detail::MakeDebugString(Which::key(), Which::DisplayValue(*p));
+        return parse_metadata_detail::MakeDebugString(Which::key(),
+                                                      Which::DisplayValue(*p));
       },
       // key_length
-      ConstantKeyLength<Which::key().length()>
-      };
+      ConstantKeyLength<Which::key().length()>};
   return &vtable;
 }
 
@@ -291,12 +295,12 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return parse_metadata_detail::MakeDebugString(Which::key(),
+        return parse_metadata_detail::MakeDebugString(
+            Which::key(),
             Which::DisplayValue(Slice(grpc_slice_ref_internal(value.slice))));
       },
       // key_length
-      ConstantKeyLength<Which::key().length()>
-  };
+      ConstantKeyLength<Which::key().length()>};
   return &vtable;
 }
 
@@ -328,12 +332,14 @@ ParsedMetadata<MetadataContainer>::MdelemVtable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return parse_metadata_detail::MakeDebugString(StringViewFromSlice(GRPC_MDKEY(value.mdelem)),
-                            StringViewFromSlice(GRPC_MDVALUE(value.mdelem)));
+        return parse_metadata_detail::MakeDebugString(
+            StringViewFromSlice(GRPC_MDKEY(value.mdelem)),
+            StringViewFromSlice(GRPC_MDVALUE(value.mdelem)));
       },
       // key_length
-      [](const Buffer& value) { return GRPC_SLICE_LENGTH(GRPC_MDKEY(value.mdelem)); }
-  };
+      [](const Buffer& value) {
+        return GRPC_SLICE_LENGTH(GRPC_MDKEY(value.mdelem));
+      }};
   return &vtable;
 }
 
