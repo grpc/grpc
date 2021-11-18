@@ -139,7 +139,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     args.SetSslTargetNameOverride("foo.test.google.com.au");
 
     if (GetParam().num_listening_ports() > 0) {
-      ports_.reserve(GetParam().num_listening_ports());
+      ports_.resize(GetParam().num_listening_ports(), 0);
     }
 
     std::string shared_key_log_file_server;
