@@ -168,8 +168,8 @@ struct CopyConstructors {
 
   template <typename Buffer>
   static Out FromCopiedBuffer(const Buffer& buffer) {
-    return FromCopiedBuffer(
-        reinterpret_cast<const char*>(buffer.data()), buffer.size());
+    return FromCopiedBuffer(reinterpret_cast<const char*>(buffer.data()),
+                            buffer.size());
   }
 };
 
