@@ -20,11 +20,6 @@
 
 namespace grpc_core {
 
-TEST(ArenaPromiseTest, EmptyCallableNeedsNoArena) {
-  ArenaPromise<int> p([] { return Poll<int>(42); });
-  EXPECT_EQ(p(), Poll<int>(42));
-}
-
 TEST(ArenaPromiseTest, AllocatedWorks) {
   auto arena = MakeScopedArena(1024);
   int x = 42;
