@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_PRECONDITIONING_H
+#define GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_PRECONDITIONING_H
+
 #include <grpc/support/port_platform.h>
 
 #include <functional>
@@ -55,3 +58,5 @@ class ChannelArgsPreconditioning {
 };
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_PRECONDITIONING_H

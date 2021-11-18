@@ -1665,7 +1665,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channel_args",
     srcs = [
-        "src/core/lib/channel/channel_args.cc"
+        "src/core/lib/channel/channel_args.cc",
     ],
     hdrs = [
         "src/core/lib/channel/channel_args.h",
@@ -1675,26 +1675,26 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "gpr_base",
         "channel_stack_type",
-        "grpc_codegen",
+        "gpr_base",
         "gpr_codegen",
+        "grpc_codegen",
         "useful",
-    ]
+    ],
 )
 
 grpc_cc_library(
     name = "channel_args_preconditioning",
     srcs = [
-        "src/core/lib/channel/channel_args_preconditioning.cc"
+        "src/core/lib/channel/channel_args_preconditioning.cc",
     ],
     hdrs = [
-        "src/core/lib/channel/channel_args_preconditioning.h"
+        "src/core/lib/channel/channel_args_preconditioning.h",
     ],
     deps = [
-        "gpr_base",
         "channel_args",
-    ]
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
@@ -2025,8 +2025,8 @@ grpc_cc_library(
     deps = [
         "avl",
         "bitset",
-        "channel_stack_type",
         "channel_args",
+        "channel_stack_type",
         "chunked_vector",
         "closure",
         "config",
@@ -2678,10 +2678,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_xds_channel_stack_modifier",
-        "grpc_xds_client","config"
+        "grpc_xds_client",
     ],
 )
 
