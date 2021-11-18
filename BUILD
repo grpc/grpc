@@ -3779,7 +3779,6 @@ grpc_cc_library(
         "hpack_constants",
         "hpack_encoder_index",
         "hpack_encoder_table",
-        "match",
         "memory_quota",
         "popularity_count",
         "resource_quota_trace",

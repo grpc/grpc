@@ -134,7 +134,7 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
   std::map<std::string, TestAddress> dest_addr_to_src_addr_;
 };
 
-static bool mock_source_addr_factory_wrapper_get_source_addr(
+bool mock_source_addr_factory_wrapper_get_source_addr(
     address_sorting_source_addr_factory* factory,
     const address_sorting_address* dest_addr,
     address_sorting_address* source_addr) {
