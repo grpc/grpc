@@ -252,7 +252,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -274,6 +274,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         shard_count: The number of shards for this test.
         flaky: Whether this test is flaky.
         copts: Add these to the compiler invocation.
+        linkstatic: link the binary in static mode
     """
     copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
@@ -294,6 +295,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_properties": exec_properties,
         "shard_count": shard_count,
         "flaky": flaky,
+        "linkstatic": linkstatic,
     }
     if uses_polling:
         # the vanilla version of the test should run on platforms that only
