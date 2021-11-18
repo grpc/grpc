@@ -965,6 +965,7 @@ grpc_cc_library(
         "src/core/lib/config/core_configuration.h",
     ],
     deps = [
+        "channel_args_preconditioning",
         "channel_init",
         "gpr_base",
         "handshaker_registry",
@@ -1662,12 +1663,46 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel_args",
+    srcs = [
+        "src/core/lib/channel/channel_args.cc"
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_args.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "gpr_base",
+        "channel_stack_type",
+        "grpc_codegen",
+        "gpr_codegen",
+        "useful",
+    ]
+)
+
+grpc_cc_library(
+    name = "channel_args_preconditioning",
+    srcs = [
+        "src/core/lib/channel/channel_args_preconditioning.cc"
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_args_preconditioning.h"
+    ],
+    deps = [
+        "gpr_base",
+        "channel_args",
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/address_utils/sockaddr_utils.cc",
         "src/core/lib/backoff/backoff.cc",
-        "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
         "src/core/lib/channel/channel_trace.cc",
@@ -1829,7 +1864,6 @@ grpc_cc_library(
         "src/core/lib/address_utils/sockaddr_utils.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
-        "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_trace.h",
@@ -1962,6 +1996,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
+        "src/core/lib/channel/channel_args.h",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
     # integrated, or when it becomes obvious the glue code is unnecessary.
@@ -1991,6 +2026,7 @@ grpc_cc_library(
         "avl",
         "bitset",
         "channel_stack_type",
+        "channel_args",
         "chunked_vector",
         "closure",
         "config",
@@ -2645,7 +2681,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_xds_channel_stack_modifier",
-        "grpc_xds_client",
+        "grpc_xds_client","config"
     ],
 )
 

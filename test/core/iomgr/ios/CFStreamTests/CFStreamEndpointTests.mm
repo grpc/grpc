@@ -127,7 +127,9 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   /* connect to it */
   XCTAssertEqual(getsockname(svr_fd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len), 0);
   init_event_closure(&done, &connected);
-  grpc_channel_args *args = grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  grpc_channel_args *args =
+      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
+          nullptr);
   grpc_tcp_client_connect(&done, &ep_, nullptr, args, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
   grpc_channel_args_destroy(args);
 

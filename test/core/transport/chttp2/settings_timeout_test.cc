@@ -119,7 +119,9 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    grpc_channel_args* args = EnsureResourceQuotaInChannelArgs(nullptr);
+    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                        .channel_args_preconditioning()
+                                        .PreconditionChannelArgs(nullptr);
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
                             server_addresses->addrs,
                             ExecCtx::Get()->Now() + 1000);
