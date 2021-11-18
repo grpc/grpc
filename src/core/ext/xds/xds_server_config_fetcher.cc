@@ -621,7 +621,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     }
     if (rds_resources_yet_to_fetch_ != 0) {
       listener_watcher_ = std::move(listener_watcher);
-      listener_watcher.reset();
+      listener_watcher = nullptr;
     }
   }
   // Promote this filter chain match manager if all referenced resources are

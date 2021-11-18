@@ -20,6 +20,8 @@
 
 #include "src/core/ext/xds/xds_routing.h"
 
+#include <cctype>
+
 namespace grpc_core {
 
 namespace {
