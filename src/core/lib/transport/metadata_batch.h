@@ -255,7 +255,10 @@ class AppendHelper {
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
     container_->Set(
-        trait, Trait::MementoToValue(Trait::ParseMemento(std::move(value_))));
+        trait,
+        ParseValue<decltype(Trait::ParseMemento), Trait::ParseMemento,
+                   decltype(Trait::MementoToValue), Trait::MementoToValue>(
+            std::move(value_)));
   }
 
   void NotFound(absl::string_view key) {
