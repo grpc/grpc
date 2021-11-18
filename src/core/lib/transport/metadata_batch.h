@@ -215,17 +215,19 @@ class ParseHelper {
 
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
-    result_ = ParsedMetadata<Container>(trait, Trait::MementoToValue(Trait::ParseMemento(std::move(value_))), transport_size_);
+    result_ = ParsedMetadata<Container>(
+        trait, Trait::MementoToValue(Trait::ParseMemento(std::move(value_))),
+        transport_size_);
   }
 
   ParsedMetadata<Container> Finish(absl::string_view key) {
     if (result_.has_value()) {
       return std::move(*result_);
     }
-    return ParsedMetadata<Container>(grpc_mdelem_from_slices(
-        grpc_slice_intern(
-            grpc_slice_from_static_buffer(key.data(), key.size())),
-        value_.TakeCSlice()));
+    return ParsedMetadata<Container>(
+        grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
+                                    key.data(), key.size())),
+                                value_.TakeCSlice()));
   }
 
  private:
@@ -237,21 +239,23 @@ class ParseHelper {
 template <typename Container>
 class AppendHelper {
  public:
-  AppendHelper(Container* container, Slice value) : container_(container), value_(std::move(value)) {}
+  AppendHelper(Container* container, Slice value)
+      : container_(container), value_(std::move(value)) {}
 
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
     GPR_DEBUG_ASSERT(!found_);
     found_ = true;
-    container_->Set(trait, Trait::MementoToValue(Trait::ParseMemento(std::move(value_))));
+    container_->Set(
+        trait, Trait::MementoToValue(Trait::ParseMemento(std::move(value_))));
   }
 
   void Finish(absl::string_view key) {
     if (found_) return;
     GPR_ASSERT(GRPC_ERROR_NONE ==
                container_->Append(grpc_mdelem_from_slices(
-                   grpc_slice_intern(grpc_slice_from_static_buffer(
-                       key.data(), key.length())),
+                   grpc_slice_intern(
+                       grpc_slice_from_static_buffer(key.data(), key.length())),
                    value_.TakeCSlice())));
   }
 
@@ -412,7 +416,8 @@ class MetadataMap {
   // Once we don't care about interning anymore, make that change!
   static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value,
                                            uint32_t transport_size) {
-    metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(), transport_size);
+    metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(),
+                                                     transport_size);
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
     return helper.Finish(key);
   }
