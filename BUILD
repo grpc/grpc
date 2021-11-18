@@ -3504,7 +3504,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
