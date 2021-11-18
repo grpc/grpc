@@ -47,10 +47,9 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
   auto raw_slice = grpc_core::Slice::FromCopiedBuffer(raw, raw_length);
   auto encoded_slice =
       grpc_core::Slice::FromCopiedBuffer(encoded, encoded_length);
-  auto raw2encoded_slice =
-      grpc_core::PercentEncodeSlice(std::move(raw_slice), type);
+  auto raw2encoded_slice = grpc_core::PercentEncodeSlice(raw_slice.Ref(), type);
   auto encoded2raw_permissive_slice =
-      grpc_core::PermissivePercentDecodeSlice(std::move(encoded_slice));
+      grpc_core::PermissivePercentDecodeSlice(encoded_slice.Ref());
 
   char* raw2encoded_msg = grpc_dump_slice(raw2encoded_slice.c_slice(),
                                           GPR_DUMP_HEX | GPR_DUMP_ASCII);

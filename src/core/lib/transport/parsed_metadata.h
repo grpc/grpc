@@ -41,6 +41,43 @@ struct HasSimpleMemento {
       sizeof(typename Which::MementoType) <= sizeof(uint64_t);
 };
 
+std::string MakeDebugString(absl::string_view key, absl::string_view value);
+
+union Buffer {
+  uint64_t trivial;
+  void* pointer;
+  grpc_slice slice;
+  grpc_mdelem mdelem;
+};
+
+template <typename Field, typename CompatibleWithField, typename Display>
+GPR_ATTRIBUTE_NOINLINE std::string MakeDebugStringPipeline(
+    absl::string_view key, const Buffer& value,
+    Field (*field_from_buffer)(const Buffer&),
+    Display (*display_from_field)(CompatibleWithField)) {
+  return MakeDebugString(
+      key, absl::StrCat(display_from_field(field_from_buffer(value))));
+}
+
+template <typename Field>
+Field FieldFromTrivial(const Buffer& value) {
+  return static_cast<Field>(value.trivial);
+}
+
+template <typename Field>
+Field FieldFromPointer(const Buffer& value) {
+  return *static_cast<const Field*>(value.pointer);
+}
+
+Slice SliceFromBuffer(const Buffer& buffer);
+
+void DestroySliceValue(const Buffer& value);
+
+template <size_t N>
+size_t ConstantKeyLength(const Buffer&) {
+  return N;
+}
+
 }  // namespace metadata_detail
 
 // A parsed metadata value.
@@ -140,12 +177,7 @@ class ParsedMetadata {
   }
 
  private:
-  union Buffer {
-    uint64_t trivial;
-    void* pointer;
-    grpc_slice slice;
-    grpc_mdelem mdelem;
-  };
+  using Buffer = metadata_detail::Buffer;
 
   struct VTable {
     const bool is_binary_header;
@@ -175,27 +207,12 @@ class ParsedMetadata {
     value_.slice = ParseMemento(std::move(*slice)).TakeCSlice();
   }
 
-  static void DestroySliceValue(const Buffer& value) {
-    grpc_slice_unref_internal(value.slice);
-  }
-
-  template <size_t N>
-  static size_t ConstantKeyLength(const Buffer&) {
-    return N;
-  }
-
   const VTable* vtable_;
   Buffer value_;
   uint32_t transport_size_;
 };
 
-namespace parse_metadata_detail {
-template <typename T>
-static GPR_ATTRIBUTE_NOINLINE std::string MakeDebugString(absl::string_view key,
-                                                          T value) {
-  return absl::StrCat(key, ": ", value);
-}
-}  // namespace parse_metadata_detail
+namespace metadata_detail {}  // namespace metadata_detail
 
 template <typename MetadataContainer>
 const typename ParsedMetadata<MetadataContainer>::VTable*
@@ -209,7 +226,10 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
       // with_new_value
       [](Slice*, ParsedMetadata*) {},
       // debug_string
-      [](const Buffer&) -> std::string { return "empty"; }};
+      [](const Buffer&) -> std::string { return "empty"; },
+      // key_length
+      metadata_detail::ConstantKeyLength<0>,
+  };
   return &vtable;
 }
 
@@ -234,13 +254,13 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return parse_metadata_detail::MakeDebugString(
-            Which::key(),
-            Which::DisplayValue(
-                static_cast<typename Which::MementoType>(value.trivial)));
+        return metadata_detail::MakeDebugStringPipeline(
+            Which::key(), value,
+            metadata_detail::FieldFromTrivial<typename Which::MementoType>,
+            Which::DisplayValue);
       },
       // key_length
-      ConstantKeyLength<Which::key().length()>};
+      metadata_detail::ConstantKeyLength<Which::key().length()>};
   return &vtable;
 }
 
@@ -267,12 +287,13 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        auto* p = static_cast<typename Which::MementoType*>(value.pointer);
-        return parse_metadata_detail::MakeDebugString(Which::key(),
-                                                      Which::DisplayValue(*p));
+        return metadata_detail::MakeDebugStringPipeline(
+            Which::key(), value,
+            metadata_detail::FieldFromPointer<typename Which::MementoType>,
+            Which::DisplayValue);
       },
       // key_length
-      ConstantKeyLength<Which::key().length()>};
+      metadata_detail::ConstantKeyLength<Which::key().length()>};
   return &vtable;
 }
 
@@ -283,10 +304,10 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
   static const VTable vtable = {
       absl::EndsWith(Which::key(), "-bin"),
       // destroy
-      DestroySliceValue,
+      metadata_detail::DestroySliceValue,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        map->Set(Which(), Slice(grpc_slice_ref_internal(value.slice)));
+        map->Set(Which(), metadata_detail::SliceFromBuffer(value));
         return GRPC_ERROR_NONE;
       },
       // with_new_value
@@ -295,12 +316,12 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return parse_metadata_detail::MakeDebugString(
-            Which::key(),
-            Which::DisplayValue(Slice(grpc_slice_ref_internal(value.slice))));
+        return metadata_detail::MakeDebugStringPipeline(
+            Which::key(), value, metadata_detail::SliceFromBuffer,
+            Which::DisplayValue);
       },
       // key_length
-      ConstantKeyLength<Which::key().length()>};
+      metadata_detail::ConstantKeyLength<Which::key().length()>};
   return &vtable;
 }
 
@@ -332,7 +353,7 @@ ParsedMetadata<MetadataContainer>::MdelemVtable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return parse_metadata_detail::MakeDebugString(
+        return metadata_detail::MakeDebugString(
             StringViewFromSlice(GRPC_MDKEY(value.mdelem)),
             StringViewFromSlice(GRPC_MDVALUE(value.mdelem)));
       },
