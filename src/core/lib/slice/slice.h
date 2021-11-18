@@ -162,6 +162,11 @@ struct CopyConstructors {
   static Out FromCopiedString(std::string s) {
     return Out(grpc_slice_from_cpp_string(std::move(s)));
   }
+  template <typename Buffer>
+  static Out FromCopiedBuffer(const Buffer& buffer) {
+    return Out(UnmanagedMemorySlice(
+        reinterpret_cast<const char*>(buffer.data()), buffer.size()));
+  }
 };
 
 }  // namespace slice_detail
@@ -296,6 +301,8 @@ class Slice : public slice_detail::BaseSlice,
   }
 
   Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }
+
+  Slice Copy() const { return Slice(grpc_slice_copy(c_slice())); }
 
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
                                     const uint8_t* begin, const uint8_t* end) {

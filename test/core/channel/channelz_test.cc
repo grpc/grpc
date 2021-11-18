@@ -518,7 +518,7 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
 TEST(ChannelzServerTest, BasicServerAPIFunctionality) {
   ExecCtx exec_ctx;
   ServerFixture server(10);
-  ServerNode* channelz_server = server.server()->core_server->channelz_node();
+  ServerNode* channelz_server = Server::FromC(server.server())->channelz_node();
   channelz_server->RecordCallStarted();
   channelz_server->RecordCallFailed();
   channelz_server->RecordCallSucceeded();

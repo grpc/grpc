@@ -214,10 +214,9 @@ class grpc_fake_channel_security_connector final
   char* target_name_override_;
 };
 
-static void fake_check_peer(
-    grpc_security_connector* /*sc*/, tsi_peer peer,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-    grpc_closure* on_peer_checked) {
+void fake_check_peer(grpc_security_connector* /*sc*/, tsi_peer peer,
+                     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                     grpc_closure* on_peer_checked) {
   const char* prop_name;
   grpc_error_handle error = GRPC_ERROR_NONE;
   *auth_context = nullptr;

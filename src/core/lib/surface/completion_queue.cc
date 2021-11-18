@@ -58,8 +58,8 @@ namespace {
 // with a cq cache will go into that cache, and
 // will only be returned on the thread that initialized the cache.
 // NOTE: Only one event will ever be cached.
-static GPR_THREAD_LOCAL(grpc_cq_completion*) g_cached_event;
-static GPR_THREAD_LOCAL(grpc_completion_queue*) g_cached_cq;
+GPR_THREAD_LOCAL(grpc_cq_completion*) g_cached_event;
+GPR_THREAD_LOCAL(grpc_completion_queue*) g_cached_cq;
 
 struct plucker {
   grpc_pollset_worker** worker;
