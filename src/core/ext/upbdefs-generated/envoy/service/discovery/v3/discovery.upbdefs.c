@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
+#include "envoy/service/discovery/v3/discovery.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
@@ -15,24 +16,6 @@ extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_rpc_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_service_discovery_v3_DiscoveryRequest_msginit;
-extern const upb_msglayout envoy_service_discovery_v3_DiscoveryResponse_msginit;
-extern const upb_msglayout envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit;
-extern const upb_msglayout envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit;
-extern const upb_msglayout envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit;
-extern const upb_msglayout envoy_service_discovery_v3_Resource_msginit;
-extern const upb_msglayout envoy_service_discovery_v3_Resource_CacheControl_msginit;
-
-static const upb_msglayout *layouts[7] = {
-  &envoy_service_discovery_v3_DiscoveryRequest_msginit,
-  &envoy_service_discovery_v3_DiscoveryResponse_msginit,
-  &envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit,
-  &envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit,
-  &envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit,
-  &envoy_service_discovery_v3_Resource_msginit,
-  &envoy_service_discovery_v3_Resource_CacheControl_msginit,
-};
-
 static const char descriptor[2206] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', 
 '/', 'v', '3', '/', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', '.', 'p', 'r', 'o', 't', 'o', '\022', '\032', 'e', 'n', 'v', 'o', 
 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', '.', 'v', '3', '\032', '\037', 'e', 
@@ -136,7 +119,7 @@ static upb_def_init *deps[7] = {
 
 upb_def_init envoy_service_discovery_v3_discovery_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_service_discovery_v3_discovery_proto_upb_file_layout,
   "envoy/service/discovery/v3/discovery.proto",
   UPB_STRVIEW_INIT(descriptor, 2206)
 };

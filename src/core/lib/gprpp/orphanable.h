@@ -117,7 +117,7 @@ class InternallyRefCounted : public Orphanable {
     refs_.Ref(location, reason);
   }
 
-  grpc_core::RefCount refs_;
+  RefCount refs_;
 };
 
 }  // namespace grpc_core

@@ -99,6 +99,8 @@ UPB_INLINE void grpc_health_v1_HealthCheckResponse_set_status(grpc_health_v1_Hea
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
+extern const upb_msglayout_file src_proto_grpc_health_v1_health_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

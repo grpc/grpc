@@ -428,7 +428,7 @@ static const int16_t emit_sub_tbl[249 * 16] = {
 
 namespace {
 // The alphabet used for base64 encoding binary metadata.
-static constexpr char kBase64Alphabet[] =
+constexpr char kBase64Alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
 // An inverted table: for each value in kBase64Alphabet, table contains the
@@ -448,7 +448,7 @@ struct Base64InverseTable {
   }
 };
 
-static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
+GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
 }  // namespace
 
 // Input tracks the current byte through the input data and provides it

@@ -126,6 +126,8 @@ for lib in LIBS:
         ]
         print(sections)
         for section in sections[1:]:
+            if section[0].startswith(".debug"):
+                continue
             diff_size += int(section[2])
     else:
         text += subprocess.check_output('%s %s.stripped --debug-file=%s' %

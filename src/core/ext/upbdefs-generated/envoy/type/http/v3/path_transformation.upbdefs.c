@@ -8,21 +8,10 @@
 
 #include "upb/def.h"
 #include "envoy/type/http/v3/path_transformation.upbdefs.h"
+#include "envoy/type/http/v3/path_transformation.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_type_http_v3_PathTransformation_msginit;
-extern const upb_msglayout envoy_type_http_v3_PathTransformation_Operation_msginit;
-extern const upb_msglayout envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit;
-extern const upb_msglayout envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit;
-
-static const upb_msglayout *layouts[4] = {
-  &envoy_type_http_v3_PathTransformation_msginit,
-  &envoy_type_http_v3_PathTransformation_Operation_msginit,
-  &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit,
-  &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit,
-};
-
 static const char descriptor[618] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'h', 't', 't', 'p', '/', 'v', '3', '/', 'p', 'a', 't', 'h', 
 '_', 't', 'r', 'a', 'n', 's', 'f', 'o', 'r', 'm', 'a', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\022', 'e', 'n', 
 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'h', 't', 't', 'p', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 
@@ -58,7 +47,7 @@ static upb_def_init *deps[3] = {
 
 upb_def_init envoy_type_http_v3_path_transformation_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_type_http_v3_path_transformation_proto_upb_file_layout,
   "envoy/type/http/v3/path_transformation.proto",
   UPB_STRVIEW_INIT(descriptor, 618)
 };

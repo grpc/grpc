@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/route/v3/route_components.upbdefs.h"
+#include "envoy/config/route/v3/route_components.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
@@ -27,116 +28,6 @@ extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_route_v3_VirtualHost_msginit;
-extern const upb_msglayout envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_msginit;
-extern const upb_msglayout envoy_config_route_v3_FilterAction_msginit;
-extern const upb_msglayout envoy_config_route_v3_Route_msginit;
-extern const upb_msglayout envoy_config_route_v3_Route_TypedPerFilterConfigEntry_msginit;
-extern const upb_msglayout envoy_config_route_v3_WeightedCluster_msginit;
-extern const upb_msglayout envoy_config_route_v3_WeightedCluster_ClusterWeight_msginit;
-extern const upb_msglayout envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteMatch_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteMatch_TlsContextMatchOptions_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteMatch_ConnectMatcher_msginit;
-extern const upb_msglayout envoy_config_route_v3_CorsPolicy_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_RequestMirrorPolicy_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_HashPolicy_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_HashPolicy_Header_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_HashPolicy_Cookie_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_HashPolicy_FilterState_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_UpgradeConfig_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_msginit;
-extern const upb_msglayout envoy_config_route_v3_RouteAction_MaxStreamDuration_msginit;
-extern const upb_msglayout envoy_config_route_v3_RetryPolicy_msginit;
-extern const upb_msglayout envoy_config_route_v3_RetryPolicy_RetryPriority_msginit;
-extern const upb_msglayout envoy_config_route_v3_RetryPolicy_RetryHostPredicate_msginit;
-extern const upb_msglayout envoy_config_route_v3_RetryPolicy_RetryBackOff_msginit;
-extern const upb_msglayout envoy_config_route_v3_RetryPolicy_ResetHeader_msginit;
-extern const upb_msglayout envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_msginit;
-extern const upb_msglayout envoy_config_route_v3_HedgePolicy_msginit;
-extern const upb_msglayout envoy_config_route_v3_RedirectAction_msginit;
-extern const upb_msglayout envoy_config_route_v3_DirectResponseAction_msginit;
-extern const upb_msglayout envoy_config_route_v3_NonForwardingAction_msginit;
-extern const upb_msglayout envoy_config_route_v3_Decorator_msginit;
-extern const upb_msglayout envoy_config_route_v3_Tracing_msginit;
-extern const upb_msglayout envoy_config_route_v3_VirtualCluster_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_SourceCluster_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_DestinationCluster_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_RequestHeaders_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_RemoteAddress_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_GenericKey_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_HeaderValueMatch_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_DynamicMetaData_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_MetaData_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Override_msginit;
-extern const upb_msglayout envoy_config_route_v3_RateLimit_Override_DynamicMetadata_msginit;
-extern const upb_msglayout envoy_config_route_v3_HeaderMatcher_msginit;
-extern const upb_msglayout envoy_config_route_v3_QueryParameterMatcher_msginit;
-extern const upb_msglayout envoy_config_route_v3_InternalRedirectPolicy_msginit;
-extern const upb_msglayout envoy_config_route_v3_FilterConfig_msginit;
-
-static const upb_msglayout *layouts[53] = {
-  &envoy_config_route_v3_VirtualHost_msginit,
-  &envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_msginit,
-  &envoy_config_route_v3_FilterAction_msginit,
-  &envoy_config_route_v3_Route_msginit,
-  &envoy_config_route_v3_Route_TypedPerFilterConfigEntry_msginit,
-  &envoy_config_route_v3_WeightedCluster_msginit,
-  &envoy_config_route_v3_WeightedCluster_ClusterWeight_msginit,
-  &envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_msginit,
-  &envoy_config_route_v3_RouteMatch_msginit,
-  &envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions_msginit,
-  &envoy_config_route_v3_RouteMatch_TlsContextMatchOptions_msginit,
-  &envoy_config_route_v3_RouteMatch_ConnectMatcher_msginit,
-  &envoy_config_route_v3_CorsPolicy_msginit,
-  &envoy_config_route_v3_RouteAction_msginit,
-  &envoy_config_route_v3_RouteAction_RequestMirrorPolicy_msginit,
-  &envoy_config_route_v3_RouteAction_HashPolicy_msginit,
-  &envoy_config_route_v3_RouteAction_HashPolicy_Header_msginit,
-  &envoy_config_route_v3_RouteAction_HashPolicy_Cookie_msginit,
-  &envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties_msginit,
-  &envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter_msginit,
-  &envoy_config_route_v3_RouteAction_HashPolicy_FilterState_msginit,
-  &envoy_config_route_v3_RouteAction_UpgradeConfig_msginit,
-  &envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_msginit,
-  &envoy_config_route_v3_RouteAction_MaxStreamDuration_msginit,
-  &envoy_config_route_v3_RetryPolicy_msginit,
-  &envoy_config_route_v3_RetryPolicy_RetryPriority_msginit,
-  &envoy_config_route_v3_RetryPolicy_RetryHostPredicate_msginit,
-  &envoy_config_route_v3_RetryPolicy_RetryBackOff_msginit,
-  &envoy_config_route_v3_RetryPolicy_ResetHeader_msginit,
-  &envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_msginit,
-  &envoy_config_route_v3_HedgePolicy_msginit,
-  &envoy_config_route_v3_RedirectAction_msginit,
-  &envoy_config_route_v3_DirectResponseAction_msginit,
-  &envoy_config_route_v3_NonForwardingAction_msginit,
-  &envoy_config_route_v3_Decorator_msginit,
-  &envoy_config_route_v3_Tracing_msginit,
-  &envoy_config_route_v3_VirtualCluster_msginit,
-  &envoy_config_route_v3_RateLimit_msginit,
-  &envoy_config_route_v3_RateLimit_Action_msginit,
-  &envoy_config_route_v3_RateLimit_Action_SourceCluster_msginit,
-  &envoy_config_route_v3_RateLimit_Action_DestinationCluster_msginit,
-  &envoy_config_route_v3_RateLimit_Action_RequestHeaders_msginit,
-  &envoy_config_route_v3_RateLimit_Action_RemoteAddress_msginit,
-  &envoy_config_route_v3_RateLimit_Action_GenericKey_msginit,
-  &envoy_config_route_v3_RateLimit_Action_HeaderValueMatch_msginit,
-  &envoy_config_route_v3_RateLimit_Action_DynamicMetaData_msginit,
-  &envoy_config_route_v3_RateLimit_Action_MetaData_msginit,
-  &envoy_config_route_v3_RateLimit_Override_msginit,
-  &envoy_config_route_v3_RateLimit_Override_DynamicMetadata_msginit,
-  &envoy_config_route_v3_HeaderMatcher_msginit,
-  &envoy_config_route_v3_QueryParameterMatcher_msginit,
-  &envoy_config_route_v3_InternalRedirectPolicy_msginit,
-  &envoy_config_route_v3_FilterConfig_msginit,
-};
-
 static const char descriptor[20318] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/', 'r', 
 'o', 'u', 't', 'e', '_', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 
 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'r', 'o', 'u', 't', 'e', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 
@@ -976,7 +867,7 @@ static upb_def_init *deps[19] = {
 
 upb_def_init envoy_config_route_v3_route_components_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_route_v3_route_components_proto_upb_file_layout,
   "envoy/config/route/v3/route_components.proto",
   UPB_STRVIEW_INIT(descriptor, 20318)
 };

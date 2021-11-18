@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
+#include "envoy/config/route/v3/route.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_config_source_proto_upbdefinit;
@@ -17,16 +18,6 @@ extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_route_v3_RouteConfiguration_msginit;
-extern const upb_msglayout envoy_config_route_v3_ClusterSpecifierPlugin_msginit;
-extern const upb_msglayout envoy_config_route_v3_Vhds_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &envoy_config_route_v3_RouteConfiguration_msginit,
-  &envoy_config_route_v3_ClusterSpecifierPlugin_msginit,
-  &envoy_config_route_v3_Vhds_msginit,
-};
-
 static const char descriptor[1634] = {'\n', '!', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/', 'r', 
 'o', 'u', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 
 'r', 'o', 'u', 't', 'e', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 
@@ -109,7 +100,7 @@ static upb_def_init *deps[9] = {
 
 upb_def_init envoy_config_route_v3_route_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_route_v3_route_proto_upb_file_layout,
   "envoy/config/route/v3/route.proto",
   UPB_STRVIEW_INIT(descriptor, 1634)
 };

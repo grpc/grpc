@@ -595,14 +595,13 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
       DiscoveryMechanismEntry entry;
       if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
                              DiscoveryMechanismType::EDS) {
-        entry.discovery_mechanism =
-            grpc_core::MakeOrphanable<EdsDiscoveryMechanism>(
-                Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"),
-                discovery_mechanisms_.size());
+        entry.discovery_mechanism = MakeOrphanable<EdsDiscoveryMechanism>(
+            Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"),
+            discovery_mechanisms_.size());
       } else if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
                                     DiscoveryMechanismType::LOGICAL_DNS) {
         entry.discovery_mechanism =
-            grpc_core::MakeOrphanable<LogicalDNSDiscoveryMechanism>(
+            MakeOrphanable<LogicalDNSDiscoveryMechanism>(
                 Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism"),
                 discovery_mechanisms_.size());
       } else {

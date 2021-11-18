@@ -8,14 +8,9 @@
 
 #include "upb/def.h"
 #include "udpa/annotations/status.upbdefs.h"
+#include "udpa/annotations/status.upb.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-extern const upb_msglayout udpa_annotations_StatusAnnotation_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &udpa_annotations_StatusAnnotation_msginit,
-};
-
 static const char descriptor[483] = {'\n', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', 
 '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '\032', 
 ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 't', 
@@ -45,7 +40,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init udpa_annotations_status_proto_upbdefinit = {
   deps,
-  layouts,
+  &udpa_annotations_status_proto_upb_file_layout,
   "udpa/annotations/status.proto",
   UPB_STRVIEW_INIT(descriptor, 483)
 };

@@ -51,7 +51,7 @@ class UrlTable : public BitSet<256> {
   }
 };
 
-static GRPC_PCTENCODE_CONSTEXPR_VALUE UrlTable g_url_table;
+GRPC_PCTENCODE_CONSTEXPR_VALUE UrlTable g_url_table;
 
 class CompatibleTable : public BitSet<256> {
  public:
@@ -63,7 +63,7 @@ class CompatibleTable : public BitSet<256> {
   }
 };
 
-static GRPC_PCTENCODE_CONSTEXPR_VALUE CompatibleTable g_compatible_table;
+GRPC_PCTENCODE_CONSTEXPR_VALUE CompatibleTable g_compatible_table;
 
 // Map PercentEncodingType to a lookup table of legal symbols for that encoding.
 const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {

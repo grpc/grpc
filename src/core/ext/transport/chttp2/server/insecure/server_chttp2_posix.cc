@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 
@@ -41,24 +42,19 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   GPR_ASSERT(reserved == nullptr);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Server* core_server = server->core_server.get();
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
 
   const grpc_channel_args* server_args = core_server->channel_args();
   std::string name = absl::StrCat("fd:", fd);
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create(name.c_str());
+  auto memory_quota =
+      grpc_core::ResourceQuotaFromChannelArgs(server_args)->memory_quota();
   grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name.c_str(), true), server_args, name,
-      grpc_slice_allocator_create(resource_quota, name, server_args));
+      grpc_fd_create(fd, name.c_str(), true), server_args, name);
   grpc_transport* transport = grpc_create_chttp2_transport(
-      server_args, server_endpoint, false /* is_client */,
-      grpc_resource_user_create(resource_quota,
-                                absl::StrCat(name, ":transport")));
-  grpc_error_handle error = core_server->SetupTransport(
-      transport, nullptr, server_args, nullptr,
-      grpc_resource_user_create(resource_quota,
-                                absl::StrCat(name, ":channel")));
-  grpc_resource_quota_unref_internal(resource_quota);
+      server_args, server_endpoint, false /* is_client */
+  );
+  grpc_error_handle error =
+      core_server->SetupTransport(transport, nullptr, server_args, nullptr);
   if (error == GRPC_ERROR_NONE) {
     for (grpc_pollset* pollset : core_server->pollsets()) {
       grpc_endpoint_add_to_pollset(server_endpoint, pollset);

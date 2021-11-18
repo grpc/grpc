@@ -887,6 +887,8 @@ UPB_INLINE struct google_api_expr_v1alpha1_Constant* google_api_expr_v1alpha1_Re
   return sub;
 }
 
+extern const upb_msglayout_file google_api_expr_v1alpha1_checked_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

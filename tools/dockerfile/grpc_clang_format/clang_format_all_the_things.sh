@@ -24,6 +24,9 @@ GLOB="*.h *.c *.cc *.m *.mm"
 # clang format command
 CLANG_FORMAT=${CLANG_FORMAT:-clang-format}
 
+# number of CPUs available
+CPU_COUNT=`nproc`
+
 files=
 for dir in $DIRS
 do
@@ -41,7 +44,7 @@ fi
 
 if [ "$TEST" == "" ]
 then
-  echo $files | xargs $CLANG_FORMAT -i
+  echo $files | xargs -P $CPU_COUNT -n 10 $CLANG_FORMAT -i
 else
   ok=yes
   for file in $files

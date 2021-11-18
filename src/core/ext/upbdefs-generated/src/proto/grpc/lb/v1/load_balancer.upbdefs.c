@@ -8,32 +8,11 @@
 
 #include "upb/def.h"
 #include "src/proto/grpc/lb/v1/load_balancer.upbdefs.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
-extern const upb_msglayout grpc_lb_v1_LoadBalanceRequest_msginit;
-extern const upb_msglayout grpc_lb_v1_InitialLoadBalanceRequest_msginit;
-extern const upb_msglayout grpc_lb_v1_ClientStatsPerToken_msginit;
-extern const upb_msglayout grpc_lb_v1_ClientStats_msginit;
-extern const upb_msglayout grpc_lb_v1_LoadBalanceResponse_msginit;
-extern const upb_msglayout grpc_lb_v1_InitialLoadBalanceResponse_msginit;
-extern const upb_msglayout grpc_lb_v1_ServerList_msginit;
-extern const upb_msglayout grpc_lb_v1_Server_msginit;
-extern const upb_msglayout grpc_lb_v1_FallbackResponse_msginit;
-
-static const upb_msglayout *layouts[9] = {
-  &grpc_lb_v1_LoadBalanceRequest_msginit,
-  &grpc_lb_v1_InitialLoadBalanceRequest_msginit,
-  &grpc_lb_v1_ClientStatsPerToken_msginit,
-  &grpc_lb_v1_ClientStats_msginit,
-  &grpc_lb_v1_LoadBalanceResponse_msginit,
-  &grpc_lb_v1_InitialLoadBalanceResponse_msginit,
-  &grpc_lb_v1_ServerList_msginit,
-  &grpc_lb_v1_Server_msginit,
-  &grpc_lb_v1_FallbackResponse_msginit,
-};
-
-static const char descriptor[1767] = {'\n', '(', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'l', 'b', '/', 'v', '1', '/', 'l', 'o', 
+static const char descriptor[1717] = {'\n', '(', 's', 'r', 'c', '/', 'p', 'r', 'o', 't', 'o', '/', 'g', 'r', 'p', 'c', '/', 'l', 'b', '/', 'v', '1', '/', 'l', 'o', 
 'a', 'd', '_', 'b', 'a', 'l', 'a', 'n', 'c', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\n', 'g', 'r', 'p', 'c', '.', 'l', 
 'b', '.', 'v', '1', '\032', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'u', 'r', 
 'a', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\032', '\037', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 
@@ -79,28 +58,26 @@ static const char descriptor[1767] = {'\n', '(', 's', 'r', 'c', '/', 'p', 'r', '
 'c', 'k', '_', 'r', 'e', 's', 'p', 'o', 'n', 's', 'e', '\030', '\003', ' ', '\001', '(', '\013', '2', '\034', '.', 'g', 'r', 'p', 'c', '.', 
 'l', 'b', '.', 'v', '1', '.', 'F', 'a', 'l', 'l', 'b', 'a', 'c', 'k', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', 'H', '\000', 'R', 
 '\020', 'f', 'a', 'l', 'l', 'b', 'a', 'c', 'k', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', 'B', '\034', '\n', '\032', 'l', 'o', 'a', 'd', 
-'_', 'b', 'a', 'l', 'a', 'n', 'c', 'e', '_', 'r', 'e', 's', 'p', 'o', 'n', 's', 'e', '_', 't', 'y', 'p', 'e', '\"', '\256', '\001', 
-'\n', '\032', 'I', 'n', 'i', 't', 'i', 'a', 'l', 'L', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'R', 'e', 's', 'p', 'o', 
-'n', 's', 'e', '\022', '4', '\n', '\026', 'l', 'o', 'a', 'd', '_', 'b', 'a', 'l', 'a', 'n', 'c', 'e', 'r', '_', 'd', 'e', 'l', 'e', 
-'g', 'a', 't', 'e', '\030', '\001', ' ', '\001', '(', '\t', 'R', '\024', 'l', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'r', 'D', 
-'e', 'l', 'e', 'g', 'a', 't', 'e', '\022', 'Z', '\n', '\034', 'c', 'l', 'i', 'e', 'n', 't', '_', 's', 't', 'a', 't', 's', '_', 'r', 
-'e', 'p', 'o', 'r', 't', '_', 'i', 'n', 't', 'e', 'r', 'v', 'a', 'l', '\030', '\002', ' ', '\001', '(', '\013', '2', '\031', '.', 'g', 'o', 
-'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'D', 'u', 'r', 'a', 't', 'i', 'o', 'n', 'R', '\031', 'c', 
-'l', 'i', 'e', 'n', 't', 'S', 't', 'a', 't', 's', 'R', 'e', 'p', 'o', 'r', 't', 'I', 'n', 't', 'e', 'r', 'v', 'a', 'l', '\"', 
-'@', '\n', '\n', 'S', 'e', 'r', 'v', 'e', 'r', 'L', 'i', 's', 't', '\022', ',', '\n', '\007', 's', 'e', 'r', 'v', 'e', 'r', 's', '\030', 
-'\001', ' ', '\003', '(', '\013', '2', '\022', '.', 'g', 'r', 'p', 'c', '.', 'l', 'b', '.', 'v', '1', '.', 'S', 'e', 'r', 'v', 'e', 'r', 
-'R', '\007', 's', 'e', 'r', 'v', 'e', 'r', 's', 'J', '\004', '\010', '\003', '\020', '\004', '\"', '\203', '\001', '\n', '\006', 'S', 'e', 'r', 'v', 'e', 
-'r', '\022', '\035', '\n', '\n', 'i', 'p', '_', 'a', 'd', 'd', 'r', 'e', 's', 's', '\030', '\001', ' ', '\001', '(', '\014', 'R', '\t', 'i', 'p', 
-'A', 'd', 'd', 'r', 'e', 's', 's', '\022', '\022', '\n', '\004', 'p', 'o', 'r', 't', '\030', '\002', ' ', '\001', '(', '\005', 'R', '\004', 'p', 'o', 
-'r', 't', '\022', ',', '\n', '\022', 'l', 'o', 'a', 'd', '_', 'b', 'a', 'l', 'a', 'n', 'c', 'e', '_', 't', 'o', 'k', 'e', 'n', '\030', 
-'\003', ' ', '\001', '(', '\t', 'R', '\020', 'l', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'T', 'o', 'k', 'e', 'n', '\022', '\022', 
-'\n', '\004', 'd', 'r', 'o', 'p', '\030', '\004', ' ', '\001', '(', '\010', 'R', '\004', 'd', 'r', 'o', 'p', 'J', '\004', '\010', '\005', '\020', '\006', '\"', 
-'\022', '\n', '\020', 'F', 'a', 'l', 'l', 'b', 'a', 'c', 'k', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', '2', 'b', '\n', '\014', 'L', 'o', 
-'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'r', '\022', 'R', '\n', '\013', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'L', 'o', 'a', 'd', 
-'\022', '\036', '.', 'g', 'r', 'p', 'c', '.', 'l', 'b', '.', 'v', '1', '.', 'L', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 
-'R', 'e', 'q', 'u', 'e', 's', 't', '\032', '\037', '.', 'g', 'r', 'p', 'c', '.', 'l', 'b', '.', 'v', '1', '.', 'L', 'o', 'a', 'd', 
-'B', 'a', 'l', 'a', 'n', 'c', 'e', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', '(', '\001', '0', '\001', 'B', 'X', '\n', '\016', 'i', 'o', 
-'.', 'g', 'r', 'p', 'c', '.', 'g', 'r', 'p', 'c', 'l', 'b', 'B', '\021', 'L', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 
+'_', 'b', 'a', 'l', 'a', 'n', 'c', 'e', '_', 'r', 'e', 's', 'p', 'o', 'n', 's', 'e', '_', 't', 'y', 'p', 'e', '\"', '\022', '\n', 
+'\020', 'F', 'a', 'l', 'l', 'b', 'a', 'c', 'k', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', '\"', '~', '\n', '\032', 'I', 'n', 'i', 't', 
+'i', 'a', 'l', 'L', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', '\022', 'Z', '\n', 
+'\034', 'c', 'l', 'i', 'e', 'n', 't', '_', 's', 't', 'a', 't', 's', '_', 'r', 'e', 'p', 'o', 'r', 't', '_', 'i', 'n', 't', 'e', 
+'r', 'v', 'a', 'l', '\030', '\002', ' ', '\001', '(', '\013', '2', '\031', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 
+'b', 'u', 'f', '.', 'D', 'u', 'r', 'a', 't', 'i', 'o', 'n', 'R', '\031', 'c', 'l', 'i', 'e', 'n', 't', 'S', 't', 'a', 't', 's', 
+'R', 'e', 'p', 'o', 'r', 't', 'I', 'n', 't', 'e', 'r', 'v', 'a', 'l', 'J', '\004', '\010', '\001', '\020', '\002', '\"', '@', '\n', '\n', 'S', 
+'e', 'r', 'v', 'e', 'r', 'L', 'i', 's', 't', '\022', ',', '\n', '\007', 's', 'e', 'r', 'v', 'e', 'r', 's', '\030', '\001', ' ', '\003', '(', 
+'\013', '2', '\022', '.', 'g', 'r', 'p', 'c', '.', 'l', 'b', '.', 'v', '1', '.', 'S', 'e', 'r', 'v', 'e', 'r', 'R', '\007', 's', 'e', 
+'r', 'v', 'e', 'r', 's', 'J', '\004', '\010', '\003', '\020', '\004', '\"', '\203', '\001', '\n', '\006', 'S', 'e', 'r', 'v', 'e', 'r', '\022', '\035', '\n', 
+'\n', 'i', 'p', '_', 'a', 'd', 'd', 'r', 'e', 's', 's', '\030', '\001', ' ', '\001', '(', '\014', 'R', '\t', 'i', 'p', 'A', 'd', 'd', 'r', 
+'e', 's', 's', '\022', '\022', '\n', '\004', 'p', 'o', 'r', 't', '\030', '\002', ' ', '\001', '(', '\005', 'R', '\004', 'p', 'o', 'r', 't', '\022', ',', 
+'\n', '\022', 'l', 'o', 'a', 'd', '_', 'b', 'a', 'l', 'a', 'n', 'c', 'e', '_', 't', 'o', 'k', 'e', 'n', '\030', '\003', ' ', '\001', '(', 
+'\t', 'R', '\020', 'l', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'T', 'o', 'k', 'e', 'n', '\022', '\022', '\n', '\004', 'd', 'r', 
+'o', 'p', '\030', '\004', ' ', '\001', '(', '\010', 'R', '\004', 'd', 'r', 'o', 'p', 'J', '\004', '\010', '\005', '\020', '\006', '2', 'b', '\n', '\014', 'L', 
+'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'r', '\022', 'R', '\n', '\013', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'L', 'o', 'a', 
+'d', '\022', '\036', '.', 'g', 'r', 'p', 'c', '.', 'l', 'b', '.', 'v', '1', '.', 'L', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 
+'e', 'R', 'e', 'q', 'u', 'e', 's', 't', '\032', '\037', '.', 'g', 'r', 'p', 'c', '.', 'l', 'b', '.', 'v', '1', '.', 'L', 'o', 'a', 
+'d', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', '(', '\001', '0', '\001', 'B', 'W', '\n', '\r', 'i', 
+'o', '.', 'g', 'r', 'p', 'c', '.', 'l', 'b', '.', 'v', '1', 'B', '\021', 'L', 'o', 'a', 'd', 'B', 'a', 'l', 'a', 'n', 'c', 'e', 
 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', '1', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'g', 'o', 'l', 'a', 'n', 'g', '.', 'o', 
 'r', 'g', '/', 'g', 'r', 'p', 'c', '/', 'b', 'a', 'l', 'a', 'n', 'c', 'e', 'r', '/', 'g', 'r', 'p', 'c', 'l', 'b', '/', 'g', 
 'r', 'p', 'c', '_', 'l', 'b', '_', 'v', '1', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
@@ -114,7 +91,7 @@ static upb_def_init *deps[3] = {
 
 upb_def_init src_proto_grpc_lb_v1_load_balancer_proto_upbdefinit = {
   deps,
-  layouts,
+  &src_proto_grpc_lb_v1_load_balancer_proto_upb_file_layout,
   "src/proto/grpc/lb/v1/load_balancer.proto",
-  UPB_STRVIEW_INIT(descriptor, 1767)
+  UPB_STRVIEW_INIT(descriptor, 1717)
 };
