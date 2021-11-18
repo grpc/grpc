@@ -453,6 +453,7 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
     td: TrafficDirectorAppNetManager
 
     def initTrafficDirectorManager(self) -> TrafficDirectorAppNetManager:
+        config_scope = self.config_scope + framework.helpers.rand.random_resource_suffix()
         return TrafficDirectorAppNetManager(
             self.gcp_api_manager,
             project=self.project,
