@@ -405,8 +405,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 XdsServerConfigFetcher::XdsServerConfigFetcher(
     RefCountedPtr<XdsClient> xds_client,
     grpc_server_xds_status_notifier notifier)
-    : xds_client_(std::move(xds_client)),
-      serving_status_notifier_(std::move(notifier)) {
+    : xds_client_(std::move(xds_client)), serving_status_notifier_(notifier) {
   GPR_ASSERT(xds_client_ != nullptr);
 }
 
@@ -454,7 +453,7 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
     std::string listening_address)
     : xds_client_(std::move(xds_client)),
       server_config_watcher_(std::move(server_config_watcher)),
-      serving_status_notifier_(std::move(serving_status_notifier)),
+      serving_status_notifier_(serving_status_notifier),
       listening_address_(std::move(listening_address)) {}
 
 void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
@@ -622,6 +621,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     }
     if (rds_resources_yet_to_fetch_ != 0) {
       listener_watcher_ = std::move(listener_watcher);
+      listener_watcher.reset();
     }
   }
   // Promote this filter chain match manager if all referenced resources are
