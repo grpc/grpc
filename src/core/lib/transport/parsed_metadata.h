@@ -169,6 +169,11 @@ class ParsedMetadata {
   template <bool kIsBinaryHeader>
   static const VTable* MdelemVtable();
 
+  template <Slice (*ParseMemento)(Slice)>
+  GPR_ATTRIBUTE_NOINLINE void WithNewValueSetSlice(Slice* slice) {
+    value_.slice = ParseMemento(std::move(*slice)).TakeCSlice();
+  }
+
   const VTable* vtable_;
   Buffer value_;
   uint32_t transport_size_;
@@ -273,7 +278,7 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       },
       // with_new_value
       [](Slice* value, ParsedMetadata* result) {
-        result->value_.slice = Which::ParseMemento(std::move(*value)).TakeCSlice();
+        result->WithNewValueSetSlice<Which::ParseMemento>(value);
       },
       // debug_string
       [](const Buffer& value) {
