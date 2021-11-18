@@ -174,6 +174,15 @@ class ParsedMetadata {
     value_.slice = ParseMemento(std::move(*slice)).TakeCSlice();
   }
 
+  static void DestroySliceValue(const Buffer& value) {
+    grpc_slice_unref_internal(value.slice);
+  }
+
+  template <size_t N>
+  static size_t ConstantKeyLength(const Buffer&) {
+    return N;
+  }
+
   const VTable* vtable_;
   Buffer value_;
   uint32_t transport_size_;
@@ -227,7 +236,7 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
                 static_cast<typename Which::MementoType>(value.trivial)));
       },
       // key_length
-      [](const Buffer& value) { return Which::key().length(); }
+      ConstantKeyLength<Which::key().length()>
   };
   return &vtable;
 }
@@ -258,7 +267,7 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
         return parse_metadata_detail::MakeDebugString(Which::key(), Which::DisplayValue(*p));
       },
       // key_length
-      [](const Buffer& value) { return Which::key().length(); }
+      ConstantKeyLength<Which::key().length()>
       };
   return &vtable;
 }
@@ -270,7 +279,7 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
   static const VTable vtable = {
       absl::EndsWith(Which::key(), "-bin"),
       // destroy
-      [](const Buffer& value) { grpc_slice_unref_internal(value.slice); },
+      DestroySliceValue,
       // set
       [](const Buffer& value, MetadataContainer* map) {
         map->Set(Which(), Slice(grpc_slice_ref_internal(value.slice)));
@@ -286,7 +295,7 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
             Which::DisplayValue(Slice(grpc_slice_ref_internal(value.slice))));
       },
       // key_length
-      [](const Buffer& value) { return Which::key().length(); }
+      ConstantKeyLength<Which::key().length()>
   };
   return &vtable;
 }

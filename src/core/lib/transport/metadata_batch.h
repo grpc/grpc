@@ -83,7 +83,7 @@ namespace grpc_core {
 struct GrpcTimeoutMetadata {
   using ValueType = grpc_millis;
   using MementoType = grpc_millis;
-  static absl::string_view key() { return "grpc-timeout"; }
+  static constexpr absl::string_view key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value) {
     grpc_millis timeout;
     if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value.c_slice(), &timeout))) {
@@ -115,7 +115,7 @@ struct TeMetadata {
     kInvalid,
   };
   using MementoType = ValueType;
-  static absl::string_view key() { return "te"; }
+  static constexpr absl::string_view key() { return "te"; }
   static MementoType ParseMemento(Slice value) {
     auto out = kInvalid;
     if (value == "trailers") {
@@ -151,37 +151,37 @@ struct SimpleSliceBasedMetadata {
 
 // user-agent metadata trait.
 struct UserAgentMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "user-agent"; }
+  static constexpr absl::string_view key() { return "user-agent"; }
 };
 
 // grpc-message metadata trait.
 struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-message"; }
+  static constexpr absl::string_view key() { return "grpc-message"; }
 };
 
 // host metadata trait.
 struct HostMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "host"; }
+  static constexpr absl::string_view key() { return "host"; }
 };
 
 // x-endpoint-load-metrics-bin metadata trait.
 struct XEndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
+  static constexpr absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
 };
 
 // grpc-server-stats-bin metadata trait.
 struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-server-stats-bin"; }
+  static constexpr absl::string_view key() { return "grpc-server-stats-bin"; }
 };
 
 // grpc-trace-bin metadata trait.
 struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-trace-bin"; }
+  static constexpr absl::string_view key() { return "grpc-trace-bin"; }
 };
 
 // grpc-tags-bin metadata trait.
 struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-tags-bin"; }
+  static constexpr absl::string_view key() { return "grpc-tags-bin"; }
 };
 
 namespace metadata_detail {
