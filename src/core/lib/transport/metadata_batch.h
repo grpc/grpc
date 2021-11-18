@@ -194,20 +194,30 @@ struct NameLookup;
 template <typename Trait, typename... Traits>
 struct NameLookup<Trait, Traits...> {
   template <typename Op>
-  static void Lookup(absl::string_view key, Op* op) {
+  static auto Lookup(absl::string_view key, Op* op)
+      -> decltype(op->Found(Trait())) {
     if (key == Trait::key()) {
-      op->Found(Trait());
-      return;
+      return op->Found(Trait());
     }
-    NameLookup<Traits...>::Lookup(key, op);
+    return NameLookup<Traits...>::Lookup(key, op);
   }
 };
 
 template <>
 struct NameLookup<> {
   template <typename Op>
-  static void Lookup(absl::string_view, Op*) {}
+  static auto Lookup(absl::string_view key, Op* op)
+      -> decltype(op->NotFound(key)) {
+    return op->NotFound(key);
+  }
 };
+
+template <typename ParseMementoFn, ParseMementoFn parse_memento,
+          typename MementoToValueFn, MementoToValueFn memento_to_value>
+GPR_ATTRIBUTE_NOINLINE auto ParseValue(Slice value)
+    -> decltype(memento_to_value(parse_memento(std::move(value)))) {
+  return memento_to_value(parse_memento(std::move(value)));
+}
 
 template <typename Container>
 class ParseHelper {
@@ -216,16 +226,17 @@ class ParseHelper {
       : value_(std::move(value)), transport_size_(transport_size) {}
 
   template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
-    result_ = ParsedMetadata<Container>(
-        trait, Trait::MementoToValue(Trait::ParseMemento(std::move(value_))),
+  ParsedMetadata<Container> Found(Trait trait) {
+    return ParsedMetadata<Container>(
+        trait,
+        ParseValue<decltype(Trait::ParseMemento), Trait::ParseMemento,
+                   decltype(Trait::MementoToValue), Trait::MementoToValue>(
+            std::move(value_)),
         transport_size_);
   }
 
-  ParsedMetadata<Container> Finish(absl::string_view key) {
-    if (result_.has_value()) {
-      return std::move(*result_);
-    }
+  GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
+      absl::string_view key) {
     return ParsedMetadata<Container>(
         grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
                                     key.data(), key.size())),
@@ -235,7 +246,6 @@ class ParseHelper {
  private:
   Slice value_;
   const size_t transport_size_;
-  absl::optional<ParsedMetadata<Container>> result_;
 };
 
 template <typename Container>
@@ -246,14 +256,11 @@ class AppendHelper {
 
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
-    GPR_DEBUG_ASSERT(!found_);
-    found_ = true;
     container_->Set(
         trait, Trait::MementoToValue(Trait::ParseMemento(std::move(value_))));
   }
 
-  void Finish(absl::string_view key) {
-    if (found_) return;
+  void NotFound(absl::string_view key) {
     GPR_ASSERT(GRPC_ERROR_NONE ==
                container_->Append(grpc_mdelem_from_slices(
                    grpc_slice_intern(
@@ -262,7 +269,6 @@ class AppendHelper {
   }
 
  private:
-  bool found_ = false;
   Container* const container_;
   Slice value_;
 };
@@ -420,8 +426,7 @@ class MetadataMap {
                                            uint32_t transport_size) {
     metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(),
                                                      transport_size);
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
-    return helper.Finish(key);
+    return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
   // Set a value from a parsed metadata object.
@@ -434,7 +439,6 @@ class MetadataMap {
   void Append(absl::string_view key, Slice value) {
     metadata_detail::AppendHelper<MetadataMap> helper(this, value.TakeOwned());
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
-    helper.Finish(key);
   }
 
   //
