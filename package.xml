@@ -837,12 +837,10 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/match.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
@@ -1176,6 +1174,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.cc" role="src" />

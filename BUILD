@@ -1541,7 +1541,6 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-        "ref_counted",
     ],
 )
 
@@ -1552,6 +1551,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_string_helpers.cc",
     ],
     hdrs = [
+        "src/core/lib/slice/slice.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
     ],
@@ -3597,7 +3597,6 @@ grpc_cc_library(
         "hpack_constants",
         "hpack_encoder_index",
         "hpack_encoder_table",
-        "match",
         "memory_quota",
         "popularity_count",
         "resource_quota_trace",
