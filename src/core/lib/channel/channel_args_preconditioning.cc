@@ -33,15 +33,11 @@ ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
 
 const grpc_channel_args* ChannelArgsPreconditioning::PreconditionChannelArgs(
     const grpc_channel_args* args) const {
-  bool first = true;
+  const grpc_channel_args* owned_args = nullptr;
   for (auto& stage : stages_) {
-    const auto* new_args = stage(args);
-    if (first) {
-      first = false;
-    } else {
-      grpc_channel_args_destroy(args);
-    }
-    args = new_args;
+    args = stage(args);
+    grpc_channel_args_destroy(owned_args);
+    owned_args = args;
   }
   return args;
 }
