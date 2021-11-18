@@ -87,7 +87,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value
-        cls.config_scope: str = xds_flags.ROUTER_SCOPE.value
+        cls.config_scope: str = xds_flags.ROUTER_SCOPE.value + framework.helpers.rand.random_resource_suffix()
         cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
@@ -453,7 +453,6 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
     td: TrafficDirectorAppNetManager
 
     def initTrafficDirectorManager(self) -> TrafficDirectorAppNetManager:
-        config_scope = self.config_scope + framework.helpers.rand.random_resource_suffix()
         return TrafficDirectorAppNetManager(
             self.gcp_api_manager,
             project=self.project,
