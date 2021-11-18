@@ -220,7 +220,7 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     if (filter_impl->channel_filter() == nullptr) continue;
     // Allow filter to add channel args that may affect service config
     // parsing.
-    args = filter_impl->ModifyChannelArgs(result.args);
+    result.args = filter_impl->ModifyChannelArgs(result.args);
     // Find config override, if any.
     const XdsHttpFilterImpl::FilterConfig* config_override =
         FindFilterConfigOverride(http_filter.name, vhost, route,
