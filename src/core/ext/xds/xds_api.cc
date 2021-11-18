@@ -3631,6 +3631,90 @@ class RouteConfigResourceType : public XdsResourceType {
   }
 };
 
+class ClusterResourceType : public XdsResourceType {
+ public:
+  struct ClusterData : public ResourceData {
+    XdsApi::CdsUpdate resource;
+  };
+
+  absl::string_view type_url() const override { return XdsApi::kCdsTypeUrl; }
+  absl::string_view v2_type_url() const override { return kCdsV2TypeUrl; }
+
+  absl::StatusOr<DecodeResult> Decode(
+      const EncodingContext& context, absl::string_view serialized_resource,
+      bool is_v2) const override {
+    // Parse serialized proto.
+    auto* resource = envoy_config_cluster_v3_Cluster_parse(
+        serialized_resource.data(), serialized_resource.size(), context.arena);
+    if (resource == nullptr) {
+      return absl::InvalidArgumentError("Can't parse Listener resource.");
+    }
+    MaybeLogCluster(context, resource);
+    // Validate resource.
+    DecodeResult result;
+    result.name =
+        UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
+    auto cluster_data = absl::make_unique<ClusterData>();
+    grpc_error_handle error =
+        CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
+    if (error != GRPC_ERROR_NONE) {
+      result.resource =
+          absl::InvalidArgumentError(grpc_error_std_string(error));
+      GRPC_ERROR_UNREF(error);
+    } else {
+      result.resource = std::move(cluster_data);
+    }
+    return result;
+  }
+
+  std::string Encode(const ResourceData* resource) const override {
+// FIXME: implement
+    return "";
+  }
+};
+
+class EndpointResourceType : public XdsResourceType {
+ public:
+  struct EndpointData : public ResourceData {
+    XdsApi::EdsUpdate resource;
+  };
+
+  absl::string_view type_url() const override { return XdsApi::kEdsTypeUrl; }
+  absl::string_view v2_type_url() const override { return kEdsV2TypeUrl; }
+
+  absl::StatusOr<DecodeResult> Decode(
+      const EncodingContext& context, absl::string_view serialized_resource,
+      bool is_v2) const override {
+    // Parse serialized proto.
+    auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
+        serialized_resource.data(), serialized_resource.size(), context.arena);
+    if (resource == nullptr) {
+      return absl::InvalidArgumentError("Can't parse Listener resource.");
+    }
+    MaybeLogClusterLoadAssignment(context, resource);
+    // Validate resource.
+    DecodeResult result;
+    result.name = UpbStringToStdString(
+        envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
+    auto endpoint_data = absl::make_unique<EndpointData>();
+    grpc_error_handle error =
+        EdsResourceParse(context, resource, is_v2, &endpoint_data->resource);
+    if (error != GRPC_ERROR_NONE) {
+      result.resource =
+          absl::InvalidArgumentError(grpc_error_std_string(error));
+      GRPC_ERROR_UNREF(error);
+    } else {
+      result.resource = std::move(endpoint_data);
+    }
+    return result;
+  }
+
+  std::string Encode(const ResourceData* resource) const override {
+// FIXME: implement
+    return "";
+  }
+};
+
 grpc_error_handle AdsResourceParse(
     const EncodingContext& context, XdsResourceType* type,
     size_t idx, const google_protobuf_Any* resource_any,
@@ -3717,94 +3801,6 @@ grpc_error_handle AddResult(
   return GRPC_ERROR_NONE;
 }
 
-template <typename ProtoParseFunction, typename ProtoResourceNameFunction,
-          typename ResourceTypeSelectorFunction, typename ProtoLogFunction,
-          typename ResourceParseFunction, typename UpdateMap>
-grpc_error_handle AdsResourceParse(
-    const EncodingContext& context, ProtoParseFunction proto_parse_function,
-    ProtoResourceNameFunction proto_resource_name_function,
-    ResourceTypeSelectorFunction resource_type_selector_function,
-    ProtoLogFunction proto_log_function,
-    ResourceParseFunction resource_parse_function,
-    const char* resource_type_string,
-    size_t idx,
-    const google_protobuf_Any* resource_any,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_resource_names,
-    UpdateMap* update_map,
-    std::set<XdsApi::ResourceName>* resource_names_failed) {
-  // Check the type_url of the resource.
-  absl::string_view type_url = absl::StripPrefix(
-      UpbStringToAbsl(google_protobuf_Any_type_url(resource_any)),
-      "type.googleapis.com/");
-  bool is_v2 = false;
-  if (!resource_type_selector_function(type_url, &is_v2)) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("resource index ", idx, ": Resource is not ",
-                     resource_type_string, "."));
-  }
-  // Parse the resource.
-  upb_strview serialized_resource = google_protobuf_Any_value(resource_any);
-  auto* resource = proto_parse_function(
-      serialized_resource.data, serialized_resource.size, context.arena);
-  if (resource == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("resource index ", idx, ": Can't parse ",
-                     resource_type_string, " resource."));
-  }
-  proto_log_function(context, resource);
-  // Check the resource name.  Ignore unexpected names.
-  std::string resource_name =
-      UpbStringToStdString(proto_resource_name_function(resource));
-  auto resource_name_status = ParseResourceNameInternal(
-      resource_name, resource_type_selector_function);
-  if (!resource_name_status.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "Cannot parse xDS resource name \"", resource_name, "\""));
-  }
-  auto iter = subscribed_resource_names.find(resource_name_status->authority);
-  if (iter == subscribed_resource_names.end() ||
-      iter->second.find(resource_name_status->id) == iter->second.end()) {
-    return GRPC_ERROR_NONE;
-  }
-  // Fail on duplicate resources.
-  if (update_map->find(*resource_name_status) != update_map->end()) {
-    resource_names_failed->insert(*resource_name_status);
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("duplicate resource name \"", resource_name, "\""));
-  }
-  // Validate resource.
-  decltype(UpdateMap::mapped_type::resource) update;
-  grpc_error_handle error =
-      resource_parse_function(context, resource, is_v2, &update);
-  if (error != GRPC_ERROR_NONE) {
-    resource_names_failed->insert(*resource_name_status);
-    return grpc_error_add_child(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat(resource_name, ": validation error")),
-        error);
-  } else {
-    // Store result in update map, in both validated and serialized form.
-    auto& resource_data = (*update_map)[*resource_name_status];
-    resource_data.resource = std::move(update);
-    resource_data.serialized_proto =
-        UpbStringToStdString(serialized_resource);
-  }
-  return GRPC_ERROR_NONE;
-}
-
-upb_strview CdsResourceName(
-    const envoy_config_cluster_v3_Cluster* cds_resource) {
-  return envoy_config_cluster_v3_Cluster_name(cds_resource);
-}
-
-upb_strview EdsResourceName(
-    const envoy_config_endpoint_v3_ClusterLoadAssignment* eds_resource) {
-  return envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(
-      eds_resource);
-}
-
 }  // namespace
 
 XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
@@ -3857,9 +3853,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
   for (size_t i = 0; i < size; ++i) {
     // Parse the response according to the resource type.
-    // TODO(roth): When we have time, consider defining an interface for the
-    // methods of each resource type, so that we don't have to pass
-    // individual functions into each call to AdsResourceParse().
+    // TODO(roth): When we have time, change the API here to avoid the need
+    // for templating and conditionals.
     grpc_error_handle parse_error = GRPC_ERROR_NONE;
     if (IsLds(result.type_url)) {
       ListenerResourceType resource_type;
@@ -3891,17 +3886,33 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
           },
           &result.resource_names_failed);
     } else if (IsCds(result.type_url)) {
+      ClusterResourceType resource_type;
+      auto& update_map = result.cds_update_map;
       parse_error = AdsResourceParse(
-          context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName,
-          IsCdsInternal, MaybeLogCluster, CdsResourceParse, "CDS", i,
-          resources[i], subscribed_cluster_names, &result.cds_update_map,
+          context, &resource_type, i, resources[i], subscribed_cluster_names,
+          [&update_map](absl::string_view resource_name_string,
+                        XdsApi::ResourceName resource_name,
+                        std::unique_ptr<XdsResourceType::ResourceData> resource,
+                        std::string serialized_resource) {
+            return AddResult<CdsUpdateMap, ClusterResourceType::ClusterData>(
+                &update_map, resource_name_string, std::move(resource_name),
+                std::move(resource), std::move(serialized_resource));
+          },
           &result.resource_names_failed);
     } else if (IsEds(result.type_url)) {
+      EndpointResourceType resource_type;
+      auto& update_map = result.eds_update_map;
       parse_error = AdsResourceParse(
-          context, envoy_config_endpoint_v3_ClusterLoadAssignment_parse,
-          EdsResourceName, IsEdsInternal, MaybeLogClusterLoadAssignment,
-          EdsResourceParse, "EDS", i, resources[i], subscribed_eds_service_names,
-          &result.eds_update_map, &result.resource_names_failed);
+          context, &resource_type, i, resources[i], subscribed_eds_service_names,
+          [&update_map](absl::string_view resource_name_string,
+                        XdsApi::ResourceName resource_name,
+                        std::unique_ptr<XdsResourceType::ResourceData> resource,
+                        std::string serialized_resource) {
+            return AddResult<EdsUpdateMap, EndpointResourceType::EndpointData>(
+                &update_map, resource_name_string, std::move(resource_name),
+                std::move(resource), std::move(serialized_resource));
+          },
+          &result.resource_names_failed);
     }
     if (parse_error != GRPC_ERROR_NONE) errors.push_back(parse_error);
   }
