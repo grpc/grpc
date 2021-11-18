@@ -189,7 +189,7 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
   }
 }
 
-static int get_socket_tcp_info(tcp_info* info, int fd) {
+int get_socket_tcp_info(tcp_info* info, int fd) {
   memset(info, 0, sizeof(*info));
   info->length = offsetof(tcp_info, length);
   return getsockopt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));

@@ -171,11 +171,12 @@ static void do_connect(void* arg, grpc_error_handle error) {
     grpc_passthru_endpoint_create(&client, &server, nullptr);
     *fc->ep = client;
 
+    grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(
-        g_server->core_server->channel_args(), server, false);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("SetupTransport",
-                                 g_server->core_server->SetupTransport(
-                                     transport, nullptr, nullptr, nullptr)));
+        core_server->channel_args(), server, false);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "SetupTransport",
+        core_server->SetupTransport(transport, nullptr, nullptr, nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);

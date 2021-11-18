@@ -50,8 +50,8 @@ using ::opencensus::stats::testing::TestUtils;
 using ::opencensus::tags::TagKey;
 using ::opencensus::tags::WithTagMap;
 
-static const auto TEST_TAG_KEY = TagKey::Register("my_key");
-static const auto TEST_TAG_VALUE = "my_value";
+const auto TEST_TAG_KEY = TagKey::Register("my_key");
+const auto TEST_TAG_VALUE = "my_value";
 const char* kExpectedTraceIdKey = "expected_trace_id";
 
 class EchoServer final : public EchoTestService::Service {

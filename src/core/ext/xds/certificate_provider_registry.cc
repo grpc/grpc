@@ -58,7 +58,7 @@ class RegistryState {
       factories_;
 };
 
-static RegistryState* g_state = nullptr;
+RegistryState* g_state = nullptr;
 
 }  // namespace
 
