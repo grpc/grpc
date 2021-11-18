@@ -169,6 +169,13 @@ class ParsedMetadata {
   uint32_t transport_size_;
 };
 
+namespace parse_metadata_detail {
+template <typename T>
+static GPR_ATTRIBUTE_NOINLINE std::string MakeDebugString(absl::string_view key, T value) {
+  return absl::StrCat(key, ": ", value);
+}
+}
+
 template <typename MetadataContainer>
 const typename ParsedMetadata<MetadataContainer>::VTable*
 ParsedMetadata<MetadataContainer>::EmptyVTable() {
@@ -208,9 +215,7 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return absl::StrCat(
-            Which::key(), ": ",
-            Which::DisplayValue(
+        return parse_metadata_detail::MakeDebugString(Which::key(), Which::DisplayValue(
                 static_cast<typename Which::MementoType>(value.trivial)));
       }};
   return &vtable;
@@ -241,7 +246,7 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       // debug_string
       [](const Buffer& value) {
         auto* p = static_cast<typename Which::MementoType*>(value.pointer);
-        return absl::StrCat(Which::key(), ": ", Which::DisplayValue(*p));
+        return parse_metadata_detail::MakeDebugString(Which::key(), Which::DisplayValue(*p));
       }};
   return &vtable;
 }
@@ -267,8 +272,7 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return absl::StrCat(
-            Which::key(), ": ",
+        return parse_metadata_detail::MakeDebugString(Which::key(),
             Which::DisplayValue(Slice(grpc_slice_ref_internal(value.slice))));
       }};
   return &vtable;
@@ -302,7 +306,7 @@ ParsedMetadata<MetadataContainer>::MdelemVtable() {
       },
       // debug_string
       [](const Buffer& value) {
-        return absl::StrCat(StringViewFromSlice(GRPC_MDKEY(value.mdelem)), ": ",
+        return parse_metadata_detail::MakeDebugString(StringViewFromSlice(GRPC_MDKEY(value.mdelem)),
                             StringViewFromSlice(GRPC_MDVALUE(value.mdelem)));
       }};
   return &vtable;
