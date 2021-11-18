@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_EXT_XDS_XDS_API_H
 #define GRPC_CORE_EXT_XDS_XDS_API_H
@@ -645,6 +643,26 @@ class XdsApi {
                     ResourceMetadata::ClientResourceStatus::NACKED,
                 "");
 
+  struct AdsResponseFields {
+    std::string type_url;
+    std::string version;
+    std::string nonce;
+  };
+
+  class AdsResponseParserInterface {
+   public:
+    virtual ~AdsResponseParserInterface() = default;
+
+    // Called when the top-level ADS fields are parsed.
+    // If this returns false, parsing will stop.
+    virtual bool ProcessAdsResponseFields(AdsResponseFields fields) = 0;
+
+    // Called to parse each individual resource in the ADS response.
+    // If this returns false, parsing will stop.
+    virtual bool ParseResource(size_t idx, absl::string_view type_url,
+                               absl::string_view serialized_resource) = 0;
+  };
+
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
   // If there is any other type of validation error, the parse_error
@@ -709,6 +727,12 @@ class XdsApi {
                      std::set<absl::string_view /*name*/>>&
           subscribed_eds_service_names);
 
+  // Returns non-OK when failing to deserialize response message.
+  // Otherwise, all events are reported to the parser.
+  absl::Status ParseAdsResponse(const XdsBootstrap::XdsServer& server,
+                                const grpc_slice& encoded_response,
+                                AdsResponseParserInterface* parser);
+
   // Creates an initial LRS request.
   grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
 
@@ -741,4 +765,4 @@ class XdsApi {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_API_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_API_H

@@ -183,6 +183,37 @@ class XdsClient::ChannelState::AdsCallState
   bool HasSubscribedResources() const;
 
  private:
+  class AdsResponseParser : public XdsApi::AdsResponseParserInterface {
+   public:
+    struct Result {
+      std::string type_url;
+      std::string version;
+      std::string nonce;
+      XdsApi::LdsUpdateMap lds_update_map;
+      XdsApi::RdsUpdateMap rds_update_map;
+      XdsApi::CdsUpdateMap cds_update_map;
+      XdsApi::EdsUpdateMap eds_update_map;
+      std::set<XdsApi::ResourceName> resource_names_failed;
+      std::vector<std::string> errors;
+      bool fatal_error = false;
+    };
+
+    explicit AdsResponseParser(AdsCallState* ads_call_state)
+        : ads_call_state_(ads_call_state) {}
+
+    bool ProcessAdsResponseFields(AdsResponseFields fields) override;
+
+    bool ParseResource(size_t idx, absl::string_view type_url,
+                       absl::string_view serialized_resource) override;
+
+    Result TakeResult() { return std::move(result); }
+
+   private:
+    AdsCallState* ads_call_state_;
+    const XdsResourceTypeInterface* type_ = nullptr;
+    Result result_;
+  };
+
   class ResourceState : public InternallyRefCounted<ResourceState> {
    public:
     ResourceState(const std::string& type_url, const XdsApi::ResourceName& name)
@@ -323,13 +354,13 @@ class XdsClient::ChannelState::AdsCallState
   template <typename StateMap>
   void RejectAdsUpdateHelperLocked(const std::string& resource_name,
                                    grpc_millis update_time,
-                                   const XdsApi::AdsParseResult& result,
+                                   const AdsResponseParser::Result& result,
                                    const std::string& error_details,
                                    StateMap* state_map)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   void RejectAdsUpdateLocked(grpc_millis update_time,
-                             const XdsApi::AdsParseResult& result)
+                             const AdsResponseParser::Result& result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   static void OnRequestSent(void* arg, grpc_error_handle error);
@@ -745,6 +776,37 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
     StartNewCallLocked();
   }
   GRPC_ERROR_UNREF(error);
+}
+
+//
+// XdsClient::ChannelState::AdsCallState::AdsResponseParser
+//
+
+bool XdsClient::ChannelState::AdsCallState::AdsResponseParser::
+    ProcessAdsResponseFields(AdsResponseFields fields) override {
+  type_ = XdsResourceTypeRegistry::GetOrCreate()->GetType(fields.type_url);
+  if (type_ == nullptr) {
+    result_.errors.push_back(
+        absl::StrCat("unknown resource type ", fields.type_url));
+    return false;
+  }
+  result.type_url = std::move(fields.type_url);
+  result.version = std::move(fields.version);
+  result.nonce = std::move(fields.nonce);
+  return true;
+}
+
+bool XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
+    size_t idx, absl::string_view type_url,
+    absl::string_view serialized_resource) override {
+  bool is_v2 = false;
+  if (!type_->IsType(type_url, &is_v2)) {
+    result_.errors.push_back(
+        absl::StrCat("resource index ", idx, ": incorrect resource type ",
+                     type_url, " (should be ", result.type_url, ")"));
+    return true;
+  }
+  return true;
 }
 
 //
@@ -1372,7 +1434,7 @@ void UpdateResourceMetadataNacked(const std::string& version,
 template <typename StateMap>
 void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateHelperLocked(
     const std::string& resource_name, grpc_millis update_time,
-    const XdsApi::AdsParseResult& result, const std::string& error_details,
+    const AdsResponseParser::Result& result, const std::string& error_details,
     StateMap* state_map) {
   auto it = state_map->find(resource_name);
   if (it == state_map->end()) return;
@@ -1385,7 +1447,8 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateHelperLocked(
 }
 
 void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
-    grpc_millis update_time, const XdsApi::AdsParseResult& result) {
+    grpc_millis update_time, const AdsResponseParser::Result& result,
+    std::string details) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] %s update NACKed containing %" PRIuPTR
@@ -1393,7 +1456,6 @@ void XdsClient::ChannelState::AdsCallState::RejectAdsUpdateLocked(
             xds_client(), result.type_url.c_str(),
             result.resource_names_failed.size());
   }
-  std::string details = grpc_error_std_string(result.parse_error);
   for (auto& resource : result.resource_names_failed) {
     auto authority_it =
         xds_client()->authority_state_map_.find(resource.authority);
@@ -1476,38 +1538,35 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
   grpc_byte_buffer_destroy(recv_message_payload_);
   recv_message_payload_ = nullptr;
   // Parse and validate the response.
-  XdsApi::AdsParseResult result = xds_client()->api_.ParseAdsResponse(
-      chand()->server_, response_slice,
-      ResourceNamesForRequest(XdsApi::kLdsTypeUrl),
-      ResourceNamesForRequest(XdsApi::kRdsTypeUrl),
-      ResourceNamesForRequest(XdsApi::kCdsTypeUrl),
-      ResourceNamesForRequest(XdsApi::kEdsTypeUrl));
+  AdsResponseParser parser(this);
+  absl::Status status = xds_client()->api_.ParseAdsResponse(
+      chand()->server_, response_slice, &parser);
   grpc_slice_unref_internal(response_slice);
-  if (result.type_url.empty()) {
+  if (!status.ok()) {
     // Ignore unparsable response.
     gpr_log(GPR_ERROR,
             "[xds_client %p] Error parsing ADS response (%s) -- ignoring",
-            xds_client(), grpc_error_std_string(result.parse_error).c_str());
-    GRPC_ERROR_UNREF(result.parse_error);
+            xds_client(), status.ToString().c_str());
   } else {
     grpc_millis update_time = ExecCtx::Get()->Now();
+    AdsResponseParser::Result result = parser.TakeResult();
     // Update nonce.
     auto& state = state_map_[result.type_url];
-    state.nonce = std::move(result.nonce);
+    state.nonce = result.nonce;
     // If we got an error, we'll NACK the update.
-    if (result.parse_error != GRPC_ERROR_NONE) {
+    std::string error = parser.GetError();
+    if (!error.empty()) {
       gpr_log(GPR_ERROR,
               "[xds_client %p] ADS response invalid for resource type %s "
               "version %s, will NACK: nonce=%s error=%s",
               xds_client(), result.type_url.c_str(), result.version.c_str(),
-              state.nonce.c_str(),
-              grpc_error_std_string(result.parse_error).c_str());
-      result.parse_error =
-          grpc_error_set_int(result.parse_error, GRPC_ERROR_INT_GRPC_STATUS,
-                             GRPC_STATUS_UNAVAILABLE);
+              state.nonce.c_str(), error.c_str());
       GRPC_ERROR_UNREF(state.error);
-      state.error = result.parse_error;
-      RejectAdsUpdateLocked(update_time, result);
+      state.error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error)),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      RejectAdsUpdateLocked(update_time, result,
+                            grpc_error_std_string(state.error));
     }
     // Process any valid resources.
     bool have_valid_resources = false;
