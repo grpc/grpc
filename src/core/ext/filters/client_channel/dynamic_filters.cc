@@ -79,7 +79,7 @@ RefCountedPtr<DynamicFilters::Call> DynamicFilters::Call::Ref() {
 }
 
 RefCountedPtr<DynamicFilters::Call> DynamicFilters::Call::Ref(
-    const grpc_core::DebugLocation& location, const char* reason) {
+    const DebugLocation& location, const char* reason) {
   IncrementRefCount(location, reason);
   return RefCountedPtr<DynamicFilters::Call>(this);
 }
@@ -112,8 +112,8 @@ void DynamicFilters::Call::IncrementRefCount() {
   GRPC_CALL_STACK_REF(CALL_TO_CALL_STACK(this), "");
 }
 
-void DynamicFilters::Call::IncrementRefCount(
-    const grpc_core::DebugLocation& /*location*/, const char* reason) {
+void DynamicFilters::Call::IncrementRefCount(const DebugLocation& /*location*/,
+                                             const char* reason) {
   GRPC_CALL_STACK_REF(CALL_TO_CALL_STACK(this), reason);
 }
 

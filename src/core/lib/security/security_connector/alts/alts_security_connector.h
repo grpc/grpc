@@ -66,8 +66,8 @@ namespace grpc_core {
 namespace internal {
 
 /* Exposed only for testing. */
-grpc_core::RefCountedPtr<grpc_auth_context>
-grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer);
+RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
+    const tsi_peer* peer);
 
 }  // namespace internal
 }  // namespace grpc_core

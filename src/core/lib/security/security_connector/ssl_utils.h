@@ -181,7 +181,7 @@ class PemKeyCertPair {
   std::string cert_chain_;
 };
 
-typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
+typedef absl::InlinedVector<PemKeyCertPair, 1> PemKeyCertPairList;
 
 }  // namespace grpc_core
 

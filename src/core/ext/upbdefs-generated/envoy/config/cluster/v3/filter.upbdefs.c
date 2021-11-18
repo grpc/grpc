@@ -8,17 +8,12 @@
 
 #include "upb/def.h"
 #include "envoy/config/cluster/v3/filter.upbdefs.h"
+#include "envoy/config/cluster/v3/filter.upb.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_cluster_v3_Filter_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_cluster_v3_Filter_msginit,
-};
-
 static const char descriptor[386] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', 
 '/', 'f', 'i', 'l', 't', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 
 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 
@@ -47,7 +42,7 @@ static upb_def_init *deps[5] = {
 
 upb_def_init envoy_config_cluster_v3_filter_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_cluster_v3_filter_proto_upb_file_layout,
   "envoy/config/cluster/v3/filter.proto",
   UPB_STRVIEW_INIT(descriptor, 386)
 };

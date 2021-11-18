@@ -4204,6 +4204,8 @@ UPB_INLINE void envoy_config_route_v3_FilterConfig_set_is_optional(envoy_config_
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
+extern const upb_msglayout_file envoy_config_route_v3_route_components_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

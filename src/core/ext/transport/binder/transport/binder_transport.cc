@@ -124,7 +124,7 @@ static void AssignMetadata(grpc_metadata_batch* mb,
                            const grpc_binder::Metadata& md) {
   mb->Clear();
   for (auto& p : md) {
-    mb->Append(p.first, grpc_slice_from_cpp_string(p.second));
+    mb->Append(p.first, grpc_core::Slice::FromCopiedString(p.second));
   }
 }
 

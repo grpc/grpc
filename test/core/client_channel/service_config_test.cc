@@ -491,7 +491,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
+      static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_STREQ(lb_config->name(), "pick_first");
@@ -503,9 +503,8 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
-  auto parsed_config =
-      static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
-          svc_cfg->GetGlobalParsedConfig(0));
+  auto parsed_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
+      svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_STREQ(lb_config->name(), "round_robin");
 }
@@ -518,7 +517,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
+      static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_STREQ(lb_config->name(), "grpclb");
@@ -541,7 +540,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
+      static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_STREQ(lb_config->name(), "xds_cluster_resolver_experimental");
@@ -586,7 +585,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
+      static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   EXPECT_EQ(parsed_config->parsed_deprecated_lb_policy(), "pick_first");
 }
@@ -597,7 +596,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicyAllCaps) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
+      static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   EXPECT_EQ(parsed_config->parsed_deprecated_lb_policy(), "pick_first");
 }
@@ -648,10 +647,10 @@ TEST_F(ClientChannelParserTest, ValidTimeout) {
       grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
   auto parsed_config = ((*vector_ptr)[0]).get();
-  EXPECT_EQ((static_cast<grpc_core::internal::ClientChannelMethodParsedConfig*>(
-                 parsed_config))
-                ->timeout(),
-            5000);
+  EXPECT_EQ(
+      (static_cast<internal::ClientChannelMethodParsedConfig*>(parsed_config))
+          ->timeout(),
+      5000);
 }
 
 TEST_F(ClientChannelParserTest, InvalidTimeout) {
@@ -694,13 +693,11 @@ TEST_F(ClientChannelParserTest, ValidWaitForReady) {
   ASSERT_NE(vector_ptr, nullptr);
   auto parsed_config = ((*vector_ptr)[0]).get();
   ASSERT_TRUE(
-      (static_cast<grpc_core::internal::ClientChannelMethodParsedConfig*>(
-           parsed_config))
+      (static_cast<internal::ClientChannelMethodParsedConfig*>(parsed_config))
           ->wait_for_ready()
           .has_value());
   EXPECT_TRUE(
-      (static_cast<grpc_core::internal::ClientChannelMethodParsedConfig*>(
-           parsed_config))
+      (static_cast<internal::ClientChannelMethodParsedConfig*>(parsed_config))
           ->wait_for_ready()
           .value());
 }
@@ -737,7 +734,7 @@ TEST_F(ClientChannelParserTest, ValidHealthCheck) {
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::ClientChannelGlobalParsedConfig*>(
+      static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->health_check_service_name(),
@@ -789,9 +786,8 @@ TEST_F(RetryParserTest, ValidRetryThrottling) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto svc_cfg = ServiceConfig::Create(nullptr, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
-  const auto* parsed_config =
-      static_cast<grpc_core::internal::RetryGlobalConfig*>(
-          svc_cfg->GetGlobalParsedConfig(0));
+  const auto* parsed_config = static_cast<internal::RetryGlobalConfig*>(
+      svc_cfg->GetGlobalParsedConfig(0));
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_milli_tokens(), 2000);
   EXPECT_EQ(parsed_config->milli_token_ratio(), 1000);
@@ -878,8 +874,7 @@ TEST_F(RetryParserTest, ValidRetryPolicy) {
       grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::RetryMethodConfig*>(
-          ((*vector_ptr)[0]).get());
+      static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 3);
   EXPECT_EQ(parsed_config->initial_backoff(), 1000);
@@ -1264,8 +1259,7 @@ TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
       grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::RetryMethodConfig*>(
-          ((*vector_ptr)[0]).get());
+      static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
   EXPECT_EQ(parsed_config->initial_backoff(), 1000);
@@ -1301,8 +1295,7 @@ TEST_F(RetryParserTest,
       grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::RetryMethodConfig*>(
-          ((*vector_ptr)[0]).get());
+      static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
   EXPECT_EQ(parsed_config->initial_backoff(), 1000);
@@ -1340,8 +1333,7 @@ TEST_F(RetryParserTest,
       grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
   const auto* parsed_config =
-      static_cast<grpc_core::internal::RetryMethodConfig*>(
-          ((*vector_ptr)[0]).get());
+      static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
   EXPECT_EQ(parsed_config->initial_backoff(), 1000);

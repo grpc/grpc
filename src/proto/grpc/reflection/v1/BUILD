@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
 licenses(["notice"])
 
 grpc_package(
-    name = "http_over_grpc",
+    name = "reflection_v1",
     visibility = "public",
 )
 
 grpc_proto_library(
-    name = "http_over_grpc_proto",
+    name = "reflection_proto",
+    srcs = ["reflection.proto"],
+)
+
+proto_library(
+    name = "reflection_proto_descriptor",
+    srcs = ["reflection.proto"],
+)
+
+filegroup(
+    name = "reflection_proto_file",
     srcs = [
-        "http_over_grpc.proto",
+        "reflection.proto",
     ],
-    has_services = True,
-    well_known_protos = True,
 )

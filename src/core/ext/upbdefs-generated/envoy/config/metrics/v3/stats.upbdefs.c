@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/metrics/v3/stats.upbdefs.h"
+#include "envoy/config/metrics/v3/stats.upb.h"
 
 extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
 extern upb_def_init envoy_type_matcher_v3_string_proto_upbdefinit;
@@ -16,26 +17,6 @@ extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_metrics_v3_StatsSink_msginit;
-extern const upb_msglayout envoy_config_metrics_v3_StatsConfig_msginit;
-extern const upb_msglayout envoy_config_metrics_v3_StatsMatcher_msginit;
-extern const upb_msglayout envoy_config_metrics_v3_TagSpecifier_msginit;
-extern const upb_msglayout envoy_config_metrics_v3_HistogramBucketSettings_msginit;
-extern const upb_msglayout envoy_config_metrics_v3_StatsdSink_msginit;
-extern const upb_msglayout envoy_config_metrics_v3_DogStatsdSink_msginit;
-extern const upb_msglayout envoy_config_metrics_v3_HystrixSink_msginit;
-
-static const upb_msglayout *layouts[8] = {
-  &envoy_config_metrics_v3_StatsSink_msginit,
-  &envoy_config_metrics_v3_StatsConfig_msginit,
-  &envoy_config_metrics_v3_StatsMatcher_msginit,
-  &envoy_config_metrics_v3_TagSpecifier_msginit,
-  &envoy_config_metrics_v3_HistogramBucketSettings_msginit,
-  &envoy_config_metrics_v3_StatsdSink_msginit,
-  &envoy_config_metrics_v3_DogStatsdSink_msginit,
-  &envoy_config_metrics_v3_HystrixSink_msginit,
-};
-
 static const char descriptor[2091] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'm', 'e', 't', 'r', 'i', 'c', 's', '/', 'v', '3', 
 '/', 's', 't', 'a', 't', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 
 'g', '.', 'm', 'e', 't', 'r', 'i', 'c', 's', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 
@@ -135,7 +116,7 @@ static upb_def_init *deps[8] = {
 
 upb_def_init envoy_config_metrics_v3_stats_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_metrics_v3_stats_proto_upb_file_layout,
   "envoy/config/metrics/v3/stats.proto",
   UPB_STRVIEW_INIT(descriptor, 2091)
 };

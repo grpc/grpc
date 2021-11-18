@@ -527,6 +527,8 @@ UPB_INLINE void envoy_config_metrics_v3_HystrixSink_set_num_buckets(envoy_config
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = value;
 }
 
+extern const upb_msglayout_file envoy_config_metrics_v3_stats_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
