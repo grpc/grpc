@@ -31,7 +31,78 @@ static constexpr bool AllowSharedAllocation() {
   return std::is_empty<Callable>::value;
 }
 
-struct UsersShouldNotTypeThis {};
+template <typename T>
+class ImplInterface {
+  public:
+  virtual Poll<T> PollOnce() = 0;
+  virtual void Destroy() = 0;
+
+  protected:
+  ~ImplInterface() = default;
+};
+
+template <typename T>
+class NullImpl final : public ImplInterface<T> {
+  public:
+  Poll<T> PollOnce() override {
+    abort();
+    GPR_UNREACHABLE_CODE(return Pending{});
+  }
+  void Destroy() override {}
+
+  static ImplInterface<T>* Get() {
+    static NullImpl<T> instance;
+    return &instance;
+  }
+};
+
+template <typename T, typename Callable>
+class CallableImpl final : public ImplInterface<T> {
+  public:
+  explicit CallableImpl(Callable&& callable)
+      : callable_(std::move(callable)) {}
+  Poll<T> PollOnce() override { return callable_(); }
+  void Destroy() override { this->~CallableImpl(); }
+
+  private:
+  Callable callable_;
+};
+
+template <typename T, typename Callable>
+class SharedImpl final : public ImplInterface<T> {
+  public:
+  Poll<T> PollOnce() override { return (*static_cast<Callable*>(nullptr))(); }
+  void Destroy() override {}
+  static SharedImpl* Get() { static SharedImpl impl;return &impl; }
+
+  private:
+  SharedImpl() = default;
+  ~SharedImpl() = default;
+};
+
+template <typename T, typename Callable, typename Ignored = void>
+struct ChooseImplForCallable;
+
+template <typename T, typename Callable>
+struct ChooseImplForCallable<T, Callable, absl::enable_if_t<!AllowSharedAllocation<Callable>(),
+                                                          void>> {
+  static ImplInterface<T>* Make(Arena* arena, Callable&& callable) {
+    return arena->template New<CallableImpl<T, Callable>>(std::forward<Callable>(callable));
+  }
+};
+
+template <typename T, typename Callable>
+struct ChooseImplForCallable<T, Callable, absl::enable_if_t<AllowSharedAllocation<Callable>(),
+                                                          void>> {
+  static ImplInterface<T>* Make(Arena*, Callable&&) {
+    return SharedImpl<T, Callable>::Get();
+  }
+};
+
+template <typename T, typename Callable>
+ImplInterface<T>* MakeImplForCallable(Arena* arena, Callable&& callable) {
+ return ChooseImplForCallable<T, Callable>::Make(arena, std::forward<Callable>(callable));
+}
 
 }  // namespace arena_promise_detail
 
@@ -44,43 +115,17 @@ class ArenaPromise {
 
   // Construct an ArenaPromise that will call the given callable when polled.
   template <typename Callable>
-  ArenaPromise(
-      absl::enable_if_t<
-          !arena_promise_detail::AllowSharedAllocation<Callable>(), Arena*>
-          arena,
-      Callable&& callable)
-      : impl_(arena->template New<CallableImpl<Callable>>(
-            std::forward<Callable>(callable))) {}
-
-  // Construct an ArenaPromise that will call the given callable when polled.
-  // This variant exploits the emptiness of many callables to avoid actually
-  // allocating memory for the promise.
-  template <typename Callable>
-  explicit ArenaPromise(
-      Callable&&,
-      absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
-                        arena_promise_detail::UsersShouldNotTypeThis> =
-          arena_promise_detail::UsersShouldNotTypeThis())
-      : impl_(SharedImpl<Callable>::Get()) {}
-
-  // Construct an ArenaPromise that will call the given callable when polled.
-  // This variant exploits the emptiness of many callables to avoid actually
-  // allocating memory for the promise.
-  template <typename Callable>
-  explicit ArenaPromise(
-      absl::enable_if_t<arena_promise_detail::AllowSharedAllocation<Callable>(),
-                        Arena*>,
-      Callable&&)
-      : impl_(SharedImpl<Callable>::Get()) {}
+  ArenaPromise(Arena* arena, Callable&& callable)
+      : impl_(arena_promise_detail::MakeImplForCallable<T>(arena, std::forward<Callable>(callable))) {}
 
   ArenaPromise(const ArenaPromise&) = delete;
   ArenaPromise& operator=(const ArenaPromise&) = delete;
   ArenaPromise(ArenaPromise&& other) noexcept : impl_(other.impl_) {
-    other.impl_ = &null_impl_;
+    other.impl_ = arena_promise_detail::NullImpl<T>::Get();
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
     impl_ = other.impl_;
-    other.impl_ = &null_impl_;
+    other.impl_ = arena_promise_detail::NullImpl<T>::Get();
     return *this;
   }
 
@@ -89,61 +134,8 @@ class ArenaPromise {
   Poll<T> operator()() { return impl_->PollOnce(); }
 
  private:
-  class ImplInterface {
-   public:
-    virtual Poll<T> PollOnce() = 0;
-    virtual void Destroy() = 0;
-
-   protected:
-    ~ImplInterface() = default;
-  };
-
-  class NullImpl final : public ImplInterface {
-   public:
-    Poll<T> PollOnce() override {
-      abort();
-      GPR_UNREACHABLE_CODE(return Pending{});
-    }
-    void Destroy() override {}
-  };
-
-  template <typename Callable>
-  class CallableImpl final : public ImplInterface {
-   public:
-    explicit CallableImpl(Callable&& callable)
-        : callable_(std::move(callable)) {}
-    Poll<T> PollOnce() override { return callable_(); }
-    void Destroy() override { this->~CallableImpl(); }
-
-   private:
-    Callable callable_;
-  };
-
-  template <typename Callable>
-  class SharedImpl final : public ImplInterface {
-   public:
-    Poll<T> PollOnce() override { return (*static_cast<Callable*>(nullptr))(); }
-    void Destroy() override {}
-    static SharedImpl* Get() { return &impl_; }
-
-   private:
-    SharedImpl() = default;
-    ~SharedImpl() = default;
-
-    static SharedImpl impl_;
-  };
-
-  static NullImpl null_impl_;
-  ImplInterface* impl_ = &null_impl_;
+  arena_promise_detail::ImplInterface<T>* impl_ = arena_promise_detail::NullImpl<T>::Get();
 };
-
-template <typename T>
-typename ArenaPromise<T>::NullImpl ArenaPromise<T>::null_impl_;
-
-template <typename T>
-template <typename Callable>
-typename ArenaPromise<T>::template SharedImpl<Callable>
-    ArenaPromise<T>::SharedImpl<Callable>::impl_;
 
 }  // namespace grpc_core
 
