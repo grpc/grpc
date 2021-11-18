@@ -29,10 +29,10 @@
 #define TEST_VECTOR(raw, encoded, dict) \
   test_vector(raw, sizeof(raw) - 1, encoded, sizeof(encoded) - 1, dict)
 
-#define TEST_NONCONFORMANT_VECTOR(encoded, permissive_unencoded, dict) \
-  test_nonconformant_vector(encoded, sizeof(encoded) - 1,              \
-                            permissive_unencoded,                      \
-                            sizeof(permissive_unencoded) - 1, dict)
+#define TEST_NONCONFORMANT_VECTOR(encoded, permissive_unencoded) \
+  test_nonconformant_vector(encoded, sizeof(encoded) - 1,        \
+                            permissive_unencoded,                \
+                            sizeof(permissive_unencoded) - 1)
 
 static void test_vector(const char* raw, size_t raw_length, const char* encoded,
                         size_t encoded_length,
@@ -69,8 +69,7 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
 static void test_nonconformant_vector(const char* encoded,
                                       size_t encoded_length,
                                       const char* permissive_unencoded,
-                                      size_t permissive_unencoded_length,
-                                      grpc_core::PercentEncodingType type) {
+                                      size_t permissive_unencoded_length) {
   char* permissive_unencoded_msg =
       gpr_dump(permissive_unencoded, permissive_unencoded_length,
                GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -114,10 +113,10 @@ int main(int argc, char** argv) {
   TEST_VECTOR("\xff", "%FF", grpc_core::PercentEncodingType::URL);
   TEST_VECTOR("\xee", "%EE", grpc_core::PercentEncodingType::URL);
   TEST_VECTOR("%2", "%252", grpc_core::PercentEncodingType::URL);
-  TEST_NONCONFORMANT_VECTOR("%", "%", grpc_core::PercentEncodingType::URL);
-  TEST_NONCONFORMANT_VECTOR("%A", "%A", grpc_core::PercentEncodingType::URL);
-  TEST_NONCONFORMANT_VECTOR("%AG", "%AG", grpc_core::PercentEncodingType::URL);
-  TEST_NONCONFORMANT_VECTOR("\0", "\0", grpc_core::PercentEncodingType::URL);
+  TEST_NONCONFORMANT_VECTOR("%", "%");
+  TEST_NONCONFORMANT_VECTOR("%A", "%A");
+  TEST_NONCONFORMANT_VECTOR("%AG", "%AG");
+  TEST_NONCONFORMANT_VECTOR("\0", "\0");
   grpc_shutdown();
   return 0;
 }
