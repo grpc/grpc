@@ -97,7 +97,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -3590,6 +3589,48 @@ class ListenerResourceType : public XdsResourceType {
   }
 };
 
+class RouteConfigResourceType : public XdsResourceType {
+ public:
+  struct RouteConfigData : public ResourceData {
+    XdsApi::RdsUpdate resource;
+  };
+
+  absl::string_view type_url() const override { return XdsApi::kRdsTypeUrl; }
+  absl::string_view v2_type_url() const override { return kRdsV2TypeUrl; }
+
+  absl::StatusOr<DecodeResult> Decode(
+      const EncodingContext& context, absl::string_view serialized_resource,
+      bool is_v2) const override {
+    // Parse serialized proto.
+    auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
+        serialized_resource.data(), serialized_resource.size(), context.arena);
+    if (resource == nullptr) {
+      return absl::InvalidArgumentError("Can't parse Listener resource.");
+    }
+    MaybeLogRouteConfiguration(context, resource);
+    // Validate resource.
+    DecodeResult result;
+    result.name = UpbStringToStdString(
+        envoy_config_route_v3_RouteConfiguration_name(resource));
+    auto route_config_data = absl::make_unique<RouteConfigData>();
+    grpc_error_handle error =
+        RouteConfigParse(context, resource, is_v2, &route_config_data->resource);
+    if (error != GRPC_ERROR_NONE) {
+      result.resource =
+          absl::InvalidArgumentError(grpc_error_std_string(error));
+      GRPC_ERROR_UNREF(error);
+    } else {
+      result.resource = std::move(route_config_data);
+    }
+    return result;
+  }
+
+  std::string Encode(const ResourceData* resource) const override {
+// FIXME: implement
+    return "";
+  }
+};
+
 grpc_error_handle AdsResourceParse(
     const EncodingContext& context, XdsResourceType* type,
     size_t idx, const google_protobuf_Any* resource_any,
@@ -3753,16 +3794,6 @@ grpc_error_handle AdsResourceParse(
   return GRPC_ERROR_NONE;
 }
 
-upb_strview LdsResourceName(
-    const envoy_config_listener_v3_Listener* lds_resource) {
-  return envoy_config_listener_v3_Listener_name(lds_resource);
-}
-
-upb_strview RdsResourceName(
-    const envoy_config_route_v3_RouteConfiguration* rds_resource) {
-  return envoy_config_route_v3_RouteConfiguration_name(rds_resource);
-}
-
 upb_strview CdsResourceName(
     const envoy_config_cluster_v3_Cluster* cds_resource) {
   return envoy_config_cluster_v3_Cluster_name(cds_resource);
@@ -3831,7 +3862,6 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     // individual functions into each call to AdsResourceParse().
     grpc_error_handle parse_error = GRPC_ERROR_NONE;
     if (IsLds(result.type_url)) {
-#if 1
       ListenerResourceType resource_type;
       auto& update_map = result.lds_update_map;
       parse_error = AdsResourceParse(
@@ -3845,19 +3875,21 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
                 std::move(resource), std::move(serialized_resource));
           },
           &result.resource_names_failed);
-#else
-      parse_error = AdsResourceParse(
-          context, envoy_config_listener_v3_Listener_parse, LdsResourceName,
-          IsLdsInternal, MaybeLogListener, LdsResourceParse, "LDS", i,
-          resources[i], subscribed_listener_names, &result.lds_update_map,
-          &result.resource_names_failed);
-#endif
     } else if (IsRds(result.type_url)) {
+      RouteConfigResourceType resource_type;
+      auto& update_map = result.rds_update_map;
       parse_error = AdsResourceParse(
-          context, envoy_config_route_v3_RouteConfiguration_parse,
-          RdsResourceName, IsRdsInternal, MaybeLogRouteConfiguration,
-          RouteConfigParse, "RDS", i, resources[i], subscribed_route_config_names,
-          &result.rds_update_map, &result.resource_names_failed);
+          context, &resource_type, i, resources[i], subscribed_route_config_names,
+          [&update_map](absl::string_view resource_name_string,
+                        XdsApi::ResourceName resource_name,
+                        std::unique_ptr<XdsResourceType::ResourceData> resource,
+                        std::string serialized_resource) {
+            return AddResult<RdsUpdateMap,
+                             RouteConfigResourceType::RouteConfigData>(
+                &update_map, resource_name_string, std::move(resource_name),
+                std::move(resource), std::move(serialized_resource));
+          },
+          &result.resource_names_failed);
     } else if (IsCds(result.type_url)) {
       parse_error = AdsResourceParse(
           context, envoy_config_cluster_v3_Cluster_parse, CdsResourceName,
