@@ -819,6 +819,8 @@ std::string XdsApi::EdsUpdate::ToString() const {
 // XdsApi
 //
 
+// TODO(roth): All constants and functions for individual resource types
+// should be merged into the XdsResourceType abstraction.
 const char* XdsApi::kLdsTypeUrl = "envoy.config.listener.v3.Listener";
 const char* XdsApi::kRdsTypeUrl = "envoy.config.route.v3.RouteConfiguration";
 const char* XdsApi::kCdsTypeUrl = "envoy.config.cluster.v3.Cluster";
@@ -827,7 +829,6 @@ const char* XdsApi::kEdsTypeUrl =
 
 namespace {
 
-// FIXME: most of these should go away!
 const char* kLdsV2TypeUrl = "envoy.api.v2.Listener";
 const char* kRdsV2TypeUrl = "envoy.api.v2.RouteConfiguration";
 const char* kCdsV2TypeUrl = "envoy.api.v2.Cluster";
@@ -916,8 +917,6 @@ class XdsResourceType {
       const EncodingContext& context, absl::string_view serialized_resource,
       bool is_v2) const = 0;
 
-  virtual std::string Encode(const ResourceData* resource) const = 0;
-
   bool IsType(absl::string_view resource_type, bool* is_v2) const {
     if (resource_type == type_url()) return true;
     if (resource_type == v2_type_url()) {
@@ -928,34 +927,6 @@ class XdsResourceType {
   }
 };
 
-absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
-    absl::string_view name, const XdsResourceType* type) {
-  // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
-    return XdsApi::ResourceName{"old:", std::string(name)};
-  }
-  // New style name.  Parse URI.
-  auto uri = URI::Parse(name);
-  if (!uri.ok()) return uri.status();
-  // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (!type->IsType(path_parts.first, nullptr)) {
-    return absl::InvalidArgumentError(
-        "xdstp URI path contains wrong resource type");
-  }
-  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
-      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
-  std::sort(query_parameters.begin(), query_parameters.end());
-  return XdsApi::ResourceName{
-      absl::StrCat("xdstp:", uri->authority()),
-      absl::StrCat(
-          path_parts.second, (query_parameters.empty() ? "?" : ""),
-          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
-}
-
-// FIXME: remove
 absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
     absl::string_view name,
     std::function<bool(absl::string_view, bool*)> is_expected_type) {
@@ -3582,11 +3553,6 @@ class ListenerResourceType : public XdsResourceType {
     }
     return result;
   }
-
-  std::string Encode(const ResourceData* resource) const override {
-// FIXME: implement
-    return "";
-  }
 };
 
 class RouteConfigResourceType : public XdsResourceType {
@@ -3623,11 +3589,6 @@ class RouteConfigResourceType : public XdsResourceType {
       result.resource = std::move(route_config_data);
     }
     return result;
-  }
-
-  std::string Encode(const ResourceData* resource) const override {
-// FIXME: implement
-    return "";
   }
 };
 
@@ -3666,11 +3627,6 @@ class ClusterResourceType : public XdsResourceType {
     }
     return result;
   }
-
-  std::string Encode(const ResourceData* resource) const override {
-// FIXME: implement
-    return "";
-  }
 };
 
 class EndpointResourceType : public XdsResourceType {
@@ -3708,11 +3664,6 @@ class EndpointResourceType : public XdsResourceType {
     }
     return result;
   }
-
-  std::string Encode(const ResourceData* resource) const override {
-// FIXME: implement
-    return "";
-  }
 };
 
 grpc_error_handle AdsResourceParse(
@@ -3747,7 +3698,11 @@ grpc_error_handle AdsResourceParse(
         "resource index ", idx, ": ", result.status().ToString()));
   }
   // Check the resource name.
-  auto resource_name = ParseResourceNameInternal(result->name, type);
+  auto resource_name = ParseResourceNameInternal(
+      result->name,
+      [type](absl::string_view type_url, bool* is_v2) {
+        return type->IsType(type_url, is_v2);
+      });
   if (!resource_name.ok()) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
         "resource index ", idx, ": Cannot parse xDS resource name \"",
