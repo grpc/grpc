@@ -901,7 +901,7 @@ class CSharpLanguage(object):
         assembly_extension = '.exe'
 
         if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp2.1'
+            assembly_subdir += '/netcoreapp3.1'
             runtime_cmd = ['dotnet', 'exec']
             assembly_extension = '.dll'
         else:

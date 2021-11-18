@@ -839,12 +839,10 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/match.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
@@ -1178,6 +1176,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.cc" role="src" />
@@ -2198,10 +2197,8 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/core.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/cygwin.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin-proctitle.c" role="src" />
-    <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin-stub.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/darwin.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/dl.c" role="src" />
-    <file baseinstalldir="/" name="third_party/libuv/src/unix/epoll.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/freebsd.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/fs.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/fsevents.c" role="src" />
@@ -2221,7 +2218,6 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/no-fsevents.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/no-proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/openbsd.c" role="src" />
-    <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-syscalls.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390-syscalls.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/os390.c" role="src" />
@@ -2233,7 +2229,6 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/procfs-exepath.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/proctitle.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/pthread-fixes.c" role="src" />
-    <file baseinstalldir="/" name="third_party/libuv/src/unix/qnx.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-devurandom.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-getentropy.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/random-getrandom.c" role="src" />

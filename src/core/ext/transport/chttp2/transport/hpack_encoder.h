@@ -119,6 +119,7 @@ class HPackCompressor {
     void Encode(grpc_mdelem md);
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
+    void Encode(UserAgentMetadata, const Slice& slice);
 
    private:
     struct FramePrefix {
@@ -144,6 +145,10 @@ class HPackCompressor {
     void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
                                                 const grpc_slice& value_slice);
     void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
+
+    void EncodeAlwaysIndexed(uint32_t* index, const grpc_slice& key,
+                             const grpc_slice& value,
+                             uint32_t transport_length);
 
     size_t CurrentFrameSize() const;
     void Add(grpc_slice slice);
@@ -269,7 +274,12 @@ class HPackCompressor {
   // seen and *may* be in the decompressor table
   HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
   HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
+  // Index into table_ for the te:trailers metadata element
   uint32_t te_index_ = 0;
+  // Index into table_ for the user-agent metadata element
+  uint32_t user_agent_index_ = 0;
+  // The user-agent string referred to by user_agent_index_
+  Slice user_agent_;
 };
 
 }  // namespace grpc_core
