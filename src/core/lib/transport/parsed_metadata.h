@@ -126,7 +126,7 @@ class ParsedMetadata {
     ParsedMetadata result;
     result.vtable_ = vtable_;
     result.value_ = value_;
-    result.transport_size_ = transport_size_;
+    result.transport_size_ = TransportSize(vtable_->key_length(value_), value.length());
     vtable_->with_new_value(&value, &result);
     return result;
   }
@@ -153,7 +153,10 @@ class ParsedMetadata {
                                    MetadataContainer* container);
     // result is a bitwise copy of the originating ParsedMetadata.
     void (*const with_new_value)(Slice* new_value, ParsedMetadata* result);
-    std::string (*debug_string)(const Buffer& value);
+    std::string (*const debug_string)(const Buffer& value);
+    // TODO(ctiller): when we delete mdelem, make this a simple integer constant
+    // on the vtable
+    size_t (*const key_length)(const Buffer& value);
   };
 
   static const VTable* EmptyVTable();
@@ -199,7 +202,7 @@ template <typename Which>
 const typename ParsedMetadata<MetadataContainer>::VTable*
 ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
   static const VTable vtable = {
-      absl::EndsWith(Which::key(), "-bin"),
+    absl::EndsWith(Which::key(), "-bin"),
       // destroy
       [](const Buffer&) {},
       // set
@@ -211,14 +214,16 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       },
       // with_new_value
       [](Slice* value, ParsedMetadata* result) {
-        result->transport_size_ = TransportSize(Which::key().length(), value->length());
         result->value_.trivial = Which::ParseMemento(std::move(*value));
       },
       // debug_string
       [](const Buffer& value) {
         return parse_metadata_detail::MakeDebugString(Which::key(), Which::DisplayValue(
                 static_cast<typename Which::MementoType>(value.trivial)));
-      }};
+      },
+      // key_length
+      [](const Buffer& value) { return Which::key().length(); }
+  };
   return &vtable;
 }
 
@@ -240,14 +245,16 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       },
       // with_new_value
       [](Slice* value, ParsedMetadata* result) {
-        result->transport_size_ = TransportSize(Which::key().length(), value->length());
         result->value_.pointer = new typename Which::MementoType(Which::ParseMemento(std::move(*value)));
       },
       // debug_string
       [](const Buffer& value) {
         auto* p = static_cast<typename Which::MementoType*>(value.pointer);
         return parse_metadata_detail::MakeDebugString(Which::key(), Which::DisplayValue(*p));
-      }};
+      },
+      // key_length
+      [](const Buffer& value) { return Which::key().length(); }
+      };
   return &vtable;
 }
 
@@ -266,14 +273,16 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       },
       // with_new_value
       [](Slice* value, ParsedMetadata* result) {
-        result->transport_size_ = TransportSize(Which::key().length(), value->length());
         result->value_.slice = Which::ParseMemento(std::move(*value)).TakeCSlice();
       },
       // debug_string
       [](const Buffer& value) {
         return parse_metadata_detail::MakeDebugString(Which::key(),
             Which::DisplayValue(Slice(grpc_slice_ref_internal(value.slice))));
-      }};
+      },
+      // key_length
+      [](const Buffer& value) { return Which::key().length(); }
+  };
   return &vtable;
 }
 
@@ -302,13 +311,15 @@ ParsedMetadata<MetadataContainer>::MdelemVtable() {
             static_cast<const ManagedMemorySlice&>(
                 grpc_slice_ref_internal(GRPC_MDKEY(result->value_.mdelem))),
             value_slice->TakeCSlice());
-        result->transport_size_ = GRPC_MDELEM_LENGTH(result->value_.mdelem);
       },
       // debug_string
       [](const Buffer& value) {
         return parse_metadata_detail::MakeDebugString(StringViewFromSlice(GRPC_MDKEY(value.mdelem)),
                             StringViewFromSlice(GRPC_MDVALUE(value.mdelem)));
-      }};
+      },
+      // key_length
+      [](const Buffer& value) { return GRPC_SLICE_LENGTH(GRPC_MDKEY(value.mdelem)); }
+  };
   return &vtable;
 }
 
