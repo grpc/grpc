@@ -182,12 +182,11 @@ static void do_connect(void* arg, grpc_error_handle error) {
     start_scheduling_grpc_passthru_endpoint_channel_effects(
         client, g_channel_actions, [&]() { g_channel_force_delete = true; });
 
-    grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(
-        core_server->channel_args(), server, false);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "SetupTransport",
-        core_server->SetupTransport(transport, nullptr, nullptr, nullptr)));
+        g_server->core_server->channel_args(), server, false);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("SetupTransport",
+                                 g_server->core_server->SetupTransport(
+                                     transport, nullptr, nullptr, nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
