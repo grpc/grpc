@@ -26,11 +26,6 @@ namespace grpc_core {
 
 namespace arena_promise_detail {
 
-template <typename Callable>
-static constexpr bool AllowSharedAllocation() {
-  return std::is_empty<Callable>::value;
-}
-
 template <typename T>
 class ImplInterface {
  public:
@@ -87,7 +82,7 @@ struct ChooseImplForCallable;
 
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
-    T, Callable, absl::enable_if_t<!AllowSharedAllocation<Callable>(), void>> {
+    T, Callable, absl::enable_if_t<!std::is_empty<Callable>::value>> {
   static ImplInterface<T>* Make(Arena* arena, Callable&& callable) {
     return arena->template New<CallableImpl<T, Callable>>(
         std::forward<Callable>(callable));
@@ -96,7 +91,7 @@ struct ChooseImplForCallable<
 
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
-    T, Callable, absl::enable_if_t<AllowSharedAllocation<Callable>(), void>> {
+    T, Callable, absl::enable_if_t<std::is_empty<Callable>::value>> {
   static ImplInterface<T>* Make(Arena*, Callable&&) {
     return SharedImpl<T, Callable>::Get();
   }
