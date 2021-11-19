@@ -48,8 +48,6 @@ class ImplInterface {
 template <typename T>
 class NullImpl final : public ImplInterface<T> {
  public:
-  ~NullImpl() = delete;
-
   Poll<T> PollOnce() override {
     abort();
     GPR_UNREACHABLE_CODE(return Pending{});
@@ -60,14 +58,15 @@ class NullImpl final : public ImplInterface<T> {
     static NullImpl<T> instance;
     return &instance;
   }
+
+ private:
+  ~NullImpl() = default;
 };
 
 // Implementation of ImplInterface for a callable object.
 template <typename T, typename Callable>
 class CallableImpl final : public ImplInterface<T> {
  public:
-  ~CallableImpl() = delete;
-
   explicit CallableImpl(Callable&& callable) : callable_(std::move(callable)) {}
   // Forward polls to the callable object.
   Poll<T> PollOnce() override { return callable_(); }
@@ -75,6 +74,9 @@ class CallableImpl final : public ImplInterface<T> {
   void Destroy() override { this->~CallableImpl(); }
 
  private:
+  // Should only be called by Destroy().
+  ~CallableImpl() = default;
+
   Callable callable_;
 };
 
@@ -88,8 +90,6 @@ class CallableImpl final : public ImplInterface<T> {
 template <typename T, typename Callable>
 class SharedImpl final : public ImplInterface<T> {
  public:
-  ~SharedImpl() = delete;
-
   // Call the callable. Since it's empty it can't access any member variables,
   // and as such we can choose any address for the object.
   Poll<T> PollOnce() override { return (*static_cast<Callable*>(nullptr))(); }
@@ -104,6 +104,7 @@ class SharedImpl final : public ImplInterface<T> {
 
  private:
   SharedImpl() = default;
+  ~SharedImpl() = default;
 };
 
 // Redirector type: given a callable type, expose a Make() function that creates
