@@ -23,6 +23,9 @@ extern "C" {
 struct udpa_annotations_StatusAnnotation;
 typedef struct udpa_annotations_StatusAnnotation udpa_annotations_StatusAnnotation;
 extern const upb_msglayout udpa_annotations_StatusAnnotation_msginit;
+extern const upb_msglayout_ext udpa_annotations_file_status_ext;
+struct google_protobuf_FileOptions;
+extern const upb_msglayout google_protobuf_FileOptions_msginit;
 
 typedef enum {
   udpa_annotations_UNKNOWN = 0,
@@ -67,6 +70,10 @@ UPB_INLINE void udpa_annotations_StatusAnnotation_set_work_in_progress(udpa_anno
 UPB_INLINE void udpa_annotations_StatusAnnotation_set_package_version_status(udpa_annotations_StatusAnnotation *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
+
+UPB_INLINE bool udpa_annotations_has_file_status(const struct google_protobuf_FileOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_file_status_ext) != NULL; }
+UPB_INLINE const udpa_annotations_StatusAnnotation* udpa_annotations_file_status(const struct google_protobuf_FileOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_file_status_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_StatusAnnotation*); }
+extern const upb_msglayout_file udpa_annotations_status_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

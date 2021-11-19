@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
@@ -42,7 +43,6 @@
 
 struct custom_fixture_data {
   grpc_endpoint_pair ep;
-  grpc_resource_quota* resource_quota;
 };
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
@@ -51,8 +51,9 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   custom_fixture_data* fixture_data =
       static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_endpoint_add_to_pollset(fixture_data->ep.server, grpc_cq_pollset(f->cq));
-  grpc_error_handle error = f->server->core_server->SetupTransport(
-      transport, nullptr, f->server->core_server->channel_args(), nullptr);
+  grpc_core::Server* core_server = grpc_core::Server::FromC(f->server);
+  grpc_error_handle error = core_server->SetupTransport(
+      transport, nullptr, core_server->channel_args(), nullptr);
   if (error == GRPC_ERROR_NONE) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
@@ -75,9 +76,8 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
   grpc_channel_args* args =
       grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  cs->f->client =
-      grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          transport, nullptr, 0, &error);
+  cs->f->client = grpc_channel_create(
+      "socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -95,7 +95,7 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args* client_args, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   custom_fixture_data* fixture_data = static_cast<custom_fixture_data*>(
       gpr_malloc(sizeof(custom_fixture_data)));
   grpc_end2end_test_fixture f;
@@ -103,8 +103,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   f.fixture_data = fixture_data;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-  fixture_data->resource_quota =
-      grpc_resource_quota_from_channel_args(client_args, true);
   fixture_data->ep = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
   return f;
 }
@@ -117,10 +115,10 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(
-      client_args, fixture_data->ep.client, true,
-      grpc_resource_user_create(fixture_data->resource_quota,
-                                "client_transport"));
+  client_args = grpc_core::EnsureResourceQuotaInChannelArgs(client_args);
+  transport =
+      grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
+  grpc_channel_args_destroy(client_args);
   client_setup_transport(&cs, transport);
   GPR_ASSERT(f->client);
 }
@@ -134,17 +132,15 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(
-      server_args, fixture_data->ep.server, false,
-      grpc_resource_user_create(fixture_data->resource_quota,
-                                "server_transport"));
+  server_args = grpc_core::EnsureResourceQuotaInChannelArgs(server_args);
+  transport =
+      grpc_create_chttp2_transport(server_args, fixture_data->ep.server, false);
+  grpc_channel_args_destroy(server_args);
   server_setup_transport(f, transport);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
   grpc_core::ExecCtx exec_ctx;
-  auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
-  grpc_resource_quota_unref(fixture_data->resource_quota);
   gpr_free(f->fixture_data);
 }
 

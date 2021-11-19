@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/service/status/v3/csds.upbdefs.h"
+#include "envoy/service/status/v3/csds.upb.h"
 
 extern upb_def_init envoy_admin_v3_config_dump_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
@@ -18,20 +19,6 @@ extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
 extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_service_status_v3_ClientStatusRequest_msginit;
-extern const upb_msglayout envoy_service_status_v3_PerXdsConfig_msginit;
-extern const upb_msglayout envoy_service_status_v3_ClientConfig_msginit;
-extern const upb_msglayout envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit;
-extern const upb_msglayout envoy_service_status_v3_ClientStatusResponse_msginit;
-
-static const upb_msglayout *layouts[5] = {
-  &envoy_service_status_v3_ClientStatusRequest_msginit,
-  &envoy_service_status_v3_PerXdsConfig_msginit,
-  &envoy_service_status_v3_ClientConfig_msginit,
-  &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit,
-  &envoy_service_status_v3_ClientStatusResponse_msginit,
-};
-
 static const char descriptor[2677] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v', '3', 
 '/', 'c', 's', 'd', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 
 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', '\032', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 
@@ -157,7 +144,7 @@ static upb_def_init *deps[10] = {
 
 upb_def_init envoy_service_status_v3_csds_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_service_status_v3_csds_proto_upb_file_layout,
   "envoy/service/status/v3/csds.proto",
   UPB_STRVIEW_INIT(descriptor, 2677)
 };

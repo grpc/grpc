@@ -16,14 +16,14 @@
 # The script to check if Bazel files need to be formatted.
 
 GIT_ROOT="$(dirname "$0")/../../.."
-"$GIT_ROOT/tools/distrib/buildifier_format_code.sh" -mode=diff
+"$GIT_ROOT/tools/distrib/buildifier_format_code.sh" -mode=diff -lint warn
 result=$?
 
 if [[ ${result} != 0 ]]; then
     echo "==========BUILDIFIER CHECK FAILED=========="
     echo "Please try using the following script to fix automatically:"
     echo ""
-    echo "    tools/distrib/buildifier_format_code.sh"
+    echo "    tools/distrib/buildifier_format_code_strict.sh"
     echo ""
     exit 1
 else

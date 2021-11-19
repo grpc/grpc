@@ -36,9 +36,9 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -52,11 +52,15 @@ class ServerThread {
 
   void Start() {
     // Start server with 1-second handshake timeout.
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
-    arg.value.integer = 1000;
-    grpc_channel_args args = {1, &arg};
+    grpc_arg a[2];
+    a[0].type = GRPC_ARG_INTEGER;
+    a[0].key = const_cast<char*>(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
+    a[0].value.integer = 1000;
+    a[1].key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
+    a[1].type = GRPC_ARG_POINTER;
+    a[1].value.pointer.p = grpc_resource_quota_create("test");
+    a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
+    grpc_channel_args args = {2, a};
     server_ = grpc_server_create(&args, nullptr);
     ASSERT_TRUE(grpc_server_add_insecure_http2_port(server_, address_));
     cq_ = grpc_completion_queue_create_for_next(nullptr);
@@ -64,6 +68,8 @@ class ServerThread {
     grpc_server_start(server_);
     thread_ =
         absl::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
+    grpc_resource_quota_unref(
+        static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
   }
 
   void Shutdown() {
@@ -102,7 +108,7 @@ class Client {
       : server_address_(server_address) {}
 
   void Connect() {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     grpc_resolved_addresses* server_addresses = nullptr;
     grpc_error_handle error =
         grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
@@ -113,10 +119,11 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    grpc_tcp_client_connect(
-        state.closure(), &endpoint_, grpc_slice_allocator_create_unlimited(),
-        pollset_set, nullptr /* channel_args */, server_addresses->addrs,
-        grpc_core::ExecCtx::Get()->Now() + 1000);
+    grpc_channel_args* args = EnsureResourceQuotaInChannelArgs(nullptr);
+    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
+                            server_addresses->addrs,
+                            ExecCtx::Get()->Now() + 1000);
+    grpc_channel_args_destroy(args);
     ASSERT_TRUE(PollUntilDone(
         &state,
         grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
@@ -129,13 +136,13 @@ class Client {
   // Reads until an error is returned.
   // Returns true if an error was encountered before the deadline.
   bool ReadUntilError() {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     grpc_slice_buffer read_buffer;
     grpc_slice_buffer_init(&read_buffer);
     bool retval = true;
     // Use a deadline of 3 seconds, which is a lot more than we should
     // need for a 1-second timeout, but this helps avoid flakes.
-    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 3000;
+    grpc_millis deadline = ExecCtx::Get()->Now() + 3000;
     while (true) {
       EventState state;
       grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
@@ -155,7 +162,7 @@ class Client {
   }
 
   void Shutdown() {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     grpc_endpoint_destroy(endpoint_);
     grpc_pollset_shutdown(pollset_,
                           GRPC_CLOSURE_CREATE(&Client::PollsetDestroy, pollset_,
@@ -201,13 +208,12 @@ class Client {
       gpr_mu_lock(mu_);
       GRPC_LOG_IF_ERROR(
           "grpc_pollset_work",
-          grpc_pollset_work(pollset_, &worker,
-                            grpc_core::ExecCtx::Get()->Now() + 100));
+          grpc_pollset_work(pollset_, &worker, ExecCtx::Get()->Now() + 100));
       // Flushes any work scheduled before or during polling.
-      grpc_core::ExecCtx::Get()->Flush();
+      ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);
       if (state != nullptr && state->done()) return true;
-      if (grpc_core::ExecCtx::Get()->Now() >= deadline) return false;
+      if (ExecCtx::Get()->Now() >= deadline) return false;
     }
   }
 

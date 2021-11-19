@@ -43,7 +43,7 @@ ReclamationPass MapReclamationPass(memory_quota_fuzzer::Reclaimer::Pass pass) {
 class Fuzzer {
  public:
   void Run(const memory_quota_fuzzer::Msg& msg) {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     RunMsg(msg);
     do {
       memory_quotas_.clear();
@@ -63,15 +63,17 @@ class Fuzzer {
           ExecCtx::Get()->Flush();
           break;
         case memory_quota_fuzzer::Action::kCreateQuota:
-          memory_quotas_.emplace(action.quota(), MemoryQuota());
+          memory_quotas_.emplace(action.quota(),
+                                 MemoryQuota(absl::StrCat("quota-step-", i)));
           break;
         case memory_quota_fuzzer::Action::kDeleteQuota:
           memory_quotas_.erase(action.quota());
           break;
         case memory_quota_fuzzer::Action::kCreateAllocator:
-          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
-            memory_allocators_.emplace(action.allocator(),
-                                       q->CreateMemoryOwner());
+          WithQuota(action.quota(), [this, action, i](MemoryQuota* q) {
+            memory_allocators_.emplace(
+                action.allocator(),
+                q->CreateMemoryOwner(absl::StrCat("allocator-step-", i)));
           });
           break;
         case memory_quota_fuzzer::Action::kDeleteAllocator:
@@ -97,7 +99,7 @@ class Fuzzer {
           MemoryRequest req(min, max);
           WithAllocator(
               action.allocator(), [this, action, req](MemoryOwner* a) {
-                auto alloc = a->allocator()->MakeReservation(req);
+                auto alloc = a->MakeReservation(req);
                 allocations_.emplace(action.allocation(), std::move(alloc));
               });
         } break;

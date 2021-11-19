@@ -8,18 +8,9 @@
 
 #include "upb/def.h"
 #include "xds/data/orca/v3/orca_load_report.upbdefs.h"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
 
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout xds_data_orca_v3_OrcaLoadReport_msginit;
-extern const upb_msglayout xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_msginit;
-extern const upb_msglayout xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &xds_data_orca_v3_OrcaLoadReport_msginit,
-  &xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_msginit,
-  &xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msginit,
-};
-
 static const char descriptor[705] = {'\n', '\'', 'x', 'd', 's', '/', 'd', 'a', 't', 'a', '/', 'o', 'r', 'c', 'a', '/', 'v', '3', '/', 'o', 'r', 'c', 'a', '_', 'l', 
 'o', 'a', 'd', '_', 'r', 'e', 'p', 'o', 'r', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'x', 'd', 's', '.', 'd', 'a', 't', 
 'a', '.', 'o', 'r', 'c', 'a', '.', 'v', '3', '\032', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 
@@ -58,7 +49,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init xds_data_orca_v3_orca_load_report_proto_upbdefinit = {
   deps,
-  layouts,
+  &xds_data_orca_v3_orca_load_report_proto_upb_file_layout,
   "xds/data/orca/v3/orca_load_report.proto",
   UPB_STRVIEW_INIT(descriptor, 705)
 };

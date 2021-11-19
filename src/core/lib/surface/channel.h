@@ -27,22 +27,15 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata.h"
 
 /// Creates a grpc_channel.
-///
-/// If the \a resource_user is not null, \a preallocated_bytes may have been
-/// allocated on that resource_user for use by the channel. These bytes will be
-/// freed from the resource_user upon channel destruction.
-///
-/// Takes ownership of a \a resource_user ref.
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* args,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
-                                  grpc_resource_user* resource_user,
-                                  size_t preallocated_bytes,
                                   grpc_error_handle* error);
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
@@ -54,7 +47,6 @@ void grpc_channel_destroy_internal(grpc_channel* channel);
 grpc_channel* grpc_channel_create_with_builder(
     grpc_channel_stack_builder* builder,
     grpc_channel_stack_type channel_stack_type,
-    grpc_resource_user* resource_user, size_t preallocated_bytes,
     grpc_error_handle* error = nullptr);
 
 /** Create a call given a grpc_channel, in order to call \a method.
@@ -93,7 +85,7 @@ struct RegisteredCall {
 };
 
 struct CallRegistrationTable {
-  grpc_core::Mutex mu;
+  Mutex mu;
   // The map key should be owned strings rather than unowned char*'s to
   // guarantee that it outlives calls on the core channel (which may outlast the
   // C++ or other wrapped language Channel that registered these calls).
@@ -109,8 +101,6 @@ struct grpc_channel {
   grpc_compression_options compression_options;
 
   gpr_atm call_size_estimate;
-  grpc_resource_user* resource_user;
-  size_t preallocated_bytes;
 
   // TODO(vjpai): Once the grpc_channel is allocated via new rather than malloc,
   //              expand the members of the CallRegistrationTable directly into

@@ -67,7 +67,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-static bool ValidateAddress(const Address& address) {
+bool ValidateAddress(const Address& address) {
   if (address.address_case() != Address::kTcpipAddress) {
     return true;
   }

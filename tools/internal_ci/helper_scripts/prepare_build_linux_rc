@@ -40,3 +40,5 @@ fi
 export DOCKERHUB_ORGANIZATION=grpctesting
 
 git submodule update --init
+
+python3 -m pip install six

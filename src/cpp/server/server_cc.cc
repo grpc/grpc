@@ -792,8 +792,8 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
   }
 
   void AddSyncMethod(grpc::internal::RpcServiceMethod* method, void* tag) {
-    server_->server()->core_server->SetRegisteredMethodAllocator(
-        server_cq_->cq(), tag, [this, method] {
+    grpc_core::Server::FromC(server_->server())
+        ->SetRegisteredMethodAllocator(server_cq_->cq(), tag, [this, method] {
           grpc_core::Server::RegisteredCallAllocation result;
           new SyncRequest(server_, method, &result);
           return result;
@@ -806,8 +806,8 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
       unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
           new grpc::internal::UnknownMethodHandler(kUnknownRpcMethod));
-      server_->server()->core_server->SetBatchMethodAllocator(
-          server_cq_->cq(), [this] {
+      grpc_core::Server::FromC(server_->server())
+          ->SetBatchMethodAllocator(server_cq_->cq(), [this] {
             grpc_core::Server::BatchCallAllocation result;
             new SyncRequest(server_, unknown_method_.get(), &result);
             return result;
@@ -1031,7 +1031,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
       has_callback_methods_ = true;
       grpc::internal::RpcServiceMethod* method_value = method.get();
       grpc::CompletionQueue* cq = CallbackCQ();
-      server_->core_server->SetRegisteredMethodAllocator(
+      grpc_core::Server::FromC(server_)->SetRegisteredMethodAllocator(
           cq->cq(), method_registration_tag, [this, cq, method_value] {
             grpc_core::Server::RegisteredCallAllocation result;
             new CallbackRequest<grpc::CallbackServerContext>(this, method_value,
@@ -1072,7 +1072,8 @@ void Server::RegisterCallbackGenericService(
   generic_handler_.reset(service->Handler());
 
   grpc::CompletionQueue* cq = CallbackCQ();
-  server_->core_server->SetBatchMethodAllocator(cq->cq(), [this, cq] {
+  grpc_core::Server::FromC(server_)->SetBatchMethodAllocator(cq->cq(), [this,
+                                                                        cq] {
     grpc_core::Server::BatchCallAllocation result;
     new CallbackRequest<grpc::GenericCallbackServerContext>(this, cq, &result);
     return result;

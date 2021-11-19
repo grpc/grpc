@@ -131,8 +131,8 @@ TEST(Json, EscapesAndControlCharactersInKeyStrings) {
 }
 
 TEST(Json, WriterCutsOffInvalidUtf8) {
-  RunSuccessTest("\"abc\xf0\x9d\x24\"", "abc\xf0\x9d\x24", "\"abc\"");
-  RunSuccessTest("\"\xff\"", "\xff", "\"\"");
+  EXPECT_EQ(Json("abc\xf0\x9d\x24").Dump(), "\"abc\"");
+  EXPECT_EQ(Json("\xff").Dump(), "\"\"");
 }
 
 TEST(Json, ValidNumbers) {

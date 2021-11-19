@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <utility>
 
 #include <grpc/support/log.h>
@@ -179,3 +181,4 @@ void WireWriterImpl::OnAckReceived(int64_t num_bytes) {
 }
 
 }  // namespace grpc_binder
+#endif

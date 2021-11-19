@@ -60,6 +60,7 @@ class Router:
     name: str
     url: str
     type: str
+    scope: Optional[str]
     network: Optional[str]
     routes: Optional[List[str]]
 
@@ -69,6 +70,7 @@ class Router:
             name=name,
             url=d["name"],
             type=d["type"],
+            scope=d.get("scope"),
             network=d.get("network"),
             routes=list(d["routes"]) if "routes" in d else None,
         )
@@ -136,27 +138,30 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
-        destination: Optional['Destination']
+        destinations: List['Destination']
         drop: Optional[int]
 
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteAction':
+            destinations = [
+                Destination.from_response(dest) for dest in d["destinations"]
+            ] if "destinations" in d else []
             return cls(
-                destination=Destination.from_response(d["destination"])
-                if "destination" in d else None,
+                destinations=destinations,
                 drop=d.get("drop"),
             )
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
-        match: Optional['RouteMatch']
+        matches: List['RouteMatch']
         action: 'RouteAction'
 
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteRule':
+            matches = [RouteMatch.from_response(m) for m in d["matches"]
+                      ] if "matches" in d else []
             return cls(
-                match=RouteMatch.from_response(d["match"])
-                if "match" in d else "",
+                matches=matches,
                 action=RouteAction.from_response(d["action"]),
             )
 
@@ -164,6 +169,7 @@ class GrpcRoute:
     url: str
     hostnames: Tuple[str]
     rules: Tuple['RouteRule']
+    routers: Optional[Tuple[str]]
 
     @classmethod
     def from_response(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
@@ -172,6 +178,7 @@ class GrpcRoute:
             url=d["name"],
             hostnames=tuple(d["hostnames"]),
             rules=tuple(d["rules"]),
+            routers=None if d.get("routers") is None else tuple(d["routers"]),
         )
 
 

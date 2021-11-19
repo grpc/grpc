@@ -17,10 +17,24 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
+#include <atomic>
 #include <functional>
+#include <memory>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"

@@ -196,6 +196,8 @@ UPB_INLINE char *envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_se
 
 
 
+extern const upb_msglayout_file envoy_type_http_v3_path_transformation_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

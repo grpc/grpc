@@ -8,60 +8,11 @@
 
 #include "upb/def.h"
 #include "validate/validate.upbdefs.h"
+#include "validate/validate.upb.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
-extern const upb_msglayout validate_FieldRules_msginit;
-extern const upb_msglayout validate_FloatRules_msginit;
-extern const upb_msglayout validate_DoubleRules_msginit;
-extern const upb_msglayout validate_Int32Rules_msginit;
-extern const upb_msglayout validate_Int64Rules_msginit;
-extern const upb_msglayout validate_UInt32Rules_msginit;
-extern const upb_msglayout validate_UInt64Rules_msginit;
-extern const upb_msglayout validate_SInt32Rules_msginit;
-extern const upb_msglayout validate_SInt64Rules_msginit;
-extern const upb_msglayout validate_Fixed32Rules_msginit;
-extern const upb_msglayout validate_Fixed64Rules_msginit;
-extern const upb_msglayout validate_SFixed32Rules_msginit;
-extern const upb_msglayout validate_SFixed64Rules_msginit;
-extern const upb_msglayout validate_BoolRules_msginit;
-extern const upb_msglayout validate_StringRules_msginit;
-extern const upb_msglayout validate_BytesRules_msginit;
-extern const upb_msglayout validate_EnumRules_msginit;
-extern const upb_msglayout validate_MessageRules_msginit;
-extern const upb_msglayout validate_RepeatedRules_msginit;
-extern const upb_msglayout validate_MapRules_msginit;
-extern const upb_msglayout validate_AnyRules_msginit;
-extern const upb_msglayout validate_DurationRules_msginit;
-extern const upb_msglayout validate_TimestampRules_msginit;
-
-static const upb_msglayout *layouts[23] = {
-  &validate_FieldRules_msginit,
-  &validate_FloatRules_msginit,
-  &validate_DoubleRules_msginit,
-  &validate_Int32Rules_msginit,
-  &validate_Int64Rules_msginit,
-  &validate_UInt32Rules_msginit,
-  &validate_UInt64Rules_msginit,
-  &validate_SInt32Rules_msginit,
-  &validate_SInt64Rules_msginit,
-  &validate_Fixed32Rules_msginit,
-  &validate_Fixed64Rules_msginit,
-  &validate_SFixed32Rules_msginit,
-  &validate_SFixed64Rules_msginit,
-  &validate_BoolRules_msginit,
-  &validate_StringRules_msginit,
-  &validate_BytesRules_msginit,
-  &validate_EnumRules_msginit,
-  &validate_MessageRules_msginit,
-  &validate_RepeatedRules_msginit,
-  &validate_MapRules_msginit,
-  &validate_AnyRules_msginit,
-  &validate_DurationRules_msginit,
-  &validate_TimestampRules_msginit,
-};
-
 static const char descriptor[6319] = {'\n', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', 
 '\022', '\010', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 
 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', '\032', '\036', 'g', 'o', 'o', 'g', 
@@ -326,7 +277,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init validate_validate_proto_upbdefinit = {
   deps,
-  layouts,
+  &validate_validate_proto_upb_file_layout,
   "validate/validate.proto",
   UPB_STRVIEW_INIT(descriptor, 6319)
 };

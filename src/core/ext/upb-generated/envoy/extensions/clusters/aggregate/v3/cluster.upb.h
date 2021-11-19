@@ -64,6 +64,8 @@ UPB_INLINE bool envoy_extensions_clusters_aggregate_v3_ClusterConfig_add_cluster
       arena);
 }
 
+extern const upb_msglayout_file envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

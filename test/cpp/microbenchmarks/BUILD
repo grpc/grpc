@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
+
 licenses(["notice"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-
 grpc_package(name = "test/cpp/microbenchmarks")
-
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
 
 grpc_cc_test(
     name = "noop-benchmark",
@@ -224,22 +223,6 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [":fullstack_streaming_pump_h"],
-)
-
-grpc_cc_test(
-    name = "bm_fullstack_trickle",
-    size = "large",
-    srcs = ["bm_fullstack_trickle.cc"],
-    args = grpc_benchmark_args(),
-    external_deps = [
-        "absl/flags:flag",
-    ],
-    tags = [
-        "manual",
-        "no_windows",
-        "notap",
-    ],
-    deps = [":helpers"],
 )
 
 grpc_cc_library(

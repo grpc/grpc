@@ -84,7 +84,7 @@ class CallData {
   void MaybeResumeRecvTrailingMetadataReady();
 
   grpc_call_context_element* call_context_;
-  grpc_core::CallCombiner* call_combiner_;
+  CallCombiner* call_combiner_;
   ServiceConfigCallData service_config_call_data_;
   // Overall error for the call
   grpc_error_handle error_ = GRPC_ERROR_NONE;

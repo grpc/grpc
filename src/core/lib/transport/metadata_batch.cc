@@ -71,6 +71,11 @@ class CopySink {
     dst_->Set(trait, value);
   }
 
+  template <class T>
+  void Encode(T trait, const grpc_core::Slice& value) {
+    dst_->Set(trait, std::move(value.AsOwned()));
+  }
+
  private:
   grpc_metadata_batch* dst_;
 };
