@@ -43,9 +43,7 @@ struct XdsEndpointResource {
         return *name == *other.name && lb_weight == other.lb_weight &&
                endpoints == other.endpoints;
       }
-      bool operator!=(const Locality& other) const {
-        return !(*this == other);
-      }
+      bool operator!=(const Locality& other) const { return !(*this == other); }
       std::string ToString() const;
     };
 
@@ -93,9 +91,7 @@ struct XdsEndpointResource {
     bool operator==(const DropConfig& other) const {
       return drop_category_list_ == other.drop_category_list_;
     }
-    bool operator!=(const DropConfig& other) const {
-      return !(*this == other);
-    }
+    bool operator!=(const DropConfig& other) const { return !(*this == other); }
 
     std::string ToString() const;
 
@@ -108,8 +104,7 @@ struct XdsEndpointResource {
   RefCountedPtr<DropConfig> drop_config;
 
   bool operator==(const XdsEndpointResource& other) const {
-    return priorities == other.priorities &&
-           *drop_config == *other.drop_config;
+    return priorities == other.priorities && *drop_config == *other.drop_config;
   }
   std::string ToString() const;
 };

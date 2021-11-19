@@ -88,8 +88,10 @@ class XdsRouting {
   static GeneratePerHttpFilterConfigsResult GeneratePerHTTPFilterConfigs(
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
-      const XdsRouteConfigResource::VirtualHost& vhost, const XdsRouteConfigResource::Route& route,
-      const XdsRouteConfigResource::Route::RouteAction::ClusterWeight* cluster_weight,
+      const XdsRouteConfigResource::VirtualHost& vhost,
+      const XdsRouteConfigResource::Route& route,
+      const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+          cluster_weight,
       grpc_channel_args* args);
 };
 

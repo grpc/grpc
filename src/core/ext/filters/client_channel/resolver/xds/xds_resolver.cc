@@ -263,7 +263,8 @@ class XdsResolver : public Resolver {
     void MaybeAddCluster(const std::string& name);
     grpc_error_handle CreateMethodConfig(
         const XdsRouteConfigResource::Route& route,
-        const XdsRouteConfigResource::Route::RouteAction::ClusterWeight* cluster_weight,
+        const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+            cluster_weight,
         RefCountedPtr<ServiceConfig>* method_config);
 
     RefCountedPtr<XdsResolver> resolver_;
@@ -375,7 +376,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     auto& route_entry = route_table_.back();
     route_entry.route = route;
     auto* route_action =
-        absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route_entry.route.action);
+        absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+            &route_entry.route.action);
     if (route_action != nullptr) {
       // If the route doesn't specify a timeout, set its timeout to the global
       // one.
@@ -432,7 +434,8 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
 
 grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsRouteConfigResource::Route& route,
-    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight* cluster_weight,
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+        cluster_weight,
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
   const auto& route_action =
@@ -538,7 +541,8 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
 absl::optional<uint64_t> HeaderHashHelper(
     const XdsRouteConfigResource::Route::RouteAction::HashPolicy& policy,
     grpc_metadata_batch* initial_metadata) {
-  GPR_ASSERT(policy.type == XdsRouteConfigResource::Route::RouteAction::HashPolicy::HEADER);
+  GPR_ASSERT(policy.type ==
+             XdsRouteConfigResource::Route::RouteAction::HashPolicy::HEADER);
   std::string value_buffer;
   absl::optional<absl::string_view> header_value = XdsRouting::GetHeaderValue(
       initial_metadata, policy.header_name, &value_buffer);
@@ -568,7 +572,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
   auto& entry = route_table_[*route_index];
   // Found a route match
   const auto* route_action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&entry.route.action);
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+          &entry.route.action);
   if (route_action == nullptr) {
     CallConfig call_config;
     call_config.error =

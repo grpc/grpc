@@ -475,11 +475,11 @@ grpc_slice XdsApi::CreateAdsRequest(
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
-                                   tracer_,
-                                   symtab_.ptr(),
-                                   arena.ptr(),
-                                   server.ShouldUseV3(),
-                                   certificate_provider_definition_map_};
+                                      tracer_,
+                                      symtab_.ptr(),
+                                      arena.ptr(),
+                                      server.ShouldUseV3(),
+                                      certificate_provider_definition_map_};
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
@@ -673,11 +673,11 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   AdsParseResult result;
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
-                                   tracer_,
-                                   symtab_.ptr(),
-                                   arena.ptr(),
-                                   server.ShouldUseV3(),
-                                   certificate_provider_definition_map_};
+                                      tracer_,
+                                      symtab_.ptr(),
+                                      arena.ptr(),
+                                      server.ShouldUseV3(),
+                                      certificate_provider_definition_map_};
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
@@ -718,7 +718,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
                         XdsApi::ResourceName resource_name,
                         std::unique_ptr<XdsResourceType::ResourceData> resource,
                         std::string serialized_resource) {
-            return AddResult<LdsUpdateMap, XdsListenerResourceType::ListenerData>(
+            return AddResult<LdsUpdateMap,
+                             XdsListenerResourceType::ListenerData>(
                 &update_map, resource_name_string, std::move(resource_name),
                 std::move(resource), std::move(serialized_resource));
           },
@@ -763,7 +764,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
                         XdsApi::ResourceName resource_name,
                         std::unique_ptr<XdsResourceType::ResourceData> resource,
                         std::string serialized_resource) {
-            return AddResult<EdsUpdateMap, XdsEndpointResourceType::EndpointData>(
+            return AddResult<EdsUpdateMap,
+                             XdsEndpointResourceType::EndpointData>(
                 &update_map, resource_name_string, std::move(resource_name),
                 std::move(resource), std::move(serialized_resource));
           },
@@ -807,11 +809,11 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
-                                   tracer_,
-                                   symtab_.ptr(),
-                                   arena.ptr(),
-                                   server.ShouldUseV3(),
-                                   certificate_provider_definition_map_};
+                                      tracer_,
+                                      symtab_.ptr(),
+                                      arena.ptr(),
+                                      server.ShouldUseV3(),
+                                      certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -985,8 +987,8 @@ grpc_error_handle XdsApi::ParseLrsResponse(
 
 namespace {
 
-google_protobuf_Timestamp* GrpcMillisToTimestamp(const XdsEncodingContext& context,
-                                                 grpc_millis value) {
+google_protobuf_Timestamp* GrpcMillisToTimestamp(
+    const XdsEncodingContext& context, grpc_millis value) {
   google_protobuf_Timestamp* timestamp =
       google_protobuf_Timestamp_new(context.arena);
   gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_REALTIME);

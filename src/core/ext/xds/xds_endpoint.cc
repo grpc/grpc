@@ -179,7 +179,8 @@ grpc_error_handle ServerAddressParseAndAppend(
 
 grpc_error_handle LocalityParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
-    XdsEndpointResource::Priority::Locality* output_locality, size_t* priority) {
+    XdsEndpointResource::Priority::Locality* output_locality,
+    size_t* priority) {
   // Parse LB weight.
   const google_protobuf_UInt32Value* lb_weight =
       envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(

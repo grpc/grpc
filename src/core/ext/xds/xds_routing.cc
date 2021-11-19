@@ -182,8 +182,10 @@ namespace {
 
 const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
     const std::string& instance_name,
-    const XdsRouteConfigResource::VirtualHost& vhost, const XdsRouteConfigResource::Route& route,
-    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight* cluster_weight) {
+    const XdsRouteConfigResource::VirtualHost& vhost,
+    const XdsRouteConfigResource::Route& route,
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+        cluster_weight) {
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
@@ -205,8 +207,10 @@ XdsRouting::GeneratePerHttpFilterConfigsResult
 XdsRouting::GeneratePerHTTPFilterConfigs(
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
-    const XdsRouteConfigResource::VirtualHost& vhost, const XdsRouteConfigResource::Route& route,
-    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight* cluster_weight,
+    const XdsRouteConfigResource::VirtualHost& vhost,
+    const XdsRouteConfigResource::Route& route,
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+        cluster_weight,
     grpc_channel_args* args) {
   GeneratePerHttpFilterConfigsResult result;
   result.args = args;

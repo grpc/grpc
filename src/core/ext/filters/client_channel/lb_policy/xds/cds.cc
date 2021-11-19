@@ -332,7 +332,8 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
   // Don't have the update we need yet.
   if (!state.update.has_value()) return false;
   // For AGGREGATE clusters, recursively expand to child clusters.
-  if (state.update->cluster_type == XdsClusterResource::ClusterType::AGGREGATE) {
+  if (state.update->cluster_type ==
+      XdsClusterResource::ClusterType::AGGREGATE) {
     bool missing_cluster = false;
     for (const std::string& child_name :
          state.update->prioritized_cluster_names) {

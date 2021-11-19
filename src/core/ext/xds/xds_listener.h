@@ -151,11 +151,7 @@ struct XdsListenerResource {
       }
     };
     using SourceIpVector = std::vector<SourceIp>;
-    enum class ConnectionSourceType {
-      kAny = 0,
-      kSameIpOrLoopback,
-      kExternal
-    };
+    enum class ConnectionSourceType { kAny = 0, kSameIpOrLoopback, kExternal };
     using ConnectionSourceTypesArray = std::array<SourceIpVector, 3>;
     struct DestinationIp {
       absl::optional<CidrRange> prefix_range;

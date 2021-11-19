@@ -139,10 +139,10 @@ class XdsServerConfigFetcher::ListenerWatcher
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
     : public grpc_server_config_fetcher::ConnectionManager {
  public:
-  FilterChainMatchManager(
-      RefCountedPtr<XdsClient> xds_client,
-      XdsListenerResource::FilterChainMap filter_chain_map,
-      absl::optional<XdsListenerResource::FilterChainData> default_filter_chain);
+  FilterChainMatchManager(RefCountedPtr<XdsClient> xds_client,
+                          XdsListenerResource::FilterChainMap filter_chain_map,
+                          absl::optional<XdsListenerResource::FilterChainData>
+                              default_filter_chain);
 
   absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
       grpc_channel_args* args, grpc_endpoint* tcp) override;
@@ -578,7 +578,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     FilterChainMatchManager(
         RefCountedPtr<XdsClient> xds_client,
         XdsListenerResource::FilterChainMap filter_chain_map,
-        absl::optional<XdsListenerResource::FilterChainData> default_filter_chain)
+        absl::optional<XdsListenerResource::FilterChainData>
+            default_filter_chain)
     : xds_client_(std::move(xds_client)),
       filter_chain_map_(std::move(filter_chain_map)),
       default_filter_chain_(std::move(default_filter_chain)) {}
@@ -913,7 +914,8 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
     GRPC_ERROR_UNREF(error);
     return nullptr;
   }
-  const XdsListenerResource::FilterChainMap::DestinationIp* best_match = nullptr;
+  const XdsListenerResource::FilterChainMap::DestinationIp* best_match =
+      nullptr;
   for (const auto& entry : destination_ip_vector) {
     // Special case for catch-all
     if (!entry.prefix_range.has_value()) {
@@ -1035,7 +1037,8 @@ absl::StatusOr<
 XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     XdsServerConfigSelector::Create(
         XdsRouteConfigResource rds_update,
-        const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        const std::vector<
+            XdsListenerResource::HttpConnectionManager::HttpFilter>&
             http_filters) {
   auto config_selector = MakeRefCounted<XdsServerConfigSelector>();
   for (auto& vhost : rds_update.virtual_hosts) {
@@ -1047,8 +1050,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       auto& config_selector_route = virtual_host.routes.back();
       config_selector_route.matchers = std::move(route.matchers);
       config_selector_route.unsupported_action =
-          absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(&route.action) ==
-          nullptr;
+          absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
+              &route.action) == nullptr;
       XdsRouting::GeneratePerHttpFilterConfigsResult result =
           XdsRouting::GeneratePerHTTPFilterConfigs(http_filters, vhost, route,
                                                    nullptr, nullptr);

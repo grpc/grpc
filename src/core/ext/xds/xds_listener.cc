@@ -478,7 +478,7 @@ grpc_error_handle DownstreamTlsContextParse(
     if (common_tls_context != nullptr) {
       grpc_error_handle error =
           CommonTlsContext::Parse(context, common_tls_context,
-                                &downstream_tls_context->common_tls_context);
+                                  &downstream_tls_context->common_tls_context);
       if (error != GRPC_ERROR_NONE) errors.push_back(error);
     }
     auto* require_client_certificate =
@@ -1001,8 +1001,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
   grpc_error_handle error =
       LdsResourceParse(context, resource, is_v2, &listener_data->resource);
   if (error != GRPC_ERROR_NONE) {
-    result.resource =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
+    result.resource = absl::InvalidArgumentError(grpc_error_std_string(error));
     GRPC_ERROR_UNREF(error);
   } else {
     result.resource = std::move(listener_data);

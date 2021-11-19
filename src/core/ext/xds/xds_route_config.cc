@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_api.h"
-
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -40,6 +38,7 @@
 #include "upb/upb.hpp"
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_routing.h"
@@ -62,7 +61,8 @@ bool XdsRbacEnabled() {
 // XdsRouteConfigResource::RetryPolicy
 //
 
-std::string XdsRouteConfigResource::RetryPolicy::RetryBackOff::ToString() const {
+std::string XdsRouteConfigResource::RetryPolicy::RetryBackOff::ToString()
+    const {
   std::vector<std::string> contents;
   contents.push_back(
       absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
@@ -100,7 +100,8 @@ std::string XdsRouteConfigResource::Route::Matchers::ToString() const {
 // XdsRouteConfigResource::Route::RouteAction::HashPolicy
 //
 
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(const HashPolicy& other)
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
+    const HashPolicy& other)
     : type(other.type),
       header_name(other.header_name),
       regex_substitution(other.regex_substitution) {
@@ -111,7 +112,8 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(const HashPol
 }
 
 XdsRouteConfigResource::Route::RouteAction::HashPolicy&
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(const HashPolicy& other) {
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
+    const HashPolicy& other) {
   type = other.type;
   header_name = other.header_name;
   if (other.regex != nullptr) {
@@ -122,14 +124,16 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(const HashPoli
   return *this;
 }
 
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy(
+    HashPolicy&& other) noexcept
     : type(other.type),
       header_name(std::move(other.header_name)),
       regex(std::move(other.regex)),
       regex_substitution(std::move(other.regex_substitution)) {}
 
 XdsRouteConfigResource::Route::RouteAction::HashPolicy&
-XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(HashPolicy&& other) noexcept {
+XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(
+    HashPolicy&& other) noexcept {
   type = other.type;
   header_name = std::move(other.header_name);
   regex = std::move(other.regex);
@@ -137,8 +141,8 @@ XdsRouteConfigResource::Route::RouteAction::HashPolicy::operator=(HashPolicy&& o
   return *this;
 }
 
-bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy::operator==(
-    const HashPolicy& other) const {
+bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy::
+operator==(const HashPolicy& other) const {
   if (type != other.type) return false;
   if (type == Type::HEADER) {
     if (regex == nullptr) {
@@ -153,7 +157,8 @@ bool XdsRouteConfigResource::Route::RouteAction::HashPolicy::HashPolicy::operato
   return true;
 }
 
-std::string XdsRouteConfigResource::Route::RouteAction::HashPolicy::ToString() const {
+std::string XdsRouteConfigResource::Route::RouteAction::HashPolicy::ToString()
+    const {
   std::vector<std::string> contents;
   switch (type) {
     case Type::HEADER:
@@ -177,7 +182,8 @@ std::string XdsRouteConfigResource::Route::RouteAction::HashPolicy::ToString() c
 // XdsRouteConfigResource::Route::RouteAction::ClusterWeight
 //
 
-std::string XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
+std::string
+XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(absl::StrCat("cluster=", name));
   contents.push_back(absl::StrCat("weight=", weight));
@@ -225,11 +231,12 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
 std::string XdsRouteConfigResource::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
-  auto* route_action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
+  auto* route_action =
+      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&action);
   if (route_action != nullptr) {
     contents.push_back(absl::StrCat("route=", route_action->ToString()));
-  } else if (absl::holds_alternative<XdsRouteConfigResource::Route::NonForwardingAction>(
-                 action)) {
+  } else if (absl::holds_alternative<
+                 XdsRouteConfigResource::Route::NonForwardingAction>(action)) {
     contents.push_back("non_forwarding_action={}");
   } else {
     contents.push_back("unknown_action={}");
@@ -281,8 +288,8 @@ std::string XdsRouteConfigResource::ToString() const {
 namespace {
 
 grpc_error_handle RoutePathMatchParse(
-    const envoy_config_route_v3_RouteMatch* match, XdsRouteConfigResource::Route* route,
-    bool* ignore_route) {
+    const envoy_config_route_v3_RouteMatch* match,
+    XdsRouteConfigResource::Route* route, bool* ignore_route) {
   auto* case_sensitive_ptr =
       envoy_config_route_v3_RouteMatch_case_sensitive(match);
   bool case_sensitive = true;
@@ -373,7 +380,8 @@ grpc_error_handle RoutePathMatchParse(
 }
 
 grpc_error_handle RouteHeaderMatchersParse(
-    const envoy_config_route_v3_RouteMatch* match, XdsRouteConfigResource::Route* route) {
+    const envoy_config_route_v3_RouteMatch* match,
+    XdsRouteConfigResource::Route* route) {
   size_t size;
   const envoy_config_route_v3_HeaderMatcher* const* headers =
       envoy_config_route_v3_RouteMatch_headers(match, &size);
@@ -439,7 +447,8 @@ grpc_error_handle RouteHeaderMatchersParse(
 }
 
 grpc_error_handle RouteRuntimeFractionParse(
-    const envoy_config_route_v3_RouteMatch* match, XdsRouteConfigResource::Route* route) {
+    const envoy_config_route_v3_RouteMatch* match,
+    XdsRouteConfigResource::Route* route) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
       envoy_config_route_v3_RouteMatch_runtime_fraction(match);
   if (runtime_fraction != nullptr) {
@@ -619,10 +628,10 @@ grpc_error_handle RetryPolicyParse(
   }
 }
 
-grpc_error_handle RouteActionParse(const XdsEncodingContext& context,
-                                   const envoy_config_route_v3_Route* route_msg,
-                                   XdsRouteConfigResource::Route::RouteAction* route,
-                                   bool* ignore_route) {
+grpc_error_handle RouteActionParse(
+    const XdsEncodingContext& context,
+    const envoy_config_route_v3_Route* route_msg,
+    XdsRouteConfigResource::Route::RouteAction* route, bool* ignore_route) {
   const envoy_config_route_v3_RouteAction* route_action =
       envoy_config_route_v3_Route_route(route_msg);
   // Get the cluster or weighted_clusters in the RouteAction.
@@ -728,7 +737,8 @@ grpc_error_handle RouteActionParse(const XdsEncodingContext& context,
         filter_state;
     if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
              hash_policy)) != nullptr) {
-      policy.type = XdsRouteConfigResource::Route::RouteAction::HashPolicy::Type::HEADER;
+      policy.type =
+          XdsRouteConfigResource::Route::RouteAction::HashPolicy::Type::HEADER;
       policy.header_name = UpbStringToStdString(
           envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
               header));
@@ -772,7 +782,8 @@ grpc_error_handle RouteActionParse(const XdsEncodingContext& context,
           envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
               filter_state));
       if (key == "io.grpc.channel_id") {
-        policy.type = XdsRouteConfigResource::Route::RouteAction::HashPolicy::Type::CHANNEL_ID;
+        policy.type = XdsRouteConfigResource::Route::RouteAction::HashPolicy::
+            Type::CHANNEL_ID;
       } else {
         gpr_log(GPR_DEBUG,
                 "RouteAction HashPolicy contains policy specifier "
@@ -812,7 +823,8 @@ grpc_error_handle XdsRouteConfigResource::Parse(
           route_config, &num_virtual_hosts);
   for (size_t i = 0; i < num_virtual_hosts; ++i) {
     rds_update->virtual_hosts.emplace_back();
-    XdsRouteConfigResource::VirtualHost& vhost = rds_update->virtual_hosts.back();
+    XdsRouteConfigResource::VirtualHost& vhost =
+        rds_update->virtual_hosts.back();
     // Parse domains.
     size_t domain_size;
     upb_strview const* domains = envoy_config_route_v3_VirtualHost_domains(
@@ -841,7 +853,8 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       if (error != GRPC_ERROR_NONE) return error;
     }
     // Parse retry policy.
-    absl::optional<XdsRouteConfigResource::RetryPolicy> virtual_host_retry_policy;
+    absl::optional<XdsRouteConfigResource::RetryPolicy>
+        virtual_host_retry_policy;
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
@@ -894,7 +907,8 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         }
       } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                      routes[j])) {
-        route.action.emplace<XdsRouteConfigResource::Route::NonForwardingAction>();
+        route.action
+            .emplace<XdsRouteConfigResource::Route::NonForwardingAction>();
       }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
@@ -938,9 +952,10 @@ void MaybeLogRouteConfiguration(
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult> XdsRouteConfigResourceType::Decode(
-    const XdsEncodingContext& context, absl::string_view serialized_resource,
-    bool /*is_v2*/) const {
+absl::StatusOr<XdsResourceType::DecodeResult>
+XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
+                                   absl::string_view serialized_resource,
+                                   bool /*is_v2*/) const {
   // Parse serialized proto.
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
@@ -956,8 +971,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsRouteConfigResourceType::Decode
   grpc_error_handle error = XdsRouteConfigResource::Parse(
       context, resource, &route_config_data->resource);
   if (error != GRPC_ERROR_NONE) {
-    result.resource =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
+    result.resource = absl::InvalidArgumentError(grpc_error_std_string(error));
     GRPC_ERROR_UNREF(error);
   } else {
     result.resource = std::move(route_config_data);

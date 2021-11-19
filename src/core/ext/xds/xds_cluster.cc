@@ -20,8 +20,8 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -431,8 +431,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   grpc_error_handle error =
       CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
   if (error != GRPC_ERROR_NONE) {
-    result.resource =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
+    result.resource = absl::InvalidArgumentError(grpc_error_std_string(error));
     GRPC_ERROR_UNREF(error);
   } else {
     result.resource = std::move(cluster_data);

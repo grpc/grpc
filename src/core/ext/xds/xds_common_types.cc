@@ -21,8 +21,8 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
@@ -37,8 +37,7 @@ namespace grpc_core {
 // CommonTlsContext::CertificateValidationContext
 //
 
-std::string CommonTlsContext::CertificateValidationContext::ToString()
-    const {
+std::string CommonTlsContext::CertificateValidationContext::ToString() const {
   std::vector<std::string> contents;
   for (const auto& match : match_subject_alt_names) {
     contents.push_back(match.ToString());
@@ -55,8 +54,8 @@ bool CommonTlsContext::CertificateValidationContext::Empty() const {
 // CommonTlsContext::CertificateProviderPluginInstance
 //
 
-std::string
-CommonTlsContext::CertificateProviderPluginInstance::ToString() const {
+std::string CommonTlsContext::CertificateProviderPluginInstance::ToString()
+    const {
   absl::InlinedVector<std::string, 2> contents;
   if (!instance_name.empty()) {
     contents.push_back(absl::StrFormat("instance_name=%s", instance_name));
@@ -68,8 +67,7 @@ CommonTlsContext::CertificateProviderPluginInstance::ToString() const {
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
-bool CommonTlsContext::CertificateProviderPluginInstance::Empty()
-    const {
+bool CommonTlsContext::CertificateProviderPluginInstance::Empty() const {
   return instance_name.empty() && certificate_name.empty();
 }
 
