@@ -13,6 +13,8 @@
 # limitations under the License.
 # distutils: language=c++
 
+g_gevent_threadpool = None
+
 cdef class TimerWrapper:
 
   cdef grpc_custom_timer *c_timer

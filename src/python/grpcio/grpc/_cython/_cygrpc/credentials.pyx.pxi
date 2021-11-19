@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import threading
+import sys
+
 
 def _spawn_callback_in_thread(cb_func, args):
+  # gpr_log("credentials.pyx.pxi", 0, GPR_LOG_SEVERITY_ERROR, "Calling _spawn_callback_in_thread")
   t = ForkManagedThread(target=cb_func, args=args)
   t.setDaemon(True)
   t.start()
+  # gpr_log("credentials.pyx.pxi", 0, GPR_LOG_SEVERITY_ERROR, "Called _spawn_callback_in_thread")
 
 async_callback_func = _spawn_callback_in_thread
 
@@ -42,6 +47,7 @@ cdef int _get_metadata(void *state,
                        size_t *num_creds_md,
                        grpc_status_code *status,
                        const char **error_details) except * with gil:
+  gpr_log("credentials.pyx.pxi", 0, GPR_LOG_SEVERITY_ERROR, "Calling _get_metadata for state %p", state)
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -62,6 +68,7 @@ cdef int _get_metadata(void *state,
     plugin._stored_ctx.copy().run(_spawn_callback_async, plugin, args)
   else:
     _spawn_callback_async(<object>state, args)
+  gpr_log("credentials.pyx.pxi", 0, GPR_LOG_SEVERITY_ERROR, "Called _get_metadata for state %p", state)
   return 0  # Asynchronous return
 
 

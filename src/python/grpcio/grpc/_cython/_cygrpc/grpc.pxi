@@ -704,3 +704,11 @@ cdef extern from "grpc/grpc_security_constants.h":
 cdef extern from "src/core/lib/iomgr/error.h":
   ctypedef grpc_error* grpc_error_handle
   grpc_error_handle GRPC_ERROR_CANCELLED
+
+cdef extern from "include/grpc/impl/codegen/log.h":
+  ctypedef enum gpr_log_severity:
+    GPR_LOG_SEVERITY_DEBUG
+    GPR_LOG_SEVERITY_INFO
+    GPR_LOG_SEVERITY_ERROR
+
+  void gpr_log(const char* file, int line, gpr_log_severity severity, const char* message, ...)

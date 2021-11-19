@@ -1972,7 +1972,9 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
   } else {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
+    // gpr_log(GPR_ERROR, "Running call_start_batch for %p", call);
     err = call_start_batch(call, ops, nops, tag, 0);
+    // gpr_log(GPR_ERROR, "Ran call_start_batch for %p", call);
   }
 
   return err;

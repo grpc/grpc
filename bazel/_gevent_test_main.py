@@ -39,6 +39,7 @@ class SingleLoader(object):
 
 if __name__ == "__main__":
     from gevent import monkey
+    import gevent.util
 
     monkey.patch_all()
 
@@ -55,6 +56,7 @@ if __name__ == "__main__":
     runner = unittest.TextTestRunner()
 
     result = gevent.spawn(runner.run, loader.suite)
+    # gevent.util.print_run_info()
     result.join()
     if not result.value.wasSuccessful():
         sys.exit("Test failure.")

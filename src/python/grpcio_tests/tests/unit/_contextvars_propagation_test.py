@@ -20,6 +20,9 @@ import sys
 import threading
 import unittest
 
+import collections
+import datetime
+
 import grpc
 from six.moves import queue
 
@@ -75,6 +78,7 @@ if contextvars_supported():
     class TestCallCredentials(grpc.AuthMetadataPlugin):
 
         def __call__(self, context, callback):
+            sys.stderr.write("TestCallCredentials called.\n"); sys.stderr.flush()
             if test_var.get() != _EXPECTED_VALUE:
                 raise AssertionError("{} != {}".format(test_var.get(),
                                                        _EXPECTED_VALUE))
@@ -94,30 +98,38 @@ else:
         def __call__(self, context, callback):
             callback((), None)
 
+marker_counts = collections.defaultdict(int)
+
+def marker(msg="marker"):
+    import sys
+    global marker_counts
+    marker_counts[msg] += 1
+    sys.stderr.write("{} {}: {}\n".format(datetime.datetime.now(), msg, marker_counts[msg]))
+    sys.stderr.flush()
 
 # TODO(https://github.com/grpc/grpc/issues/22257)
 @unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
-@unittest.skipIf(test_common.running_under_gevent(),
-                 "ThreadLocals do not work under gevent.")
 class ContextVarsPropagationTest(unittest.TestCase):
 
-    def test_propagation_to_auth_plugin(self):
-        set_up_expected_context()
-        with _server() as port:
-            target = "localhost:{}".format(port)
-            local_credentials = grpc.local_channel_credentials()
-            test_call_credentials = TestCallCredentials()
-            call_credentials = grpc.metadata_call_credentials(
-                test_call_credentials, "test call credentials")
-            composite_credentials = grpc.composite_channel_credentials(
-                local_credentials, call_credentials)
-            with grpc.secure_channel(target, composite_credentials) as channel:
-                stub = channel.unary_unary(_UNARY_UNARY)
-                response = stub(_REQUEST, wait_for_ready=True)
-                self.assertEqual(_REQUEST, response)
+    # def test_propagation_to_auth_plugin(self):
+    #     set_up_expected_context()
+    #     with _server() as port:
+    #         target = "localhost:{}".format(port)
+    #         local_credentials = grpc.local_channel_credentials()
+    #         test_call_credentials = TestCallCredentials()
+    #         call_credentials = grpc.metadata_call_credentials(
+    #             test_call_credentials, "test call credentials")
+    #         composite_credentials = grpc.composite_channel_credentials(
+    #             local_credentials, call_credentials)
+    #         with grpc.secure_channel(target, composite_credentials) as channel:
+    #             stub = channel.unary_unary(_UNARY_UNARY)
+    #             response = stub(_REQUEST, wait_for_ready=True)
+    #             self.assertEqual(_REQUEST, response)
 
     def test_concurrent_propagation(self):
-        _THREAD_COUNT = 32
+        # _THREAD_COUNT = 10
+        # _RPC_COUNT = 100
+        _THREAD_COUNT = 1
         _RPC_COUNT = 32
 
         set_up_expected_context()
@@ -130,6 +142,8 @@ class ContextVarsPropagationTest(unittest.TestCase):
             composite_credentials = grpc.composite_channel_credentials(
                 local_credentials, call_credentials)
             wait_group = test_common.WaitGroup(_THREAD_COUNT)
+
+            marker()
 
             def _run_on_thread(exception_queue):
                 try:
@@ -145,16 +159,27 @@ class ContextVarsPropagationTest(unittest.TestCase):
                     exception_queue.put(e)
 
             threads = []
-            for _ in range(_RPC_COUNT):
+
+            marker()
+            for _ in range(_THREAD_COUNT):
                 q = queue.Queue()
+                marker("Spawning thread")
                 thread = threading.Thread(target=_run_on_thread, args=(q,))
                 thread.setDaemon(True)
                 thread.start()
                 threads.append((thread, q))
+                marker("Spawned thread")
 
+            marker()
+            import gevent; gevent.sleep(3)
             for thread, q in threads:
+                marker("Joining thread")
+                import gevent.util
+                gevent.util.print_run_info()
                 thread.join()
+                marker("Joined thread")
                 if not q.empty():
+                    marker("Found exception")
                     raise q.get()
 
 

@@ -66,6 +66,6 @@ def py_grpc_gevent_test(
         srcs = [copied_main_filename],
         main = copied_main_filename,
         python_version = "PY3",
-        flaky = True,
+        flaky = False,
         **kwargs
     )

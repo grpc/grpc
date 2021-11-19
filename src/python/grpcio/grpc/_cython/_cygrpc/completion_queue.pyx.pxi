@@ -15,7 +15,7 @@
 import datetime
 import sys
 
-cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
+cdef int _INTERRUPT_CHECK_PERIOD_MS = 2000
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *:
   cdef gpr_timespec c_increment
@@ -43,7 +43,7 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
 
     # Handle any signals
     cpython.PyErr_CheckSignals()
-    import gevent; gevent.sleep(0)
+    # import gevent; gevent.sleep(0)
   return c_event
 
 # TODO: Make this one work with gevent as well.
@@ -67,12 +67,25 @@ cdef _internal_latent_event(_LatentEventArg latent_event_arg):
   return _interpret_event(c_event)
 
 cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
-    from gevent import get_hub
-    pool = get_hub().threadpool
+    # sys.stderr.write("{} Getting hub for cq {}\n".format(datetime.datetime.now(), hex(<uintptr_t>(c_completion_queue)))); sys.stderr.flush()
+    # from gevent import get_hub
+    # sys.stderr.write("{} Got hub for cq {}\n".format(datetime.datetime.now(), hex(<uintptr_t>(c_completion_queue)))); sys.stderr.flush()
     latent_event_arg = _LatentEventArg()
     latent_event_arg.c_completion_queue = c_completion_queue
     latent_event_arg.deadline = deadline
-    return pool.apply(_internal_latent_event, (latent_event_arg,))
+
+    global g_gevent_threadpool
+
+    if g_gevent_threadpool is None:
+      g_gevent_threadpool = gevent_hub.get_hub().threadpool
+    # sys.stderr.write("Gevent threadpool size: {}\n".format(g_gevent_threadpool.size))
+    # sys.stderr.write("Gevent threadpool maxsize: {}\n".format(g_gevent_threadpool.maxsize))
+    # sys.stderr.flush()
+
+    # sys.stderr.write("{} Calling internal_latent_event: {}\n".format(datetime.datetime.now(), hex(<uintptr_t>(c_completion_queue)))); sys.stderr.flush()
+    result = g_gevent_threadpool.apply(_internal_latent_event, (latent_event_arg,))
+    # sys.stderr.write("{} Called internal_latent_event: 0x{}\n".format(datetime.datetime.now(), hex(<uintptr_t>(c_completion_queue)))); sys.stderr.flush()
+    return result
 
 cdef class CompletionQueue:
 
@@ -102,9 +115,9 @@ cdef class CompletionQueue:
   # We name this 'poll' to avoid problems with CPython's expectations for
   # 'special' methods (like next and __next__).
   def poll(self, deadline=None):
-    from gevent import get_hub
-    pool = get_hub().threadpool
-    return pool.apply(CompletionQueue._internal_poll, (self, deadline))
+    # from gevent import get_hub
+    # pool = get_hub().threadpool
+    return g_gevent_threadpool.apply(CompletionQueue._internal_poll, (self, deadline))
     # return self._interpret_event(_next(self.c_completion_queue, deadline))
 
   def shutdown(self):

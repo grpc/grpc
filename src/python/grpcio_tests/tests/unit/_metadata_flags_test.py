@@ -20,6 +20,15 @@ import time
 import unittest
 import weakref
 
+import datetime
+
+import functools
+
+import collections
+
+import gevent
+import gevent.util
+
 import grpc
 from six.moves import queue
 
@@ -35,6 +44,15 @@ _STREAM_STREAM = '/test/StreamStream'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x00\x00\x00'
+
+marker_counts = collections.defaultdict(int)
+
+def marker(msg="marker"):
+    import sys
+    global marker_counts
+    marker_counts[msg] += 1
+    sys.stderr.write("{} {}: {}\n".format(datetime.datetime.now(), msg, marker_counts[msg]))
+    sys.stderr.flush()
 
 
 def handle_unary_unary(test, request, servicer_context):
@@ -135,7 +153,7 @@ def perform_unary_stream_call(channel, wait_for_ready=None):
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready)
     for _ in response_iterator:
-        pass
+        marker("unary_stream_call iterator")
 
 
 def perform_stream_unary_call(channel, wait_for_ready=None):
@@ -170,10 +188,14 @@ def perform_stream_stream_call(channel, wait_for_ready=None):
 
 
 _ALL_CALL_CASES = [
-    perform_unary_unary_call, perform_unary_unary_with_call,
-    perform_unary_unary_future, perform_unary_stream_call,
-    perform_stream_unary_call, perform_stream_unary_with_call,
-    perform_stream_unary_future, perform_stream_stream_call
+    perform_unary_unary_call,
+    perform_unary_unary_with_call,
+    perform_unary_unary_future,
+    perform_unary_stream_call,
+    perform_stream_unary_call,
+    perform_stream_unary_with_call,
+    perform_stream_unary_future,
+    perform_stream_stream_call
 ]
 
 
@@ -213,43 +235,66 @@ class MetadataFlagsTest(unittest.TestCase):
         addr = '{}:{}'.format(host, port)
         wg = test_common.WaitGroup(len(_ALL_CALL_CASES))
 
-        def wait_for_transient_failure(channel_connectivity):
-            if channel_connectivity == grpc.ChannelConnectivity.TRANSIENT_FAILURE:
-                wg.done()
+        channel_finished_statuses = []
 
-        def test_call(perform_call):
+        def wait_for_transient_failure(channel_id, channel_connectivity):
+            greenlet_id = id(gevent.getcurrent())
+            marker("Subscription for channel {}: {}, greenlet {}".format(channel_id, channel_connectivity, greenlet_id))
+            if (channel_connectivity == grpc.ChannelConnectivity.TRANSIENT_FAILURE and
+                not channel_finished_statuses[channel_id]):
+                # gevent.util.print_run_info()
+                marker("Transient failure for channel {}, greenlet {}".format(channel_id, greenlet_id))
+                wg.done()
+                channel_finished_statuses[channel_id] = True
+
+        def test_call(perform_call, channel_id):
             with grpc.insecure_channel(addr) as channel:
                 try:
-                    channel.subscribe(wait_for_transient_failure)
+                    channel.subscribe(functools.partial(wait_for_transient_failure, channel_id))
+                    marker("Performing call {}".format(channel_id))
                     perform_call(channel, wait_for_ready=True)
+                    marker("Performed call {}".format(channel_id))
                 except BaseException as e:  # pylint: disable=broad-except
+                    marker("Exception")
                     # If the call failed, the thread would be destroyed. The
                     # channel object can be collected before calling the
                     # callback, which will result in a deadlock.
                     wg.done()
+                    channel_finished_statuses[channel_id] = True
                     unhandled_exceptions.put(e, True)
 
         test_threads = []
-        for perform_call in _ALL_CALL_CASES:
+        for channel_id, perform_call in enumerate(_ALL_CALL_CASES):
+            channel_finished_statuses.append(False)
             test_thread = threading.Thread(target=test_call,
-                                           args=(perform_call,))
+                                           args=(perform_call, channel_id))
             test_thread.daemon = True
             test_thread.exception = None
             test_thread.start()
             test_threads.append(test_thread)
 
         # Start the server after the connections are waiting
+        marker()
         wg.wait()
+        marker()
+    
         server = test_common.test_server(reuse_port=True)
         server.add_generic_rpc_handlers((_GenericHandler(weakref.proxy(self)),))
         server.add_insecure_port(addr)
+        marker()
         server.start()
+        marker()
 
         for test_thread in test_threads:
+            marker("Joining thread")
+            # gevent.util.print_run_info()
             test_thread.join()
+            marker("Joined thread")
 
+        marker()
         # Stop the server to make test end properly
         server.stop(0)
+        marker()
 
         if not unhandled_exceptions.empty():
             raise unhandled_exceptions.get(True)

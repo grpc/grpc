@@ -114,7 +114,9 @@ class ForkManagedThread(object):
     def start(self):
         if _GRPC_ENABLE_FORK_SUPPORT:
             _fork_state.active_thread_count.increment()
+        print("Starting ForkManagedThread")
         self._thread.start()
+        print("Started ForkManagedThread")
 
     def join(self):
         self._thread.join()

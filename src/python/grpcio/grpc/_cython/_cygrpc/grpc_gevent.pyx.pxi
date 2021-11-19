@@ -23,8 +23,12 @@ gevent_event = None
 g_event = None
 g_pool = None
 
+g_gevent_threadpool = None
+
 def _spawn_greenlet(*args):
+  sys.stderr.write("Calling _spawn_greenlet with args {}\n".format(args)); sys.stderr.flush()
   greenlet = g_pool.spawn(*args)
+  sys.stderr.write("Called _spawn_greenlet\n"); sys.stderr.flush()
 
 ###############################
 ### socket implementation ###
@@ -377,30 +381,34 @@ cdef grpc_custom_timer_vtable gevent_timer_vtable
 cdef grpc_custom_poller_vtable gevent_pollset_vtable
 
 def init_grpc_gevent():
-  pass
   # Lazily import gevent
   # global gevent_socket
   # global gevent_g
-  # global gevent_hub
+  global gevent_hub
+  global g_gevent_threadpool
   # global gevent_event
   # global g_event
-  # global g_pool
-  # import gevent
+  global g_pool
+  import gevent
   # gevent_g = gevent
   # import gevent.socket
   # gevent_socket = gevent.socket
   # import gevent.hub
-  # gevent_hub = gevent.hub
+  gevent_hub = gevent.hub
   # import gevent.event
   # gevent_event = gevent.event
-  # import gevent.pool
+  import gevent.pool
+
+  g_gevent_threadpool = gevent_hub.get_hub().threadpool
+  g_gevent_threadpool.maxsize = 1024
+  g_gevent_threadpool.size = 32
 
   # g_event = gevent.event.Event()
-  # g_pool = gevent.pool.Group()
+  g_pool = gevent.pool.Group()
 
-  # def cb_func(cb, args):
-  #   _spawn_greenlet(cb, *args)
-  # set_async_callback_func(cb_func)
+  def cb_func(cb, args):
+    _spawn_greenlet(cb, *args)
+  set_async_callback_func(cb_func)
 
   # gevent_resolver_vtable.resolve = socket_resolve
   # gevent_resolver_vtable.resolve_async = socket_resolve_async
