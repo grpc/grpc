@@ -185,7 +185,7 @@ constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
     "  ]\n"
     "}";
 
-constexpr char kBootstrapFileV3[] =
+constexpr char kBootstrapFileHeaderAndXdsServers[] =
     "{\n"
     "  \"xds_servers\": [\n"
     "    {\n"
@@ -197,25 +197,18 @@ constexpr char kBootstrapFileV3[] =
     "      ],\n"
     "      \"server_features\": [\"xds_v3\"]\n"
     "    }\n"
-    "  ],\n"
-    "  \"node\": {\n"
-    "    \"id\": \"xds_end2end_test\",\n"
-    "    \"cluster\": \"test\",\n"
-    "    \"metadata\": {\n"
-    "      \"foo\": \"bar\"\n"
-    "    },\n"
-    "    \"locality\": {\n"
-    "      \"region\": \"corp\",\n"
-    "      \"zone\": \"svl\",\n"
-    "      \"sub_zone\": \"mp3\"\n"
-    "    }\n"
-    "  },\n"
+    "  ],\n";
+constexpr char kBootstrapFileAuthorities[] =
     "  \"authorities\": {\n"
     "    \"xds.example.com\": {\n"
     "    }\n"
-    "  },\n"
+    "  },\n";
+
+constexpr char kBootstrapFileServerNameTemplate[] =
     "  \"server_listener_resource_name_template\": "
-    "\"grpc/server?xds.resource.listening_address=%s\",\n"
+    "\"grpc/server?xds.resource.listening_address=%s\",\n";
+
+constexpr char kBootstrapFileCertificateProviders[] =
     "  \"certificate_providers\": {\n"
     "    \"fake_plugin1\": {\n"
     "      \"plugin_name\": \"fake1\"\n"
@@ -230,6 +223,20 @@ constexpr char kBootstrapFileV3[] =
     "        \"private_key_file\": \"src/core/tsi/test_creds/client.key\",\n"
     "        \"ca_certificate_file\": \"src/core/tsi/test_creds/ca.pem\"\n"
     "      }"
+    "    }\n"
+    "  },\n";
+
+constexpr char kBootstrapFileNodeAndFooter[] =
+    "  \"node\": {\n"
+    "    \"id\": \"xds_end2end_test\",\n"
+    "    \"cluster\": \"test\",\n"
+    "    \"metadata\": {\n"
+    "      \"foo\": \"bar\"\n"
+    "    },\n"
+    "    \"locality\": {\n"
+    "      \"region\": \"corp\",\n"
+    "      \"zone\": \"svl\",\n"
+    "      \"sub_zone\": \"mp3\"\n"
     "    }\n"
     "  }\n"
     "}\n";
@@ -790,7 +797,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().use_v2()) {
       builder.SetV2();
     }
-    gpr_log(GPR_INFO, "donna num of balancers is %d", num_balancers_);
     if (num_balancers_ > 0 && !GetParam().use_fake_resolver()) {
       builder.SetDefaultServer(
           absl::StrCat("localhost:", balancers_[0]->port()));
@@ -1694,9 +1700,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
       void UpdateArguments(grpc::ChannelArguments* args) override {
         gpr_log(GPR_INFO, "donna did failed test call this?");
+
         args->SetString(
             GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-            GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+            test_obj_->bootstrap_);
         args->SetPointerWithVtable(
             GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
             &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
@@ -1931,31 +1938,37 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
    public:
     BootstrapBuilder() {}
     void SetV2() { v2_ = true; }
-    void SetDefaultServer(const std::string& server) {
-      if (top_servers_.empty()) {
-        top_servers_.emplace_back();
-      }
-      top_servers_[0] = server;
-    }
+    void SetDefaultServer(const std::string& server) { top_server_ = server; }
     void SetAuthorityServer(const std::string& authority,
                             const std::string& server) {
-      servers_map_[authority][0] = server;
+      authority_server_ = {authority, server};
     }
     std::string Build() {
-      if (top_servers_.empty()) {
-        return std::string((v2_ ? kBootstrapFileV2 : kBootstrapFileV3));
+      if (top_server_.empty()) {
+        return std::string(
+            (v2_ ? kBootstrapFileV2
+                 : absl::StrCat(kBootstrapFileHeaderAndXdsServers,
+                                kBootstrapFileAuthorities,
+                                kBootstrapFileServerNameTemplate,
+                                kBootstrapFileCertificateProviders,
+                                kBootstrapFileNodeAndFooter)));
       }
-      std::string bootstrap =
-          absl::StrReplaceAll((v2_ ? kBootstrapFileV2 : kBootstrapFileV3),
-                              {{"fake:///xds_server", top_servers_[0]}});
+      std::string bootstrap = absl::StrReplaceAll(
+          (v2_ ? kBootstrapFileV2
+               : absl::StrCat(kBootstrapFileHeaderAndXdsServers,
+                              kBootstrapFileAuthorities,
+                              kBootstrapFileServerNameTemplate,
+                              kBootstrapFileCertificateProviders,
+                              kBootstrapFileNodeAndFooter)),
+          {{"fake:///xds_server", top_server_}});
       return bootstrap;
     }
 
    private:
     bool v2_ = false;
-    absl::InlinedVector<std::string, 1> top_servers_;
-    std::map<std::string /*authority*/, absl::InlinedVector<std::string, 1>>
-        servers_map_;
+    std::string top_server_;
+    std::pair<std::string /*authority*/, std::string /*server*/>
+        authority_server_;
   };
 
   const size_t num_backends_;
@@ -12463,9 +12476,7 @@ class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  gpr_log(GPR_INFO, "donna before unset");
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  gpr_log(GPR_INFO, "donna after unset");
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
