@@ -1480,7 +1480,6 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
                                           .PreconditionChannelArgs(args);
   grpc_core::Server* server = new grpc_core::Server(new_args);
   grpc_channel_args_destroy(new_args);
-  grpc_channel_args_destroy(args);
   return server->c_ptr();
 }
 
