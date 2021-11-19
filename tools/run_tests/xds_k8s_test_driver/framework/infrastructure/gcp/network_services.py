@@ -55,7 +55,7 @@ class EndpointPolicy:
 
 
 @dataclasses.dataclass(frozen=True)
-class Router:
+class Mesh:
 
     name: str
     url: str
@@ -65,7 +65,7 @@ class Router:
     routes: Optional[List[str]]
 
     @classmethod
-    def from_response(cls, name: str, d: Dict[str, Any]) -> 'Router':
+    def from_response(cls, name: str, d: Dict[str, Any]) -> 'Mesh':
         return cls(
             name=name,
             url=d["name"],
@@ -169,7 +169,7 @@ class GrpcRoute:
     url: str
     hostnames: Tuple[str]
     rules: Tuple['RouteRule']
-    routers: Optional[Tuple[str]]
+    meshes: Optional[Tuple[str]]
 
     @classmethod
     def from_response(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
@@ -178,7 +178,7 @@ class GrpcRoute:
             url=d["name"],
             hostnames=tuple(d["hostnames"]),
             rules=tuple(d["rules"]),
-            routers=None if d.get("routers") is None else tuple(d["routers"]),
+            meshes=None if d.get("meshes") is None else tuple(d["meshes"]),
         )
 
 
@@ -247,27 +247,27 @@ class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
     """
 
     GRPC_ROUTES = 'grpcRoutes'
-    ROUTERS = 'routers'
+    MESHES = 'meshes'
 
     @property
     def api_version(self) -> str:
         return 'v1alpha1'
 
-    def create_router(self, name: str, body: dict) -> GcpResource:
-        return self._create_resource(collection=self._api_locations.routers(),
+    def create_mesh(self, name: str, body: dict) -> GcpResource:
+        return self._create_resource(collection=self._api_locations.meshes(),
                                      body=body,
-                                     routerId=name)
+                                     meshId=name)
 
-    def get_router(self, name: str) -> Router:
-        full_name = self.resource_full_name(name, self.ROUTERS)
-        result = self._get_resource(collection=self._api_locations.routers(),
+    def get_mesh(self, name: str) -> Mesh:
+        full_name = self.resource_full_name(name, self.MESHES)
+        result = self._get_resource(collection=self._api_locations.meshes(),
                                     full_name=full_name)
-        return Router.from_response(name, result)
+        return Mesh.from_response(name, result)
 
-    def delete_router(self, name: str) -> bool:
-        return self._delete_resource(collection=self._api_locations.routers(),
+    def delete_mesh(self, name: str) -> bool:
+        return self._delete_resource(collection=self._api_locations.meshes(),
                                      full_name=self.resource_full_name(
-                                         name, self.ROUTERS))
+                                         name, self.MESHES))
 
     def create_grpc_route(self, name: str, body: dict) -> GcpResource:
         return self._create_resource(
