@@ -56,9 +56,8 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   custom_fixture_data* fixture_data =
       static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_endpoint_add_to_pollset(fixture_data->ep.server, grpc_cq_pollset(f->cq));
-  grpc_core::Server* core_server = grpc_core::Server::FromC(f->server);
-  grpc_error_handle error = core_server->SetupTransport(
-      transport, nullptr, core_server->channel_args(), nullptr);
+  grpc_error_handle error = f->server->core_server->SetupTransport(
+      transport, nullptr, f->server->core_server->channel_args(), nullptr);
   if (error == GRPC_ERROR_NONE) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {

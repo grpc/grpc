@@ -491,6 +491,8 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
+  - src/core/ext/filters/server_config_selector/server_config_selector.h
+  - src/core/ext/filters/server_config_selector/server_config_selector_filter.h
   - src/core/ext/service_config/service_config.h
   - src/core/ext/service_config/service_config_call_data.h
   - src/core/ext/service_config/service_config_parser.h
@@ -723,6 +725,7 @@ libs:
   - src/core/ext/xds/xds_client_stats.h
   - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
+  - src/core/ext/xds/xds_routing.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -759,9 +762,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/table.h
@@ -915,6 +916,7 @@ libs:
   - src/core/lib/security/util/json_util.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -1055,6 +1057,8 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
+  - src/core/ext/filters/server_config_selector/server_config_selector.cc
+  - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   - src/core/ext/service_config/service_config.cc
   - src/core/ext/service_config/service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
@@ -1290,6 +1294,7 @@ libs:
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
+  - src/core/ext/xds/xds_routing.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
@@ -1584,6 +1589,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -1606,6 +1612,7 @@ libs:
   - test/core/util/tls_utils.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -1637,6 +1644,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -1658,6 +1666,7 @@ libs:
   - test/core/util/test_tcp_server.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -1833,9 +1842,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/table.h
@@ -1940,6 +1947,7 @@ libs:
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -3735,6 +3743,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -4052,6 +4061,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -4145,15 +4155,6 @@ targets:
   - test/core/transport/chttp2/stream_map_test.cc
   deps:
   - grpc_test_util
-- name: stream_owned_slice_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/stream_owned_slice_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: string_test
   build: test
   language: c
@@ -4226,30 +4227,6 @@ targets:
   - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
-- name: test_core_slice_slice_test
-  build: test
-  language: c
-  headers:
-  - src/core/lib/debug/trace.h
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
-  src:
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
-  - test/core/slice/slice_test.cc
-  deps:
-  - gpr
-  uses_polling: false
 - name: thd_test
   build: test
   language: c
@@ -5729,6 +5706,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -6812,6 +6790,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -7536,6 +7515,7 @@ targets:
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -7717,10 +7697,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/ext/filters/server_config_selector/server_config_selector.h
+  headers: []
   src:
-  - src/core/ext/filters/server_config_selector/server_config_selector.cc
   - test/core/server_config_selector/server_config_selector_test.cc
   deps:
   - grpc_test_util
@@ -7991,6 +7969,34 @@ targets:
   deps:
   - absl/types:optional
   - absl/utility:utility
+  uses_polling: false
+- name: test_core_slice_slice_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
+  - src/core/lib/slice/static_slice.h
+  - test/core/util/build.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/slice/static_slice.cc
+  - test/core/slice/slice_test.cc
+  - test/core/util/build.cc
+  deps:
+  - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
@@ -8542,6 +8548,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -8566,6 +8573,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc

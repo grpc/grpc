@@ -1,0 +1,117 @@
+actions {
+  create_server {
+    channel_args {
+      key: "grpc.resource_quota"
+      resource_quota {
+      }
+    }
+    channel_args {
+    }
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+    channel_args {
+      resource_quota {
+      }
+    }
+    channel_args {
+      i: 1
+    }
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "dns:sers:s"
+      intern: true
+    }
+    timeout: 999962120
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "dns:se0s[s\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\001\000W\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000D08796287\000\000\000\000\000\000\000\000\000\000\000\000\000"
+    }
+    host {
+      value: "dns:sers:s"
+      intern: true
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  get_peer {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      flags: 1634992128
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  queue_batch {
+  }
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  watch_connectivity: 10131072
+}
+actions {
+  advance_time: 80
+}
+actions {
+  create_call {
+    method {
+      value: "dns:sers:ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"
+      intern: true
+    }
+    host {
+      value: "dns:sers:s"
+      intern: true
+    }
+    timeout: 999962120
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  destroy_call {
+  }
+}
+actions {
+  resize_resource_quota: 0
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      flags: 1634992128
+    }
+  }
+}
+actions {
+  disable_tracer: "dns:sers:s"
+}

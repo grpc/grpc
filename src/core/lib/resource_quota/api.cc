@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
@@ -39,14 +40,19 @@ grpc_arg MakeArg(ResourceQuota* quota) {
 
 grpc_channel_args* EnsureResourceQuotaInChannelArgs(
     const grpc_channel_args* args) {
-  if (grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA) != nullptr) {
+  const grpc_arg* existing =
+      grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA);
+  if (existing != nullptr && existing->type == GRPC_ARG_POINTER &&
+      existing->value.pointer.p == nullptr) {
     return grpc_channel_args_copy(args);
   }
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not
   // sharing subchannels due to their channel args not specifying a quota.
+  const char* remove[] = {GRPC_ARG_RESOURCE_QUOTA};
   auto new_arg = MakeArg(ResourceQuota::Default().get());
-  return grpc_channel_args_copy_and_add(args, &new_arg, 1);
+  return grpc_channel_args_copy_and_add_and_remove(args, remove, 1, &new_arg,
+                                                   1);
 }
 
 grpc_channel_args* ChannelArgsWrappingResourceQuota(
@@ -89,6 +95,7 @@ extern "C" void grpc_resource_quota_unref(grpc_resource_quota* resource_quota) {
 
 extern "C" void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                            size_t new_size) {
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::ResourceQuota::FromC(resource_quota)
       ->memory_quota()
       ->SetSize(new_size);
