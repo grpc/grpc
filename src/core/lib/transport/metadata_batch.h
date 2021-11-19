@@ -210,9 +210,9 @@ struct NameLookup<> {
   }
 };
 
-template <typename ParseMementoFn, ParseMementoFn parse_memento,
-          typename MementoToValueFn, MementoToValueFn memento_to_value>
+template <typename ParseMementoFn, typename MementoToValueFn>
 struct ParseValue {
+  template <ParseMementoFn parse_memento, MementoToValueFn memento_to_value>
   GPR_ATTRIBUTE_NOINLINE static auto Parse(Slice* slice)
       -> decltype(memento_to_value(parse_memento(std::move(*slice)))) {
     return memento_to_value(parse_memento(std::move(*slice)));
@@ -229,9 +229,9 @@ class ParseHelper {
   ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
         trait,
-        ParseValue<decltype(Trait::ParseMemento), Trait::ParseMemento,
-                   decltype(Trait::MementoToValue),
-                   Trait::MementoToValue>::Parse(&value_),
+        ParseValue<decltype(Trait::ParseMemento),
+                   decltype(Trait::MementoToValue)>::
+            template Parse<Trait::ParseMemento, Trait::MementoToValue>(&value_),
         transport_size_);
   }
 
@@ -257,9 +257,10 @@ class AppendHelper {
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
     container_->Set(
-        trait, ParseValue<decltype(Trait::ParseMemento), Trait::ParseMemento,
-                          decltype(Trait::MementoToValue),
-                          Trait::MementoToValue>::Parse(&value_));
+        trait, ParseValue<decltype(Trait::ParseMemento),
+                          decltype(Trait::MementoToValue)>::
+                   template Parse<Trait::ParseMemento, Trait::MementoToValue>(
+                       &value_));
   }
 
   void NotFound(absl::string_view key) {
