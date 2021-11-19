@@ -19,6 +19,9 @@
 
 #include <memory>
 
+#include "absl/functional/bind_front.h"
+
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
@@ -26,81 +29,74 @@
 #include <grpcpp/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 namespace grpc {
 
 namespace internal {
-class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
+
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+class AlarmImpl : public grpc::internal::CompletionQueueTag {
  public:
-  AlarmImpl() : cq_(nullptr), tag_(nullptr) {
-    gpr_ref_init(&refs_, 1);
-    grpc_timer_init_unset(&timer_);
-  }
+  AlarmImpl() : cq_(nullptr), tag_(nullptr) { gpr_ref_init(&refs_, 1); }
   ~AlarmImpl() override {}
   bool FinalizeResult(void** tag, bool* /*status*/) override {
     *tag = tag_;
     Unref();
     return true;
   }
-  void Set(::grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
+  void Set(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
     tag_ = tag;
     GPR_ASSERT(grpc_cq_begin_op(cq_, this));
-    GRPC_CLOSURE_INIT(
-        &on_alarm_,
-        [](void* arg, grpc_error_handle error) {
-          // queue the op on the completion queue
-          AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-          alarm->Ref();
-          // Preserve the cq and reset the cq_ so that the alarm
-          // can be reset when the alarm tag is delivered.
-          grpc_completion_queue* cq = alarm->cq_;
-          alarm->cq_ = nullptr;
-          grpc_cq_end_op(
-              cq, alarm, error,
-              [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, arg,
-              &alarm->completion_);
-          GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
-        },
-        this, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),
-                    &on_alarm_);
+    closure_ = [this](grpc_error_handle error) {
+      Ref();
+      // Preserve the cq and reset the cq_ so that the alarm
+      // can be reset when the alarm tag is delivered.
+      grpc_completion_queue* cq = cq_;
+      cq_ = nullptr;
+      grpc_cq_end_op(
+          cq, this, error,
+          [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, this,
+          &completion_);
+      GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
+    };
+    // TODO(hork): options for EE ownership:
+    // * global EE as shown below,
+    // * an alarm-owned EE (terrible idea included for completeness)
+    // * adding a new Alarm constructor that takes a shared EE, maybe
+    //   indirectly through ChannelArgs
+    timer_handle_ = GetDefaultEventEngine()->RunAt(
+        grpc_core::ToAbslTime(deadline),
+        absl::bind_front(closure_, GRPC_ERROR_NONE));
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
     // Don't use any CQ at all. Instead just use the timer to fire the function
-    callback_ = std::move(f);
     Ref();
-    GRPC_CLOSURE_INIT(
-        &on_alarm_,
-        [](void* arg, grpc_error_handle error) {
-          grpc_core::Executor::Run(
-              GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error_handle error) {
-                    AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                    alarm->callback_(error == GRPC_ERROR_NONE);
-                    alarm->Unref();
-                  },
-                  arg, nullptr),
-              error);
-        },
-        this, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),
-                    &on_alarm_);
+    closure_ = [this, f](grpc_error_handle error) {
+      f(error == GRPC_ERROR_NONE);
+      Unref();
+    };
+    // TODO(hork): see above for EE ownership ideas
+    timer_handle_ = GetDefaultEventEngine()->RunAt(
+        grpc_core::ToAbslTime(deadline),
+        absl::bind_front(closure_, GRPC_ERROR_NONE));
   }
+
   void Cancel() {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    grpc_timer_cancel(&timer_);
+    if (GetDefaultEventEngine()->Cancel(timer_handle_)) {
+      Ref();
+      GetDefaultEventEngine()->Run([this]() {
+        closure_(GRPC_ERROR_CANCELLED);
+        Unref();
+      });
+    }
   }
+
   void Destroy() {
     Cancel();
     Unref();
@@ -114,24 +110,23 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     }
   }
 
-  grpc_timer timer_;
+  EventEngine::TaskHandle timer_handle_ = {{-1, -1}};
+  std::function<void(grpc_error_handle)> closure_;
   gpr_refcount refs_;
-  grpc_closure on_alarm_;
   grpc_cq_completion completion_;
   // completion queue where events about this alarm will be posted
   grpc_completion_queue* cq_;
   void* tag_;
-  std::function<void(bool)> callback_;
 };
 }  // namespace internal
 
-static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 
 Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
   g_gli_initializer.summon();
 }
 
-void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
+void Alarm::SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline,
                         void* tag) {
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
