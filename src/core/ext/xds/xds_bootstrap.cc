@@ -40,6 +40,8 @@
 
 namespace grpc_core {
 
+namespace {
+
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
@@ -50,24 +52,19 @@ bool XdsFederationEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-grpc_error_handle ParseChannelCreds(const Json& json, size_t idx,
+grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {
   std::vector<grpc_error_handle> error_list;
   std::string type;
-  ParseJsonObjectField(json.object_value(), "type", &type, &error_list);
-  Json config;
-  auto it = json.object_value().find("config");
-  if (it != json.object_value().end()) {
-    if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"config\" field is not an object"));
-    } else {
-      config = it->second;
-    }
-  }
+  ParseJsonObjectField(json, "type", &type, &error_list);
+  const Json::Object* config_ptr = nullptr;
+  ParseJsonObjectField(json, "config", &config_ptr, &error_list,
+                       /*required=*/false);
   // Select the first channel creds type that we support.
   if (server->channel_creds_type.empty() &&
       XdsChannelCredsRegistry::IsSupported(type)) {
+    Json config;
+    if (config_ptr != nullptr) config = *config_ptr;
     if (!XdsChannelCredsRegistry::IsValidConfig(type, config)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "invalid config for channel creds type \"", type, "\"")));
@@ -79,16 +76,17 @@ grpc_error_handle ParseChannelCreds(const Json& json, size_t idx,
       absl::StrCat("errors parsing index ", idx), &error_list);
 }
 
-grpc_error_handle ParseChannelCredsArray(const Json& json,
+grpc_error_handle ParseChannelCredsArray(const Json::Array& json,
                                          XdsBootstrap::XdsServer* server) {
   std::vector<grpc_error_handle> error_list;
-  for (size_t i = 0; i < json.array_value().size(); ++i) {
-    const Json& child = json.array_value().at(i);
+  for (size_t i = 0; i < json.size(); ++i) {
+    const Json& child = json.at(i);
     if (child.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("array element ", i, " is not an object")));
     } else {
-      grpc_error_handle parse_error = ParseChannelCreds(child, i, server);
+      grpc_error_handle parse_error =
+          ParseChannelCreds(child.object_value(), i, server);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     }
   }
@@ -99,6 +97,8 @@ grpc_error_handle ParseChannelCredsArray(const Json& json,
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"channel_creds\" array",
                                        &error_list);
 }
+
+}  // namespace
 
 //
 // XdsChannelCredsRegistry
@@ -140,15 +140,12 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   XdsServer server;
   ParseJsonObjectField(json.object_value(), "server_uri", &server.server_uri,
                        &error_list);
-  auto it = json.object_value().find("channel_creds");
-  if (it == json.object_value().end()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"channel_creds\" field not present"));
-  } else if (it->second.type() != Json::Type::ARRAY) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "\"channel_creds\" field is not an array"));
-  } else {
-    grpc_error_handle parse_error = ParseChannelCredsArray(it->second, &server);
+  const Json::Array* creds_array = nullptr;
+  ParseJsonObjectField(json.object_value(), "channel_creds", &creds_array,
+                       &error_list);
+  if (creds_array != nullptr) {
+    grpc_error_handle parse_error =
+        ParseChannelCredsArray(*creds_array, &server);
     if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
   }
   const Json::Array* server_features_array = nullptr;
@@ -318,10 +315,12 @@ grpc_error_handle XdsBootstrap::ParseAuthority(Json* json,
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"client_listener_resource_name_template\" field is not a string"));
     } else {
-      if (!absl::StartsWith(it->second.string_value(),
-                            absl::StrCat("xdstp://", name, "/"))) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "\"client_listener_resource_name_template\" field is not valid"));
+      std::string expected_prefix = absl::StrCat("xdstp://", name, "/");
+      if (!absl::StartsWith(it->second.string_value(), expected_prefix)) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("\"client_listener_resource_name_template\" field "
+                         "must begin with \"",
+                         expected_prefix, "\"")));
       } else {
         authority.client_listener_resource_name_template =
             std::move(*it->second.mutable_string_value());
