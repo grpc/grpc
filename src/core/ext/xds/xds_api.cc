@@ -3551,7 +3551,7 @@ class ListenerResourceType : public XdsResourceType {
     } else {
       result.resource = std::move(listener_data);
     }
-    return result;
+    return std::move(result);
   }
 };
 
@@ -3588,7 +3588,7 @@ class RouteConfigResourceType : public XdsResourceType {
     } else {
       result.resource = std::move(route_config_data);
     }
-    return result;
+    return std::move(result);
   }
 };
 
@@ -3625,7 +3625,7 @@ class ClusterResourceType : public XdsResourceType {
     } else {
       result.resource = std::move(cluster_data);
     }
-    return result;
+    return std::move(result);
   }
 };
 
@@ -3662,7 +3662,7 @@ class EndpointResourceType : public XdsResourceType {
     } else {
       result.resource = std::move(endpoint_data);
     }
-    return result;
+    return std::move(result);
   }
 };
 
