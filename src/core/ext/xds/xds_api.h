@@ -45,8 +45,6 @@
 
 namespace grpc_core {
 
-bool XdsRbacEnabled();
-
 class XdsClient;
 
 class XdsApi {
@@ -71,28 +69,24 @@ class XdsApi {
     XdsListenerResource resource;
     std::string serialized_proto;
   };
-
   using LdsUpdateMap = std::map<ResourceName, LdsResourceData>;
 
   struct RdsResourceData {
     XdsRouteConfigResource resource;
     std::string serialized_proto;
   };
-
   using RdsUpdateMap = std::map<ResourceName, RdsResourceData>;
 
   struct CdsResourceData {
     XdsClusterResource resource;
     std::string serialized_proto;
   };
-
   using CdsUpdateMap = std::map<ResourceName, CdsResourceData>;
 
   struct EdsResourceData {
     XdsEndpointResource resource;
     std::string serialized_proto;
   };
-
   using EdsUpdateMap = std::map<ResourceName, EdsResourceData>;
 
   struct ClusterLoadReport {
