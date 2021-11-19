@@ -117,6 +117,13 @@ set(gRPC_ABSL_USED_TARGETS
   absl_container_common
   absl_container_memory
   absl_cord
+  absl_cord_internal
+  absl_cordz_functions
+  absl_cordz_handle
+  absl_cordz_info
+  absl_cordz_statistics
+  absl_cordz_update_scope
+  absl_cordz_update_tracker
   absl_core_headers
   absl_debugging_internal
   absl_demangle_internal
@@ -140,6 +147,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_kernel_timeout_internal
   absl_layout
   absl_log_severity
+  absl_low_level_hash
   absl_malloc_internal
   absl_memory
   absl_numeric_representation
@@ -147,6 +155,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_raw_hash_map
   absl_raw_hash_set
   absl_raw_logging_internal
+  absl_sample_recorder
   absl_span
   absl_spinlock_wait
   absl_stacktrace
@@ -164,7 +173,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_type_traits
   absl_utility
   absl_variant
-  absl_wyhash
   absl_meta
 )
 
@@ -1577,6 +1585,8 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/filters/server_config_selector/server_config_selector.cc
+  src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   src/core/ext/service_config/service_config.cc
   src/core/ext/service_config/service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
@@ -1812,6 +1822,7 @@ add_library(grpc
   src/core/ext/xds/xds_client_stats.cc
   src/core/ext/xds/xds_http_fault_filter.cc
   src/core/ext/xds/xds_http_filters.cc
+  src/core/ext/xds/xds_routing.cc
   src/core/ext/xds/xds_server_config_fetcher.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
@@ -15124,7 +15135,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_config_selector_test
-  src/core/ext/filters/server_config_selector/server_config_selector.cc
   test/core/server_config_selector/server_config_selector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
