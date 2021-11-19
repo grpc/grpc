@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
@@ -40,6 +41,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -73,6 +75,8 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -797,8 +801,11 @@ void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
   if (have_retry_alarm_) {
-    retry_immediately_ = true;
-    grpc_timer_cancel(&retry_alarm_);
+    if (GetDefaultEventEngine()->Cancel(retry_alarm_handle_)) {
+      // retry immediately
+      have_retry_alarm_ = false;
+      ContinueConnectingLocked();
+    }
   } else {
     backoff_begun_ = false;
     MaybeStartConnectingLocked();
@@ -892,35 +899,26 @@ void Subchannel::MaybeStartConnectingLocked() {
       gpr_log(GPR_INFO, "subchannel %p %s: Retry in %" PRId64 " milliseconds",
               this, key_.ToString().c_str(), time_til_next);
     }
-    GRPC_CLOSURE_INIT(&on_retry_alarm_, OnRetryAlarm, this,
-                      grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&retry_alarm_, next_attempt_deadline_, &on_retry_alarm_);
+    retry_alarm_handle_ = GetDefaultEventEngine()->RunAt(
+        grpc_core::ToAbslTime(grpc_millis_to_timespec(next_attempt_deadline_,
+                                                      GPR_CLOCK_MONOTONIC)),
+        absl::bind_front(&Subchannel::OnRetryAlarm, this));
   }
 }
 
-void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
-  WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
-  MutexLock lock(&c->mu_);
-  c->have_retry_alarm_ = false;
-  if (c->disconnected_) {
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
-                                                             &error, 1);
-  } else if (c->retry_immediately_) {
-    c->retry_immediately_ = false;
-    error = GRPC_ERROR_NONE;
-  } else {
-    (void)GRPC_ERROR_REF(error);
-  }
-  if (error == GRPC_ERROR_NONE) {
+void Subchannel::OnRetryAlarm() {
+  WeakRefCountedPtr<Subchannel> c(this);
+  MutexLock lock(&mu_);
+  have_retry_alarm_ = false;
+  if (!disconnected_) {
     gpr_log(GPR_INFO,
-            "subchannel %p %s: failed to connect to channel, retrying", c.get(),
-            c->key_.ToString().c_str());
-    c->ContinueConnectingLocked();
+            "subchannel %p %s: failed to connect to channel, retrying", this,
+            key_.ToString().c_str());
+    ContinueConnectingLocked();
     // Still connecting, keep ref around. Note that this stolen ref won't
     // be dropped without first acquiring c->mu_.
     c.release();
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 void Subchannel::ContinueConnectingLocked() {

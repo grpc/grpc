@@ -21,6 +21,8 @@
 
 #include <deque>
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -33,7 +35,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -319,8 +320,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Methods for connection.
   void MaybeStartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnRetryAlarm(void* arg, grpc_error_handle error)
-      ABSL_LOCKS_EXCLUDED(mu_);
+  void OnRetryAlarm() ABSL_LOCKS_EXCLUDED(mu_);
   void ContinueConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnConnectingFinished(void* arg, grpc_error_handle error)
       ABSL_LOCKS_EXCLUDED(mu_);
@@ -368,11 +368,9 @@ class Subchannel : public DualRefCounted<Subchannel> {
   bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
 
   // Retry alarm.
-  grpc_timer retry_alarm_ ABSL_GUARDED_BY(mu_);
-  grpc_closure on_retry_alarm_ ABSL_GUARDED_BY(mu_);
+  grpc_event_engine::experimental::EventEngine::TaskHandle retry_alarm_handle_
+      ABSL_GUARDED_BY(mu_);
   bool have_retry_alarm_ ABSL_GUARDED_BY(mu_) = false;
-  // reset_backoff() was called while alarm was pending.
-  bool retry_immediately_ ABSL_GUARDED_BY(mu_) = false;
   // Keepalive time period (-1 for unset)
   int keepalive_time_ ABSL_GUARDED_BY(mu_) = -1;
 };
