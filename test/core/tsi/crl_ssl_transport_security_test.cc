@@ -50,8 +50,12 @@ class CrlSslTransportSecurityTest
    public:
     static SslTsiTestFixture* Create(bool use_revoked_server_cert,
                                      bool use_revoked_client_cert) {
-      return new SslTsiTestFixture(use_revoked_server_cert,
-                                   use_revoked_client_cert);
+      auto* fixture = static_cast<SslTsiTestFixture*>(
+          gpr_malloc(sizeof(SslTsiTestFixture)));
+      memset(&fixture->base_, 0, sizeof(tsi_test_fixture));
+      new (fixture)
+          SslTsiTestFixture(use_revoked_server_cert, use_revoked_client_cert);
+      return fixture;
     }
 
     void Run() {
