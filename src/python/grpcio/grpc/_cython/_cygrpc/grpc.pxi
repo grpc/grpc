@@ -413,6 +413,7 @@ cdef extern from "grpc/grpc.h":
 
   grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
        grpc_server_xds_status_notifier notifier,
+       int drain_grace_time,
        const grpc_channel_args* args) nogil
 
 

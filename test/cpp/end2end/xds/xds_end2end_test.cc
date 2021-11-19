@@ -1647,6 +1647,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
               absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
         }
         builder.set_status_notifier(&notifier_);
+        builder.experimental().set_drain_grace_time(
+            test_obj_->xds_drain_grace_time_ms_);
         builder.AddListeningPort(server_address.str(), Credentials());
         RegisterAllServices(&builder);
         server_ = builder.BuildAndStart();
@@ -1947,6 +1949,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   RouteConfiguration default_server_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
+  int xds_drain_grace_time_ms_ = 10 * 60 * 1000;  // 10 mins
   bool bootstrap_contents_from_env_var_;
 };
 
@@ -9244,6 +9247,56 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     new_context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));
     EXPECT_FALSE(
         streaming_rpcs[i].stub->Echo(&new_context, request, &response).ok());
+  }
+}
+
+TEST_P(XdsEnabledServerStatusNotificationTest,
+       ExistingRpcsFailOnResourceUpdateAfterDrainGraceTimeExpires) {
+  xds_drain_grace_time_ms_ = 100;
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  // Send a valid LDS update to get the server to start listening
+  SetValidLdsUpdate();
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  constexpr int kNumChannels = 10;
+  struct StreamingRpc {
+    std::shared_ptr<Channel> channel;
+    std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
+    ClientContext context;
+    std::unique_ptr<ClientReaderWriter<EchoRequest, EchoResponse>> stream;
+  } streaming_rpcs[kNumChannels];
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  for (int i = 0; i < kNumChannels; i++) {
+    streaming_rpcs[i].channel = CreateInsecureChannel();
+    streaming_rpcs[i].stub =
+        grpc::testing::EchoTestService::NewStub(streaming_rpcs[i].channel);
+    streaming_rpcs[i].context.set_wait_for_ready(true);
+    streaming_rpcs[i].stream =
+        streaming_rpcs[i].stub->BidiStream(&streaming_rpcs[i].context);
+    EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
+    streaming_rpcs[i].stream->Read(&response);
+    EXPECT_EQ(request.message(), response.message());
+  }
+  // Update the resource.
+  SetLdsUpdate("", "", "fake_plugin1", "", false);
+  // Wait for the updated resource to take effect.
+  SendRpc([this]() { return CreateTlsChannel(); },
+          server_authenticated_identity_, {});
+  // After the drain grace time expires, the existing RPCs should all fail.
+  for (int i = 0; i < kNumChannels; i++) {
+    // Wait for the drain grace time to expire
+    EXPECT_FALSE(streaming_rpcs[i].stream->Read(&response));
+    auto status = streaming_rpcs[i].stream->Finish();
+    EXPECT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE)
+        << status.error_code() << ", " << status.error_message() << ", "
+        << status.error_details() << ", "
+        << streaming_rpcs[i].context.debug_error_string();
   }
 }
 

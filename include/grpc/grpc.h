@@ -433,7 +433,8 @@ typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
 
 /** EXPERIMENTAL.  Creates an xDS config fetcher. */
 GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
+    grpc_server_xds_status_notifier notifier, int drain_grace_time_ms,
+    const grpc_channel_args* args);
 
 /** EXPERIMENTAL.  Destroys a config fetcher. */
 GRPCAPI void grpc_server_config_fetcher_destroy(

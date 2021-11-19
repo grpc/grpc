@@ -46,6 +46,26 @@ class XdsServerServingStatusNotifierInterface {
 
 class XdsServerBuilder : public ::grpc::ServerBuilder {
  public:
+  // NOTE: class experimental_type is not part of the public API of this class
+  // TODO(yashykt): Integrate into public API when this is no longer
+  // experimental.
+  class experimental_type : public ::grpc::ServerBuilder::experimental_type {
+   public:
+    explicit experimental_type(XdsServerBuilder* builder)
+        : ServerBuilder::experimental_type(builder), builder_(builder) {}
+
+    // TODO(): ServerBuilder uses the style `SetDefaultGraceTime` but we already
+    // ended up using `set_status_notifier` above.
+    // EXPERIMENTAL: Sets the drain grace period in ms for older connections
+    // when updates to a Listener is received.
+    void set_drain_grace_time(int drain_grace_time_ms) {
+      builder_->drain_grace_time_ms_ = drain_grace_time_ms;
+    }
+
+   private:
+    XdsServerBuilder* builder_;
+  };
+
   // It is the responsibility of the application to make sure that \a notifier
   // outlasts the life of the server. Notifications will start being made
   // asynchronously once `BuildAndStart()` has been called. Note that it is
@@ -54,13 +74,19 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
     notifier_ = notifier;
   }
 
+  /// NOTE: The function experimental() is not stable public API. It is a view
+  /// to the experimental components of this class. It may be changed or removed
+  /// at any time.
+  experimental_type experimental() { return experimental_type(this); }
+
  private:
   // Called at the beginning of BuildAndStart().
   ChannelArguments BuildChannelArgs() override {
     ChannelArguments args = ServerBuilder::BuildChannelArgs();
     grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
-        {OnServingStatusUpdate, notifier_}, &c_channel_args);
+        {OnServingStatusUpdate, notifier_}, drain_grace_time_ms_,
+        &c_channel_args);
     if (fetcher != nullptr) set_fetcher(fetcher);
     return args;
   }
@@ -76,6 +102,8 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   }
 
   XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
+  constexpr static int kDefaultDrainGraceTimeMs = 10 * 60 * 1000;  // 10 minutes
+  int drain_grace_time_ms_ = kDefaultDrainGraceTimeMs;
 };
 
 namespace experimental {
