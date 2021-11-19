@@ -891,6 +891,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   std::shared_ptr<Channel> CreateChannel(
       int failover_timeout = 0, const char* server_name = kServerName,
+      const char* xds_authority = "",
       grpc_core::FakeResolverResponseGenerator* response_generator = nullptr,
       grpc_channel_args* xds_channel_args = nullptr) {
     ChannelArguments args;
@@ -922,11 +923,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
         logical_dns_cluster_resolver_response_generator_.get(),
         &grpc_core::FakeResolverResponseGenerator::kChannelArgPointerVtable);
-    std::string uri = absl::StrCat(
-        GetParam().use_fake_resolver() ? "fake" : "xds", ":///", server_name);
-    if (absl::StartsWith(server_name, "xds")) {
-      uri = server_name;
+    absl::string_view uri_scheme;
+    if (GetParam().use_fake_resolver()) {
+      // Authority not allowed when using fake resolver.
+      GPR_ASSERT(xds_authority == "");
+      uri_scheme = "fake";
+    } else {
+      uri_scheme = "xds";
     }
+    std::string uri =
+        absl::StrCat(uri_scheme, "://", xds_authority, "/", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
         GetParam().use_xds_credentials()
             ? XdsCredentials(CreateTlsFallbackCredentials())
@@ -2457,7 +2463,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
       lb_response_generator2.get());
   grpc_channel_args xds_channel_args2 = {1, &xds_arg};
   auto channel2 = CreateChannel(
-      /*failover_timeout=*/0, /*server_name=*/kServerName,
+      /*failover_timeout=*/0, /*server_name=*/kServerName, /*authority*/ "",
       response_generator2.get(), &xds_channel_args2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   // Set resolution results for both channels and for the xDS channel.
@@ -2579,7 +2585,8 @@ TEST_P(GlobalXdsClientTest, FederationBasic) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  const char* kTargetUri = "xds://xds.example.com/new_server.example.com";
+  const char* kAuthority = "xds.example.com";
+  const char* kNewTarget = "new_server.example.com";
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -2610,8 +2617,8 @@ TEST_P(GlobalXdsClientTest, FederationBasic) {
   WaitForAllBackends(0, 1);
   backends_[0]->backend_service()->ResetCounters();
   CheckRpcSendOk(10);
-  // Create second channel to kTargetUri and send 1 RPC .
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kTargetUri);
+  // Create second channel to new target uri and send 1 RPC .
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewTarget, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -11062,6 +11069,8 @@ TEST_P(BalancerUpdateTest, Repeated) {
 // Tests that if the balancer is down, the RPCs will still be sent to the
 // backends according to the last balancer response, until a new balancer is
 // reachable.
+// How should I regenerate the bootstrap file inside a test as the content
+// in particular the server name has changed.
 /*TEST_P(BalancerUpdateTest, DeadUpdate) {
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
@@ -12850,7 +12859,6 @@ INSTANTIATE_TEST_SUITE_P(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  // grpc::testing::WriteBootstrapFiles();
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);

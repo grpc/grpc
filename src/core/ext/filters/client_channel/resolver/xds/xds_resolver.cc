@@ -45,7 +45,7 @@ const char* kXdsClusterAttribute = "xds_cluster_name";
 
 namespace {
 
-static std::string GetDefaultAuthorityInternal(const URI& uri) {
+std::string GetDefaultAuthorityInternal(const URI& uri) {
   // Obtain the authority to use for the data plane connections, which is
   // also used to select the right VirtualHost from the RouteConfiguration.
   // We need to take the part of the URI path following the last
@@ -55,8 +55,8 @@ static std::string GetDefaultAuthorityInternal(const URI& uri) {
   return uri.path().substr(pos + 1);
 }
 
-static std::string GetDataPlaneAuthority(const grpc_channel_args& args,
-                                         const URI& uri) {
+std::string GetDataPlaneAuthority(const grpc_channel_args& args,
+                                  const URI& uri) {
   const char* authority =
       grpc_channel_args_find_string(&args, GRPC_ARG_DEFAULT_AUTHORITY);
   if (authority != nullptr) return authority;
@@ -775,7 +775,7 @@ void XdsResolver::StartLocked() {
         xds_client_->bootstrap().LookupAuthority(uri_.authority());
     if (authority_config == nullptr) {
       gpr_log(GPR_ERROR, "Invalid target URI -- authority not found for %s.",
-              resource_name_fragment.c_str());
+              uri_.authority().c_str());
       result_handler_->ReturnError(error);
       return;
     }
@@ -802,11 +802,8 @@ void XdsResolver::StartLocked() {
         absl::StrReplaceAll(name_template, {{"%s", resource_name_fragment}});
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_resolver %p] Started with lds_resource_name %s, "
-            "data_plane_authority %s, and authority %s",
-            this, lds_resource_name_.c_str(), data_plane_authority_.c_str(),
-            uri_.authority().c_str());
+    gpr_log(GPR_INFO, "[xds_resolver %p] Started with lds_resource_name %s.",
+            this, lds_resource_name_.c_str());
   }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
