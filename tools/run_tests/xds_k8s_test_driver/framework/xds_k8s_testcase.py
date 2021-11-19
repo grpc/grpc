@@ -138,7 +138,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
 
-        self.config_scope = xds_flags.CONFIG_SCOPE.value + framework.helpers.rand.random_resource_suffix(
+        self.config_scope = xds_flags.CONFIG_SCOPE.value + "-" + framework.helpers.rand.random_resource_suffix(
         )
 
         # TD Manager
