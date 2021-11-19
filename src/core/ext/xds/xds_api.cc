@@ -89,6 +89,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -341,104 +342,6 @@ std::string XdsApi::RdsUpdate::ToString() const {
     vhosts.push_back("]\n");
   }
   return absl::StrJoin(vhosts, "");
-}
-
-namespace {
-
-// Better match type has smaller value.
-enum MatchType {
-  EXACT_MATCH,
-  SUFFIX_MATCH,
-  PREFIX_MATCH,
-  UNIVERSE_MATCH,
-  INVALID_MATCH,
-};
-
-// Returns true if match succeeds.
-bool DomainMatch(MatchType match_type, const std::string& domain_pattern_in,
-                 const std::string& expected_host_name_in) {
-  // Normalize the args to lower-case. Domain matching is case-insensitive.
-  std::string domain_pattern = domain_pattern_in;
-  std::string expected_host_name = expected_host_name_in;
-  std::transform(domain_pattern.begin(), domain_pattern.end(),
-                 domain_pattern.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  std::transform(expected_host_name.begin(), expected_host_name.end(),
-                 expected_host_name.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  if (match_type == EXACT_MATCH) {
-    return domain_pattern == expected_host_name;
-  } else if (match_type == SUFFIX_MATCH) {
-    // Asterisk must match at least one char.
-    if (expected_host_name.size() < domain_pattern.size()) return false;
-    absl::string_view pattern_suffix(domain_pattern.c_str() + 1);
-    absl::string_view host_suffix(expected_host_name.c_str() +
-                                  expected_host_name.size() -
-                                  pattern_suffix.size());
-    return pattern_suffix == host_suffix;
-  } else if (match_type == PREFIX_MATCH) {
-    // Asterisk must match at least one char.
-    if (expected_host_name.size() < domain_pattern.size()) return false;
-    absl::string_view pattern_prefix(domain_pattern.c_str(),
-                                     domain_pattern.size() - 1);
-    absl::string_view host_prefix(expected_host_name.c_str(),
-                                  pattern_prefix.size());
-    return pattern_prefix == host_prefix;
-  } else {
-    return match_type == UNIVERSE_MATCH;
-  }
-}
-
-MatchType DomainPatternMatchType(const std::string& domain_pattern) {
-  if (domain_pattern.empty()) return INVALID_MATCH;
-  if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
-  if (domain_pattern == "*") return UNIVERSE_MATCH;
-  if (domain_pattern[0] == '*') return SUFFIX_MATCH;
-  if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
-  return INVALID_MATCH;
-}
-
-}  // namespace
-
-XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
-    const std::string& domain) {
-  // Find the best matched virtual host.
-  // The search order for 4 groups of domain patterns:
-  //   1. Exact match.
-  //   2. Suffix match (e.g., "*ABC").
-  //   3. Prefix match (e.g., "ABC*").
-  //   4. Universe match (i.e., "*").
-  // Within each group, longest match wins.
-  // If the same best matched domain pattern appears in multiple virtual hosts,
-  // the first matched virtual host wins.
-  VirtualHost* target_vhost = nullptr;
-  MatchType best_match_type = INVALID_MATCH;
-  size_t longest_match = 0;
-  // Check each domain pattern in each virtual host to determine the best
-  // matched virtual host.
-  for (VirtualHost& vhost : virtual_hosts) {
-    for (const std::string& domain_pattern : vhost.domains) {
-      // Check the match type first. Skip the pattern if it's not better than
-      // current match.
-      const MatchType match_type = DomainPatternMatchType(domain_pattern);
-      // This should be caught by RouteConfigParse().
-      GPR_ASSERT(match_type != INVALID_MATCH);
-      if (match_type > best_match_type) continue;
-      if (match_type == best_match_type &&
-          domain_pattern.size() <= longest_match) {
-        continue;
-      }
-      // Skip if match fails.
-      if (!DomainMatch(match_type, domain_pattern, domain)) continue;
-      // Choose this match.
-      target_vhost = &vhost;
-      best_match_type = match_type;
-      longest_match = domain_pattern.size();
-      if (best_match_type == EXACT_MATCH) break;
-    }
-    if (best_match_type == EXACT_MATCH) break;
-  }
-  return target_vhost;
 }
 
 //
@@ -1917,8 +1820,7 @@ grpc_error_handle RouteConfigParse(
         virtual_hosts[i], &domain_size);
     for (size_t j = 0; j < domain_size; ++j) {
       std::string domain_pattern = UpbStringToStdString(domains[j]);
-      const MatchType match_type = DomainPatternMatchType(domain_pattern);
-      if (match_type == INVALID_MATCH) {
+      if (!XdsRouting::IsValidDomainPattern(domain_pattern)) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
       }
