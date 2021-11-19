@@ -778,6 +778,53 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   return result;
 }
 
+absl::Status XdsApi::ParseAdsResponse(
+    const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
+    AdsResponseParserInterface* parser) {
+  AdsParseResult result;
+  upb::Arena arena;
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
+  // Decode the response.
+  const envoy_service_discovery_v3_DiscoveryResponse* response =
+      envoy_service_discovery_v3_DiscoveryResponse_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+  // If decoding fails, report a fatal error and return.
+  if (response == nullptr) {
+    return absl::InvalidArgumentError("Can't decode DiscoveryResponse.");
+  }
+  MaybeLogDiscoveryResponse(context, response);
+  // Report the type_url, the version_info, and the nonce of the response.
+  AdsResponseFields fields;
+  fields.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
+      UpbStringToAbsl(
+          envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
+      "type.googleapis.com/"));
+  fields.version = UpbStringToStdString(
+      envoy_service_discovery_v3_DiscoveryResponse_version_info(response));
+  fields.nonce = UpbStringToStdString(
+      envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
+  parser->ProcessAdsResponseFields(std::move(fields));
+  // Get the resources from the response.
+  size_t num_resources;
+  const google_protobuf_Any* const* resources =
+      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
+  for (size_t i = 0; i < num_resources; ++i) {
+    absl::string_view type_url = absl::StripPrefix(
+        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i])),
+        "type.googleapis.com/");
+    absl::string_view serialized_resource =
+        UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
+    if (!parser->ParseResource(i, type_url, serialized_resource)) break;
+  }
+  return absl::OkStatus();
+}
+
 namespace {
 
 void MaybeLogLrsRequest(

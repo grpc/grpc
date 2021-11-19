@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -59,6 +60,12 @@ class XdsResourceType {
       const XdsEncodingContext& context, absl::string_view serialized_resource,
       bool is_v2) const = 0;
 
+  // Indicates whether the resource type requires that all resources must
+  // be present in every SotW response from the server.  If true, a
+  // response that does not include a previously seen resource will be
+  // interpreted as a deletion of that resource.
+  virtual bool AllResourcesRequiredInSotW() const { return false; }
+
   // Convenient method for checking if a resource type matches this type.
   bool IsType(absl::string_view resource_type, bool* is_v2) const {
     if (resource_type == type_url()) return true;
@@ -68,6 +75,42 @@ class XdsResourceType {
     }
     return false;
   }
+};
+
+class XdsResourceTypeRegistry {
+ public:
+  static XdsResourceTypeRegistry* GetOrCreate() {
+    static gpr_once once = GPR_ONCE_INIT;
+    gpr_once_init(&once, Create);
+    return g_registry_;
+  }
+
+  const XdsResourceType* GetType(absl::string_view resource_type) {
+    auto it = resource_types_.find(resource_type);
+    if (it != resource_types_.end()) return it->second.get();
+    auto it2 = v2_resource_types_.find(resource_type);
+    if (it2 != v2_resource_types_.end()) return it2->second.get();
+    return nullptr;
+  }
+
+  void RegisterType(std::unique_ptr<XdsResourceType> resource_type) {
+    GPR_ASSERT(resource_types_.find(resource_type->type_url()) ==
+               resource_types_.end());
+    GPR_ASSERT(v2_resource_types_.find(resource_type->v2_type_url()) ==
+               v2_resource_types_.end());
+    v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type.get());
+    resource_types_.emplace(resource_type->type_url(), std::move(resource_type));
+  }
+
+ private:
+  static void Create() { g_registry_ = new XdsResourceTypeRegistry(); }
+
+  std::map<absl::string_view /*resource_type*/, std::unique_ptr<XdsResourceType>>
+      resource_types_;
+  std::map<absl::string_view /*v2_resource_type*/, XdsResourceType*>
+      v2_resource_types_;
+
+  static XdsResourceTypeRegistry* g_registry_ = nullptr;
 };
 
 }  // namespace grpc_core

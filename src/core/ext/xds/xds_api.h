@@ -156,6 +156,26 @@ class XdsApi {
                     ResourceMetadata::ClientResourceStatus::NACKED,
                 "");
 
+  struct AdsResponseFields {
+    std::string type_url;
+    std::string version;
+    std::string nonce;
+  };
+
+  class AdsResponseParserInterface {
+   public:
+    virtual ~AdsResponseParserInterface() = default;
+
+    // Called when the top-level ADS fields are parsed.
+    // If this returns false, parsing will stop.
+    virtual bool ProcessAdsResponseFields(AdsResponseFields fields) = 0;
+
+    // Called to parse each individual resource in the ADS response.
+    // If this returns false, parsing will stop.
+    virtual bool ParseResource(size_t idx, absl::string_view type_url,
+                               absl::string_view serialized_resource) = 0;
+  };
+
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
   // If there is any other type of validation error, the parse_error
@@ -219,6 +239,12 @@ class XdsApi {
       const std::map<absl::string_view /*authority*/,
                      std::set<absl::string_view /*name*/>>&
           subscribed_eds_service_names);
+
+  // Returns non-OK when failing to deserialize response message.
+  // Otherwise, all events are reported to the parser.
+  absl::Status ParseAdsResponse(const XdsBootstrap::XdsServer& server,
+                                const grpc_slice& encoded_response,
+                                AdsResponseParserInterface* parser);
 
   // Creates an initial LRS request.
   grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
