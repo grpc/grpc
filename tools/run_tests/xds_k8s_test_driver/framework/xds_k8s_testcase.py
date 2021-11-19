@@ -78,6 +78,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     server_runner: KubernetesServerRunner
     server_xds_port: int
     td: TrafficDirectorManager
+    config_scope: str
 
     @classmethod
     def setUpClass(cls):
@@ -137,6 +138,9 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
 
+        self.config_scope = self.td.make_resource_name(
+            xds_flags.CONFIG_SCOPE.value)
+
         # TD Manager
         self.td = self.initTrafficDirectorManager()
 
@@ -164,9 +168,6 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             #  but we should find a better approach.
             self.server_xds_port = self.td.find_unused_forwarding_rule_port()
             logger.info('Found unused xds port: %s', self.server_xds_port)
-
-        self.config_scope: str = self.td.make_resource_name(
-            xds_flags.CONFIG_SCOPE.value)
 
     @abc.abstractmethod
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:
