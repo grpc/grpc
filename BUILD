@@ -1630,9 +1630,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
     ],
-    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS + [
-        "src/core/lib/event_engine/event_engine_factory.h",
-    ],
+    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS,
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -1652,6 +1650,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/uv/libuv_event_engine.cc",
     ],
     hdrs = [
+        "src/core/lib/event_engine/event_engine_factory.h",
         "src/core/lib/event_engine/uv/libuv_event_engine.h",
         "src/core/lib/iomgr/event_engine/promise.h",
     ],
@@ -1855,6 +1854,7 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
+        "src/core/lib/event_engine/event_engine_factory.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/event_engine/sockaddr.h",
         "src/core/lib/http/format_request.h",
