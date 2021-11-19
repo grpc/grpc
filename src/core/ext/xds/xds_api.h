@@ -43,6 +43,8 @@
 
 namespace grpc_core {
 
+bool XdsRbacEnabled();
+
 class XdsClient;
 
 class XdsApi {
@@ -195,7 +197,6 @@ class XdsApi {
       return virtual_hosts == other.virtual_hosts;
     }
     std::string ToString() const;
-    VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
   struct DownstreamTlsContext {

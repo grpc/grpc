@@ -127,7 +127,11 @@ for lib in LIBS:
         ]
         print(sections)
         for section in sections[1:]:
+            # skip debug sections for bloat severity calculation
             if section[0].startswith(".debug"):
+                continue
+            # skip dynamic loader sections too
+            if section[0].startswith(".dyn"):
                 continue
             diff_size += int(section[2])
     else:
