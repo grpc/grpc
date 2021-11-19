@@ -1083,18 +1083,18 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (status_code != GRPC_STATUS_OK) {
       char* peer = grpc_call_get_peer(call);
-      error = grpc_error_set_str(
-          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                                 "Error received from peer ", peer)),
-                             GRPC_ERROR_INT_GRPC_STATUS,
-                             static_cast<intptr_t>(status_code)),
-          GRPC_ERROR_STR_GRPC_MESSAGE,
-          b->Take(grpc_core::GrpcMessageMetadata())
-              .value_or(grpc_core::Slice())
-              .as_string_view());
+      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                     "Error received from peer ", peer)),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 static_cast<intptr_t>(status_code));
       gpr_free(peer);
-    } else {
-      b->Remove(grpc_core::GrpcMessageMetadata());
+    }
+    auto grpc_message = b->Take(grpc_core::GrpcMessageMetadata());
+    if (grpc_message.has_value()) {
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                 grpc_message->as_string_view());
+    } else if (error != GRPC_ERROR_NONE) {
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
     }
     set_final_status(call, GRPC_ERROR_REF(error));
     b->Remove(GRPC_BATCH_GRPC_STATUS);
