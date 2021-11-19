@@ -86,7 +86,7 @@ class XdsRouting {
 
   // Generates a map of per_filter_configs. \a args is consumed.
   static GeneratePerHttpFilterConfigsResult GeneratePerHTTPFilterConfigs(
-      const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
+      const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
       const XdsRouteConfigResource::VirtualHost& vhost, const XdsRouteConfigResource::Route& route,
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight* cluster_weight,

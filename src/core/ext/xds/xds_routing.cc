@@ -203,7 +203,7 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
 
 XdsRouting::GeneratePerHttpFilterConfigsResult
 XdsRouting::GeneratePerHTTPFilterConfigs(
-    const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
     const XdsRouteConfigResource::VirtualHost& vhost, const XdsRouteConfigResource::Route& route,
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight* cluster_weight,

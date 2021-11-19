@@ -46,7 +46,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Listener data watcher interface.  Implemented by callers.
   class ListenerWatcherInterface : public RefCounted<ListenerWatcherInterface> {
    public:
-    virtual void OnListenerChanged(XdsApi::LdsUpdate listener)
+    virtual void OnListenerChanged(XdsListenerResource listener)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -268,7 +268,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<ListenerWatcherInterface*, RefCountedPtr<ListenerWatcherInterface>>
         watchers;
     // The latest data seen from LDS.
-    absl::optional<XdsApi::LdsUpdate> update;
+    absl::optional<XdsListenerResource> update;
     XdsApi::ResourceMetadata meta;
   };
 

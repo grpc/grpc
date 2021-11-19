@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
@@ -55,163 +56,6 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
-  struct DownstreamTlsContext {
-    CommonTlsContext common_tls_context;
-    bool require_client_certificate = false;
-
-    bool operator==(const DownstreamTlsContext& other) const {
-      return common_tls_context == other.common_tls_context &&
-             require_client_certificate == other.require_client_certificate;
-    }
-
-    std::string ToString() const;
-    bool Empty() const;
-  };
-
-  // TODO(roth): When we can use absl::variant<>, consider using that
-  // here, to enforce the fact that only one of the two fields can be set.
-  struct LdsUpdate {
-    enum class ListenerType {
-      kTcpListener = 0,
-      kHttpApiListener,
-    } type;
-
-    struct HttpConnectionManager {
-      // The name to use in the RDS request.
-      std::string route_config_name;
-      // Storing the Http Connection Manager Common Http Protocol Option
-      // max_stream_duration
-      Duration http_max_stream_duration;
-      // The RouteConfiguration to use for this listener.
-      // Present only if it is inlined in the LDS response.
-      absl::optional<XdsRouteConfigResource> rds_update;
-
-      struct HttpFilter {
-        std::string name;
-        XdsHttpFilterImpl::FilterConfig config;
-
-        bool operator==(const HttpFilter& other) const {
-          return name == other.name && config == other.config;
-        }
-
-        std::string ToString() const;
-      };
-      std::vector<HttpFilter> http_filters;
-
-      bool operator==(const HttpConnectionManager& other) const {
-        return route_config_name == other.route_config_name &&
-               http_max_stream_duration == other.http_max_stream_duration &&
-               rds_update == other.rds_update &&
-               http_filters == other.http_filters;
-      }
-
-      std::string ToString() const;
-    };
-
-    // Populated for type=kHttpApiListener.
-    HttpConnectionManager http_connection_manager;
-
-    // Populated for type=kTcpListener.
-    // host:port listening_address set when type is kTcpListener
-    std::string address;
-
-    struct FilterChainData {
-      DownstreamTlsContext downstream_tls_context;
-      // This is in principle the filter list.
-      // We currently require exactly one filter, which is the HCM.
-      HttpConnectionManager http_connection_manager;
-
-      bool operator==(const FilterChainData& other) const {
-        return downstream_tls_context == other.downstream_tls_context &&
-               http_connection_manager == other.http_connection_manager;
-      }
-
-      std::string ToString() const;
-    };
-
-    // A multi-level map used to determine which filter chain to use for a given
-    // incoming connection. Determining the right filter chain for a given
-    // connection checks the following properties, in order:
-    // - destination port (never matched, so not present in map)
-    // - destination IP address
-    // - server name (never matched, so not present in map)
-    // - transport protocol (allows only "raw_buffer" or unset, prefers the
-    //   former, so only one of those two types is present in map)
-    // - application protocol (never matched, so not present in map)
-    // - connection source type (any, local or external)
-    // - source IP address
-    // - source port
-    // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener_components.proto#config-listener-v3-filterchainmatch
-    // for more details
-    struct FilterChainMap {
-      struct FilterChainDataSharedPtr {
-        std::shared_ptr<FilterChainData> data;
-        bool operator==(const FilterChainDataSharedPtr& other) const {
-          return *data == *other.data;
-        }
-      };
-      struct CidrRange {
-        grpc_resolved_address address;
-        uint32_t prefix_len;
-
-        bool operator==(const CidrRange& other) const {
-          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
-                 prefix_len == other.prefix_len;
-        }
-
-        std::string ToString() const;
-      };
-      using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
-      struct SourceIp {
-        absl::optional<CidrRange> prefix_range;
-        SourcePortsMap ports_map;
-
-        bool operator==(const SourceIp& other) const {
-          return prefix_range == other.prefix_range &&
-                 ports_map == other.ports_map;
-        }
-      };
-      using SourceIpVector = std::vector<SourceIp>;
-      enum class ConnectionSourceType {
-        kAny = 0,
-        kSameIpOrLoopback,
-        kExternal
-      };
-      using ConnectionSourceTypesArray = std::array<SourceIpVector, 3>;
-      struct DestinationIp {
-        absl::optional<CidrRange> prefix_range;
-        // We always fail match on server name, so those filter chains are not
-        // included here.
-        ConnectionSourceTypesArray source_types_array;
-
-        bool operator==(const DestinationIp& other) const {
-          return prefix_range == other.prefix_range &&
-                 source_types_array == other.source_types_array;
-        }
-      };
-      // We always fail match on destination ports map
-      using DestinationIpVector = std::vector<DestinationIp>;
-      DestinationIpVector destination_ip_vector;
-
-      bool operator==(const FilterChainMap& other) const {
-        return destination_ip_vector == other.destination_ip_vector;
-      }
-
-      std::string ToString() const;
-    } filter_chain_map;
-
-    absl::optional<FilterChainData> default_filter_chain;
-
-    bool operator==(const LdsUpdate& other) const {
-      return http_connection_manager == other.http_connection_manager &&
-             address == other.address &&
-             filter_chain_map == other.filter_chain_map &&
-             default_filter_chain == other.default_filter_chain;
-    }
-
-    std::string ToString() const;
-  };
-
   struct ResourceName {
     std::string authority;
     std::string id;
@@ -224,7 +68,7 @@ class XdsApi {
   };
 
   struct LdsResourceData {
-    LdsUpdate resource;
+    XdsListenerResource resource;
     std::string serialized_proto;
   };
 

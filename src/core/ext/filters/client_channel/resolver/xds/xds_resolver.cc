@@ -83,7 +83,7 @@ class XdsResolver : public Resolver {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
-    void OnListenerChanged(XdsApi::LdsUpdate listener) override {
+    void OnListenerChanged(XdsListenerResource listener) override {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           // TODO(yashykt): When we move to C++14, capture listener with
@@ -272,7 +272,7 @@ class XdsResolver : public Resolver {
     std::vector<const grpc_channel_filter*> filters_;
   };
 
-  void OnListenerUpdate(XdsApi::LdsUpdate listener);
+  void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
   void OnError(grpc_error_handle error);
   void OnResourceDoesNotExist();
@@ -294,7 +294,7 @@ class XdsResolver : public Resolver {
   // This will not contain the RouteConfiguration, even if it comes with the
   // LDS response; instead, the relevant VirtualHost from the
   // RouteConfiguration will be saved in current_virtual_host_.
-  XdsApi::LdsUpdate current_listener_;
+  XdsListenerResource current_listener_;
 
   std::string route_config_name_;
   XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
@@ -706,7 +706,7 @@ void XdsResolver::ShutdownLocked() {
   }
 }
 
-void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
+void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
   }

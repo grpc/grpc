@@ -994,7 +994,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
   for (auto& p : lds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::LdsUpdate& lds_update = p.second.resource;
+    XdsListenerResource& lds_update = p.second.resource;
     auto it = lds_state.subscribed_resources.find(name.authority);
     if (it != lds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);
