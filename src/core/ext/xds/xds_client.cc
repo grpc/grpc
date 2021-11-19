@@ -2199,8 +2199,15 @@ void XdsClient::WatchListenerData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      authority_state.channel_state =
-          GetOrCreateChannelStateLocked(bootstrap_->server());
+      if (resource->authority.empty()) {
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(bootstrap_->server());
+      } else {
+        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        GPR_ASSERT(authority != nullptr);
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(authority->server());
+      }
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
                                                    *resource);
@@ -2225,8 +2232,15 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   listener_state.watchers.erase(it);
   if (!listener_state.watchers.empty()) return;
   authority_state.listener_map.erase(resource->id);
-  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
+  if (resource->authority.empty()) {
+    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+        XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
+  } else {
+    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    GPR_ASSERT(authority != nullptr);
+    xds_server_channel_map_[authority->server()]->UnsubscribeLocked(
+        XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
+  }
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2279,8 +2293,15 @@ void XdsClient::WatchRouteConfigData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      authority_state.channel_state =
-          GetOrCreateChannelStateLocked(bootstrap_->server());
+      if (resource->authority.empty()) {
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(bootstrap_->server());
+      } else {
+        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        GPR_ASSERT(authority != nullptr);
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(authority->server());
+      }
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
                                                    *resource);
@@ -2306,8 +2327,15 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   route_config_state.watchers.erase(it);
   if (!route_config_state.watchers.empty()) return;
   authority_state.route_config_map.erase(resource->id);
-  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
+  if (resource->authority.empty()) {
+    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+        XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
+  } else {
+    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    GPR_ASSERT(authority != nullptr);
+    xds_server_channel_map_[authority->server()]->UnsubscribeLocked(
+        XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
+  }
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2356,8 +2384,15 @@ void XdsClient::WatchClusterData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      authority_state.channel_state =
-          GetOrCreateChannelStateLocked(bootstrap_->server());
+      if (resource->authority.empty()) {
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(bootstrap_->server());
+      } else {
+        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        GPR_ASSERT(authority != nullptr);
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(authority->server());
+      }
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
                                                    *resource);
@@ -2382,8 +2417,15 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   cluster_state.watchers.erase(it);
   if (!cluster_state.watchers.empty()) return;
   authority_state.cluster_map.erase(resource->id);
-  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
+  if (resource->authority.empty()) {
+    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+        XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
+  } else {
+    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    GPR_ASSERT(authority != nullptr);
+    xds_server_channel_map_[authority->server()]->UnsubscribeLocked(
+        XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
+  }
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2431,8 +2473,15 @@ void XdsClient::WatchEndpointData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      authority_state.channel_state =
-          GetOrCreateChannelStateLocked(bootstrap_->server());
+      if (resource->authority.empty()) {
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(bootstrap_->server());
+      } else {
+        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        GPR_ASSERT(authority != nullptr);
+        authority_state.channel_state =
+            GetOrCreateChannelStateLocked(authority->server());
+      }
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
                                                    *resource);
@@ -2457,8 +2506,15 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   endpoint_state.watchers.erase(it);
   if (!endpoint_state.watchers.empty()) return;
   authority_state.endpoint_map.erase(resource->id);
-  xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-      XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
+  if (resource->authority.empty()) {
+    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
+        XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
+  } else {
+    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    GPR_ASSERT(authority != nullptr);
+    xds_server_channel_map_[authority->server()]->UnsubscribeLocked(
+        XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
+  }
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
