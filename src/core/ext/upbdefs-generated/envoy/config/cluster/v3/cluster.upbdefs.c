@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
+#include "envoy/config/cluster/v3/cluster.upb.h"
 
 extern upb_def_init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit;
 extern upb_def_init envoy_config_cluster_v3_filter_proto_upbdefinit;
@@ -32,60 +33,6 @@ extern upb_def_init udpa_annotations_security_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_cluster_v3_ClusterCollection_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_TransportSocketMatch_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_CustomClusterType_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_EdsClusterConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_LbSubsetConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_SlowStartConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_RingHashLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_MaglevLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_RefreshRate_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_LoadBalancingPolicy_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_LoadBalancingPolicy_Policy_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_UpstreamBindConfig_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_UpstreamConnectionOptions_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_TrackClusterStats_msginit;
-
-static const upb_msglayout *layouts[25] = {
-  &envoy_config_cluster_v3_ClusterCollection_msginit,
-  &envoy_config_cluster_v3_Cluster_msginit,
-  &envoy_config_cluster_v3_Cluster_TransportSocketMatch_msginit,
-  &envoy_config_cluster_v3_Cluster_CustomClusterType_msginit,
-  &envoy_config_cluster_v3_Cluster_EdsClusterConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_LbSubsetConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSubsetSelector_msginit,
-  &envoy_config_cluster_v3_Cluster_SlowStartConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_RingHashLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_MaglevLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_CommonLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_RefreshRate_msginit,
-  &envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit,
-  &envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_msginit,
-  &envoy_config_cluster_v3_LoadBalancingPolicy_msginit,
-  &envoy_config_cluster_v3_LoadBalancingPolicy_Policy_msginit,
-  &envoy_config_cluster_v3_UpstreamBindConfig_msginit,
-  &envoy_config_cluster_v3_UpstreamConnectionOptions_msginit,
-  &envoy_config_cluster_v3_TrackClusterStats_msginit,
-};
-
 static const char descriptor[11811] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', 
 '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 
 'f', 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', '\032', '-', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 
@@ -590,7 +537,7 @@ static upb_def_init *deps[24] = {
 
 upb_def_init envoy_config_cluster_v3_cluster_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_cluster_v3_cluster_proto_upb_file_layout,
   "envoy/config/cluster/v3/cluster.proto",
   UPB_STRVIEW_INIT(descriptor, 11811)
 };

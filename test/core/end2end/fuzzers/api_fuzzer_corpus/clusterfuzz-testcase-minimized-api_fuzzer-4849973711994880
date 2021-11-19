@@ -1,0 +1,55 @@
+actions {
+  create_channel {
+    target: "dse:snrver"
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "%:?"
+    }
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_initial_metadata {
+      }
+    }
+    operations {
+      send_message {
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+          value: "bob"
+        }
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+      }
+    }
+    operations {
+      receive_initial_metadata {
+      }
+    }
+  }
+}

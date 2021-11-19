@@ -20,7 +20,18 @@
 const upb_msglayout envoy_service_cluster_v3_CdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 0, 255,
+  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
+};
+
+static const upb_msglayout *messages_layout[1] = {
+  &envoy_service_cluster_v3_CdsDummy_msginit,
+};
+
+const upb_msglayout_file envoy_service_cluster_v3_cds_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  1,
+  0,
 };
 
 #include "upb/port_undef.inc"

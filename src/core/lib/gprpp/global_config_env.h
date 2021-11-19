@@ -43,7 +43,7 @@ class GlobalConfigEnv {
 
  public:
   // Returns the value of `name` variable.
-  grpc_core::UniquePtr<char> GetValue();
+  UniquePtr<char> GetValue();
 
   // Sets the value of `name` variable.
   void SetValue(const char* value);
@@ -87,7 +87,7 @@ class GlobalConfigEnvString : public GlobalConfigEnv {
   constexpr GlobalConfigEnvString(char* name, const char* default_value)
       : GlobalConfigEnv(name), default_value_(default_value) {}
 
-  grpc_core::UniquePtr<char> Get();
+  UniquePtr<char> Get();
   void Set(const char* value);
 
  private:

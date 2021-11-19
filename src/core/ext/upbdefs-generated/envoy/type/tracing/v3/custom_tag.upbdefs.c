@@ -8,25 +8,12 @@
 
 #include "upb/def.h"
 #include "envoy/type/tracing/v3/custom_tag.upbdefs.h"
+#include "envoy/type/tracing/v3/custom_tag.upb.h"
 
 extern upb_def_init envoy_type_metadata_v3_metadata_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_type_tracing_v3_CustomTag_msginit;
-extern const upb_msglayout envoy_type_tracing_v3_CustomTag_Literal_msginit;
-extern const upb_msglayout envoy_type_tracing_v3_CustomTag_Environment_msginit;
-extern const upb_msglayout envoy_type_tracing_v3_CustomTag_Header_msginit;
-extern const upb_msglayout envoy_type_tracing_v3_CustomTag_Metadata_msginit;
-
-static const upb_msglayout *layouts[5] = {
-  &envoy_type_tracing_v3_CustomTag_msginit,
-  &envoy_type_tracing_v3_CustomTag_Literal_msginit,
-  &envoy_type_tracing_v3_CustomTag_Environment_msginit,
-  &envoy_type_tracing_v3_CustomTag_Header_msginit,
-  &envoy_type_tracing_v3_CustomTag_Metadata_msginit,
-};
-
 static const char descriptor[1249] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 't', 'r', 'a', 'c', 'i', 'n', 'g', '/', 'v', '3', '/', 'c', 
 'u', 's', 't', 'o', 'm', '_', 't', 'a', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 
 'p', 'e', '.', 't', 'r', 'a', 'c', 'i', 'n', 'g', '.', 'v', '3', '\032', '%', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', 
@@ -89,7 +76,7 @@ static upb_def_init *deps[5] = {
 
 upb_def_init envoy_type_tracing_v3_custom_tag_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_type_tracing_v3_custom_tag_proto_upb_file_layout,
   "envoy/type/tracing/v3/custom_tag.proto",
   UPB_STRVIEW_INIT(descriptor, 1249)
 };

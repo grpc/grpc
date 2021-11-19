@@ -8,16 +8,11 @@
 
 #include "upb/def.h"
 #include "xds/core/v3/resource.upbdefs.h"
+#include "xds/core/v3/resource.upb.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
 extern upb_def_init xds_core_v3_resource_name_proto_upbdefinit;
-extern const upb_msglayout xds_core_v3_Resource_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &xds_core_v3_Resource_msginit,
-};
-
 static const char descriptor[365] = {'\n', '\032', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'r', 'e', 's', 'o', 'u', 'r', 'c', 'e', '.', 'p', 'r', 
 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 
 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 't', 'o', '\032', '\037', 'x', 'd', 's', '/', 'a', 
@@ -44,7 +39,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init xds_core_v3_resource_proto_upbdefinit = {
   deps,
-  layouts,
+  &xds_core_v3_resource_proto_upb_file_layout,
   "xds/core/v3/resource.proto",
   UPB_STRVIEW_INIT(descriptor, 365)
 };

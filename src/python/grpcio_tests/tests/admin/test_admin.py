@@ -15,6 +15,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import logging
+import sys
 import unittest
 
 import grpc
@@ -25,6 +26,8 @@ from grpc_csds import csds_pb2
 from grpc_csds import csds_pb2_grpc
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class TestAdmin(unittest.TestCase):
 
     def setUp(self):

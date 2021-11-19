@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
+#include "envoy/config/endpoint/v3/endpoint.upb.h"
 
 extern upb_def_init envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit;
 extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
@@ -16,18 +17,6 @@ extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit;
-extern const upb_msglayout envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_msginit;
-
-static const upb_msglayout *layouts[4] = {
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_msginit,
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit,
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit,
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_msginit,
-};
-
 static const char descriptor[1443] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/', 'v', 
 '3', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
 'o', 'n', 'f', 'i', 'g', '.', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '.', 'v', '3', '\032', '2', 'e', 'n', 'v', 'o', 'y', '/', 
@@ -101,7 +90,7 @@ static upb_def_init *deps[8] = {
 
 upb_def_init envoy_config_endpoint_v3_endpoint_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_endpoint_v3_endpoint_proto_upb_file_layout,
   "envoy/config/endpoint/v3/endpoint.proto",
   UPB_STRVIEW_INIT(descriptor, 1443)
 };

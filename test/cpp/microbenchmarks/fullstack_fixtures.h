@@ -51,6 +51,7 @@ class FixtureConfiguration {
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+    c->SetResourceQuota(ResourceQuota());
   }
 
   virtual void ApplyCommonServerBuilderConfig(ServerBuilder* b) const {
@@ -172,23 +173,19 @@ class EndpointPairFixture : public BaseFixture {
     /* add server endpoint to server_
      * */
     {
-      const grpc_channel_args* server_args =
-          server_->c_server()->core_server->channel_args();
-      grpc_resource_quota* server_resource_quota =
-          grpc_resource_quota_from_channel_args(server_args, true);
+      grpc_core::Server* core_server =
+          grpc_core::Server::FromC(server_->c_server());
+      const grpc_channel_args* server_args = core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */,
-          grpc_resource_user_create(server_resource_quota, "server_transport"));
-      grpc_resource_quota_unref(server_resource_quota);
-      for (grpc_pollset* pollset :
-           server_->c_server()->core_server->pollsets()) {
+          server_args, endpoints.server, false /* is_client */);
+      for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "SetupTransport",
-          server_->c_server()->core_server->SetupTransport(
-              server_transport_, nullptr, server_args, nullptr)));
+          core_server->SetupTransport(server_transport_, nullptr, server_args,
+                                      nullptr)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
                                           nullptr);
     }
@@ -200,16 +197,12 @@ class EndpointPairFixture : public BaseFixture {
       fixture_configuration.ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_resource_quota* client_resource_quota =
-          grpc_resource_quota_from_channel_args(&c_args, true);
-      client_transport_ = grpc_create_chttp2_transport(
-          &c_args, endpoints.client, true,
-          grpc_resource_user_create(client_resource_quota, "client_transport"));
-      grpc_resource_quota_unref(client_resource_quota);
+      client_transport_ =
+          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
       grpc_channel* channel =
           grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                              client_transport_, nullptr, 0, nullptr);
+                              client_transport_, nullptr);
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
                                           nullptr);
 

@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/rbac/v3/rbac.upbdefs.h"
+#include "envoy/config/rbac/v3/rbac.upb.h"
 
 extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
@@ -23,26 +24,6 @@ extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_rbac_v3_RBAC_msginit;
-extern const upb_msglayout envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit;
-extern const upb_msglayout envoy_config_rbac_v3_Policy_msginit;
-extern const upb_msglayout envoy_config_rbac_v3_Permission_msginit;
-extern const upb_msglayout envoy_config_rbac_v3_Permission_Set_msginit;
-extern const upb_msglayout envoy_config_rbac_v3_Principal_msginit;
-extern const upb_msglayout envoy_config_rbac_v3_Principal_Set_msginit;
-extern const upb_msglayout envoy_config_rbac_v3_Principal_Authenticated_msginit;
-
-static const upb_msglayout *layouts[8] = {
-  &envoy_config_rbac_v3_RBAC_msginit,
-  &envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit,
-  &envoy_config_rbac_v3_Policy_msginit,
-  &envoy_config_rbac_v3_Permission_msginit,
-  &envoy_config_rbac_v3_Permission_Set_msginit,
-  &envoy_config_rbac_v3_Principal_msginit,
-  &envoy_config_rbac_v3_Principal_Set_msginit,
-  &envoy_config_rbac_v3_Principal_Authenticated_msginit,
-};
-
 static const char descriptor[3378] = {'\n', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'r', 'b', 'a', 'c', '/', 'v', '3', '/', 'r', 'b', 
 'a', 'c', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'r', 'b', 
 'a', 'c', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 
@@ -201,7 +182,7 @@ static upb_def_init *deps[15] = {
 
 upb_def_init envoy_config_rbac_v3_rbac_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_rbac_v3_rbac_proto_upb_file_layout,
   "envoy/config/rbac/v3/rbac.proto",
   UPB_STRVIEW_INIT(descriptor, 3378)
 };

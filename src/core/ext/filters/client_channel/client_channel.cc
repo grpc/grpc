@@ -578,7 +578,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
           DEBUG_LOCATION);
     }
 
-    void OnConnectivityStateChange() override {
+    void OnConnectivityStateChange(grpc_connectivity_state state,
+                                   const absl::Status& status) override {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
@@ -587,9 +588,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
-          [this]()
+          [this, state, status]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
-                ApplyUpdateInControlPlaneWorkSerializer();
+                ApplyUpdateInControlPlaneWorkSerializer(state, status);
                 Unref();
               },
           DEBUG_LOCATION);
@@ -612,19 +613,20 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
-    void ApplyUpdateInControlPlaneWorkSerializer()
+    void ApplyUpdateInControlPlaneWorkSerializer(grpc_connectivity_state state,
+                                                 const absl::Status& status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: processing connectivity change in work serializer "
-                "for subchannel wrapper %p subchannel %p "
-                "watcher=%p",
+                "for subchannel wrapper %p subchannel %p watcher=%p: "
+                "state=%s status=%s",
                 parent_->chand_, parent_.get(), parent_->subchannel_.get(),
-                watcher_.get());
+                watcher_.get(), ConnectivityStateName(state),
+                status.ToString().c_str());
       }
-      ConnectivityStateChange state_change = PopConnectivityStateChange();
       absl::optional<absl::Cord> keepalive_throttling =
-          state_change.status.GetPayload(kKeepaliveThrottlingKey);
+          status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
@@ -652,8 +654,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
-        last_seen_state_ = state_change.state;
-        watcher_->OnConnectivityStateChange(state_change.state);
+        last_seen_state_ = state;
+        watcher_->OnConnectivityStateChange(state);
       }
     }
 
@@ -1091,7 +1093,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   // resolver creation will succeed later.
   if (!ResolverRegistry::IsValidTarget(uri_to_resolve_)) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("the target uri is not valid: ", uri_to_resolve_.c_str()));
+        absl::StrCat("the target uri is not valid: ", uri_to_resolve_));
     return;
   }
   // Strip out service config channel arg, so that it doesn't affect
@@ -2428,16 +2430,9 @@ class ClientChannel::LoadBalancedCall::Metadata
 
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
       override {
-    std::vector<std::pair<std::string, std::string>> result;
-    batch_->ForEach([&](grpc_mdelem md) {
-      auto key = std::string(StringViewFromSlice(GRPC_MDKEY(md)));
-      if (key != ":path") {
-        result.push_back(
-            std::make_pair(std::move(key),
-                           std::string(StringViewFromSlice(GRPC_MDVALUE(md)))));
-      }
-    });
-    return result;
+    Encoder encoder;
+    batch_->Encode(&encoder);
+    return encoder.Take();
   }
 
   absl::optional<absl::string_view> Lookup(absl::string_view key,
@@ -2446,6 +2441,33 @@ class ClientChannel::LoadBalancedCall::Metadata
   }
 
  private:
+  class Encoder {
+   public:
+    void Encode(grpc_mdelem md) {
+      auto key = StringViewFromSlice(GRPC_MDKEY(md));
+      if (key != ":path") {
+        out_.emplace_back(std::string(key),
+                          std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
+      }
+    }
+
+    template <class Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      auto value_slice = Which::Encode(value);
+      out_.emplace_back(std::string(Which::key()),
+                        std::string(value_slice.as_string_view()));
+    }
+
+    void Encode(GrpcTimeoutMetadata, grpc_millis) {}
+
+    std::vector<std::pair<std::string, std::string>> Take() {
+      return std::move(out_);
+    }
+
+   private:
+    std::vector<std::pair<std::string, std::string>> out_;
+  };
+
   LoadBalancedCall* lb_call_;
   grpc_metadata_batch* batch_;
 };
@@ -2461,19 +2483,6 @@ class ClientChannel::LoadBalancedCall::LbCallState
 
   void* Alloc(size_t size) override { return lb_call_->arena_->Alloc(size); }
 
-  const LoadBalancingPolicy::BackendMetricData* GetBackendMetricData()
-      override {
-    if (lb_call_->backend_metric_data_ == nullptr) {
-      grpc_linked_mdelem* md = lb_call_->recv_trailing_metadata_->legacy_index()
-                                   ->named.x_endpoint_load_metrics_bin;
-      if (md != nullptr) {
-        lb_call_->backend_metric_data_ =
-            ParseBackendMetricData(GRPC_MDVALUE(md->md), lb_call_->arena_);
-      }
-    }
-    return lb_call_->backend_metric_data_;
-  }
-
   absl::string_view ExperimentalGetCallAttribute(const char* key) override {
     auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
         lb_call_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
@@ -2488,7 +2497,33 @@ class ClientChannel::LoadBalancedCall::LbCallState
 };
 
 //
-// LoadBalancedCall
+// ClientChannel::LoadBalancedCall::BackendMetricAccessor
+//
+
+class ClientChannel::LoadBalancedCall::BackendMetricAccessor
+    : public LoadBalancingPolicy::BackendMetricAccessor {
+ public:
+  explicit BackendMetricAccessor(LoadBalancedCall* lb_call)
+      : lb_call_(lb_call) {}
+
+  const BackendMetricData* GetBackendMetricData() override {
+    if (lb_call_->backend_metric_data_ == nullptr) {
+      grpc_linked_mdelem* md = lb_call_->recv_trailing_metadata_->legacy_index()
+                                   ->named.x_endpoint_load_metrics_bin;
+      if (md != nullptr) {
+        lb_call_->backend_metric_data_ =
+            ParseBackendMetricData(GRPC_MDVALUE(md->md), lb_call_->arena_);
+      }
+    }
+    return lb_call_->backend_metric_data_;
+  }
+
+ private:
+  LoadBalancedCall* lb_call_;
+};
+
+//
+// ClientChannel::LoadBalancedCall
 //
 
 namespace {
@@ -2530,8 +2565,8 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   GRPC_ERROR_UNREF(cancel_error_);
   GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
-    backend_metric_data_
-        ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
+    backend_metric_data_->LoadBalancingPolicy::BackendMetricAccessor::
+        BackendMetricData::~BackendMetricData();
   }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2832,7 +2867,7 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
   auto* self = static_cast<LoadBalancedCall*>(arg);
   // Check if we have a tracer or an LB callback to invoke.
   if (self->call_attempt_tracer_ != nullptr ||
-      self->lb_recv_trailing_metadata_ready_ != nullptr) {
+      self->lb_subchannel_call_tracker_ != nullptr) {
     // Get the call's status.
     absl::Status status;
     if (error != GRPC_ERROR_NONE) {
@@ -2864,11 +2899,13 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
     }
     // If the LB policy requested a callback for trailing metadata, invoke
     // the callback.
-    if (self->lb_recv_trailing_metadata_ready_ != nullptr) {
+    if (self->lb_subchannel_call_tracker_ != nullptr) {
       Metadata trailing_metadata(self, self->recv_trailing_metadata_);
-      LbCallState lb_call_state(self);
-      self->lb_recv_trailing_metadata_ready_(status, &trailing_metadata,
-                                             &lb_call_state);
+      BackendMetricAccessor backend_metric_accessor(self);
+      LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+          status, &trailing_metadata, &backend_metric_accessor};
+      self->lb_subchannel_call_tracker_->Finish(args);
+      self->lb_subchannel_call_tracker_.reset();
     }
   }
   // Chain to original callback.
@@ -3054,15 +3091,21 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             // subchannel has moved out of state READY but the LB policy hasn't
             // yet seen that change and given us a new picker), then just
             // queue the pick.  We'll try again as soon as we get a new picker.
-            // TODO(roth): In this case, we need to invoke the LB
-            // policy's recv_trailing_metadata_ready callback to tell it
-            // that the pick has been abandoned.
             if (connected_subchannel_ == nullptr) {
+              if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+                gpr_log(GPR_INFO,
+                        "chand=%p lb_call=%p: subchannel returned by LB picker "
+                        "has no connected subchannel; queueing pick",
+                        chand_, this);
+              }
               MaybeAddCallToLbQueuedCallsLocked();
               return false;
             }
-            lb_recv_trailing_metadata_ready_ =
-                std::move(complete_pick->recv_trailing_metadata_ready);
+            lb_subchannel_call_tracker_ =
+                std::move(complete_pick->subchannel_call_tracker);
+            if (lb_subchannel_call_tracker_ != nullptr) {
+              lb_subchannel_call_tracker_->Start();
+            }
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           },

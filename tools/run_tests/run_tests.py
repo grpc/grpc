@@ -756,7 +756,7 @@ class PythonLanguage(object):
 
         if args.iomgr_platform in ('asyncio', 'gevent'):
             if args.compiler not in ('default', 'python3.6', 'python3.7',
-                                     'python3.8'):
+                                     'python3.8', 'python3.9'):
                 raise Exception(
                     'Compiler %s not supported with IO Manager platform: %s' %
                     (args.compiler, args.iomgr_platform))
@@ -901,7 +901,7 @@ class CSharpLanguage(object):
         assembly_extension = '.exe'
 
         if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp2.1'
+            assembly_subdir += '/netcoreapp3.1'
             runtime_cmd = ['dotnet', 'exec']
             assembly_extension = '.dll'
         else:
