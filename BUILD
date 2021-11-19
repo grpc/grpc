@@ -2794,8 +2794,8 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
-        "grpc_server_config_selector_filter",
         "grpc_server_config_selector",
+        "grpc_server_config_selector_filter",
         "grpc_sockaddr",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
