@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
 licenses(["notice"])
@@ -25,4 +26,9 @@ grpc_proto_library(
     name = "rls_proto",
     srcs = ["rls.proto"],
     well_known_protos = True,
+)
+
+proto_library(
+    name = "rls_proto_descriptor",
+    srcs = ["rls.proto"],
 )
