@@ -3253,7 +3253,6 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
         "src/core/lib/security/security_connector/local/local_security_connector.cc",
-        "src/core/lib/security/transport/server_auth_filter.cc",
         "src/core/lib/surface/init_secure.cc",
     ],
     hdrs = [
