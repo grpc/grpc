@@ -16,13 +16,12 @@
  *
  */
 
-#include <string.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -43,13 +42,15 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
-#define MAX_ADVANCE_TIME_MICROS (24 * 3600 * 365 * 1000000)  // 1 year
+static constexpr uint64_t max_advance_time_micros =
+    31536000000000;  // 1 year (24 * 365 * 3600 * 1000000)
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_WAIT_MS (24 * 3600 * 365 * 1000)  // 1 year
+static constexpr uint64_t max_wait_ms =
+    31536000000;  // 1 year (24 * 365 * 3600 * 1000)
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_READABLE_BYTES (2 * 1024 * 1024)  // 2GB
+static constexpr uint64_t max_add_n_readable_bytes = (2 * 1024 * 1024);  // 2GB
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_WRITABLE_BYTES (2 * 1024 * 1024)  // 2GB
+static constexpr uint64_t max_add_n_writable_bytes = (2 * 1024 * 1024);  // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -789,7 +790,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       g_now = gpr_time_add(
           g_now,
           gpr_time_from_seconds(
-              std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS / 1000)),
+              std::max<int64_t>(1, static_cast<int64_t>(max_wait_ms / 1000)),
               GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
@@ -820,7 +821,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(
                        std::min(static_cast<uint64_t>(action.advance_time()),
-                                static_cast<uint64_t>(MAX_ADVANCE_TIME_MICROS)),
+                                max_advance_time_micros),
                        GPR_TIMESPAN));
         break;
       }
@@ -849,11 +850,11 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
                 action.create_channel().channel_actions(i);
             g_channel_actions.push_back({
                 std::min(channel_action.wait_ms(),
-                         static_cast<uint64_t>(MAX_WAIT_MS)),
+                         max_wait_ms),
                 std::min(channel_action.add_n_bytes_writable(),
-                         static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTES)),
+                         max_add_n_writable_bytes),
                 std::min(channel_action.add_n_bytes_readable(),
-                         static_cast<uint64_t>(MAX_ADD_N_READABLE_BYTES)),
+                         max_add_n_readable_bytes),
             });
           }
           GPR_ASSERT(g_channel != nullptr);
