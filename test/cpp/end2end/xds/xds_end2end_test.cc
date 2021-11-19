@@ -201,6 +201,17 @@ constexpr char kBootstrapFileHeaderAndXdsServers[] =
 constexpr char kBootstrapFileAuthorities[] =
     "  \"authorities\": {\n"
     "    \"xds.example.com\": {\n"
+    "      \"xds_servers\": [\n"
+    "        {\n"
+    "          \"server_uri\": \"fake:///xds_server\",\n"
+    "          \"channel_creds\": [\n"
+    "            {\n"
+    "              \"type\": \"fake\"\n"
+    "            }\n"
+    "          ],\n"
+    "          \"server_features\": [\"xds_v3\"]\n"
+    "        }\n"
+    "      ]\n"
     "    }\n"
     "  },\n";
 
@@ -811,9 +822,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().use_v2()) {
       builder.SetV2();
     }
-    if (num_balancers_ > 0 && !GetParam().use_fake_resolver()) {
+    if (!GetParam().use_fake_resolver() &&
+        num_balancers_ > GetParam().top_balancer_index() &&
+        num_balancers_ > GetParam().authority_balancer_index()) {
       builder.SetDefaultServer(absl::StrCat(
           "localhost:", balancers_[GetParam().top_balancer_index()]->port()));
+      builder.SetAuthorityServer(absl::StrCat(
+          "localhost:",
+          balancers_[GetParam().authority_balancer_index()]->port()));
     }
     bootstrap_ = builder.Build();
     gpr_log(GPR_INFO, "donna the bootstrap built as %s", bootstrap_.c_str());
@@ -1953,36 +1969,39 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     BootstrapBuilder() {}
     void SetV2() { v2_ = true; }
     void SetDefaultServer(const std::string& server) { top_server_ = server; }
-    void SetAuthorityServer(const std::string& authority,
-                            const std::string& server) {
-      authority_server_ = {authority, server};
+    void SetAuthorityServer(const std::string& server) {
+      authority_server_ = server;
     }
     std::string Build() {
-      if (top_server_.empty()) {
-        return std::string(
-            (v2_ ? kBootstrapFileV2
-                 : absl::StrCat(kBootstrapFileHeaderAndXdsServers,
-                                kBootstrapFileAuthorities,
-                                kBootstrapFileServerNameTemplate,
-                                kBootstrapFileCertificateProviders,
-                                kBootstrapFileNodeAndFooter)));
+      gpr_log(GPR_INFO, "donna top %s and authority %s", top_server_.c_str(),
+              authority_server_.c_str());
+      std::string authorities;
+      if (!authority_server_.empty()) {
+        authorities =
+            absl::StrReplaceAll(kBootstrapFileAuthorities,
+                                {{"fake:///xds_server", authority_server_}});
       }
-      std::string bootstrap = absl::StrReplaceAll(
+      std::string header;
+      if (!top_server_.empty()) {
+        header = absl::StrReplaceAll(kBootstrapFileHeaderAndXdsServers,
+                                     {{"fake:///xds_server", top_server_}});
+      }
+      return std::string(
           (v2_ ? kBootstrapFileV2
-               : absl::StrCat(kBootstrapFileHeaderAndXdsServers,
-                              kBootstrapFileAuthorities,
-                              kBootstrapFileServerNameTemplate,
-                              kBootstrapFileCertificateProviders,
-                              kBootstrapFileNodeAndFooter)),
-          {{"fake:///xds_server", top_server_}});
-      return bootstrap;
+               : absl::StrCat(
+                     (top_server_.empty() ? kBootstrapFileHeaderAndXdsServers
+                                          : header),
+                     (authority_server_.empty() ? kBootstrapFileAuthorities
+                                                : authorities),
+                     kBootstrapFileServerNameTemplate,
+                     kBootstrapFileCertificateProviders,
+                     kBootstrapFileNodeAndFooter)));
     }
 
    private:
     bool v2_ = false;
     std::string top_server_;
-    std::pair<std::string /*authority*/, std::string /*server*/>
-        authority_server_;
+    std::string authority_server_;
   };
 
   const size_t num_backends_;
