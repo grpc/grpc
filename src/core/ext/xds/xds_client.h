@@ -58,7 +58,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class RouteConfigWatcherInterface
       : public RefCounted<RouteConfigWatcherInterface> {
    public:
-    virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config)
+    virtual void OnRouteConfigChanged(XdsRouteConfigResource route_config)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -277,7 +277,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
              RefCountedPtr<RouteConfigWatcherInterface>>
         watchers;
     // The latest data seen from RDS.
-    absl::optional<XdsApi::RdsUpdate> update;
+    absl::optional<XdsRouteConfigResource> update;
     XdsApi::ResourceMetadata meta;
   };
 

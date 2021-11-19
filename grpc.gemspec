@@ -746,6 +746,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_http_filters.cc )
   s.files += %w( src/core/ext/xds/xds_http_filters.h )
   s.files += %w( src/core/ext/xds/xds_resource_type.h )
+  s.files += %w( src/core/ext/xds/xds_route_config.cc )
+  s.files += %w( src/core/ext/xds/xds_route_config.h )
   s.files += %w( src/core/ext/xds/xds_routing.cc )
   s.files += %w( src/core/ext/xds/xds_routing.h )
   s.files += %w( src/core/ext/xds/xds_server_config_fetcher.cc )

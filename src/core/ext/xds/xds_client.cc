@@ -1094,7 +1094,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::RdsUpdate& rds_update = p.second.resource;
+    XdsRouteConfigResource& rds_update = p.second.resource;
     auto it = rds_state.subscribed_resources.find(name.authority);
     if (it != rds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);

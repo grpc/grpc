@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -53,151 +54,6 @@ class XdsApi {
   static const char* kRdsTypeUrl;
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
-
-  using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
-
-  struct RetryPolicy {
-    internal::StatusCodeSet retry_on;
-    uint32_t num_retries;
-
-    struct RetryBackOff {
-      Duration base_interval;
-      Duration max_interval;
-
-      bool operator==(const RetryBackOff& other) const {
-        return base_interval == other.base_interval &&
-               max_interval == other.max_interval;
-      }
-      std::string ToString() const;
-    };
-    RetryBackOff retry_back_off;
-
-    bool operator==(const RetryPolicy& other) const {
-      return (retry_on == other.retry_on && num_retries == other.num_retries &&
-              retry_back_off == other.retry_back_off);
-    }
-    std::string ToString() const;
-  };
-
-  // TODO(donnadionne): When we can use absl::variant<>, consider using that
-  // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
-  struct Route {
-    // Matchers for this route.
-    struct Matchers {
-      StringMatcher path_matcher;
-      std::vector<HeaderMatcher> header_matchers;
-      absl::optional<uint32_t> fraction_per_million;
-
-      bool operator==(const Matchers& other) const {
-        return path_matcher == other.path_matcher &&
-               header_matchers == other.header_matchers &&
-               fraction_per_million == other.fraction_per_million;
-      }
-      std::string ToString() const;
-    };
-
-    Matchers matchers;
-
-    struct UnknownAction {
-      bool operator==(const UnknownAction& /* other */) const { return true; }
-    };
-
-    struct RouteAction {
-      struct HashPolicy {
-        enum Type { HEADER, CHANNEL_ID };
-        Type type;
-        bool terminal = false;
-        // Fields used for type HEADER.
-        std::string header_name;
-        std::unique_ptr<RE2> regex = nullptr;
-        std::string regex_substitution;
-
-        HashPolicy() {}
-
-        // Copyable.
-        HashPolicy(const HashPolicy& other);
-        HashPolicy& operator=(const HashPolicy& other);
-
-        // Moveable.
-        HashPolicy(HashPolicy&& other) noexcept;
-        HashPolicy& operator=(HashPolicy&& other) noexcept;
-
-        bool operator==(const HashPolicy& other) const;
-        std::string ToString() const;
-      };
-
-      struct ClusterWeight {
-        std::string name;
-        uint32_t weight;
-        TypedPerFilterConfig typed_per_filter_config;
-
-        bool operator==(const ClusterWeight& other) const {
-          return name == other.name && weight == other.weight &&
-                 typed_per_filter_config == other.typed_per_filter_config;
-        }
-        std::string ToString() const;
-      };
-
-      std::vector<HashPolicy> hash_policies;
-      absl::optional<RetryPolicy> retry_policy;
-
-      // Action for this route.
-      // TODO(roth): When we can use absl::variant<>, consider using that
-      // here, to enforce the fact that only one of the two fields can be set.
-      std::string cluster_name;
-      std::vector<ClusterWeight> weighted_clusters;
-      // Storing the timeout duration from route action:
-      // RouteAction.max_stream_duration.grpc_timeout_header_max or
-      // RouteAction.max_stream_duration.max_stream_duration if the former is
-      // not set.
-      absl::optional<Duration> max_stream_duration;
-
-      bool operator==(const RouteAction& other) const {
-        return hash_policies == other.hash_policies &&
-               retry_policy == other.retry_policy &&
-               cluster_name == other.cluster_name &&
-               weighted_clusters == other.weighted_clusters &&
-               max_stream_duration == other.max_stream_duration;
-      }
-      std::string ToString() const;
-    };
-
-    struct NonForwardingAction {
-      bool operator==(const NonForwardingAction& /* other */) const {
-        return true;
-      }
-    };
-
-    absl::variant<UnknownAction, RouteAction, NonForwardingAction> action;
-    TypedPerFilterConfig typed_per_filter_config;
-
-    bool operator==(const Route& other) const {
-      return matchers == other.matchers && action == other.action &&
-             typed_per_filter_config == other.typed_per_filter_config;
-    }
-    std::string ToString() const;
-  };
-
-  struct RdsUpdate {
-    struct VirtualHost {
-      std::vector<std::string> domains;
-      std::vector<Route> routes;
-      TypedPerFilterConfig typed_per_filter_config;
-
-      bool operator==(const VirtualHost& other) const {
-        return domains == other.domains && routes == other.routes &&
-               typed_per_filter_config == other.typed_per_filter_config;
-      }
-    };
-
-    std::vector<VirtualHost> virtual_hosts;
-
-    bool operator==(const RdsUpdate& other) const {
-      return virtual_hosts == other.virtual_hosts;
-    }
-    std::string ToString() const;
-  };
 
   struct DownstreamTlsContext {
     CommonTlsContext common_tls_context;
@@ -228,7 +84,7 @@ class XdsApi {
       Duration http_max_stream_duration;
       // The RouteConfiguration to use for this listener.
       // Present only if it is inlined in the LDS response.
-      absl::optional<RdsUpdate> rds_update;
+      absl::optional<XdsRouteConfigResource> rds_update;
 
       struct HttpFilter {
         std::string name;
@@ -375,7 +231,7 @@ class XdsApi {
   using LdsUpdateMap = std::map<ResourceName, LdsResourceData>;
 
   struct RdsResourceData {
-    RdsUpdate resource;
+    XdsRouteConfigResource resource;
     std::string serialized_proto;
   };
 

@@ -726,6 +726,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />

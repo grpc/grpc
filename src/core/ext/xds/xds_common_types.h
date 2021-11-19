@@ -24,6 +24,7 @@
 
 #include "absl/strings/str_format.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 
 #include "src/core/ext/xds/upb_utils.h"
@@ -97,6 +98,10 @@ struct CommonTlsContext {
           common_tls_context_proto,
       CommonTlsContext* common_tls_context);
 };
+
+grpc_error_handle ExtractHttpFilterTypeName(const XdsEncodingContext& context,
+                                            const google_protobuf_Any* any,
+                                            absl::string_view* filter_type);
 
 }  // namespace grpc_core
 
