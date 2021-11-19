@@ -1183,7 +1183,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::CdsUpdate& cds_update = p.second.resource;
+    XdsClusterResource& cds_update = p.second.resource;
     auto it = cds_state.subscribed_resources.find(name.authority);
     if (it != cds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);

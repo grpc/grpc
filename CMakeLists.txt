@@ -1801,6 +1801,8 @@ add_library(grpc
   src/core/ext/xds/xds_channel_stack_modifier.cc
   src/core/ext/xds/xds_client.cc
   src/core/ext/xds/xds_client_stats.cc
+  src/core/ext/xds/xds_cluster.cc
+  src/core/ext/xds/xds_common_types.cc
   src/core/ext/xds/xds_endpoint.cc
   src/core/ext/xds/xds_http_fault_filter.cc
   src/core/ext/xds/xds_http_filters.cc

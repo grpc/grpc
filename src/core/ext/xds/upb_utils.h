@@ -14,14 +14,34 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_CORE_EXT_XDS_UPB_UTILS_H
+#define GRPC_CORE_EXT_XDS_UPB_UTILS_H
+
 #include <grpc/support/port_platform.h>
 
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "upb/text_encode.h"
 #include "upb/upb.h"
+#include "upb/upb.hpp"
+
+#include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/lib/debug/trace.h"
 
 namespace grpc_core {
+
+class XdsClient;
+
+struct XdsEncodingContext {
+  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
+  TraceFlag* tracer;
+  upb_symtab* symtab;
+  upb_arena* arena;
+  bool use_v3;
+  const CertificateProviderStore::PluginDefinitionMap*
+      certificate_provider_definition_map;
+};
 
 // Works for both std::string and absl::string_view.
 template <typename T>
@@ -38,3 +58,5 @@ inline std::string UpbStringToStdString(const upb_strview& str) {
 }
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_EXT_XDS_UPB_UTILS_H

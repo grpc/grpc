@@ -69,7 +69,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Cluster data watcher interface.  Implemented by callers.
   class ClusterWatcherInterface : public RefCounted<ClusterWatcherInterface> {
    public:
-    virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data)
+    virtual void OnClusterChanged(XdsClusterResource cluster_data)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -285,7 +285,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<ClusterWatcherInterface*, RefCountedPtr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
-    absl::optional<XdsApi::CdsUpdate> update;
+    absl::optional<XdsClusterResource> update;
     XdsApi::ResourceMetadata meta;
   };
 

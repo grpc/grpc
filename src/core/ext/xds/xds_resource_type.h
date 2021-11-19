@@ -21,29 +21,13 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/text_encode.h"
-#include "upb/upb.h"
-#include "upb/upb.hpp"
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/ext/xds/upb_utils.h"
 
 #ifndef GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
 #define GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
 
 namespace grpc_core {
-
-class XdsClient;
-
-struct XdsEncodingContext {
-  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
-  TraceFlag* tracer;
-  upb_symtab* symtab;
-  upb_arena* arena;
-  bool use_v3;
-  const CertificateProviderStore::PluginDefinitionMap*
-      certificate_provider_definition_map;
-};
 
 class XdsResourceType {
  public:

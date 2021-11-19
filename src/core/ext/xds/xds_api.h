@@ -35,6 +35,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/status_util.h"
@@ -50,17 +51,6 @@ class XdsApi {
   static const char* kRdsTypeUrl;
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
-
-  struct Duration {
-    int64_t seconds = 0;
-    int32_t nanos = 0;
-    bool operator==(const Duration& other) const {
-      return seconds == other.seconds && nanos == other.nanos;
-    }
-    std::string ToString() const {
-      return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
-    }
-  };
 
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
@@ -206,48 +196,6 @@ class XdsApi {
     }
     std::string ToString() const;
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
-  };
-
-  struct CommonTlsContext {
-    struct CertificateProviderPluginInstance {
-      std::string instance_name;
-      std::string certificate_name;
-
-      bool operator==(const CertificateProviderPluginInstance& other) const {
-        return instance_name == other.instance_name &&
-               certificate_name == other.certificate_name;
-      }
-
-      std::string ToString() const;
-      bool Empty() const;
-    };
-
-    struct CertificateValidationContext {
-      CertificateProviderPluginInstance ca_certificate_provider_instance;
-      std::vector<StringMatcher> match_subject_alt_names;
-
-      bool operator==(const CertificateValidationContext& other) const {
-        return ca_certificate_provider_instance ==
-                   other.ca_certificate_provider_instance &&
-               match_subject_alt_names == other.match_subject_alt_names;
-      }
-
-      std::string ToString() const;
-      bool Empty() const;
-    };
-
-    CertificateValidationContext certificate_validation_context;
-    CertificateProviderPluginInstance tls_certificate_provider_instance;
-
-    bool operator==(const CommonTlsContext& other) const {
-      return certificate_validation_context ==
-                 other.certificate_validation_context &&
-             tls_certificate_provider_instance ==
-                 other.tls_certificate_provider_instance;
-    }
-
-    std::string ToString() const;
-    bool Empty() const;
   };
 
   struct DownstreamTlsContext {
@@ -432,57 +380,8 @@ class XdsApi {
 
   using RdsUpdateMap = std::map<ResourceName, RdsResourceData>;
 
-  struct CdsUpdate {
-    enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
-    ClusterType cluster_type;
-    // For cluster type EDS.
-    // The name to use in the EDS request.
-    // If empty, the cluster name will be used.
-    std::string eds_service_name;
-    // For cluster type LOGICAL_DNS.
-    // The hostname to lookup in DNS.
-    std::string dns_hostname;
-    // For cluster type AGGREGATE.
-    // The prioritized list of cluster names.
-    std::vector<std::string> prioritized_cluster_names;
-
-    // Tls Context used by clients
-    CommonTlsContext common_tls_context;
-
-    // The LRS server to use for load reporting.
-    // If not set, load reporting will be disabled.
-    // If set to the empty string, will use the same server we obtained the CDS
-    // data from.
-    absl::optional<std::string> lrs_load_reporting_server_name;
-
-    // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
-    std::string lb_policy;
-    // Used for RING_HASH LB policy only.
-    uint64_t min_ring_size = 1024;
-    uint64_t max_ring_size = 8388608;
-    // Maximum number of outstanding requests can be made to the upstream
-    // cluster.
-    uint32_t max_concurrent_requests = 1024;
-
-    bool operator==(const CdsUpdate& other) const {
-      return cluster_type == other.cluster_type &&
-             eds_service_name == other.eds_service_name &&
-             dns_hostname == other.dns_hostname &&
-             prioritized_cluster_names == other.prioritized_cluster_names &&
-             common_tls_context == other.common_tls_context &&
-             lrs_load_reporting_server_name ==
-                 other.lrs_load_reporting_server_name &&
-             lb_policy == other.lb_policy &&
-             min_ring_size == other.min_ring_size &&
-             max_ring_size == other.max_ring_size &&
-             max_concurrent_requests == other.max_concurrent_requests;
-    }
-
-    std::string ToString() const;
-  };
-
   struct CdsResourceData {
-    CdsUpdate resource;
+    XdsClusterResource resource;
     std::string serialized_proto;
   };
 
