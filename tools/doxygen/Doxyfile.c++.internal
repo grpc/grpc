@@ -1692,6 +1692,7 @@ src/core/ext/xds/certificate_provider_store.cc \
 src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
 src/core/ext/xds/file_watcher_certificate_provider_factory.h \
+src/core/ext/xds/upb_utils.h \
 src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
 src/core/ext/xds/xds_bootstrap.cc \
@@ -1705,10 +1706,13 @@ src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
+src/core/ext/xds/xds_endpoint.cc \
+src/core/ext/xds/xds_endpoint.h \
 src/core/ext/xds/xds_http_fault_filter.cc \
 src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
+src/core/ext/xds/xds_resource_type.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
 src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \

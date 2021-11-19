@@ -80,7 +80,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Endpoint data watcher interface.  Implemented by callers.
   class EndpointWatcherInterface : public RefCounted<EndpointWatcherInterface> {
    public:
-    virtual void OnEndpointChanged(XdsApi::EdsUpdate update)
+    virtual void OnEndpointChanged(XdsEndpointResource update)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -293,7 +293,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<EndpointWatcherInterface*, RefCountedPtr<EndpointWatcherInterface>>
         watchers;
     // The latest data seen from EDS.
-    absl::optional<XdsApi::EdsUpdate> update;
+    absl::optional<XdsEndpointResource> update;
     XdsApi::ResourceMetadata meta;
   };
 

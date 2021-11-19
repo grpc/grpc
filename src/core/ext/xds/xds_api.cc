@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <string>
 
+// FIXME: prune includes!
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -89,6 +90,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -746,76 +750,6 @@ std::string XdsApi::CdsUpdate::ToString() const {
 }
 
 //
-// XdsApi::EdsUpdate
-//
-
-std::string XdsApi::EdsUpdate::Priority::Locality::ToString() const {
-  std::vector<std::string> endpoint_strings;
-  for (const ServerAddress& endpoint : endpoints) {
-    endpoint_strings.emplace_back(endpoint.ToString());
-  }
-  return absl::StrCat("{name=", name->AsHumanReadableString(),
-                      ", lb_weight=", lb_weight, ", endpoints=[",
-                      absl::StrJoin(endpoint_strings, ", "), "]}");
-}
-
-bool XdsApi::EdsUpdate::Priority::operator==(const Priority& other) const {
-  if (localities.size() != other.localities.size()) return false;
-  auto it1 = localities.begin();
-  auto it2 = other.localities.begin();
-  while (it1 != localities.end()) {
-    if (*it1->first != *it2->first) return false;
-    if (it1->second != it2->second) return false;
-    ++it1;
-    ++it2;
-  }
-  return true;
-}
-
-std::string XdsApi::EdsUpdate::Priority::ToString() const {
-  std::vector<std::string> locality_strings;
-  for (const auto& p : localities) {
-    locality_strings.emplace_back(p.second.ToString());
-  }
-  return absl::StrCat("[", absl::StrJoin(locality_strings, ", "), "]");
-}
-
-bool XdsApi::EdsUpdate::DropConfig::ShouldDrop(
-    const std::string** category_name) const {
-  for (size_t i = 0; i < drop_category_list_.size(); ++i) {
-    const auto& drop_category = drop_category_list_[i];
-    // Generate a random number in [0, 1000000).
-    const uint32_t random = static_cast<uint32_t>(rand()) % 1000000;
-    if (random < drop_category.parts_per_million) {
-      *category_name = &drop_category.name;
-      return true;
-    }
-  }
-  return false;
-}
-
-std::string XdsApi::EdsUpdate::DropConfig::ToString() const {
-  std::vector<std::string> category_strings;
-  for (const DropCategory& category : drop_category_list_) {
-    category_strings.emplace_back(
-        absl::StrCat(category.name, "=", category.parts_per_million));
-  }
-  return absl::StrCat("{[", absl::StrJoin(category_strings, ", "),
-                      "], drop_all=", drop_all_, "}");
-}
-
-std::string XdsApi::EdsUpdate::ToString() const {
-  std::vector<std::string> priority_strings;
-  for (size_t i = 0; i < priorities.size(); ++i) {
-    const Priority& priority = priorities[i];
-    priority_strings.emplace_back(
-        absl::StrCat("priority ", i, ": ", priority.ToString()));
-  }
-  return absl::StrCat("priorities=[", absl::StrJoin(priority_strings, ", "),
-                      "], drop_config=", drop_config->ToString());
-}
-
-//
 // XdsApi
 //
 
@@ -886,46 +820,6 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
   }
   return std::string(type_url);
 }
-
-struct EncodingContext {
-  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
-  TraceFlag* tracer;
-  upb_symtab* symtab;
-  upb_arena* arena;
-  bool use_v3;
-  const CertificateProviderStore::PluginDefinitionMap*
-      certificate_provider_definition_map;
-};
-
-class XdsResourceType {
- public:
-  // A base type for resource data.
-  struct ResourceData {};
-
-  struct DecodeResult {
-    std::string name;
-    absl::StatusOr<std::unique_ptr<ResourceData>> resource;
-  };
-
-  virtual ~XdsResourceType() = default;
-
-  virtual absl::string_view type_url() const = 0;
-
-  virtual absl::string_view v2_type_url() const = 0;
-
-  virtual absl::StatusOr<DecodeResult> Decode(
-      const EncodingContext& context, absl::string_view serialized_resource,
-      bool is_v2) const = 0;
-
-  bool IsType(absl::string_view resource_type, bool* is_v2) const {
-    if (resource_type == type_url()) return true;
-    if (resource_type == v2_type_url()) {
-      if (is_v2 != nullptr) *is_v2 = true;
-      return true;
-    }
-    return false;
-  }
-};
 
 absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
     absl::string_view name,
@@ -1047,16 +941,10 @@ std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
 
 namespace {
 
-// Works for both std::string and absl::string_view.
-template <typename T>
-inline upb_strview StdStringToUpbString(const T& str) {
-  return upb_strview_make(str.data(), str.size());
-}
-
-void PopulateMetadataValue(const EncodingContext& context,
+void PopulateMetadataValue(const XdsEncodingContext& context,
                            google_protobuf_Value* value_pb, const Json& value);
 
-void PopulateListValue(const EncodingContext& context,
+void PopulateListValue(const XdsEncodingContext& context,
                        google_protobuf_ListValue* list_value,
                        const Json::Array& values) {
   for (const auto& value : values) {
@@ -1066,7 +954,7 @@ void PopulateListValue(const EncodingContext& context,
   }
 }
 
-void PopulateMetadata(const EncodingContext& context,
+void PopulateMetadata(const XdsEncodingContext& context,
                       google_protobuf_Struct* metadata_pb,
                       const Json::Object& metadata) {
   for (const auto& p : metadata) {
@@ -1077,7 +965,7 @@ void PopulateMetadata(const EncodingContext& context,
   }
 }
 
-void PopulateMetadataValue(const EncodingContext& context,
+void PopulateMetadataValue(const XdsEncodingContext& context,
                            google_protobuf_Value* value_pb, const Json& value) {
   switch (value.type()) {
     case Json::Type::JSON_NULL:
@@ -1133,7 +1021,7 @@ std::string EncodeStringField(uint32_t field_number, const std::string& str) {
          EncodeVarint(str.size()) + str;
 }
 
-void PopulateBuildVersion(const EncodingContext& context,
+void PopulateBuildVersion(const XdsEncodingContext& context,
                           envoy_config_core_v3_Node* node_msg,
                           const std::string& build_version) {
   std::string encoded_build_version = EncodeStringField(5, build_version);
@@ -1145,7 +1033,7 @@ void PopulateBuildVersion(const EncodingContext& context,
                       encoded_build_version.size(), context.arena);
 }
 
-void PopulateNode(const EncodingContext& context,
+void PopulateNode(const XdsEncodingContext& context,
                   const XdsBootstrap::Node* node,
                   const std::string& build_version,
                   const std::string& user_agent_name,
@@ -1195,16 +1083,8 @@ void PopulateNode(const EncodingContext& context,
       context.arena);
 }
 
-inline absl::string_view UpbStringToAbsl(const upb_strview& str) {
-  return absl::string_view(str.data, str.size);
-}
-
-inline std::string UpbStringToStdString(const upb_strview& str) {
-  return std::string(str.data, str.size);
-}
-
 void MaybeLogDiscoveryRequest(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1218,7 +1098,7 @@ void MaybeLogDiscoveryRequest(
 }
 
 grpc_slice SerializeDiscoveryRequest(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     envoy_service_discovery_v3_DiscoveryRequest* request) {
   size_t output_length;
   char* output = envoy_service_discovery_v3_DiscoveryRequest_serialize(
@@ -1235,7 +1115,7 @@ grpc_slice XdsApi::CreateAdsRequest(
     const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
-  const EncodingContext context = {client_,
+  const XdsEncodingContext context = {client_,
                                    tracer_,
                                    symtab_.ptr(),
                                    arena.ptr(),
@@ -1315,7 +1195,7 @@ grpc_slice XdsApi::CreateAdsRequest(
 namespace {
 
 void MaybeLogDiscoveryResponse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1328,7 +1208,7 @@ void MaybeLogDiscoveryResponse(
   }
 }
 
-void MaybeLogListener(const EncodingContext& context,
+void MaybeLogListener(const XdsEncodingContext& context,
                       const envoy_config_listener_v3_Listener* listener) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1341,7 +1221,7 @@ void MaybeLogListener(const EncodingContext& context,
 }
 
 void MaybeLogHttpConnectionManager(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
@@ -1358,7 +1238,7 @@ void MaybeLogHttpConnectionManager(
 }
 
 void MaybeLogRouteConfiguration(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1371,7 +1251,7 @@ void MaybeLogRouteConfiguration(
   }
 }
 
-void MaybeLogCluster(const EncodingContext& context,
+void MaybeLogCluster(const XdsEncodingContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1380,21 +1260,6 @@ void MaybeLogCluster(const EncodingContext& context,
     char buf[10240];
     upb_text_encode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", context.client, buf);
-  }
-}
-
-void MaybeLogClusterLoadAssignment(
-    const EncodingContext& context,
-    const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
-      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
-        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
-            context.symtab);
-    char buf[10240];
-    upb_text_encode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s",
-            context.client, buf);
   }
 }
 
@@ -1589,7 +1454,7 @@ grpc_error_handle RouteRuntimeFractionParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle ExtractHttpFilterTypeName(const EncodingContext& context,
+grpc_error_handle ExtractHttpFilterTypeName(const XdsEncodingContext& context,
                                             const google_protobuf_Any* any,
                                             absl::string_view* filter_type) {
   *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
@@ -1611,7 +1476,7 @@ grpc_error_handle ExtractHttpFilterTypeName(const EncodingContext& context,
 
 template <typename ParentType, typename EntryType>
 grpc_error_handle ParseTypedPerFilterConfig(
-    const EncodingContext& context, const ParentType* parent,
+    const XdsEncodingContext& context, const ParentType* parent,
     const EntryType* (*entry_func)(const ParentType*, size_t*),
     upb_strview (*key_func)(const EntryType*),
     const google_protobuf_Any* (*value_func)(const EntryType*),
@@ -1682,7 +1547,7 @@ XdsApi::Duration DurationParse(const google_protobuf_Duration* proto_duration) {
 }
 
 grpc_error_handle RetryPolicyParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
     absl::optional<XdsApi::RetryPolicy>* retry) {
   std::vector<grpc_error_handle> errors;
@@ -1764,7 +1629,7 @@ grpc_error_handle RetryPolicyParse(
   }
 }
 
-grpc_error_handle RouteActionParse(const EncodingContext& context,
+grpc_error_handle RouteActionParse(const XdsEncodingContext& context,
                                    const envoy_config_route_v3_Route* route_msg,
                                    XdsApi::Route::RouteAction* route,
                                    bool* ignore_route) {
@@ -1945,7 +1810,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
 }
 
 grpc_error_handle RouteConfigParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     bool /*is_v2*/, XdsApi::RdsUpdate* rds_update) {
   // Get the virtual hosts.
@@ -2066,7 +1931,7 @@ grpc_error_handle RouteConfigParse(
 // TODO(yashykt): Remove this once we stop supporting the old way of fetching
 // certificate provider instances.
 grpc_error_handle CertificateProviderInstanceParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
         certificate_provider_instance_proto,
     XdsApi::CommonTlsContext::CertificateProviderPluginInstance*
@@ -2089,7 +1954,7 @@ grpc_error_handle CertificateProviderInstanceParse(
 }
 
 grpc_error_handle CertificateProviderPluginInstanceParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance*
         certificate_provider_plugin_instance_proto,
     XdsApi::CommonTlsContext::CertificateProviderPluginInstance*
@@ -2112,7 +1977,7 @@ grpc_error_handle CertificateProviderPluginInstanceParse(
 }
 
 grpc_error_handle CertificateValidationContextParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext*
         certificate_validation_context_proto,
     XdsApi::CommonTlsContext::CertificateValidationContext*
@@ -2222,7 +2087,7 @@ grpc_error_handle CertificateValidationContextParse(
 }
 
 grpc_error_handle CommonTlsContextParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
@@ -2327,7 +2192,7 @@ grpc_error_handle CommonTlsContextParse(
 }
 
 grpc_error_handle HttpConnectionManagerParse(
-    bool is_client, const EncodingContext& context,
+    bool is_client, const XdsEncodingContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_proto,
     bool is_v2,
@@ -2492,7 +2357,7 @@ grpc_error_handle HttpConnectionManagerParse(
 }
 
 grpc_error_handle LdsResourceParseClient(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kHttpApiListener;
@@ -2511,7 +2376,7 @@ grpc_error_handle LdsResourceParseClient(
 }
 
 grpc_error_handle DownstreamTlsContextParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket,
     XdsApi::DownstreamTlsContext* downstream_tls_context) {
   absl::string_view name = UpbStringToAbsl(
@@ -2672,7 +2537,7 @@ grpc_error_handle FilterChainMatchParse(
 }
 
 grpc_error_handle FilterChainParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto, bool is_v2,
     FilterChain* filter_chain) {
   std::vector<grpc_error_handle> errors;
@@ -2956,7 +2821,7 @@ grpc_error_handle BuildFilterChainMap(
 }
 
 grpc_error_handle LdsResourceParseServer(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_listener_v3_Listener* listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
@@ -3005,7 +2870,7 @@ grpc_error_handle LdsResourceParseServer(
 }
 
 grpc_error_handle LdsResourceParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_listener_v3_Listener* listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
   // Check whether it's a client or server listener.
@@ -3032,7 +2897,7 @@ grpc_error_handle LdsResourceParse(
 }
 
 grpc_error_handle UpstreamTlsContextParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket,
     XdsApi::CommonTlsContext* common_tls_context) {
   // Record Upstream tls context
@@ -3145,7 +3010,7 @@ grpc_error_handle CdsLogicalDnsParse(
 }
 
 grpc_error_handle CdsResourceParse(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/,
     XdsApi::CdsUpdate* cds_update) {
   std::vector<grpc_error_handle> errors;
@@ -3327,197 +3192,6 @@ grpc_error_handle CdsResourceParse(
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS resource", &errors);
 }
 
-grpc_error_handle ServerAddressParseAndAppend(
-    const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
-    ServerAddressList* list) {
-  // If health_status is not HEALTHY or UNKNOWN, skip this endpoint.
-  const int32_t health_status =
-      envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
-  if (health_status != envoy_config_core_v3_UNKNOWN &&
-      health_status != envoy_config_core_v3_HEALTHY) {
-    return GRPC_ERROR_NONE;
-  }
-  // Find the ip:port.
-  const envoy_config_endpoint_v3_Endpoint* endpoint =
-      envoy_config_endpoint_v3_LbEndpoint_endpoint(lb_endpoint);
-  const envoy_config_core_v3_Address* address =
-      envoy_config_endpoint_v3_Endpoint_address(endpoint);
-  const envoy_config_core_v3_SocketAddress* socket_address =
-      envoy_config_core_v3_Address_socket_address(address);
-  std::string address_str = UpbStringToStdString(
-      envoy_config_core_v3_SocketAddress_address(socket_address));
-  uint32_t port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
-  if (GPR_UNLIKELY(port >> 16) != 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
-  }
-  // Find load_balancing_weight for the endpoint.
-  const google_protobuf_UInt32Value* load_balancing_weight =
-      envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
-  const int32_t weight =
-      load_balancing_weight != nullptr
-          ? google_protobuf_UInt32Value_value(load_balancing_weight)
-          : 500;
-  if (weight == 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid endpoint weight of 0.");
-  }
-  // Populate grpc_resolved_address.
-  grpc_resolved_address addr;
-  grpc_error_handle error =
-      grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
-  if (error != GRPC_ERROR_NONE) return error;
-  // Append the address to the list.
-  std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-      attributes;
-  attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
-      absl::make_unique<ServerAddressWeightAttribute>(weight);
-  list->emplace_back(addr, nullptr, std::move(attributes));
-  return GRPC_ERROR_NONE;
-}
-
-grpc_error_handle LocalityParse(
-    const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
-    XdsApi::EdsUpdate::Priority::Locality* output_locality, size_t* priority) {
-  // Parse LB weight.
-  const google_protobuf_UInt32Value* lb_weight =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_load_balancing_weight(
-          locality_lb_endpoints);
-  // If LB weight is not specified, it means this locality is assigned no load.
-  // TODO(juanlishen): When we support CDS to configure the inter-locality
-  // policy, we should change the LB weight handling.
-  output_locality->lb_weight =
-      lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
-  if (output_locality->lb_weight == 0) return GRPC_ERROR_NONE;
-  // Parse locality name.
-  const envoy_config_core_v3_Locality* locality =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
-          locality_lb_endpoints);
-  if (locality == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty locality.");
-  }
-  std::string region =
-      UpbStringToStdString(envoy_config_core_v3_Locality_region(locality));
-  std::string zone =
-      UpbStringToStdString(envoy_config_core_v3_Locality_region(locality));
-  std::string sub_zone =
-      UpbStringToStdString(envoy_config_core_v3_Locality_sub_zone(locality));
-  output_locality->name = MakeRefCounted<XdsLocalityName>(
-      std::move(region), std::move(zone), std::move(sub_zone));
-  // Parse the addresses.
-  size_t size;
-  const envoy_config_endpoint_v3_LbEndpoint* const* lb_endpoints =
-      envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(
-          locality_lb_endpoints, &size);
-  for (size_t i = 0; i < size; ++i) {
-    grpc_error_handle error = ServerAddressParseAndAppend(
-        lb_endpoints[i], &output_locality->endpoints);
-    if (error != GRPC_ERROR_NONE) return error;
-  }
-  // Parse the priority.
-  *priority = envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
-      locality_lb_endpoints);
-  return GRPC_ERROR_NONE;
-}
-
-grpc_error_handle DropParseAndAppend(
-    const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload*
-        drop_overload,
-    XdsApi::EdsUpdate::DropConfig* drop_config) {
-  // Get the category.
-  std::string category = UpbStringToStdString(
-      envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_category(
-          drop_overload));
-  if (category.empty()) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty drop category name");
-  }
-  // Get the drop rate (per million).
-  const envoy_type_v3_FractionalPercent* drop_percentage =
-      envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_drop_percentage(
-          drop_overload);
-  uint32_t numerator =
-      envoy_type_v3_FractionalPercent_numerator(drop_percentage);
-  const auto denominator =
-      static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
-          envoy_type_v3_FractionalPercent_denominator(drop_percentage));
-  // Normalize to million.
-  switch (denominator) {
-    case envoy_type_v3_FractionalPercent_HUNDRED:
-      numerator *= 10000;
-      break;
-    case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
-      numerator *= 100;
-      break;
-    case envoy_type_v3_FractionalPercent_MILLION:
-      break;
-    default:
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown denominator type");
-  }
-  // Cap numerator to 1000000.
-  numerator = std::min(numerator, 1000000u);
-  drop_config->AddCategory(std::move(category), numerator);
-  return GRPC_ERROR_NONE;
-}
-
-grpc_error_handle EdsResourceParse(
-    const EncodingContext& /*context*/,
-    const envoy_config_endpoint_v3_ClusterLoadAssignment*
-        cluster_load_assignment,
-    bool /*is_v2*/, XdsApi::EdsUpdate* eds_update) {
-  std::vector<grpc_error_handle> errors;
-  // Get the endpoints.
-  size_t locality_size;
-  const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
-      envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
-          cluster_load_assignment, &locality_size);
-  for (size_t j = 0; j < locality_size; ++j) {
-    size_t priority;
-    XdsApi::EdsUpdate::Priority::Locality locality;
-    grpc_error_handle error = LocalityParse(endpoints[j], &locality, &priority);
-    if (error != GRPC_ERROR_NONE) {
-      errors.push_back(error);
-      continue;
-    }
-    // Filter out locality with weight 0.
-    if (locality.lb_weight == 0) continue;
-    // Make sure prorities is big enough. Note that they might not
-    // arrive in priority order.
-    while (eds_update->priorities.size() < priority + 1) {
-      eds_update->priorities.emplace_back();
-    }
-    eds_update->priorities[priority].localities.emplace(locality.name.get(),
-                                                        std::move(locality));
-  }
-  for (const auto& priority : eds_update->priorities) {
-    if (priority.localities.empty()) {
-      errors.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("sparse priority list"));
-    }
-  }
-  // Get the drop config.
-  eds_update->drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
-  const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* policy =
-      envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
-          cluster_load_assignment);
-  if (policy != nullptr) {
-    size_t drop_size;
-    const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload* const*
-        drop_overload =
-            envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads(
-                policy, &drop_size);
-    for (size_t j = 0; j < drop_size; ++j) {
-      grpc_error_handle error =
-          DropParseAndAppend(drop_overload[j], eds_update->drop_config.get());
-      if (error != GRPC_ERROR_NONE) {
-        errors.push_back(
-            grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "drop config validation error"),
-                                 error));
-      }
-    }
-  }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing EDS resource", &errors);
-}
-
 class ListenerResourceType : public XdsResourceType {
  public:
   struct ListenerData : public ResourceData {
@@ -3527,7 +3201,7 @@ class ListenerResourceType : public XdsResourceType {
   absl::string_view type_url() const override { return XdsApi::kLdsTypeUrl; }
   absl::string_view v2_type_url() const override { return kLdsV2TypeUrl; }
 
-  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
+  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override {
     // Parse serialized proto.
@@ -3564,7 +3238,7 @@ class RouteConfigResourceType : public XdsResourceType {
   absl::string_view type_url() const override { return XdsApi::kRdsTypeUrl; }
   absl::string_view v2_type_url() const override { return kRdsV2TypeUrl; }
 
-  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
+  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override {
     // Parse serialized proto.
@@ -3601,7 +3275,7 @@ class ClusterResourceType : public XdsResourceType {
   absl::string_view type_url() const override { return XdsApi::kCdsTypeUrl; }
   absl::string_view v2_type_url() const override { return kCdsV2TypeUrl; }
 
-  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
+  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override {
     // Parse serialized proto.
@@ -3629,45 +3303,8 @@ class ClusterResourceType : public XdsResourceType {
   }
 };
 
-class EndpointResourceType : public XdsResourceType {
- public:
-  struct EndpointData : public ResourceData {
-    XdsApi::EdsUpdate resource;
-  };
-
-  absl::string_view type_url() const override { return XdsApi::kEdsTypeUrl; }
-  absl::string_view v2_type_url() const override { return kEdsV2TypeUrl; }
-
-  absl::StatusOr<DecodeResult> Decode(const EncodingContext& context,
-                                      absl::string_view serialized_resource,
-                                      bool is_v2) const override {
-    // Parse serialized proto.
-    auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
-        serialized_resource.data(), serialized_resource.size(), context.arena);
-    if (resource == nullptr) {
-      return absl::InvalidArgumentError("Can't parse Listener resource.");
-    }
-    MaybeLogClusterLoadAssignment(context, resource);
-    // Validate resource.
-    DecodeResult result;
-    result.name = UpbStringToStdString(
-        envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
-    auto endpoint_data = absl::make_unique<EndpointData>();
-    grpc_error_handle error =
-        EdsResourceParse(context, resource, is_v2, &endpoint_data->resource);
-    if (error != GRPC_ERROR_NONE) {
-      result.resource =
-          absl::InvalidArgumentError(grpc_error_std_string(error));
-      GRPC_ERROR_UNREF(error);
-    } else {
-      result.resource = std::move(endpoint_data);
-    }
-    return std::move(result);
-  }
-};
-
 grpc_error_handle AdsResourceParse(
-    const EncodingContext& context, XdsResourceType* type, size_t idx,
+    const XdsEncodingContext& context, XdsResourceType* type, size_t idx,
     const google_protobuf_Any* resource_any,
     const std::map<absl::string_view /*authority*/,
                    std::set<absl::string_view /*name*/>>&
@@ -3771,7 +3408,7 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
         subscribed_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
-  const EncodingContext context = {client_,
+  const XdsEncodingContext context = {client_,
                                    tracer_,
                                    symtab_.ptr(),
                                    arena.ptr(),
@@ -3853,7 +3490,7 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
           },
           &result.resource_names_failed);
     } else if (IsEds(result.type_url)) {
-      EndpointResourceType resource_type;
+      XdsEndpointResourceType resource_type;
       auto& update_map = result.eds_update_map;
       parse_error = AdsResourceParse(
           context, &resource_type, i, resources[i],
@@ -3862,7 +3499,7 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
                         XdsApi::ResourceName resource_name,
                         std::unique_ptr<XdsResourceType::ResourceData> resource,
                         std::string serialized_resource) {
-            return AddResult<EdsUpdateMap, EndpointResourceType::EndpointData>(
+            return AddResult<EdsUpdateMap, XdsEndpointResourceType::EndpointData>(
                 &update_map, resource_name_string, std::move(resource_name),
                 std::move(resource), std::move(serialized_resource));
           },
@@ -3878,7 +3515,7 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
 namespace {
 
 void MaybeLogLrsRequest(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -3892,7 +3529,7 @@ void MaybeLogLrsRequest(
 }
 
 grpc_slice SerializeLrsRequest(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
   size_t output_length;
   char* output = envoy_service_load_stats_v3_LoadStatsRequest_serialize(
@@ -3905,7 +3542,7 @@ grpc_slice SerializeLrsRequest(
 grpc_slice XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
-  const EncodingContext context = {client_,
+  const XdsEncodingContext context = {client_,
                                    tracer_,
                                    symtab_.ptr(),
                                    arena.ptr(),
@@ -3930,7 +3567,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
 namespace {
 
 void LocalityStatsPopulate(
-    const EncodingContext& context,
+    const XdsEncodingContext& context,
     envoy_config_endpoint_v3_UpstreamLocalityStats* output,
     const XdsLocalityName& locality_name,
     const XdsClusterLocalityStats::Snapshot& snapshot) {
@@ -3980,7 +3617,7 @@ void LocalityStatsPopulate(
 grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  const EncodingContext context = {
+  const XdsEncodingContext context = {
       client_,     tracer_, symtab_.ptr(),
       arena.ptr(), false,   certificate_provider_definition_map_};
   // Create a request.
@@ -4084,7 +3721,7 @@ grpc_error_handle XdsApi::ParseLrsResponse(
 
 namespace {
 
-google_protobuf_Timestamp* GrpcMillisToTimestamp(const EncodingContext& context,
+google_protobuf_Timestamp* GrpcMillisToTimestamp(const XdsEncodingContext& context,
                                                  grpc_millis value) {
   google_protobuf_Timestamp* timestamp =
       google_protobuf_Timestamp_new(context.arena);
@@ -4104,7 +3741,7 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
-  const EncodingContext context = {
+  const XdsEncodingContext context = {
       client_,     tracer_, symtab_.ptr(),
       arena.ptr(), true,    certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,

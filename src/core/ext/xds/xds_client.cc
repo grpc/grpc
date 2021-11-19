@@ -1308,7 +1308,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::EdsUpdate& eds_update = p.second.resource;
+    XdsEndpointResource& eds_update = p.second.resource;
     auto it = eds_state.subscribed_resources.find(name.authority);
     if (it != eds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);
