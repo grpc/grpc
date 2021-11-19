@@ -138,8 +138,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
 
-        self.config_scope = self.td.make_resource_name(
-            xds_flags.CONFIG_SCOPE.value)
+        self.config_scope = xds_flags.CONFIG_SCOPE.value + framework.helpers.rand.random_resource_suffix(
+        )
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
