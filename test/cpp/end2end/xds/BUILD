@@ -64,6 +64,7 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 50,
     tags = [
         "no_test_ios",

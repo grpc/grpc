@@ -194,7 +194,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20210324.2'
+    abseil_version = '1.20211102.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -270,6 +270,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/server/http_server_filter.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
+                      'src/core/ext/filters/server_config_selector/server_config_selector.h',
+                      'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                       'src/core/ext/service_config/service_config.h',
                       'src/core/ext/service_config/service_config_call_data.h',
                       'src/core/ext/service_config/service_config_parser.h',
@@ -553,6 +555,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_client_stats.h',
                       'src/core/ext/xds/xds_http_fault_filter.h',
                       'src/core/ext/xds/xds_http_filters.h',
+                      'src/core/ext/xds/xds_routing.h',
                       'src/core/lib/address_utils/parse_address.h',
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
@@ -610,11 +613,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
-                      'src/core/lib/gprpp/match.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mpscq.h',
                       'src/core/lib/gprpp/orphanable.h',
-                      'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
                       'src/core/lib/gprpp/stat.h',
@@ -773,6 +774,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/util/json_util.h',
                       'src/core/lib/slice/b64.h',
                       'src/core/lib/slice/percent_encoding.h',
+                      'src/core/lib/slice/slice.h',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
@@ -999,6 +1001,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
+                              'src/core/ext/filters/server_config_selector/server_config_selector.h',
+                              'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                               'src/core/ext/service_config/service_config.h',
                               'src/core/ext/service_config/service_config_call_data.h',
                               'src/core/ext/service_config/service_config_parser.h',
@@ -1264,6 +1268,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
+                              'src/core/ext/xds/xds_routing.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
@@ -1321,11 +1326,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
-                              'src/core/lib/gprpp/match.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/orphanable.h',
-                              'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/stat.h',
@@ -1484,6 +1487,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/util/json_util.h',
                               'src/core/lib/slice/b64.h',
                               'src/core/lib/slice/percent_encoding.h',
+                              'src/core/lib/slice/slice.h',
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',

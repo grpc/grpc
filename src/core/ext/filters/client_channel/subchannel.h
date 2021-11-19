@@ -34,6 +34,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -145,43 +146,13 @@ class Subchannel : public DualRefCounted<Subchannel> {
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
    public:
-    struct ConnectivityStateChange {
-      grpc_connectivity_state state;
-      absl::Status status;
-    };
-
-    ~ConnectivityStateWatcherInterface() override = default;
-
-    // Will be invoked whenever the subchannel's connectivity state
-    // changes.  There will be only one invocation of this method on a
-    // given watcher instance at any given time.
-    // Implementations should call PopConnectivityStateChange to get the next
-    // connectivity state change.
-    virtual void OnConnectivityStateChange() = 0;
+    // Invoked whenever the subchannel's connectivity state changes.
+    // There will be only one invocation of this method on a given watcher
+    // instance at any given time.
+    virtual void OnConnectivityStateChange(grpc_connectivity_state state,
+                                           const absl::Status& status) = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
-
-    // Enqueues connectivity state change notifications.
-    // When the state changes to READY, connected_subchannel will
-    // contain a ref to the connected subchannel.  When it changes from
-    // READY to some other state, the implementation must release its
-    // ref to the connected subchannel.
-    // TODO(yashkt): This is currently needed to send the state updates in the
-    // right order when asynchronously notifying. This will no longer be
-    // necessary when we have access to EventManager.
-    void PushConnectivityStateChange(ConnectivityStateChange state_change);
-
-    // Dequeues connectivity state change notifications.
-    ConnectivityStateChange PopConnectivityStateChange();
-
-   private:
-    Mutex mu_;  // protects the queue
-    // Keeps track of the updates that the watcher instance must be notified of.
-    // TODO(yashkt): This is currently needed to send the state updates in the
-    // right order when asynchronously notifying. This will no longer be
-    // necessary when we have access to EventManager.
-    std::deque<ConnectivityStateChange> connectivity_state_queue_
-        ABSL_GUARDED_BY(&mu_);
   };
 
   // Creates a subchannel.
@@ -251,6 +222,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // the subchannel's state.
   class ConnectivityStateWatcherList {
    public:
+    explicit ConnectivityStateWatcherList(Subchannel* subchannel)
+        : subchannel_(subchannel) {}
     ~ConnectivityStateWatcherList() { Clear(); }
 
     void AddWatcherLocked(
@@ -266,6 +239,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
     bool empty() const { return watchers_.empty(); }
 
    private:
+    Subchannel* subchannel_;
     // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
     // be a set instead of a map.
     std::map<ConnectivityStateWatcherInterface*,
@@ -309,8 +283,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
   };
 
   class ConnectedSubchannelStateWatcher;
-
-  class AsyncWatcherNotifierLocked;
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
@@ -360,6 +332,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   ConnectivityStateWatcherList watcher_list_ ABSL_GUARDED_BY(mu_);
   // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
+  // Used for sending connectivity state notifications.
+  WorkSerializer work_serializer_;
 
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);

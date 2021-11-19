@@ -578,7 +578,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
           DEBUG_LOCATION);
     }
 
-    void OnConnectivityStateChange() override {
+    void OnConnectivityStateChange(grpc_connectivity_state state,
+                                   const absl::Status& status) override {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
@@ -587,9 +588,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
-          [this]()
+          [this, state, status]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
-                ApplyUpdateInControlPlaneWorkSerializer();
+                ApplyUpdateInControlPlaneWorkSerializer(state, status);
                 Unref();
               },
           DEBUG_LOCATION);
@@ -612,19 +613,20 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
-    void ApplyUpdateInControlPlaneWorkSerializer()
+    void ApplyUpdateInControlPlaneWorkSerializer(grpc_connectivity_state state,
+                                                 const absl::Status& status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: processing connectivity change in work serializer "
-                "for subchannel wrapper %p subchannel %p "
-                "watcher=%p",
+                "for subchannel wrapper %p subchannel %p watcher=%p: "
+                "state=%s status=%s",
                 parent_->chand_, parent_.get(), parent_->subchannel_.get(),
-                watcher_.get());
+                watcher_.get(), ConnectivityStateName(state),
+                status.ToString().c_str());
       }
-      ConnectivityStateChange state_change = PopConnectivityStateChange();
       absl::optional<absl::Cord> keepalive_throttling =
-          state_change.status.GetPayload(kKeepaliveThrottlingKey);
+          status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
@@ -652,8 +654,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
-        last_seen_state_ = state_change.state;
-        watcher_->OnConnectivityStateChange(state_change.state);
+        last_seen_state_ = state;
+        watcher_->OnConnectivityStateChange(state);
       }
     }
 
@@ -2428,16 +2430,9 @@ class ClientChannel::LoadBalancedCall::Metadata
 
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
       override {
-    std::vector<std::pair<std::string, std::string>> result;
-    batch_->ForEach([&](grpc_mdelem md) {
-      auto key = std::string(StringViewFromSlice(GRPC_MDKEY(md)));
-      if (key != ":path") {
-        result.push_back(
-            std::make_pair(std::move(key),
-                           std::string(StringViewFromSlice(GRPC_MDVALUE(md)))));
-      }
-    });
-    return result;
+    Encoder encoder;
+    batch_->Encode(&encoder);
+    return encoder.Take();
   }
 
   absl::optional<absl::string_view> Lookup(absl::string_view key,
@@ -2446,6 +2441,33 @@ class ClientChannel::LoadBalancedCall::Metadata
   }
 
  private:
+  class Encoder {
+   public:
+    void Encode(grpc_mdelem md) {
+      auto key = StringViewFromSlice(GRPC_MDKEY(md));
+      if (key != ":path") {
+        out_.emplace_back(std::string(key),
+                          std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
+      }
+    }
+
+    template <class Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      auto value_slice = Which::Encode(value);
+      out_.emplace_back(std::string(Which::key()),
+                        std::string(value_slice.as_string_view()));
+    }
+
+    void Encode(GrpcTimeoutMetadata, grpc_millis) {}
+
+    std::vector<std::pair<std::string, std::string>> Take() {
+      return std::move(out_);
+    }
+
+   private:
+    std::vector<std::pair<std::string, std::string>> out_;
+  };
+
   LoadBalancedCall* lb_call_;
   grpc_metadata_batch* batch_;
 };

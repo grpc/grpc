@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -463,7 +464,8 @@ class Server : public InternallyRefCounted<Server>,
 
 struct grpc_server_config_fetcher {
  public:
-  class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
+  class ConnectionManager
+      : public grpc_core::DualRefCounted<ConnectionManager> {
    public:
     // Ownership of \a args is transfered.
     virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
