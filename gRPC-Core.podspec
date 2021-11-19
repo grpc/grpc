@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20210324.2'
+  abseil_version = '1.20211102.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -321,6 +321,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.h',
+                      'src/core/ext/filters/server_config_selector/server_config_selector.cc',
+                      'src/core/ext/filters/server_config_selector/server_config_selector.h',
+                      'src/core/ext/filters/server_config_selector/server_config_selector_filter.cc',
+                      'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                       'src/core/ext/service_config/service_config.cc',
                       'src/core/ext/service_config/service_config.h',
                       'src/core/ext/service_config/service_config_call_data.h',
@@ -814,6 +818,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_http_fault_filter.h',
                       'src/core/ext/xds/xds_http_filters.cc',
                       'src/core/ext/xds/xds_http_filters.h',
+                      'src/core/ext/xds/xds_routing.cc',
+                      'src/core/ext/xds/xds_routing.h',
                       'src/core/ext/xds/xds_server_config_fetcher.cc',
                       'src/core/lib/address_utils/parse_address.cc',
                       'src/core/lib/address_utils/parse_address.h',
@@ -1543,6 +1549,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/server/http_server_filter.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
+                              'src/core/ext/filters/server_config_selector/server_config_selector.h',
+                              'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                               'src/core/ext/service_config/service_config.h',
                               'src/core/ext/service_config/service_config_call_data.h',
                               'src/core/ext/service_config/service_config_parser.h',
@@ -1788,6 +1796,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
+                              'src/core/ext/xds/xds_routing.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
