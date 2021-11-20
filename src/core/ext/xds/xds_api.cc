@@ -18,65 +18,21 @@
 
 #include "src/core/ext/xds/xds_api.h"
 
-#include <algorithm>
-#include <cctype>
-#include <cstdint>
-#include <cstdlib>
+#include <set>
 #include <string>
+#include <vector>
 
-// FIXME: prune includes!
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
 #include "envoy/admin/v3/config_dump.upb.h"
-#include "envoy/config/cluster/v3/circuit_breaker.upb.h"
-#include "envoy/config/cluster/v3/cluster.upb.h"
-#include "envoy/config/cluster/v3/cluster.upbdefs.h"
-#include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
-#include "envoy/config/core/v3/base.upbdefs.h"
-#include "envoy/config/core/v3/config_source.upb.h"
-#include "envoy/config/core/v3/health_check.upb.h"
-#include "envoy/config/core/v3/protocol.upb.h"
-#include "envoy/config/endpoint/v3/endpoint.upb.h"
-#include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
-#include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
-#include "envoy/config/listener/v3/api_listener.upb.h"
-#include "envoy/config/listener/v3/listener.upb.h"
-#include "envoy/config/listener/v3/listener.upbdefs.h"
-#include "envoy/config/listener/v3/listener_components.upb.h"
-#include "envoy/config/route/v3/route.upb.h"
-#include "envoy/config/route/v3/route.upbdefs.h"
-#include "envoy/config/route/v3/route_components.upb.h"
-#include "envoy/config/route/v3/route_components.upbdefs.h"
-#include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
-#include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
-#include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
-#include "envoy/service/cluster/v3/cds.upb.h"
-#include "envoy/service/cluster/v3/cds.upbdefs.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
-#include "envoy/service/endpoint/v3/eds.upb.h"
-#include "envoy/service/endpoint/v3/eds.upbdefs.h"
-#include "envoy/service/listener/v3/lds.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
-#include "envoy/service/route/v3/rds.upb.h"
-#include "envoy/service/route/v3/rds.upbdefs.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "envoy/service/status/v3/csds.upbdefs.h"
-#include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
-#include "envoy/type/v3/percent.upb.h"
-#include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
@@ -84,16 +40,13 @@
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
-#include "xds/type/v3/typed_struct.upb.h"
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -188,18 +141,10 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
   // properly in logs.
   // Note: This won't actually work properly until upb adds support for
   // Any fields in textproto printing (internal b/178821188).
-  envoy_config_listener_v3_Listener_getmsgdef(symtab_.ptr());
-  envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab_.ptr());
-  envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
-  envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab_.ptr());
-  envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
-  envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab_.ptr());
-  envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
-      symtab_.ptr());
-  envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
-      symtab_.ptr());
-  // Load HTTP filter proto messages into the upb symtab.
-  XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
+  XdsResourceTypeRegistry::GetOrCreate()->ForEach(
+      [this](const XdsResourceType* type) {
+        type->InitUpbSymtab(symtab_.ptr());
+      });
 }
 
 namespace {

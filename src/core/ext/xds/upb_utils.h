@@ -39,6 +39,7 @@ struct XdsEncodingContext {
   upb_symtab* symtab;
   upb_arena* arena;
   bool use_v3;
+// FIXME: remove this field -- or maybe rethink the context approach here
   const CertificateProviderStore::PluginDefinitionMap*
       certificate_provider_definition_map;
 };

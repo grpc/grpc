@@ -24,6 +24,7 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -137,6 +138,10 @@ class XdsEndpointResourceType : public XdsResourceType {
     auto resource_copy = absl::make_unique<EndpointData>();
     resource_copy->resource = static_cast<const EndpointData*>(resource)->resource;
     return resource_copy;
+  }
+
+  void InitUpbSymtab(upb_symtab* symtab) const override {
+    envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
   }
 };
 

@@ -78,6 +78,12 @@ class XdsResourceType {
   // interpreted as a deletion of that resource.
   virtual bool AllResourcesRequiredInSotW() const { return false; }
 
+  // Populate upb symtab with xDS proto messages that we want to print
+  // properly in logs.
+  // Note: This won't actually work properly until upb adds support for
+  // Any fields in textproto printing (internal b/178821188).
+  virtual void InitUpbSymtab(upb_symtab* symtab) const = 0;
+
   // Convenience method for checking if resource_type matches this type.
   // Checks against both type_url() and v2_type_url().
   // If is_v2 is non-null, it will be set to true if matching v2_type_url().
@@ -96,6 +102,9 @@ class XdsResourceTypeRegistry {
   // Registers a resource type.
   // All types must be registered before they can be used in the XdsClient.
   void RegisterType(std::unique_ptr<XdsResourceType> resource_type);
+
+  // Calls func for each resource type.
+  void ForEach(std::function<void(const XdsResourceType*)> func);
 
  private:
   std::map<absl::string_view /*resource_type*/, std::unique_ptr<XdsResourceType>>

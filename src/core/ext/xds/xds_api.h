@@ -23,25 +23,14 @@
 
 #include <set>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "envoy/admin/v3/config_dump.upb.h"
-#include "re2/re2.h"
 #include "upb/def.hpp"
 
-#include <grpc/slice_buffer.h>
+#include <grpc/slice.h>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_endpoint.h"
-#include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_route_config.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 

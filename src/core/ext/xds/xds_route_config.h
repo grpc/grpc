@@ -26,6 +26,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "envoy/config/route/v3/route.upb.h"
+#include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
@@ -217,6 +218,10 @@ class XdsRouteConfigResourceType : public XdsResourceType {
     resource_copy->resource =
         static_cast<const RouteConfigData*>(resource)->resource;
     return resource_copy;
+  }
+
+  void InitUpbSymtab(upb_symtab* symtab) const override {
+    envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
   }
 };
 

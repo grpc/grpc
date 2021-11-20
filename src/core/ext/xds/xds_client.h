@@ -28,6 +28,10 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_cluster.h"
+#include "src/core/ext/xds/xds_endpoint.h"
+#include "src/core/ext/xds/xds_listener.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -316,12 +320,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   struct AuthorityState {
     RefCountedPtr<ChannelState> channel_state;
-
     std::map<const XdsResourceType*,
              std::map<std::string /*id*/, ResourceState>> resource_map;
-
-// FIXME: remove?
-    bool HasSubscribedResources() { return !resource_map.empty(); }
   };
 
   struct LoadReportState {

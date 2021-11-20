@@ -60,4 +60,11 @@ void XdsResourceTypeRegistry::RegisterType(
   resource_types_.emplace(resource_type->type_url(), std::move(resource_type));
 }
 
+void XdsResourceTypeRegistry::ForEach(
+    std::function<void(const XdsResourceType*)> func) {
+  for (const auto& p : resource_types_) {
+    func(p.second.get());
+  }
+}
+
 }  // namespace grpc_core

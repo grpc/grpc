@@ -27,6 +27,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -218,6 +220,13 @@ class XdsListenerResourceType : public XdsResourceType {
   }
 
   bool AllResourcesRequiredInSotW() const override { return true; }
+
+  void InitUpbSymtab(upb_symtab* symtab) const override {
+    envoy_config_listener_v3_Listener_getmsgdef(symtab);
+    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+        symtab);
+    XdsHttpFilterRegistry::PopulateSymtab(symtab);
+  }
 };
 
 }  // namespace grpc_core
