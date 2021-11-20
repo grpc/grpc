@@ -325,9 +325,9 @@ class XdsClient::ChannelState::AdsCallState
 
   bool IsCurrentCallOnChannel() const;
 
-  std::map<absl::string_view /*authority*/,
-           std::set<absl::string_view /*name*/>>
-  ResourceNamesForRequest(const XdsResourceType* type);
+  // Constructs a list of resource names of a given type for an ADS
+  // request.  Also starts the timer for each resource if needed.
+  std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -1026,13 +1026,11 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   auto& state = state_map_[type];
   grpc_slice request_payload_slice;
-  std::map<absl::string_view /*authority*/,
-           std::set<absl::string_view /*name*/>>
-      resource_map = ResourceNamesForRequest(type);
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
       chand()->server_, type->type_url(),
-      chand()->resource_type_version_map_[type], state.nonce, resource_map,
-      GRPC_ERROR_REF(state.error), !sent_initial_message_);
+      chand()->resource_type_version_map_[type], state.nonce,
+      ResourceNamesForRequest(type), GRPC_ERROR_REF(state.error),
+      !sent_initial_message_);
   sent_initial_message_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -1282,23 +1280,24 @@ bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
   return this == chand()->ads_calld_->calld();
 }
 
-std::map<absl::string_view /*authority*/, std::set<absl::string_view /*name*/>>
+std::vector<std::string>
 XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
     const XdsResourceType* type) {
-  std::map<absl::string_view /*authority*/,
-           std::set<absl::string_view /*name*/>>
-      resource_map;
+  std::vector<std::string> resource_names;
   auto it = state_map_.find(type);
   if (it != state_map_.end()) {
     for (auto& a : it->second.subscribed_resources) {
+      const std::string& authority = a.first;
       for (auto& p : a.second) {
-        resource_map[a.first].insert(p.first);
+        const std::string& resource_id = p.first;
+        resource_names.emplace_back(XdsClient::ConstructFullXdsResourceName(
+            authority, type->type_url(), resource_id));
         OrphanablePtr<ResourceTimer>& resource_timer = p.second;
         resource_timer->MaybeStartTimer(Ref(DEBUG_LOCATION, "ResourceTimer"));
       }
     }
   }
-  return resource_map;
+  return resource_names;
 }
 
 //
@@ -2280,7 +2279,7 @@ std::string XdsClient::DumpClientConfigBinary() {
       for (const auto& r : t.second) {  // resource id
         const std::string& resource_id = r.first;
         const ResourceState& resource_state = r.second;
-        resource_metadata_map[XdsApi::ConstructFullResourceName(
+        resource_metadata_map[ConstructFullXdsResourceName(
             authority, type->type_url(), resource_id)] = &resource_state.meta;
       }
     }

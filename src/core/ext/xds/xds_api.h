@@ -148,18 +148,12 @@ class XdsApi {
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          const CertificateProviderStore::PluginDefinitionMap* map);
 
-  // A helper method to construct the resource name from parts.
-  static std::string ConstructFullResourceName(absl::string_view authority,
-                                               absl::string_view resource_type,
-                                               absl::string_view name);
-
   // Creates an ADS request.
   // Takes ownership of \a error.
   grpc_slice CreateAdsRequest(
       const XdsBootstrap::XdsServer& server, absl::string_view type_url,
       absl::string_view version, absl::string_view nonce,
-      const std::map<absl::string_view /*authority*/,
-                     std::set<absl::string_view /*name*/>>& resource_names,
+      const std::vector<std::string>& resource_names,
       grpc_error_handle error, bool populate_node);
 
   // Returns non-OK when failing to deserialize response message.

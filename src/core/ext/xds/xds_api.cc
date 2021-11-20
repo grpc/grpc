@@ -215,16 +215,6 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
   XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
 }
 
-std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
-                                              absl::string_view resource_type,
-                                              absl::string_view name) {
-  if (absl::ConsumePrefix(&authority, "xdstp:")) {
-    return absl::StrCat("xdstp://", authority, "/", resource_type, "/", name);
-  } else {
-    return std::string(absl::StripPrefix(name, "old:"));
-  }
-}
-
 namespace {
 
 void PopulateMetadataValue(const XdsEncodingContext& context,
@@ -397,8 +387,7 @@ grpc_slice SerializeDiscoveryRequest(
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, absl::string_view type_url,
     absl::string_view version, absl::string_view nonce,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& resource_names,
+    const std::vector<std::string>& resource_names,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
@@ -452,27 +441,10 @@ grpc_slice XdsApi::CreateAdsRequest(
     PopulateNode(context, node_, build_version_, user_agent_name_,
                  user_agent_version_, node_msg);
   }
-  // A vector for temporary local storage of resource name strings.
-  std::vector<std::string> resource_name_storage;
-  // Make sure the vector is sized right up-front, so that reallocations
-  // don't move the strings out from under the upb proto object that
-  // points to them.
-  size_t size = 0;
-  for (const auto& p : resource_names) {
-    size += p.second.size();
-  }
-  resource_name_storage.reserve(size);
   // Add resource_names.
-  for (const auto& a : resource_names) {
-    absl::string_view authority = a.first;
-    for (const auto& p : a.second) {
-      absl::string_view resource_id = p;
-      resource_name_storage.push_back(
-          ConstructFullResourceName(authority, real_type_url, resource_id));
-      envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
-          request, StdStringToUpbString(resource_name_storage.back()),
-          arena.ptr());
-    }
+  for (const std::string& resource_name : resource_names) {
+    envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
+        request, StdStringToUpbString(resource_name), arena.ptr());
   }
   MaybeLogDiscoveryRequest(context, request);
   return SerializeDiscoveryRequest(context, request);
