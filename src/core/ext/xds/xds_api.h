@@ -36,13 +36,35 @@ namespace grpc_core {
 
 class XdsClient;
 
+// TODO(roth): When we have time, split this into multiple pieces:
+// - a common upb-based parsing framework (combine with XdsEncodingContext)
+// - ADS request/response handling
+// - LRS request/response handling
+// - CSDS response generation
 class XdsApi {
  public:
-// FIXME: remove all resource-type-specific APIs and types here
-  static const char* kLdsTypeUrl;
-  static const char* kRdsTypeUrl;
-  static const char* kCdsTypeUrl;
-  static const char* kEdsTypeUrl;
+  // Interface defined by caller and passed to ParseAdsResponse().
+  class AdsResponseParserInterface {
+   public:
+    struct AdsResponseFields {
+      std::string type_url;
+      std::string version;
+      std::string nonce;
+      size_t num_resources;
+    };
+
+    virtual ~AdsResponseParserInterface() = default;
+
+    // Called when the top-level ADS fields are parsed.
+    // If this returns non-OK, parsing will stop, and the individual
+    // resources will not be processed.
+    virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
+
+    // Called to parse each individual resource in the ADS response.
+    virtual void ParseResource(const XdsEncodingContext& context,
+                               size_t idx, absl::string_view type_url,
+                               absl::string_view serialized_resource) = 0;
+  };
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
@@ -110,28 +132,6 @@ class XdsApi {
                     envoy_admin_v3_NACKED) ==
                     ResourceMetadata::ClientResourceStatus::NACKED,
                 "");
-
-  class AdsResponseParserInterface {
-   public:
-    struct AdsResponseFields {
-      std::string type_url;
-      std::string version;
-      std::string nonce;
-      size_t num_resources;
-    };
-
-    virtual ~AdsResponseParserInterface() = default;
-
-    // Called when the top-level ADS fields are parsed.
-    // If this returns non-OK, parsing will stop, and the individual
-    // resources will not be processed.
-    virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
-
-    // Called to parse each individual resource in the ADS response.
-    virtual void ParseResource(const XdsEncodingContext& context,
-                               size_t idx, absl::string_view type_url,
-                               absl::string_view serialized_resource) = 0;
-  };
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          const CertificateProviderStore::PluginDefinitionMap* map);

@@ -61,18 +61,6 @@
 
 namespace grpc_core {
 
-//
-// XdsApi
-//
-
-// TODO(roth): All constants and functions for individual resource types
-// should be merged into the XdsResourceType abstraction.
-const char* XdsApi::kLdsTypeUrl = "envoy.config.listener.v3.Listener";
-const char* XdsApi::kRdsTypeUrl = "envoy.config.route.v3.RouteConfiguration";
-const char* XdsApi::kCdsTypeUrl = "envoy.config.cluster.v3.Cluster";
-const char* XdsApi::kEdsTypeUrl =
-    "envoy.config.endpoint.v3.ClusterLoadAssignment";
-
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.
 #ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
