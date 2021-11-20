@@ -35,8 +35,6 @@ import perfection
 
 CONFIG = [
     # metadata strings
-    'host',
-    'grpc-timeout',
     'grpc-internal-encoding-request',
     'grpc-internal-stream-encoding-request',
     ':path',
@@ -51,11 +49,6 @@ CONFIG = [
     '3',
     '4',
     '',
-    # channel arg keys
-    'grpc.wait_for_ready',
-    'grpc.timeout',
-    'grpc.max_request_message_bytes',
-    'grpc.max_response_message_bytes',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',

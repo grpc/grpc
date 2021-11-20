@@ -85,27 +85,6 @@ static int check_ssl_peer_equivalence(const tsi_peer* original,
   return 1;
 }
 
-static void test_check_security_level() {
-  GPR_ASSERT(grpc_check_security_level(GRPC_PRIVACY_AND_INTEGRITY,
-                                       GRPC_PRIVACY_AND_INTEGRITY) == true);
-  GPR_ASSERT(grpc_check_security_level(GRPC_PRIVACY_AND_INTEGRITY,
-                                       GRPC_INTEGRITY_ONLY) == true);
-  GPR_ASSERT(grpc_check_security_level(GRPC_PRIVACY_AND_INTEGRITY,
-                                       GRPC_SECURITY_NONE) == true);
-  GPR_ASSERT(grpc_check_security_level(GRPC_INTEGRITY_ONLY,
-                                       GRPC_PRIVACY_AND_INTEGRITY) == false);
-  GPR_ASSERT(grpc_check_security_level(GRPC_INTEGRITY_ONLY,
-                                       GRPC_INTEGRITY_ONLY) == true);
-  GPR_ASSERT(grpc_check_security_level(GRPC_INTEGRITY_ONLY,
-                                       GRPC_SECURITY_NONE) == true);
-  GPR_ASSERT(grpc_check_security_level(GRPC_SECURITY_NONE,
-                                       GRPC_PRIVACY_AND_INTEGRITY) == false);
-  GPR_ASSERT(grpc_check_security_level(GRPC_SECURITY_NONE,
-                                       GRPC_INTEGRITY_ONLY) == false);
-  GPR_ASSERT(grpc_check_security_level(GRPC_SECURITY_NONE,
-                                       GRPC_SECURITY_NONE) == true);
-}
-
 static void test_unauthenticated_ssl_peer(void) {
   tsi_peer peer;
   tsi_peer rpeer;
@@ -778,7 +757,6 @@ int main(int argc, char** argv) {
   test_ipv6_address_san();
   test_default_ssl_roots();
   test_peer_alpn_check();
-  test_check_security_level();
   grpc_shutdown();
   return 0;
 }
