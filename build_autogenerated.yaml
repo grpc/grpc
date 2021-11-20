@@ -4561,7 +4561,6 @@ targets:
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
-  - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
@@ -4625,7 +4624,6 @@ targets:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
-  - src/core/lib/gprpp/arena.cc
   - src/core/lib/gprpp/examine_stack.cc
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
@@ -5137,6 +5135,7 @@ targets:
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
