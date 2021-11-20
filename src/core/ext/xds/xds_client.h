@@ -55,7 +55,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
-// FIXME: remove resource-type-specific APIs
+  // TODO(roth): Consider removing these resource-type-specific APIs in
+  // favor of some mechanism for automatic type-deduction for the generic
+  // API.
+
   // Listener data watcher interface.  Implemented by callers.
   class ListenerWatcherInterface : public ResourceWatcherInterface {
    public:
@@ -147,7 +150,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            ResourceWatcherInterface* watcher,
                            bool delay_unsubscription = false);
 
-// FIXME: remove type-specific
   // Start and cancel listener data watch for a listener.
   // The XdsClient takes ownership of the watcher, but the caller may
   // keep a raw pointer to the watcher, which may be used only for

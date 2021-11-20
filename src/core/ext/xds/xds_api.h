@@ -55,41 +55,6 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
-  struct ResourceName {
-    std::string authority;
-    std::string id;
-
-    bool operator<(const ResourceName& other) const {
-      if (authority < other.authority) return true;
-      if (id < other.id) return true;
-      return false;
-    }
-  };
-
-  struct LdsResourceData {
-    XdsListenerResource resource;
-    std::string serialized_proto;
-  };
-  using LdsUpdateMap = std::map<ResourceName, LdsResourceData>;
-
-  struct RdsResourceData {
-    XdsRouteConfigResource resource;
-    std::string serialized_proto;
-  };
-  using RdsUpdateMap = std::map<ResourceName, RdsResourceData>;
-
-  struct CdsResourceData {
-    XdsClusterResource resource;
-    std::string serialized_proto;
-  };
-  using CdsUpdateMap = std::map<ResourceName, CdsResourceData>;
-
-  struct EdsResourceData {
-    XdsEndpointResource resource;
-    std::string serialized_proto;
-  };
-  using EdsUpdateMap = std::map<ResourceName, EdsResourceData>;
-
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
     std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
@@ -158,20 +123,21 @@ class XdsApi {
                     ResourceMetadata::ClientResourceStatus::NACKED,
                 "");
 
-  struct AdsResponseFields {
-    std::string type_url;
-    std::string version;
-    std::string nonce;
-    size_t num_resources;
-  };
-
   class AdsResponseParserInterface {
    public:
+    struct AdsResponseFields {
+      std::string type_url;
+      std::string version;
+      std::string nonce;
+      size_t num_resources;
+    };
+
     virtual ~AdsResponseParserInterface() = default;
 
     // Called when the top-level ADS fields are parsed.
-    // If this returns false, parsing will stop.
-    virtual bool ProcessAdsResponseFields(AdsResponseFields fields) = 0;
+    // If this returns non-OK, parsing will stop, and the individual
+    // resources will not be processed.
+    virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
 
     // Called to parse each individual resource in the ADS response.
     virtual void ParseResource(const XdsEncodingContext& context,
@@ -181,18 +147,6 @@ class XdsApi {
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
          const CertificateProviderStore::PluginDefinitionMap* map);
-
-  static bool IsLds(absl::string_view type_url);
-  static bool IsRds(absl::string_view type_url);
-  static bool IsCds(absl::string_view type_url);
-  static bool IsEds(absl::string_view type_url);
-
-  // A helper method to parse the resource name and return back a ResourceName
-  // struct.  Optionally the parser can check the resource type portion of the
-  // resource name.
-  static absl::StatusOr<ResourceName> ParseResourceName(
-      absl::string_view name,
-      bool (*is_expected_type)(absl::string_view) = nullptr);
 
   // A helper method to construct the resource name from parts.
   static std::string ConstructFullResourceName(absl::string_view authority,

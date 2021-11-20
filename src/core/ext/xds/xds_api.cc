@@ -127,27 +127,6 @@ const char* kRdsV2TypeUrl = "envoy.api.v2.RouteConfiguration";
 const char* kCdsV2TypeUrl = "envoy.api.v2.Cluster";
 const char* kEdsV2TypeUrl = "envoy.api.v2.ClusterLoadAssignment";
 
-bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
-  if (type_url == XdsApi::kLdsTypeUrl) return true;
-  if (type_url == kLdsV2TypeUrl) {
-    if (is_v2 != nullptr) *is_v2 = true;
-    return true;
-  }
-  return false;
-}
-
-bool IsRdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
-}
-
-bool IsCdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
-}
-
-bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
-}
-
 absl::string_view TypeUrlExternalToInternal(bool use_v3,
                                             absl::string_view type_url) {
   if (!use_v3) {
@@ -178,34 +157,6 @@ std::string TypeUrlInternalToExternal(absl::string_view type_url) {
     return XdsApi::kEdsTypeUrl;
   }
   return std::string(type_url);
-}
-
-absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
-    absl::string_view name,
-    std::function<bool(absl::string_view, bool*)> is_expected_type) {
-  // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
-    return XdsApi::ResourceName{"old:", std::string(name)};
-  }
-  // New style name.  Parse URI.
-  auto uri = URI::Parse(name);
-  if (!uri.ok()) return uri.status();
-  // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (!is_expected_type(path_parts.first, nullptr)) {
-    return absl::InvalidArgumentError(
-        "xdstp URI path must indicate valid xDS resource type");
-  }
-  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
-      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
-  std::sort(query_parameters.begin(), query_parameters.end());
-  return XdsApi::ResourceName{
-      absl::StrCat("xdstp:", uri->authority()),
-      absl::StrCat(
-          path_parts.second, (query_parameters.empty() ? "?" : ""),
-          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
 }
 
 }  // namespace
@@ -262,30 +213,6 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       symtab_.ptr());
   // Load HTTP filter proto messages into the upb symtab.
   XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
-}
-
-bool XdsApi::IsLds(absl::string_view type_url) {
-  return IsLdsInternal(type_url);
-}
-
-bool XdsApi::IsRds(absl::string_view type_url) {
-  return IsRdsInternal(type_url);
-}
-
-bool XdsApi::IsCds(absl::string_view type_url) {
-  return IsCdsInternal(type_url);
-}
-
-bool XdsApi::IsEds(absl::string_view type_url) {
-  return IsEdsInternal(type_url);
-}
-
-absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
-    absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
-  return ParseResourceNameInternal(
-      name, [is_expected_type](absl::string_view type, bool*) {
-        return is_expected_type(type);
-      });
 }
 
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
@@ -590,7 +517,7 @@ absl::Status XdsApi::ParseAdsResponse(
   }
   MaybeLogDiscoveryResponse(context, response);
   // Report the type_url, version, nonce, and number of resources to the parser.
-  AdsResponseFields fields;
+  AdsResponseParserInterface::AdsResponseFields fields;
   fields.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
       UpbStringToAbsl(
           envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
@@ -604,9 +531,8 @@ absl::Status XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_resources(response,
                                                              &num_resources);
   fields.num_resources = num_resources;
-  if (!parser->ProcessAdsResponseFields(std::move(fields))) {
-    return absl::OkStatus();
-  }
+  absl::Status status = parser->ProcessAdsResponseFields(std::move(fields));
+  if (!status.ok()) return status;
   // Process each resource.
   for (size_t i = 0; i < num_resources; ++i) {
     absl::string_view type_url = absl::StripPrefix(

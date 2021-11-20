@@ -199,7 +199,7 @@ class XdsClient::ChannelState::AdsCallState
     explicit AdsResponseParser(AdsCallState* ads_call_state)
         : ads_call_state_(ads_call_state) {}
 
-    bool ProcessAdsResponseFields(XdsApi::AdsResponseFields fields) override;
+    absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override;
 
     void ParseResource(const XdsEncodingContext& context, size_t idx,
                        absl::string_view type_url,
@@ -732,25 +732,24 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 // XdsClient::ChannelState::AdsCallState::AdsResponseParser
 //
 
-bool XdsClient::ChannelState::AdsCallState::AdsResponseParser::
-    ProcessAdsResponseFields(XdsApi::AdsResponseFields fields) {
+absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
+    ProcessAdsResponseFields(AdsResponseFields fields) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_client %p] received ADS response for %s containing %" PRIuPTR
-            " resources",
+            "[xds_client %p] received ADS response: type_url=%s, "
+            "version=%s, nonce=%s, num_resources=%" PRIuPTR,
             ads_call_state_->xds_client(), fields.type_url.c_str(),
-            fields.num_resources);
+            fields.version.c_str(), fields.nonce.c_str(), fields.num_resources);
   }
   result_.type = XdsResourceTypeRegistry::GetOrCreate()->GetType(fields.type_url);
   if (result_.type == nullptr) {
-    result_.errors.push_back(
+    return absl::InvalidArgumentError(
         absl::StrCat("unknown resource type ", fields.type_url));
-    return false;
   }
   result_.type_url = std::move(fields.type_url);
   result_.version = std::move(fields.version);
   result_.nonce = std::move(fields.nonce);
-  return true;
+  return absl::OkStatus();
 }
 
 namespace {
@@ -847,7 +846,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
         "resource index ", idx, ": ", result->name,
         ": validation error: ", result->resource.status().ToString()));
     Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
-        xds_client(), resource_state.watchers, 
+        xds_client(), resource_state.watchers,
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_CPP_STRING(
                 absl::StrCat("invalid resource: ",
@@ -1034,17 +1033,6 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       chand()->server_, type->type_url(),
       chand()->resource_type_version_map_[type], state.nonce, resource_map,
       GRPC_ERROR_REF(state.error), !sent_initial_message_);
-
-// FIXME: can't do this until we're done looking at state
-// maybe base this on whether there are any watchers in the map?
-// (check how I did this in the other branch...)
-#if 0
-  if (type_url != XdsApi::kLdsTypeUrl && type_url != XdsApi::kRdsTypeUrl &&
-      type_url != XdsApi::kCdsTypeUrl && type_url != XdsApi::kEdsTypeUrl) {
-    state_map_.erase(type_url);
-  }
-#endif
-
   sent_initial_message_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -1179,7 +1167,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
     // Update nonce.
     auto& state = state_map_[result.type];
     state.nonce = result.nonce;
-    // If we got an error, we'll NACK the update.
+    // If we got an error, set state.error so that we'll NACK the update.
     if (!result.errors.empty()) {
       std::string error = absl::StrJoin(result.errors, "; ");
       gpr_log(GPR_ERROR,
@@ -2072,9 +2060,11 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
         it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
-  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
-  GPR_ASSERT(resource.ok());
-  auto a = authority_state_map_.find(resource->authority);
+  auto resource_name = ParseXdsResourceName(
+      cluster_name,
+      XdsResourceTypeRegistry::GetOrCreate()->GetType(XdsApi::kCdsTypeUrl));
+  GPR_ASSERT(resource_name.ok());
+  auto a = authority_state_map_.find(resource_name->authority);
   if (a != authority_state_map_.end()) {
     a->second.channel_state->MaybeStartLrsCall();
   }
@@ -2134,9 +2124,11 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
         std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
-  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
-  GPR_ASSERT(resource.ok());
-  auto a = authority_state_map_.find(resource->authority);
+  auto resource_name = ParseXdsResourceName(
+      cluster_name,
+      XdsResourceTypeRegistry::GetOrCreate()->GetType(XdsApi::kCdsTypeUrl));
+  GPR_ASSERT(resource_name.ok());
+  auto a = authority_state_map_.find(resource_name->authority);
   if (a != authority_state_map_.end()) {
     a->second.channel_state->MaybeStartLrsCall();
   }
