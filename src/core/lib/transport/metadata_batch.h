@@ -82,24 +82,24 @@ namespace grpc_core {
 // should not need to.
 struct GrpcTimeoutMetadata {
   using ValueType = Timestamp;
-  using MementoType = Timestamp;
+  using MementoType = Duration;
   static const char* key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value) {
-    Timestamp timeout;
+    Duration timeout;
     if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value.c_slice(), &timeout))) {
-      timeout = Timestamp::InfFuture();
+      timeout = Duration::Infinity();
     }
     return timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
-    if (timeout == Timestamp::InfFuture()) {
+    if (timeout == Duration::Infinity()) {
       return Timestamp::InfFuture();
     }
     return ExecCtx::Get()->Now() + timeout;
   }
   static Slice Encode(ValueType x) {
     char timeout[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
-    grpc_http2_encode_timeout(x, timeout);
+    grpc_http2_encode_timeout(x - ExecCtx::Get()->Now(), timeout);
     return Slice::FromCopiedString(timeout);
   }
   static MementoType DisplayValue(MementoType x) { return x; }

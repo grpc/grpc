@@ -99,7 +99,7 @@ static int is_all_whitespace(const char* p, const char* end) {
 
 int grpc_http2_decode_timeout(const grpc_slice& text,
                               grpc_core::Duration* timeout) {
-  grpc_core::Duration x;
+  int64_t x = 0;
   const uint8_t* p = GRPC_SLICE_START_PTR(text);
   const uint8_t* end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
@@ -127,22 +127,22 @@ int grpc_http2_decode_timeout(const grpc_slice& text,
   /* decode unit specifier */
   switch (*p) {
     case 'n':
-      *timeout = x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0);
+      *timeout = Duration::NanosecondsRoundUp(x);
       break;
     case 'u':
-      *timeout = x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0);
+      *timeout = Duration::MicrosecondsRoundUp(x);
       break;
     case 'm':
-      *timeout = x;
+      *timeout = Duration::Milliseconds(x);
       break;
     case 'S':
-      *timeout = x * GPR_MS_PER_SEC;
+      *timeout = Duration::Seconds(x);
       break;
     case 'M':
-      *timeout = x * 60 * GPR_MS_PER_SEC;
+      *timeout = Duration::Seconds(x * 60);
       break;
     case 'H':
-      *timeout = x * 60 * 60 * GPR_MS_PER_SEC;
+      *timeout = Duration::Seconds(x * 60 * 60);
       break;
     default:
       return 0;

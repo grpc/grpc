@@ -180,7 +180,9 @@ static void decrease_call_count(channel_data* chand) {
   /* Enter idle */
   if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
     gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis,
-                             (gpr_atm)grpc_core::ExecCtx::Get()->Now());
+                             (gpr_atm)grpc_core::ExecCtx::Get()
+                                 ->Now()
+                                 .milliseconds_after_process_epoch());
     while (true) {
       gpr_atm idle_state = gpr_atm_acq_load(&chand->idle_state);
       switch (idle_state) {

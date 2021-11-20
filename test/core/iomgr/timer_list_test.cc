@@ -38,7 +38,8 @@ extern grpc_core::TraceFlag grpc_timer_trace;
 extern grpc_core::TraceFlag grpc_timer_check_trace;
 
 static int cb_called[MAX_CB][2];
-static const int64_t kMillisIn25Days = 2160000000;
+static const grpc_core::Duration k25Days =
+    grpc_core::Duration::Milliseconds(2160000000);
 static const int64_t kHoursIn25Days = 600;
 
 static void cb(void* arg, grpc_error_handle error) {
@@ -172,14 +173,14 @@ void long_running_service_cleanup_test(void) {
   gpr_log(GPR_INFO, "long_running_service_cleanup_test");
 
   grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
-  GPR_ASSERT(now >= kMillisIn25Days);
+  GPR_ASSERT(now.milliseconds_after_process_epoch() >= k25Days.millis());
   grpc_timer_list_init();
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_timer_init(
-      &timers[0], now + kMillisIn25Days,
+      &timers[0], now + k25Days,
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)0, grpc_schedule_on_exec_ctx));
   grpc_timer_init(
       &timers[1], now + 3,
@@ -188,13 +189,13 @@ void long_running_service_cleanup_test(void) {
       &timers[2], grpc_core::Timestamp::InfFuture() - 1,
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)2, grpc_schedule_on_exec_ctx));
 
-  gpr_timespec deadline_spec = grpc_core::Timestamp_to_timespec(
-      now + kMillisIn25Days, gpr_clock_type::GPR_CLOCK_MONOTONIC);
+  gpr_timespec deadline_spec =
+      (now + k25Days).as_timespec(gpr_clock_type::GPR_CLOCK_MONOTONIC);
 
   /* grpc_timespec_to_millis_round_up is how users usually compute a millisecond
     input value into grpc_timer_init, so we mimic that behavior here */
   grpc_timer_init(
-      &timers[3], grpc_timespec_to_millis_round_up(deadline_spec),
+      &timers[3], grpc_core::Timestamp(deadline_spec),
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)3, grpc_schedule_on_exec_ctx));
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(now + 4);

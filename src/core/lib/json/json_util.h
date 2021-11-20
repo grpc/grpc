@@ -33,7 +33,7 @@ namespace grpc_core {
 // proto message, as per:
 //   https://developers.google.com/protocol-buffers/docs/proto3#json
 // Returns true on success, false otherwise.
-bool ParseDurationFromJson(const Json& field, Timestamp* duration);
+bool ParseDurationFromJson(const Json& field, Duration* duration);
 
 //
 // Helper functions for extracting types from JSON.

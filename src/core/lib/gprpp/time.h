@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include <cstdint>
+#include <limits>
 
 #include <grpc/support/time.h>
 
@@ -62,6 +63,8 @@ class Timestamp {
 
   uint64_t milliseconds_after_process_epoch() const { return millis_; }
 
+  gpr_timespec as_timespec(gpr_clock_type type) const;
+
  private:
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
@@ -72,8 +75,36 @@ class Duration {
  public:
   constexpr Duration() : millis_(0) {}
 
+  static constexpr Duration NegativeInfinity() {
+    return Duration(std::numeric_limits<int64_t>::min());
+  }
+
+  static constexpr Duration Infinity() {
+    return Duration(std::numeric_limits<int64_t>::max());
+  }
+
+  static constexpr Duration Seconds(int64_t seconds) {
+    return Duration(seconds * GPR_MS_PER_SEC);
+  }
+
   static constexpr Duration Milliseconds(int64_t millis) {
     return Duration(millis);
+  }
+
+  static constexpr Duration MicrosecondsRoundDown(int64_t micros) {
+    return Duration(micros / GPR_US_PER_MS);
+  }
+
+  static constexpr Duration NanosecondsRoundDown(int64_t nanos) {
+    return Duration(nanos / GPR_NS_PER_MS);
+  }
+
+  static constexpr Duration MicrosecondsRoundUp(int64_t micros) {
+    return Duration(micros / GPR_US_PER_MS + (micros % GPR_US_PER_MS != 0));
+  }
+
+  static constexpr Duration NanosecondsRoundUp(int64_t nanos) {
+    return Duration(nanos / GPR_NS_PER_MS + (nanos % GPR_NS_PER_MS != 0));
   }
 
   constexpr bool operator==(Duration other) const {
