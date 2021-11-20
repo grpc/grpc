@@ -67,9 +67,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class ListenerWatcherInterface : public ResourceWatcherInterface {
    public:
     virtual void OnListenerChanged(XdsListenerResource listener) = 0;
+
    private:
-    void OnResourceChanged(const XdsResourceType::ResourceData* resource)
-        override {
+    void OnResourceChanged(
+        const XdsResourceType::ResourceData* resource) override {
       OnListenerChanged(
           static_cast<const XdsListenerResourceType::ListenerData*>(resource)
               ->resource);
@@ -80,11 +81,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class RouteConfigWatcherInterface : public ResourceWatcherInterface {
    public:
     virtual void OnRouteConfigChanged(XdsRouteConfigResource route_config) = 0;
+
    private:
-    void OnResourceChanged(const XdsResourceType::ResourceData* resource)
-        override {
+    void OnResourceChanged(
+        const XdsResourceType::ResourceData* resource) override {
       OnRouteConfigChanged(
-          static_cast<const XdsRouteConfigResourceType::RouteConfigData*>(resource)
+          static_cast<const XdsRouteConfigResourceType::RouteConfigData*>(
+              resource)
               ->resource);
     }
   };
@@ -93,9 +96,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class ClusterWatcherInterface : public ResourceWatcherInterface {
    public:
     virtual void OnClusterChanged(XdsClusterResource cluster_data) = 0;
+
    private:
-    void OnResourceChanged(const XdsResourceType::ResourceData* resource)
-        override {
+    void OnResourceChanged(
+        const XdsResourceType::ResourceData* resource) override {
       OnClusterChanged(
           static_cast<const XdsClusterResourceType::ClusterData*>(resource)
               ->resource);
@@ -106,9 +110,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class EndpointWatcherInterface : public ResourceWatcherInterface {
    public:
     virtual void OnEndpointChanged(XdsEndpointResource update) = 0;
+
    private:
-    void OnResourceChanged(const XdsResourceType::ResourceData* resource)
-        override {
+    void OnResourceChanged(
+        const XdsResourceType::ResourceData* resource) override {
       OnEndpointChanged(
           static_cast<const XdsEndpointResourceType::EndpointData*>(resource)
               ->resource);
@@ -149,7 +154,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // old one, it should set delay_unsubscription to true.
   void WatchResource(const XdsResourceType* type, absl::string_view name,
                      RefCountedPtr<ResourceWatcherInterface> watcher);
-  void CancelResourceWatch(const XdsResourceType* type, 
+  void CancelResourceWatch(const XdsResourceType* type,
                            absl::string_view listener_name,
                            ResourceWatcherInterface* watcher,
                            bool delay_unsubscription = false);
@@ -321,7 +326,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   struct AuthorityState {
     RefCountedPtr<ChannelState> channel_state;
     std::map<const XdsResourceType*,
-             std::map<std::string /*id*/, ResourceState>> resource_map;
+             std::map<std::string /*id*/, ResourceState>>
+        resource_map;
   };
 
   struct LoadReportState {
@@ -346,9 +352,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   static absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
-  static std::string ConstructFullXdsResourceName(absl::string_view authority,
-                                                  absl::string_view resource_type,
-                                                  absl::string_view id);
+  static std::string ConstructFullXdsResourceName(
+      absl::string_view authority, absl::string_view resource_type,
+      absl::string_view id);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters)

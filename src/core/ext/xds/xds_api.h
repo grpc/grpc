@@ -61,8 +61,8 @@ class XdsApi {
     virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
 
     // Called to parse each individual resource in the ADS response.
-    virtual void ParseResource(const XdsEncodingContext& context,
-                               size_t idx, absl::string_view type_url,
+    virtual void ParseResource(const XdsEncodingContext& context, size_t idx,
+                               absl::string_view type_url,
                                absl::string_view serialized_resource) = 0;
   };
 
@@ -138,11 +138,12 @@ class XdsApi {
 
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(
-      const XdsBootstrap::XdsServer& server, absl::string_view type_url,
-      absl::string_view version, absl::string_view nonce,
-      const std::vector<std::string>& resource_names,
-      grpc_error_handle error, bool populate_node);
+  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
+                              absl::string_view type_url,
+                              absl::string_view version,
+                              absl::string_view nonce,
+                              const std::vector<std::string>& resource_names,
+                              grpc_error_handle error, bool populate_node);
 
   // Returns non-OK when failing to deserialize response message.
   // Otherwise, all events are reported to the parser.

@@ -279,8 +279,8 @@ grpc_slice SerializeDiscoveryRequest(
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, absl::string_view type_url,
     absl::string_view version, absl::string_view nonce,
-    const std::vector<std::string>& resource_names,
-    grpc_error_handle error, bool populate_node) {
+    const std::vector<std::string>& resource_names, grpc_error_handle error,
+    bool populate_node) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
                                       tracer_,
@@ -357,9 +357,9 @@ void MaybeLogDiscoveryResponse(
 
 }  // namespace
 
-absl::Status XdsApi::ParseAdsResponse(
-    const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-    AdsResponseParserInterface* parser) {
+absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
+                                      const grpc_slice& encoded_response,
+                                      AdsResponseParserInterface* parser) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
                                       tracer_,

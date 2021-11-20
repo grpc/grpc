@@ -206,14 +206,14 @@ class XdsRouteConfigResourceType : public XdsResourceType {
                                       absl::string_view serialized_resource,
                                       bool /*is_v2*/) const override;
 
-  bool ResourcesEqual(const ResourceData* r1, const ResourceData* r2)
-      const override {
+  bool ResourcesEqual(const ResourceData* r1,
+                      const ResourceData* r2) const override {
     return static_cast<const RouteConfigData*>(r1)->resource ==
            static_cast<const RouteConfigData*>(r2)->resource;
   }
 
-  std::unique_ptr<ResourceData> CopyResource(const ResourceData* resource)
-      const override {
+  std::unique_ptr<ResourceData> CopyResource(
+      const ResourceData* resource) const override {
     auto resource_copy = absl::make_unique<RouteConfigData>();
     resource_copy->resource =
         static_cast<const RouteConfigData*>(resource)->resource;

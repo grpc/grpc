@@ -177,12 +177,10 @@ class XdsClient::ChannelState::AdsCallState
   XdsClient* xds_client() const { return chand()->xds_client(); }
   bool seen_response() const { return seen_response_; }
 
-  void SubscribeLocked(const XdsResourceType* type,
-                       const XdsResourceName& name)
+  void SubscribeLocked(const XdsResourceType* type, const XdsResourceName& name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   void UnsubscribeLocked(const XdsResourceType* type,
-                         const XdsResourceName& name,
-                         bool delay_unsubscription)
+                         const XdsResourceName& name, bool delay_unsubscription)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   bool HasSubscribedResources() const;
@@ -598,8 +596,8 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
   client_channel->RemoveConnectivityWatcher(watcher_);
 }
 
-void XdsClient::ChannelState::SubscribeLocked(
-    const XdsResourceType* type, const XdsResourceName& name) {
+void XdsClient::ChannelState::SubscribeLocked(const XdsResourceType* type,
+                                              const XdsResourceName& name) {
   if (ads_calld_ == nullptr) {
     // Start the ADS call if this is the first request.
     ads_calld_.reset(new RetryableCall<AdsCallState>(
@@ -616,9 +614,9 @@ void XdsClient::ChannelState::SubscribeLocked(
   ads_calld()->SubscribeLocked(type, name);
 }
 
-void XdsClient::ChannelState::UnsubscribeLocked(
-    const XdsResourceType* type, const XdsResourceName& name,
-    bool delay_unsubscription) {
+void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
+                                                const XdsResourceName& name,
+                                                bool delay_unsubscription) {
   if (ads_calld_ != nullptr) {
     auto* calld = ads_calld_->calld();
     if (calld != nullptr) {
@@ -746,7 +744,8 @@ absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
             ads_call_state_->xds_client(), fields.type_url.c_str(),
             fields.version.c_str(), fields.nonce.c_str(), fields.num_resources);
   }
-  result_.type = XdsResourceTypeRegistry::GetOrCreate()->GetType(fields.type_url);
+  result_.type =
+      XdsResourceTypeRegistry::GetOrCreate()->GetType(fields.type_url);
   if (result_.type == nullptr) {
     return absl::InvalidArgumentError(
         absl::StrCat("unknown resource type ", fields.type_url));
@@ -804,7 +803,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     return;
   }
   // Check the resource name.
-  auto resource_name = XdsClient::ParseXdsResourceName(result->name, result_.type);
+  auto resource_name =
+      XdsClient::ParseXdsResourceName(result->name, result_.type);
   if (!resource_name.ok()) {
     result_.errors.emplace_back(absl::StrCat(
         "resource index ", idx, ": Cannot parse xDS resource name \"",
@@ -814,7 +814,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   // Cancel resource-does-not-exist timer, if needed.
   auto timer_it = ads_call_state_->state_map_.find(result_.type);
   if (timer_it != ads_call_state_->state_map_.end()) {
-    auto it = timer_it->second.subscribed_resources.find(resource_name->authority);
+    auto it =
+        timer_it->second.subscribed_resources.find(resource_name->authority);
     if (it != timer_it->second.subscribed_resources.end()) {
       auto res_it = it->second.find(resource_name->id);
       if (res_it != it->second.end()) {
@@ -823,8 +824,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     }
   }
   // Lookup the authority in the cache.
-  auto authority_it = xds_client()->authority_state_map_.find(
-      resource_name->authority);
+  auto authority_it =
+      xds_client()->authority_state_map_.find(resource_name->authority);
   if (authority_it == xds_client()->authority_state_map_.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
@@ -853,14 +854,13 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
         xds_client(), resource_state.watchers,
         grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(
-                absl::StrCat("invalid resource: ",
-                             result->resource.status().ToString())),
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                "invalid resource: ", result->resource.status().ToString())),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
         DEBUG_LOCATION);
-    UpdateResourceMetadataNacked(
-        result_.version, result->resource.status().ToString(), update_time_,
-        &resource_state.meta);
+    UpdateResourceMetadataNacked(result_.version,
+                                 result->resource.status().ToString(),
+                                 update_time_, &resource_state.meta);
     return;
   }
   // Resource is valid.
@@ -1202,16 +1202,18 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
           if (seen_authority_it == result.resources_seen.end() ||
               seen_authority_it->second.find(resource_id) ==
                   seen_authority_it->second.end()) {
-            // If the resource was newly requested but has not yet been received,
-            // we don't want to generate an error for the watchers, because this
-            // ADS response may be in reaction to an earlier request that did not
-            // yet request the new resource, so its absence from the response does
-            // not necessarily indicate that the resource does not exist.  For
-            // that case, we rely on the request timeout instead.
+            // If the resource was newly requested but has not yet been
+            // received, we don't want to generate an error for the watchers,
+            // because this ADS response may be in reaction to an earlier
+            // request that did not yet request the new resource, so its absence
+            // from the response does not necessarily indicate that the resource
+            // does not exist.  For that case, we rely on the request timeout
+            // instead.
             if (resource_state.resource == nullptr) continue;
             resource_state.resource.reset();
-            Notifier::ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-                xds_client(), resource_state.watchers, DEBUG_LOCATION);
+            Notifier::
+                ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
+                    xds_client(), resource_state.watchers, DEBUG_LOCATION);
           }
         }
       }
@@ -1219,7 +1221,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
     // If we had valid resources, update the version.
     if (result.have_valid_resources) {
       seen_response_ = true;
-      chand()->resource_type_version_map_[result.type] = std::move(result.version);
+      chand()->resource_type_version_map_[result.type] =
+          std::move(result.version);
       // Start load reporting if needed.
       auto& lrs_call = chand()->lrs_calld_;
       if (lrs_call != nullptr) {
@@ -1842,7 +1845,8 @@ RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
   return channel_state;
 }
 
-void XdsClient::WatchResource(const XdsResourceType* type, absl::string_view name,
+void XdsClient::WatchResource(const XdsResourceType* type,
+                              absl::string_view name,
                               RefCountedPtr<ResourceWatcherInterface> watcher) {
   ResourceWatcherInterface* w = watcher.get();
   auto resource_name = ParseXdsResourceName(name, type);
@@ -1851,8 +1855,8 @@ void XdsClient::WatchResource(const XdsResourceType* type, absl::string_view nam
       MutexLock lock(&mu_);
       invalid_watchers_[w] = watcher;
     }
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-        "Unable to parse resource name %s", name));
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Unable to parse resource name %s", name));
     work_serializer_.Run(
         // TODO(yashykt): When we move to C++14, capture watcher using
         // std::move()
@@ -1871,8 +1875,8 @@ void XdsClient::WatchResource(const XdsResourceType* type, absl::string_view nam
     ResourceState& resource_state =
         authority_state.resource_map[type][resource_name->id];
     resource_state.watchers[w] = watcher;
-    // If we already have a cached value for the resource, notify the new watcher
-    // immediately.
+    // If we already have a cached value for the resource, notify the new
+    // watcher immediately.
     if (resource_state.resource != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO,
@@ -1898,9 +1902,10 @@ void XdsClient::WatchResource(const XdsResourceType* type, absl::string_view nam
   work_serializer_.DrainQueue();
 }
 
-void XdsClient::CancelResourceWatch(
-    const XdsResourceType* type, absl::string_view name,
-    ResourceWatcherInterface* watcher, bool delay_unsubscription) {
+void XdsClient::CancelResourceWatch(const XdsResourceType* type,
+                                    absl::string_view name,
+                                    ResourceWatcherInterface* watcher,
+                                    bool delay_unsubscription) {
   auto resource_name = ParseXdsResourceName(name, type);
   MutexLock lock(&mu_);
   if (!resource_name.ok()) {
@@ -1922,8 +1927,8 @@ void XdsClient::CancelResourceWatch(
   ResourceState& resource_state = resource_it->second;
   // Remove watcher.
   resource_state.watchers.erase(watcher);
-  authority_state.channel_state->UnsubscribeLocked(
-      type, *resource_name, delay_unsubscription);
+  authority_state.channel_state->UnsubscribeLocked(type, *resource_name,
+                                                   delay_unsubscription);
   // Clean up empty map entries, if any.
   if (resource_state.watchers.empty()) {
     type_map.erase(resource_it);
@@ -1939,9 +1944,8 @@ void XdsClient::CancelResourceWatch(
 void XdsClient::WatchListenerData(
     absl::string_view listener_name,
     RefCountedPtr<ListenerWatcherInterface> watcher) {
-  WatchResource(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kLdsTypeUrl),
-      listener_name, std::move(watcher));
+  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kLdsTypeUrl),
+                listener_name, std::move(watcher));
 }
 
 void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
@@ -1955,9 +1959,8 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
 void XdsClient::WatchRouteConfigData(
     absl::string_view route_config_name,
     RefCountedPtr<RouteConfigWatcherInterface> watcher) {
-  WatchResource(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kRdsTypeUrl),
-      route_config_name, std::move(watcher));
+  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kRdsTypeUrl),
+                route_config_name, std::move(watcher));
 }
 
 void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
@@ -1971,9 +1974,8 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
 void XdsClient::WatchClusterData(
     absl::string_view cluster_name,
     RefCountedPtr<ClusterWatcherInterface> watcher) {
-  WatchResource(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kCdsTypeUrl),
-      cluster_name, std::move(watcher));
+  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kCdsTypeUrl),
+                cluster_name, std::move(watcher));
 }
 
 void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
@@ -1987,9 +1989,8 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
 void XdsClient::WatchEndpointData(
     absl::string_view eds_service_name,
     RefCountedPtr<EndpointWatcherInterface> watcher) {
-  WatchResource(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kEdsTypeUrl),
-      eds_service_name, std::move(watcher));
+  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kEdsTypeUrl),
+                eds_service_name, std::move(watcher));
 }
 
 void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
@@ -2174,9 +2175,9 @@ void XdsClient::ResetBackoff() {
 
 void XdsClient::NotifyOnErrorLocked(grpc_error_handle error) {
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
-  for (const auto& a : authority_state_map_) {  // authority
+  for (const auto& a : authority_state_map_) {     // authority
     for (const auto& t : a.second.resource_map) {  // type
-      for (const auto& r : t.second) {  // resource id
+      for (const auto& r : t.second) {             // resource id
         for (const auto& w : r.second.watchers) {  // watchers
           watchers.insert(w.second);
         }
@@ -2184,7 +2185,8 @@ void XdsClient::NotifyOnErrorLocked(grpc_error_handle error) {
     }
   }
   work_serializer_.Schedule(
-      // TODO(yashykt): When we move to C++14, capture watchers using std::move()
+      // TODO(yashykt): When we move to C++14, capture watchers using
+      // std::move()
       [watchers, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
         for (const auto& watcher : watchers) {
           watcher->OnError(GRPC_ERROR_REF(error));
@@ -2282,7 +2284,8 @@ std::string XdsClient::DumpClientConfigBinary() {
     const std::string& authority = a.first;
     for (const auto& t : a.second.resource_map) {  // type
       const XdsResourceType* type = t.first;
-      auto& resource_metadata_map = resource_type_metadata_map[type->type_url()];
+      auto& resource_metadata_map =
+          resource_type_metadata_map[type->type_url()];
       for (const auto& r : t.second) {  // resource id
         const std::string& resource_id = r.first;
         const ResourceState& resource_state = r.second;

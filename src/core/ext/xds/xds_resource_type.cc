@@ -27,7 +27,8 @@
 
 namespace grpc_core {
 
-bool XdsResourceType::IsType(absl::string_view resource_type, bool* is_v2) const {
+bool XdsResourceType::IsType(absl::string_view resource_type,
+                             bool* is_v2) const {
   if (resource_type == type_url()) return true;
   if (resource_type == v2_type_url()) {
     if (is_v2 != nullptr) *is_v2 = true;

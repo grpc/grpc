@@ -127,16 +127,17 @@ class XdsEndpointResourceType : public XdsResourceType {
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
 
-  bool ResourcesEqual(const ResourceData* r1, const ResourceData* r2)
-      const override {
+  bool ResourcesEqual(const ResourceData* r1,
+                      const ResourceData* r2) const override {
     return static_cast<const EndpointData*>(r1)->resource ==
            static_cast<const EndpointData*>(r2)->resource;
   }
 
-  std::unique_ptr<ResourceData> CopyResource(const ResourceData* resource)
-      const override {
+  std::unique_ptr<ResourceData> CopyResource(
+      const ResourceData* resource) const override {
     auto resource_copy = absl::make_unique<EndpointData>();
-    resource_copy->resource = static_cast<const EndpointData*>(resource)->resource;
+    resource_copy->resource =
+        static_cast<const EndpointData*>(resource)->resource;
     return resource_copy;
   }
 

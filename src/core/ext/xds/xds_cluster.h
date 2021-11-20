@@ -98,16 +98,17 @@ class XdsClusterResourceType : public XdsResourceType {
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
 
-  bool ResourcesEqual(const ResourceData* r1, const ResourceData* r2)
-      const override {
+  bool ResourcesEqual(const ResourceData* r1,
+                      const ResourceData* r2) const override {
     return static_cast<const ClusterData*>(r1)->resource ==
            static_cast<const ClusterData*>(r2)->resource;
   }
 
-  std::unique_ptr<ResourceData> CopyResource(const ResourceData* resource)
-      const override {
+  std::unique_ptr<ResourceData> CopyResource(
+      const ResourceData* resource) const override {
     auto resource_copy = absl::make_unique<ClusterData>();
-    resource_copy->resource = static_cast<const ClusterData*>(resource)->resource;
+    resource_copy->resource =
+        static_cast<const ClusterData*>(resource)->resource;
     return resource_copy;
   }
 
@@ -116,7 +117,8 @@ class XdsClusterResourceType : public XdsResourceType {
   void InitUpbSymtab(upb_symtab* symtab) const override {
     envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
     envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
-    envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(symtab);
+    envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
+        symtab);
   }
 };
 

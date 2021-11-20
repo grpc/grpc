@@ -960,7 +960,8 @@ XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse RouteConfiguration resource.");
+    return absl::InvalidArgumentError(
+        "Can't parse RouteConfiguration resource.");
   }
   MaybeLogRouteConfiguration(context, resource);
   // Validate resource.

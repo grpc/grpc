@@ -63,14 +63,16 @@ class XdsResourceType {
       bool is_v2) const = 0;
 
   // Returns true if r1 and r2 are equal.
-  // Must be invoked only on resources returned by this object's Decode() method.
-  virtual bool ResourcesEqual(const ResourceData* r1, const ResourceData* r2)
-      const = 0;
+  // Must be invoked only on resources returned by this object's Decode()
+  // method.
+  virtual bool ResourcesEqual(const ResourceData* r1,
+                              const ResourceData* r2) const = 0;
 
   // Returns a copy of resource.
-  // Must be invoked only on resources returned by this object's Decode() method.
-  virtual std::unique_ptr<ResourceData> CopyResource(const ResourceData* resource)
-      const = 0;
+  // Must be invoked only on resources returned by this object's Decode()
+  // method.
+  virtual std::unique_ptr<ResourceData> CopyResource(
+      const ResourceData* resource) const = 0;
 
   // Indicates whether the resource type requires that all resources must
   // be present in every SotW response from the server.  If true, a
@@ -107,7 +109,8 @@ class XdsResourceTypeRegistry {
   void ForEach(std::function<void(const XdsResourceType*)> func);
 
  private:
-  std::map<absl::string_view /*resource_type*/, std::unique_ptr<XdsResourceType>>
+  std::map<absl::string_view /*resource_type*/,
+           std::unique_ptr<XdsResourceType>>
       resource_types_;
   std::map<absl::string_view /*v2_resource_type*/, XdsResourceType*>
       v2_resource_types_;
