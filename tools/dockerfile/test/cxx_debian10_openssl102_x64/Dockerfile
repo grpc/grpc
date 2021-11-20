@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM i386/debian:jessie
-RUN sed -i '/deb http:\/\/http.debian.net\/debian jessie-updates main/d' /etc/apt/sources.list
+FROM debian:10
 
+RUN apt-get --allow-releaseinfo-change update
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -73,21 +73,27 @@ RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 o
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
+#=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
+RUN apt-get update && apt-get install -y cmake && apt-get clean
+
 
 RUN mkdir /var/local/jenkins
 
-#=================
-# Use cmake 3.6 from jessie-backports
-# should only be used for images based on debian jessie.
 
-RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
-RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
-
-
-# Install gcc-4.9 and other relevant items
-RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
+# Install openssl 1.0.2 from source
+RUN apt-get update && apt-get install -y build-essential zlib1g-dev
+RUN cd /tmp && \
+    wget --no-check-certificate https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz && \
+    tar -xf openssl-1.0.2u.tar.gz && \
+    cd openssl-1.0.2u && \
+    ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
+    make -j 4 && \
+    make install && \
+    rm -rf /tmp/openssl-1.0.2u*
+ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 
 # Define the default command.
 CMD ["bash"]
