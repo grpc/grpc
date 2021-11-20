@@ -92,7 +92,6 @@ class XdsApi {
   };
   using ResourceMetadataMap =
       std::map<std::string /*resource_name*/, const ResourceMetadata*>;
-// FIXME: change key type to const XdsResourceType*
   using ResourceTypeMetadataMap =
       std::map<absl::string_view /*type_url*/, ResourceMetadataMap>;
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(

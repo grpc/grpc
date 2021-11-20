@@ -73,34 +73,6 @@ const char* XdsApi::kCdsTypeUrl = "envoy.config.cluster.v3.Cluster";
 const char* XdsApi::kEdsTypeUrl =
     "envoy.config.endpoint.v3.ClusterLoadAssignment";
 
-namespace {
-
-const char* kLdsV2TypeUrl = "envoy.api.v2.Listener";
-const char* kRdsV2TypeUrl = "envoy.api.v2.RouteConfiguration";
-const char* kCdsV2TypeUrl = "envoy.api.v2.Cluster";
-const char* kEdsV2TypeUrl = "envoy.api.v2.ClusterLoadAssignment";
-
-absl::string_view TypeUrlExternalToInternal(bool use_v3,
-                                            absl::string_view type_url) {
-  if (!use_v3) {
-    if (type_url == XdsApi::kLdsTypeUrl) {
-      return kLdsV2TypeUrl;
-    }
-    if (type_url == XdsApi::kRdsTypeUrl) {
-      return kRdsV2TypeUrl;
-    }
-    if (type_url == XdsApi::kCdsTypeUrl) {
-      return kCdsV2TypeUrl;
-    }
-    if (type_url == XdsApi::kEdsTypeUrl) {
-      return kEdsV2TypeUrl;
-    }
-  }
-  return type_url;
-}
-
-}  // namespace
-
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.
 #ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
@@ -332,12 +304,9 @@ grpc_slice XdsApi::CreateAdsRequest(
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
   // Set type_url.
-  absl::string_view real_type_url =
-      TypeUrlExternalToInternal(server.ShouldUseV3(), type_url);
-  std::string real_type_url_str =
-      absl::StrCat("type.googleapis.com/", real_type_url);
+  std::string type_url_str = absl::StrCat("type.googleapis.com/", type_url);
   envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
-      request, StdStringToUpbString(real_type_url_str));
+      request, StdStringToUpbString(type_url_str));
   // Set version_info.
   if (!version.empty()) {
     envoy_service_discovery_v3_DiscoveryRequest_set_version_info(

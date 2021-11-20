@@ -1027,7 +1027,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   auto& state = state_map_[type];
   grpc_slice request_payload_slice;
   request_payload_slice = xds_client()->api_.CreateAdsRequest(
-      chand()->server_, type->type_url(),
+      chand()->server_,
+      chand()->server_.ShouldUseV3() ? type->type_url() : type->v2_type_url(),
       chand()->resource_type_version_map_[type], state.nonce,
       ResourceNamesForRequest(type), GRPC_ERROR_REF(state.error),
       !sent_initial_message_);

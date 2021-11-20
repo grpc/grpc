@@ -33,13 +33,15 @@ namespace grpc_core {
 
 class XdsClient;
 
+// FIXME: Rethink this.  All fields except symtab and arena should come
+// from XdsClient, injected into XdsResourceType::Decode() somehow without
+// passing through XdsApi code.
 struct XdsEncodingContext {
   XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
   TraceFlag* tracer;
   upb_symtab* symtab;
   upb_arena* arena;
   bool use_v3;
-// FIXME: remove this field -- or maybe rethink the context approach here
   const CertificateProviderStore::PluginDefinitionMap*
       certificate_provider_definition_map;
 };
