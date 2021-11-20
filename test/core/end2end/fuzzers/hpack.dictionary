@@ -14,6 +14,7 @@
 "%grpc-internal-stream-encoding-request"
 "\x1Agrpc-previous-rpc-attempts"
 "\x16grpc-retry-pushback-ms"
+"\x0Cgrpc-timeout"
 "\x011"
 "\x012"
 "\x013"

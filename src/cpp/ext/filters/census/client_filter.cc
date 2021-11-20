@@ -100,19 +100,13 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                              kMaxTraceContextLen);
   if (tracing_len > 0) {
-    GRPC_LOG_IF_ERROR(
-        "census grpc_filter",
-        send_initial_metadata->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_GRPC_TRACE_BIN,
-            grpc_core::UnmanagedMemorySlice(tracing_buf, tracing_len))));
+    send_initial_metadata->Set(grpc_core::GrpcTraceBinMetadata(), grpc_core::Slice(grpc_core::UnmanagedMemorySlice(tracing_buf, tracing_len)));
   }
   grpc_slice tags = grpc_empty_slice();
   // TODO(unknown): Add in tagging serialization.
   size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
   if (encoded_tags_len > 0) {
-    GRPC_LOG_IF_ERROR("census grpc_filter",
-                      send_initial_metadata->Append(grpc_mdelem_from_slices(
-                          GRPC_MDSTR_GRPC_TAGS_BIN, tags)));
+    send_initial_metadata->Set(grpc_core::GrpcTagsBinMetadata(), grpc_core::Slice(tags));
   }
 }
 

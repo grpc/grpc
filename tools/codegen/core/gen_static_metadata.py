@@ -44,6 +44,7 @@ CONFIG = [
     'grpc-status',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
+    'grpc-timeout',
     '1',
     '2',
     '3',
