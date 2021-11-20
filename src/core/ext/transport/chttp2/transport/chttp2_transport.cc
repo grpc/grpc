@@ -2987,11 +2987,10 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
     grpc_slice_buffer_swap(&s->frame_storage,
                            &s->unprocessed_incoming_frames_buffer);
     s->unprocessed_incoming_frames_decompressed = false;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
-                            GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete, GRPC_ERROR_NONE);
   } else if (s->byte_stream_error != GRPC_ERROR_NONE) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
-                            GRPC_ERROR_REF(s->byte_stream_error));
+    ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
+                 GRPC_ERROR_REF(s->byte_stream_error));
     if (s->data_parser.parsing_frame != nullptr) {
       s->data_parser.parsing_frame->Unref();
       s->data_parser.parsing_frame = nullptr;
@@ -3000,8 +2999,8 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
     if (bs->remaining_bytes_ != 0) {
       s->byte_stream_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Truncated message", &s->read_closed_error, 1);
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
-                              GRPC_ERROR_REF(s->byte_stream_error));
+      ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
+                   GRPC_ERROR_REF(s->byte_stream_error));
       if (s->data_parser.parsing_frame != nullptr) {
         s->data_parser.parsing_frame->Unref();
         s->data_parser.parsing_frame = nullptr;
@@ -3089,8 +3088,7 @@ grpc_error_handle Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
 
 void Chttp2IncomingByteStream::PublishError(grpc_error_handle error) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, stream_->on_next,
-                          GRPC_ERROR_REF(error));
+  ExecCtx::Run(DEBUG_LOCATION, stream_->on_next, GRPC_ERROR_REF(error));
   stream_->on_next = nullptr;
   GRPC_ERROR_UNREF(stream_->byte_stream_error);
   stream_->byte_stream_error = GRPC_ERROR_REF(error);

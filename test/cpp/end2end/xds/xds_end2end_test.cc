@@ -999,11 +999,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                        EchoResponse* response) {
     switch (rpc_options.method) {
       case METHOD_ECHO:
-        return (*stub)->Echo(context, request, response);
+        return stub->Echo(context, request, response);
       case METHOD_ECHO1:
-        return (*stub)->Echo1(context, request, response);
+        return stub->Echo1(context, request, response);
       case METHOD_ECHO2:
-        return (*stub)->Echo2(context, request, response);
+        return stub->Echo2(context, request, response);
     }
     GPR_UNREACHABLE_CODE();
   }
@@ -1240,16 +1240,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     Status status;
     switch (rpc_options.service) {
       case SERVICE_ECHO:
-        status =
-            SendRpcMethod(&stub_, rpc_options, &context, request, response);
+        status = SendRpcMethod(stub_.get(), rpc_options, &context, request,
+                               response);
         break;
       case SERVICE_ECHO1:
-        status =
-            SendRpcMethod(&stub1_, rpc_options, &context, request, response);
+        status = SendRpcMethod(stub1_.get(), rpc_options, &context, request,
+                               response);
         break;
       case SERVICE_ECHO2:
-        status =
-            SendRpcMethod(&stub2_, rpc_options, &context, request, response);
+        status = SendRpcMethod(stub2_.get(), rpc_options, &context, request,
+                               response);
         break;
     }
     if (local_response) delete response;
@@ -1335,9 +1335,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         expected_status);
   }
 
-  bool WaitForRdsNack() {
+  bool WaitForRdsNack(StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
-        [&]() { return RouteConfigurationResponseState(0).state; });
+        [&]() { return RouteConfigurationResponseState(0).state; },
+        expected_status);
   }
 
   bool WaitForCdsNack() {
@@ -1350,6 +1351,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return WaitForNack([&]() {
       return balancers_[0]->ads_service()->eds_response_state().state;
     });
+  }
+
+  bool WaitForRouteConfigNack(
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
+    if (GetParam().enable_rds_testing()) {
+      return WaitForRdsNack(expected_status);
+    }
+    return WaitForLdsNack(expected_status);
   }
 
   AdsServiceImpl::ResponseState RouteConfigurationResponseState(int idx) const {
@@ -1421,7 +1430,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         hcm_accessor.Unpack(listener);
     if (GetParam().enable_rds_testing()) {
       auto* rds = http_connection_manager.mutable_rds();
-      rds->set_route_config_name(kDefaultRouteConfigurationName);
+      rds->set_route_config_name(route_config.name());
       rds->mutable_config_source()->mutable_ads();
       balancers_[idx]->ads_service()->SetRdsResource(route_config);
     } else {
@@ -9758,7 +9767,7 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
                            "filter chain: {source_ports={8080}}"));
 }
 
-class XdsServerRdsTest : public XdsServerSecurityTest {
+class XdsServerRdsTest : public XdsEnabledServerStatusNotificationTest {
  protected:
   static void SetUpTestSuite() {
     gpr_setenv("GRPC_XDS_EXPERIMENTAL_RBAC", "true");
@@ -9769,15 +9778,23 @@ class XdsServerRdsTest : public XdsServerSecurityTest {
   }
 };
 
+TEST_P(XdsServerRdsTest, Basic) {
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
 TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
   RouteConfiguration route_config = default_server_route_config_;
   route_config.mutable_virtual_hosts()->at(0).add_domains("");
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
-  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
               ::testing::HasSubstr("Invalid domain pattern \"\""));
 }
 
@@ -9787,9 +9804,9 @@ TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
-  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
               ::testing::HasSubstr("VirtualHost has no domains"));
 }
 
@@ -9799,9 +9816,9 @@ TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
-  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
               ::testing::HasSubstr("No route found in the virtual host"));
 }
 
@@ -9815,10 +9832,121 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
   SetServerListenerNameAndRouteConfiguration(
       0, default_server_listener_, backends_[0]->port(), route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+  ASSERT_TRUE(WaitForRouteConfigNack(StatusCode::DEADLINE_EXCEEDED))
       << "timed out waiting for NACK";
-  EXPECT_THAT(balancers_[0]->ads_service()->lds_response_state().error_message,
+  EXPECT_THAT(RouteConfigurationResponseState(0).error_message,
               ::testing::HasSubstr("Match can't be null"));
+}
+
+TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
+  SetServerListenerNameAndRouteConfiguration(
+      0, default_server_listener_, backends_[0]->port(),
+      default_route_config_ /* inappropriate route config for servers */);
+  backends_[0]->Start();
+  // The server should be ready to serve but RPCs should fail.
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+// Test that non-inline route configuration also works for non-default filter
+// chains
+TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNonDefaultFilterChain) {
+  if (!GetParam().enable_rds_testing()) {
+    return;
+  }
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.add_filter_chains();
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultServerRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
+  if (!GetParam().enable_rds_testing()) {
+    return;
+  }
+  Listener listener = default_server_listener_;
+  PopulateServerListenerNameAndPort(listener, backends_[0]->port());
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name("unknown_server_route_config");
+  rds->mutable_config_source()->mutable_ads();
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+// TODO(yashykt): Once https://github.com/grpc/grpc/issues/24035 is fixed, we
+// should add tests that make sure that different route configs are used for
+// incoming connections with a different match.
+TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
+  Listener listener = default_server_listener_;
+  // Set a filter chain with a new route config name
+  auto new_route_config = default_server_route_config_;
+  new_route_config.set_name("new_server_route_config");
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(new_route_config.name());
+  rds->mutable_config_source()->mutable_ads();
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  // Set another filter chain with another route config name
+  auto another_route_config = default_server_route_config_;
+  another_route_config.set_name("another_server_route_config");
+  http_connection_manager.mutable_rds()->set_route_config_name(
+      another_route_config.name());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::SAME_IP_OR_LOOPBACK);
+  // Add another filter chain with the same route config name
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::EXTERNAL);
+  // Add another filter chain with an inline route config
+  filter_chain = listener.add_filter_chains();
+  filter_chain->mutable_filter_chain_match()->add_source_ports(1234);
+  http_connection_manager = ServerHcmAccessor().Unpack(listener);
+  *http_connection_manager.mutable_route_config() =
+      default_server_route_config_;
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  // Set resources on the ADS service
+  balancers_[0]->ads_service()->SetRdsResource(new_route_config);
+  balancers_[0]->ads_service()->SetRdsResource(another_route_config);
+  SetServerListenerNameAndRouteConfiguration(0, listener, backends_[0]->port(),
+                                             default_server_route_config_);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
 using EdsTest = BasicTest;
@@ -9865,37 +9993,196 @@ class TimeoutTest : public XdsEnd2endTest {
       : XdsEnd2endTest(/* num_backends= */ 4, /* num_balancers= */ 1,
                        /*client_load_reporting_interval_seconds= */ 100,
                        /* xds_resource_does_not_exist_timeout_ms */ 500,
-                       /* use_xds_enabled_server= */ false) {}
+                       /* use_xds_enabled_server= */ false) {
+    StartAllBackends();
+  }
 };
 
-// Tests that LDS client times out when no response received.
-TEST_P(TimeoutTest, Lds) {
+TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kLdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
-TEST_P(TimeoutTest, Rds) {
+TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
+  balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
+  ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
+      << "This test cannot use bootstrap from channel args, because it "
+         "needs two channels to use the same XdsClient instance.";
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // Create second channel for a new server name.
+  // This should fail because there is no LDS resource for this server name.
+  auto channel2 =
+      CreateChannel(/*failover_timeout=*/0, "new-server.example.com");
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  RpcOptions rpc_options;
+  rpc_options.SetupRpc(&context, &request);
+  auto status =
+      SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+}
+
+TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kRdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
-// Tests that CDS client times out when no response received.
-TEST_P(TimeoutTest, Cds) {
+TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
+  balancers_[0]->ads_service()->UnsetResource(kRdsTypeUrl,
+                                              kDefaultRouteConfigurationName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
+  ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
+      << "This test cannot use bootstrap from channel args, because it "
+         "needs two channels to use the same XdsClient instance.";
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Add listener for 2nd channel, but no RDS resource.
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = default_listener_;
+  listener.set_name(kNewServerName);
+  HttpConnectionManager http_connection_manager =
+      ClientHcmAccessor().Unpack(listener);
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name("rds_resource_does_not_exist");
+  rds->mutable_config_source()->mutable_ads();
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // Create second channel for a new server name.
+  // This should fail because the LDS resource points to a non-existent RDS
+  // resource.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  RpcOptions rpc_options;
+  rpc_options.SetupRpc(&context, &request);
+  auto status =
+      SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+}
+
+TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
-TEST_P(TimeoutTest, Eds) {
+TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
+  balancers_[0]->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // Change route config to point to non-existing cluster.
+  const char* kNewClusterName = "new_cluster_name";
+  RouteConfiguration route_config = default_route_config_;
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  balancers_[0]->ads_service()->SetRdsResource(route_config);
+  // New cluster times out.
+  // May need to wait a bit for the change to propagate to the client.
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  bool error_seen = false;
+  do {
+    auto status = SendRpc();
+    if (status.error_code() == StatusCode::UNAVAILABLE) {
+      error_seen = true;
+      break;
+    }
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+  EXPECT_TRUE(error_seen);
+}
+
+TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancers_[0]->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
+  // No need to remove EDS resource, since the test suite does not add it
+  // by default.
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+}
+
+TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  // New cluster that points to a non-existant EDS resource.
+  const char* kNewClusterName = "new_cluster_name";
+  Cluster cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      "eds_service_name_does_not_exist");
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Now add a route pointing to the new cluster.
+  RouteConfiguration route_config = default_route_config_;
+  auto* route = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  *route_config.mutable_virtual_hosts(0)->add_routes() = *route;
+  route->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo1");
+  route->mutable_route()->set_cluster(kNewClusterName);
+  balancers_[0]->ads_service()->SetRdsResource(route_config);
+  // New EDS resource times out.
+  // May need to wait a bit for the RDS change to propagate to the client.
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  bool error_seen = false;
+  do {
+    auto status = SendRpc(RpcOptions().set_rpc_method(METHOD_ECHO1));
+    if (status.error_code() == StatusCode::UNAVAILABLE) {
+      error_seen = true;
+      break;
+    }
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+  EXPECT_TRUE(error_seen);
 }
 
 using LocalityMapTest = BasicTest;
@@ -12379,12 +12666,14 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
                          &TestTypeName);
 
 // We are only testing the server here.
-// TODO(yashykt): Also add a test type with set_enable_rds_testing() once we
-// start fetching non-inline resources.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
                          ::testing::Values(TestType()
                                                .set_use_fake_resolver()
-                                               .set_use_xds_credentials()),
+                                               .set_use_xds_credentials(),
+                                           TestType()
+                                               .set_use_fake_resolver()
+                                               .set_use_xds_credentials()
+                                               .set_enable_rds_testing()),
                          &TestTypeName);
 
 // EDS could be tested with or without XdsResolver, but the tests would
@@ -12398,9 +12687,13 @@ INSTANTIATE_TEST_SUITE_P(
 // Do this only for XdsResolver with RDS enabled, so that we can test
 // all resource types.
 // Run with V3 only, since the functionality is no different in V2.
-INSTANTIATE_TEST_SUITE_P(XdsTest, TimeoutTest,
-                         ::testing::Values(TestType().set_enable_rds_testing()),
-                         &TestTypeName);
+// Run with bootstrap from env var so that multiple channels share the same
+// XdsClient (needed for testing the timeout for the 2nd LDS and RDS resource).
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, TimeoutTest,
+    ::testing::Values(TestType().set_enable_rds_testing().set_bootstrap_source(
+        TestType::kBootstrapFromEnvVar)),
+    &TestTypeName);
 
 // XdsResolverOnlyTest depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(

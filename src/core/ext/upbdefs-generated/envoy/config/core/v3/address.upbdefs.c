@@ -8,30 +8,13 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/address.upbdefs.h"
+#include "envoy/config/core/v3/address.upb.h"
 
 extern upb_def_init envoy_config_core_v3_socket_option_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_Pipe_msginit;
-extern const upb_msglayout envoy_config_core_v3_EnvoyInternalAddress_msginit;
-extern const upb_msglayout envoy_config_core_v3_SocketAddress_msginit;
-extern const upb_msglayout envoy_config_core_v3_TcpKeepalive_msginit;
-extern const upb_msglayout envoy_config_core_v3_BindConfig_msginit;
-extern const upb_msglayout envoy_config_core_v3_Address_msginit;
-extern const upb_msglayout envoy_config_core_v3_CidrRange_msginit;
-
-static const upb_msglayout *layouts[7] = {
-  &envoy_config_core_v3_Pipe_msginit,
-  &envoy_config_core_v3_EnvoyInternalAddress_msginit,
-  &envoy_config_core_v3_SocketAddress_msginit,
-  &envoy_config_core_v3_TcpKeepalive_msginit,
-  &envoy_config_core_v3_BindConfig_msginit,
-  &envoy_config_core_v3_Address_msginit,
-  &envoy_config_core_v3_CidrRange_msginit,
-};
-
 static const char descriptor[1878] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'a', 'd', 
 'd', 'r', 'e', 's', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', 
 '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 
@@ -121,7 +104,7 @@ static upb_def_init *deps[6] = {
 
 upb_def_init envoy_config_core_v3_address_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_address_proto_upb_file_layout,
   "envoy/config/core/v3/address.proto",
   UPB_STRVIEW_INIT(descriptor, 1878)
 };

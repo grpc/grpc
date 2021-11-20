@@ -85,7 +85,7 @@ struct RegisteredCall {
 };
 
 struct CallRegistrationTable {
-  grpc_core::Mutex mu;
+  Mutex mu;
   // The map key should be owned strings rather than unowned char*'s to
   // guarantee that it outlives calls on the core channel (which may outlast the
   // C++ or other wrapped language Channel that registered these calls).

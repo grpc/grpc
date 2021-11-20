@@ -124,6 +124,8 @@ UPB_INLINE struct envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_resolver_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

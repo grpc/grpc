@@ -58,11 +58,6 @@ CONFIG = [
     '4',
     '',
     'x-endpoint-load-metrics-bin',
-    # channel arg keys
-    'grpc.wait_for_ready',
-    'grpc.timeout',
-    'grpc.max_request_message_bytes',
-    'grpc.max_response_message_bytes',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',
@@ -177,7 +172,6 @@ METADATA_BATCH_CALLOUTS = [
     'accept-encoding',
     'grpc-internal-encoding-request',
     'grpc-internal-stream-encoding-request',
-    'user-agent',
     'host',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
@@ -430,13 +424,13 @@ for i, elem in enumerate(all_strs):
 
 def slice_def_for_ctx(i):
     return (
-        'grpc_core::StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
+        'StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
     ) % (i, len(all_strs[i]), id2strofs[i])
 
 
 def slice_def(i):
     return (
-        'grpc_core::StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
+        'StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
     ) % (i, len(all_strs[i]), id2strofs[i])
 
 
@@ -452,7 +446,7 @@ for elem in METADATA_BATCH_CALLOUTS:
 static_slice_dest_assert = (
     'static_assert(std::is_trivially_destructible' +
     '<grpc_core::StaticMetadataSlice>::value, '
-    '"grpc_core::StaticMetadataSlice must be trivially destructible.");')
+    '"StaticMetadataSlice must be trivially destructible.");')
 print(static_slice_dest_assert, file=STR_H)
 print('#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs), file=STR_H)
 for i, elem in enumerate(all_strs):
@@ -475,7 +469,7 @@ extern const uint8_t g_static_metadata_bytes[];
 }
 ''',
       file=STR_H)
-print('grpc_slice_refcount grpc_core::StaticSliceRefcount::kStaticSubRefcount;',
+print('grpc_slice_refcount StaticSliceRefcount::kStaticSubRefcount;',
       file=STR_C)
 print('''
 StaticSliceRefcount
@@ -539,7 +533,7 @@ print('', file=STR_H)
 print('', file=STR_C)
 print('#define GRPC_STATIC_METADATA_INDEX(static_slice) \\', file=STR_H)
 print(
-    '(reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount)->index)',
+    '(reinterpret_cast<::grpc_core::StaticSliceRefcount*>((static_slice).refcount)->index)',
     file=STR_H)
 print('', file=STR_H)
 

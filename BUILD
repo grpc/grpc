@@ -18,6 +18,8 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
+    "grpc_upb_proto_library",
+    "grpc_upb_proto_reflection_library",
     "python_config_settings",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
@@ -535,7 +537,9 @@ grpc_cc_library(
         "grpc++_codegen_proto",
         "grpc_base",
         "grpc_codegen",
+        "grpc_credentials_util",
         "grpc_secure",
+        "grpc_security_base",
         "json",
         "ref_counted_ptr",
         "slice",
@@ -715,6 +719,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc++",
         "tsi",
+        "tsi_alts_credentials",
     ],
 )
 
@@ -866,6 +871,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
+        "protobuf_any_upb",
         "useful",
     ],
 )
@@ -1080,6 +1086,21 @@ grpc_cc_library(
         "gpr_platform",
         "poll",
         "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "arena_promise",
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/arena_promise.h",
+    ],
+    deps = [
+        "gpr_base",
+        "poll",
     ],
 )
 
@@ -1554,7 +1575,6 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-        "ref_counted",
     ],
 )
 
@@ -1565,6 +1585,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_string_helpers.cc",
     ],
     hdrs = [
+        "src/core/lib/slice/slice.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
     ],
@@ -2465,6 +2486,8 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_transport_chttp2_client_insecure",
         "orphanable",
+        "protobuf_duration_upb",
+        "protobuf_timestamp_upb",
         "ref_counted_ptr",
         "slice",
     ],
@@ -2505,27 +2528,19 @@ grpc_cc_library(
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpc_security_base",
         "grpc_transport_chttp2_client_secure",
         "orphanable",
+        "protobuf_duration_upb",
+        "protobuf_timestamp_upb",
         "ref_counted_ptr",
         "slice",
     ],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "rls_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
+    deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
 )
 
 grpc_cc_library(
@@ -2549,6 +2564,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_secure",
+        "grpc_security_base",
         "json",
         "json_util",
         "orphanable",
@@ -2570,6 +2586,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
+        "src/core/ext/xds/xds_routing.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
@@ -2585,6 +2602,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_http_fault_filter.h",
         "src/core/ext/xds/xds_http_filters.h",
+        "src/core/ext/xds/xds_routing.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
@@ -2613,14 +2631,22 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
+        "grpc_credentials_util",
         "grpc_fault_injection_filter",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_secure",
+        "grpc_security_base",
+        "grpc_tls_credentials",
         "grpc_transport_chttp2_client_secure",
         "json",
         "json_util",
         "orphanable",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_struct_upb",
+        "protobuf_timestamp_upb",
+        "protobuf_wrappers_upb",
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
@@ -2658,8 +2684,11 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_server_config_selector",
+        "grpc_server_config_selector_filter",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
+        "slice_refcount",
     ],
 )
 
@@ -2940,6 +2969,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_secure",
+        "grpc_security_base",
         "slice",
     ],
     alwayslink = 1,
@@ -3219,17 +3249,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_secure",
+    name = "grpc_httpcli_security_connector",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_base",
+        "grpc_security_base",
+        "ref_counted_ptr",
+        "tsi_ssl_credentials",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_secure",
+    srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/authorization/sdk_server_authz_filter.cc",
-        "src/core/lib/security/context/security_context.cc",
-        "src/core/lib/security/credentials/alts/alts_credentials.cc",
-        "src/core/lib/security/credentials/composite/composite_credentials.cc",
-        "src/core/lib/security/credentials/credentials.cc",
-        "src/core/lib/security/credentials/credentials_metadata.cc",
         "src/core/lib/security/credentials/external/aws_external_account_credentials.cc",
         "src/core/lib/security/credentials/external/aws_request_signer.cc",
         "src/core/lib/security/credentials/external/external_account_credentials.cc",
@@ -3240,36 +3283,11 @@ grpc_cc_library(
         "src/core/lib/security/credentials/google_default/google_default_credentials.cc",
         "src/core/lib/security/credentials/iam/iam_credentials.cc",
         "src/core/lib/security/credentials/insecure/insecure_credentials.cc",
-        "src/core/lib/security/credentials/jwt/json_token.cc",
-        "src/core/lib/security/credentials/jwt/jwt_credentials.cc",
-        "src/core/lib/security/credentials/jwt/jwt_verifier.cc",
         "src/core/lib/security/credentials/local/local_credentials.cc",
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
-        "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
-        "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc",
-        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
-        "src/core/lib/security/credentials/tls/tls_credentials.cc",
-        "src/core/lib/security/credentials/tls/tls_utils.cc",
-        "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
         "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
-        "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
-        "src/core/lib/security/security_connector/load_system_roots_linux.cc",
         "src/core/lib/security/security_connector/local/local_security_connector.cc",
-        "src/core/lib/security/security_connector/security_connector.cc",
-        "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
-        "src/core/lib/security/security_connector/ssl_utils.cc",
-        "src/core/lib/security/security_connector/ssl_utils_config.cc",
-        "src/core/lib/security/security_connector/tls/tls_security_connector.cc",
-        "src/core/lib/security/transport/client_auth_filter.cc",
-        "src/core/lib/security/transport/secure_endpoint.cc",
-        "src/core/lib/security/transport/security_handshaker.cc",
-        "src/core/lib/security/transport/server_auth_filter.cc",
-        "src/core/lib/security/transport/tsi_error.cc",
-        "src/core/lib/security/util/json_util.cc",
         "src/core/lib/surface/init_secure.cc",
     ],
     hdrs = [
@@ -3279,10 +3297,6 @@ grpc_cc_library(
         "src/core/lib/security/authorization/authorization_policy_provider.h",
         "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/sdk_server_authz_filter.h",
-        "src/core/lib/security/context/security_context.h",
-        "src/core/lib/security/credentials/alts/alts_credentials.h",
-        "src/core/lib/security/credentials/composite/composite_credentials.h",
-        "src/core/lib/security/credentials/credentials.h",
         "src/core/lib/security/credentials/external/aws_external_account_credentials.h",
         "src/core/lib/security/credentials/external/aws_request_signer.h",
         "src/core/lib/security/credentials/external/external_account_credentials.h",
@@ -3291,35 +3305,11 @@ grpc_cc_library(
         "src/core/lib/security/credentials/fake/fake_credentials.h",
         "src/core/lib/security/credentials/google_default/google_default_credentials.h",
         "src/core/lib/security/credentials/iam/iam_credentials.h",
-        "src/core/lib/security/credentials/jwt/json_token.h",
-        "src/core/lib/security/credentials/jwt/jwt_credentials.h",
-        "src/core/lib/security/credentials/jwt/jwt_verifier.h",
         "src/core/lib/security/credentials/local/local_credentials.h",
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
-        "src/core/lib/security/credentials/plugin/plugin_credentials.h",
-        "src/core/lib/security/credentials/ssl/ssl_credentials.h",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h",
-        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
-        "src/core/lib/security/credentials/tls/tls_credentials.h",
-        "src/core/lib/security/credentials/tls/tls_utils.h",
-        "src/core/lib/security/security_connector/alts/alts_security_connector.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.h",
-        "src/core/lib/security/security_connector/load_system_roots.h",
-        "src/core/lib/security/security_connector/load_system_roots_linux.h",
         "src/core/lib/security/security_connector/local/local_security_connector.h",
-        "src/core/lib/security/security_connector/security_connector.h",
-        "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
-        "src/core/lib/security/security_connector/ssl_utils.h",
-        "src/core/lib/security/security_connector/ssl_utils_config.h",
-        "src/core/lib/security/security_connector/tls/tls_security_connector.h",
-        "src/core/lib/security/transport/auth_filters.h",
-        "src/core/lib/security/transport/secure_endpoint.h",
-        "src/core/lib/security/transport/security_handshaker.h",
-        "src/core/lib/security/transport/tsi_error.h",
-        "src/core/lib/security/util/json_util.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",
@@ -3339,10 +3329,17 @@ grpc_cc_library(
         "config",
         "error",
         "gpr_base",
+        "grpc_alts_credentials",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
+        "grpc_credentials_util",
+        "grpc_httpcli_security_connector",
+        "grpc_jwt_credentials",
         "grpc_lb_xds_channel_args",
+        "grpc_security_base",
+        "grpc_ssl_credentials",
+        "grpc_tls_credentials",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "json",
@@ -3351,8 +3348,328 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "tsi",
-        "tsi_interface",
+        "tsi_base",
         "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "tsi_ssl_types",
+    hdrs = [
+        "src/core/tsi/ssl_types.h",
+    ],
+    external_deps = [
+        "libssl",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "tsi_base",
+    srcs = [
+        "src/core/tsi/transport_security.cc",
+        "src/core/tsi/transport_security_grpc.cc",
+    ],
+    hdrs = [
+        "src/core/tsi/transport_security.h",
+        "src/core/tsi/transport_security_grpc.h",
+        "src/core/tsi/transport_security_interface.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:tsi_interface"],
+    deps = [
+        "gpr",
+        "grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_security_base",
+    srcs = [
+        "src/core/lib/security/context/security_context.cc",
+        "src/core/lib/security/credentials/composite/composite_credentials.cc",
+        "src/core/lib/security/credentials/credentials.cc",
+        "src/core/lib/security/credentials/credentials_metadata.cc",
+        "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
+        "src/core/lib/security/security_connector/security_connector.cc",
+        "src/core/lib/security/transport/client_auth_filter.cc",
+        "src/core/lib/security/transport/secure_endpoint.cc",
+        "src/core/lib/security/transport/security_handshaker.cc",
+        "src/core/lib/security/transport/server_auth_filter.cc",
+        "src/core/lib/security/transport/tsi_error.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/context/security_context.h",
+        "src/core/lib/security/credentials/composite/composite_credentials.h",
+        "src/core/lib/security/credentials/credentials.h",
+        "src/core/lib/security/credentials/plugin/plugin_credentials.h",
+        "src/core/lib/security/security_connector/security_connector.h",
+        "src/core/lib/security/transport/auth_filters.h",
+        "src/core/lib/security/transport/secure_endpoint.h",
+        "src/core/lib/security/transport/security_handshaker.h",
+        "src/core/lib/security/transport/tsi_error.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/time",
+    ],
+    language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
+    visibility = ["@grpc:public"],
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_base",
+        "grpc_trace",
+        "json",
+        "ref_counted",
+        "ref_counted_ptr",
+        "tsi_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_credentials_util",
+    srcs = [
+        "src/core/lib/security/credentials/tls/tls_utils.cc",
+        "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
+        "src/core/lib/security/security_connector/load_system_roots_linux.cc",
+        "src/core/lib/security/util/json_util.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/tls/tls_utils.h",
+        "src/core/lib/security/security_connector/load_system_roots.h",
+        "src/core/lib/security/security_connector/load_system_roots_linux.h",
+        "src/core/lib/security/util/json_util.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/strings",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_security_base",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "tsi_alts_credentials",
+    srcs = [
+        "src/core/tsi/alts/crypt/aes_gcm.cc",
+        "src/core/tsi/alts/crypt/gsec.cc",
+        "src/core/tsi/alts/frame_protector/alts_counter.cc",
+        "src/core/tsi/alts/frame_protector/alts_crypter.cc",
+        "src/core/tsi/alts/frame_protector/alts_frame_protector.cc",
+        "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc",
+        "src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc",
+        "src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc",
+        "src/core/tsi/alts/frame_protector/frame_handler.cc",
+        "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
+        "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
+        "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc",
+        "src/core/tsi/alts/handshaker/alts_tsi_utils.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc",
+    ],
+    hdrs = [
+        "src/core/tsi/alts/crypt/gsec.h",
+        "src/core/tsi/alts/frame_protector/alts_counter.h",
+        "src/core/tsi/alts/frame_protector/alts_crypter.h",
+        "src/core/tsi/alts/frame_protector/alts_frame_protector.h",
+        "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h",
+        "src/core/tsi/alts/frame_protector/frame_handler.h",
+        "src/core/tsi/alts/handshaker/alts_handshaker_client.h",
+        "src/core/tsi/alts/handshaker/alts_shared_resource.h",
+        "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h",
+        "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
+        "src/core/tsi/alts/handshaker/alts_tsi_utils.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
+    ],
+    external_deps = [
+        "libssl",
+        "libcrypto",
+        "upb_lib",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "alts_util",
+        "config",
+        "error",
+        "gpr_base",
+        "grpc_base",
+        "tsi_base",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "tsi_ssl_credentials",
+    srcs = [
+        "src/core/lib/security/security_connector/ssl_utils.cc",
+        "src/core/lib/security/security_connector/ssl_utils_config.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
+        "src/core/tsi/ssl_transport_security.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/security_connector/ssl_utils.h",
+        "src/core/lib/security/security_connector/ssl_utils_config.h",
+        "src/core/tsi/ssl/session_cache/ssl_session.h",
+        "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
+        "src/core/tsi/ssl_transport_security.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "libssl",
+        "libcrypto",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_credentials_util",
+        "grpc_security_base",
+        "grpc_transport_chttp2_alpn",
+        "ref_counted_ptr",
+        "tsi_base",
+        "tsi_ssl_types",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_jwt_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/jwt/json_token.cc",
+        "src/core/lib/security/credentials/jwt/jwt_credentials.cc",
+        "src/core/lib/security/credentials/jwt/jwt_verifier.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/jwt/json_token.h",
+        "src/core/lib/security/credentials/jwt/jwt_credentials.h",
+        "src/core/lib/security/credentials/jwt/jwt_verifier.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_credentials_util",
+        "grpc_security_base",
+        "json",
+        "ref_counted",
+        "ref_counted_ptr",
+        "tsi_ssl_types",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_alts_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/alts/alts_credentials.cc",
+        "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/alts/alts_credentials.h",
+        "src/core/lib/security/security_connector/alts/alts_security_connector.h",
+    ],
+    external_deps = [
+        "libssl",
+        "upb_lib",
+        "upb_lib_descriptor",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "alts_util",
+        "gpr_base",
+        "grpc_base",
+        "grpc_security_base",
+        "ref_counted_ptr",
+        "tsi_alts_credentials",
+        "tsi_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_ssl_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
+        "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/ssl/ssl_credentials.h",
+        "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_credentials_util",
+        "grpc_security_base",
+        "grpc_transport_chttp2_alpn",
+        "ref_counted_ptr",
+        "tsi_base",
+        "tsi_ssl_credentials",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_tls_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc",
+        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
+        "src/core/lib/security/credentials/tls/tls_credentials.cc",
+        "src/core/lib/security/security_connector/tls/tls_security_connector.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h",
+        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
+        "src/core/lib/security/credentials/tls/tls_credentials.h",
+        "src/core/lib/security/security_connector/tls/tls_security_connector.h",
+    ],
+    external_deps = [
+        "absl/functional:bind_front",
+        "absl/strings",
+        "libssl",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_credentials_util",
+        "grpc_security_base",
+        "tsi_base",
+        "tsi_ssl_credentials",
     ],
 )
 
@@ -3612,7 +3929,6 @@ grpc_cc_library(
         "hpack_constants",
         "hpack_encoder_index",
         "hpack_encoder_table",
-        "match",
         "memory_quota",
         "popularity_count",
         "resource_quota_trace",
@@ -3684,6 +4000,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_secure",
+        "grpc_security_base",
         "grpc_transport_chttp2",
         "grpc_transport_chttp2_client_connector",
         "slice",
@@ -3748,6 +4065,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_secure",
+        "grpc_security_base",
         "grpc_transport_chttp2",
         "grpc_transport_chttp2_server",
         "ref_counted_ptr",
@@ -3774,66 +4092,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tsi_interface",
-    srcs = [
-        "src/core/tsi/transport_security.cc",
-    ],
-    hdrs = [
-        "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_interface.h",
-    ],
     language = "c++",
     visibility = ["@grpc:tsi_interface"],
     deps = [
         "gpr",
         "grpc_trace",
-    ],
-)
-
-grpc_cc_library(
-    name = "alts_frame_protector",
-    srcs = [
-        "src/core/tsi/alts/crypt/aes_gcm.cc",
-        "src/core/tsi/alts/crypt/gsec.cc",
-        "src/core/tsi/alts/frame_protector/alts_counter.cc",
-        "src/core/tsi/alts/frame_protector/alts_crypter.cc",
-        "src/core/tsi/alts/frame_protector/alts_frame_protector.cc",
-        "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc",
-        "src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc",
-        "src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc",
-        "src/core/tsi/alts/frame_protector/frame_handler.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc",
-    ],
-    hdrs = [
-        "src/core/tsi/alts/crypt/gsec.h",
-        "src/core/tsi/alts/frame_protector/alts_counter.h",
-        "src/core/tsi/alts/frame_protector/alts_crypter.h",
-        "src/core/tsi/alts/frame_protector/alts_frame_protector.h",
-        "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h",
-        "src/core/tsi/alts/frame_protector/frame_handler.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
-        "src/core/tsi/transport_security_grpc.h",
-    ],
-    external_deps = [
-        "libssl",
-        "libcrypto",
-    ],
-    language = "c++",
-    visibility = ["@grpc:alts_frame_protector"],
-    deps = [
-        "gpr_base",
-        "grpc_base",
-        "slice",
-        "tsi_interface",
-        "useful",
+        "tsi_base",
     ],
 )
 
@@ -3870,31 +4134,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi",
     srcs = [
-        "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
-        "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
-        "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc",
-        "src/core/tsi/alts/handshaker/alts_tsi_utils.cc",
         "src/core/tsi/fake_transport_security.cc",
         "src/core/tsi/local_transport_security.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
-        "src/core/tsi/ssl_transport_security.cc",
-        "src/core/tsi/transport_security_grpc.cc",
     ],
     hdrs = [
-        "src/core/tsi/alts/handshaker/alts_handshaker_client.h",
-        "src/core/tsi/alts/handshaker/alts_shared_resource.h",
-        "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h",
-        "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
-        "src/core/tsi/alts/handshaker/alts_tsi_utils.h",
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/local_transport_security.h",
-        "src/core/tsi/ssl/session_cache/ssl_session.h",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
-        "src/core/tsi/ssl_transport_security.h",
-        "src/core/tsi/ssl_types.h",
-        "src/core/tsi/transport_security_grpc.h",
     ],
     external_deps = [
         "libssl",
@@ -3905,13 +4150,15 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:tsi"],
     deps = [
-        "alts_frame_protector",
         "alts_util",
         "gpr_base",
         "grpc_base",
         "grpc_transport_chttp2_client_insecure",
         "slice",
-        "tsi_interface",
+        "tsi_alts_credentials",
+        "tsi_base",
+        "tsi_ssl_credentials",
+        "tsi_ssl_types",
         "useful",
     ],
 )
@@ -4437,6 +4684,11 @@ grpc_cc_library(
         "envoy_type_upb",
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_struct_upb",
+        "protobuf_timestamp_upb",
+        "protobuf_wrappers_upb",
         "udpa_annotations_upb",
         "xds_core_upb",
     ],
@@ -4640,6 +4892,11 @@ grpc_cc_library(
         "envoy_type_upb",
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_empty_upb",
+        "protobuf_struct_upb",
+        "protobuf_wrappers_upb",
         "udpa_annotations_upb",
         "xds_annotations_upb",
         "xds_core_upb",
@@ -4740,6 +4997,7 @@ grpc_cc_library(
         "envoy_annotations_upb",
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_wrappers_upb",
         "udpa_annotations_upb",
     ],
 )
@@ -4809,6 +5067,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "google_api_upb",
+        "protobuf_duration_upb",
+        "protobuf_timestamp_upb",
     ],
 )
 
@@ -4981,6 +5241,7 @@ grpc_cc_library(
     deps = [
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_any_upb",
         "udpa_annotations_upb",
         "xds_annotations_upb",
     ],
@@ -5038,6 +5299,7 @@ grpc_cc_library(
     deps = [
         "google_api_upb",
         "proto_gen_validate_upb",
+        "protobuf_struct_upb",
     ],
 )
 
@@ -5060,30 +5322,33 @@ grpc_cc_library(
     deps = [
         "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
+        "xds_type_upb",
     ],
 )
 
-# Once upb code-gen issue is resolved, replace grpc_health_upb with this.
-# grpc_upb_proto_library(
-#     name = "grpc_health_upb",
-#     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
-# )
-
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "grpc_health_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
+
+WELL_KNOWN_PROTO_TARGETS = [
+    "any",
+    "duration",
+    "empty",
+    "struct",
+    "timestamp",
+    "wrappers",
+]
+
+[grpc_upb_proto_library(
+    name = "protobuf_" + target + "_upb",
+    deps = ["@com_google_protobuf//:" + target + "_proto"],
+) for target in WELL_KNOWN_PROTO_TARGETS]
+
+[grpc_upb_proto_reflection_library(
+    name = "protobuf_" + target + "_upbdefs",
+    deps = ["@com_google_protobuf//:" + target + "_proto"],
+) for target in WELL_KNOWN_PROTO_TARGETS]
 
 # Once upb code-gen issue is resolved, remove this.
 grpc_cc_library(
@@ -5093,12 +5358,6 @@ grpc_cc_library(
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c",
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c",
         "src/core/ext/upb-generated/google/api/http.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
         "src/core/ext/upb-generated/google/rpc/status.upb.c",
     ],
     hdrs = [
@@ -5106,12 +5365,6 @@ grpc_cc_library(
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h",
         "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h",
         "src/core/ext/upb-generated/google/api/http.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
         "src/core/ext/upb-generated/google/rpc/status.upb.h",
     ],
     external_deps = [
@@ -5120,6 +5373,14 @@ grpc_cc_library(
         "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
     ],
     language = "c++",
+    deps = [
+        "protobuf_any_upb",
+        "protobuf_duration_upb",
+        "protobuf_empty_upb",
+        "protobuf_struct_upb",
+        "protobuf_timestamp_upb",
+        "protobuf_wrappers_upb",
+    ],
 )
 
 grpc_cc_library(
@@ -5127,23 +5388,11 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c",
         "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c",
     ],
     hdrs = [
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/api/http.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.h",
         "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h",
     ],
     external_deps = [
@@ -5156,32 +5405,18 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "google_api_upb",
+        "protobuf_any_upbdefs",
+        "protobuf_duration_upbdefs",
+        "protobuf_empty_upbdefs",
+        "protobuf_struct_upbdefs",
+        "protobuf_timestamp_upbdefs",
+        "protobuf_wrappers_upbdefs",
     ],
 )
 
-# Once upb code-gen issue is resolved, replace grpc_lb_upb with this.
-# grpc_upb_proto_library(
-#     name = "grpc_lb_upb",
-#     deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
-# )
-
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "google_api_upb",
-    ],
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
 )
 
 # Once upb code-gen issue is resolved, replace meshca_upb with this.
@@ -5204,33 +5439,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "google_api_upb",
+        "protobuf_duration_upb",
     ],
 )
 
-# Once upb code-gen issue is resolved, replace alts_upb with this.
-# grpc_upb_proto_library(
-#     name = "alts_upb",
-#     deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
-# )
-
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "alts_upb",
-    srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
+    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
 )
 
 grpc_cc_library(

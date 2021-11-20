@@ -175,6 +175,8 @@ UPB_INLINE void envoy_type_matcher_v3_RegexMatchAndSubstitute_set_substitution(e
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 
+extern const upb_msglayout_file envoy_type_matcher_v3_regex_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

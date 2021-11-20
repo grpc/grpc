@@ -8,16 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit,
-};
-
 static const char descriptor[389] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'c', 'l', 'u', 's', 't', 'e', 
 'r', 's', '/', 'a', 'g', 'g', 'r', 'e', 'g', 'a', 't', 'e', '/', 'v', '3', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '&', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'c', 'l', 
@@ -45,7 +40,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout,
   "envoy/extensions/clusters/aggregate/v3/cluster.proto",
   UPB_STRVIEW_INIT(descriptor, 389)
 };

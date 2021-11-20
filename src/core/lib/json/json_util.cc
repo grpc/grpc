@@ -30,7 +30,7 @@ bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();
   if (field.string_value()[len - 1] != 's') return false;
-  grpc_core::UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
+  UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
   *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf.get(), '.');
   int nanos = 0;

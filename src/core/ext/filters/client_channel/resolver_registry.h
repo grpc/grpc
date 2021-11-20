@@ -76,8 +76,7 @@ class ResolverRegistry {
   static std::string GetDefaultAuthority(absl::string_view target);
 
   /// Returns \a target with the default prefix prepended, if needed.
-  static grpc_core::UniquePtr<char> AddDefaultPrefixIfNeeded(
-      const char* target);
+  static UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target);
 
   /// Returns the resolver factory for \a scheme.
   /// Caller does NOT own the return value.

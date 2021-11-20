@@ -122,7 +122,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     }
 
     template <typename T, typename V>
-    void Encode(T, V) {
+    void Encode(T, const V&) {
       abort();  // not implemented
     }
 
