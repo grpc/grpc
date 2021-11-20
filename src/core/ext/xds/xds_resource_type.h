@@ -30,6 +30,8 @@
 
 namespace grpc_core {
 
+// Interface for an xDS resource type.
+// Used to inject type-specific logic into XdsClient.
 class XdsResourceType {
  public:
   // A base type for resource data.
@@ -76,66 +78,31 @@ class XdsResourceType {
   // interpreted as a deletion of that resource.
   virtual bool AllResourcesRequiredInSotW() const { return false; }
 
-  // Convenient method for checking if a resource type matches this type.
-  bool IsType(absl::string_view resource_type, bool* is_v2) const {
-    if (resource_type == type_url()) return true;
-    if (resource_type == v2_type_url()) {
-      if (is_v2 != nullptr) *is_v2 = true;
-      return true;
-    }
-    return false;
-  }
+  // Convenience method for checking if resource_type matches this type.
+  // Checks against both type_url() and v2_type_url().
+  // If is_v2 is non-null, it will be set to true if matching v2_type_url().
+  bool IsType(absl::string_view resource_type, bool* is_v2) const;
 };
 
+// Global registry of xDS resource types.
 class XdsResourceTypeRegistry {
  public:
-  static XdsResourceTypeRegistry* GetOrCreate() {
-    static gpr_once once = GPR_ONCE_INIT;
-    gpr_once_init(&once, Create);
-    return g_registry_;
-  }
+  // Gets the global registry, creating it if needed.
+  static XdsResourceTypeRegistry* GetOrCreate();
 
-  const XdsResourceType* GetType(absl::string_view resource_type) {
-    auto it = resource_types_.find(resource_type);
-    if (it != resource_types_.end()) return it->second.get();
-    auto it2 = v2_resource_types_.find(resource_type);
-    if (it2 != v2_resource_types_.end()) return it2->second;
-    return nullptr;
-  }
+  // Gets the type for resource_type, or null if the type is unknown.
+  const XdsResourceType* GetType(absl::string_view resource_type);
 
-  void RegisterType(std::unique_ptr<XdsResourceType> resource_type) {
-    GPR_ASSERT(resource_types_.find(resource_type->type_url()) ==
-               resource_types_.end());
-    GPR_ASSERT(v2_resource_types_.find(resource_type->v2_type_url()) ==
-               v2_resource_types_.end());
-    v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type.get());
-    resource_types_.emplace(resource_type->type_url(), std::move(resource_type));
-  }
+  // Registers a resource type.
+  // All types must be registered before they can be used in the XdsClient.
+  void RegisterType(std::unique_ptr<XdsResourceType> resource_type);
 
  private:
-  static void Create() { g_registry_ = new XdsResourceTypeRegistry(); }
-
   std::map<absl::string_view /*resource_type*/, std::unique_ptr<XdsResourceType>>
       resource_types_;
   std::map<absl::string_view /*v2_resource_type*/, XdsResourceType*>
       v2_resource_types_;
-
-  static XdsResourceTypeRegistry* g_registry_;
 };
-
-// FIXME: maybe move the ResourceName code back to xds_client.cc?
-
-struct XdsResourceName {
-  std::string authority;
-  std::string id;
-};
-
-absl::StatusOr<XdsResourceName> ParseXdsResourceName(absl::string_view name,
-                                                     const XdsResourceType* type);
-
-std::string ConstructFullXdsResourceName(absl::string_view authority,
-                                         absl::string_view resource_type,
-                                         absl::string_view id);
 
 }  // namespace grpc_core
 

@@ -27,42 +27,37 @@
 
 namespace grpc_core {
 
-XdsResourceTypeRegistry* XdsResourceTypeRegistry::g_registry_ = nullptr;
-
-absl::StatusOr<XdsResourceName> ParseXdsResourceName(absl::string_view name,
-                                                     const XdsResourceType* type) {
-  // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
-    return XdsResourceName{"old:", std::string(name)};
+bool XdsResourceType::IsType(absl::string_view resource_type, bool* is_v2) const {
+  if (resource_type == type_url()) return true;
+  if (resource_type == v2_type_url()) {
+    if (is_v2 != nullptr) *is_v2 = true;
+    return true;
   }
-  // New style name.  Parse URI.
-  auto uri = URI::Parse(name);
-  if (!uri.ok()) return uri.status();
-  // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (!type->IsType(path_parts.first, nullptr)) {
-    return absl::InvalidArgumentError(
-        "xdstp URI path must indicate valid xDS resource type");
-  }
-  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
-      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
-  std::sort(query_parameters.begin(), query_parameters.end());
-  return XdsResourceName{
-      absl::StrCat("xdstp:", uri->authority()),
-      absl::StrCat(
-          path_parts.second, (query_parameters.empty() ? "?" : ""),
-          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
+  return false;
 }
 
-std::string ConstructFullXdsResourceName(absl::string_view authority,
-                                         absl::string_view resource_type,
-                                         absl::string_view id) {
-  if (absl::ConsumePrefix(&authority, "xdstp:")) {
-    return absl::StrCat("xdstp://", authority, "/", resource_type, "/", id);
-  }
-  return std::string(id);
+XdsResourceTypeRegistry* XdsResourceTypeRegistry::GetOrCreate() {
+  static XdsResourceTypeRegistry* registry = new XdsResourceTypeRegistry();
+  return registry;
+}
+
+const XdsResourceType* XdsResourceTypeRegistry::GetType(
+    absl::string_view resource_type) {
+  auto it = resource_types_.find(resource_type);
+  if (it != resource_types_.end()) return it->second.get();
+  auto it2 = v2_resource_types_.find(resource_type);
+  if (it2 != v2_resource_types_.end()) return it2->second;
+  return nullptr;
+}
+
+void XdsResourceTypeRegistry::RegisterType(
+    std::unique_ptr<XdsResourceType> resource_type) {
+  GPR_ASSERT(resource_types_.find(resource_type->type_url()) ==
+             resource_types_.end());
+  GPR_ASSERT(v2_resource_types_.find(resource_type->v2_type_url()) ==
+             v2_resource_types_.end());
+  v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type.get());
+  resource_types_.emplace(resource_type->type_url(), std::move(resource_type));
 }
 
 }  // namespace grpc_core

@@ -268,8 +268,8 @@ class XdsClient::ChannelState::AdsCallState
             GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
                 "timeout obtaining resource {type=%s name=%s} from xds server",
                 type_->type_url(),
-                ConstructFullXdsResourceName(name_.authority, type_->type_url(),
-                                             name_.id)));
+                XdsClient::ConstructFullXdsResourceName(
+                    name_.authority, type_->type_url(), name_.id)));
         watcher_error = grpc_error_set_int(
             watcher_error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -800,7 +800,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     return;
   }
   // Check the resource name.
-  auto resource_name = ParseXdsResourceName(result->name, result_.type);
+  auto resource_name = XdsClient::ParseXdsResourceName(result->name, result_.type);
   if (!resource_name.ok()) {
     result_.errors.emplace_back(absl::StrCat(
         "resource index ", idx, ": Cannot parse xDS resource name \"",
@@ -2004,6 +2004,42 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   CancelResourceWatch(
       XdsResourceTypeRegistry::GetOrCreate()->GetType(XdsApi::kEdsTypeUrl),
       eds_service_name, watcher, delay_unsubscription);
+}
+
+absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
+    absl::string_view name, const XdsResourceType* type) {
+  // Old-style names use the empty string for authority.
+  // authority is prefixed with "old:" to indicate that it's an old-style name.
+  if (!absl::StartsWith(name, "xdstp:")) {
+    return XdsResourceName{"old:", std::string(name)};
+  }
+  // New style name.  Parse URI.
+  auto uri = URI::Parse(name);
+  if (!uri.ok()) return uri.status();
+  // Split the resource type off of the path to get the id.
+  std::pair<absl::string_view, absl::string_view> path_parts =
+      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
+  if (!type->IsType(path_parts.first, nullptr)) {
+    return absl::InvalidArgumentError(
+        "xdstp URI path must indicate valid xDS resource type");
+  }
+  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
+      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
+  std::sort(query_parameters.begin(), query_parameters.end());
+  return XdsResourceName{
+      absl::StrCat("xdstp:", uri->authority()),
+      absl::StrCat(
+          path_parts.second, (query_parameters.empty() ? "?" : ""),
+          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
+}
+
+std::string XdsClient::ConstructFullXdsResourceName(
+    absl::string_view authority, absl::string_view resource_type,
+    absl::string_view id) {
+  if (absl::ConsumePrefix(&authority, "xdstp:")) {
+    return absl::StrCat("xdstp://", authority, "/", resource_type, "/", id);
+  }
+  return std::string(id);
 }
 
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(

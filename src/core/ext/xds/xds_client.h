@@ -239,6 +239,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
       const grpc_channel_args& args);
 
  private:
+  struct XdsResourceName {
+    std::string authority;
+    std::string id;
+  };
+
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
   class ChannelState : public DualRefCounted<ChannelState> {
@@ -336,6 +341,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnErrorLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  static absl::StatusOr<XdsResourceName> ParseXdsResourceName(
+      absl::string_view name, const XdsResourceType* type);
+  static std::string ConstructFullXdsResourceName(absl::string_view authority,
+                                                  absl::string_view resource_type,
+                                                  absl::string_view id);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters)
