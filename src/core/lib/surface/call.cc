@@ -940,7 +940,6 @@ static int prepare_application_metadata(grpc_call* call, int count,
     }
     GRPC_LOG_IF_ERROR("prepare_application_metadata", error);
   }
-  call->send_extra_metadata_count = 0;
 
   return 1;
 }
@@ -1670,6 +1669,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                               call->send_initial_metadata.LinkTail(
                                   &call->send_extra_metadata[i]));
           }
+          call->send_extra_metadata_count = 0;
         }
         if (!prepare_application_metadata(
                 call, static_cast<int>(op->data.send_initial_metadata.count),
