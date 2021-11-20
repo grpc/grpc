@@ -146,19 +146,6 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
   return type_url;
 }
 
-std::string TypeUrlInternalToExternal(absl::string_view type_url) {
-  if (type_url == kLdsV2TypeUrl) {
-    return XdsApi::kLdsTypeUrl;
-  } else if (type_url == kRdsV2TypeUrl) {
-    return XdsApi::kRdsTypeUrl;
-  } else if (type_url == kCdsV2TypeUrl) {
-    return XdsApi::kCdsTypeUrl;
-  } else if (type_url == kEdsV2TypeUrl) {
-    return XdsApi::kEdsTypeUrl;
-  }
-  return std::string(type_url);
-}
-
 }  // namespace
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
@@ -490,7 +477,7 @@ absl::Status XdsApi::ParseAdsResponse(
   MaybeLogDiscoveryResponse(context, response);
   // Report the type_url, version, nonce, and number of resources to the parser.
   AdsResponseParserInterface::AdsResponseFields fields;
-  fields.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
+  fields.type_url = std::string(absl::StripPrefix(
       UpbStringToAbsl(
           envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
       "type.googleapis.com/"));
