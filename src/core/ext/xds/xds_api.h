@@ -49,6 +49,7 @@ class XdsClient;
 
 class XdsApi {
  public:
+// FIXME: remove all resource-type-specific APIs and types here
   static const char* kLdsTypeUrl;
   static const char* kRdsTypeUrl;
   static const char* kCdsTypeUrl;
@@ -137,6 +138,7 @@ class XdsApi {
   };
   using ResourceMetadataMap =
       std::map<std::string /*resource_name*/, const ResourceMetadata*>;
+// FIXME: change key type to const XdsResourceType*
   using ResourceTypeMetadataMap =
       std::map<absl::string_view /*type_url*/, ResourceMetadataMap>;
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
@@ -160,6 +162,7 @@ class XdsApi {
     std::string type_url;
     std::string version;
     std::string nonce;
+    size_t num_resources;
   };
 
   class AdsResponseParserInterface {
@@ -171,28 +174,9 @@ class XdsApi {
     virtual bool ProcessAdsResponseFields(AdsResponseFields fields) = 0;
 
     // Called to parse each individual resource in the ADS response.
-    // If this returns false, parsing will stop.
-    virtual bool ParseResource(size_t idx, absl::string_view type_url,
+    virtual void ParseResource(const XdsEncodingContext& context,
+                               size_t idx, absl::string_view type_url,
                                absl::string_view serialized_resource) = 0;
-  };
-
-  // If the response can't be parsed at the top level, the resulting
-  // type_url will be empty.
-  // If there is any other type of validation error, the parse_error
-  // field will be set to something other than GRPC_ERROR_NONE and the
-  // resource_names_failed field will be populated.
-  // Otherwise, one of the *_update_map fields will be populated, based
-  // on the type_url field.
-  struct AdsParseResult {
-    grpc_error_handle parse_error = GRPC_ERROR_NONE;
-    std::string version;
-    std::string nonce;
-    std::string type_url;
-    LdsUpdateMap lds_update_map;
-    RdsUpdateMap rds_update_map;
-    CdsUpdateMap cds_update_map;
-    EdsUpdateMap eds_update_map;
-    std::set<ResourceName> resource_names_failed;
   };
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
@@ -218,27 +202,11 @@ class XdsApi {
   // Creates an ADS request.
   // Takes ownership of \a error.
   grpc_slice CreateAdsRequest(
-      const XdsBootstrap::XdsServer& server, const std::string& type_url,
+      const XdsBootstrap::XdsServer& server, absl::string_view type_url,
+      absl::string_view version, absl::string_view nonce,
       const std::map<absl::string_view /*authority*/,
                      std::set<absl::string_view /*name*/>>& resource_names,
-      const std::string& version, const std::string& nonce,
       grpc_error_handle error, bool populate_node);
-
-  // Parses an ADS response.
-  AdsParseResult ParseAdsResponse(
-      const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-      const std::map<absl::string_view /*authority*/,
-                     std::set<absl::string_view /*name*/>>&
-          subscribed_listener_names,
-      const std::map<absl::string_view /*authority*/,
-                     std::set<absl::string_view /*name*/>>&
-          subscribed_route_config_names,
-      const std::map<absl::string_view /*authority*/,
-                     std::set<absl::string_view /*name*/>>&
-          subscribed_cluster_names,
-      const std::map<absl::string_view /*authority*/,
-                     std::set<absl::string_view /*name*/>>&
-          subscribed_eds_service_names);
 
   // Returns non-OK when failing to deserialize response message.
   // Otherwise, all events are reported to the parser.

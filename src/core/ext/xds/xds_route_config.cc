@@ -960,7 +960,7 @@ XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Listener resource.");
+    return absl::InvalidArgumentError("Can't parse RouteConfiguration resource.");
   }
   MaybeLogRouteConfiguration(context, resource);
   // Validate resource.
@@ -971,9 +971,21 @@ XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
   grpc_error_handle error = XdsRouteConfigResource::Parse(
       context, resource, &route_config_data->resource);
   if (error != GRPC_ERROR_NONE) {
-    result.resource = absl::InvalidArgumentError(grpc_error_std_string(error));
+    std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+        gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
+      gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
+              context.client, result.name.c_str(), error_str.c_str());
+    }
+    result.resource = absl::InvalidArgumentError(error_str);
   } else {
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+        gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      gpr_log(GPR_ERROR, "[xds_client %p] parsed RouteConfiguration %s: %s",
+              context.client, result.name.c_str(),
+              route_config_data->resource.ToString().c_str());
+    }
     result.resource = std::move(route_config_data);
   }
   return std::move(result);

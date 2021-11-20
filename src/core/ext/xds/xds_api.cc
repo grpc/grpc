@@ -149,7 +149,7 @@ bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
 }
 
 absl::string_view TypeUrlExternalToInternal(bool use_v3,
-                                            const std::string& type_url) {
+                                            absl::string_view type_url) {
   if (!use_v3) {
     if (type_url == XdsApi::kLdsTypeUrl) {
       return kLdsV2TypeUrl;
@@ -468,10 +468,10 @@ grpc_slice SerializeDiscoveryRequest(
 }  // namespace
 
 grpc_slice XdsApi::CreateAdsRequest(
-    const XdsBootstrap::XdsServer& server, const std::string& type_url,
+    const XdsBootstrap::XdsServer& server, absl::string_view type_url,
+    absl::string_view version, absl::string_view nonce,
     const std::map<absl::string_view /*authority*/,
                    std::set<absl::string_view /*name*/>>& resource_names,
-    const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
@@ -567,110 +567,11 @@ void MaybeLogDiscoveryResponse(
   }
 }
 
-grpc_error_handle AdsResourceParse(
-    const XdsEncodingContext& context, XdsResourceType* type, size_t idx,
-    const google_protobuf_Any* resource_any,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_resource_names,
-    std::function<grpc_error_handle(
-        absl::string_view, XdsApi::ResourceName,
-        std::unique_ptr<XdsResourceType::ResourceData>, std::string)>
-        add_result_func,
-    std::set<XdsApi::ResourceName>* resource_names_failed) {
-  // Check the type_url of the resource.
-  absl::string_view type_url = absl::StripPrefix(
-      UpbStringToAbsl(google_protobuf_Any_type_url(resource_any)),
-      "type.googleapis.com/");
-  bool is_v2 = false;
-  if (!type->IsType(type_url, &is_v2)) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("resource index ", idx, ": found resource type ", type_url,
-                     " in response for type ", type->type_url()));
-  }
-  // Parse the resource.
-  absl::string_view serialized_resource =
-      UpbStringToAbsl(google_protobuf_Any_value(resource_any));
-  absl::StatusOr<XdsResourceType::DecodeResult> result =
-      type->Decode(context, serialized_resource, is_v2);
-  if (!result.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("resource index ", idx, ": ", result.status().ToString()));
-  }
-  // Check the resource name.
-  auto resource_name = ParseResourceNameInternal(
-      result->name, [type](absl::string_view type_url, bool* is_v2) {
-        return type->IsType(type_url, is_v2);
-      });
-  if (!resource_name.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "resource index ", idx, ": Cannot parse xDS resource name \"",
-        result->name, "\""));
-  }
-  // Ignore unexpected names.
-  auto iter = subscribed_resource_names.find(resource_name->authority);
-  if (iter == subscribed_resource_names.end() ||
-      iter->second.find(resource_name->id) == iter->second.end()) {
-    return GRPC_ERROR_NONE;
-  }
-  // Check that resource was valid.
-  if (!result->resource.ok()) {
-    resource_names_failed->insert(*resource_name);
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "resource index ", idx, ": ", result->name,
-        ": validation error: ", result->resource.status().ToString()));
-  }
-  // Add result.
-  grpc_error_handle error = add_result_func(result->name, *resource_name,
-                                            std::move(*result->resource),
-                                            std::string(serialized_resource));
-  if (error != GRPC_ERROR_NONE) {
-    resource_names_failed->insert(*resource_name);
-    return grpc_error_add_child(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-            "resource index ", idx, ": ", result->name, ": validation error")),
-        error);
-  }
-  return GRPC_ERROR_NONE;
-}
-
-template <typename UpdateMap, typename ResourceTypeData>
-grpc_error_handle AddResult(
-    UpdateMap* update_map, absl::string_view resource_name_string,
-    XdsApi::ResourceName resource_name,
-    std::unique_ptr<XdsResourceType::ResourceData> resource,
-    std::string serialized_resource) {
-  // Reject duplicate names.
-  if (update_map->find(resource_name) != update_map->end()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("duplicate resource name \"", resource_name_string, "\""));
-  }
-  // Save result.
-  auto& resource_data = (*update_map)[resource_name];
-  ResourceTypeData* typed_resource =
-      static_cast<ResourceTypeData*>(resource.get());
-  resource_data.resource = std::move(typed_resource->resource);
-  resource_data.serialized_proto = std::move(serialized_resource);
-  return GRPC_ERROR_NONE;
-}
-
 }  // namespace
 
-XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
+absl::Status XdsApi::ParseAdsResponse(
     const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_listener_names,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_route_config_names,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_cluster_names,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_eds_service_names) {
-  AdsParseResult result;
+    AdsResponseParserInterface* parser) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
                                       tracer_,
@@ -683,123 +584,12 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
-  // If decoding fails, output an empty type_url and return.
-  if (response == nullptr) {
-    result.parse_error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode DiscoveryResponse.");
-    return result;
-  }
-  MaybeLogDiscoveryResponse(context, response);
-  // Record the type_url, the version_info, and the nonce of the response.
-  result.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
-      UpbStringToAbsl(
-          envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
-      "type.googleapis.com/"));
-  result.version = UpbStringToStdString(
-      envoy_service_discovery_v3_DiscoveryResponse_version_info(response));
-  result.nonce = UpbStringToStdString(
-      envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
-  // Get the resources from the response.
-  std::vector<grpc_error_handle> errors;
-  size_t size;
-  const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
-  for (size_t i = 0; i < size; ++i) {
-    // Parse the response according to the resource type.
-    // TODO(roth): When we have time, change the API here to avoid the need
-    // for templating and conditionals.
-    grpc_error_handle parse_error = GRPC_ERROR_NONE;
-    if (IsLds(result.type_url)) {
-      XdsListenerResourceType resource_type;
-      auto& update_map = result.lds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i], subscribed_listener_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<LdsUpdateMap,
-                             XdsListenerResourceType::ListenerData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    } else if (IsRds(result.type_url)) {
-      XdsRouteConfigResourceType resource_type;
-      auto& update_map = result.rds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i],
-          subscribed_route_config_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<RdsUpdateMap,
-                             XdsRouteConfigResourceType::RouteConfigData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    } else if (IsCds(result.type_url)) {
-      XdsClusterResourceType resource_type;
-      auto& update_map = result.cds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i], subscribed_cluster_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<CdsUpdateMap, XdsClusterResourceType::ClusterData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    } else if (IsEds(result.type_url)) {
-      XdsEndpointResourceType resource_type;
-      auto& update_map = result.eds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i],
-          subscribed_eds_service_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<EdsUpdateMap,
-                             XdsEndpointResourceType::EndpointData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    }
-    if (parse_error != GRPC_ERROR_NONE) errors.push_back(parse_error);
-  }
-  result.parse_error =
-      GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing ADS response", &errors);
-  return result;
-}
-
-absl::Status XdsApi::ParseAdsResponse(
-    const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-    AdsResponseParserInterface* parser) {
-  AdsParseResult result;
-  upb::Arena arena;
-  const EncodingContext context = {client_,
-                                   tracer_,
-                                   symtab_.ptr(),
-                                   arena.ptr(),
-                                   server.ShouldUseV3(),
-                                   certificate_provider_definition_map_};
-  // Decode the response.
-  const envoy_service_discovery_v3_DiscoveryResponse* response =
-      envoy_service_discovery_v3_DiscoveryResponse_parse(
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
-          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
   // If decoding fails, report a fatal error and return.
   if (response == nullptr) {
     return absl::InvalidArgumentError("Can't decode DiscoveryResponse.");
   }
   MaybeLogDiscoveryResponse(context, response);
-  // Report the type_url, the version_info, and the nonce of the response.
+  // Report the type_url, version, nonce, and number of resources to the parser.
   AdsResponseFields fields;
   fields.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
       UpbStringToAbsl(
@@ -809,18 +599,22 @@ absl::Status XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_version_info(response));
   fields.nonce = UpbStringToStdString(
       envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
-  parser->ProcessAdsResponseFields(std::move(fields));
-  // Get the resources from the response.
   size_t num_resources;
   const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
+      envoy_service_discovery_v3_DiscoveryResponse_resources(response,
+                                                             &num_resources);
+  fields.num_resources = num_resources;
+  if (!parser->ProcessAdsResponseFields(std::move(fields))) {
+    return absl::OkStatus();
+  }
+  // Process each resource.
   for (size_t i = 0; i < num_resources; ++i) {
     absl::string_view type_url = absl::StripPrefix(
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i])),
         "type.googleapis.com/");
     absl::string_view serialized_resource =
         UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
-    if (!parser->ParseResource(i, type_url, serialized_resource)) break;
+    parser->ParseResource(context, i, type_url, serialized_resource);
   }
   return absl::OkStatus();
 }

@@ -60,6 +60,16 @@ class XdsResourceType {
       const XdsEncodingContext& context, absl::string_view serialized_resource,
       bool is_v2) const = 0;
 
+  // Returns true if r1 and r2 are equal.
+  // Must be invoked only on resources returned by this object's Decode() method.
+  virtual bool ResourcesEqual(const ResourceData* r1, const ResourceData* r2)
+      const = 0;
+
+  // Returns a copy of resource.
+  // Must be invoked only on resources returned by this object's Decode() method.
+  virtual std::unique_ptr<ResourceData> CopyResource(const ResourceData* resource)
+      const = 0;
+
   // Indicates whether the resource type requires that all resources must
   // be present in every SotW response from the server.  If true, a
   // response that does not include a previously seen resource will be
@@ -89,7 +99,7 @@ class XdsResourceTypeRegistry {
     auto it = resource_types_.find(resource_type);
     if (it != resource_types_.end()) return it->second.get();
     auto it2 = v2_resource_types_.find(resource_type);
-    if (it2 != v2_resource_types_.end()) return it2->second.get();
+    if (it2 != v2_resource_types_.end()) return it2->second;
     return nullptr;
   }
 
@@ -110,8 +120,22 @@ class XdsResourceTypeRegistry {
   std::map<absl::string_view /*v2_resource_type*/, XdsResourceType*>
       v2_resource_types_;
 
-  static XdsResourceTypeRegistry* g_registry_ = nullptr;
+  static XdsResourceTypeRegistry* g_registry_;
 };
+
+// FIXME: maybe move the ResourceName code back to xds_client.cc?
+
+struct XdsResourceName {
+  std::string authority;
+  std::string id;
+};
+
+absl::StatusOr<XdsResourceName> ParseXdsResourceName(absl::string_view name,
+                                                     const XdsResourceType* type);
+
+std::string ConstructFullXdsResourceName(absl::string_view authority,
+                                         absl::string_view resource_type,
+                                         absl::string_view id);
 
 }  // namespace grpc_core
 

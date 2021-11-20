@@ -203,6 +203,21 @@ class XdsListenerResourceType : public XdsResourceType {
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
+
+  bool ResourcesEqual(const ResourceData* r1, const ResourceData* r2)
+      const override {
+    return static_cast<const ListenerData*>(r1)->resource ==
+           static_cast<const ListenerData*>(r2)->resource;
+  }
+
+  std::unique_ptr<ResourceData> CopyResource(const ResourceData* resource)
+      const override {
+    auto resource_copy = absl::make_unique<ListenerData>();
+    resource_copy->resource = static_cast<const ListenerData*>(resource)->resource;
+    return resource_copy;
+  }
+
+  bool AllResourcesRequiredInSotW() const override { return true; }
 };
 
 }  // namespace grpc_core
