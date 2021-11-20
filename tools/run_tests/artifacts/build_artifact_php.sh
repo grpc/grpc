@@ -20,6 +20,7 @@ cd "$(dirname "$0")/../../.."
 mkdir -p "${ARTIFACTS_OUT}"
 
 # Build the PHP extension archive (this just zips all the files up)
+export MAKEFLAGS="-j $(nproc)"
 pear package
 
 cp -r grpc-*.tgz "${ARTIFACTS_OUT}"/

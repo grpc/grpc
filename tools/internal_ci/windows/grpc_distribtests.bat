@@ -21,7 +21,7 @@ call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 powershell -Command "mv %KOKORO_GFILE_DIR%\github\grpc\artifacts input_artifacts"
 dir input_artifacts
 
-python tools/run_tests/task_runner.py -f distribtest windows -j 4
+python tools/run_tests/task_runner.py -f distribtest windows -j 16
 set RUNTESTS_EXITCODE=%errorlevel%
 
 bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
