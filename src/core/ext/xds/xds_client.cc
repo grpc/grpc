@@ -1864,7 +1864,8 @@ void XdsClient::WatchResource(const XdsResourceType* type, absl::string_view nam
   }
   {
     MutexLock lock(&mu_);
-// FIXME: maybe don't create authority map entry if it doesn't already exist?
+    // TODO(donnadionne): If we get a request for an authority that is not
+    // configured in the bootstrap file, reject it.
     AuthorityState& authority_state =
         authority_state_map_[resource_name->authority];
     ResourceState& resource_state =
