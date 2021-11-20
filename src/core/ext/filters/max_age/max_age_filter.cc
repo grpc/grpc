@@ -68,11 +68,11 @@ struct channel_data {
      max_connection_idle */
   grpc_timer max_idle_timer;
   /* Allowed max time a channel may have no outstanding rpcs */
-  grpc_core::Timestamp max_connection_idle;
+  grpc_core::Duration max_connection_idle;
   /* Allowed max time a channel may exist */
-  grpc_core::Timestamp max_connection_age;
+  grpc_core::Duration max_connection_age;
   /* Allowed grace period after the channel reaches its max age */
-  grpc_core::Timestamp max_connection_age_grace;
+  grpc_core::Duration max_connection_age_grace;
   /* Closure to run when the channel's idle duration reaches max_connection_idle
      and should be closed gracefully */
   grpc_closure max_idle_timer_cb;
@@ -473,7 +473,8 @@ static grpc_error_handle max_age_init_channel_elem(
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i], MAX_CONNECTION_IDLE_INTEGER_OPTIONS);
       chand->max_connection_idle =
-          value == INT_MAX ? grpc_core::Timestamp::InfFuture() : value;
+          value == INT_MAX ? grpc_core::Duration::Infinity()
+                           : grpc_core::Duration::Milliseconds(value);
     }
   }
   GRPC_CLOSURE_INIT(&chand->max_idle_timer_cb, max_idle_timer_cb, chand,

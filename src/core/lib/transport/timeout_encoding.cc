@@ -127,22 +127,22 @@ int grpc_http2_decode_timeout(const grpc_slice& text,
   /* decode unit specifier */
   switch (*p) {
     case 'n':
-      *timeout = Duration::NanosecondsRoundUp(x);
+      *timeout = grpc_core::Duration::NanosecondsRoundUp(x);
       break;
     case 'u':
-      *timeout = Duration::MicrosecondsRoundUp(x);
+      *timeout = grpc_core::Duration::MicrosecondsRoundUp(x);
       break;
     case 'm':
-      *timeout = Duration::Milliseconds(x);
+      *timeout = grpc_core::Duration::Milliseconds(x);
       break;
     case 'S':
-      *timeout = Duration::Seconds(x);
+      *timeout = grpc_core::Duration::Seconds(x);
       break;
     case 'M':
-      *timeout = Duration::Seconds(x * 60);
+      *timeout = grpc_core::Duration::Seconds(x * 60);
       break;
     case 'H':
-      *timeout = Duration::Seconds(x * 60 * 60);
+      *timeout = grpc_core::Duration::Seconds(x * 60 * 60);
       break;
     default:
       return 0;

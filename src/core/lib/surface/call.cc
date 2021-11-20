@@ -995,7 +995,7 @@ class PublishToAppEncoder {
 
   void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
 
-  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis) {}
+  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_core::Timestamp) {}
   void Encode(grpc_core::TeMetadata, grpc_core::TeMetadata::ValueType) {}
 
   template <typename Which>

@@ -800,7 +800,7 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 
 static int poll_deadline_to_millis_timeout(grpc_core::Timestamp millis) {
   if (millis == grpc_core::Timestamp::InfFuture()) return -1;
-  grpc_core::Timestamp delta = millis - grpc_core::ExecCtx::Get()->Now();
+  int64_t delta = (millis - grpc_core::ExecCtx::Get()->Now()).millis();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {

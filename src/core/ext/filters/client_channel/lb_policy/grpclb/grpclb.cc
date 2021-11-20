@@ -488,7 +488,7 @@ class GrpcLb : public LoadBalancingPolicy {
   bool child_policy_ready_ = false;
 
   // Deleted subchannel caching.
-  const Timestamp subchannel_cache_interval_ms_;
+  const Duration subchannel_cache_interval_;
   std::map<Timestamp /*deletion time*/,
            std::vector<RefCountedPtr<SubchannelInterface>>>
       cached_subchannels_;
@@ -1368,7 +1368,7 @@ GrpcLb::GrpcLb(Args args)
       fallback_at_startup_timeout_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS,
           {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX})),
-      subchannel_cache_interval_ms_(grpc_channel_args_find_integer(
+      subchannel_cache_interval_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
           {GRPC_GRPCLB_DEFAULT_SUBCHANNEL_DELETION_DELAY_MS, 0, INT_MAX})) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
@@ -1717,8 +1717,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
 
 void GrpcLb::CacheDeletedSubchannelLocked(
     RefCountedPtr<SubchannelInterface> subchannel) {
-  Timestamp deletion_time =
-      ExecCtx::Get()->Now() + subchannel_cache_interval_ms_;
+  Timestamp deletion_time = ExecCtx::Get()->Now() + subchannel_cache_interval_;
   cached_subchannels_[deletion_time].push_back(std::move(subchannel));
   if (!subchannel_cache_timer_pending_) {
     Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer").release();

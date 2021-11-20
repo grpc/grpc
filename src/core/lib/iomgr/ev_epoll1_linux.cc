@@ -641,7 +641,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 
 static int poll_deadline_to_millis_timeout(grpc_core::Timestamp millis) {
   if (millis == grpc_core::Timestamp::InfFuture()) return -1;
-  grpc_core::Timestamp delta = millis - grpc_core::ExecCtx::Get()->Now();
+  int64_t delta = (millis - grpc_core::ExecCtx::Get()->Now()).millis();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {
@@ -832,8 +832,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
       }
 
       if (gpr_cv_wait(&worker->cv, &pollset->mu,
-                      grpc_core::Timestamp_to_timespec(deadline,
-                                                       GPR_CLOCK_MONOTONIC)) &&
+                      deadline.as_timespec(GPR_CLOCK_MONOTONIC)) &&
           worker->state == UNKICKED) {
         /* If gpr_cv_wait returns true (i.e a timeout), pretend that the worker
            received a kick */

@@ -54,17 +54,6 @@ class XdsApi {
   static const char* kCdsTypeUrl;
   static const char* kEdsTypeUrl;
 
-  struct Duration {
-    int64_t seconds = 0;
-    int32_t nanos = 0;
-    bool operator==(const Duration& other) const {
-      return seconds == other.seconds && nanos == other.nanos;
-    }
-    std::string ToString() const {
-      return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
-    }
-  };
-
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
 
@@ -584,7 +573,7 @@ class XdsApi {
     std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
-    Timestamp load_report_interval;
+    Duration load_report_interval;
   };
   using ClusterLoadReportMap = std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
@@ -722,7 +711,7 @@ class XdsApi {
   grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
                                      bool* send_all_clusters,
                                      std::set<std::string>* cluster_names,
-                                     Timestamp* load_reporting_interval);
+                                     Duration* load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(

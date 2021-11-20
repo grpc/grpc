@@ -115,9 +115,9 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   struct RouteLookupConfig {
     KeyBuilderMap key_builder_map;
     std::string lookup_service;
-    Timestamp lookup_service_timeout;
-    Timestamp max_age;
-    Timestamp stale_age;
+    Duration lookup_service_timeout;
+    Duration max_age;
+    Duration stale_age;
     int64_t cache_size_bytes = 0;
     std::string default_target;
   };
@@ -141,11 +141,11 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   const std::string& lookup_service() const {
     return route_lookup_config_.lookup_service;
   }
-  Timestamp lookup_service_timeout() const {
+  Duration lookup_service_timeout() const {
     return route_lookup_config_.lookup_service_timeout;
   }
-  Timestamp max_age() const { return route_lookup_config_.max_age; }
-  Timestamp stale_age() const { return route_lookup_config_.stale_age; }
+  Duration max_age() const { return route_lookup_config_.max_age; }
+  Duration stale_age() const { return route_lookup_config_.stale_age; }
   int64_t cache_size_bytes() const {
     return route_lookup_config_.cache_size_bytes;
   }
@@ -563,7 +563,7 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
-      Timestamp window_size_;
+      Duration window_size_;
       double ratio_for_successes_;
       int paddings_;
 

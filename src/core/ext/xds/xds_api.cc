@@ -1532,10 +1532,11 @@ grpc_error_handle ParseTypedPerFilterConfig(
   return GRPC_ERROR_NONE;
 }
 
-XdsApi::Duration DurationParse(const google_protobuf_Duration* proto_duration) {
-  XdsApi::Duration duration;
-  duration.seconds = google_protobuf_Duration_seconds(proto_duration);
-  duration.nanos = google_protobuf_Duration_nanos(proto_duration);
+Duration DurationParse(const google_protobuf_Duration* proto_duration) {
+  Duration duration =
+      Duration::Seconds(google_protobuf_Duration_seconds(proto_duration)) +
+      Duration::NanosecondsRoundDown(
+          google_protobuf_Duration_nanos(proto_duration));
   return duration;
 }
 
@@ -1593,25 +1594,18 @@ grpc_error_handle RetryPolicyParse(
     }
     const google_protobuf_Duration* max_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
-    XdsApi::Duration max;
+    Duration max;
     if (max_interval != nullptr) {
       max = DurationParse(max_interval);
     } else {
       // if max interval is not set, it is 10x the base, if the value in nanos
       // can yield another second, adjust the value in seconds accordingly.
-      max.seconds = retry_to_return.retry_back_off.base_interval.seconds * 10;
-      max.nanos = retry_to_return.retry_back_off.base_interval.nanos * 10;
-      if (max.nanos > 1000000000) {
-        max.seconds += max.nanos / 1000000000;
-        max.nanos = max.nanos % 1000000000;
-      }
+      max = retry_to_return.retry_back_off.base_interval * 10;
     }
     retry_to_return.retry_back_off.max_interval = max;
   } else {
-    retry_to_return.retry_back_off.base_interval.seconds = 0;
-    retry_to_return.retry_back_off.base_interval.nanos = 25000000;
-    retry_to_return.retry_back_off.max_interval.seconds = 0;
-    retry_to_return.retry_back_off.max_interval.nanos = 250000000;
+    retry_to_return.retry_back_off.base_interval = Duration::Milliseconds(25);
+    retry_to_return.retry_back_off.max_interval = Duration::Milliseconds(25);
   }
   if (errors.empty()) {
     *retry = retry_to_return;
@@ -3728,8 +3722,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     envoy_config_endpoint_v3_ClusterStats_set_total_dropped_requests(
         cluster_stats, total_dropped_requests);
     // Set real load report interval.
-    gpr_timespec timespec =
-        Timestamp_to_timespec(load_report.load_report_interval, GPR_TIMESPAN);
+    gpr_timespec timespec = load_report.load_report_interval.as_timespec();
     google_protobuf_Duration* load_report_interval =
         envoy_config_endpoint_v3_ClusterStats_mutable_load_report_interval(
             cluster_stats, arena.ptr());
@@ -3743,7 +3736,7 @@ grpc_slice XdsApi::CreateLrsRequest(
 grpc_error_handle XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
                                            bool* send_all_clusters,
                                            std::set<std::string>* cluster_names,
-                                           Timestamp* load_reporting_interval) {
+                                           Duration* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v3_LoadStatsResponse* decoded_response =
@@ -3772,11 +3765,11 @@ grpc_error_handle XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
   const google_protobuf_Duration* load_reporting_interval_duration =
       envoy_service_load_stats_v3_LoadStatsResponse_load_reporting_interval(
           decoded_response);
-  gpr_timespec timespec{
-      google_protobuf_Duration_seconds(load_reporting_interval_duration),
-      google_protobuf_Duration_nanos(load_reporting_interval_duration),
-      GPR_TIMESPAN};
-  *load_reporting_interval = gpr_time_to_millis(timespec);
+  *load_reporting_interval =
+      Duration::Seconds(
+          google_protobuf_Duration_seconds(load_reporting_interval_duration)) +
+      Duration::NanosecondsRoundDown(
+          google_protobuf_Duration_nanos(load_reporting_interval_duration));
   return GRPC_ERROR_NONE;
 }
 

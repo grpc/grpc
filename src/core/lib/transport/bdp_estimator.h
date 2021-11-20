@@ -84,7 +84,7 @@ class BdpEstimator {
   int64_t estimate_;
   // when was the current ping started?
   gpr_timespec ping_start_time_;
-  int inter_ping_delay_;
+  Duration inter_ping_delay_;
   int stable_estimate_count_;
   double bw_est_;
   const char* name_;

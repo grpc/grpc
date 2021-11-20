@@ -145,7 +145,7 @@ bool ParseJsonObjectField(const Json::Object& object,
 // Alternative to ParseJsonObjectField() for duration-value fields.
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     absl::string_view field_name,
-                                    Timestamp* output,
+                                    Duration* output,
                                     std::vector<grpc_error_handle>* error_list,
                                     bool required = true);
 

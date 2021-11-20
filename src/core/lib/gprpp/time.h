@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <string>
 
 #include <grpc/support/time.h>
 
@@ -75,6 +76,8 @@ class Duration {
  public:
   constexpr Duration() : millis_(0) {}
 
+  static constexpr Duration Zero() { return Duration(0); }
+
   static constexpr Duration NegativeInfinity() {
     return Duration(std::numeric_limits<int64_t>::min());
   }
@@ -125,8 +128,20 @@ class Duration {
   constexpr bool operator>=(Duration other) const {
     return millis_ >= other.millis_;
   }
+  Duration& operator/=(int64_t divisor) {
+    millis_ /= divisor;
+    return *this;
+  }
+  Duration& operator+=(Duration other) {
+    millis_ += other.millis_;
+    return *this;
+  }
 
   constexpr int64_t millis() const { return millis_; }
+
+  gpr_timespec as_timespec() const;
+
+  std::string ToString() const;
 
  private:
   explicit constexpr Duration(int64_t millis) : millis_(millis) {}

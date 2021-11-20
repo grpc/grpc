@@ -214,7 +214,7 @@ static void validate_non_pending_timer(grpc_timer* t) {
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
  * an expensive operation) */
-static GPR_THREAD_LOCAL(grpc_core::Timestamp) g_last_seen_min_timer;
+static GPR_THREAD_LOCAL(int64_t) g_last_seen_min_timer;
 
 struct shared_mutables {
   /* The deadline of the next timer due across all timer shards */
@@ -372,8 +372,8 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
     return;
   }
 
-  grpc_time_averaged_stats_add_sample(
-      &shard->stats, static_cast<double>(deadline - now) / 1000.0);
+  grpc_time_averaged_stats_add_sample(&shard->stats,
+                                      (deadline - now).millis() / 1000.0);
 
   ADD_TO_HASH_TABLE(timer);
 
@@ -485,9 +485,10 @@ static bool refill_heap(timer_shard* shard, grpc_core::Timestamp now) {
   grpc_timer *timer, *next;
 
   /* Compute the new cap and put all timers under it into the queue: */
-  shard->queue_deadline_cap = saturating_add(
-      std::max(now, shard->queue_deadline_cap),
-      static_cast<grpc_core::Timestamp>(deadline_delta * 1000.0));
+  shard->queue_deadline_cap =
+      saturating_add(std::max(now, shard->queue_deadline_cap),
+                     grpc_core::Timestamp::FromMiillisecondsAfterProcessEpoch(
+                         deadline_delta * 1000.0));
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
     gpr_log(GPR_INFO, "  .. shard[%d]->queue_deadline_cap --> %" PRId64,
@@ -572,8 +573,9 @@ static grpc_timer_check_result run_some_expired_timers(
   // mac platforms complaining that gpr_atm* is (long *) while
   // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
   // safe since we know that both are pointer types and 64-bit wide
-  grpc_core::Timestamp min_timer = static_cast<grpc_core::Timestamp>(
-      gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
+  grpc_core::Timestamp min_timer =
+      grpc_core::Timestamp::FromMiillisecondsAfterProcessEpoch(
+          gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
 #else
   // On 32-bit systems, gpr_atm_no_barrier_load does not work on 64-bit types
   // (like grpc_core::Timestamp). So all reads and writes to
