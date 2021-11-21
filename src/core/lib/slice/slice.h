@@ -192,7 +192,7 @@ class StaticSlice : public slice_detail::BaseSlice {
   }
 
   static StaticSlice FromStaticString(absl::string_view s) {
-    return StaticSlice(UnmanagedMemorySlice(s.data(), s.size()));
+    return StaticSlice(ExternallyManagedSlice(s.data(), s.size()));
   }
 
   StaticSlice(const StaticSlice& other)
