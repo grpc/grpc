@@ -110,20 +110,6 @@ absl::string_view EvaluateArgs::GetMethod() const {
   return method;
 }
 
-std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
-    const {
-  std::multimap<absl::string_view, absl::string_view> headers;
-  if (metadata_ == nullptr) {
-    return headers;
-  }
-  metadata_->ForEach([&](grpc_mdelem md) {
-    const grpc_slice& key = GRPC_MDKEY(md);
-    const grpc_slice& val = GRPC_MDVALUE(md);
-    headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
-  });
-  return headers;
-}
-
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
     absl::string_view key, std::string* concatenated_value) const {
   if (metadata_ == nullptr) {
