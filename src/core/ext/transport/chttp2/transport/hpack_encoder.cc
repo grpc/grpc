@@ -395,7 +395,7 @@ void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyNotIdx(
   Add(grpc_slice_ref_internal(key.key()));
   NonBinaryStringValue emit(value_slice);
   emit.WritePrefix(AddTiny(emit.prefix_length()));
-  Add(emit.data());
+  Add(grpc_slice_ref_internal(emit.data()));
 }
 
 void HPackCompressor::Framer::AdvertiseTableSizeChange() {
