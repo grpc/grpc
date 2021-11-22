@@ -1725,6 +1725,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_base",
     ],
@@ -3748,6 +3749,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "tsi_ssl_types",
+        "uri_parser",
     ],
 )
 
