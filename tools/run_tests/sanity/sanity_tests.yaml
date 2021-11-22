@@ -31,6 +31,8 @@
   # ClangTidy needs to run exclusively because it uses files under the bazel output
   # directory and this will be removed by another bazel invocation.
   cpu_cost: 1000
+- script: tools/distrib/iwyu.sh
+  cpu_cost: 1000
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
 - script: tools/distrib/yapf_code.sh --diff
@@ -41,4 +43,3 @@
 - script: tools/distrib/check_boringssl_prefix_symbol.sh
 - script: tools/run_tests/sanity/build_banned_constructs.sh
 - script: tools/distrib/check_redundant_namespace_qualifiers.py
-

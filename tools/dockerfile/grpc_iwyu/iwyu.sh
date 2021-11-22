@@ -43,3 +43,5 @@ xargs -a iwyu_files.txt $CLANG_FORMAT -i
 
 # TODO(ctiller): expand this to match the clang-tidy directories:
 #  | grep -E "(^include/|^src/core/|^src/cpp/|^test/core/|^test/cpp/)"
+
+git diff --exit-code > /dev/null
