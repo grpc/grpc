@@ -43,13 +43,15 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
-#define MAX_ADVANCE_TIME_MICROS (24 * 3600 * 365 * 1000000)  // 1 year
+static constexpr uint64_t kMaxAdvanceTimeMicros =
+    31536000000000;  // 1 year (24 * 365 * 3600 * 1000000)
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_WAIT_MS (24 * 3600 * 365 * 1000)  // 1 year
+static constexpr uint64_t kMaxWaitMs =
+    31536000000;  // 1 year (24 * 365 * 3600 * 1000)
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_READABLE_BYTES (2 * 1024 * 1024)  // 2GB
+static constexpr uint64_t kMaxAddNReadableBytes = (2 * 1024 * 1024);  // 2GB
 // Applicable when simulating channel actions. Prevents overflows.
-#define MAX_ADD_N_WRITABLE_BYTES (2 * 1024 * 1024)  // 2GB
+static constexpr uint64_t kMaxAddNWritableBytes = (2 * 1024 * 1024);  // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -182,11 +184,12 @@ static void do_connect(void* arg, grpc_error_handle error) {
     start_scheduling_grpc_passthru_endpoint_channel_effects(
         client, g_channel_actions, [&]() { g_channel_force_delete = true; });
 
+    grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(
-        g_server->core_server->channel_args(), server, false);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("SetupTransport",
-                                 g_server->core_server->SetupTransport(
-                                     transport, nullptr, nullptr, nullptr)));
+        core_server->channel_args(), server, false);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "SetupTransport",
+        core_server->SetupTransport(transport, nullptr, nullptr, nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
@@ -788,7 +791,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       g_now = gpr_time_add(
           g_now,
           gpr_time_from_seconds(
-              std::max<int64_t>(1, static_cast<int64_t>(MAX_WAIT_MS / 1000)),
+              std::max<int64_t>(1, static_cast<int64_t>(kMaxWaitMs / 1000)),
               GPR_TIMESPAN));
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
@@ -819,7 +822,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(
                        std::min(static_cast<uint64_t>(action.advance_time()),
-                                static_cast<uint64_t>(MAX_ADVANCE_TIME_MICROS)),
+                                kMaxAdvanceTimeMicros),
                        GPR_TIMESPAN));
         break;
       }
@@ -847,12 +850,11 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
             const api_fuzzer::ChannelAction& channel_action =
                 action.create_channel().channel_actions(i);
             g_channel_actions.push_back({
-                std::min(channel_action.wait_ms(),
-                         static_cast<uint64_t>(MAX_WAIT_MS)),
+                std::min(channel_action.wait_ms(), kMaxWaitMs),
                 std::min(channel_action.add_n_bytes_writable(),
-                         static_cast<uint64_t>(MAX_ADD_N_WRITABLE_BYTES)),
+                         kMaxAddNWritableBytes),
                 std::min(channel_action.add_n_bytes_readable(),
-                         static_cast<uint64_t>(MAX_ADD_N_READABLE_BYTES)),
+                         kMaxAddNReadableBytes),
             });
           }
           GPR_ASSERT(g_channel != nullptr);
