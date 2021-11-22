@@ -352,7 +352,7 @@ class MetadataEncoder {
 
   template <typename Trait>
   void Encode(Trait, const typename Trait::ValueType& value) {
-    init_md_->emplace_back(Trait::key(),
+    init_md_->emplace_back(std::string(Trait::key()),
                            std::string(Trait::Encode(value).as_string_view()));
   }
 
