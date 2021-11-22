@@ -304,7 +304,8 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       metadata_detail::DestroySliceValue,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        map->Set(Which(), metadata_detail::SliceFromBuffer(value));
+        map->Set(Which(), Which::MementoToValue(
+                              metadata_detail::SliceFromBuffer(value)));
         return GRPC_ERROR_NONE;
       },
       // with_new_value
