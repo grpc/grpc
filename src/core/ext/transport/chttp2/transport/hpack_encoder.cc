@@ -270,11 +270,19 @@ class BinaryStringValue {
   explicit BinaryStringValue(const grpc_slice& value,
                              bool use_true_binary_metadata)
       : wire_value_(GetWireValue(value, use_true_binary_metadata, true)),
-        len_val_(GRPC_SLICE_LENGTH(value)) {}
+        len_val_(wire_value_.length) {}
 
-  size_t prefix_length() const { return len_val_.length(); }
+  size_t prefix_length() const {
+    return len_val_.length() +
+           (wire_value_.insert_null_before_wire_value ? 1 : 0);
+  }
 
-  void WritePrefix(uint8_t* prefix_data) { len_val_.Write(0x00, prefix_data); }
+  void WritePrefix(uint8_t* prefix_data) {
+    len_val_.Write(wire_value_.huffman_prefix, prefix_data);
+    if (wire_value_.insert_null_before_wire_value) {
+      prefix_data[len_val_.length()] = 0;
+    }
+  }
 
   const grpc_slice& data() { return wire_value_.data; }
 
