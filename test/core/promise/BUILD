@@ -76,6 +76,7 @@ grpc_cc_test(
     deps = [
         "//:arena_promise",
         "//test/core/util:grpc_suppressions",
+        "//:resource_quota",
     ],
 )
 

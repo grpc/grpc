@@ -1099,6 +1099,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "poll",
+        "arena",
     ],
 )
 
