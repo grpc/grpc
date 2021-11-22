@@ -92,21 +92,21 @@ class SharedImpl final : public ImplInterface<T>, private Callable {
  public:
   // Call the callable, or at least an exact duplicate of it - if you have no
   // members, all your instances look the same.
-  Poll<T> PollOnce() override {
-    return Callable::operator()();
-  }
+  Poll<T> PollOnce() override { return Callable::operator()(); }
   // Nothing to destroy.
   void Destroy() override {}
   // Return a pointer to the shared instance - these are singletons, and are
   // needed just to get the vtable in place.
   static SharedImpl* Get(Callable&& callable) {
-    static_assert(sizeof(SharedImpl) == sizeof(void*), "SharedImpl should be pointer sized");
+    static_assert(sizeof(SharedImpl) == sizeof(void*),
+                  "SharedImpl should be pointer sized");
     static SharedImpl impl(std::forward<Callable>(callable));
     return &impl;
   }
 
  private:
-  explicit SharedImpl(Callable&& callable) : Callable(std::forward<Callable>(callable)) {}
+  explicit SharedImpl(Callable&& callable)
+      : Callable(std::forward<Callable>(callable)) {}
   ~SharedImpl() = default;
 };
 
