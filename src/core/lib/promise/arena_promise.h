@@ -88,22 +88,25 @@ class CallableImpl final : public ImplInterface<T> {
 // (this comes up often when the promise only accesses context data from the
 // containing activity).
 template <typename T, typename Callable>
-class SharedImpl final : public ImplInterface<T> {
+class SharedImpl final : public ImplInterface<T>, private Callable {
  public:
-  // Call the callable. Since it's empty it can't access any member variables,
-  // and as such we can choose any address for the object.
-  Poll<T> PollOnce() override { return (*static_cast<Callable*>(nullptr))(); }
+  // Call the callable, or at least an exact duplicate of it - if you have no
+  // members, all your instances look the same.
+  Poll<T> PollOnce() override {
+    return Callable::operator()();
+  }
   // Nothing to destroy.
   void Destroy() override {}
   // Return a pointer to the shared instance - these are singletons, and are
   // needed just to get the vtable in place.
-  static SharedImpl* Get() {
-    static SharedImpl impl;
+  static SharedImpl* Get(Callable&& callable) {
+    static_assert(sizeof(SharedImpl) == sizeof(void*), "SharedImpl should be pointer sized");
+    static SharedImpl impl(std::forward<Callable>(callable));
     return &impl;
   }
 
  private:
-  SharedImpl() = default;
+  explicit SharedImpl(Callable&& callable) : Callable(std::forward<Callable>(callable)) {}
   ~SharedImpl() = default;
 };
 
@@ -124,8 +127,8 @@ struct ChooseImplForCallable<
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable, absl::enable_if_t<std::is_empty<Callable>::value>> {
-  static ImplInterface<T>* Make(Arena*, Callable&&) {
-    return SharedImpl<T, Callable>::Get();
+  static ImplInterface<T>* Make(Arena*, Callable&& callable) {
+    return SharedImpl<T, Callable>::Get(std::forward<Callable>(callable));
   }
 };
 
