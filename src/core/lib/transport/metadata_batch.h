@@ -192,8 +192,8 @@ struct NameLookup;
 
 template <typename Trait, typename... Traits>
 struct NameLookup<Trait, Traits...> {
-  // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in Traits.
-  // If not found, call op->NotFount().
+  // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
+  // Traits. If not found, call op->NotFount().
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->Found(Trait())) {
@@ -214,18 +214,20 @@ struct NameLookup<> {
 };
 
 // Helper to take a slice to a memento to a value.
-// By splitting this part out we can scale code size as the number of (memento, value) types, rather than as the number of traits.
+// By splitting this part out we can scale code size as the number of (memento,
+// value) types, rather than as the number of traits.
 template <typename ParseMementoFn, typename MementoToValueFn>
 struct ParseValue {
   template <ParseMementoFn parse_memento, MementoToValueFn memento_to_value>
-  static GPR_ATTRIBUTE_NOINLINE auto Parse(Slice* value) -> decltype(memento_to_value(
-      parse_memento(std::move(*value)))) {
-        return memento_to_value(parse_memento(std::move(*value)));
+  static GPR_ATTRIBUTE_NOINLINE auto Parse(Slice* value)
+      -> decltype(memento_to_value(parse_memento(std::move(*value)))) {
+    return memento_to_value(parse_memento(std::move(*value)));
   }
 };
 
 // This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a ParsedMetadata object.
+// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
+// ParsedMetadata object.
 template <typename Container>
 class ParseHelper {
  public:
@@ -235,9 +237,7 @@ class ParseHelper {
   template <typename Trait>
   ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
-        trait,
-        Trait::ParseMemento(std::move(value_)),
-        transport_size_);
+        trait, Trait::ParseMemento(std::move(value_)), transport_size_);
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
@@ -254,7 +254,8 @@ class ParseHelper {
 };
 
 // This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a value and add it to a container.
+// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
+// value and add it to a container.
 template <typename Container>
 class AppendHelper {
  public:
