@@ -33,7 +33,7 @@
 typedef struct grpc_end2end_http_proxy grpc_end2end_http_proxy;
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    grpc_channel_args* args);
+    const grpc_channel_args* args);
 
 void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
 

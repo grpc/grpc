@@ -732,6 +732,7 @@ libs:
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
+  - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_trace.h
@@ -1299,6 +1300,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_trace.cc
@@ -1811,6 +1813,7 @@ libs:
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
+  - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_trace.h
@@ -2095,6 +2098,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_trace.cc
@@ -5424,6 +5428,8 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/config/core_configuration.h
@@ -5470,6 +5476,8 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/gpr/alloc.cc

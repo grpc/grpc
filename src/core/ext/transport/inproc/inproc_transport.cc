@@ -1281,7 +1281,7 @@ void grpc_inproc_transport_init(void) {
 }
 
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
-                                         grpc_channel_args* args,
+                                         const grpc_channel_args* args,
                                          void* /*reserved*/) {
   GRPC_API_TRACE("grpc_inproc_channel_create(server=%p, args=%p)", 2,
                  (server, args));
@@ -1302,8 +1302,9 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   default_authority_arg.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
   default_authority_arg.value.string = const_cast<char*>("inproc.authority");
   args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
-  grpc_channel_args* client_args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  const grpc_channel_args* client_args = grpc_core::CoreConfiguration::Get()
+                                             .channel_args_preconditioning()
+                                             .PreconditionChannelArgs(args);
   grpc_channel_args_destroy(args);
   grpc_transport* server_transport;
   grpc_transport* client_transport;
