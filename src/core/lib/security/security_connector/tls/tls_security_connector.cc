@@ -34,6 +34,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
