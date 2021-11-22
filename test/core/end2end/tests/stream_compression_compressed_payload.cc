@@ -40,10 +40,10 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    const grpc_channel_args* client_args,
+    const grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -104,8 +104,8 @@ static void request_for_disabled_algorithm(
   grpc_call* s;
   grpc_slice request_payload_slice;
   grpc_byte_buffer* request_payload;
-  grpc_channel_args* client_args;
-  grpc_channel_args* server_args;
+  const grpc_channel_args* client_args;
+  const grpc_channel_args* server_args;
   grpc_end2end_test_fixture f;
   grpc_op ops[6];
   grpc_op* op;
@@ -280,8 +280,8 @@ static void request_with_payload_template(
   grpc_call* s;
   grpc_slice request_payload_slice;
   grpc_byte_buffer* request_payload = nullptr;
-  grpc_channel_args* client_args;
-  grpc_channel_args* server_args;
+  const grpc_channel_args* client_args;
+  const grpc_channel_args* server_args;
   grpc_end2end_test_fixture f;
   grpc_op ops[6];
   grpc_op* op;

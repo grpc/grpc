@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 typedef struct grpc_resource_quota grpc_resource_quota;
@@ -32,19 +33,7 @@ constexpr size_t kResourceQuotaChannelSize = 50 * 1024;
 // UB if not set.
 ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args);
 
-// Take some channel args:
-// If there is a resource quota set, copy args and return that.
-// If there is no resource quota set, set a default, and return new
-// channel args. Call grpc_channel_args_destroy on the input args.
-grpc_channel_args* EnsureResourceQuotaInChannelArgs(
-    const grpc_channel_args* args);
-
-// Create channel args with just the passed in resource quota
-grpc_channel_args* ChannelArgsWrappingResourceQuota(ResourceQuotaRefPtr);
-
-inline ResourceQuota* ResourceQuotaFromC(grpc_resource_quota* quota) {
-  return reinterpret_cast<ResourceQuota*>(quota);
-}
+void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 

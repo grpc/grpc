@@ -1,4 +1,4 @@
-# Copyright 2021 the gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:buster
+FROM i386/debian:9
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -81,18 +81,6 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 RUN mkdir /var/local/jenkins
 
-
-# Install openssl 1.0.2 from source
-RUN apt-get update && apt-get install -y build-essential zlib1g-dev
-RUN cd /tmp && \
-    wget https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz && \
-    tar -xf openssl-1.0.2u.tar.gz && \
-    cd openssl-1.0.2u && \
-    ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
-    make -j 4 && \
-    make install && \
-    rm -rf /tmp/openssl-1.0.2u*
-ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 
 # Define the default command.
 CMD ["bash"]
