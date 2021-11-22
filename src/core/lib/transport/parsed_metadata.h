@@ -41,8 +41,7 @@ struct HasSimpleMemento {
       sizeof(typename Which::MementoType) <= sizeof(uint64_t);
 };
 
-std::string MakeDebugString(absl::string_view key, absl::string_view value);
-
+// Storage type for a single metadata entry.
 union Buffer {
   uint64_t trivial;
   void* pointer;
@@ -50,6 +49,13 @@ union Buffer {
   grpc_mdelem mdelem;
 };
 
+// Given a key and a value, concatenate together to make a debug string.
+// Split out to avoid template bloat.
+std::string MakeDebugString(absl::string_view key, absl::string_view value);
+
+// Wrapper around MakeDebugString.
+// For the value part, use two functions - one to extract a typed field from Buffer, and a second (sourced from the trait) to generate a displayable debug string from the field value.
+// We try to maximize indirection/code sharing here as this is not critical path code and we'd like to avoid some code bloat - better to scale by number of types than then number of metadata traits!
 template <typename Field, typename CompatibleWithField, typename Display>
 GPR_ATTRIBUTE_NOINLINE std::string MakeDebugStringPipeline(
     absl::string_view key, const Buffer& value,
@@ -59,18 +65,22 @@ GPR_ATTRIBUTE_NOINLINE std::string MakeDebugStringPipeline(
       key, absl::StrCat(display_from_field(field_from_buffer(value))));
 }
 
+// Extract a trivial field value from a Buffer - for MakeDebugStringPipeline.
 template <typename Field>
 Field FieldFromTrivial(const Buffer& value) {
   return static_cast<Field>(value.trivial);
 }
 
+// Extract a pointer field value from a Buffer - for MakeDebugStringPipeline.
 template <typename Field>
 Field FieldFromPointer(const Buffer& value) {
   return *static_cast<const Field*>(value.pointer);
 }
 
+// Extract a Slice from a Buffer.
 Slice SliceFromBuffer(const Buffer& buffer);
 
+// Unref the grpc_slice part of a Buffer (assumes it is in fact a grpc_slice).
 void DestroySliceValue(const Buffer& value);
 
 }  // namespace metadata_detail
@@ -109,6 +119,7 @@ class ParsedMetadata {
         transport_size_(transport_size) {
     value_.pointer = new typename Which::MementoType(std::move(value));
   }
+  // Construct metadata from a Slice typed value.
   template <typename Which>
   ParsedMetadata(Which, Slice value, uint32_t transport_size)
       : vtable_(ParsedMetadata::template SliceTraitVTable<Which>()),
