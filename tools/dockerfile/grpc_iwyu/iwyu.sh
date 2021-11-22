@@ -33,8 +33,10 @@ xargs -a iwyu_files.txt /iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 
   | grep -v -E "port_platform.h" \
   | tee iwyu.out
 
+cat iwyu.out | grep -Ev "^namespace " > iwyu.out.filtered
+
 # apply the suggested changes
-/iwyu/fix_includes.py --nocomments < iwyu.out || true
+/iwyu/fix_includes.py --nocomments < iwyu.out.filtered || true
 
 # reformat sources, since iwyu gets this wrong
 xargs -a iwyu_files.txt $CLANG_FORMAT -i

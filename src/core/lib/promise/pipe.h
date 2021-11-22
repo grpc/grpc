@@ -42,6 +42,7 @@ template <typename T>
 struct Pipe;
 template <typename T>
 class PipeSender;
+
 template <typename T>
 class PipeReceiver;
 

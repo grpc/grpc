@@ -16,8 +16,6 @@
 
 #include "src/core/lib/promise/activity.h"
 
-#include "absl/base/attributes.h"
-
 #include "src/core/lib/gprpp/atomic_utils.h"
 
 namespace grpc_core {
