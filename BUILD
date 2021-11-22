@@ -1091,21 +1091,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "arena_promise",
-    external_deps = [
-        "absl/types:optional",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/promise/arena_promise.h",
-    ],
-    deps = [
-        "gpr_base",
-        "poll",
-    ],
-)
-
-grpc_cc_library(
     name = "promise_like",
     language = "c++",
     public_hdrs = [
