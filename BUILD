@@ -1407,7 +1407,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "tsi_ssl_types",
     hdrs = [
@@ -1570,7 +1569,6 @@ grpc_cc_library(
         "useful",
     ],
 )
-
 
 grpc_cc_library(
     name = "tsi_ssl_credentials",
