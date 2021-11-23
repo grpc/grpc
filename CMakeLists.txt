@@ -47,6 +47,7 @@ set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for 
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
+option(gRPC_BUILD_MSVC_MP "Enable build with multiple processes in Visual Studio" TRUE)
 option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
 set(gRPC_INSTALL_default ON)
@@ -220,6 +221,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 if(MSVC)
   include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+  if (gRPC_BUILD_MSVC_MP)
+    set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /MP")
+  endif()
   # needed to compile protobuf
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4065 /wd4506")
   # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
