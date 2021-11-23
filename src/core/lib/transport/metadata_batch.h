@@ -23,12 +23,15 @@
 
 #include <stdbool.h>
 
+#include <limits>
+
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/chunked_vector.h"
@@ -184,6 +187,49 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
+template <typename Int>
+struct SimpleIntBasedMetadataBase {
+  using ValueType = Int;
+  using MementoType = Int;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(ValueType x) {
+    char tmp[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(x, tmp);
+    return Slice::FromCopiedString(tmp);
+  }
+  static Int DisplayValue(MementoType x) { return x; }
+};
+
+template <typename Int, Int kInvalidValue>
+struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
+  static constexpr Int invalid_value() { return kInvalidValue; }
+  static Int ParseMemento(Slice value) {
+    Int out;
+    if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
+      out = kInvalidValue;
+    }
+    return out;
+  }
+};
+
+// grpc-status metadata trait.
+struct GrpcStatusMetadata
+    : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
+  static absl::string_view key() { return "grpc-status"; }
+};
+
+// grpc-previous-rpc-attempts metadata trait.
+struct GrpcPreviousRpcAttemptsMetadata
+    : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
+};
+
+// grpc-retry-pushback-ms metadata trait.
+struct GrpcRetryPushbackMsMetadata
+    : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
+  static absl::string_view key() { return "grpc-retry-pushback-ms"; }
+};
+
 namespace metadata_detail {
 
 // Helper type - maps a string name to a trait.
@@ -192,8 +238,8 @@ struct NameLookup;
 
 template <typename Trait, typename... Traits>
 struct NameLookup<Trait, Traits...> {
-  // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in Traits.
-  // If not found, call op->NotFount().
+  // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
+  // Traits. If not found, call op->NotFount().
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->Found(Trait())) {
@@ -214,18 +260,20 @@ struct NameLookup<> {
 };
 
 // Helper to take a slice to a memento to a value.
-// By splitting this part out we can scale code size as the number of (memento, value) types, rather than as the number of traits.
+// By splitting this part out we can scale code size as the number of (memento,
+// value) types, rather than as the number of traits.
 template <typename ParseMementoFn, typename MementoToValueFn>
 struct ParseValue {
   template <ParseMementoFn parse_memento, MementoToValueFn memento_to_value>
-  static GPR_ATTRIBUTE_NOINLINE auto Parse(Slice* value) -> decltype(memento_to_value(
-      parse_memento(std::move(*value)))) {
-        return memento_to_value(parse_memento(std::move(*value)));
+  static GPR_ATTRIBUTE_NOINLINE auto Parse(Slice* value)
+      -> decltype(memento_to_value(parse_memento(std::move(*value)))) {
+    return memento_to_value(parse_memento(std::move(*value)));
   }
 };
 
 // This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a ParsedMetadata object.
+// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
+// ParsedMetadata object.
 template <typename Container>
 class ParseHelper {
  public:
@@ -235,9 +283,7 @@ class ParseHelper {
   template <typename Trait>
   ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
-        trait,
-        Trait::ParseMemento(std::move(value_)),
-        transport_size_);
+        trait, Trait::ParseMemento(std::move(value_)), transport_size_);
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
@@ -254,7 +300,8 @@ class ParseHelper {
 };
 
 // This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a value and add it to a container.
+// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
+// value and add it to a container.
 template <typename Container>
 class AppendHelper {
  public:
@@ -967,7 +1014,9 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 }  // namespace grpc_core
 
 using grpc_metadata_batch = grpc_core::MetadataMap<
-    grpc_core::GrpcTimeoutMetadata, grpc_core::TeMetadata,
+    grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
+    grpc_core::GrpcPreviousRpcAttemptsMetadata,
+    grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::TeMetadata,
     grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata,
     grpc_core::HostMetadata, grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,

@@ -62,7 +62,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 /** The maximum number of concurrent batches possible.
@@ -992,6 +991,10 @@ class PublishToAppEncoder {
     Append(grpc_core::ExternallyManagedSlice(key.data(), key.length()),
            value.c_slice());
   }
+  template <typename Which>
+  void Encode(Which, typename Which::ValueType value) {
+    Encode(Which(), Which::Encode(value));
+  }
 
  private:
   void Append(grpc_slice key, grpc_slice value) {
@@ -1065,37 +1068,39 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
   grpc_call* call = static_cast<grpc_call*>(args);
   if (batch_error != GRPC_ERROR_NONE) {
     set_final_status(call, batch_error);
-  } else if (b->legacy_index()->named.grpc_status != nullptr) {
-    grpc_status_code status_code = grpc_get_status_code_from_metadata(
-        b->legacy_index()->named.grpc_status->md);
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    if (status_code != GRPC_STATUS_OK) {
-      char* peer = grpc_call_get_peer(call);
-      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                                     "Error received from peer ", peer)),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 static_cast<intptr_t>(status_code));
-      gpr_free(peer);
-    }
-    auto grpc_message = b->Take(grpc_core::GrpcMessageMetadata());
-    if (grpc_message.has_value()) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                                 grpc_message->as_string_view());
-    } else if (error != GRPC_ERROR_NONE) {
-      error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
-    }
-    set_final_status(call, GRPC_ERROR_REF(error));
-    b->Remove(GRPC_BATCH_GRPC_STATUS);
-    GRPC_ERROR_UNREF(error);
-  } else if (!call->is_client) {
-    set_final_status(call, GRPC_ERROR_NONE);
   } else {
-    gpr_log(GPR_DEBUG,
-            "Received trailing metadata with no error and no status");
-    set_final_status(
-        call, grpc_error_set_int(
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("No status received"),
-                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNKNOWN));
+    absl::optional<grpc_status_code> grpc_status =
+        b->Take(grpc_core::GrpcStatusMetadata());
+    if (grpc_status.has_value()) {
+      grpc_status_code status_code = *grpc_status;
+      grpc_error_handle error = GRPC_ERROR_NONE;
+      if (status_code != GRPC_STATUS_OK) {
+        char* peer = grpc_call_get_peer(call);
+        error = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                absl::StrCat("Error received from peer ", peer)),
+            GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+        gpr_free(peer);
+      }
+      auto grpc_message = b->Take(grpc_core::GrpcMessageMetadata());
+      if (grpc_message.has_value()) {
+        error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                   grpc_message->as_string_view());
+      } else if (error != GRPC_ERROR_NONE) {
+        error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "");
+      }
+      set_final_status(call, GRPC_ERROR_REF(error));
+      GRPC_ERROR_UNREF(error);
+    } else if (!call->is_client) {
+      set_final_status(call, GRPC_ERROR_NONE);
+    } else {
+      gpr_log(GPR_DEBUG,
+              "Received trailing metadata with no error and no status");
+      set_final_status(
+          call, grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("No status received"),
+                    GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNKNOWN));
+    }
   }
   publish_app_metadata(call, b, true);
 }
@@ -1802,10 +1807,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->status_error.set(status_error);
         GRPC_ERROR_UNREF(status_error);
 
-        GRPC_LOG_IF_ERROR(
-            "set call status",
-            call->send_trailing_metadata.Append(grpc_get_reffed_status_elem(
-                op->data.send_status_from_server.status)));
+        call->send_trailing_metadata.Set(
+            grpc_core::GrpcStatusMetadata(),
+            op->data.send_status_from_server.status);
 
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->send_trailing_metadata;

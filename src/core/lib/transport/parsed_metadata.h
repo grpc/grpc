@@ -54,8 +54,11 @@ union Buffer {
 std::string MakeDebugString(absl::string_view key, absl::string_view value);
 
 // Wrapper around MakeDebugString.
-// For the value part, use two functions - one to extract a typed field from Buffer, and a second (sourced from the trait) to generate a displayable debug string from the field value.
-// We try to maximize indirection/code sharing here as this is not critical path code and we'd like to avoid some code bloat - better to scale by number of types than then number of metadata traits!
+// For the value part, use two functions - one to extract a typed field from
+// Buffer, and a second (sourced from the trait) to generate a displayable debug
+// string from the field value. We try to maximize indirection/code sharing here
+// as this is not critical path code and we'd like to avoid some code bloat -
+// better to scale by number of types than then number of metadata traits!
 template <typename Field, typename CompatibleWithField, typename Display>
 GPR_ATTRIBUTE_NOINLINE std::string MakeDebugStringPipeline(
     absl::string_view key, const Buffer& value,

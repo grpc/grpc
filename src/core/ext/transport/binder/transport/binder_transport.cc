@@ -41,7 +41,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 #ifndef NDEBUG
@@ -289,14 +288,9 @@ static void recv_trailing_metadata_locked(void* arg,
         // TODO(b/192208695): See if we can avoid to manually put status
         // code into the header
         gpr_log(GPR_INFO, "status = %d", args->status);
-        grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
-            gbs->arena->Alloc(sizeof(grpc_linked_mdelem)));
-        glm->md = grpc_get_reffed_status_elem(args->status);
-        GPR_ASSERT(gbs->recv_trailing_metadata->LinkTail(glm) ==
-                   GRPC_ERROR_NONE);
-        gpr_log(GPR_INFO, "trailing_metadata = %p",
-                gbs->recv_trailing_metadata);
-        gpr_log(GPR_INFO, "glm = %p", glm);
+        gbs->recv_trailing_metadata->Set(
+            grpc_core::GrpcStatusMetadata(),
+            static_cast<grpc_status_code>(args->status));
       }
       return GRPC_ERROR_NONE;
     }();
@@ -341,13 +335,14 @@ class MetadataEncoder {
       // Only client send method ref.
       GPR_ASSERT(is_client_);
       tx_->SetMethodRef(path);
-    } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS)) {
-      int status = grpc_get_status_code_from_metadata(md);
-      gpr_log(GPR_INFO, "send trailing metadata status = %d", status);
-      tx_->SetStatus(status);
     } else {
       init_md_->emplace_back(std::string(key), std::string(value));
     }
+  }
+
+  void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status) {
+    gpr_log(GPR_INFO, "send trailing metadata status = %d", status);
+    tx_->SetStatus(status);
   }
 
   template <typename Trait>

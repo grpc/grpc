@@ -73,7 +73,6 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "src/core/lib/transport/status_metadata.h"
 
 //
 // Client channel filter
@@ -2879,10 +2878,8 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
     } else {
       // Get status from headers.
       const auto& md = *self->recv_trailing_metadata_;
-      const auto& fields = md.legacy_index()->named;
-      GPR_ASSERT(fields.grpc_status != nullptr);
       grpc_status_code code =
-          grpc_get_status_code_from_metadata(fields.grpc_status->md);
+          md.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
       if (code != GRPC_STATUS_OK) {
         absl::string_view message;
         if (const auto* grpc_message = md.get_pointer(GrpcMessageMetadata())) {

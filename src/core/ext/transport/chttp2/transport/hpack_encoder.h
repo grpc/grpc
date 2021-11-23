@@ -138,6 +138,10 @@ class HPackCompressor {
             slice.c_slice());
       }
     }
+    template <typename Which>
+    void Encode(Which, typename Which::ValueType value) {
+      return Encode(Which(), Which::Encode(value));
+    }
 
    private:
     struct FramePrefix {

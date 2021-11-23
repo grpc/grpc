@@ -195,8 +195,9 @@ static void test_retry_per_attempt_recv_timeout(
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(!grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                              GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS));
+    GPR_ASSERT(!grpc_slice_eq(
+        request_metadata_recv.metadata[i].key,
+        grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
   }
 
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -218,10 +219,11 @@ static void test_retry_per_attempt_recv_timeout(
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
+    if (grpc_slice_eq(
+            request_metadata_recv.metadata[i].key,
+            grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
       GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
+          grpc_slice_eq(request_metadata_recv.metadata[i].value, grpc_slice_from_static_string("1")));
       found_retry_header = true;
       break;
     }
@@ -274,10 +276,11 @@ static void test_retry_per_attempt_recv_timeout(
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
+    if (grpc_slice_eq(
+            request_metadata_recv.metadata[i].key,
+            grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
       GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_2));
+          grpc_slice_eq(request_metadata_recv.metadata[i].value, grpc_slice_from_static_string("2")));
       found_retry_header = true;
       break;
     }
