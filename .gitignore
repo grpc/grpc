@@ -161,4 +161,5 @@ compile_commands.json
 # IWYU byproducts
 compile_commands_for_iwyu.json
 iwyu.out
+iwyu.out.filtered
 iwyu_files.txt
