@@ -42,12 +42,12 @@ set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries
 set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
 set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation directory for cmake config files")
 set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
+set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE INTERNAL "The maximum number of processes for MSVC /MP option")
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
-option(gRPC_BUILD_MSVC_MP "Enable build with multiple processes in Visual Studio" TRUE)
 option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
 set(gRPC_INSTALL_default ON)
@@ -221,7 +221,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 if(MSVC)
   include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
-  if (gRPC_BUILD_MSVC_MP)
+  # Set /MP option
+  if (gRPC_BUILD_MSVC_MP_COUNT GREATER 0)
+    set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /MP${gRPC_BUILD_MSVC_MP_COUNT}")
+  elseif (gRPC_BUILD_MSVC_MP_COUNT LESS 0)
     set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /MP")
   endif()
   # needed to compile protobuf
