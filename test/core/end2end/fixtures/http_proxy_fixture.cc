@@ -62,7 +62,7 @@ struct grpc_end2end_http_proxy {
   std::string proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
-  const grpc_channel_args* channel_args;
+  grpc_channel_args* channel_args;
   gpr_mu* mu;
   std::vector<grpc_pollset*> pollset;
   gpr_refcount users;
@@ -536,9 +536,8 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
       grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
+  grpc_channel_args* args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
                           conn->pollset_set, args,
                           &resolved_addresses->addrs[0], deadline);
@@ -605,7 +604,7 @@ static void thread_main(void* arg) {
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    const grpc_channel_args* args) {
+    grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   // Construct proxy address.
@@ -613,9 +612,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
-  proxy->channel_args = grpc_core::CoreConfiguration::Get()
-                            .channel_args_preconditioning()
-                            .PreconditionChannelArgs(args);
+  proxy->channel_args = grpc_core::EnsureResourceQuotaInChannelArgs(args);
   grpc_error_handle error =
       grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);

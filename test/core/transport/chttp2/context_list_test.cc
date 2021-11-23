@@ -72,9 +72,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
   grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-  const grpc_channel_args* args = CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
+  grpc_channel_args* args = EnsureResourceQuotaInChannelArgs(nullptr);
   grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
   grpc_channel_args_destroy(args);
   std::vector<grpc_chttp2_stream*> s;
@@ -127,9 +125,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
   grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-  const grpc_channel_args* args = CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
+  grpc_channel_args* args = EnsureResourceQuotaInChannelArgs(nullptr);
   grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
   grpc_channel_args_destroy(args);
   std::vector<grpc_chttp2_stream*> s;

@@ -36,8 +36,9 @@ grpc_arg MakeArg(ResourceQuota* quota) {
       const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), quota,
       grpc_resource_quota_arg_vtable());
 }
+}  // namespace
 
-const grpc_channel_args* EnsureResourceQuotaInChannelArgs(
+grpc_channel_args* EnsureResourceQuotaInChannelArgs(
     const grpc_channel_args* args) {
   const grpc_arg* existing =
       grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA);
@@ -53,11 +54,11 @@ const grpc_channel_args* EnsureResourceQuotaInChannelArgs(
   return grpc_channel_args_copy_and_add_and_remove(args, remove, 1, &new_arg,
                                                    1);
 }
-}  // namespace
 
-void RegisterResourceQuota(CoreConfiguration::Builder* builder) {
-  builder->channel_args_preconditioning()->RegisterStage(
-      EnsureResourceQuotaInChannelArgs);
+grpc_channel_args* ChannelArgsWrappingResourceQuota(
+    ResourceQuotaRefPtr resource_quota) {
+  auto new_arg = MakeArg(resource_quota.get());
+  return grpc_channel_args_copy_and_add(nullptr, &new_arg, 1);
 }
 
 }  // namespace grpc_core

@@ -104,7 +104,6 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
-extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -116,7 +115,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
-  RegisterResourceQuota(builder);
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterBuiltins(builder);

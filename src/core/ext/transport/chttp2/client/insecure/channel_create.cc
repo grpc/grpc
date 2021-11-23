@@ -60,9 +60,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args* new_args0 =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
-  const grpc_channel_args* new_args = CoreConfiguration::Get()
-                                          .channel_args_preconditioning()
-                                          .PreconditionChannelArgs(new_args0);
+  grpc_channel_args* new_args = EnsureResourceQuotaInChannelArgs(new_args0);
   grpc_channel_args_destroy(new_args0);
   grpc_channel* channel = grpc_channel_create(
       target, new_args, GRPC_CLIENT_CHANNEL, nullptr, error);
@@ -93,6 +91,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
                                            const grpc_channel_args* args,
                                            void* reserved) {
   grpc_core::ExecCtx exec_ctx;
+  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
@@ -108,6 +107,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   grpc_channel* channel = grpc_core::CreateChannel(target, new_args, &error);
   // Clean up.
   grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(args);
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

@@ -35,8 +35,7 @@ struct Chttp2InsecureFullstackFixtureData {
 };
 
 grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   Chttp2InsecureFullstackFixtureData* ffd =
@@ -51,7 +50,7 @@ grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
 }
 
 void Chttp2InitClientInsecureFullstack(grpc_end2end_test_fixture* f,
-                                       const grpc_channel_args* client_args) {
+                                       grpc_channel_args* client_args) {
   Chttp2InsecureFullstackFixtureData* ffd =
       static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
@@ -70,7 +69,7 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
 }
 
 void Chttp2InitServerInsecureFullstack(grpc_end2end_test_fixture* f,
-                                       const grpc_channel_args* server_args) {
+                                       grpc_channel_args* server_args) {
   Chttp2InsecureFullstackFixtureData* ffd =
       static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
   if (f->server) {

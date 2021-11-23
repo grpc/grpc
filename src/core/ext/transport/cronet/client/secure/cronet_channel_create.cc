@@ -53,9 +53,7 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
       const_cast<char*>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
   disable_client_authority_filter_arg.type = GRPC_ARG_INTEGER;
   disable_client_authority_filter_arg.value.integer = 1;
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args);
+  args = grpc_core::EnsureResourceQuotaInChannelArgs(args);
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       args, &disable_client_authority_filter_arg, 1);
 

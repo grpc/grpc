@@ -29,6 +29,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
@@ -70,6 +71,22 @@ grpc_channel_args* grpc_channel_args_copy_and_remove(
     size_t num_to_remove) {
   return grpc_channel_args_copy_and_add_and_remove(src, to_remove,
                                                    num_to_remove, nullptr, 0);
+}
+
+grpc_channel_args* grpc_channel_args_remove_grpc_internal(
+    const grpc_channel_args* src) {
+  if (src == nullptr) return nullptr;
+  // Create result.
+  grpc_channel_args* dst =
+      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
+  dst->args =
+      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * src->num_args));
+  dst->num_args = 0;
+  for (size_t i = 0; i < src->num_args; ++i) {
+    if (absl::StartsWith(src->args[i].key, "grpc.internal.")) continue;
+    dst->args[dst->num_args++] = copy_arg(&src->args[i]);
+  }
+  return dst;
 }
 
 static bool should_remove_arg(const grpc_arg* arg, const char** to_remove,
@@ -367,23 +384,6 @@ std::string grpc_channel_args_string(const grpc_channel_args* args) {
   }
   return absl::StrJoin(arg_strings, ", ");
 }
-
-namespace grpc_core {
-const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
-  if (src == nullptr) return nullptr;
-  // Create result.
-  grpc_channel_args* dst =
-      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  dst->args =
-      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * src->num_args));
-  dst->num_args = 0;
-  for (size_t i = 0; i < src->num_args; ++i) {
-    if (absl::StartsWith(src->args[i].key, "grpc.internal.")) continue;
-    dst->args[dst->num_args++] = copy_arg(&src->args[i]);
-  }
-  return dst;
-}
-}  // namespace grpc_core
 
 namespace {
 grpc_channel_args_client_channel_creation_mutator g_mutator = nullptr;

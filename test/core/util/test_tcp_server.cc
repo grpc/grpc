@@ -66,9 +66,8 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
+  grpc_channel_args* args =
+      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
   grpc_error_handle error = grpc_tcp_server_create(&server->shutdown_complete,
                                                    args, &server->tcp_server);
   grpc_channel_args_destroy(args);

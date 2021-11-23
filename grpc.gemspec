@@ -751,8 +751,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/call_tracer.h )
   s.files += %w( src/core/lib/channel/channel_args.cc )
   s.files += %w( src/core/lib/channel/channel_args.h )
-  s.files += %w( src/core/lib/channel/channel_args_preconditioning.cc )
-  s.files += %w( src/core/lib/channel/channel_args_preconditioning.h )
   s.files += %w( src/core/lib/channel/channel_stack.cc )
   s.files += %w( src/core/lib/channel/channel_stack.h )
   s.files += %w( src/core/lib/channel/channel_stack_builder.cc )

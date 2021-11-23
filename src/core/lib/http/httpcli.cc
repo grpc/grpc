@@ -27,7 +27,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -205,13 +204,7 @@ class InternalRequest {
     addr = &addresses_->addrs[next_address_++];
     GRPC_CLOSURE_INIT(&connected_, OnConnected, this,
                       grpc_schedule_on_exec_ctx);
-    grpc_arg rq_arg = grpc_channel_arg_pointer_create(
-        const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), resource_quota_->c_ptr(),
-        grpc_resource_quota_arg_vtable());
-    grpc_channel_args channel_args{1, &rq_arg};
-    auto* args = CoreConfiguration::Get()
-                     .channel_args_preconditioning()
-                     .PreconditionChannelArgs(&channel_args);
+    grpc_channel_args* args = ChannelArgsWrappingResourceQuota(resource_quota_);
     grpc_tcp_client_connect(&connected_, &ep_, context_->pollset_set, args,
                             addr, deadline_);
     grpc_channel_args_destroy(args);

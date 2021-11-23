@@ -18,7 +18,6 @@
 
 #include <string.h>
 
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"

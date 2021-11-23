@@ -50,9 +50,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         grpc_resource_quota_create("context_list_test");
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                        .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
+    grpc_channel_args* args =
+        grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
     grpc_transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint, true);
     grpc_channel_args_destroy(args);

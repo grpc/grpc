@@ -41,13 +41,12 @@ struct fullstack_compression_fixture_data {
     grpc_channel_args_destroy(server_args_compression);
   }
   std::string localaddr;
-  const grpc_channel_args* client_args_compression = nullptr;
-  const grpc_channel_args* server_args_compression = nullptr;
+  grpc_channel_args* client_args_compression = nullptr;
+  grpc_channel_args* server_args_compression = nullptr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
-    const grpc_channel_args* /*client_args*/,
-    const grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_compression_fixture_data* ffd =
@@ -62,8 +61,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_compression(
   return f;
 }
 
-void chttp2_init_client_fullstack_compression(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
+void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture* f,
+                                              grpc_channel_args* client_args) {
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
   if (ffd->client_args_compression != nullptr) {
@@ -77,8 +76,8 @@ void chttp2_init_client_fullstack_compression(
       ffd->localaddr.c_str(), ffd->client_args_compression, nullptr);
 }
 
-void chttp2_init_server_fullstack_compression(
-    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args) {
+void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
+                                              grpc_channel_args* server_args) {
   fullstack_compression_fixture_data* ffd =
       static_cast<fullstack_compression_fixture_data*>(f->fixture_data);
   if (ffd->server_args_compression != nullptr) {

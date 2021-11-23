@@ -33,10 +33,10 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(
-    grpc_end2end_test_config config, const char* test_name,
-    const grpc_channel_args* client_args,
-    const grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
+                                            const char* test_name,
+                                            grpc_channel_args* client_args,
+                                            grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -90,10 +90,10 @@ static void end_test(grpc_end2end_test_fixture* f) {
 /* Client pings and server pongs. Repeat messages rounds before finishing. */
 static void test_pingpong_streaming(grpc_end2end_test_config config,
                                     int messages) {
-  const grpc_channel_args* client_args =
+  grpc_channel_args* client_args =
       grpc_channel_args_set_channel_default_compression_algorithm(
           nullptr, GRPC_COMPRESS_STREAM_GZIP);
-  const grpc_channel_args* server_args =
+  grpc_channel_args* server_args =
       grpc_channel_args_set_channel_default_compression_algorithm(
           nullptr, GRPC_COMPRESS_STREAM_GZIP);
   grpc_end2end_test_fixture f =
