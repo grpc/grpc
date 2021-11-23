@@ -75,8 +75,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:arena_promise",
-        "//test/core/util:grpc_suppressions",
         "//:resource_quota",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 

@@ -1097,9 +1097,9 @@ grpc_cc_library(
         "src/core/lib/promise/arena_promise.h",
     ],
     deps = [
+        "arena",
         "gpr_base",
         "poll",
-        "arena",
     ],
 )
 
