@@ -276,7 +276,6 @@ typedef enum {
   GRPC_BATCH_CONTENT_ENCODING,
   GRPC_BATCH_ACCEPT_ENCODING,
   GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
-  GRPC_BATCH_GRPC_INTERNAL_STREAM_ENCODING_REQUEST,
   GRPC_BATCH_HOST,
   GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS,
   GRPC_BATCH_GRPC_RETRY_PUSHBACK_MS,
@@ -304,7 +303,6 @@ typedef union {
     struct grpc_linked_mdelem* content_encoding;
     struct grpc_linked_mdelem* accept_encoding;
     struct grpc_linked_mdelem* grpc_internal_encoding_request;
-    struct grpc_linked_mdelem* grpc_internal_stream_encoding_request;
     struct grpc_linked_mdelem* host;
     struct grpc_linked_mdelem* grpc_previous_rpc_attempts;
     struct grpc_linked_mdelem* grpc_retry_pushback_ms;
