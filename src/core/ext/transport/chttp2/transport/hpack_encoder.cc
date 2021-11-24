@@ -542,13 +542,14 @@ void HPackCompressor::Framer::Encode(ContentTypeMetadata,
           hpack_constants::kEntryOverhead);
 }
 
-void HPackCompressor::Framer::Encode(SchemeMetadata, SchemeMetadata::ValueType value) {
+void HPackCompressor::Framer::Encode(SchemeMetadata,
+                                     SchemeMetadata::ValueType value) {
   switch (value) {
     case SchemeMetadata::ValueType::kHttp:
-      EmitIndexed(5); // :scheme: http
+      EmitIndexed(5);  // :scheme: http
       break;
     case SchemeMetadata::ValueType::kHttps:
-      EmitIndexed(6); // :scheme: https
+      EmitIndexed(6);  // :scheme: https
       break;
     case SchemeMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
@@ -561,20 +562,21 @@ void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
   EmitIndexed(7);  // :status: 200
 }
 
-void HPackCompressor::Framer::Encode(MethodMetadata, MethodMetadata::ValueType method) {
+void HPackCompressor::Framer::Encode(MethodMetadata,
+                                     MethodMetadata::ValueType method) {
   switch (method) {
-  case  MethodMetadata::ValueType::kGet:
-    EmitIndexed(2);  // :method: GET
-    break;
- case   MethodMetadata::ValueType::kPost:
-    EmitIndexed(3);  // :method: POST
-    break;
- case   MethodMetadata::ValueType::kPut:
-    EmitLitHdrWithNonBinaryStringKeyNotIdx(
-      StaticSlice::FromStaticString(":method").c_slice(), 
-      StaticSlice::FromStaticString("PUT").c_slice());
+    case MethodMetadata::ValueType::kGet:
+      EmitIndexed(2);  // :method: GET
       break;
-   case   MethodMetadata::ValueType::kInvalid:
+    case MethodMetadata::ValueType::kPost:
+      EmitIndexed(3);  // :method: POST
+      break;
+    case MethodMetadata::ValueType::kPut:
+      EmitLitHdrWithNonBinaryStringKeyNotIdx(
+          StaticSlice::FromStaticString(":method").c_slice(),
+          StaticSlice::FromStaticString("PUT").c_slice());
+      break;
+    case MethodMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
       break;
   }

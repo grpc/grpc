@@ -1253,7 +1253,8 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       GPR_ASSERT(host_.has_value());
       GPR_ASSERT(path_.has_value());
       rc->data.batch.details->host = grpc_slice_ref_internal(host_->c_slice());
-      rc->data.batch.details->method = grpc_slice_ref_internal(path_->c_slice());
+      rc->data.batch.details->method =
+          grpc_slice_ref_internal(path_->c_slice());
       rc->data.batch.details->deadline =
           grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = recv_initial_metadata_flags_;

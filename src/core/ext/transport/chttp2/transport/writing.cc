@@ -571,10 +571,12 @@ class StreamWriteContext {
                               &s_->stats.outgoing, &t_->outbuf);
     } else {
       if (send_status_.has_value()) {
-        s_->send_initial_metadata->Set(grpc_core::StatusMetadata(), *send_status_);
+        s_->send_initial_metadata->Set(grpc_core::StatusMetadata(),
+                                       *send_status_);
       }
       if (send_content_type_.has_value()) {
-        s_->send_initial_metadata->Set(grpc_core::ContentTypeMetadata(), *send_content_type_);
+        s_->send_initial_metadata->Set(grpc_core::ContentTypeMetadata(),
+                                       *send_content_type_);
       }
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
@@ -586,8 +588,7 @@ class StreamWriteContext {
               t_->settings[GRPC_PEER_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               &s_->stats.outgoing},
-          *s_->send_trailing_metadata,
-          &t_->outbuf);
+          *s_->send_trailing_metadata, &t_->outbuf);
     }
     write_context_->IncTrailingMetadataWrites();
     grpc_chttp2_reset_ping_clock(t_);

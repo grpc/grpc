@@ -95,7 +95,7 @@ struct call_data {
   grpc_call_stack* owning_call;
   grpc_core::CallCombiner* call_combiner;
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;
-  grpc_core::Slice host ;
+  grpc_core::Slice host;
   grpc_core::Slice method;
   /* pollset{_set} bound to this call; if we need to make external
      network requests, they should be done under a pollset added to this
@@ -302,8 +302,9 @@ static void send_security_metadata(grpc_call_element* elem,
   }
 
   grpc_auth_metadata_context_build(
-      chand->security_connector->url_scheme(), calld->host.c_slice(), calld->method.c_slice(),
-      chand->auth_context.get(), &calld->auth_md_context);
+      chand->security_connector->url_scheme(), calld->host.c_slice(),
+      calld->method.c_slice(), chand->auth_context.get(),
+      &calld->auth_md_context);
 
   GPR_ASSERT(calld->pollent != nullptr);
   GRPC_CALL_STACK_REF(calld->owning_call, "get_request_metadata");
@@ -338,11 +339,11 @@ static void on_host_checked(void* arg, grpc_error_handle error) {
   } else {
     grpc_transport_stream_op_batch_finish_with_failure(
         batch,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                "Invalid host ", calld->host.as_string_view(),
-                " set in :authority metadata.")),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                               "Invalid host ", calld->host.as_string_view(),
+                               " set in :authority metadata.")),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAUTHENTICATED),
         calld->call_combiner);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
@@ -374,7 +375,8 @@ static void client_auth_start_transport_stream_op_batch(
       calld->method = metadata->get_pointer(grpc_core::PathMetadata())->Ref();
     }
     if (metadata->get_pointer(grpc_core::AuthorityMetadata()) != nullptr) {
-      calld->host = metadata->get_pointer(grpc_core::AuthorityMetadata())->Ref();
+      calld->host =
+          metadata->get_pointer(grpc_core::AuthorityMetadata())->Ref();
       batch->handler_private.extra_arg = elem;
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,

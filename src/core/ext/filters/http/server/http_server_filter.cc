@@ -127,26 +127,26 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   if (method.has_value()) {
     switch (*method) {
       case grpc_core::MethodMetadata::kPost:
-          *calld->recv_initial_metadata_flags &=
-              ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
-                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-            break;
+        *calld->recv_initial_metadata_flags &=
+            ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
+              GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
+        break;
       case grpc_core::MethodMetadata::kPut:
-          *calld->recv_initial_metadata_flags &=
-              ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-          *calld->recv_initial_metadata_flags |=
-              GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-          break;
+        *calld->recv_initial_metadata_flags &=
+            ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
+        *calld->recv_initial_metadata_flags |=
+            GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+        break;
       case grpc_core::MethodMetadata::kGet:
-          *calld->recv_initial_metadata_flags |=
-              GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-          *calld->recv_initial_metadata_flags &=
-              ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-          break;
+        *calld->recv_initial_metadata_flags |=
+            GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
+        *calld->recv_initial_metadata_flags &=
+            ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+        break;
       case grpc_core::MethodMetadata::kInvalid:
-          hs_add_error(error_name, &error,
-                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad method header"));
-          break;
+        hs_add_error(error_name, &error,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad method header"));
+        break;
     }
   } else {
     hs_add_error(error_name, &error,
@@ -172,7 +172,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   if (scheme.has_value()) {
     if (*scheme == grpc_core::SchemeMetadata::kInvalid) {
       hs_add_error(error_name, &error,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad :scheme header"));
+                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad :scheme header"));
     }
   } else {
     hs_add_error(error_name, &error,
@@ -195,11 +195,12 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
      * query parameter which is base64 encoded request payload. */
     const char kQuerySeparator = '?';
     /* offset of the character '?' */
-    auto it = std::find(path_slice->begin(), path_slice->end(), kQuerySeparator);
+    auto it =
+        std::find(path_slice->begin(), path_slice->end(), kQuerySeparator);
     if (it != path_slice->end()) {
       const auto query_start = it - path_slice->begin() + 1;
-      auto query_slice = path_slice->RefSubSlice(query_start,
-                                               path_slice->size() - query_start);
+      auto query_slice = path_slice->RefSubSlice(
+          query_start, path_slice->size() - query_start);
 
       /* substitute path metadata with just the path (not query) */
       auto path_without_query = path_slice->TakeSubSlice(0, query_start - 1);
@@ -335,8 +336,7 @@ static grpc_error_handle hs_mutate_op(grpc_call_element* elem,
     grpc_error_handle error = GRPC_ERROR_NONE;
     static const char* error_name = "Failed sending initial metadata";
     op->payload->send_initial_metadata.send_initial_metadata->Set(
-      grpc_core::StatusMetadata(), 200
-    );
+        grpc_core::StatusMetadata(), 200);
     op->payload->send_initial_metadata.send_initial_metadata->Set(
         grpc_core::ContentTypeMetadata(),
         grpc_core::ContentTypeMetadata::kApplicationGrpc);
