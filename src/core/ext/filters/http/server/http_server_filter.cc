@@ -34,9 +34,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-#define EXPECTED_CONTENT_TYPE "application/grpc"
-#define EXPECTED_CONTENT_TYPE_LENGTH (sizeof(EXPECTED_CONTENT_TYPE) - 1)
-
 static void hs_recv_initial_metadata_ready(void* user_data,
                                            grpc_error_handle err);
 static void hs_recv_trailing_metadata_ready(void* user_data,
@@ -69,7 +66,6 @@ struct call_data {
 
   // Outgoing headers to add to send_initial_metadata.
   grpc_linked_mdelem status;
-  grpc_linked_mdelem content_type;
 
   // If we see the recv_message contents in the GET query string, we
   // store it here.
@@ -218,38 +214,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                      GRPC_ERROR_STR_KEY, ":scheme"));
   }
 
-  if (b->legacy_index()->named.content_type != nullptr) {
-    if (!grpc_mdelem_static_value_eq(
-            b->legacy_index()->named.content_type->md,
-            GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-      if (grpc_slice_buf_start_eq(
-              GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
-              EXPECTED_CONTENT_TYPE, EXPECTED_CONTENT_TYPE_LENGTH) &&
-          (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->legacy_index()
-                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               '+' ||
-           GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->legacy_index()
-                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               ';')) {
-        /* Although the C implementation doesn't (currently) generate them,
-           any custom +-suffix is explicitly valid. */
-        /* TODO(klempner): We should consider preallocating common values such
-           as +proto or +json, or at least stashing them if we see them. */
-        /* TODO(klempner): Should we be surfacing this to application code? */
-      } else {
-        /* TODO(klempner): We're currently allowing this, but we shouldn't
-           see it without a proxy so log for now. */
-        char* val = grpc_dump_slice(
-            GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
-            GPR_DUMP_ASCII);
-        gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
-        gpr_free(val);
-      }
-    }
-    b->Remove(GRPC_BATCH_CONTENT_TYPE);
-  }
+  b->Remove(grpc_core::ContentTypeMetadata());
 
   if (b->legacy_index()->named.path == nullptr) {
     hs_add_error(error_name, &error,
@@ -415,12 +380,7 @@ static grpc_error_handle hs_mutate_op(grpc_call_element* elem,
         grpc_metadata_batch_add_head(
             op->payload->send_initial_metadata.send_initial_metadata,
             &calld->status, GRPC_MDELEM_STATUS_200, GRPC_BATCH_STATUS));
-    hs_add_error(error_name, &error,
-                 grpc_metadata_batch_add_tail(
-                     op->payload->send_initial_metadata.send_initial_metadata,
-                     &calld->content_type,
-                     GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-                     GRPC_BATCH_CONTENT_TYPE));
+    op->payload->send_initial_metadata.send_initial_metadata->Set(grpc_core::ContentTypeMetadata(), grpc_core::ContentTypeMetadata::kApplicationGrpc);
     hs_add_error(error_name, &error,
                  hs_filter_outgoing_metadata(
                      op->payload->send_initial_metadata.send_initial_metadata));

@@ -119,6 +119,7 @@ class HPackCompressor {
     void Encode(grpc_mdelem md);
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
+    void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
     void Encode(UserAgentMetadata, const Slice& slice);
     void Encode(GrpcStatusMetadata, grpc_status_code status);
     void Encode(GrpcMessageMetadata, const Slice& slice) {
@@ -304,6 +305,8 @@ class HPackCompressor {
   HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
   // Index into table_ for the te:trailers metadata element
   uint32_t te_index_ = 0;
+  // Index into table_ for the content-type metadata element
+  uint32_t content_type_index_ = 0;
   // Index into table_ for the user-agent metadata element
   uint32_t user_agent_index_ = 0;
   // Cached grpc-status values

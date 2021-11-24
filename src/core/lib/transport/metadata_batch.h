@@ -141,6 +141,46 @@ struct TeMetadata {
   }
 };
 
+// content-type metadata trait.
+struct ContentTypeMetadata {
+  // gRPC says that content-type can be application/grpc[;something]
+  // Core has only ever verified the prefix.
+  // IF we want to start verifying more, we can expand this type.
+  enum ValueType {
+    kApplicationGrpc,
+    kInvalid,
+  };
+  using MementoType = ValueType;
+  static absl::string_view key() { return "content-type"; }
+  static MementoType ParseMemento(Slice value) {
+    auto out = kInvalid;
+    auto value_string = value.as_string_view();
+    if (value_string == "application/grpc") {
+      out = kApplicationGrpc;
+    } else if (absl::StartsWith(value_string, "application/grpc;")) {
+      out = kApplicationGrpc;
+    } else if (absl::StartsWith(value_string, "application/grpc+")) {
+      out = kApplicationGrpc;
+    }
+    return out;
+  }
+  static ValueType MementoToValue(MementoType content_type) {
+    return content_type;
+  }
+  static StaticSlice Encode(ValueType x) {
+    GPR_ASSERT(x == kApplicationGrpc);
+    return StaticSlice::FromStaticString("application/grpc");
+  }
+  static const char* DisplayValue(MementoType content_type) {
+    switch (content_type) {
+      case ValueType::kApplicationGrpc:
+        return "application/grpc";
+      default:
+        return "<discarded-invalid-value>";
+    }
+  }
+};
+
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
@@ -1016,7 +1056,7 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
     grpc_core::GrpcPreviousRpcAttemptsMetadata,
-    grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::TeMetadata,
+    grpc_core::GrpcRetryPushbackMsMetadata,grpc_core::ContentTypeMetadata, grpc_core::TeMetadata,
     grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata,
     grpc_core::HostMetadata, grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,

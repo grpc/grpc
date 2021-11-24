@@ -146,38 +146,7 @@ static grpc_error_handle client_filter_incoming_metadata(
         grpc_core::PermissivePercentDecodeSlice(std::move(*grpc_message));
   }
 
-  if (b->legacy_index()->named.content_type != nullptr) {
-    if (!grpc_mdelem_static_value_eq(
-            b->legacy_index()->named.content_type->md,
-            GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-      if (grpc_slice_buf_start_eq(
-              GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
-              EXPECTED_CONTENT_TYPE, EXPECTED_CONTENT_TYPE_LENGTH) &&
-          (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->legacy_index()
-                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               '+' ||
-           GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->legacy_index()
-                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               ';')) {
-        /* Although the C implementation doesn't (currently) generate them,
-           any custom +-suffix is explicitly valid. */
-        /* TODO(klempner): We should consider preallocating common values such
-           as +proto or +json, or at least stashing them if we see them. */
-        /* TODO(klempner): Should we be surfacing this to application code? */
-      } else {
-        /* TODO(klempner): We're currently allowing this, but we shouldn't
-           see it without a proxy so log for now. */
-        char* val = grpc_dump_slice(
-            GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
-            GPR_DUMP_ASCII);
-        gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
-        gpr_free(val);
-      }
-    }
-    b->Remove(GRPC_BATCH_CONTENT_TYPE);
-  }
+  b->Remove(grpc_core::ContentTypeMetadata());
 
   return GRPC_ERROR_NONE;
 }
@@ -436,9 +405,6 @@ static void http_client_start_transport_stream_op_batch(
     remove_if_present(
         batch->payload->send_initial_metadata.send_initial_metadata,
         GRPC_BATCH_SCHEME);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_CONTENT_TYPE);
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
@@ -452,11 +418,8 @@ static void http_client_start_transport_stream_op_batch(
     if (error != GRPC_ERROR_NONE) goto done;
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
         grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-        GRPC_BATCH_CONTENT_TYPE);
-    if (error != GRPC_ERROR_NONE) goto done;
+    batch->payload->send_initial_metadata.send_initial_metadata->Set(
+        grpc_core::ContentTypeMetadata(), grpc_core::ContentTypeMetadata::kApplicationGrpc);
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
         grpc_core::UserAgentMetadata(), channeld->user_agent.Ref());
   }

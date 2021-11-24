@@ -307,8 +307,7 @@ class RepresentativeClientInitialMetadata {
         b->Append(
             GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
+    b->Set(grpc_core::ContentTypeMetadata(), grpc_core::ContentTypeMetadata::kApplicationGrpc);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd", b->Append(grpc_mdelem_from_slices(
                      GRPC_MDSTR_USER_AGENT,

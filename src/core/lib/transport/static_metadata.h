@@ -34,7 +34,7 @@
 #include "src/core/lib/slice/static_slice.h"
 #include "src/core/lib/transport/metadata.h"
 
-#define GRPC_STATIC_MDELEM_COUNT 81
+#define GRPC_STATIC_MDELEM_COUNT 80
 
 namespace grpc_core {
 extern StaticMetadata g_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
@@ -201,55 +201,52 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "grpc-encoding": "deflate" */
 #define GRPC_MDELEM_GRPC_ENCODING_DEFLATE \
   (::grpc_core::g_static_mdelem_manifested[63])
-/* "content-type": "application/grpc" */
-#define GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC \
-  (::grpc_core::g_static_mdelem_manifested[64])
 /* ":scheme": "grpc" */
-#define GRPC_MDELEM_SCHEME_GRPC (::grpc_core::g_static_mdelem_manifested[65])
+#define GRPC_MDELEM_SCHEME_GRPC (::grpc_core::g_static_mdelem_manifested[64])
 /* ":method": "PUT" */
-#define GRPC_MDELEM_METHOD_PUT (::grpc_core::g_static_mdelem_manifested[66])
+#define GRPC_MDELEM_METHOD_PUT (::grpc_core::g_static_mdelem_manifested[65])
 /* "accept-encoding": "" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_EMPTY \
-  (::grpc_core::g_static_mdelem_manifested[67])
+  (::grpc_core::g_static_mdelem_manifested[66])
 /* "content-encoding": "identity" */
 #define GRPC_MDELEM_CONTENT_ENCODING_IDENTITY \
-  (::grpc_core::g_static_mdelem_manifested[68])
+  (::grpc_core::g_static_mdelem_manifested[67])
 /* "content-encoding": "gzip" */
 #define GRPC_MDELEM_CONTENT_ENCODING_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[69])
+  (::grpc_core::g_static_mdelem_manifested[68])
 /* "lb-cost-bin": "" */
 #define GRPC_MDELEM_LB_COST_BIN_EMPTY \
-  (::grpc_core::g_static_mdelem_manifested[70])
+  (::grpc_core::g_static_mdelem_manifested[69])
 /* "grpc-accept-encoding": "identity" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY \
-  (::grpc_core::g_static_mdelem_manifested[71])
+  (::grpc_core::g_static_mdelem_manifested[70])
 /* "grpc-accept-encoding": "deflate" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE \
-  (::grpc_core::g_static_mdelem_manifested[72])
+  (::grpc_core::g_static_mdelem_manifested[71])
 /* "grpc-accept-encoding": "identity,deflate" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE \
-  (::grpc_core::g_static_mdelem_manifested[73])
+  (::grpc_core::g_static_mdelem_manifested[72])
 /* "grpc-accept-encoding": "gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[74])
+  (::grpc_core::g_static_mdelem_manifested[73])
 /* "grpc-accept-encoding": "identity,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[75])
+  (::grpc_core::g_static_mdelem_manifested[74])
 /* "grpc-accept-encoding": "deflate,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[76])
+  (::grpc_core::g_static_mdelem_manifested[75])
 /* "grpc-accept-encoding": "identity,deflate,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[77])
+  (::grpc_core::g_static_mdelem_manifested[76])
 /* "accept-encoding": "identity" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY \
-  (::grpc_core::g_static_mdelem_manifested[78])
+  (::grpc_core::g_static_mdelem_manifested[77])
 /* "accept-encoding": "gzip" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[79])
+  (::grpc_core::g_static_mdelem_manifested[78])
 /* "accept-encoding": "identity,gzip" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[80])
+  (::grpc_core::g_static_mdelem_manifested[79])
 
 grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b);
 typedef enum {
@@ -260,7 +257,6 @@ typedef enum {
   GRPC_BATCH_SCHEME,
   GRPC_BATCH_GRPC_ENCODING,
   GRPC_BATCH_GRPC_ACCEPT_ENCODING,
-  GRPC_BATCH_CONTENT_TYPE,
   GRPC_BATCH_CONTENT_ENCODING,
   GRPC_BATCH_ACCEPT_ENCODING,
   GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
@@ -277,7 +273,6 @@ typedef union {
     struct grpc_linked_mdelem* scheme;
     struct grpc_linked_mdelem* grpc_encoding;
     struct grpc_linked_mdelem* grpc_accept_encoding;
-    struct grpc_linked_mdelem* content_type;
     struct grpc_linked_mdelem* content_encoding;
     struct grpc_linked_mdelem* accept_encoding;
     struct grpc_linked_mdelem* grpc_internal_encoding_request;
