@@ -1500,6 +1500,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "tsi_base",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
