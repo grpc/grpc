@@ -992,7 +992,7 @@ class PublishToAppEncoder {
            value.c_slice());
   }
   template <typename Which>
-  void Encode(Which, typename Which::ValueType value) {
+  void Encode(Which, const typename Which::ValueType& value) {
     Encode(Which(), Which::Encode(value));
   }
 
