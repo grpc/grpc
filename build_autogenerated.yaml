@@ -5553,6 +5553,21 @@ targets:
   - test/core/gprpp/cpp_impl_of_test.cc
   deps: []
   uses_polling: false
+- name: crl_ssl_transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/crl_ssl_transport_security_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: delegating_channel_test
   gtest: true
   build: test

@@ -156,7 +156,6 @@ EXPORTS
     grpc_tls_credentials_options_set_identity_cert_name
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_crl_directory
-    grpc_tls_server_authorization_check_config_create
     grpc_tls_credentials_options_set_verify_server_cert
     grpc_tls_credentials_options_set_check_call_host
     grpc_xds_credentials_create
