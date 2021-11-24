@@ -181,6 +181,97 @@ struct ContentTypeMetadata {
   }
 };
 
+// scheme metadata trait.
+struct SchemeMetadata {
+  // gRPC says that content-type can be application/grpc[;something]
+  // Core has only ever verified the prefix.
+  // IF we want to start verifying more, we can expand this type.
+  enum ValueType {
+    kHttp,
+    kHttps,
+    kInvalid,
+  };
+  using MementoType = ValueType;
+  static absl::string_view key() { return ":scheme"; }
+  static MementoType ParseMemento(Slice value) {
+    return Parse(value.as_string_view());
+  }
+  static ValueType Parse(absl::string_view value) {
+    if (value == "http") {
+      return kHttp;
+    } else if (value == "https") {
+      return kHttps;
+    }
+    return kInvalid;
+  }
+  static ValueType MementoToValue(MementoType content_type) {
+    return content_type;
+  }
+  static StaticSlice Encode(ValueType x) {
+    switch (x) {
+      case kHttp: return StaticSlice::FromStaticString("http");
+      case kHttps: return StaticSlice::FromStaticString("https");
+      default: abort();
+    }
+  }
+  static const char* DisplayValue(MementoType content_type) {
+    switch (content_type) {
+      case kHttp:
+        return "http";
+      case kHttps: return "https";
+      default:
+        return "<discarded-invalid-value>";
+    }
+  }
+};
+
+// method metadata trait.
+struct MethodMetadata {
+  // gRPC says that content-type can be application/grpc[;something]
+  // Core has only ever verified the prefix.
+  // IF we want to start verifying more, we can expand this type.
+  enum ValueType {
+    kPost,
+    kPut,
+    kGet,
+    kInvalid,
+  };
+  using MementoType = ValueType;
+  static absl::string_view key() { return ":method"; }
+  static MementoType ParseMemento(Slice value) {
+    auto out = kInvalid;
+    auto value_string = value.as_string_view();
+    if (value_string == "post") {
+      out = kPost;
+    } else if (value_string == "put") {
+      out = kPut;
+    } else if (value_string == "get") {
+      out = kGet;
+    }
+    return out;
+  }
+  static ValueType MementoToValue(MementoType content_type) {
+    return content_type;
+  }
+  static StaticSlice Encode(ValueType x) {
+    switch (x) {
+      case kPost: return StaticSlice::FromStaticString("post");
+      case kPut: return StaticSlice::FromStaticString("put");
+      case kGet: return StaticSlice::FromStaticString("get");
+      default: abort();
+    }
+  }
+  static const char* DisplayValue(MementoType content_type) {
+    switch (content_type) {
+      case kPost: return "post";
+      case kPut: return "put";
+      case kGet: return "get";
+      default:
+        return "<discarded-invalid-value>";
+    }
+  }
+};
+
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
@@ -227,6 +318,16 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
+// :authority metadata trait.
+struct AuthorityMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return ":authority"; }
+};
+
+// :path metadata trait.
+struct PathMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return ":path"; }
+};
+
 template <typename Int>
 struct SimpleIntBasedMetadataBase {
   using ValueType = Int;
@@ -268,6 +369,12 @@ struct GrpcPreviousRpcAttemptsMetadata
 struct GrpcRetryPushbackMsMetadata
     : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
+};
+
+// :status metadata trait.
+// TODO(ctiller): consider moving to uint16_t
+struct StatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static absl::string_view key() { return ":status"; }
 };
 
 namespace metadata_detail {
@@ -1054,10 +1161,16 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 }  // namespace grpc_core
 
 using grpc_metadata_batch = grpc_core::MetadataMap<
+    // Colon prefixed headers first
+    grpc_core::PathMetadata, 
+    grpc_core::AuthorityMetadata, grpc_core::MethodMetadata, grpc_core::StatusMetadata,
+    grpc_core::SchemeMetadata,
+    // Non-colon prefixed headers begin here
+    grpc_core::ContentTypeMetadata,
+    grpc_core::TeMetadata,
     grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
     grpc_core::GrpcPreviousRpcAttemptsMetadata,
-    grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::ContentTypeMetadata,
-    grpc_core::TeMetadata, grpc_core::UserAgentMetadata,
+    grpc_core::GrpcRetryPushbackMsMetadata,  grpc_core::UserAgentMetadata,
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,

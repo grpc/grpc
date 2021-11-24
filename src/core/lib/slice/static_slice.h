@@ -39,78 +39,78 @@ static_assert(
     std::is_trivially_destructible<grpc_core::StaticMetadataSlice>::value,
     "StaticMetadataSlice must be trivially destructible.");
 #define GRPC_STATIC_MDSTR_COUNT 90
-/* ":path" */
-#define GRPC_MDSTR_PATH (::grpc_core::g_static_metadata_slice_table[0])
-/* ":method" */
-#define GRPC_MDSTR_METHOD (::grpc_core::g_static_metadata_slice_table[1])
-/* ":status" */
-#define GRPC_MDSTR_STATUS (::grpc_core::g_static_metadata_slice_table[2])
-/* ":authority" */
-#define GRPC_MDSTR_AUTHORITY (::grpc_core::g_static_metadata_slice_table[3])
-/* ":scheme" */
-#define GRPC_MDSTR_SCHEME (::grpc_core::g_static_metadata_slice_table[4])
 /* "grpc-encoding" */
-#define GRPC_MDSTR_GRPC_ENCODING (::grpc_core::g_static_metadata_slice_table[5])
+#define GRPC_MDSTR_GRPC_ENCODING (::grpc_core::g_static_metadata_slice_table[0])
 /* "grpc-accept-encoding" */
 #define GRPC_MDSTR_GRPC_ACCEPT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[6])
+  (::grpc_core::g_static_metadata_slice_table[1])
 /* "content-encoding" */
 #define GRPC_MDSTR_CONTENT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[7])
+  (::grpc_core::g_static_metadata_slice_table[2])
 /* "accept-encoding" */
 #define GRPC_MDSTR_ACCEPT_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[8])
+  (::grpc_core::g_static_metadata_slice_table[3])
 /* "grpc-internal-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST \
-  (::grpc_core::g_static_metadata_slice_table[9])
+  (::grpc_core::g_static_metadata_slice_table[4])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[10])
+#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[5])
 /* "" */
-#define GRPC_MDSTR_EMPTY (::grpc_core::g_static_metadata_slice_table[11])
+#define GRPC_MDSTR_EMPTY (::grpc_core::g_static_metadata_slice_table[6])
 /* "/grpc.lb.v1.LoadBalancer/BalanceLoad" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD \
-  (::grpc_core::g_static_metadata_slice_table[12])
+  (::grpc_core::g_static_metadata_slice_table[7])
 /* "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats" */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS \
-  (::grpc_core::g_static_metadata_slice_table[13])
+  (::grpc_core::g_static_metadata_slice_table[8])
 /* "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats" */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V3_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS \
-  (::grpc_core::g_static_metadata_slice_table[14])
+  (::grpc_core::g_static_metadata_slice_table[9])
 /* "/grpc.health.v1.Health/Watch" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH \
-  (::grpc_core::g_static_metadata_slice_table[15])
+  (::grpc_core::g_static_metadata_slice_table[10])
 /* "/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources"
  */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES \
-  (::grpc_core::g_static_metadata_slice_table[16])
+  (::grpc_core::g_static_metadata_slice_table[11])
 /* "/envoy.service.discovery.v3.AggregatedDiscoveryService/StreamAggregatedResources"
  */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V3_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES \
-  (::grpc_core::g_static_metadata_slice_table[17])
+  (::grpc_core::g_static_metadata_slice_table[12])
 /* "deflate" */
-#define GRPC_MDSTR_DEFLATE (::grpc_core::g_static_metadata_slice_table[18])
+#define GRPC_MDSTR_DEFLATE (::grpc_core::g_static_metadata_slice_table[13])
 /* "gzip" */
-#define GRPC_MDSTR_GZIP (::grpc_core::g_static_metadata_slice_table[19])
+#define GRPC_MDSTR_GZIP (::grpc_core::g_static_metadata_slice_table[14])
 /* "stream/gzip" */
 #define GRPC_MDSTR_STREAM_SLASH_GZIP \
-  (::grpc_core::g_static_metadata_slice_table[20])
+  (::grpc_core::g_static_metadata_slice_table[15])
 /* "te" */
-#define GRPC_MDSTR_TE (::grpc_core::g_static_metadata_slice_table[21])
+#define GRPC_MDSTR_TE (::grpc_core::g_static_metadata_slice_table[16])
 /* "trailers" */
-#define GRPC_MDSTR_TRAILERS (::grpc_core::g_static_metadata_slice_table[22])
+#define GRPC_MDSTR_TRAILERS (::grpc_core::g_static_metadata_slice_table[17])
+/* ":authority" */
+#define GRPC_MDSTR_AUTHORITY (::grpc_core::g_static_metadata_slice_table[18])
+/* ":method" */
+#define GRPC_MDSTR_METHOD (::grpc_core::g_static_metadata_slice_table[19])
 /* "GET" */
-#define GRPC_MDSTR_GET (::grpc_core::g_static_metadata_slice_table[23])
+#define GRPC_MDSTR_GET (::grpc_core::g_static_metadata_slice_table[20])
 /* "POST" */
-#define GRPC_MDSTR_POST (::grpc_core::g_static_metadata_slice_table[24])
+#define GRPC_MDSTR_POST (::grpc_core::g_static_metadata_slice_table[21])
+/* ":path" */
+#define GRPC_MDSTR_PATH (::grpc_core::g_static_metadata_slice_table[22])
 /* "/" */
-#define GRPC_MDSTR_SLASH (::grpc_core::g_static_metadata_slice_table[25])
+#define GRPC_MDSTR_SLASH (::grpc_core::g_static_metadata_slice_table[23])
 /* "/index.html" */
 #define GRPC_MDSTR_SLASH_INDEX_DOT_HTML \
-  (::grpc_core::g_static_metadata_slice_table[26])
+  (::grpc_core::g_static_metadata_slice_table[24])
+/* ":scheme" */
+#define GRPC_MDSTR_SCHEME (::grpc_core::g_static_metadata_slice_table[25])
 /* "http" */
-#define GRPC_MDSTR_HTTP (::grpc_core::g_static_metadata_slice_table[27])
+#define GRPC_MDSTR_HTTP (::grpc_core::g_static_metadata_slice_table[26])
 /* "https" */
-#define GRPC_MDSTR_HTTPS (::grpc_core::g_static_metadata_slice_table[28])
+#define GRPC_MDSTR_HTTPS (::grpc_core::g_static_metadata_slice_table[27])
+/* ":status" */
+#define GRPC_MDSTR_STATUS (::grpc_core::g_static_metadata_slice_table[28])
 /* "200" */
 #define GRPC_MDSTR_200 (::grpc_core::g_static_metadata_slice_table[29])
 /* "204" */

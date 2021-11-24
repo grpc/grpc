@@ -79,14 +79,13 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
 }
 
 absl::string_view EvaluateArgs::GetPath() const {
-  absl::string_view path;
-  if (metadata_ != nullptr &&
-      metadata_->legacy_index()->named.path != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.path;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    path = StringViewFromSlice(val);
+  if (metadata_ != nullptr) {
+    const auto* path = metadata_->get_pointer(PathMetadata());
+    if (path != nullptr) {
+      return path->as_string_view();
+    }
   }
-  return path;
+  return absl::string_view();
 }
 
 absl::string_view EvaluateArgs::GetHost() const {
@@ -100,14 +99,11 @@ absl::string_view EvaluateArgs::GetHost() const {
 }
 
 absl::string_view EvaluateArgs::GetMethod() const {
-  absl::string_view method;
-  if (metadata_ != nullptr &&
-      metadata_->legacy_index()->named.method != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.method;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    method = StringViewFromSlice(val);
+  if (metadata_ != nullptr) {
+    auto method_md = metadata_->get(MethodMetadata());
+    if (method_md.has_value()) return MethodMetadata::DisplayValue(*method_md);
   }
-  return method;
+  return absl::string_view();
 }
 
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(

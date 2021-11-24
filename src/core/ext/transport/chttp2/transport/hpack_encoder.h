@@ -36,47 +36,6 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-// Wrapper to take an array of mdelems and make them encodable
-class MetadataArray {
- public:
-  MetadataArray(grpc_mdelem** elems, size_t count)
-      : elems_(elems), count_(count) {}
-
-  template <typename Encoder>
-  void Encode(Encoder* encoder) const {
-    for (size_t i = 0; i < count_; i++) {
-      encoder->Encode(*elems_[i]);
-    }
-  }
-
- private:
-  grpc_mdelem** elems_;
-  size_t count_;
-};
-
-namespace metadata_detail {
-template <typename A, typename B>
-class ConcatMetadata {
- public:
-  ConcatMetadata(const A& a, const B& b) : a_(a), b_(b) {}
-
-  template <typename Encoder>
-  void Encode(Encoder* encoder) const {
-    a_.Encode(encoder);
-    b_.Encode(encoder);
-  }
-
- private:
-  const A& a_;
-  const B& b_;
-};
-}  // namespace metadata_detail
-
-template <typename A, typename B>
-metadata_detail::ConcatMetadata<A, B> ConcatMetadata(const A& a, const B& b) {
-  return metadata_detail::ConcatMetadata<A, B>(a, b);
-}
-
 class HPackCompressor {
  public:
   HPackCompressor() = default;
@@ -117,9 +76,12 @@ class HPackCompressor {
     Framer& operator=(const Framer&) = delete;
 
     void Encode(grpc_mdelem md);
+    void Encode(StatusMetadata, uint32_t status);
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
+    void Encode(SchemeMetadata, SchemeMetadata::ValueType value);
+    void Encode(MethodMetadata, MethodMetadata::ValueType value);
     void Encode(UserAgentMetadata, const Slice& slice);
     void Encode(GrpcStatusMetadata, grpc_status_code status);
     void Encode(GrpcMessageMetadata, const Slice& slice) {

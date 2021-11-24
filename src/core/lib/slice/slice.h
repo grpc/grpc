@@ -321,6 +321,11 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(grpc_slice_sub_no_ref(TakeCSlice(), pos, pos + n));
   }
 
+  // Return a sub slice of this one. Adds a reference to the underlying slice.
+  Slice RefSubSlice(size_t pos, size_t n) const {
+    return Slice(grpc_slice_sub(c_slice(), pos, pos + n));
+  }
+
   Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }
 
   Slice Copy() const { return Slice(grpc_slice_copy(c_slice())); }

@@ -986,6 +986,10 @@ class PublishToAppEncoder {
   void Encode(grpc_core::TeMetadata, grpc_core::TeMetadata::ValueType) {}
   void Encode(grpc_core::ContentTypeMetadata,
               grpc_core::ContentTypeMetadata::ValueType) {}
+  void Encode(grpc_core::SchemeMetadata,
+              grpc_core::SchemeMetadata::ValueType) {}
+  void Encode(grpc_core::MethodMetadata,
+              grpc_core::MethodMetadata::ValueType) {}
 
   template <typename Which>
   void Encode(Which, const grpc_core::Slice& value) {

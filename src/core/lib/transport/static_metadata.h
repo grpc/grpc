@@ -250,11 +250,6 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 
 grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b);
 typedef enum {
-  GRPC_BATCH_PATH,
-  GRPC_BATCH_METHOD,
-  GRPC_BATCH_STATUS,
-  GRPC_BATCH_AUTHORITY,
-  GRPC_BATCH_SCHEME,
   GRPC_BATCH_GRPC_ENCODING,
   GRPC_BATCH_GRPC_ACCEPT_ENCODING,
   GRPC_BATCH_CONTENT_ENCODING,
@@ -266,11 +261,6 @@ typedef enum {
 typedef union {
   struct grpc_linked_mdelem* array[GRPC_BATCH_CALLOUTS_COUNT];
   struct {
-    struct grpc_linked_mdelem* path;
-    struct grpc_linked_mdelem* method;
-    struct grpc_linked_mdelem* status;
-    struct grpc_linked_mdelem* authority;
-    struct grpc_linked_mdelem* scheme;
     struct grpc_linked_mdelem* grpc_encoding;
     struct grpc_linked_mdelem* grpc_accept_encoding;
     struct grpc_linked_mdelem* content_encoding;

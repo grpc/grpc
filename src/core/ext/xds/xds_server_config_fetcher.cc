@@ -1089,19 +1089,17 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     FilterChainMatchManager::XdsServerConfigSelector::GetCallConfig(
         grpc_metadata_batch* metadata) {
   CallConfig call_config;
-  if (metadata->legacy_index()->named.path == nullptr) {
+  if (metadata->get_pointer(PathMetadata()) == nullptr) {
     call_config.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No path found");
     return call_config;
   }
-  absl::string_view path = StringViewFromSlice(
-      GRPC_MDVALUE(metadata->legacy_index()->named.path->md));
-  if (metadata->legacy_index()->named.authority == nullptr) {
+  absl::string_view path = metadata->get_pointer(PathMetadata())->as_string_view();
+  if (metadata->get_pointer(AuthorityMetadata()) == nullptr) {
     call_config.error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("No authority found");
     return call_config;
   }
-  absl::string_view authority = StringViewFromSlice(
-      GRPC_MDVALUE(metadata->legacy_index()->named.authority->md));
+  absl::string_view authority = metadata->get_pointer(AuthorityMetadata())->as_string_view();
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
       VirtualHostListIterator(&virtual_hosts_), authority);
   if (!vhost_index.has_value()) {

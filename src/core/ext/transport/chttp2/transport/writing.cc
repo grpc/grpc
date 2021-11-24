@@ -570,6 +570,12 @@ class StreamWriteContext {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, &t_->outbuf);
     } else {
+      if (send_status_.has_value()) {
+        s_->send_initial_metadata->Set(grpc_core::StatusMetadata(), *send_status_);
+      }
+      if (send_content_type_.has_value()) {
+        s_->send_initial_metadata->Set(grpc_core::ContentTypeMetadata(), *send_content_type_);
+      }
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
               s_->id, true,
@@ -580,11 +586,7 @@ class StreamWriteContext {
               t_->settings[GRPC_PEER_SETTINGS]
                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
               &s_->stats.outgoing},
-          grpc_core::ConcatMetadata(
-              grpc_core::MetadataArray(
-                  extra_headers_for_trailing_metadata_,
-                  num_extra_headers_for_trailing_metadata_),
-              *s_->send_trailing_metadata),
+          *s_->send_trailing_metadata,
           &t_->outbuf);
     }
     write_context_->IncTrailingMetadataWrites();
@@ -605,11 +607,7 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move the :status and
     // content-type headers to the trailers.
-    if (s_->send_initial_metadata->legacy_index()->named.status != nullptr) {
-      extra_headers_for_trailing_metadata_
-          [num_extra_headers_for_trailing_metadata_++] =
-              &s_->send_initial_metadata->legacy_index()->named.status->md;
-    }
+    send_status_ = s_->send_initial_metadata->get(grpc_core::StatusMetadata());
     send_content_type_ =
         s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
   }
@@ -636,8 +634,7 @@ class StreamWriteContext {
   grpc_chttp2_transport* const t_;
   grpc_chttp2_stream* const s_;
   bool stream_became_writable_ = false;
-  grpc_mdelem* extra_headers_for_trailing_metadata_[2];
-  size_t num_extra_headers_for_trailing_metadata_ = 0;
+  absl::optional<uint32_t> send_status_;
   absl::optional<grpc_core::ContentTypeMetadata::ValueType> send_content_type_ =
       {};
 };

@@ -1200,12 +1200,6 @@ Server::CallData::CallData(grpc_call_element* elem,
 Server::CallData::~CallData() {
   GPR_ASSERT(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   GRPC_ERROR_UNREF(recv_initial_metadata_error_);
-  if (host_.has_value()) {
-    grpc_slice_unref_internal(*host_);
-  }
-  if (path_.has_value()) {
-    grpc_slice_unref_internal(*path_);
-  }
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
 }
@@ -1258,8 +1252,8 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
     case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());
       GPR_ASSERT(path_.has_value());
-      rc->data.batch.details->host = grpc_slice_ref_internal(*host_);
-      rc->data.batch.details->method = grpc_slice_ref_internal(*path_);
+      rc->data.batch.details->host = grpc_slice_ref_internal(host_->c_slice());
+      rc->data.batch.details->method = grpc_slice_ref_internal(path_->c_slice());
       rc->data.batch.details->deadline =
           grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = recv_initial_metadata_flags_;
@@ -1320,7 +1314,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
     ChannelRegisteredMethod* rm =
-        chand->GetRegisteredMethod(*host_, *path_,
+        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice(),
                                    (recv_initial_metadata_flags_ &
                                     GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST));
     if (rm != nullptr) {
@@ -1385,17 +1379,8 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
-    GPR_DEBUG_ASSERT(
-        calld->recv_initial_metadata_->legacy_index()->named.path != nullptr);
-    GPR_DEBUG_ASSERT(
-        calld->recv_initial_metadata_->legacy_index()->named.authority !=
-        nullptr);
-    calld->path_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
-        calld->recv_initial_metadata_->legacy_index()->named.path->md)));
-    calld->host_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
-        calld->recv_initial_metadata_->legacy_index()->named.authority->md)));
-    calld->recv_initial_metadata_->Remove(GRPC_BATCH_PATH);
-    calld->recv_initial_metadata_->Remove(GRPC_BATCH_AUTHORITY);
+    calld->path_ = calld->recv_initial_metadata_->Take(PathMetadata());
+    calld->host_ = calld->recv_initial_metadata_->Take(AuthorityMetadata());
   } else {
     (void)GRPC_ERROR_REF(error);
   }

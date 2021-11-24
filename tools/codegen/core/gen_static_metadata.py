@@ -36,10 +36,8 @@ import perfection
 CONFIG = [
     # metadata strings
     'grpc-internal-encoding-request',
-    ':path',
     'grpc-encoding',
     'grpc-accept-encoding',
-    ':authority',
     'grpc-timeout',
     '',
     # well known method names
