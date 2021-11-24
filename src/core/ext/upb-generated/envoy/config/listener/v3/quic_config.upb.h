@@ -168,6 +168,8 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listen
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_listener_v3_quic_config_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

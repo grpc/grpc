@@ -1,0 +1,618 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      wait_ms: 1000
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+  }
+}
+actions {
+  create_call {
+    method: { value: "/foo" }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {}
+    }
+    operations {
+      receive_initial_metadata {}
+    }
+  }
+}
+actions {
+  request_call {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  change_active_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {}
+    }
+  }
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  change_active_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "hello world"
+        }
+      }
+    }
+  }
+}
+actions {
+  change_active_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {}
+    }
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  change_active_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "hello world"
+        }
+      }
+    }
+  }
+}
+actions {
+  change_active_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {}
+    }
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  change_active_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      receive_status_on_client {}
+    }
+  }
+}
+actions {
+  change_active_call {}
+}
+actions {
+  queue_batch {
+    operations {
+      send_status_from_server {
+        status_code: 0
+      }
+    }
+    operations {
+      receive_close_on_server {}
+    }
+  }
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  queue_batch {
+    operations {
+      send_close_from_client {}
+    }
+  }
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq: {}
+}
+actions {
+  advance_time: 1000000
+}
+

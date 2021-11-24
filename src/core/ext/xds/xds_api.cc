@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -91,6 +89,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -343,104 +342,6 @@ std::string XdsApi::RdsUpdate::ToString() const {
     vhosts.push_back("]\n");
   }
   return absl::StrJoin(vhosts, "");
-}
-
-namespace {
-
-// Better match type has smaller value.
-enum MatchType {
-  EXACT_MATCH,
-  SUFFIX_MATCH,
-  PREFIX_MATCH,
-  UNIVERSE_MATCH,
-  INVALID_MATCH,
-};
-
-// Returns true if match succeeds.
-bool DomainMatch(MatchType match_type, const std::string& domain_pattern_in,
-                 const std::string& expected_host_name_in) {
-  // Normalize the args to lower-case. Domain matching is case-insensitive.
-  std::string domain_pattern = domain_pattern_in;
-  std::string expected_host_name = expected_host_name_in;
-  std::transform(domain_pattern.begin(), domain_pattern.end(),
-                 domain_pattern.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  std::transform(expected_host_name.begin(), expected_host_name.end(),
-                 expected_host_name.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  if (match_type == EXACT_MATCH) {
-    return domain_pattern == expected_host_name;
-  } else if (match_type == SUFFIX_MATCH) {
-    // Asterisk must match at least one char.
-    if (expected_host_name.size() < domain_pattern.size()) return false;
-    absl::string_view pattern_suffix(domain_pattern.c_str() + 1);
-    absl::string_view host_suffix(expected_host_name.c_str() +
-                                  expected_host_name.size() -
-                                  pattern_suffix.size());
-    return pattern_suffix == host_suffix;
-  } else if (match_type == PREFIX_MATCH) {
-    // Asterisk must match at least one char.
-    if (expected_host_name.size() < domain_pattern.size()) return false;
-    absl::string_view pattern_prefix(domain_pattern.c_str(),
-                                     domain_pattern.size() - 1);
-    absl::string_view host_prefix(expected_host_name.c_str(),
-                                  pattern_prefix.size());
-    return pattern_prefix == host_prefix;
-  } else {
-    return match_type == UNIVERSE_MATCH;
-  }
-}
-
-MatchType DomainPatternMatchType(const std::string& domain_pattern) {
-  if (domain_pattern.empty()) return INVALID_MATCH;
-  if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
-  if (domain_pattern == "*") return UNIVERSE_MATCH;
-  if (domain_pattern[0] == '*') return SUFFIX_MATCH;
-  if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
-  return INVALID_MATCH;
-}
-
-}  // namespace
-
-XdsApi::RdsUpdate::VirtualHost* XdsApi::RdsUpdate::FindVirtualHostForDomain(
-    const std::string& domain) {
-  // Find the best matched virtual host.
-  // The search order for 4 groups of domain patterns:
-  //   1. Exact match.
-  //   2. Suffix match (e.g., "*ABC").
-  //   3. Prefix match (e.g., "ABC*").
-  //   4. Universe match (i.e., "*").
-  // Within each group, longest match wins.
-  // If the same best matched domain pattern appears in multiple virtual hosts,
-  // the first matched virtual host wins.
-  VirtualHost* target_vhost = nullptr;
-  MatchType best_match_type = INVALID_MATCH;
-  size_t longest_match = 0;
-  // Check each domain pattern in each virtual host to determine the best
-  // matched virtual host.
-  for (VirtualHost& vhost : virtual_hosts) {
-    for (const std::string& domain_pattern : vhost.domains) {
-      // Check the match type first. Skip the pattern if it's not better than
-      // current match.
-      const MatchType match_type = DomainPatternMatchType(domain_pattern);
-      // This should be caught by RouteConfigParse().
-      GPR_ASSERT(match_type != INVALID_MATCH);
-      if (match_type > best_match_type) continue;
-      if (match_type == best_match_type &&
-          domain_pattern.size() <= longest_match) {
-        continue;
-      }
-      // Skip if match fails.
-      if (!DomainMatch(match_type, domain_pattern, domain)) continue;
-      // Choose this match.
-      target_vhost = &vhost;
-      best_match_type = match_type;
-      longest_match = domain_pattern.size();
-      if (best_match_type == EXACT_MATCH) break;
-    }
-    if (best_match_type == EXACT_MATCH) break;
-  }
-  return target_vhost;
 }
 
 //
@@ -821,23 +722,18 @@ std::string XdsApi::EdsUpdate::ToString() const {
 // XdsApi
 //
 
-const char* XdsApi::kLdsTypeUrl =
-    "type.googleapis.com/envoy.config.listener.v3.Listener";
-const char* XdsApi::kRdsTypeUrl =
-    "type.googleapis.com/envoy.config.route.v3.RouteConfiguration";
-const char* XdsApi::kCdsTypeUrl =
-    "type.googleapis.com/envoy.config.cluster.v3.Cluster";
+const char* XdsApi::kLdsTypeUrl = "envoy.config.listener.v3.Listener";
+const char* XdsApi::kRdsTypeUrl = "envoy.config.route.v3.RouteConfiguration";
+const char* XdsApi::kCdsTypeUrl = "envoy.config.cluster.v3.Cluster";
 const char* XdsApi::kEdsTypeUrl =
-    "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment";
+    "envoy.config.endpoint.v3.ClusterLoadAssignment";
 
 namespace {
 
-const char* kLdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Listener";
-const char* kRdsV2TypeUrl =
-    "type.googleapis.com/envoy.api.v2.RouteConfiguration";
-const char* kCdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
-const char* kEdsV2TypeUrl =
-    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+const char* kLdsV2TypeUrl = "envoy.api.v2.Listener";
+const char* kRdsV2TypeUrl = "envoy.api.v2.RouteConfiguration";
+const char* kCdsV2TypeUrl = "envoy.api.v2.Cluster";
+const char* kEdsV2TypeUrl = "envoy.api.v2.ClusterLoadAssignment";
 
 bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
   if (type_url == XdsApi::kLdsTypeUrl) return true;
@@ -864,9 +760,9 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
     absl::string_view name,
     std::function<bool(absl::string_view, bool*)> is_expected_type) {
   // Old-style names use the empty string for authority.
-  // ID is prefixed with "old:" to indicate that it's an old-style name.
+  // authority is prefixed with "old:" to indicate that it's an old-style name.
   if (!absl::StartsWith(name, "xdstp:")) {
-    return XdsApi::ResourceName{"", absl::StrCat("old:", name)};
+    return XdsApi::ResourceName{"old:", std::string(name)};
   }
   // New style name.  Parse URI.
   auto uri = URI::Parse(name);
@@ -882,9 +778,9 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
       uri->query_parameter_map().begin(), uri->query_parameter_map().end());
   std::sort(query_parameters.begin(), query_parameters.end());
   return XdsApi::ResourceName{
-      uri->authority(),
+      absl::StrCat("xdstp:", uri->authority()),
       absl::StrCat(
-          "xdstp:", path_parts.second, (query_parameters.empty() ? "?" : ""),
+          path_parts.second, (query_parameters.empty() ? "?" : ""),
           absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
 }
 
@@ -971,9 +867,8 @@ absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
 std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
                                               absl::string_view resource_type,
                                               absl::string_view name) {
-  if (absl::StartsWith(name, "xdstp:")) {
-    return absl::StrCat("xdstp://", authority, "/", resource_type,
-                        absl::StripPrefix(name, "xdstp:"));
+  if (absl::ConsumePrefix(&authority, "xdstp:")) {
+    return absl::StrCat("xdstp://", authority, "/", resource_type, "/", name);
   } else {
     return std::string(absl::StripPrefix(name, "old:"));
   }
@@ -1210,8 +1105,10 @@ grpc_slice XdsApi::CreateAdsRequest(
   // Set type_url.
   absl::string_view real_type_url =
       TypeUrlExternalToInternal(server.ShouldUseV3(), type_url);
+  std::string real_type_url_str =
+      absl::StrCat("type.googleapis.com/", real_type_url);
   envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
-      request, StdStringToUpbString(real_type_url));
+      request, StdStringToUpbString(real_type_url_str));
   // Set version_info.
   if (!version.empty()) {
     envoy_service_discovery_v3_DiscoveryRequest_set_version_info(
@@ -1263,7 +1160,7 @@ grpc_slice XdsApi::CreateAdsRequest(
     for (const auto& p : a.second) {
       absl::string_view resource_id = p;
       resource_name_storage.push_back(
-          ConstructFullResourceName(authority, type_url, resource_id));
+          ConstructFullResourceName(authority, real_type_url, resource_id));
       envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
           request, StdStringToUpbString(resource_name_storage.back()),
           arena.ptr());
@@ -1909,7 +1806,6 @@ grpc_error_handle RouteConfigParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     bool /*is_v2*/, XdsApi::RdsUpdate* rds_update) {
-  MaybeLogRouteConfiguration(context, route_config);
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
@@ -1924,8 +1820,7 @@ grpc_error_handle RouteConfigParse(
         virtual_hosts[i], &domain_size);
     for (size_t j = 0; j < domain_size; ++j) {
       std::string domain_pattern = UpbStringToStdString(domains[j]);
-      const MatchType match_type = DomainPatternMatchType(domain_pattern);
-      if (match_type == INVALID_MATCH) {
+      if (!XdsRouting::IsValidDomainPattern(domain_pattern)) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("Invalid domain pattern \"", domain_pattern, "\"."));
       }
@@ -3503,8 +3398,9 @@ grpc_error_handle AdsResponseParse(
       envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
   for (size_t i = 0; i < size; ++i) {
     // Check the type_url of the resource.
-    absl::string_view type_url =
-        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
+    absl::string_view type_url = absl::StripPrefix(
+        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i])),
+        "type.googleapis.com/");
     bool is_v2 = false;
     if (!resource_type_selector_function(type_url, &is_v2)) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -3637,8 +3533,10 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   }
   MaybeLogDiscoveryResponse(context, response);
   // Record the type_url, the version_info, and the nonce of the response.
-  result.type_url = TypeUrlInternalToExternal(UpbStringToAbsl(
-      envoy_service_discovery_v3_DiscoveryResponse_type_url(response)));
+  result.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
+      UpbStringToAbsl(
+          envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
+      "type.googleapis.com/"));
   result.version = UpbStringToStdString(
       envoy_service_discovery_v3_DiscoveryResponse_version_info(response));
   result.nonce = UpbStringToStdString(
@@ -3910,9 +3808,12 @@ std::string XdsApi::AssembleClientConfig(
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
   // Dump each resource.
+  std::vector<std::string> type_url_storage;
   for (const auto& p : resource_type_metadata_map) {
     absl::string_view type_url = p.first;
     const ResourceMetadataMap& resource_metadata_map = p.second;
+    type_url_storage.emplace_back(
+        absl::StrCat("type.googleapis.com/", type_url));
     for (const auto& q : resource_metadata_map) {
       absl::string_view resource_name = q.first;
       const ResourceMetadata& metadata = *q.second;
@@ -3920,7 +3821,7 @@ std::string XdsApi::AssembleClientConfig(
           envoy_service_status_v3_ClientConfig_add_generic_xds_configs(
               client_config, context.arena);
       envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(
-          entry, StdStringToUpbString(type_url));
+          entry, StdStringToUpbString(type_url_storage.back()));
       envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(
           entry, StdStringToUpbString(resource_name));
       envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(
@@ -3933,8 +3834,8 @@ std::string XdsApi::AssembleClientConfig(
         auto* any_field =
             envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
                 entry, context.arena);
-        google_protobuf_Any_set_type_url(any_field,
-                                         StdStringToUpbString(type_url));
+        google_protobuf_Any_set_type_url(
+            any_field, StdStringToUpbString(type_url_storage.back()));
         google_protobuf_Any_set_value(
             any_field, StdStringToUpbString(metadata.serialized_proto));
       }

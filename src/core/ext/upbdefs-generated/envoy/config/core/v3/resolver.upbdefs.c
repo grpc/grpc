@@ -8,18 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/resolver.upbdefs.h"
+#include "envoy/config/core/v3/resolver.upb.h"
 
 extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_DnsResolverOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_DnsResolutionConfig_msginit;
-
-static const upb_msglayout *layouts[2] = {
-  &envoy_config_core_v3_DnsResolverOptions_msginit,
-  &envoy_config_core_v3_DnsResolutionConfig_msginit,
-};
-
 static const char descriptor[543] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'r', 'e', 
 's', 'o', 'l', 'v', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 
 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 
@@ -53,7 +46,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_config_core_v3_resolver_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_resolver_proto_upb_file_layout,
   "envoy/config/core/v3/resolver.proto",
   UPB_STRVIEW_INIT(descriptor, 543)
 };

@@ -313,10 +313,10 @@ class AllocatedMetadata : public RefcountedMdBase {
   // TODO(arjunroy): Change to use strongly typed slices instead.
   struct NoRefKey {};
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value);
-  AllocatedMetadata(const grpc_core::ManagedMemorySlice& key,
-                    const grpc_core::UnmanagedMemorySlice& value);
-  AllocatedMetadata(const grpc_core::ExternallyManagedSlice& key,
-                    const grpc_core::UnmanagedMemorySlice& value);
+  AllocatedMetadata(const ManagedMemorySlice& key,
+                    const UnmanagedMemorySlice& value);
+  AllocatedMetadata(const ExternallyManagedSlice& key,
+                    const UnmanagedMemorySlice& value);
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value,
                     const NoRefKey*);
   ~AllocatedMetadata();

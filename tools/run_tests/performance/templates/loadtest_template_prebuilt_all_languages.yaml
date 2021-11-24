@@ -56,9 +56,8 @@ spec:
       args:
       - -c
       - |
-        ${java_worker_command_prefix} timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            /execute/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /run_scripts/run_worker.sh
       command:
       - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
@@ -182,9 +181,8 @@ spec:
       args:
       - -c
       - |
-        ${java_worker_command_prefix} timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            /execute/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /run_scripts/run_worker.sh
       command:
       - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
