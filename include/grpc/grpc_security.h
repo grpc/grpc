@@ -919,8 +919,7 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
  */
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
-    grpc_tls_server_authorization_check_config* config);
-
+    grpc_ssl_client_certificate_request_type type);
 /**
  * EXPERIMENTAL API - Subject to change
  *
