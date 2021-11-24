@@ -919,10 +919,11 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
  */
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
-<<<<<<< HEAD
     grpc_tls_server_authorization_check_config* config);
 
 /**
+ * EXPERIMENTAL API - Subject to change
+ *
  * If set, gRPC will read all hashed x.509 CRL files in the directory and
  * enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
  * version > 1.1.
@@ -930,91 +931,6 @@ GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
  */
 GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
     grpc_tls_credentials_options* options, const char* crl_directory);
-
-/** --- TLS server authorization check config. ---
- *  It is used for experimental purpose for now and subject to change. */
-
-typedef struct grpc_tls_server_authorization_check_arg
-    grpc_tls_server_authorization_check_arg;
-
-/** callback function provided by gRPC used to handle the result of server
-    authorization check. It is used when schedule API is implemented
-    asynchronously, and serves to bring the control back to gRPC C core. It is
-    used for experimental purpose for now and subject to change. */
-typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
-    grpc_tls_server_authorization_check_arg* arg);
-
-/** A struct containing all information necessary to schedule/cancel a server
-    authorization check request.
-    - cb and cb_user_data represent a gRPC-provided callback and an argument
-      passed to it.
-    - success will store the result of server authorization check. That is,
-      if success returns a non-zero value, it means the authorization check
-      passes and if returning zero, it means the check fails.
-   - target_name is the name of an endpoint the channel is connecting to.
-   - peer_cert represents a complete certificate chain including both
-     signing and leaf certificates.
-   - \a subject_alternative_names is an array of size
-     \a subject_alternative_names_size consisting of pointers to strings.
-   - status and error_details contain information
-     about errors occurred when a server authorization check request is
-     scheduled/cancelled.
-   - config is a pointer to the unique
-     grpc_tls_server_authorization_check_config instance that this argument
-     corresponds to.
-   - context is a pointer to a wrapped language implementation of this
-     grpc_tls_server_authorization_check_arg instance.
-   - destroy_context is a pointer to a caller-provided method that cleans
-      up any data associated with the context pointer.
-   It is used for experimental purpose for now and subject to change.
-*/
-struct grpc_tls_server_authorization_check_arg {
-  grpc_tls_on_server_authorization_check_done_cb cb;
-  void* cb_user_data;
-  int success;
-  const char* target_name;
-  const char* peer_cert;
-  const char* peer_cert_full_chain;
-  char** subject_alternative_names;
-  size_t subject_alternative_names_size;
-  grpc_status_code status;
-  grpc_tls_error_details* error_details;
-  grpc_tls_server_authorization_check_config* config;
-  void* context;
-  void (*destroy_context)(void* ctx);
-};
-
-/** Create a grpc_tls_server_authorization_check_config instance.
-    - config_user_data is config-specific, read-only user data
-      that works for all channels created with a credential using the config.
-    - schedule is a pointer to an application-provided callback used to invoke
-      server authorization check API. The implementation of this method has to
-      be non-blocking, but can be performed synchronously or asynchronously.
-      1)If processing occurs synchronously, it populates arg->result,
-      arg->status, and arg->error_details and returns zero.
-      2) If processing occurs asynchronously, it returns a non-zero value. The
-      application then invokes arg->cb when processing is completed. Note that
-      arg->cb cannot be invoked before schedule API returns.
-    - cancel is a pointer to an application-provided callback used to cancel a
-      server authorization check request scheduled via an asynchronous schedule
-      API. arg is used to pinpoint an exact check request to be cancelled. The
-      operation may not have any effect if the request has already been
-      processed.
-    - destruct is a pointer to an application-provided callback used to clean up
-      any data associated with the config.
-    It is used for experimental purpose for now and subject to change.
-*/
-GRPCAPI grpc_tls_server_authorization_check_config*
-grpc_tls_server_authorization_check_config_create(
-    const void* config_user_data,
-    int (*schedule)(void* config_user_data,
-                    grpc_tls_server_authorization_check_arg* arg),
-    void (*cancel)(void* config_user_data,
-                   grpc_tls_server_authorization_check_arg* arg),
-    void (*destruct)(void* config_user_data));
-=======
-    grpc_ssl_client_certificate_request_type type);
->>>>>>> e88f8347b11bda0b3d946e3257d633e41302da1e
 
 /**
  * EXPERIMENTAL API - Subject to change
