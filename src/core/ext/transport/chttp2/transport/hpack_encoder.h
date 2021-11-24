@@ -120,6 +120,7 @@ class HPackCompressor {
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(UserAgentMetadata, const Slice& slice);
+    void Encode(GrpcStatusMetadata, grpc_status_code status);
     void Encode(GrpcMessageMetadata, const Slice& slice) {
       if (slice.empty()) return;
       EmitLitHdrWithNonBinaryStringKeyNotIdx(
@@ -199,6 +200,7 @@ class HPackCompressor {
 
  private:
   static constexpr size_t kNumFilterValues = 64;
+  static constexpr uint32_t kNumCachedGrpcStatusValues = 16;
 
   void AddKeyWithIndex(grpc_slice_refcount* key_ref, uint32_t new_index,
                        uint32_t key_hash);
@@ -304,6 +306,8 @@ class HPackCompressor {
   uint32_t te_index_ = 0;
   // Index into table_ for the user-agent metadata element
   uint32_t user_agent_index_ = 0;
+  // Cached grpc-status values
+  uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};;
   // The user-agent string referred to by user_agent_index_
   Slice user_agent_;
 };

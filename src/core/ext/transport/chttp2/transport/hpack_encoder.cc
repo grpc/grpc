@@ -27,6 +27,7 @@
  * TODO(murgatroid99): Remove this
  */
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -554,6 +555,30 @@ void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
   EncodeAlwaysIndexed(
       &compressor_->user_agent_index_, GRPC_MDSTR_USER_AGENT, slice.c_slice(),
       10 /* user-agent */ + slice.size() + hpack_constants::kEntryOverhead);
+}
+
+void HPackCompressor::Framer::Encode(GrpcStatusMetadata, grpc_status_code status) {
+  const uint32_t code = static_cast<uint32_t>(status);
+  uint32_t* index = nullptr;
+  if (code < kNumCachedGrpcStatusValues) {
+    index = &compressor_->cached_grpc_status_[code];
+    if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
+      EmitIndexed(compressor_->table_.DynamicIndex(*index));
+      return;
+    }
+  }
+  char buffer[GPR_LTOA_MIN_BUFSIZE];
+  gpr_ltoa(code, buffer);
+  grpc_slice key = ExternallyManagedSlice(GrpcStatusMetadata::key().data(), GrpcStatusMetadata::key().size());
+  grpc_slice value = grpc_slice_from_copied_string(buffer);
+  const uint32_t transport_length = GRPC_SLICE_LENGTH(key) + GRPC_SLICE_LENGTH(value) +
+                      hpack_constants::kEntryOverhead;
+  if (index != nullptr) {
+    *index = compressor_->table_.AllocateIndex(transport_length);
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value);
+  } else {
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(key, value);
+  }
 }
 
 void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
