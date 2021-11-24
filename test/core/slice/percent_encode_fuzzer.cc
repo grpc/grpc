@@ -32,13 +32,22 @@ bool leak_check = true;
 static void test(const uint8_t* data, size_t size,
                  grpc_core::PercentEncodingType type) {
   grpc_init();
-  auto input = grpc_core::Slice::FromCopiedBuffer(
-      reinterpret_cast<const char*>(data), size);
-  auto output = grpc_core::PercentEncodeSlice(input.Ref(), type);
-  auto permissive_decoded_output =
-      grpc_core::PermissivePercentDecodeSlice(std::move(output));
-  // decoded output must always match the input
-  GPR_ASSERT(input == permissive_decoded_output);
+  grpc_slice input =
+      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size);
+  grpc_slice output = grpc_core::PercentEncodeSlice(input, type);
+  absl::optional<grpc_slice> decoded_output =
+      grpc_core::PercentDecodeSlice(output, type);
+  // encoder must always produce decodable output
+  GPR_ASSERT(decoded_output.has_value());
+  grpc_slice permissive_decoded_output =
+      grpc_core::PermissivePercentDecodeSlice(output);
+  // and decoded output must always match the input
+  GPR_ASSERT(grpc_slice_eq(input, *decoded_output));
+  GPR_ASSERT(grpc_slice_eq(input, permissive_decoded_output));
+  grpc_slice_unref(input);
+  grpc_slice_unref(output);
+  grpc_slice_unref(*decoded_output);
+  grpc_slice_unref(permissive_decoded_output);
   grpc_shutdown();
 }
 

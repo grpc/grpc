@@ -138,10 +138,17 @@ static grpc_error_handle client_filter_incoming_metadata(
     }
   }
 
-  if (grpc_core::Slice* grpc_message =
-          b->get_pointer(grpc_core::GrpcMessageMetadata())) {
-    *grpc_message =
-        grpc_core::PermissivePercentDecodeSlice(std::move(*grpc_message));
+  if (b->legacy_index()->named.grpc_message != nullptr) {
+    grpc_slice pct_decoded_msg = grpc_core::PermissivePercentDecodeSlice(
+        GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md));
+    if (grpc_slice_is_equivalent(
+            pct_decoded_msg,
+            GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md))) {
+      grpc_slice_unref_internal(pct_decoded_msg);
+    } else {
+      grpc_metadata_batch_set_value(b->legacy_index()->named.grpc_message,
+                                    pct_decoded_msg);
+    }
   }
 
   if (b->legacy_index()->named.content_type != nullptr) {
