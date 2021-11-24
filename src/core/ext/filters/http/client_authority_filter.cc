@@ -54,11 +54,10 @@ void client_authority_start_transport_stream_op_batch(
   // Handle send_initial_metadata.
   // If the initial metadata doesn't already contain :authority, add it.
   if (batch->send_initial_metadata &&
-      batch->payload->send_initial_metadata.send_initial_metadata->get_pointer(grpc_core::AuthorityMetadata()) == nullptr) {
+      batch->payload->send_initial_metadata.send_initial_metadata->get_pointer(
+          grpc_core::AuthorityMetadata()) == nullptr) {
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
-      grpc_core::AuthorityMetadata(),
-      chand->default_authority.Ref()
-    );
+        grpc_core::AuthorityMetadata(), chand->default_authority.Ref());
   }
   // Pass control down the stack.
   grpc_call_next_op(elem, batch);
@@ -94,7 +93,8 @@ grpc_error_handle client_authority_init_channel_elem(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
   }
-  chand->default_authority = grpc_core::Slice::FromCopiedString(default_authority_str);
+  chand->default_authority =
+      grpc_core::Slice::FromCopiedString(default_authority_str);
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
