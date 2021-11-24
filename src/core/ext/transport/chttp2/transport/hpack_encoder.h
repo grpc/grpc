@@ -140,7 +140,7 @@ class HPackCompressor {
       }
     }
     template <typename Which>
-    void Encode(Which, typename Which::ValueType value) {
+    void Encode(Which, const typename Which::ValueType& value) {
       return Encode(Which(), Which::Encode(value));
     }
 
