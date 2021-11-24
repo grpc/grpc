@@ -1273,8 +1273,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/static_metadata.h )
   s.files += %w( src/core/lib/transport/status_conversion.cc )
   s.files += %w( src/core/lib/transport/status_conversion.h )
-  s.files += %w( src/core/lib/transport/status_metadata.cc )
-  s.files += %w( src/core/lib/transport/status_metadata.h )
   s.files += %w( src/core/lib/transport/timeout_encoding.cc )
   s.files += %w( src/core/lib/transport/timeout_encoding.h )
   s.files += %w( src/core/lib/transport/transport.cc )
