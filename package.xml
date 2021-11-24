@@ -1245,6 +1245,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
