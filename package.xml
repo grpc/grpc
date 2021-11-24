@@ -1253,8 +1253,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
