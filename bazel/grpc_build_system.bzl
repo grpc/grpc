@@ -29,7 +29,7 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
+load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
 # The set of pollers to test against if a test exercises polling
@@ -252,7 +252,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -274,6 +274,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         shard_count: The number of shards for this test.
         flaky: Whether this test is flaky.
         copts: Add these to the compiler invocation.
+        linkstatic: link the binary in static mode
     """
     copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
@@ -294,6 +295,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_properties": exec_properties,
         "shard_count": shard_count,
         "flaky": flaky,
+        "linkstatic": linkstatic,
     }
     if uses_polling:
         # the vanilla version of the test should run on platforms that only
@@ -381,12 +383,13 @@ def grpc_generate_one_off_targets():
 def grpc_generate_objc_one_off_targets():
     pass
 
-def grpc_sh_test(name, srcs, args = [], data = []):
+def grpc_sh_test(name, srcs, args = [], data = [], tags = []):
     native.sh_test(
         name = name,
         srcs = srcs,
         args = args,
         data = data,
+        tags = tags,
     )
 
 def grpc_sh_binary(name, srcs, data = []):
@@ -477,6 +480,9 @@ def grpc_objc_library(
 
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
+
+def grpc_upb_proto_reflection_library(name, deps):
+    upb_proto_reflection_library(name = name, deps = deps)
 
 # buildifier: disable=unnamed-macro
 def python_config_settings():

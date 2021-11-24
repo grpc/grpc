@@ -35,7 +35,6 @@ TEST_F(EvaluateArgsTest, EmptyMetadata) {
   EXPECT_EQ(args.GetPath(), nullptr);
   EXPECT_EQ(args.GetMethod(), nullptr);
   EXPECT_EQ(args.GetHost(), nullptr);
-  EXPECT_THAT(args.GetHeaders(), ::testing::ElementsAre());
   EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
@@ -55,16 +54,6 @@ TEST_F(EvaluateArgsTest, GetMethodSuccess) {
   util_.AddPairToMetadata(":method", "GET");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetMethod(), "GET");
-}
-
-TEST_F(EvaluateArgsTest, GetHeadersSuccess) {
-  util_.AddPairToMetadata("host", "host123");
-  util_.AddPairToMetadata(":path", "/expected/path");
-  EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_THAT(args.GetHeaders(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("host", "host123"),
-                  ::testing::Pair(":path", "/expected/path")));
 }
 
 TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {

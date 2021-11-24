@@ -937,10 +937,11 @@ TEST_F(GrpcToolTest, CallCommandWithTimeoutDeadlineUpperBound) {
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
 
+  std::string output = output_stream.str();
+
   // Expected output: "message: "true""
   // deadline not greater than timeout + current time
-  EXPECT_TRUE(nullptr !=
-              strstr(output_stream.str().c_str(), "message: \"true\""));
+  EXPECT_TRUE(nullptr != strstr(output.c_str(), "message: \"true\"")) << output;
   ShutdownServer();
 }
 
