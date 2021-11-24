@@ -209,16 +209,20 @@ struct SchemeMetadata {
   }
   static StaticSlice Encode(ValueType x) {
     switch (x) {
-      case kHttp: return StaticSlice::FromStaticString("http");
-      case kHttps: return StaticSlice::FromStaticString("https");
-      default: abort();
+      case kHttp:
+        return StaticSlice::FromStaticString("http");
+      case kHttps:
+        return StaticSlice::FromStaticString("https");
+      default:
+        abort();
     }
   }
   static const char* DisplayValue(MementoType content_type) {
     switch (content_type) {
       case kHttp:
         return "http";
-      case kHttps: return "https";
+      case kHttps:
+        return "https";
       default:
         return "<discarded-invalid-value>";
     }
@@ -255,17 +259,24 @@ struct MethodMetadata {
   }
   static StaticSlice Encode(ValueType x) {
     switch (x) {
-      case kPost: return StaticSlice::FromStaticString("post");
-      case kPut: return StaticSlice::FromStaticString("put");
-      case kGet: return StaticSlice::FromStaticString("get");
-      default: abort();
+      case kPost:
+        return StaticSlice::FromStaticString("post");
+      case kPut:
+        return StaticSlice::FromStaticString("put");
+      case kGet:
+        return StaticSlice::FromStaticString("get");
+      default:
+        abort();
     }
   }
   static const char* DisplayValue(MementoType content_type) {
     switch (content_type) {
-      case kPost: return "post";
-      case kPut: return "put";
-      case kGet: return "get";
+      case kPost:
+        return "post";
+      case kPut:
+        return "put";
+      case kGet:
+        return "get";
       default:
         return "<discarded-invalid-value>";
     }
@@ -1162,15 +1173,14 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 
 using grpc_metadata_batch = grpc_core::MetadataMap<
     // Colon prefixed headers first
-    grpc_core::PathMetadata, 
-    grpc_core::AuthorityMetadata, grpc_core::MethodMetadata, grpc_core::StatusMetadata,
+    grpc_core::PathMetadata, grpc_core::AuthorityMetadata,
+    grpc_core::MethodMetadata, grpc_core::StatusMetadata,
     grpc_core::SchemeMetadata,
     // Non-colon prefixed headers begin here
-    grpc_core::ContentTypeMetadata,
-    grpc_core::TeMetadata,
+    grpc_core::ContentTypeMetadata, grpc_core::TeMetadata,
     grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
     grpc_core::GrpcPreviousRpcAttemptsMetadata,
-    grpc_core::GrpcRetryPushbackMsMetadata,  grpc_core::UserAgentMetadata,
+    grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata,
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,

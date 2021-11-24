@@ -81,7 +81,7 @@ class HPackCompressor {
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
     void Encode(SchemeMetadata, SchemeMetadata::ValueType value);
-    void Encode(MethodMetadata, MethodMetadata::ValueType value);
+    void Encode(MethodMetadata, MethodMetadata::ValueType method);
     void Encode(UserAgentMetadata, const Slice& slice);
     void Encode(GrpcStatusMetadata, grpc_status_code status);
     void Encode(GrpcMessageMetadata, const Slice& slice) {
