@@ -10,7 +10,6 @@
 "\x10content-encoding"
 "\x0Faccept-encoding"
 "\x1Egrpc-internal-encoding-request"
-"%grpc-internal-stream-encoding-request"
 "\x0Cgrpc-timeout"
 "\x00"
 "$/grpc.lb.v1.LoadBalancer/BalanceLoad"

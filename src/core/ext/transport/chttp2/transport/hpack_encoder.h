@@ -307,7 +307,7 @@ class HPackCompressor {
   // Index into table_ for the user-agent metadata element
   uint32_t user_agent_index_ = 0;
   // Cached grpc-status values
-  uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};;
+  uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};
   // The user-agent string referred to by user_agent_index_
   Slice user_agent_;
 };

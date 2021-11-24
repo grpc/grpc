@@ -460,14 +460,16 @@ class CLanguage(object):
             # so we only allow the non-specific choices.
             _check_compiler(compiler, ['default', 'cmake'])
 
-        if compiler == 'gcc4.9' or compiler == 'default' or compiler == 'cmake':
-            return ('jessie', [])
+        if compiler == 'default' or compiler == 'cmake':
+            return ('debian9', [])
+        elif compiler == 'gcc4.9':
+            return ('gcc_4.9', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
         elif compiler == 'gcc8.3':
-            return ('buster', [])
+            return ('debian10', [])
         elif compiler == 'gcc8.3_openssl102':
-            return ('buster_openssl102', [
+            return ('debian10_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
         elif compiler == 'gcc11':

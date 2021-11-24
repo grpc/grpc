@@ -36,7 +36,6 @@ import perfection
 CONFIG = [
     # metadata strings
     'grpc-internal-encoding-request',
-    'grpc-internal-stream-encoding-request',
     ':path',
     'grpc-encoding',
     'grpc-accept-encoding',
@@ -147,7 +146,6 @@ METADATA_BATCH_CALLOUTS = [
     'content-encoding',
     'accept-encoding',
     'grpc-internal-encoding-request',
-    'grpc-internal-stream-encoding-request',
 ]
 
 COMPRESSION_ALGORITHMS = [

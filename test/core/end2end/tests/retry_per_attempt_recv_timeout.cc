@@ -222,8 +222,8 @@ static void test_retry_per_attempt_recv_timeout(
     if (grpc_slice_eq(
             request_metadata_recv.metadata[i].key,
             grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, grpc_slice_from_static_string("1")));
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               grpc_slice_from_static_string("1")));
       found_retry_header = true;
       break;
     }
@@ -279,8 +279,8 @@ static void test_retry_per_attempt_recv_timeout(
     if (grpc_slice_eq(
             request_metadata_recv.metadata[i].key,
             grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, grpc_slice_from_static_string("2")));
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               grpc_slice_from_static_string("2")));
       found_retry_header = true;
       break;
     }

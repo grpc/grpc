@@ -38,7 +38,7 @@
 static_assert(
     std::is_trivially_destructible<grpc_core::StaticMetadataSlice>::value,
     "StaticMetadataSlice must be trivially destructible.");
-#define GRPC_STATIC_MDSTR_COUNT 92
+#define GRPC_STATIC_MDSTR_COUNT 91
 /* ":path" */
 #define GRPC_MDSTR_PATH (::grpc_core::g_static_metadata_slice_table[0])
 /* ":method" */
@@ -65,205 +65,202 @@ static_assert(
 /* "grpc-internal-encoding-request" */
 #define GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST \
   (::grpc_core::g_static_metadata_slice_table[10])
-/* "grpc-internal-stream-encoding-request" */
-#define GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST \
-  (::grpc_core::g_static_metadata_slice_table[11])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[12])
+#define GRPC_MDSTR_GRPC_TIMEOUT (::grpc_core::g_static_metadata_slice_table[11])
 /* "" */
-#define GRPC_MDSTR_EMPTY (::grpc_core::g_static_metadata_slice_table[13])
+#define GRPC_MDSTR_EMPTY (::grpc_core::g_static_metadata_slice_table[12])
 /* "/grpc.lb.v1.LoadBalancer/BalanceLoad" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD \
-  (::grpc_core::g_static_metadata_slice_table[14])
+  (::grpc_core::g_static_metadata_slice_table[13])
 /* "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats" */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS \
-  (::grpc_core::g_static_metadata_slice_table[15])
+  (::grpc_core::g_static_metadata_slice_table[14])
 /* "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats" */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V3_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS \
-  (::grpc_core::g_static_metadata_slice_table[16])
+  (::grpc_core::g_static_metadata_slice_table[15])
 /* "/grpc.health.v1.Health/Watch" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH \
-  (::grpc_core::g_static_metadata_slice_table[17])
+  (::grpc_core::g_static_metadata_slice_table[16])
 /* "/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources"
  */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES \
-  (::grpc_core::g_static_metadata_slice_table[18])
+  (::grpc_core::g_static_metadata_slice_table[17])
 /* "/envoy.service.discovery.v3.AggregatedDiscoveryService/StreamAggregatedResources"
  */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V3_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES \
-  (::grpc_core::g_static_metadata_slice_table[19])
+  (::grpc_core::g_static_metadata_slice_table[18])
 /* "deflate" */
-#define GRPC_MDSTR_DEFLATE (::grpc_core::g_static_metadata_slice_table[20])
+#define GRPC_MDSTR_DEFLATE (::grpc_core::g_static_metadata_slice_table[19])
 /* "gzip" */
-#define GRPC_MDSTR_GZIP (::grpc_core::g_static_metadata_slice_table[21])
+#define GRPC_MDSTR_GZIP (::grpc_core::g_static_metadata_slice_table[20])
 /* "stream/gzip" */
 #define GRPC_MDSTR_STREAM_SLASH_GZIP \
-  (::grpc_core::g_static_metadata_slice_table[22])
+  (::grpc_core::g_static_metadata_slice_table[21])
 /* "te" */
-#define GRPC_MDSTR_TE (::grpc_core::g_static_metadata_slice_table[23])
+#define GRPC_MDSTR_TE (::grpc_core::g_static_metadata_slice_table[22])
 /* "trailers" */
-#define GRPC_MDSTR_TRAILERS (::grpc_core::g_static_metadata_slice_table[24])
+#define GRPC_MDSTR_TRAILERS (::grpc_core::g_static_metadata_slice_table[23])
 /* "GET" */
-#define GRPC_MDSTR_GET (::grpc_core::g_static_metadata_slice_table[25])
+#define GRPC_MDSTR_GET (::grpc_core::g_static_metadata_slice_table[24])
 /* "POST" */
-#define GRPC_MDSTR_POST (::grpc_core::g_static_metadata_slice_table[26])
+#define GRPC_MDSTR_POST (::grpc_core::g_static_metadata_slice_table[25])
 /* "/" */
-#define GRPC_MDSTR_SLASH (::grpc_core::g_static_metadata_slice_table[27])
+#define GRPC_MDSTR_SLASH (::grpc_core::g_static_metadata_slice_table[26])
 /* "/index.html" */
 #define GRPC_MDSTR_SLASH_INDEX_DOT_HTML \
-  (::grpc_core::g_static_metadata_slice_table[28])
+  (::grpc_core::g_static_metadata_slice_table[27])
 /* "http" */
-#define GRPC_MDSTR_HTTP (::grpc_core::g_static_metadata_slice_table[29])
+#define GRPC_MDSTR_HTTP (::grpc_core::g_static_metadata_slice_table[28])
 /* "https" */
-#define GRPC_MDSTR_HTTPS (::grpc_core::g_static_metadata_slice_table[30])
+#define GRPC_MDSTR_HTTPS (::grpc_core::g_static_metadata_slice_table[29])
 /* "200" */
-#define GRPC_MDSTR_200 (::grpc_core::g_static_metadata_slice_table[31])
+#define GRPC_MDSTR_200 (::grpc_core::g_static_metadata_slice_table[30])
 /* "204" */
-#define GRPC_MDSTR_204 (::grpc_core::g_static_metadata_slice_table[32])
+#define GRPC_MDSTR_204 (::grpc_core::g_static_metadata_slice_table[31])
 /* "206" */
-#define GRPC_MDSTR_206 (::grpc_core::g_static_metadata_slice_table[33])
+#define GRPC_MDSTR_206 (::grpc_core::g_static_metadata_slice_table[32])
 /* "304" */
-#define GRPC_MDSTR_304 (::grpc_core::g_static_metadata_slice_table[34])
+#define GRPC_MDSTR_304 (::grpc_core::g_static_metadata_slice_table[33])
 /* "400" */
-#define GRPC_MDSTR_400 (::grpc_core::g_static_metadata_slice_table[35])
+#define GRPC_MDSTR_400 (::grpc_core::g_static_metadata_slice_table[34])
 /* "404" */
-#define GRPC_MDSTR_404 (::grpc_core::g_static_metadata_slice_table[36])
+#define GRPC_MDSTR_404 (::grpc_core::g_static_metadata_slice_table[35])
 /* "500" */
-#define GRPC_MDSTR_500 (::grpc_core::g_static_metadata_slice_table[37])
+#define GRPC_MDSTR_500 (::grpc_core::g_static_metadata_slice_table[36])
 /* "accept-charset" */
 #define GRPC_MDSTR_ACCEPT_CHARSET \
-  (::grpc_core::g_static_metadata_slice_table[38])
+  (::grpc_core::g_static_metadata_slice_table[37])
 /* "gzip, deflate" */
 #define GRPC_MDSTR_GZIP_COMMA_DEFLATE \
-  (::grpc_core::g_static_metadata_slice_table[39])
+  (::grpc_core::g_static_metadata_slice_table[38])
 /* "accept-language" */
 #define GRPC_MDSTR_ACCEPT_LANGUAGE \
-  (::grpc_core::g_static_metadata_slice_table[40])
+  (::grpc_core::g_static_metadata_slice_table[39])
 /* "accept-ranges" */
 #define GRPC_MDSTR_ACCEPT_RANGES \
-  (::grpc_core::g_static_metadata_slice_table[41])
+  (::grpc_core::g_static_metadata_slice_table[40])
 /* "accept" */
-#define GRPC_MDSTR_ACCEPT (::grpc_core::g_static_metadata_slice_table[42])
+#define GRPC_MDSTR_ACCEPT (::grpc_core::g_static_metadata_slice_table[41])
 /* "access-control-allow-origin" */
 #define GRPC_MDSTR_ACCESS_CONTROL_ALLOW_ORIGIN \
-  (::grpc_core::g_static_metadata_slice_table[43])
+  (::grpc_core::g_static_metadata_slice_table[42])
 /* "age" */
-#define GRPC_MDSTR_AGE (::grpc_core::g_static_metadata_slice_table[44])
+#define GRPC_MDSTR_AGE (::grpc_core::g_static_metadata_slice_table[43])
 /* "allow" */
-#define GRPC_MDSTR_ALLOW (::grpc_core::g_static_metadata_slice_table[45])
+#define GRPC_MDSTR_ALLOW (::grpc_core::g_static_metadata_slice_table[44])
 /* "authorization" */
 #define GRPC_MDSTR_AUTHORIZATION \
-  (::grpc_core::g_static_metadata_slice_table[46])
+  (::grpc_core::g_static_metadata_slice_table[45])
 /* "cache-control" */
 #define GRPC_MDSTR_CACHE_CONTROL \
-  (::grpc_core::g_static_metadata_slice_table[47])
+  (::grpc_core::g_static_metadata_slice_table[46])
 /* "content-disposition" */
 #define GRPC_MDSTR_CONTENT_DISPOSITION \
-  (::grpc_core::g_static_metadata_slice_table[48])
+  (::grpc_core::g_static_metadata_slice_table[47])
 /* "content-language" */
 #define GRPC_MDSTR_CONTENT_LANGUAGE \
-  (::grpc_core::g_static_metadata_slice_table[49])
+  (::grpc_core::g_static_metadata_slice_table[48])
 /* "content-length" */
 #define GRPC_MDSTR_CONTENT_LENGTH \
-  (::grpc_core::g_static_metadata_slice_table[50])
+  (::grpc_core::g_static_metadata_slice_table[49])
 /* "content-location" */
 #define GRPC_MDSTR_CONTENT_LOCATION \
-  (::grpc_core::g_static_metadata_slice_table[51])
+  (::grpc_core::g_static_metadata_slice_table[50])
 /* "content-range" */
 #define GRPC_MDSTR_CONTENT_RANGE \
-  (::grpc_core::g_static_metadata_slice_table[52])
+  (::grpc_core::g_static_metadata_slice_table[51])
 /* "cookie" */
-#define GRPC_MDSTR_COOKIE (::grpc_core::g_static_metadata_slice_table[53])
+#define GRPC_MDSTR_COOKIE (::grpc_core::g_static_metadata_slice_table[52])
 /* "date" */
-#define GRPC_MDSTR_DATE (::grpc_core::g_static_metadata_slice_table[54])
+#define GRPC_MDSTR_DATE (::grpc_core::g_static_metadata_slice_table[53])
 /* "etag" */
-#define GRPC_MDSTR_ETAG (::grpc_core::g_static_metadata_slice_table[55])
+#define GRPC_MDSTR_ETAG (::grpc_core::g_static_metadata_slice_table[54])
 /* "expect" */
-#define GRPC_MDSTR_EXPECT (::grpc_core::g_static_metadata_slice_table[56])
+#define GRPC_MDSTR_EXPECT (::grpc_core::g_static_metadata_slice_table[55])
 /* "expires" */
-#define GRPC_MDSTR_EXPIRES (::grpc_core::g_static_metadata_slice_table[57])
+#define GRPC_MDSTR_EXPIRES (::grpc_core::g_static_metadata_slice_table[56])
 /* "from" */
-#define GRPC_MDSTR_FROM (::grpc_core::g_static_metadata_slice_table[58])
+#define GRPC_MDSTR_FROM (::grpc_core::g_static_metadata_slice_table[57])
 /* "host" */
-#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[59])
+#define GRPC_MDSTR_HOST (::grpc_core::g_static_metadata_slice_table[58])
 /* "if-match" */
-#define GRPC_MDSTR_IF_MATCH (::grpc_core::g_static_metadata_slice_table[60])
+#define GRPC_MDSTR_IF_MATCH (::grpc_core::g_static_metadata_slice_table[59])
 /* "if-modified-since" */
 #define GRPC_MDSTR_IF_MODIFIED_SINCE \
-  (::grpc_core::g_static_metadata_slice_table[61])
+  (::grpc_core::g_static_metadata_slice_table[60])
 /* "if-none-match" */
 #define GRPC_MDSTR_IF_NONE_MATCH \
-  (::grpc_core::g_static_metadata_slice_table[62])
+  (::grpc_core::g_static_metadata_slice_table[61])
 /* "if-range" */
-#define GRPC_MDSTR_IF_RANGE (::grpc_core::g_static_metadata_slice_table[63])
+#define GRPC_MDSTR_IF_RANGE (::grpc_core::g_static_metadata_slice_table[62])
 /* "if-unmodified-since" */
 #define GRPC_MDSTR_IF_UNMODIFIED_SINCE \
-  (::grpc_core::g_static_metadata_slice_table[64])
+  (::grpc_core::g_static_metadata_slice_table[63])
 /* "last-modified" */
 #define GRPC_MDSTR_LAST_MODIFIED \
-  (::grpc_core::g_static_metadata_slice_table[65])
+  (::grpc_core::g_static_metadata_slice_table[64])
 /* "link" */
-#define GRPC_MDSTR_LINK (::grpc_core::g_static_metadata_slice_table[66])
+#define GRPC_MDSTR_LINK (::grpc_core::g_static_metadata_slice_table[65])
 /* "location" */
-#define GRPC_MDSTR_LOCATION (::grpc_core::g_static_metadata_slice_table[67])
+#define GRPC_MDSTR_LOCATION (::grpc_core::g_static_metadata_slice_table[66])
 /* "max-forwards" */
-#define GRPC_MDSTR_MAX_FORWARDS (::grpc_core::g_static_metadata_slice_table[68])
+#define GRPC_MDSTR_MAX_FORWARDS (::grpc_core::g_static_metadata_slice_table[67])
 /* "proxy-authenticate" */
 #define GRPC_MDSTR_PROXY_AUTHENTICATE \
-  (::grpc_core::g_static_metadata_slice_table[69])
+  (::grpc_core::g_static_metadata_slice_table[68])
 /* "proxy-authorization" */
 #define GRPC_MDSTR_PROXY_AUTHORIZATION \
-  (::grpc_core::g_static_metadata_slice_table[70])
+  (::grpc_core::g_static_metadata_slice_table[69])
 /* "range" */
-#define GRPC_MDSTR_RANGE (::grpc_core::g_static_metadata_slice_table[71])
+#define GRPC_MDSTR_RANGE (::grpc_core::g_static_metadata_slice_table[70])
 /* "referer" */
-#define GRPC_MDSTR_REFERER (::grpc_core::g_static_metadata_slice_table[72])
+#define GRPC_MDSTR_REFERER (::grpc_core::g_static_metadata_slice_table[71])
 /* "refresh" */
-#define GRPC_MDSTR_REFRESH (::grpc_core::g_static_metadata_slice_table[73])
+#define GRPC_MDSTR_REFRESH (::grpc_core::g_static_metadata_slice_table[72])
 /* "retry-after" */
-#define GRPC_MDSTR_RETRY_AFTER (::grpc_core::g_static_metadata_slice_table[74])
+#define GRPC_MDSTR_RETRY_AFTER (::grpc_core::g_static_metadata_slice_table[73])
 /* "server" */
-#define GRPC_MDSTR_SERVER (::grpc_core::g_static_metadata_slice_table[75])
+#define GRPC_MDSTR_SERVER (::grpc_core::g_static_metadata_slice_table[74])
 /* "set-cookie" */
-#define GRPC_MDSTR_SET_COOKIE (::grpc_core::g_static_metadata_slice_table[76])
+#define GRPC_MDSTR_SET_COOKIE (::grpc_core::g_static_metadata_slice_table[75])
 /* "strict-transport-security" */
 #define GRPC_MDSTR_STRICT_TRANSPORT_SECURITY \
-  (::grpc_core::g_static_metadata_slice_table[77])
+  (::grpc_core::g_static_metadata_slice_table[76])
 /* "transfer-encoding" */
 #define GRPC_MDSTR_TRANSFER_ENCODING \
-  (::grpc_core::g_static_metadata_slice_table[78])
+  (::grpc_core::g_static_metadata_slice_table[77])
 /* "user-agent" */
-#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[79])
+#define GRPC_MDSTR_USER_AGENT (::grpc_core::g_static_metadata_slice_table[78])
 /* "vary" */
-#define GRPC_MDSTR_VARY (::grpc_core::g_static_metadata_slice_table[80])
+#define GRPC_MDSTR_VARY (::grpc_core::g_static_metadata_slice_table[79])
 /* "via" */
-#define GRPC_MDSTR_VIA (::grpc_core::g_static_metadata_slice_table[81])
+#define GRPC_MDSTR_VIA (::grpc_core::g_static_metadata_slice_table[80])
 /* "www-authenticate" */
 #define GRPC_MDSTR_WWW_AUTHENTICATE \
-  (::grpc_core::g_static_metadata_slice_table[82])
+  (::grpc_core::g_static_metadata_slice_table[81])
 /* "identity" */
-#define GRPC_MDSTR_IDENTITY (::grpc_core::g_static_metadata_slice_table[83])
+#define GRPC_MDSTR_IDENTITY (::grpc_core::g_static_metadata_slice_table[82])
 /* "application/grpc" */
 #define GRPC_MDSTR_APPLICATION_SLASH_GRPC \
-  (::grpc_core::g_static_metadata_slice_table[84])
+  (::grpc_core::g_static_metadata_slice_table[83])
 /* "grpc" */
-#define GRPC_MDSTR_GRPC (::grpc_core::g_static_metadata_slice_table[85])
+#define GRPC_MDSTR_GRPC (::grpc_core::g_static_metadata_slice_table[84])
 /* "PUT" */
-#define GRPC_MDSTR_PUT (::grpc_core::g_static_metadata_slice_table[86])
+#define GRPC_MDSTR_PUT (::grpc_core::g_static_metadata_slice_table[85])
 /* "lb-cost-bin" */
-#define GRPC_MDSTR_LB_COST_BIN (::grpc_core::g_static_metadata_slice_table[87])
+#define GRPC_MDSTR_LB_COST_BIN (::grpc_core::g_static_metadata_slice_table[86])
 /* "identity,deflate" */
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE \
-  (::grpc_core::g_static_metadata_slice_table[88])
+  (::grpc_core::g_static_metadata_slice_table[87])
 /* "identity,gzip" */
 #define GRPC_MDSTR_IDENTITY_COMMA_GZIP \
-  (::grpc_core::g_static_metadata_slice_table[89])
+  (::grpc_core::g_static_metadata_slice_table[88])
 /* "deflate,gzip" */
 #define GRPC_MDSTR_DEFLATE_COMMA_GZIP \
-  (::grpc_core::g_static_metadata_slice_table[90])
+  (::grpc_core::g_static_metadata_slice_table[89])
 /* "identity,deflate,gzip" */
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (::grpc_core::g_static_metadata_slice_table[91])
+  (::grpc_core::g_static_metadata_slice_table[90])
 
 namespace grpc_core {
 extern StaticSliceRefcount

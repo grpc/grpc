@@ -264,7 +264,6 @@ typedef enum {
   GRPC_BATCH_CONTENT_ENCODING,
   GRPC_BATCH_ACCEPT_ENCODING,
   GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
-  GRPC_BATCH_GRPC_INTERNAL_STREAM_ENCODING_REQUEST,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
@@ -282,7 +281,6 @@ typedef union {
     struct grpc_linked_mdelem* content_encoding;
     struct grpc_linked_mdelem* accept_encoding;
     struct grpc_linked_mdelem* grpc_internal_encoding_request;
-    struct grpc_linked_mdelem* grpc_internal_stream_encoding_request;
   } named;
 } grpc_metadata_batch_callouts;
 

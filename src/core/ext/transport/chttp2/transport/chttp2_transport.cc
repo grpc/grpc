@@ -1245,8 +1245,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
-  return batch->get(grpc_core::GrpcStatusMetadata())
-             .value_or(GRPC_STATUS_OK) != GRPC_STATUS_OK;
+  return batch->get(grpc_core::GrpcStatusMetadata()).value_or(GRPC_STATUS_OK) !=
+         GRPC_STATUS_OK;
 }
 
 static void maybe_become_writable_due_to_send_msg(grpc_chttp2_transport* t,

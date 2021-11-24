@@ -271,11 +271,19 @@ class BinaryStringValue {
   explicit BinaryStringValue(const grpc_slice& value,
                              bool use_true_binary_metadata)
       : wire_value_(GetWireValue(value, use_true_binary_metadata, true)),
-        len_val_(GRPC_SLICE_LENGTH(value)) {}
+        len_val_(wire_value_.length) {}
 
-  size_t prefix_length() const { return len_val_.length(); }
+  size_t prefix_length() const {
+    return len_val_.length() +
+           (wire_value_.insert_null_before_wire_value ? 1 : 0);
+  }
 
-  void WritePrefix(uint8_t* prefix_data) { len_val_.Write(0x00, prefix_data); }
+  void WritePrefix(uint8_t* prefix_data) {
+    len_val_.Write(wire_value_.huffman_prefix, prefix_data);
+    if (wire_value_.insert_null_before_wire_value) {
+      prefix_data[len_val_.length()] = 0;
+    }
+  }
 
   const grpc_slice& data() { return wire_value_.data; }
 
@@ -557,7 +565,8 @@ void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
       10 /* user-agent */ + slice.size() + hpack_constants::kEntryOverhead);
 }
 
-void HPackCompressor::Framer::Encode(GrpcStatusMetadata, grpc_status_code status) {
+void HPackCompressor::Framer::Encode(GrpcStatusMetadata,
+                                     grpc_status_code status) {
   const uint32_t code = static_cast<uint32_t>(status);
   uint32_t* index = nullptr;
   if (code < kNumCachedGrpcStatusValues) {
@@ -569,10 +578,12 @@ void HPackCompressor::Framer::Encode(GrpcStatusMetadata, grpc_status_code status
   }
   char buffer[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(code, buffer);
-  grpc_slice key = ExternallyManagedSlice(GrpcStatusMetadata::key().data(), GrpcStatusMetadata::key().size());
+  grpc_slice key = ExternallyManagedSlice(GrpcStatusMetadata::key().data(),
+                                          GrpcStatusMetadata::key().size());
   grpc_slice value = grpc_slice_from_copied_string(buffer);
-  const uint32_t transport_length = GRPC_SLICE_LENGTH(key) + GRPC_SLICE_LENGTH(value) +
-                      hpack_constants::kEntryOverhead;
+  const uint32_t transport_length = GRPC_SLICE_LENGTH(key) +
+                                    GRPC_SLICE_LENGTH(value) +
+                                    hpack_constants::kEntryOverhead;
   if (index != nullptr) {
     *index = compressor_->table_.AllocateIndex(transport_length);
     EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value);
