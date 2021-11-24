@@ -424,8 +424,10 @@ class CLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat'] +
-                    self._cmake_configure_extra_args]
+            return [[
+                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+                '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % args.jobs
+            ] + self._cmake_configure_extra_args]
         elif self._use_cmake:
             return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
                     self._cmake_configure_extra_args]
