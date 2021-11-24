@@ -532,12 +532,14 @@ void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
       2 /* te */ + 8 /* trailers */ + hpack_constants::kEntryOverhead);
 }
 
-void HPackCompressor::Framer::Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value) {
+void HPackCompressor::Framer::Encode(ContentTypeMetadata,
+                                     ContentTypeMetadata::ValueType value) {
   GPR_ASSERT(value == ContentTypeMetadata::ValueType::kApplicationGrpc);
   EncodeAlwaysIndexed(
-      &compressor_->te_index_, GRPC_MDSTR_CONTENT_TYPE, 
+      &compressor_->te_index_, GRPC_MDSTR_CONTENT_TYPE,
       StaticSlice::FromStaticString("application/grpc").c_slice(),
-      12 /* content-type */ + 16 /* application/grpc */ + hpack_constants::kEntryOverhead);
+      12 /* content-type */ + 16 /* application/grpc */ +
+          hpack_constants::kEntryOverhead);
 }
 
 void HPackCompressor::Framer::EncodeAlwaysIndexed(uint32_t* index,

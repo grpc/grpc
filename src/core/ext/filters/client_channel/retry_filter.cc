@@ -1894,11 +1894,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::
                            &call_attempt_->send_initial_metadata_);
   if (GPR_UNLIKELY(calld->num_attempts_completed_ > 0)) {
     call_attempt_->send_initial_metadata_.Set(
-        grpc_core::GrpcPreviousRpcAttemptsMetadata(),
+        GrpcPreviousRpcAttemptsMetadata(),
         calld->num_attempts_completed_);
   } else {
     call_attempt_->send_initial_metadata_.Remove(
-        grpc_core::GrpcPreviousRpcAttemptsMetadata());
+        GrpcPreviousRpcAttemptsMetadata());
   }
   call_attempt_->started_send_initial_metadata_ = true;
   batch_.send_initial_metadata = true;

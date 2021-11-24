@@ -610,7 +610,8 @@ class StreamWriteContext {
           [num_extra_headers_for_trailing_metadata_++] =
               &s_->send_initial_metadata->legacy_index()->named.status->md;
     }
-    send_content_type_ = s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
+    send_content_type_ =
+        s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
   }
 
   void SentLastFrame() {
@@ -637,7 +638,8 @@ class StreamWriteContext {
   bool stream_became_writable_ = false;
   grpc_mdelem* extra_headers_for_trailing_metadata_[2];
   size_t num_extra_headers_for_trailing_metadata_ = 0;
-  absl::optional<grpc_core::ContentTypeMetadata::ValueType> send_content_type_ = {};
+  absl::optional<grpc_core::ContentTypeMetadata::ValueType> send_content_type_ =
+      {};
 };
 }  // namespace
 
