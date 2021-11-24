@@ -1056,9 +1056,10 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
     grpc_core::GrpcPreviousRpcAttemptsMetadata,
-    grpc_core::GrpcRetryPushbackMsMetadata,grpc_core::ContentTypeMetadata, grpc_core::TeMetadata,
-    grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata,
-    grpc_core::HostMetadata, grpc_core::XEndpointLoadMetricsBinMetadata,
+    grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::ContentTypeMetadata,
+    grpc_core::TeMetadata, grpc_core::UserAgentMetadata,
+    grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
+    grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata>;
 

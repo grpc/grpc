@@ -419,7 +419,8 @@ static void http_client_start_transport_stream_op_batch(
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
         grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::ContentTypeMetadata(), grpc_core::ContentTypeMetadata::kApplicationGrpc);
+        grpc_core::ContentTypeMetadata(),
+        grpc_core::ContentTypeMetadata::kApplicationGrpc);
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
         grpc_core::UserAgentMetadata(), channeld->user_agent.Ref());
   }

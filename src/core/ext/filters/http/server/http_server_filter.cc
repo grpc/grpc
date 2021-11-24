@@ -380,7 +380,9 @@ static grpc_error_handle hs_mutate_op(grpc_call_element* elem,
         grpc_metadata_batch_add_head(
             op->payload->send_initial_metadata.send_initial_metadata,
             &calld->status, GRPC_MDELEM_STATUS_200, GRPC_BATCH_STATUS));
-    op->payload->send_initial_metadata.send_initial_metadata->Set(grpc_core::ContentTypeMetadata(), grpc_core::ContentTypeMetadata::kApplicationGrpc);
+    op->payload->send_initial_metadata.send_initial_metadata->Set(
+        grpc_core::ContentTypeMetadata(),
+        grpc_core::ContentTypeMetadata::kApplicationGrpc);
     hs_add_error(error_name, &error,
                  hs_filter_outgoing_metadata(
                      op->payload->send_initial_metadata.send_initial_metadata));
