@@ -8,28 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/type/metadata/v3/metadata.upbdefs.h"
+#include "envoy/type/metadata/v3/metadata.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_type_metadata_v3_MetadataKey_msginit;
-extern const upb_msglayout envoy_type_metadata_v3_MetadataKey_PathSegment_msginit;
-extern const upb_msglayout envoy_type_metadata_v3_MetadataKind_msginit;
-extern const upb_msglayout envoy_type_metadata_v3_MetadataKind_Request_msginit;
-extern const upb_msglayout envoy_type_metadata_v3_MetadataKind_Route_msginit;
-extern const upb_msglayout envoy_type_metadata_v3_MetadataKind_Cluster_msginit;
-extern const upb_msglayout envoy_type_metadata_v3_MetadataKind_Host_msginit;
-
-static const upb_msglayout *layouts[7] = {
-  &envoy_type_metadata_v3_MetadataKey_msginit,
-  &envoy_type_metadata_v3_MetadataKey_PathSegment_msginit,
-  &envoy_type_metadata_v3_MetadataKind_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Request_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Route_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Cluster_msginit,
-  &envoy_type_metadata_v3_MetadataKind_Host_msginit,
-};
-
 static const char descriptor[1104] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '/', 'v', '3', '/', 
 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '.', 'p', 'r', 'o', 't', 'o', '\022', '\026', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 
 'e', '.', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 
@@ -86,7 +69,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_type_metadata_v3_metadata_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_type_metadata_v3_metadata_proto_upb_file_layout,
   "envoy/type/metadata/v3/metadata.proto",
   UPB_STRVIEW_INIT(descriptor, 1104)
 };

@@ -215,6 +215,27 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "msg_test",
+    srcs = ["upb/msg_test.cc"],
+    deps = [
+        "@com_google_googletest//:gtest_main",
+        ":msg_test_upb_proto_reflection",
+        ":json",
+    ],
+)
+
+proto_library(
+    name = "msg_test_proto",
+    srcs = ["upb/msg_test.proto"],
+    deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "msg_test_upb_proto_reflection",
+    deps = [":msg_test_proto"],
+)
+
 # Internal C/C++ libraries #####################################################
 
 cc_library(
@@ -233,18 +254,12 @@ cc_library(
 
 # copybara:strip_for_google3_begin
 
-py_binary(
-    name = "amalgamate",
-    srcs = ["tools/amalgamate.py"],
-)
-
 upb_amalgamation(
     name = "gen_amalgamation",
     outs = [
         "upb.c",
         "upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
@@ -267,7 +282,6 @@ upb_amalgamation(
         "php-upb.c",
         "php-upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
@@ -293,7 +307,6 @@ upb_amalgamation(
         "ruby-upb.c",
         "ruby-upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",

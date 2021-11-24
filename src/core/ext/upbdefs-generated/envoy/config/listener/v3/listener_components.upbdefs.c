@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/listener/v3/listener_components.upbdefs.h"
+#include "envoy/config/listener/v3/listener_components.upb.h"
 
 extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
@@ -20,24 +21,6 @@ extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_listener_v3_Filter_msginit;
-extern const upb_msglayout envoy_config_listener_v3_FilterChainMatch_msginit;
-extern const upb_msglayout envoy_config_listener_v3_FilterChain_msginit;
-extern const upb_msglayout envoy_config_listener_v3_FilterChain_OnDemandConfiguration_msginit;
-extern const upb_msglayout envoy_config_listener_v3_ListenerFilterChainMatchPredicate_msginit;
-extern const upb_msglayout envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_msginit;
-extern const upb_msglayout envoy_config_listener_v3_ListenerFilter_msginit;
-
-static const upb_msglayout *layouts[7] = {
-  &envoy_config_listener_v3_Filter_msginit,
-  &envoy_config_listener_v3_FilterChainMatch_msginit,
-  &envoy_config_listener_v3_FilterChain_msginit,
-  &envoy_config_listener_v3_FilterChain_OnDemandConfiguration_msginit,
-  &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_msginit,
-  &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_msginit,
-  &envoy_config_listener_v3_ListenerFilter_msginit,
-};
-
 static const char descriptor[3426] = {'\n', '2', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
 '3', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '_', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 
 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', 
@@ -195,7 +178,7 @@ static upb_def_init *deps[12] = {
 
 upb_def_init envoy_config_listener_v3_listener_components_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_listener_v3_listener_components_proto_upb_file_layout,
   "envoy/config/listener/v3/listener_components.proto",
   UPB_STRVIEW_INIT(descriptor, 3426)
 };

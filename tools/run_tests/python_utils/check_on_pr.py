@@ -177,12 +177,12 @@ def label_significance_on_pr(name, change):
         '/repos/%s/issues/%s/labels' %
         (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
         method='GET').json()
-    print('Result of Deleting Labels on PR:', existing)
+    print('Result of fetching labels on PR:', existing)
     new = [x['name'] for x in existing if not x['name'].startswith(name + '/')]
     new.append(name + '/' + value)
     resp = _call(
         '/repos/%s/issues/%s/labels' %
         (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
-        method='POST',
+        method='PUT',
         json=new)
-    print('Result of Adding Label on PR:', resp.text)
+    print('Result of setting labels on PR:', resp.text)

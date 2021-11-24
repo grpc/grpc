@@ -556,6 +556,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                  project: str,
                  *,
                  resource_prefix: str,
+                 config_scope: str,
                  resource_suffix: Optional[str] = None,
                  network: str = 'default',
                  compute_api_version: str = 'v1'):
@@ -565,6 +566,8 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                          resource_suffix=resource_suffix,
                          network=network,
                          compute_api_version=compute_api_version)
+
+        self.config_scope = config_scope
 
         # API
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
@@ -578,8 +581,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         logger.info("Creating Router %s", name)
         body = {
             "type": "PROXYLESS_GRPC",
-            "routes": [self.grpc_route.url],
-            "network": "default",
+            "scope": self.config_scope,
         }
         resource = self.netsvc.create_router(name, body)
         self.router = self.netsvc.get_router(name)
@@ -599,14 +601,17 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
         host = f'{src_host}:{src_port}'
+        service_name = self.netsvc.resource_full_name(self.backend_service.name,
+                                                      "backendServices")
         body = {
+            "routers": [self.router.url],
             "hostnames":
                 host,
             "rules": [{
                 "action": {
-                    "destination": {
-                        "serviceName": self.backend_service.name
-                    }
+                    "destinations": [{
+                        "serviceName": service_name
+                    }]
                 }
             }],
         }
@@ -637,8 +642,8 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         self.grpc_route = None
 
     def cleanup(self, *, force=False):
-        self.delete_router(force=force)
         self.delete_grpc_route(force=force)
+        self.delete_router(force=force)
         super().cleanup(force=force)
 
 

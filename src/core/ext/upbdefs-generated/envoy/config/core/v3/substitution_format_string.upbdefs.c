@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/substitution_format_string.upbdefs.h"
+#include "envoy/config/core/v3/substitution_format_string.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
@@ -15,12 +16,6 @@ extern upb_def_init google_protobuf_struct_proto_upbdefinit;
 extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_SubstitutionFormatString_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_core_v3_SubstitutionFormatString_msginit,
-};
-
 static const char descriptor[757] = {'\n', '5', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's', 'u', 
 'b', 's', 't', 'i', 't', 'u', 't', 'i', 'o', 'n', '_', 'f', 'o', 'r', 'm', 'a', 't', '_', 's', 't', 'r', 'i', 'n', 'g', '.', 
 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 
@@ -66,7 +61,7 @@ static upb_def_init *deps[7] = {
 
 upb_def_init envoy_config_core_v3_substitution_format_string_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_substitution_format_string_proto_upb_file_layout,
   "envoy/config/core/v3/substitution_format_string.proto",
   UPB_STRVIEW_INIT(descriptor, 757)
 };

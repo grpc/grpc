@@ -114,6 +114,8 @@ UPB_INLINE void envoy_extensions_filters_http_router_v3_Router_set_suppress_grpc
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
 }
 
+extern const upb_msglayout_file envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

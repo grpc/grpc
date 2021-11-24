@@ -82,11 +82,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:slice",
+        "//test/core/util:build",
         "//test/core/util:grpc_suppressions",
     ],
 )

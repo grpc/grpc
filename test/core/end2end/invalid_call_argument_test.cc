@@ -607,6 +607,31 @@ static void test_invalid_initial_metadata_reserved_key() {
   cleanup_test();
 }
 
+static void test_multiple_ops_in_a_single_batch() {
+  gpr_log(GPR_INFO, "test_multiple_ops_in_a_single_batch");
+
+  grpc_op* op;
+  prepare_test(1);
+
+  for (auto which :
+       {GRPC_OP_SEND_INITIAL_METADATA, GRPC_OP_RECV_INITIAL_METADATA,
+        GRPC_OP_SEND_MESSAGE, GRPC_OP_RECV_MESSAGE,
+        GRPC_OP_RECV_STATUS_ON_CLIENT, GRPC_OP_RECV_CLOSE_ON_SERVER,
+        GRPC_OP_SEND_STATUS_FROM_SERVER, GRPC_OP_RECV_CLOSE_ON_SERVER}) {
+    op = g_state.ops;
+    op->op = which;
+    op++;
+    op->op = which;
+    op++;
+    GPR_ASSERT(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS ==
+               grpc_call_start_batch(g_state.call, g_state.ops,
+                                     (size_t)(op - g_state.ops), tag(1),
+                                     nullptr));
+  }
+
+  cleanup_test();
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -630,6 +655,7 @@ int main(int argc, char** argv) {
   test_send_server_status_twice();
   test_recv_close_on_server_with_invalid_flags();
   test_recv_close_on_server_twice();
+  test_multiple_ops_in_a_single_batch();
   grpc_shutdown();
 
   return 0;

@@ -85,6 +85,8 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_core_v3_BackoffStrategy
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_backoff_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

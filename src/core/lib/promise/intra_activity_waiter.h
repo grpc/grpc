@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 

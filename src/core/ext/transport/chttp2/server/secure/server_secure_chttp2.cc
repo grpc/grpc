@@ -75,6 +75,7 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
       "grpc_server_add_secure_http2_port("
       "server=%p, addr=%s, creds=%p)",
       3, (server, addr, creds));
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
   // Create security context.
   if (creds == nullptr) {
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -91,10 +92,10 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   // rewritten, we would be able to make this workaround go away by removing
   // that assumption. As an immediate drawback of this workaround, config
   // fetchers need to be registered before adding ports to the server.
-  if (server->core_server->config_fetcher() != nullptr) {
+  if (core_server->config_fetcher() != nullptr) {
     // Create channel args.
     grpc_arg arg_to_add = grpc_server_credentials_to_arg(creds);
-    args = grpc_channel_args_copy_and_add(server->core_server->channel_args(),
+    args = grpc_channel_args_copy_and_add(core_server->channel_args(),
                                           &arg_to_add, 1);
   } else {
     sc = creds->create_security_connector(nullptr);
@@ -107,12 +108,11 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_server_credentials_to_arg(creds);
     args_to_add[1] = grpc_security_connector_to_arg(sc.get());
-    args = grpc_channel_args_copy_and_add(server->core_server->channel_args(),
-                                          args_to_add,
-                                          GPR_ARRAY_SIZE(args_to_add));
+    args = grpc_channel_args_copy_and_add(
+        core_server->channel_args(), args_to_add, GPR_ARRAY_SIZE(args_to_add));
   }
   // Add server port.
-  err = grpc_core::Chttp2ServerAddPort(server->core_server.get(), addr, args,
+  err = grpc_core::Chttp2ServerAddPort(core_server, addr, args,
                                        ModifyArgsForConnection, &port_num);
 done:
   sc.reset(DEBUG_LOCATION, "server");

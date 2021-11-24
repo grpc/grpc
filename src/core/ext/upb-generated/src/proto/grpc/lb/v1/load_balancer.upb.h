@@ -25,28 +25,28 @@ struct grpc_lb_v1_InitialLoadBalanceRequest;
 struct grpc_lb_v1_ClientStatsPerToken;
 struct grpc_lb_v1_ClientStats;
 struct grpc_lb_v1_LoadBalanceResponse;
+struct grpc_lb_v1_FallbackResponse;
 struct grpc_lb_v1_InitialLoadBalanceResponse;
 struct grpc_lb_v1_ServerList;
 struct grpc_lb_v1_Server;
-struct grpc_lb_v1_FallbackResponse;
 typedef struct grpc_lb_v1_LoadBalanceRequest grpc_lb_v1_LoadBalanceRequest;
 typedef struct grpc_lb_v1_InitialLoadBalanceRequest grpc_lb_v1_InitialLoadBalanceRequest;
 typedef struct grpc_lb_v1_ClientStatsPerToken grpc_lb_v1_ClientStatsPerToken;
 typedef struct grpc_lb_v1_ClientStats grpc_lb_v1_ClientStats;
 typedef struct grpc_lb_v1_LoadBalanceResponse grpc_lb_v1_LoadBalanceResponse;
+typedef struct grpc_lb_v1_FallbackResponse grpc_lb_v1_FallbackResponse;
 typedef struct grpc_lb_v1_InitialLoadBalanceResponse grpc_lb_v1_InitialLoadBalanceResponse;
 typedef struct grpc_lb_v1_ServerList grpc_lb_v1_ServerList;
 typedef struct grpc_lb_v1_Server grpc_lb_v1_Server;
-typedef struct grpc_lb_v1_FallbackResponse grpc_lb_v1_FallbackResponse;
 extern const upb_msglayout grpc_lb_v1_LoadBalanceRequest_msginit;
 extern const upb_msglayout grpc_lb_v1_InitialLoadBalanceRequest_msginit;
 extern const upb_msglayout grpc_lb_v1_ClientStatsPerToken_msginit;
 extern const upb_msglayout grpc_lb_v1_ClientStats_msginit;
 extern const upb_msglayout grpc_lb_v1_LoadBalanceResponse_msginit;
+extern const upb_msglayout grpc_lb_v1_FallbackResponse_msginit;
 extern const upb_msglayout grpc_lb_v1_InitialLoadBalanceResponse_msginit;
 extern const upb_msglayout grpc_lb_v1_ServerList_msginit;
 extern const upb_msglayout grpc_lb_v1_Server_msginit;
-extern const upb_msglayout grpc_lb_v1_FallbackResponse_msginit;
 struct google_protobuf_Duration;
 struct google_protobuf_Timestamp;
 extern const upb_msglayout google_protobuf_Duration_msginit;
@@ -336,6 +336,34 @@ UPB_INLINE struct grpc_lb_v1_FallbackResponse* grpc_lb_v1_LoadBalanceResponse_mu
   return sub;
 }
 
+/* grpc.lb.v1.FallbackResponse */
+
+UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_new(upb_arena *arena) {
+  return (grpc_lb_v1_FallbackResponse *)_upb_msg_new(&grpc_lb_v1_FallbackResponse_msginit, arena);
+}
+UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char *grpc_lb_v1_FallbackResponse_serialize(const grpc_lb_v1_FallbackResponse *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &grpc_lb_v1_FallbackResponse_msginit, arena, len);
+}
+
+
+
 /* grpc.lb.v1.InitialLoadBalanceResponse */
 
 UPB_INLINE grpc_lb_v1_InitialLoadBalanceResponse *grpc_lb_v1_InitialLoadBalanceResponse_new(upb_arena *arena) {
@@ -362,16 +390,12 @@ UPB_INLINE char *grpc_lb_v1_InitialLoadBalanceResponse_serialize(const grpc_lb_v
   return upb_encode(msg, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview grpc_lb_v1_InitialLoadBalanceResponse_load_balancer_delegate(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
 UPB_INLINE bool grpc_lb_v1_InitialLoadBalanceResponse_has_client_stats_report_interval(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct google_protobuf_Duration* grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Duration*); }
+UPB_INLINE const struct google_protobuf_Duration* grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Duration*); }
 
-UPB_INLINE void grpc_lb_v1_InitialLoadBalanceResponse_set_load_balancer_delegate(grpc_lb_v1_InitialLoadBalanceResponse *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
-}
 UPB_INLINE void grpc_lb_v1_InitialLoadBalanceResponse_set_client_stats_report_interval(grpc_lb_v1_InitialLoadBalanceResponse *msg, struct google_protobuf_Duration* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Duration*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Duration*) = value;
 }
 UPB_INLINE struct google_protobuf_Duration* grpc_lb_v1_InitialLoadBalanceResponse_mutable_client_stats_report_interval(grpc_lb_v1_InitialLoadBalanceResponse *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(msg);
@@ -470,33 +494,7 @@ UPB_INLINE void grpc_lb_v1_Server_set_drop(grpc_lb_v1_Server *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
 }
 
-/* grpc.lb.v1.FallbackResponse */
-
-UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_new(upb_arena *arena) {
-  return (grpc_lb_v1_FallbackResponse *)_upb_msg_new(&grpc_lb_v1_FallbackResponse_msginit, arena);
-}
-UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
-  if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, extreg, options, arena)) {
-    return NULL;
-  }
-  return ret;
-}
-UPB_INLINE char *grpc_lb_v1_FallbackResponse_serialize(const grpc_lb_v1_FallbackResponse *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &grpc_lb_v1_FallbackResponse_msginit, arena, len);
-}
-
-
+extern const upb_msglayout_file src_proto_grpc_lb_v1_load_balancer_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
