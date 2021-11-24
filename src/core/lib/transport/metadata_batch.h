@@ -332,6 +332,16 @@ class AppendHelper {
 
 }  // namespace metadata_detail
 
+template <typename Which>
+absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value, const Slice&>
+MetadataValueAsSlice(const Slice& slice) { return slice; }
+
+template <typename Which>
+absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
+MetadataValueAsSlice(Which::ValueType value) {
+  return Which::Encode(value);
+}
+
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
 // substitute this type for grpc_metadata_batch in a relatively easy fashion. At
