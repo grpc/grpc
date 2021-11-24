@@ -146,18 +146,40 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
   return absl::StrContains(grpc_error_std_string(arg), msg);
 }
 
+namespace {
+class MetadataEncoder {
+ public:
+  void Encode(grpc_mdelem elem) {
+    metadata_.emplace_back(
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDKEY(elem))),
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem))));
+  }
+
+  template <typename Which>
+  void Encode(Which, const grpc_core::Slice& slice) {
+    metadata_.emplace_back(std::string(Which::key()),
+                           std::string(slice.as_string_view()));
+  }
+
+  template <typename Which>
+  void Encode(Which, typename Which::ValueType value) {
+    Encode(Which(), grpc_core::Slice(Which::Encode(value)));
+  }
+
+  const Metadata& metadata() const { return metadata_; }
+
+ private:
+  Metadata metadata_;
+};
+}  // namespace
+
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
 void VerifyMetadataEqual(const Metadata& md,
                          const grpc_metadata_batch& grpc_md) {
-  size_t i = 0;
-  grpc_md.ForEach([&](grpc_mdelem mdelm) {
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(mdelm)), md[i].first);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(mdelm)),
-              md[i].second);
-    i++;
-  });
-  EXPECT_EQ(md.size(), i);
+  MetadataEncoder encoder;
+  grpc_md.Encode(&encoder);
+  EXPECT_EQ(encoder.metadata(), md);
 }
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.
