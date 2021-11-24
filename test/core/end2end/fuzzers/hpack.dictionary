@@ -11,7 +11,6 @@
 "\x10content-encoding"
 "\x0Faccept-encoding"
 "\x1Egrpc-internal-encoding-request"
-"%grpc-internal-stream-encoding-request"
 "\x1Agrpc-previous-rpc-attempts"
 "\x16grpc-retry-pushback-ms"
 "\x0Cgrpc-timeout"

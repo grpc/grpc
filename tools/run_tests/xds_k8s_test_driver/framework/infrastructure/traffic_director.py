@@ -547,7 +547,7 @@ class TrafficDirectorManager:
 class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     GRPC_ROUTE_NAME = "grpc-route"
-    MESH_NAME = "mesh"
+    ROUTER_NAME = "router"
 
     netsvc: _NetworkServicesV1Alpha1
 
@@ -574,37 +574,37 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
         # Managed resources
         self.grpc_route: Optional[_NetworkServicesV1Alpha1.GrpcRoute] = None
-        self.mesh: Optional[_NetworkServicesV1Alpha1.Mesh] = None
+        self.router: Optional[_NetworkServicesV1Alpha1.Router] = None
 
-    def create_mesh(self) -> GcpResource:
-        name = self.make_resource_name(self.MESH_NAME)
-        logger.info("Creating Mesh %s", name)
+    def create_router(self) -> GcpResource:
+        name = self.make_resource_name(self.ROUTER_NAME)
+        logger.info("Creating Router %s", name)
         body = {
             "type": "PROXYLESS_GRPC",
             "scope": self.config_scope,
         }
-        resource = self.netsvc.create_mesh(name, body)
-        self.mesh = self.netsvc.get_mesh(name)
-        logger.debug("Loaded Mesh: %s", self.mesh)
+        resource = self.netsvc.create_router(name, body)
+        self.router = self.netsvc.get_router(name)
+        logger.debug("Loaded Router: %s", self.router)
         return resource
 
-    def delete_mesh(self, force=False):
+    def delete_router(self, force=False):
         if force:
-            name = self.make_resource_name(self.MESH_NAME)
-        elif self.mesh:
-            name = self.mesh.name
+            name = self.make_resource_name(self.ROUTER_NAME)
+        elif self.router:
+            name = self.router.name
         else:
             return
-        logger.info('Deleting Mesh %s', name)
-        self.netsvc.delete_mesh(name)
-        self.mesh = None
+        logger.info('Deleting Router %s', name)
+        self.netsvc.delete_router(name)
+        self.router = None
 
     def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
         host = f'{src_host}:{src_port}'
         service_name = self.netsvc.resource_full_name(self.backend_service.name,
                                                       "backendServices")
         body = {
-            "meshes": [self.mesh.url],
+            "routers": [self.router.url],
             "hostnames":
                 host,
             "rules": [{
@@ -643,7 +643,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     def cleanup(self, *, force=False):
         self.delete_grpc_route(force=force)
-        self.delete_mesh(force=force)
+        self.delete_router(force=force)
         super().cleanup(force=force)
 
 

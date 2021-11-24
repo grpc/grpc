@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:8
+FROM debian:10
 
-
+RUN apt-get --allow-releaseinfo-change update
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -74,20 +74,14 @@ RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 o
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #=================
-# Use cmake 3.6 from jessie-backports
-# should only be used for images based on debian jessie.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
-RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 
 RUN mkdir /var/local/jenkins
 
-
-# Install gcc-4.9 and other relevant items
-RUN apt-get update && apt-get -y install gcc gcc-multilib g++ g++-multilib && apt-get clean
 
 # Define the default command.
 CMD ["bash"]

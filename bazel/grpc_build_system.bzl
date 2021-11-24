@@ -383,12 +383,13 @@ def grpc_generate_one_off_targets():
 def grpc_generate_objc_one_off_targets():
     pass
 
-def grpc_sh_test(name, srcs, args = [], data = []):
+def grpc_sh_test(name, srcs, args = [], data = [], tags = []):
     native.sh_test(
         name = name,
         srcs = srcs,
         args = args,
         data = data,
+        tags = tags,
     )
 
 def grpc_sh_binary(name, srcs, data = []):
