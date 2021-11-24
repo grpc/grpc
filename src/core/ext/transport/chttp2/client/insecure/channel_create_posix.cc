@@ -46,8 +46,9 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>("test.authority"));
   args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
-  grpc_channel_args* final_args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  const grpc_channel_args* final_args = grpc_core::CoreConfiguration::Get()
+                                            .channel_args_preconditioning()
+                                            .PreconditionChannelArgs(args);
   grpc_channel_args_destroy(args);
 
   int flags = fcntl(fd, F_GETFL, 0);

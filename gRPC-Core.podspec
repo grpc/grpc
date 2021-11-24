@@ -169,7 +169,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.22'
+    ss.dependency 'BoringSSL-GRPC', '0.0.23'
     ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -831,6 +831,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/call_tracer.h',
                       'src/core/lib/channel/channel_args.cc',
                       'src/core/lib/channel/channel_args.h',
+                      'src/core/lib/channel/channel_args_preconditioning.cc',
+                      'src/core/lib/channel/channel_args_preconditioning.h',
                       'src/core/lib/channel/channel_stack.cc',
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.cc',
@@ -1802,6 +1804,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/backoff/backoff.h',
                               'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
+                              'src/core/lib/channel/channel_args_preconditioning.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_trace.h',

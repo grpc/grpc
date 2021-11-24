@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_sh_test")
 
 licenses(["notice"])
 
@@ -217,6 +217,17 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
+)
+
+grpc_sh_test(
+    name = "interop_test_with_metadata_log",
+    srcs = [
+        "interop_test_with_metadata_log.sh",
+    ],
+    data = [
+        ":interop_test",
+    ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_binary(

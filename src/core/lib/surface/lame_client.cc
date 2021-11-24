@@ -187,7 +187,9 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
   grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(&error);
   grpc_channel_args* args0 =
       grpc_channel_args_copy_and_add(nullptr, &error_arg, 1);
-  grpc_channel_args* args = grpc_core::EnsureResourceQuotaInChannelArgs(args0);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(args0);
   grpc_channel_args_destroy(args0);
   grpc_channel* channel = grpc_channel_create(
       target, args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr);

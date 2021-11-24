@@ -38,7 +38,6 @@ CONFIG = [
     'host',
     'grpc-timeout',
     'grpc-internal-encoding-request',
-    'grpc-internal-stream-encoding-request',
     'grpc-payload-bin',
     ':path',
     'grpc-encoding',
@@ -58,11 +57,6 @@ CONFIG = [
     '4',
     '',
     'x-endpoint-load-metrics-bin',
-    # channel arg keys
-    'grpc.wait_for_ready',
-    'grpc.timeout',
-    'grpc.max_request_message_bytes',
-    'grpc.max_response_message_bytes',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',
@@ -176,7 +170,6 @@ METADATA_BATCH_CALLOUTS = [
     'content-encoding',
     'accept-encoding',
     'grpc-internal-encoding-request',
-    'grpc-internal-stream-encoding-request',
     'host',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
