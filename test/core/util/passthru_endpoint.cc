@@ -274,11 +274,14 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                                       grpc_slice_copy(slices->slices[i]));
       }
     }
-    if (m->pending_write_op.slices->count) {
+    if (m->pending_write_op.slices->count > 0) {
       m->pending_write_op.is_armed = true;
       m->pending_write_op.cb = cb;
       m->pending_write_op.ep = ep;
       do_pending_write_op_locked(m, GRPC_ERROR_NONE);
+    } else {
+      // There is nothing to write. Schedule callback to be run right away.
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
     }
   }
   gpr_mu_unlock(&m->parent->mu);
