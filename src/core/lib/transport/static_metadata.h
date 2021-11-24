@@ -264,15 +264,22 @@ typedef enum {
   GRPC_BATCH_STATUS,
   GRPC_BATCH_AUTHORITY,
   GRPC_BATCH_SCHEME,
+  GRPC_BATCH_GRPC_MESSAGE,
   GRPC_BATCH_GRPC_STATUS,
+  GRPC_BATCH_GRPC_PAYLOAD_BIN,
   GRPC_BATCH_GRPC_ENCODING,
   GRPC_BATCH_GRPC_ACCEPT_ENCODING,
+  GRPC_BATCH_GRPC_SERVER_STATS_BIN,
+  GRPC_BATCH_GRPC_TAGS_BIN,
+  GRPC_BATCH_GRPC_TRACE_BIN,
   GRPC_BATCH_CONTENT_TYPE,
   GRPC_BATCH_CONTENT_ENCODING,
   GRPC_BATCH_ACCEPT_ENCODING,
   GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
+  GRPC_BATCH_HOST,
   GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS,
   GRPC_BATCH_GRPC_RETRY_PUSHBACK_MS,
+  GRPC_BATCH_X_ENDPOINT_LOAD_METRICS_BIN,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
@@ -284,15 +291,22 @@ typedef union {
     struct grpc_linked_mdelem* status;
     struct grpc_linked_mdelem* authority;
     struct grpc_linked_mdelem* scheme;
+    struct grpc_linked_mdelem* grpc_message;
     struct grpc_linked_mdelem* grpc_status;
+    struct grpc_linked_mdelem* grpc_payload_bin;
     struct grpc_linked_mdelem* grpc_encoding;
     struct grpc_linked_mdelem* grpc_accept_encoding;
+    struct grpc_linked_mdelem* grpc_server_stats_bin;
+    struct grpc_linked_mdelem* grpc_tags_bin;
+    struct grpc_linked_mdelem* grpc_trace_bin;
     struct grpc_linked_mdelem* content_type;
     struct grpc_linked_mdelem* content_encoding;
     struct grpc_linked_mdelem* accept_encoding;
     struct grpc_linked_mdelem* grpc_internal_encoding_request;
+    struct grpc_linked_mdelem* host;
     struct grpc_linked_mdelem* grpc_previous_rpc_attempts;
     struct grpc_linked_mdelem* grpc_retry_pushback_ms;
+    struct grpc_linked_mdelem* x_endpoint_load_metrics_bin;
   } named;
 } grpc_metadata_batch_callouts;
 

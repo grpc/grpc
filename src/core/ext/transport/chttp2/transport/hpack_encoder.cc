@@ -265,32 +265,6 @@ class StringValue {
   VarintWriter<1> len_val_;
 };
 
-class BinaryStringValue {
- public:
-  explicit BinaryStringValue(const grpc_slice& value,
-                             bool use_true_binary_metadata)
-      : wire_value_(GetWireValue(value, use_true_binary_metadata, true)),
-        len_val_(wire_value_.length) {}
-
-  size_t prefix_length() const {
-    return len_val_.length() +
-           (wire_value_.insert_null_before_wire_value ? 1 : 0);
-  }
-
-  void WritePrefix(uint8_t* prefix_data) {
-    len_val_.Write(wire_value_.huffman_prefix, prefix_data);
-    if (wire_value_.insert_null_before_wire_value) {
-      prefix_data[len_val_.length()] = 0;
-    }
-  }
-
-  const grpc_slice& data() { return wire_value_.data; }
-
- private:
-  WireValue wire_value_;
-  VarintWriter<1> len_val_;
-};
-
 class NonBinaryStringValue {
  public:
   explicit NonBinaryStringValue(const grpc_slice& value)
@@ -380,30 +354,6 @@ void HPackCompressor::Framer::EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem) {
   StringValue emit(UnsureIfInterned(), elem, use_true_binary_metadata_);
   emit.WritePrefix(AddTiny(emit.prefix_length()));
   Add(emit.data());
-}
-
-void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
-    const grpc_slice& key_slice, const grpc_slice& value_slice) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  StringKey key(key_slice);
-  key.WritePrefix(0x00, AddTiny(key.prefix_length()));
-  Add(grpc_slice_ref_internal(key.key()));
-  BinaryStringValue emit(value_slice, use_true_binary_metadata_);
-  emit.WritePrefix(AddTiny(emit.prefix_length()));
-  Add(emit.data());
-}
-
-void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyNotIdx(
-    const grpc_slice& key_slice, const grpc_slice& value_slice) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  StringKey key(key_slice);
-  key.WritePrefix(0x00, AddTiny(key.prefix_length()));
-  Add(grpc_slice_ref_internal(key.key()));
-  NonBinaryStringValue emit(value_slice);
-  emit.WritePrefix(AddTiny(emit.prefix_length()));
-  Add(grpc_slice_ref_internal(emit.data()));
 }
 
 void HPackCompressor::Framer::AdvertiseTableSizeChange() {

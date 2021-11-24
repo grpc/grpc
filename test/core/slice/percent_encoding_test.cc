@@ -29,10 +29,10 @@
 #define TEST_VECTOR(raw, encoded, dict) \
   test_vector(raw, sizeof(raw) - 1, encoded, sizeof(encoded) - 1, dict)
 
-#define TEST_NONCONFORMANT_VECTOR(encoded, permissive_unencoded) \
-  test_nonconformant_vector(encoded, sizeof(encoded) - 1,        \
-                            permissive_unencoded,                \
-                            sizeof(permissive_unencoded) - 1)
+#define TEST_NONCONFORMANT_VECTOR(encoded, permissive_unencoded, dict) \
+  test_nonconformant_vector(encoded, sizeof(encoded) - 1,              \
+                            permissive_unencoded,                      \
+                            sizeof(permissive_unencoded) - 1, dict)
 
 static void test_vector(const char* raw, size_t raw_length, const char* encoded,
                         size_t encoded_length,
@@ -44,32 +44,46 @@ static void test_vector(const char* raw, size_t raw_length, const char* encoded,
   gpr_free(raw_msg);
   gpr_free(encoded_msg);
 
-  auto raw_slice = grpc_core::Slice::FromCopiedBuffer(raw, raw_length);
-  auto encoded_slice =
-      grpc_core::Slice::FromCopiedBuffer(encoded, encoded_length);
-  auto raw2encoded_slice = grpc_core::PercentEncodeSlice(raw_slice.Ref(), type);
-  auto encoded2raw_permissive_slice =
-      grpc_core::PermissivePercentDecodeSlice(encoded_slice.Ref());
+  grpc_slice raw_slice = grpc_slice_from_copied_buffer(raw, raw_length);
+  grpc_slice encoded_slice =
+      grpc_slice_from_copied_buffer(encoded, encoded_length);
+  grpc_slice raw2encoded_slice = grpc_core::PercentEncodeSlice(raw_slice, type);
+  absl::optional<grpc_slice> encoded2raw_slice =
+      grpc_core::PercentDecodeSlice(encoded_slice, type);
+  GPR_ASSERT(encoded2raw_slice.has_value());
+  grpc_slice encoded2raw_permissive_slice =
+      grpc_core::PermissivePercentDecodeSlice(encoded_slice);
 
-  char* raw2encoded_msg = grpc_dump_slice(raw2encoded_slice.c_slice(),
-                                          GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  char* raw2encoded_msg =
+      grpc_dump_slice(raw2encoded_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  char* encoded2raw_msg =
+      grpc_dump_slice(*encoded2raw_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   char* encoded2raw_permissive_msg = grpc_dump_slice(
-      encoded2raw_permissive_slice.c_slice(), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      encoded2raw_permissive_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG,
-          "Result:\nraw2encoded = %s\nencoded2raw_permissive "
+          "Result:\nraw2encoded = %s\nencoded2raw = %s\nencoded2raw_permissive "
           "= %s",
-          raw2encoded_msg, encoded2raw_permissive_msg);
+          raw2encoded_msg, encoded2raw_msg, encoded2raw_permissive_msg);
   gpr_free(raw2encoded_msg);
+  gpr_free(encoded2raw_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(raw_slice == encoded2raw_permissive_slice);
-  GPR_ASSERT(encoded_slice == raw2encoded_slice);
+  GPR_ASSERT(grpc_slice_eq(raw_slice, *encoded2raw_slice));
+  GPR_ASSERT(grpc_slice_eq(raw_slice, encoded2raw_permissive_slice));
+  GPR_ASSERT(grpc_slice_eq(encoded_slice, raw2encoded_slice));
+
+  grpc_slice_unref(*encoded2raw_slice);
+  grpc_slice_unref(encoded2raw_permissive_slice);
+  grpc_slice_unref(raw2encoded_slice);
+  grpc_slice_unref(raw_slice);
+  grpc_slice_unref(encoded_slice);
 }
 
 static void test_nonconformant_vector(const char* encoded,
                                       size_t encoded_length,
                                       const char* permissive_unencoded,
-                                      size_t permissive_unencoded_length) {
+                                      size_t permissive_unencoded_length,
+                                      grpc_core::PercentEncodingType type) {
   char* permissive_unencoded_msg =
       gpr_dump(permissive_unencoded, permissive_unencoded_length,
                GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -80,20 +94,28 @@ static void test_nonconformant_vector(const char* encoded,
   gpr_free(permissive_unencoded_msg);
   gpr_free(encoded_msg);
 
-  auto permissive_unencoded_slice = grpc_core::Slice::FromCopiedBuffer(
+  grpc_slice permissive_unencoded_slice = grpc_slice_from_copied_buffer(
       permissive_unencoded, permissive_unencoded_length);
-  auto encoded_slice =
-      grpc_core::Slice::FromCopiedBuffer(encoded, encoded_length);
-  auto encoded2raw_permissive_slice =
-      grpc_core::PermissivePercentDecodeSlice(std::move(encoded_slice));
+  grpc_slice encoded_slice =
+      grpc_slice_from_copied_buffer(encoded, encoded_length);
+  absl::optional<grpc_slice> encoded2raw_slice =
+      grpc_core::PercentDecodeSlice(encoded_slice, type);
+  GPR_ASSERT(!encoded2raw_slice.has_value());
+  grpc_slice encoded2raw_permissive_slice =
+      grpc_core::PermissivePercentDecodeSlice(encoded_slice);
 
   char* encoded2raw_permissive_msg = grpc_dump_slice(
-      encoded2raw_permissive_slice.c_slice(), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      encoded2raw_permissive_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log(GPR_DEBUG, "Result:\nencoded2raw_permissive = %s",
           encoded2raw_permissive_msg);
   gpr_free(encoded2raw_permissive_msg);
 
-  GPR_ASSERT(permissive_unencoded_slice == encoded2raw_permissive_slice);
+  GPR_ASSERT(
+      grpc_slice_eq(permissive_unencoded_slice, encoded2raw_permissive_slice));
+
+  grpc_slice_unref(permissive_unencoded_slice);
+  grpc_slice_unref(encoded2raw_permissive_slice);
+  grpc_slice_unref(encoded_slice);
 }
 
 int main(int argc, char** argv) {
@@ -113,10 +135,10 @@ int main(int argc, char** argv) {
   TEST_VECTOR("\xff", "%FF", grpc_core::PercentEncodingType::URL);
   TEST_VECTOR("\xee", "%EE", grpc_core::PercentEncodingType::URL);
   TEST_VECTOR("%2", "%252", grpc_core::PercentEncodingType::URL);
-  TEST_NONCONFORMANT_VECTOR("%", "%");
-  TEST_NONCONFORMANT_VECTOR("%A", "%A");
-  TEST_NONCONFORMANT_VECTOR("%AG", "%AG");
-  TEST_NONCONFORMANT_VECTOR("\0", "\0");
+  TEST_NONCONFORMANT_VECTOR("%", "%", grpc_core::PercentEncodingType::URL);
+  TEST_NONCONFORMANT_VECTOR("%A", "%A", grpc_core::PercentEncodingType::URL);
+  TEST_NONCONFORMANT_VECTOR("%AG", "%AG", grpc_core::PercentEncodingType::URL);
+  TEST_NONCONFORMANT_VECTOR("\0", "\0", grpc_core::PercentEncodingType::URL);
   grpc_shutdown();
   return 0;
 }

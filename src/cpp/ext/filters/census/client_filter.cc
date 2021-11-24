@@ -100,16 +100,19 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                              kMaxTraceContextLen);
   if (tracing_len > 0) {
-    send_initial_metadata->Set(grpc_core::GrpcTraceBinMetadata(),
-                               grpc_core::Slice(grpc_core::UnmanagedMemorySlice(
-                                   tracing_buf, tracing_len)));
+    GRPC_LOG_IF_ERROR(
+        "census grpc_filter",
+        send_initial_metadata->Append(grpc_mdelem_from_slices(
+            GRPC_MDSTR_GRPC_TRACE_BIN,
+            grpc_core::UnmanagedMemorySlice(tracing_buf, tracing_len))));
   }
   grpc_slice tags = grpc_empty_slice();
   // TODO(unknown): Add in tagging serialization.
   size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
   if (encoded_tags_len > 0) {
-    send_initial_metadata->Set(grpc_core::GrpcTagsBinMetadata(),
-                               grpc_core::Slice(tags));
+    GRPC_LOG_IF_ERROR("census grpc_filter",
+                      send_initial_metadata->Append(grpc_mdelem_from_slices(
+                          GRPC_MDSTR_GRPC_TAGS_BIN, tags)));
   }
 }
 
@@ -126,12 +129,14 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
 namespace {
 
 void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
-  absl::optional<grpc_core::Slice> grpc_server_stats_bin =
-      b->Take(grpc_core::GrpcServerStatsBinMetadata());
-  if (grpc_server_stats_bin.has_value()) {
+  if (b->legacy_index()->named.grpc_server_stats_bin != nullptr) {
     ServerStatsDeserialize(
-        reinterpret_cast<const char*>(grpc_server_stats_bin->data()),
-        grpc_server_stats_bin->size(), elapsed_time);
+        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
+            GRPC_MDVALUE(b->legacy_index()->named.grpc_server_stats_bin->md))),
+        GRPC_SLICE_LENGTH(
+            GRPC_MDVALUE(b->legacy_index()->named.grpc_server_stats_bin->md)),
+        elapsed_time);
+    b->Remove(b->legacy_index()->named.grpc_server_stats_bin);
   }
 }
 

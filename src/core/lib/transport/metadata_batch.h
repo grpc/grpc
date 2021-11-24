@@ -138,9 +138,11 @@ struct TeMetadata {
   }
 };
 
-struct SimpleSliceBasedMetadata {
+// user-agent metadata trait.
+struct UserAgentMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
+  static absl::string_view key() { return "user-agent"; }
   static MementoType ParseMemento(Slice value) { return value.TakeOwned(); }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(const ValueType& x) { return x.Ref(); }
@@ -149,139 +151,68 @@ struct SimpleSliceBasedMetadata {
   }
 };
 
-// user-agent metadata trait.
-struct UserAgentMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "user-agent"; }
-};
-
-// grpc-message metadata trait.
-struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-message"; }
-};
-
-// host metadata trait.
-struct HostMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "host"; }
-};
-
-// x-endpoint-load-metrics-bin metadata trait.
-struct XEndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
-};
-
-// grpc-server-stats-bin metadata trait.
-struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-server-stats-bin"; }
-};
-
-// grpc-trace-bin metadata trait.
-struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-trace-bin"; }
-};
-
-// grpc-tags-bin metadata trait.
-struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
-  static absl::string_view key() { return "grpc-tags-bin"; }
-};
-
 namespace metadata_detail {
 
-// Helper type - maps a string name to a trait.
-template <typename... Traits>
-struct NameLookup;
+// Inner implementation of MetadataMap<Container>::Parse()
+// Recursive in terms of metadata trait, tries each known type in order by doing
+// a string comparison on key, and if that key is found parses it. If not found,
+// calls not_found to generate the result value.
+template <typename Container, typename... Traits>
+struct ParseHelper;
 
-template <typename Trait, typename... Traits>
-struct NameLookup<Trait, Traits...> {
-  // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
-  // Traits. If not found, call op->NotFount().
-  template <typename Op>
-  static auto Lookup(absl::string_view key, Op* op)
-      -> decltype(op->Found(Trait())) {
+template <typename Container, typename Trait, typename... Traits>
+struct ParseHelper<Container, Trait, Traits...> {
+  template <typename NotFound>
+  static ParsedMetadata<Container> Parse(absl::string_view key, Slice value,
+                                         uint32_t transport_size,
+                                         NotFound not_found) {
     if (key == Trait::key()) {
-      return op->Found(Trait());
+      return ParsedMetadata<Container>(
+          Trait(), Trait::ParseMemento(value.TakeOwned()), transport_size);
     }
-    return NameLookup<Traits...>::Lookup(key, op);
+    return ParseHelper<Container, Traits...>::Parse(key, std::move(value),
+                                                    transport_size, not_found);
   }
 };
 
-template <>
-struct NameLookup<> {
-  template <typename Op>
-  static auto Lookup(absl::string_view key, Op* op)
-      -> decltype(op->NotFound(key)) {
-    return op->NotFound(key);
-  }
-};
-
-// Helper to take a slice to a memento to a value.
-// By splitting this part out we can scale code size as the number of (memento,
-// value) types, rather than as the number of traits.
-template <typename ParseMementoFn, typename MementoToValueFn>
-struct ParseValue {
-  template <ParseMementoFn parse_memento, MementoToValueFn memento_to_value>
-  static GPR_ATTRIBUTE_NOINLINE auto Parse(Slice* value)
-      -> decltype(memento_to_value(parse_memento(std::move(*value)))) {
-    return memento_to_value(parse_memento(std::move(*value)));
-  }
-};
-
-// This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
-// ParsedMetadata object.
 template <typename Container>
-class ParseHelper {
- public:
-  ParseHelper(Slice value, size_t transport_size)
-      : value_(std::move(value)), transport_size_(transport_size) {}
-
-  template <typename Trait>
-  ParsedMetadata<Container> Found(Trait trait) {
-    return ParsedMetadata<Container>(
-        trait, Trait::ParseMemento(std::move(value_)), transport_size_);
+struct ParseHelper<Container> {
+  template <typename NotFound>
+  static ParsedMetadata<Container> Parse(absl::string_view, Slice value,
+                                         uint32_t, NotFound not_found) {
+    return not_found(std::move(value));
   }
-
-  GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
-      absl::string_view key) {
-    return ParsedMetadata<Container>(
-        grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
-                                    key.data(), key.size())),
-                                value_.TakeCSlice()));
-  }
-
- private:
-  Slice value_;
-  const size_t transport_size_;
 };
 
-// This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
-// value and add it to a container.
+// Inner implementation of MetadataMap<Container>::Append()
+// Recursive in terms of metadata trait, tries each known type in order by doing
+// a string comparison on key, and if that key is found sets it. If not found,
+// calls not_found to append generically.
+template <typename Container, typename... Traits>
+struct AppendHelper;
+
+template <typename Container, typename Trait, typename... Traits>
+struct AppendHelper<Container, Trait, Traits...> {
+  template <typename NotFound>
+  static void Append(Container* container, absl::string_view key, Slice value,
+                     NotFound not_found) {
+    if (key == Trait::key()) {
+      container->Set(Trait(), Trait::MementoToValue(
+                                  Trait::ParseMemento(value.TakeOwned())));
+      return;
+    }
+    AppendHelper<Container, Traits...>::Append(container, key, std::move(value),
+                                               not_found);
+  }
+};
+
 template <typename Container>
-class AppendHelper {
- public:
-  AppendHelper(Container* container, Slice value)
-      : container_(container), value_(std::move(value)) {}
-
-  template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
-    container_->Set(
-        trait, ParseValue<decltype(Trait::ParseMemento),
-                          decltype(Trait::MementoToValue)>::
-                   template Parse<Trait::ParseMemento, Trait::MementoToValue>(
-                       &value_));
+struct AppendHelper<Container> {
+  template <typename NotFound>
+  static void Append(Container*, absl::string_view, Slice value,
+                     NotFound not_found) {
+    not_found(std::move(value));
   }
-
-  void NotFound(absl::string_view key) {
-    GPR_ASSERT(GRPC_ERROR_NONE ==
-               container_->Append(grpc_mdelem_from_slices(
-                   grpc_slice_intern(
-                       grpc_slice_from_static_buffer(key.data(), key.length())),
-                   value_.TakeCSlice())));
-  }
-
- private:
-  Container* const container_;
-  Slice value_;
 };
 
 }  // namespace metadata_detail
@@ -308,7 +239,7 @@ class AppendHelper {
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
-//   static absl::string_view key() { return "grpc-xyz"; }
+//   static constexpr absl::string_view key() { return "grpc-xyz"; }
 //   // Parse a memento from a slice
 //   // Takes ownership of value
 //   static MementoType ParseMemento(Slice value) { ... }
@@ -421,12 +352,9 @@ class MetadataMap {
   //  m.Remove(T());
   template <typename Which>
   absl::optional<typename Which::ValueType> Take(Which which) {
-    if (auto* p = get_pointer(which)) {
-      absl::optional<typename Which::ValueType> value(std::move(*p));
-      Remove(which);
-      return value;
-    }
-    return {};
+    auto value = get(which);
+    Remove(which);
+    return value;
   }
 
   // Parse metadata from a key/value pair, and return an object representing
@@ -435,9 +363,16 @@ class MetadataMap {
   // Once we don't care about interning anymore, make that change!
   static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value,
                                            uint32_t transport_size) {
-    metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(),
-                                                     transport_size);
-    return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    bool parsed = true;
+    auto out = metadata_detail::ParseHelper<MetadataMap, Traits...>::Parse(
+        key, std::move(value), transport_size, [&](Slice value) {
+          parsed = false;
+          return ParsedMetadata<MetadataMap>(grpc_mdelem_from_slices(
+              grpc_slice_intern(
+                  grpc_slice_from_static_buffer(key.data(), key.size())),
+              value.TakeCSlice()));
+        });
+    return out;
   }
 
   // Set a value from a parsed metadata object.
@@ -448,8 +383,14 @@ class MetadataMap {
 
   // Append a key/value pair - takes ownership of value
   void Append(absl::string_view key, Slice value) {
-    metadata_detail::AppendHelper<MetadataMap> helper(this, value.TakeOwned());
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    metadata_detail::AppendHelper<MetadataMap, Traits...>::Append(
+        this, key, std::move(value), [this, key](Slice value) {
+          GPR_ASSERT(GRPC_ERROR_NONE ==
+                     Append(grpc_mdelem_from_slices(
+                         grpc_slice_intern(grpc_slice_from_static_buffer(
+                             key.data(), key.length())),
+                         value.TakeCSlice())));
+        });
   }
 
   //
@@ -967,12 +908,9 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 
 }  // namespace grpc_core
 
-using grpc_metadata_batch = grpc_core::MetadataMap<
-    grpc_core::GrpcTimeoutMetadata, grpc_core::TeMetadata,
-    grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata,
-    grpc_core::HostMetadata, grpc_core::XEndpointLoadMetricsBinMetadata,
-    grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
-    grpc_core::GrpcTagsBinMetadata>;
+using grpc_metadata_batch =
+    grpc_core::MetadataMap<grpc_core::GrpcTimeoutMetadata,
+                           grpc_core::TeMetadata, grpc_core::UserAgentMetadata>;
 
 inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
   batch->Clear();
