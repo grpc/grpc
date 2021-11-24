@@ -91,10 +91,11 @@ absl::string_view EvaluateArgs::GetPath() const {
 
 absl::string_view EvaluateArgs::GetHost() const {
   absl::string_view host;
-  if (metadata_ != nullptr) {
-    if (auto* host_md = metadata_->get_pointer(HostMetadata())) {
-      host = host_md->as_string_view();
-    }
+  if (metadata_ != nullptr &&
+      metadata_->legacy_index()->named.host != nullptr) {
+    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.host;
+    const grpc_slice& val = GRPC_MDVALUE(elem->md);
+    host = StringViewFromSlice(val);
   }
   return host;
 }
@@ -108,6 +109,20 @@ absl::string_view EvaluateArgs::GetMethod() const {
     method = StringViewFromSlice(val);
   }
   return method;
+}
+
+std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
+    const {
+  std::multimap<absl::string_view, absl::string_view> headers;
+  if (metadata_ == nullptr) {
+    return headers;
+  }
+  metadata_->ForEach([&](grpc_mdelem md) {
+    const grpc_slice& key = GRPC_MDKEY(md);
+    const grpc_slice& val = GRPC_MDVALUE(md);
+    headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));
+  });
+  return headers;
 }
 
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(

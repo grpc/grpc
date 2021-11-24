@@ -120,24 +120,6 @@ class HPackCompressor {
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(UserAgentMetadata, const Slice& slice);
-    void Encode(GrpcMessageMetadata, const Slice& slice) {
-      if (slice.empty()) return;
-      EmitLitHdrWithNonBinaryStringKeyNotIdx(
-          StaticSlice::FromStaticString("grpc-message").c_slice(),
-          slice.c_slice());
-    }
-    template <typename Which>
-    void Encode(Which, const Slice& slice) {
-      if (absl::EndsWith(Which::key(), "-bin")) {
-        EmitLitHdrWithBinaryStringKeyNotIdx(
-            StaticSlice::FromStaticString(Which::key()).c_slice(),
-            slice.c_slice());
-      } else {
-        EmitLitHdrWithNonBinaryStringKeyNotIdx(
-            StaticSlice::FromStaticString(Which::key()).c_slice(),
-            slice.c_slice());
-      }
-    }
 
    private:
     struct FramePrefix {
@@ -161,10 +143,6 @@ class HPackCompressor {
     void EmitLitHdrNotIdx(uint32_t key_index, grpc_mdelem elem);
     void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
     void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
-                                                const grpc_slice& value_slice);
-    void EmitLitHdrWithBinaryStringKeyNotIdx(const grpc_slice& key_slice,
-                                             const grpc_slice& value_slice);
-    void EmitLitHdrWithNonBinaryStringKeyNotIdx(const grpc_slice& key_slice,
                                                 const grpc_slice& value_slice);
     void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
 

@@ -311,52 +311,75 @@ class Subchannel::ConnectedSubchannelStateWatcher
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     Subchannel* c = subchannel_.get();
-    {
-      MutexLock lock(&c->mu_);
-      switch (new_state) {
-        case GRPC_CHANNEL_TRANSIENT_FAILURE:
-        case GRPC_CHANNEL_SHUTDOWN: {
-          if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
-              gpr_log(GPR_INFO,
-                      "subchannel %p %s: Connected subchannel %p has gone into "
-                      "%s. Attempting to reconnect.",
-                      c, c->key_.ToString().c_str(),
-                      c->connected_subchannel_.get(),
-                      ConnectivityStateName(new_state));
-            }
-            c->connected_subchannel_.reset();
-            if (c->channelz_node() != nullptr) {
-              c->channelz_node()->SetChildSocket(nullptr);
-            }
-            // We need to construct our own status if the underlying state was
-            // shutdown since the accompanying status will be StatusCode::OK
-            // otherwise.
-            c->SetConnectivityStateLocked(
-                GRPC_CHANNEL_TRANSIENT_FAILURE,
-                new_state == GRPC_CHANNEL_SHUTDOWN
-                    ? absl::Status(absl::StatusCode::kUnavailable,
-                                   "Subchannel has disconnected.")
-                    : status);
-            c->backoff_begun_ = false;
-            c->backoff_.Reset();
+    MutexLock lock(&c->mu_);
+    switch (new_state) {
+      case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      case GRPC_CHANNEL_SHUTDOWN: {
+        if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
+            gpr_log(GPR_INFO,
+                    "subchannel %p %s: Connected subchannel %p has gone into "
+                    "%s. Attempting to reconnect.",
+                    c, c->key_.ToString().c_str(),
+                    c->connected_subchannel_.get(),
+                    ConnectivityStateName(new_state));
           }
-          break;
+          c->connected_subchannel_.reset();
+          if (c->channelz_node() != nullptr) {
+            c->channelz_node()->SetChildSocket(nullptr);
+          }
+          // We need to construct our own status if the underlying state was
+          // shutdown since the accompanying status will be StatusCode::OK
+          // otherwise.
+          c->SetConnectivityStateLocked(
+              GRPC_CHANNEL_TRANSIENT_FAILURE,
+              new_state == GRPC_CHANNEL_SHUTDOWN
+                  ? absl::Status(absl::StatusCode::kUnavailable,
+                                 "Subchannel has disconnected.")
+                  : status);
+          c->backoff_begun_ = false;
+          c->backoff_.Reset();
         }
-        default: {
-          // In principle, this should never happen.  We should not get
-          // a callback for READY, because that was the state we started
-          // this watch from.  And a connected subchannel should never go
-          // from READY to CONNECTING or IDLE.
-          c->SetConnectivityStateLocked(new_state, status);
-        }
+        break;
+      }
+      default: {
+        // In principle, this should never happen.  We should not get
+        // a callback for READY, because that was the state we started
+        // this watch from.  And a connected subchannel should never go
+        // from READY to CONNECTING or IDLE.
+        c->SetConnectivityStateLocked(new_state, status);
       }
     }
-    // Drain any connectivity state notifications after releasing the mutex.
-    c->work_serializer_.DrainQueue();
   }
 
   WeakRefCountedPtr<Subchannel> subchannel_;
+};
+
+// Asynchronously notifies the \a watcher of a change in the connectvity state
+// of \a subchannel to the current \a state. Deletes itself when done.
+class Subchannel::AsyncWatcherNotifierLocked {
+ public:
+  AsyncWatcherNotifierLocked(
+      RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher,
+      grpc_connectivity_state state, const absl::Status& status)
+      : watcher_(std::move(watcher)) {
+    watcher_->PushConnectivityStateChange({state, status});
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_INIT(
+                     &closure_,
+                     [](void* arg, grpc_error_handle /*error*/) {
+                       auto* self =
+                           static_cast<AsyncWatcherNotifierLocked*>(arg);
+                       self->watcher_->OnConnectivityStateChange();
+                       delete self;
+                     },
+                     this, nullptr),
+                 GRPC_ERROR_NONE);
+  }
+
+ private:
+  RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher_;
+  grpc_closure closure_;
 };
 
 //
@@ -376,13 +399,7 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& p : watchers_) {
-    auto* watcher = p.second->Ref().release();
-    subchannel_->work_serializer_.Schedule(
-        [watcher, state, status]() {
-          watcher->OnConnectivityStateChange(state, status);
-          watcher->Unref();
-        },
-        DEBUG_LOCATION);
+    new AsyncWatcherNotifierLocked(p.second, state, status);
   }
 }
 
@@ -401,8 +418,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
         health_check_service_name_(std::move(health_check_service_name)),
         state_(subchannel_->state_ == GRPC_CHANNEL_READY
                    ? GRPC_CHANNEL_CONNECTING
-                   : subchannel_->state_),
-        watcher_list_(subchannel_.get()) {
+                   : subchannel_->state_) {
     // If the subchannel is already connected, start health checking.
     if (subchannel_->state_ == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
   }
@@ -421,15 +437,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
-      auto* watcher_ptr = watcher->Ref().release();
-      auto state = state_;
-      auto status = status_;
-      subchannel_->work_serializer_.Schedule(
-          [watcher_ptr, state, status]() {
-            watcher_ptr->OnConnectivityStateChange(state, status);
-            watcher_ptr->Unref();
-          },
-          DEBUG_LOCATION);
+      new AsyncWatcherNotifierLocked(watcher, state_, status_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
@@ -473,17 +481,12 @@ class Subchannel::HealthWatcherMap::HealthWatcher
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
-    {
-      MutexLock lock(&subchannel_->mu_);
-      if (new_state != GRPC_CHANNEL_SHUTDOWN &&
-          health_check_client_ != nullptr) {
-        state_ = new_state;
-        status_ = status;
-        watcher_list_.NotifyLocked(new_state, status);
-      }
+    MutexLock lock(&subchannel_->mu_);
+    if (new_state != GRPC_CHANNEL_SHUTDOWN && health_check_client_ != nullptr) {
+      state_ = new_state;
+      status_ = status;
+      watcher_list_.NotifyLocked(new_state, status);
     }
-    // Drain any connectivity state notifications after releasing the mutex.
-    subchannel_->work_serializer_.DrainQueue();
   }
 
   void StartHealthCheckingLocked()
@@ -620,6 +623,21 @@ BackOff::Options ParseArgsForBackoffValues(
 
 }  // namespace
 
+void Subchannel::ConnectivityStateWatcherInterface::PushConnectivityStateChange(
+    ConnectivityStateChange state_change) {
+  MutexLock lock(&mu_);
+  connectivity_state_queue_.push_back(std::move(state_change));
+}
+
+Subchannel::ConnectivityStateWatcherInterface::ConnectivityStateChange
+Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
+  MutexLock lock(&mu_);
+  GPR_ASSERT(!connectivity_state_queue_.empty());
+  ConnectivityStateChange state_change = connectivity_state_queue_.front();
+  connectivity_state_queue_.pop_front();
+  return state_change;
+}
+
 Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
@@ -629,7 +647,6 @@ Subchannel::Subchannel(SubchannelKey key,
       key_(std::move(key)),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
-      watcher_list_(this),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
@@ -738,33 +755,21 @@ void Subchannel::WatchConnectivityState(
     grpc_connectivity_state initial_state,
     const absl::optional<std::string>& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
-  {
-    MutexLock lock(&mu_);
-    grpc_pollset_set* interested_parties = watcher->interested_parties();
-    if (interested_parties != nullptr) {
-      grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
-    }
-    if (!health_check_service_name.has_value()) {
-      if (state_ != initial_state) {
-        auto* watcher_ptr = watcher->Ref().release();
-        auto state = state_;
-        auto status = status_;
-        work_serializer_.Schedule(
-            [watcher_ptr, state, status]() {
-              watcher_ptr->OnConnectivityStateChange(state, status);
-              watcher_ptr->Unref();
-            },
-            DEBUG_LOCATION);
-      }
-      watcher_list_.AddWatcherLocked(std::move(watcher));
-    } else {
-      health_watcher_map_.AddWatcherLocked(
-          WeakRef(DEBUG_LOCATION, "health_watcher"), initial_state,
-          *health_check_service_name, std::move(watcher));
-    }
+  MutexLock lock(&mu_);
+  grpc_pollset_set* interested_parties = watcher->interested_parties();
+  if (interested_parties != nullptr) {
+    grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
   }
-  // Drain any connectivity state notifications after releasing the mutex.
-  work_serializer_.DrainQueue();
+  if (!health_check_service_name.has_value()) {
+    if (state_ != initial_state) {
+      new AsyncWatcherNotifierLocked(watcher, state_, status_);
+    }
+    watcher_list_.AddWatcherLocked(std::move(watcher));
+  } else {
+    health_watcher_map_.AddWatcherLocked(
+        WeakRef(DEBUG_LOCATION, "health_watcher"), initial_state,
+        *health_check_service_name, std::move(watcher));
+  }
 }
 
 void Subchannel::CancelConnectivityStateWatch(
@@ -784,28 +789,20 @@ void Subchannel::CancelConnectivityStateWatch(
 }
 
 void Subchannel::AttemptToConnect() {
-  {
-    MutexLock lock(&mu_);
-    MaybeStartConnectingLocked();
-  }
-  // Drain any connectivity state notifications after releasing the mutex.
-  work_serializer_.DrainQueue();
+  MutexLock lock(&mu_);
+  MaybeStartConnectingLocked();
 }
 
 void Subchannel::ResetBackoff() {
-  {
-    MutexLock lock(&mu_);
-    backoff_.Reset();
-    if (have_retry_alarm_) {
-      retry_immediately_ = true;
-      grpc_timer_cancel(&retry_alarm_);
-    } else {
-      backoff_begun_ = false;
-      MaybeStartConnectingLocked();
-    }
+  MutexLock lock(&mu_);
+  backoff_.Reset();
+  if (have_retry_alarm_) {
+    retry_immediately_ = true;
+    grpc_timer_cancel(&retry_alarm_);
+  } else {
+    backoff_begun_ = false;
+    MaybeStartConnectingLocked();
   }
-  // Drain any connectivity state notifications after releasing the mutex.
-  work_serializer_.DrainQueue();
 }
 
 void Subchannel::Orphan() {
@@ -815,16 +812,12 @@ void Subchannel::Orphan() {
     subchannel_pool_->UnregisterSubchannel(key_, this);
     subchannel_pool_.reset();
   }
-  {
-    MutexLock lock(&mu_);
-    GPR_ASSERT(!disconnected_);
-    disconnected_ = true;
-    connector_.reset();
-    connected_subchannel_.reset();
-    health_watcher_map_.ShutdownLocked();
-  }
-  // Drain any connectivity state notifications after releasing the mutex.
-  work_serializer_.DrainQueue();
+  MutexLock lock(&mu_);
+  GPR_ASSERT(!disconnected_);
+  disconnected_ = true;
+  connector_.reset();
+  connected_subchannel_.reset();
+  health_watcher_map_.ShutdownLocked();
 }
 
 namespace {
@@ -907,31 +900,27 @@ void Subchannel::MaybeStartConnectingLocked() {
 
 void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
-  {
-    MutexLock lock(&c->mu_);
-    c->have_retry_alarm_ = false;
-    if (c->disconnected_) {
-      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
-                                                               &error, 1);
-    } else if (c->retry_immediately_) {
-      c->retry_immediately_ = false;
-      error = GRPC_ERROR_NONE;
-    } else {
-      (void)GRPC_ERROR_REF(error);
-    }
-    if (error == GRPC_ERROR_NONE) {
-      gpr_log(GPR_INFO,
-              "subchannel %p %s: failed to connect to channel, retrying",
-              c.get(), c->key_.ToString().c_str());
-      c->ContinueConnectingLocked();
-      // Still connecting, keep ref around. Note that this stolen ref won't
-      // be dropped without first acquiring c->mu_.
-      c.release();
-    }
-    GRPC_ERROR_UNREF(error);
+  MutexLock lock(&c->mu_);
+  c->have_retry_alarm_ = false;
+  if (c->disconnected_) {
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
+                                                             &error, 1);
+  } else if (c->retry_immediately_) {
+    c->retry_immediately_ = false;
+    error = GRPC_ERROR_NONE;
+  } else {
+    (void)GRPC_ERROR_REF(error);
   }
-  // Drain any connectivity state notifications after releasing the mutex.
-  static_cast<Subchannel*>(arg)->work_serializer_.DrainQueue();
+  if (error == GRPC_ERROR_NONE) {
+    gpr_log(GPR_INFO,
+            "subchannel %p %s: failed to connect to channel, retrying", c.get(),
+            c->key_.ToString().c_str());
+    c->ContinueConnectingLocked();
+    // Still connecting, keep ref around. Note that this stolen ref won't
+    // be dropped without first acquiring c->mu_.
+    c.release();
+  }
+  GRPC_ERROR_UNREF(error);
 }
 
 void Subchannel::ContinueConnectingLocked() {
@@ -965,8 +954,6 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
     }
   }
   grpc_channel_args_destroy(delete_channel_args);
-  // Drain any connectivity state notifications after releasing the mutex.
-  c->work_serializer_.DrainQueue();
   c.reset(DEBUG_LOCATION, "connecting");
 }
 
