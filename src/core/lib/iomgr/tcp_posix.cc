@@ -852,11 +852,12 @@ static void tcp_continue_read(grpc_tcp* tcp) {
                              tcp->max_read_chunk_size))));
     if (!tcp->has_posted_reclaimer) {
       tcp->has_posted_reclaimer = true;
-      tcp->memory_owner.PostReclaimer(grpc_core::ReclamationPass::kBenign, [tcp]() {
-        MutexLock lock(tcp->...);
-        grpc_slice_buffer_clear(tcp->incoming_buffer);
-        tcp->has_posted_reclaimer = false;
-      });
+      tcp->memory_owner.PostReclaimer(
+          grpc_core::ReclamationPass::kBenign, [tcp]() {
+            MutexLock lock(tcp->...);
+            grpc_slice_buffer_clear(tcp->incoming_buffer);
+            tcp->has_posted_reclaimer = false;
+          });
     }
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
