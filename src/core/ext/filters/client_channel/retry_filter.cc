@@ -1893,9 +1893,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   grpc_metadata_batch_copy(&calld->send_initial_metadata_,
                            &call_attempt_->send_initial_metadata_);
   if (GPR_UNLIKELY(calld->num_attempts_completed_ > 0)) {
-    call_attempt_->send_initial_metadata_.Set(
-        GrpcPreviousRpcAttemptsMetadata(),
-        calld->num_attempts_completed_);
+    call_attempt_->send_initial_metadata_.Set(GrpcPreviousRpcAttemptsMetadata(),
+                                              calld->num_attempts_completed_);
   } else {
     call_attempt_->send_initial_metadata_.Remove(
         GrpcPreviousRpcAttemptsMetadata());
