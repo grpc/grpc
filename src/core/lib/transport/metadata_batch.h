@@ -281,7 +281,7 @@ class ParseHelper {
       : value_(std::move(value)), transport_size_(transport_size) {}
 
   template <typename Trait>
-  ParsedMetadata<Container> Found(Trait trait) {
+  GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
         trait, Trait::ParseMemento(std::move(value_)), transport_size_);
   }
@@ -317,7 +317,7 @@ class AppendHelper {
                        &value_));
   }
 
-  void NotFound(absl::string_view key) {
+  GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
     GPR_ASSERT(GRPC_ERROR_NONE ==
                container_->Append(grpc_mdelem_from_slices(
                    grpc_slice_intern(
