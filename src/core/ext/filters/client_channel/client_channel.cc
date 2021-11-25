@@ -577,8 +577,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
           DEBUG_LOCATION);
     }
 
-    void OnConnectivityStateChange(grpc_connectivity_state state,
-                                   const absl::Status& status) override {
+    void OnConnectivityStateChange() override {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
@@ -587,9 +586,9 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
-          [this, state, status]()
+          [this]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
-                ApplyUpdateInControlPlaneWorkSerializer(state, status);
+                ApplyUpdateInControlPlaneWorkSerializer();
                 Unref();
               },
           DEBUG_LOCATION);
@@ -612,20 +611,19 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
-    void ApplyUpdateInControlPlaneWorkSerializer(grpc_connectivity_state state,
-                                                 const absl::Status& status)
+    void ApplyUpdateInControlPlaneWorkSerializer()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: processing connectivity change in work serializer "
-                "for subchannel wrapper %p subchannel %p watcher=%p: "
-                "state=%s status=%s",
+                "for subchannel wrapper %p subchannel %p "
+                "watcher=%p",
                 parent_->chand_, parent_.get(), parent_->subchannel_.get(),
-                watcher_.get(), ConnectivityStateName(state),
-                status.ToString().c_str());
+                watcher_.get());
       }
+      ConnectivityStateChange state_change = PopConnectivityStateChange();
       absl::optional<absl::Cord> keepalive_throttling =
-          status.GetPayload(kKeepaliveThrottlingKey);
+          state_change.status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
@@ -653,8 +651,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
-        last_seen_state_ = state;
-        watcher_->OnConnectivityStateChange(state);
+        last_seen_state_ = state_change.state;
+        watcher_->OnConnectivityStateChange(state_change.state);
       }
     }
 

@@ -1219,6 +1219,7 @@ class HPackParser::Parser {
             " vs. %" PRIu32
             "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
             *frame_length_, metadata_size_limit_);
+    if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
     return input_->MaybeSetErrorAndReturn(
         [] {
           return grpc_error_set_int(
