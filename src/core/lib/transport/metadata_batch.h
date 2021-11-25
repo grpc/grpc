@@ -283,7 +283,9 @@ class ParseHelper {
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
-        trait, ParseValueToMemento<typename Trait::MementoType, Trait::ParseMemento>(), transport_size_);
+        trait,
+        ParseValueToMemento<typename Trait::MementoType, Trait::ParseMemento>(),
+        transport_size_);
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
