@@ -986,14 +986,14 @@ class PublishToAppEncoder {
   void Encode(grpc_core::TeMetadata, grpc_core::TeMetadata::ValueType) {}
 
   template <typename Which>
-  void Encode(Which, const grpc_core::Slice& value) {
+  void Encode(Which, absl::enable_if_t<std::is_same<typename Which::ValueType, grpc_core::Slice>::value, const grpc_core::Slice&> value) {
     const auto key = Which::key();
     Append(grpc_core::ExternallyManagedSlice(key.data(), key.length()),
            value.c_slice());
   }
   template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {
-    Encode(Which(), Which::Encode(value));
+  void Encode(Which, absl::enable_if_t<!std::is_same<typename Which::ValueType, grpc_core::Slice>::value, typename Which::ValueType> value) {
+    abort();
   }
 
  private:
