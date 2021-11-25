@@ -215,13 +215,16 @@ class ParsedMetadata {
   static const VTable* MdelemVtable();
 
   template <Slice (*ParseMemento)(Slice)>
-  GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetSlice(Slice* slice, ParsedMetadata* result) {
+  GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetSlice(
+      Slice* slice, ParsedMetadata* result) {
     result->value_.slice = ParseMemento(std::move(*slice)).TakeCSlice();
   }
 
   template <typename T, T (*ParseMemento)(Slice)>
-  GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetTrivial(Slice* slice, ParsedMetadata* result) {
-    result->value_.trivial = static_cast<uint64_t>(ParseMemento(std::move(*slice)));
+  GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetTrivial(
+      Slice* slice, ParsedMetadata* result) {
+    result->value_.trivial =
+        static_cast<uint64_t>(ParseMemento(std::move(*slice)));
   }
 
   const VTable* vtable_;
