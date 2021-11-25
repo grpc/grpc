@@ -491,13 +491,16 @@ class AppendHelper {
 }  // namespace metadata_detail
 
 template <typename Which>
-absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value, const Slice&>
-MetadataValueAsSlice(const Slice& slice) { return slice; }
+absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value,
+                  const Slice&>
+MetadataValueAsSlice(const Slice& slice) {
+  return slice;
+}
 
 template <typename Which>
 absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
-MetadataValueAsSlice(Which::ValueType value) {
-  return Which::Encode(value);
+MetadataValueAsSlice(typename typename Which::ValueType value) {
+  return Which::Encode(absl::default_allocator_is_nothrow::value);
 }
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
