@@ -340,8 +340,11 @@ class AppendHelper {
 // Helper function for encoders
 // Given a metadata trait, convert the value to a slice.
 template <typename Which>
-absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value, const Slice&>
-MetadataValueAsSlice(const Slice& slice) { return slice; }
+absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value,
+                  const Slice&>
+MetadataValueAsSlice(const Slice& slice) {
+  return slice;
+}
 
 template <typename Which>
 absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
