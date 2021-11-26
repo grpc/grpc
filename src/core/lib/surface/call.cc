@@ -906,8 +906,6 @@ static int prepare_application_metadata(grpc_call* call, int count,
                                            : &call->send_initial_metadata;
   for (i = 0; i < total_count; i++) {
     grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem* l = linked_from_md(md);
-    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
       break;
@@ -920,24 +918,8 @@ static int prepare_application_metadata(grpc_call* call, int count,
       // HTTP2 hpack encoding has a maximum limit.
       break;
     }
-    l->md = grpc_mdelem_from_grpc_metadata(const_cast<grpc_metadata*>(md));
-  }
-  if (i != total_count) {
-    for (int j = 0; j < i; j++) {
-      grpc_metadata* md = get_md_elem(metadata, additional_metadata, j, count);
-      grpc_linked_mdelem* l = linked_from_md(md);
-      GRPC_MDELEM_UNREF(l->md);
-    }
-    return 0;
-  }
-  for (i = 0; i < total_count; i++) {
-    grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem* l = linked_from_md(md);
-    grpc_error_handle error = batch->LinkTail(l);
-    if (error != GRPC_ERROR_NONE) {
-      GRPC_MDELEM_UNREF(l->md);
-    }
-    GRPC_LOG_IF_ERROR("prepare_application_metadata", error);
+    batch->Append(grpc_core::StringViewFromSlice(md->key),
+                  grpc_core::Slice(grpc_slice_ref(md->value)));
   }
 
   return 1;
@@ -982,24 +964,16 @@ class PublishToAppEncoder {
 
   void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
 
-  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis) {}
-  void Encode(grpc_core::TeMetadata, grpc_core::TeMetadata::ValueType) {}
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {}
 
-  template <typename Which>
-  void Encode(Which, absl::enable_if_t<std::is_same<typename Which::ValueType,
-                                                    grpc_core::Slice>::value,
-                                       const grpc_core::Slice&>
-                         value) {
-    const auto key = Which::key();
-    Append(grpc_core::ExternallyManagedSlice(key.data(), key.length()),
-           value.c_slice());
-  }
-  template <typename Which>
-  void Encode(Which, absl::enable_if_t<!std::is_same<typename Which::ValueType,
-                                                     grpc_core::Slice>::value,
-                                       typename Which::ValueType>
-                         value) {
-    abort();
+  void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
+    char buffer[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(count, buffer);
+    Append(grpc_core::StaticSlice::FromStaticString(
+               grpc_core::GrpcPreviousRpcAttemptsMetadata::key())
+               .c_slice(),
+           grpc_core::Slice::FromCopiedString(buffer).c_slice());
   }
 
  private:
