@@ -882,10 +882,6 @@ grpc_call_test_only_get_incoming_stream_encodings(grpc_call* call) {
   return call->incoming_stream_compression_algorithm;
 }
 
-static grpc_linked_mdelem* linked_from_md(grpc_metadata* md) {
-  return reinterpret_cast<grpc_linked_mdelem*>(&md->internal_data);
-}
-
 static grpc_metadata* get_md_elem(grpc_metadata* metadata,
                                   grpc_metadata* additional_metadata, int i,
                                   int count) {
@@ -968,15 +964,21 @@ class PublishToAppEncoder {
   void Encode(Which, const typename Which::ValueType& value) {}
 
   void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
-    char buffer[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(count, buffer);
-    Append(grpc_core::StaticSlice::FromStaticString(
-               grpc_core::GrpcPreviousRpcAttemptsMetadata::key())
-               .c_slice(),
-           grpc_core::Slice::FromCopiedString(buffer).c_slice());
+    Append(grpc_core::GrpcPreviousRpcAttemptsMetadata::key(), count);
+  }
+
+  void Encode(grpc_core::GrpcRetryPushbackMsMetadata, grpc_millis count) {
+    Append(grpc_core::GrpcRetryPushbackMsMetadata::key(), count);
   }
 
  private:
+  void Append(absl::string_view key, uint32_t value) {
+    char buffer[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(value, buffer);
+    Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
+           grpc_core::Slice::FromCopiedString(buffer).c_slice());
+  }
+
   void Append(grpc_slice key, grpc_slice value) {
     auto* mdusr = &dest_->metadata[dest_->count++];
     mdusr->key = key;
