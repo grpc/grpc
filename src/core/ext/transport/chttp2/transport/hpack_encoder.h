@@ -92,7 +92,7 @@ class HPackCompressor {
     }
     template <typename Which>
     void Encode(Which, const typename Which::ValueType& value) {
-      const Slice& slice = MetadataValueAsSlice(value);
+      const Slice& slice = MetadataValueAsSlice<Which>(value);
       if (absl::EndsWith(Which::key(), "-bin")) {
         EmitLitHdrWithBinaryStringKeyNotIdx(
             StaticSlice::FromStaticString(Which::key()).c_slice(),

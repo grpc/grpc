@@ -439,9 +439,11 @@ class ParseHelper {
       : value_(std::move(value)), transport_size_(transport_size) {}
 
   template <typename Trait>
-  ParsedMetadata<Container> Found(Trait trait) {
+  GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
-        trait, Trait::ParseMemento(std::move(value_)), transport_size_);
+        trait,
+        ParseValueToMemento<typename Trait::MementoType, Trait::ParseMemento>(),
+        transport_size_);
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
@@ -453,6 +455,11 @@ class ParseHelper {
   }
 
  private:
+  template <typename T, T (*parse_memento)(Slice)>
+  GPR_ATTRIBUTE_NOINLINE T ParseValueToMemento() {
+    return parse_memento(std::move(value_));
+  }
+
   Slice value_;
   const size_t transport_size_;
 };
@@ -475,7 +482,7 @@ class AppendHelper {
                        &value_));
   }
 
-  void NotFound(absl::string_view key) {
+  GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
     GPR_ASSERT(GRPC_ERROR_NONE ==
                container_->Append(grpc_mdelem_from_slices(
                    grpc_slice_intern(
@@ -490,6 +497,8 @@ class AppendHelper {
 
 }  // namespace metadata_detail
 
+// Helper function for encoders
+// Given a metadata trait, convert the value to a slice.
 template <typename Which>
 absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value,
                   const Slice&>
@@ -499,8 +508,8 @@ MetadataValueAsSlice(const Slice& slice) {
 
 template <typename Which>
 absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
-MetadataValueAsSlice(typename typename Which::ValueType value) {
-  return Which::Encode(absl::default_allocator_is_nothrow::value);
+MetadataValueAsSlice(typename Which::ValueType value) {
+  return Which::Encode(value);
 }
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.

@@ -882,10 +882,6 @@ grpc_call_test_only_get_incoming_stream_encodings(grpc_call* call) {
   return call->incoming_stream_compression_algorithm;
 }
 
-static grpc_linked_mdelem* linked_from_md(grpc_metadata* md) {
-  return reinterpret_cast<grpc_linked_mdelem*>(&md->internal_data);
-}
-
 static grpc_metadata* get_md_elem(grpc_metadata* metadata,
                                   grpc_metadata* additional_metadata, int i,
                                   int count) {
@@ -906,38 +902,20 @@ static int prepare_application_metadata(grpc_call* call, int count,
                                            : &call->send_initial_metadata;
   for (i = 0; i < total_count; i++) {
     grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem* l = linked_from_md(md);
-    GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
-      break;
+      return 0;
     } else if (!grpc_is_binary_header_internal(md->key) &&
                !GRPC_LOG_IF_ERROR(
                    "validate_metadata",
                    grpc_validate_header_nonbin_value_is_legal(md->value))) {
-      break;
+      return 0;
     } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
       // HTTP2 hpack encoding has a maximum limit.
-      break;
+      return 0;
     }
-    l->md = grpc_mdelem_from_grpc_metadata(const_cast<grpc_metadata*>(md));
-  }
-  if (i != total_count) {
-    for (int j = 0; j < i; j++) {
-      grpc_metadata* md = get_md_elem(metadata, additional_metadata, j, count);
-      grpc_linked_mdelem* l = linked_from_md(md);
-      GRPC_MDELEM_UNREF(l->md);
-    }
-    return 0;
-  }
-  for (i = 0; i < total_count; i++) {
-    grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
-    grpc_linked_mdelem* l = linked_from_md(md);
-    grpc_error_handle error = batch->LinkTail(l);
-    if (error != GRPC_ERROR_NONE) {
-      GRPC_MDELEM_UNREF(l->md);
-    }
-    GRPC_LOG_IF_ERROR("prepare_application_metadata", error);
+    batch->Append(grpc_core::StringViewFromSlice(md->key),
+                  grpc_core::Slice(grpc_slice_ref(md->value)));
   }
 
   return 1;
@@ -982,27 +960,25 @@ class PublishToAppEncoder {
 
   void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
 
-  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis) {}
-  void Encode(grpc_core::TeMetadata, grpc_core::TeMetadata::ValueType) {}
-  void Encode(grpc_core::ContentTypeMetadata,
-              grpc_core::ContentTypeMetadata::ValueType) {}
-  void Encode(grpc_core::SchemeMetadata, grpc_core::SchemeMetadata::ValueType) {
-  }
-  void Encode(grpc_core::MethodMetadata, grpc_core::MethodMetadata::ValueType) {
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {}
+
+  void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
+    Append(grpc_core::GrpcPreviousRpcAttemptsMetadata::key(), count);
   }
 
-  template <typename Which>
-  void Encode(Which, const grpc_core::Slice& value) {
-    const auto key = Which::key();
-    Append(grpc_core::ExternallyManagedSlice(key.data(), key.length()),
-           value.c_slice());
-  }
-  template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {
-    Encode(Which(), Which::Encode(value));
+  void Encode(grpc_core::GrpcRetryPushbackMsMetadata, grpc_millis count) {
+    Append(grpc_core::GrpcRetryPushbackMsMetadata::key(), count);
   }
 
  private:
+  void Append(absl::string_view key, uint32_t value) {
+    char buffer[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(value, buffer);
+    Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
+           grpc_core::Slice::FromCopiedString(buffer).c_slice());
+  }
+
   void Append(grpc_slice key, grpc_slice value) {
     auto* mdusr = &dest_->metadata[dest_->count++];
     mdusr->key = key;
