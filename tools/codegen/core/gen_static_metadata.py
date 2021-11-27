@@ -132,11 +132,6 @@ CONFIG = [
 # All entries here are ignored when counting non-default initial metadata that
 # prevents the chttp2 server from sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    ':path',
-    ':method',
-    ':status',
-    ':authority',
-    ':scheme',
     'grpc-encoding',
     'grpc-accept-encoding',
     'content-encoding',

@@ -1124,8 +1124,6 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   args.cq = nullptr;
   args.pollset_set_alternative = nullptr;
   args.server_transport_data = transport_server_data;
-  args.add_initial_metadata = nullptr;
-  args.add_initial_metadata_count = 0;
   args.send_deadline = GRPC_MILLIS_INF_FUTURE;
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);

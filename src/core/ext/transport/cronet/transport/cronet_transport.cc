@@ -723,6 +723,37 @@ class CronetMetadataEncoder {
     GRPC_MDELEM_UNREF(mdelem);
   }
 
+  void Encode(grpc_core::SchemeMetadata, grpc_core::SchemeMetadata::ValueType) {
+    /* Cronet populates these fields on its own */
+  }
+  void Encode(grpc_core::AuthorityMetadata,
+              grpc_core::AuthorityMetadata::ValueType) {
+    /* Cronet populates these fields on its own */
+  }
+
+  void Encode(grpc_core::MethodMetadata,
+              grpc_core::MethodMetadata::ValueType method) {
+    switch (method) {
+      case grpc_core::MethodMetadata::kPost:
+        *method_ = "POST";
+        break;
+      case grpc_core::MethodMetadata::kPut:
+        *method_ = "PUT";
+        break;
+      case grpc_core::MethodMetadata::kGet:
+        *method_ = "GET";
+        break;
+      case grpc_core::MethodMetadata::kInvalid:
+        abort();
+    }
+  }
+
+  void Encode(grpc_core::PathMetadata,
+              grpc_core::PathMetadata::ValueType path) {
+    /* Create URL by appending :path value to the hostname */
+    *url_ = absl::StrCat("https://", host_, path.as_string_view());
+  }
+
   void Encode(grpc_mdelem mdelem) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
     char* value;
@@ -732,32 +763,6 @@ class CronetMetadataEncoder {
       grpc_slice_unref_internal(wire_value);
     } else {
       value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
-    }
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
-        grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem),
-                                      GRPC_MDSTR_AUTHORITY)) {
-      /* Cronet populates these fields on its own */
-      gpr_free(key);
-      gpr_free(value);
-      return;
-    }
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_METHOD)) {
-      if (grpc_slice_eq_static_interned(GRPC_MDVALUE(mdelem), GRPC_MDSTR_PUT)) {
-        *method_ = "PUT";
-      } else {
-        /* POST method in default*/
-        *method_ = "POST";
-      }
-      gpr_free(key);
-      gpr_free(value);
-      return;
-    }
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
-      /* Create URL by appending :path value to the hostname */
-      *url_ = absl::StrCat("https://", host_, value);
-      gpr_free(key);
-      gpr_free(value);
-      return;
     }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
     GPR_ASSERT(count_ < capacity_);

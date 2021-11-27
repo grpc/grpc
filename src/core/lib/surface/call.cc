@@ -372,23 +372,16 @@ grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
     call->final_op.client.status = nullptr;
     call->final_op.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
-    GPR_ASSERT(args->add_initial_metadata_count <
-               MAX_SEND_EXTRA_METADATA_COUNT);
-    for (size_t i = 0; i < args->add_initial_metadata_count; i++) {
-      call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      if (grpc_slice_eq_static_interned(
-              GRPC_MDKEY(args->add_initial_metadata[i]), GRPC_MDSTR_PATH)) {
-        path = grpc_slice_ref_internal(
-            GRPC_MDVALUE(args->add_initial_metadata[i]));
-      }
+    call->send_initial_metadata.Set(grpc_core::PathMetadata(),
+                                    std::move(*args->path));
+    if (args->authority.has_value()) {
+      call->send_initial_metadata.Set(grpc_core::AuthorityMetadata(),
+                                      std::move(*args->authority));
     }
-    call->send_extra_metadata_count =
-        static_cast<int>(args->add_initial_metadata_count);
   } else {
     GRPC_STATS_INC_SERVER_CALLS_CREATED();
     call->final_op.server.cancelled = nullptr;
     call->final_op.server.core_server = args->server;
-    GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
   }
 

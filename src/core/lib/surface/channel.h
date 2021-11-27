@@ -74,8 +74,8 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 namespace grpc_core {
 
 struct RegisteredCall {
-  grpc_mdelem path;
-  grpc_mdelem authority;
+  Slice path;
+  absl::optional<Slice> authority;
 
   explicit RegisteredCall(const char* method_arg, const char* host_arg);
   RegisteredCall(const RegisteredCall& other);

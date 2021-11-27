@@ -46,8 +46,8 @@ typedef struct grpc_call_create_args {
 
   const void* server_transport_data;
 
-  grpc_mdelem* add_initial_metadata;
-  size_t add_initial_metadata_count;
+  absl::optional<grpc_core::Slice> path;
+  absl::optional<grpc_core::Slice> authority;
 
   grpc_millis send_deadline;
 } grpc_call_create_args;

@@ -257,18 +257,12 @@ class RepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH,
-            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
+    b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
+    b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
+    b->Set(grpc_core::PathMetadata(),
+           grpc_slice_from_static_string("/foo/bar"));
+    b->Set(grpc_core::AuthorityMetadata(),
+           grpc_slice_from_static_string("foo.test.google.fr:1234"));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd",
         b->Append(
@@ -276,11 +270,9 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+    b->Set(grpc_core::UserAgentMetadata(),
+           grpc_slice_from_static_string(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)"));
   }
 };
 
@@ -291,18 +283,12 @@ class MoreRepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH, grpc_slice_intern(grpc_slice_from_static_string(
-                                 "/grpc.test.FooService/BarMethod"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
+    b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
+    b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
+    b->Set(grpc_core::PathMetadata(),
+           grpc_slice_from_static_string("/grpc.test.FooService/BarMethod"));
+    b->Set(grpc_core::AuthorityMetadata(),
+           grpc_slice_from_static_string("foo.test.google.fr:1234"));
     b->Set(grpc_core::GrpcTraceBinMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -324,11 +310,9 @@ class MoreRepresentativeClientInitialMetadata {
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+    b->Set(grpc_core::UserAgentMetadata(),
+           grpc_slice_from_static_string(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)"));
   }
 };
 
@@ -336,7 +320,7 @@ class RepresentativeServerInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_STATUS_200)));
+    b->Set(grpc_core::StatusMetadata(), 200);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(

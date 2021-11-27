@@ -593,10 +593,10 @@ class MetadataMap {
   // transitions.
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
+    table_.ForEach(EncodeWrapper<Encoder>{encoder});
     for (auto* l = list_.head; l; l = l->next) {
       encoder->Encode(l->md);
     }
-    table_.ForEach(EncodeWrapper<Encoder>{encoder});
   }
 
   // Get the pointer to the value of some known metadata.
