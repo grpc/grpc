@@ -904,15 +904,15 @@ static int prepare_application_metadata(grpc_call* call, int count,
     grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
-      break;
+      return 0;
     } else if (!grpc_is_binary_header_internal(md->key) &&
                !GRPC_LOG_IF_ERROR(
                    "validate_metadata",
                    grpc_validate_header_nonbin_value_is_legal(md->value))) {
-      break;
+      return 0;
     } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
       // HTTP2 hpack encoding has a maximum limit.
-      break;
+      return 0;
     }
     batch->Append(grpc_core::StringViewFromSlice(md->key),
                   grpc_core::Slice(grpc_slice_ref(md->value)));
