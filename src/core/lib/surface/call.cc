@@ -961,7 +961,7 @@ class PublishToAppEncoder {
   void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
 
   template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {}
+  void Encode(Which, const typename Which::ValueType&) {}
 
   void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
     Append(grpc_core::GrpcPreviousRpcAttemptsMetadata::key(), count);
