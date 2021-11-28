@@ -213,11 +213,15 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
   ServerLoadReportingChannelData* chand =
       reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
   if (err == GRPC_ERROR_NONE) {
-    if (const grpc_core::Slice* path = calld->recv_initial_metadata_->get_pointer(grpc_core::PathMetadata())) {
+    if (const grpc_core::Slice* path =
+            calld->recv_initial_metadata_->get_pointer(
+                grpc_core::PathMetadata())) {
       calld->service_method_ = path->Ref().TakeCSlice();
     }
     if (calld->target_host_ == nullptr) {
-      if (const grpc_core::Slice* authority = calld->recv_initial_metadata_->get_pointer(grpc_core::AuthorityMetadata())) {
+      if (const grpc_core::Slice* authority =
+              calld->recv_initial_metadata_->get_pointer(
+                  grpc_core::AuthorityMetadata())) {
         calld->target_host_len_ = authority->size();
         calld->target_host_ =
             reinterpret_cast<char*>(gpr_zalloc(calld->target_host_len_));
@@ -228,12 +232,14 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
       }
     }
     std::string buffer;
-    auto lb_token = calld->recv_initial_metadata_->GetValue(grpc_core::kGrpcLbLbTokenMetadataKey, &buffer);
+    auto lb_token = calld->recv_initial_metadata_->GetValue(
+        grpc_core::kGrpcLbLbTokenMetadataKey, &buffer);
     if (lb_token.has_value()) {
       if (calld->client_ip_and_lr_token_ == nullptr) {
         calld->StoreClientIpAndLrToken(lb_token->data(), lb_token->size());
       }
-      calld->recv_initial_metadata_->Remove(grpc_core::Slice::FromCopiedString(grpc_core::kGrpcLbLbTokenMetadataKey));
+      calld->recv_initial_metadata_->Remove(grpc_core::Slice::FromCopiedString(
+          grpc_core::kGrpcLbLbTokenMetadataKey));
     }
     // If the LB token was not found in the recv_initial_metadata, only the
     // client IP part will be recorded (with an empty LB token).
