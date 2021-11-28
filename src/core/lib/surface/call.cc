@@ -972,7 +972,7 @@ class PublishToAppEncoder {
   }
 
  private:
-  void Append(absl::string_view key, uint32_t value) {
+  void Append(absl::string_view key, int64_t value) {
     char buffer[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(value, buffer);
     Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
