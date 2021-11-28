@@ -806,13 +806,7 @@ static void parse_grpc_header(const uint8_t* data, int* length,
 }
 
 static bool header_has_authority(const grpc_metadata_batch* b) {
-  bool found = false;
-  b->ForEach([&](grpc_mdelem elem) {
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(elem), GRPC_MDSTR_AUTHORITY)) {
-      found = true;
-    }
-  });
-  return found;
+  return b->get_pointer(grpc_core::AuthorityMetadata()) != nullptr;
 }
 
 /*

@@ -205,35 +205,6 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
       client_ip_and_lr_token_len_);
 }
 
-grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
-    void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  ServerLoadReportingCallData* calld =
-      reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
-    calld->service_method_ = grpc_slice_ref_internal(GRPC_MDVALUE(md));
-  } else if (calld->target_host_ == nullptr &&
-             grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY)) {
-    grpc_slice target_host_slice = GRPC_MDVALUE(md);
-    calld->target_host_len_ = GRPC_SLICE_LENGTH(target_host_slice);
-    calld->target_host_ =
-        reinterpret_cast<char*>(gpr_zalloc(calld->target_host_len_));
-    for (size_t i = 0; i < calld->target_host_len_; ++i) {
-      calld->target_host_[i] = static_cast<char>(
-          tolower(GRPC_SLICE_START_PTR(target_host_slice)[i]));
-    }
-  } else if (grpc_slice_str_cmp(GRPC_MDKEY(md),
-                                grpc_core::kGrpcLbLbTokenMetadataKey) == 0) {
-    if (calld->client_ip_and_lr_token_ == nullptr) {
-      calld->StoreClientIpAndLrToken(
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(GRPC_MDVALUE(md)),
-          GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)));
-    }
-    return GRPC_FILTERED_REMOVE();
-  }
-  return GRPC_FILTERED_MDELEM(md);
-}
-
 void ServerLoadReportingCallData::RecvInitialMetadataReady(
     void* arg, grpc_error_handle err) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(arg);
@@ -242,11 +213,28 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
   ServerLoadReportingChannelData* chand =
       reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
   if (err == GRPC_ERROR_NONE) {
-    GRPC_LOG_IF_ERROR(
-        "server_load_reporting_filter",
-        grpc_metadata_batch_filter(calld->recv_initial_metadata_,
-                                   RecvInitialMetadataFilter, elem,
-                                   "recv_initial_metadata filtering error"));
+    if (const grpc_core::Slice* path = calld->recv_initial_metadata_->get_pointer(grpc_core::PathMetadata())) {
+      calld->service_method_ = path->Ref().TakeCSlice();
+    }
+    if (calld->target_host_ == nullptr) {
+      if (const grpc_core::Slice* authority = calld->recv_initial_metadata_->get_pointer(grpc_core::AuthorityMetadata())) {
+        calld->target_host_len_ = authority->size();
+        calld->target_host_ =
+            reinterpret_cast<char*>(gpr_zalloc(calld->target_host_len_));
+        for (size_t i = 0; i < calld->target_host_len_; ++i) {
+          calld->target_host_[i] = static_cast<char>(
+              tolower(static_cast<unsigned char>(authority->begin()[i])));
+        }
+      }
+    }
+    std::string buffer;
+    auto lb_token = calld->recv_initial_metadata_->GetValue(grpc_core::kGrpcLbLbTokenMetadataKey, &buffer);
+    if (lb_token.has_value()) {
+      if (calld->client_ip_and_lr_token_ == nullptr) {
+        calld->StoreClientIpAndLrToken(lb_token->data(), lb_token->size());
+      }
+      calld->recv_initial_metadata_->Remove(grpc_core::Slice::FromCopiedString(grpc_core::kGrpcLbLbTokenMetadataKey));
+    }
     // If the LB token was not found in the recv_initial_metadata, only the
     // client IP part will be recorded (with an empty LB token).
     if (calld->client_ip_and_lr_token_ == nullptr) {
