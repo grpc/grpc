@@ -954,7 +954,7 @@ class PublishToAppEncoder {
   void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
 
   template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {}
+  void Encode(Which, const typename Which::ValueType&) {}
 
   void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
     Append(grpc_core::GrpcPreviousRpcAttemptsMetadata::key(), count);
@@ -965,7 +965,7 @@ class PublishToAppEncoder {
   }
 
  private:
-  void Append(absl::string_view key, uint32_t value) {
+  void Append(absl::string_view key, int64_t value) {
     char buffer[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(value, buffer);
     Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
