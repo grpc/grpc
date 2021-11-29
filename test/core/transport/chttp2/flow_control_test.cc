@@ -69,6 +69,7 @@ class TransportTargetWindowSizeMocker
   // Alternates the initial window size targets. Computes a low values if it was
   // previously high, or a high value if it was previously low.
   void AlternateTargetInitialWindowSizes() {
+    absl::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = true;
   }
 
@@ -81,9 +82,9 @@ class TransportTargetWindowSizeMocker
   }
 
  private:
-  bool alternating_initial_window_sizes_ = false;
-  double window_size_ = kLargeInitialWindowSize;
   absl::Mutex mu_;
+  bool alternating_initial_window_sizes_ ABSL_GUARDED_BY(mu_) = false;
+  double window_size_ ABSL_GUARDED_BY(mu_) = kLargeInitialWindowSize;
 };
 
 TransportTargetWindowSizeMocker* g_target_initial_window_size_mocker;
