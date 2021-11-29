@@ -253,8 +253,6 @@ class Chttp2IncomingByteStream : public ByteStream {
   static void NextLocked(void* arg, grpc_error_handle error_ignored);
   static void OrphanLocked(void* arg, grpc_error_handle error_ignored);
 
-  void MaybeCreateStreamDecompressionCtx();
-
   grpc_chttp2_transport* transport_;  // Immutable.
   grpc_chttp2_stream* stream_;        // Immutable.
 

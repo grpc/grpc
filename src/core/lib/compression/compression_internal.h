@@ -26,6 +26,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/slice/slice.h"
 #include "absl/types/optional.h"
 #include "absl/strings/string_view.h"
 
@@ -38,9 +39,13 @@ class CompressionAlgorithmSet {
  public:
  static CompressionAlgorithmSet FromUint32(uint32_t value);
   static CompressionAlgorithmSet FromChannelArgs(const grpc_channel_args* args);
+  static CompressionAlgorithmSet FromString(absl::string_view value);
 
   grpc_compression_algorithm CompressionAlgorithmForLevel(grpc_compression_level level)const;
   bool IsSet(grpc_compression_algorithm algorithm)const;
+
+  std::string ToString() const;
+  Slice ToSlice() const;
 
  private:
   BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT> set_;

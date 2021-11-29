@@ -396,7 +396,6 @@ class StreamWriteContext {
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
     if (!t_->is_client && s_->fetching_send_message == nullptr &&
         s_->flow_controlled_buffer.length == 0 &&
-        compressed_data_buffer_len() == 0 &&
         s_->send_trailing_metadata != nullptr &&
         is_default_initial_metadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
@@ -427,13 +426,6 @@ class StreamWriteContext {
         "send_initial_metadata_finished");
   }
 
-  size_t compressed_data_buffer_len() {
-    return s_->stream_compression_method ==
-                   GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
-               ? 0
-               : s_->compressed_data_buffer.length;
-  }
-
   void FlushWindowUpdates() {
     /* send any window updates */
     const uint32_t stream_announce = s_->flow_control->MaybeSendUpdate();
@@ -449,8 +441,7 @@ class StreamWriteContext {
   void FlushData() {
     if (!s_->sent_initial_metadata) return;
 
-    if (s_->flow_controlled_buffer.length == 0 &&
-        compressed_data_buffer_len() == 0) {
+    if (s_->flow_controlled_buffer.length == 0) {
       return;  // early out: nothing to do
     }
 
@@ -467,22 +458,9 @@ class StreamWriteContext {
       return;  // early out: nothing to do
     }
 
-    if (s_->stream_compression_method ==
-        GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
-      while (s_->flow_controlled_buffer.length > 0 &&
-             data_send_context.max_outgoing() > 0) {
-        data_send_context.FlushUncompressedBytes();
-      }
-    } else {
-      while ((s_->flow_controlled_buffer.length > 0 ||
-              s_->compressed_data_buffer.length > 0) &&
-             data_send_context.max_outgoing() > 0) {
-        if (s_->compressed_data_buffer.length > 0) {
-          data_send_context.FlushCompressedBytes();
-        } else {
-          data_send_context.CompressMoreBytes();
-        }
-      }
+    while (s_->flow_controlled_buffer.length > 0 &&
+            data_send_context.max_outgoing() > 0) {
+      data_send_context.FlushBytes();
     }
     grpc_chttp2_reset_ping_clock(t_);
     if (data_send_context.is_last_frame()) {
@@ -490,8 +468,7 @@ class StreamWriteContext {
     }
     data_send_context.CallCallbacks();
     stream_became_writable_ = true;
-    if (s_->flow_controlled_buffer.length > 0 ||
-        compressed_data_buffer_len() > 0) {
+    if (s_->flow_controlled_buffer.length > 0) {
       GRPC_CHTTP2_STREAM_REF(s_, "chttp2_writing:fork");
       grpc_chttp2_list_add_writable_stream(t_, s_);
     }
@@ -504,7 +481,6 @@ class StreamWriteContext {
     if (s_->send_trailing_metadata == nullptr) return;
     if (s_->fetching_send_message != nullptr) return;
     if (s_->flow_controlled_buffer.length != 0) return;
-    if (compressed_data_buffer_len() != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
     if (s_->send_trailing_metadata->empty()) {

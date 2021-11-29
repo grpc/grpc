@@ -1356,25 +1356,6 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
 }
 
-static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
-                                        grpc_chttp2_stream* s,
-                                        grpc_metadata_batch* initial_metadata) {
-  if (initial_metadata->legacy_index()->named.content_encoding == nullptr ||
-      grpc_stream_compression_method_parse(
-          GRPC_MDVALUE(
-              initial_metadata->legacy_index()->named.content_encoding->md),
-          false, &s->stream_decompression_method) == 0) {
-    s->stream_decompression_method =
-        GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
-  }
-
-  if (s->stream_decompression_method !=
-      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-    s->stream_decompression_ctx = nullptr;
-    grpc_slice_buffer_init(&s->decompressed_data_buffer);
-  }
-}
-
 grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   grpc_chttp2_transport* t,
                                                   grpc_chttp2_stream* s,
@@ -1397,11 +1378,6 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
         if (s->header_frames_received == 2) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
-        }
-        /* Process stream compression md element if it exists */
-        if (s->header_frames_received ==
-            0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->initial_metadata_buffer);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

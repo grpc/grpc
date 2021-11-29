@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/surface/call.h"
 
 #include <assert.h>
@@ -204,14 +205,11 @@ struct grpc_call {
   grpc_call_final_info final_info;
 
   /* Compression algorithm for *incoming* data */
-  grpc_message_compression_algorithm incoming_message_compression_algorithm =
-      GRPC_MESSAGE_COMPRESS_NONE;
-  /* Stream compression algorithm for *incoming* data */
-  grpc_stream_compression_algorithm incoming_stream_compression_algorithm =
-      GRPC_STREAM_COMPRESS_NONE;
+  grpc_compression_algorithm incoming_compression_algorithm =
+      GRPC_COMPRESS_NONE;
   /* Supported encodings (compression algorithms), a bitset.
    * Always support no compression. */
-  uint32_t encodings_accepted_by_peer = 1 << GRPC_MESSAGE_COMPRESS_NONE;
+  grpc_core::CompressionAlgorithmSet encodings_accepted_by_peer {GRPC_MESSAGE_COMPRESS_NONE};
   /* Supported stream encodings (stream compression algorithms), a bitset */
   uint32_t stream_encodings_accepted_by_peer = 0;
 
@@ -770,25 +768,9 @@ static void set_final_status(grpc_call* call, grpc_error_handle error) {
  * COMPRESSION
  */
 
-static void set_incoming_message_compression_algorithm(
-    grpc_call* call, grpc_message_compression_algorithm algo) {
-  GPR_ASSERT(algo < GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT);
-  call->incoming_message_compression_algorithm = algo;
-}
-
-static void set_incoming_stream_compression_algorithm(
-    grpc_call* call, grpc_stream_compression_algorithm algo) {
-  GPR_ASSERT(algo < GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT);
-  call->incoming_stream_compression_algorithm = algo;
-}
-
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
     grpc_call* call) {
-  grpc_compression_algorithm algorithm = GRPC_COMPRESS_NONE;
-  grpc_compression_algorithm_from_message_stream_compression_algorithm(
-      &algorithm, call->incoming_message_compression_algorithm,
-      call->incoming_stream_compression_algorithm);
-  return algorithm;
+  return call->incoming_compression_algorithm;
 }
 
 static grpc_compression_algorithm compression_algorithm_for_level_locked(

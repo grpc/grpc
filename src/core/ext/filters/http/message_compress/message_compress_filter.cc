@@ -191,7 +191,7 @@ initial_metadata->Take(grpc_core::GrpcInternalEncodingRequest()).value_or(channe
       abort();
   }
   // Convey supported compression algorithms.
-  initial_metadata->Set(grpc_core::GrpcAcceptEncodingMetadata(), channeld->enabled_compression_algorithms().ToString());
+  initial_metadata->Set(grpc_core::GrpcAcceptEncodingMetadata(), channeld->enabled_compression_algorithms());
 }
 
 void CallData::SendMessageOnComplete(void* calld_arg, grpc_error_handle error) {
@@ -211,15 +211,14 @@ void CallData::SendMessageBatchContinue(grpc_call_element* elem) {
 }
 
 void CallData::FinishSendMessage(grpc_call_element* elem) {
-  GPR_DEBUG_ASSERT(message_compression_algorithm_ !=
-                   GRPC_MESSAGE_COMPRESS_NONE);
+  GPR_DEBUG_ASSERT(compression_algorithm_ != GRPC_COMPRESS_NONE);
   // Compress the data if appropriate.
   grpc_slice_buffer tmp;
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
       send_message_batch_->payload->send_message.send_message->flags();
   bool did_compress =
-      grpc_msg_compress(message_compression_algorithm_, &slices_, &tmp);
+      grpc_msg_compress(compression_algorithm_, &slices_, &tmp);
   if (did_compress) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
@@ -227,8 +226,8 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
       const size_t after_size = tmp.length;
       const float savings_ratio = 1.0f - static_cast<float>(after_size) /
                                              static_cast<float>(before_size);
-      GPR_ASSERT(grpc_message_compression_algorithm_name(
-          message_compression_algorithm_, &algo_name));
+      GPR_ASSERT(grpc_compression_algorithm_name(
+          compression_algorithm_, &algo_name));
       gpr_log(GPR_INFO,
               "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
               " bytes (%.2f%% savings)",
@@ -239,8 +238,8 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
-      GPR_ASSERT(grpc_message_compression_algorithm_name(
-          message_compression_algorithm_, &algo_name));
+      GPR_ASSERT(grpc_compression_algorithm_name(
+          compression_algorithm_, &algo_name));
       gpr_log(GPR_INFO,
               "Algorithm '%s' enabled but decided not to compress. Input size: "
               "%" PRIuPTR,

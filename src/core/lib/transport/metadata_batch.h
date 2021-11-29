@@ -318,6 +318,7 @@ struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
 
 // grpc-accept-encoding metadata trait.
 struct GrpcAcceptEncodingMetadata {
+  static absl::string_view key() { return "grpc-accept-encoding"; }
   using ValueType = CompressionAlgorithmSet;
   using MementoType = ValueType;
   static MementoType ParseMemento(Slice value) {
@@ -325,10 +326,10 @@ struct GrpcAcceptEncodingMetadata {
   }
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(ValueType x) {
-    return x.AsSlice();
+    return x.ToSlice();
   }
   static std::string DisplayValue(MementoType x) {
-    return x.AsString(x);
+    return x.ToString();
   }
 };
 
@@ -558,7 +559,7 @@ MetadataValueAsSlice(const Slice& slice) {
 template <typename Which>
 absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
 MetadataValueAsSlice(typename Which::ValueType value) {
-  return Which::Encode(value);
+  return Slice(Which::Encode(value));
 }
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
