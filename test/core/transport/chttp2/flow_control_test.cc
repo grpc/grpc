@@ -29,8 +29,6 @@
 
 #include <gmock/gmock.h>
 
-#include "third_party/absl/synchronization/mutex.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
