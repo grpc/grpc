@@ -29,6 +29,8 @@
 
 #include <gmock/gmock.h>
 
+#include "third_party/absl/synchronization/mutex.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
@@ -44,7 +46,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "third_party/absl/synchronization/mutex.h"
 
 namespace {
 
