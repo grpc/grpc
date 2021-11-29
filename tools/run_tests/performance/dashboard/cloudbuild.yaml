@@ -1,0 +1,31 @@
+steps:
+# Substitute environment variables in config files
+- name: 'ubuntu'
+  entrypoint: /bin/bash
+  args:
+    - -c
+    - |
+      apt-get update
+      apt-get install -y gettext-base
+      pushd $_DASHBOARD_PATH
+      ./sub_env.sh
+  env:
+  - 'GCP_PROJECT_ID=$_GCP_PROJECT_ID'
+  - 'GCP_GRAFANA_SERVICE=$_GCP_GRAFANA_SERVICE'
+  - 'GCP_DATA_TRANSFER_SERVICE=$_GCP_DATA_TRANSFER_SERVICE'
+  - 'BQ_PROJECT_ID=$_BQ_PROJECT_ID'
+  - 'PG_USER=$_PG_USER'
+  - 'PG_PASS=$_PG_PASS'
+  - 'PG_DATABASE=$_PG_DATABASE'
+  - 'GRAFANA_ADMIN_PASS=$_GRAFANA_ADMIN_PASS'
+  - 'CLOUD_SQL_INSTANCE=$_CLOUD_SQL_INSTANCE'
+
+# Deploy Grafana to App Engine
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      pushd $_DASHBOARD_PATH/$_DEPLOY_TARGET
+      gcloud config set app/cloud_build_timeout 1600 && gcloud app deploy
+  timeout: '1600s'
