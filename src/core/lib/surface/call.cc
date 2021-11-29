@@ -956,6 +956,10 @@ class PublishToAppEncoder {
   template <typename Which>
   void Encode(Which, const typename Which::ValueType&) {}
 
+  void Encode(grpc_core::UserAgentMetadata, const grpc_core::Slice& slice) {
+    Append(grpc_core::UserAgentMetadata::key(), slice);
+  }
+
   void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
     Append(grpc_core::GrpcPreviousRpcAttemptsMetadata::key(), count);
   }
@@ -970,6 +974,11 @@ class PublishToAppEncoder {
     gpr_ltoa(value, buffer);
     Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
            grpc_core::Slice::FromCopiedString(buffer).c_slice());
+  }
+
+  void Append(absl::string_view key, const grpc_core::Slice& value) {
+    Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
+           value.c_slice());
   }
 
   void Append(grpc_slice key, grpc_slice value) {
