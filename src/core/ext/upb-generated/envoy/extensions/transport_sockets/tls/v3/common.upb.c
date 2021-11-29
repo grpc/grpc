@@ -23,107 +23,123 @@
 #include "upb/port_def.inc"
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_TlsParameters__fields[4] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_ARRAY},
-  {4, UPB_SIZE(12, 16), 0, 0, 9, _UPB_MODE_ARRAY},
+  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(8, 8), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {4, UPB_SIZE(12, 16), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsParameters_msginit = {
   NULL,
   &envoy_extensions_transport_sockets_tls_v3_TlsParameters__fields[0],
-  UPB_SIZE(16, 24), 4, false, 4, 255,
+  UPB_SIZE(16, 24), 4, _UPB_MSGEXT_NONE, 4, 255,
 };
 
-static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[1] = {
-  &google_protobuf_Any_msginit,
+static const upb_msglayout_sub envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[1] = {
+  {.submsg = &google_protobuf_Any_msginit},
 };
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider__fields[0],
-  UPB_SIZE(16, 32), 2, false, 1, 255,
+  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 1, 255,
 };
 
-static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[3] = {
-  &envoy_config_core_v3_DataSource_msginit,
-  &envoy_config_core_v3_WatchedDirectory_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit,
+static const upb_msglayout_sub envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[3] = {
+  {.submsg = &envoy_config_core_v3_DataSource_msginit},
+  {.submsg = &envoy_config_core_v3_WatchedDirectory_msginit},
+  {.submsg = &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit},
 };
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_TlsCertificate__fields[7] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 2, 0, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(12, 24), 3, 0, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(16, 32), 4, 0, 11, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(28, 56), 0, 0, 11, _UPB_MODE_ARRAY},
-  {6, UPB_SIZE(20, 40), 5, 2, 11, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(24, 48), 6, 1, 11, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(8, 16), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(12, 24), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {4, UPB_SIZE(16, 32), 4, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {5, UPB_SIZE(28, 56), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {6, UPB_SIZE(20, 40), 5, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {7, UPB_SIZE(24, 48), 6, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_TlsCertificate__fields[0],
-  UPB_SIZE(32, 64), 7, false, 7, 255,
+  UPB_SIZE(32, 64), 7, _UPB_MSGEXT_NONE, 7, 255,
 };
 
-static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[1] = {
-  &envoy_config_core_v3_DataSource_msginit,
+static const upb_msglayout_sub envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_DataSource_msginit},
 };
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys__fields[0],
-  UPB_SIZE(8, 8), 1, false, 1, 255,
+  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
 };
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit = {
   NULL,
   &envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance__fields[0],
-  UPB_SIZE(16, 32), 2, false, 2, 255,
+  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
 };
 
-static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[6] = {
-  &envoy_config_core_v3_DataSource_msginit,
-  &envoy_config_core_v3_TypedExtensionConfig_msginit,
-  &envoy_config_core_v3_WatchedDirectory_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit,
-  &envoy_type_matcher_v3_StringMatcher_msginit,
-  &google_protobuf_BoolValue_msginit,
+static const upb_msglayout_sub envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[6] = {
+  {.submsg = &envoy_config_core_v3_DataSource_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+  {.submsg = &envoy_config_core_v3_WatchedDirectory_msginit},
+  {.submsg = &envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit},
+  {.submsg = &envoy_type_matcher_v3_StringMatcher_msginit},
+  {.submsg = &google_protobuf_BoolValue_msginit},
 };
 
 static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[11] = {
-  {1, UPB_SIZE(12, 16), 1, 0, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(36, 64), 0, 0, 9, _UPB_MODE_ARRAY},
-  {3, UPB_SIZE(40, 72), 0, 0, 9, _UPB_MODE_ARRAY},
-  {6, UPB_SIZE(16, 24), 2, 5, 11, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(20, 32), 3, 0, 11, _UPB_MODE_SCALAR},
-  {8, UPB_SIZE(8, 8), 0, 0, 8, _UPB_MODE_SCALAR},
-  {9, UPB_SIZE(44, 80), 0, 4, 11, _UPB_MODE_ARRAY},
-  {10, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
-  {11, UPB_SIZE(24, 40), 4, 2, 11, _UPB_MODE_SCALAR},
-  {12, UPB_SIZE(28, 48), 5, 1, 11, _UPB_MODE_SCALAR},
-  {13, UPB_SIZE(32, 56), 6, 3, 11, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(12, 16), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(36, 64), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(40, 72), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {6, UPB_SIZE(16, 24), 2, 5, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {7, UPB_SIZE(20, 32), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {8, UPB_SIZE(8, 8), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {9, UPB_SIZE(44, 80), 0, 4, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {10, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+  {11, UPB_SIZE(24, 40), 4, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {12, UPB_SIZE(28, 48), 5, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {13, UPB_SIZE(32, 56), 6, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[0],
-  UPB_SIZE(48, 88), 11, false, 3, 255,
+  UPB_SIZE(48, 88), 11, _UPB_MSGEXT_NONE, 3, 255,
+};
+
+static const upb_msglayout *messages_layout[6] = {
+  &envoy_extensions_transport_sockets_tls_v3_TlsParameters_msginit,
+  &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit,
+  &envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit,
+  &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit,
+  &envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit,
+  &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit,
+};
+
+const upb_msglayout_file envoy_extensions_transport_sockets_tls_v3_common_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  6,
+  0,
 };
 
 #include "upb/port_undef.inc"

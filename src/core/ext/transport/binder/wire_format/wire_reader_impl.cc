@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <functional>
 #include <limits>
 #include <string>
@@ -379,3 +381,4 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
 }
 
 }  // namespace grpc_binder
+#endif

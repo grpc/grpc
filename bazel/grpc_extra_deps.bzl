@@ -39,6 +39,10 @@ def grpc_extra_deps(ignore_version_differences = False):
 
     grpc_extra_deps()
     ```
+
+    Args:
+      ignore_version_differences: Plumbed directly to the invocation of
+        apple_rules_dependencies.
     """
     protobuf_deps()
 

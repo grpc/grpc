@@ -34,7 +34,7 @@ _DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
 _CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Set timeout high for ObjC for Cocoapods to install pods
-_OBJC_RUNTESTS_TIMEOUT = 90 * 60
+_OBJC_RUNTESTS_TIMEOUT = 2 * 60 * 60
 
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
@@ -320,6 +320,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
+                                inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C and C++ with no-exceptions on Linux
@@ -328,6 +329,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 platforms=['linux'],
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
+                                inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     test_jobs += _generate_jobs(languages=['python'],

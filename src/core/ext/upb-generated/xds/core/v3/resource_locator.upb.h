@@ -169,6 +169,8 @@ UPB_INLINE void xds_core_v3_ResourceLocator_Directive_set_entry(xds_core_v3_Reso
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 2);
 }
 
+extern const upb_msglayout_file xds_core_v3_resource_locator_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

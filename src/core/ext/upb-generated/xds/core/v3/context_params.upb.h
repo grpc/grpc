@@ -81,6 +81,8 @@ UPB_INLINE void xds_core_v3_ContextParams_ParamsEntry_set_value(xds_core_v3_Cont
   _upb_msg_map_set_value(msg, &value, 0);
 }
 
+extern const upb_msglayout_file xds_core_v3_context_params_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

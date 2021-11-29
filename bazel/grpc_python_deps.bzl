@@ -16,7 +16,10 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
+# buildifier: disable=unnamed-macro
 def grpc_python_deps():
+    """Loads dependencies for gRPC Python."""
+
     # protobuf binds to the name "six", so we can't use it here.
     # See https://github.com/bazelbuild/bazel/issues/1952 for why bind is
     # horrible.

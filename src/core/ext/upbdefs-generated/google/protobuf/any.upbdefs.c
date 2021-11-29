@@ -8,12 +8,7 @@
 
 #include "upb/def.h"
 #include "google/protobuf/any.upbdefs.h"
-
-extern const upb_msglayout google_protobuf_Any_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &google_protobuf_Any_msginit,
-};
+#include "google/protobuf/any.upb.h"
 
 static const char descriptor[228] = {'\n', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 
 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '\"', '6', '\n', '\003', 'A', 'n', 
@@ -33,7 +28,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init google_protobuf_any_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_protobuf_any_proto_upb_file_layout,
   "google/protobuf/any.proto",
   UPB_STRVIEW_INIT(descriptor, 228)
 };

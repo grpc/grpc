@@ -908,6 +908,8 @@ UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntr
   _upb_msg_map_set_value(msg, &value, sizeof(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value*));
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_grpc_service_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -8,16 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/socket_option.upbdefs.h"
+#include "envoy/config/core/v3/socket_option.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_SocketOption_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_core_v3_SocketOption_msginit,
-};
-
 static const char descriptor[590] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's', 'o', 
 'c', 'k', 'e', 't', '_', 'o', 'p', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 
 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 
@@ -53,7 +48,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_config_core_v3_socket_option_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_socket_option_proto_upb_file_layout,
   "envoy/config/core/v3/socket_option.proto",
   UPB_STRVIEW_INIT(descriptor, 590)
 };

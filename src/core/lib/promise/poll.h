@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include "absl/types/variant.h"
 
 namespace grpc_core {

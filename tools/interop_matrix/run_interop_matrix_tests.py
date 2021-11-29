@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,13 +40,13 @@ import upload_test_results
 _TEST_TIMEOUT_SECONDS = 60
 _PULL_IMAGE_TIMEOUT_SECONDS = 15 * 60
 _MAX_PARALLEL_DOWNLOADS = 6
-_LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
+_LANGUAGES = list(client_matrix.LANG_RUNTIME_MATRIX.keys())
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(
     list(
         set(release
-            for release_dict in client_matrix.LANG_RELEASE_MATRIX.values()
-            for release in release_dict.keys())))
+            for release_dict in list(client_matrix.LANG_RELEASE_MATRIX.values())
+            for release in list(release_dict.keys()))))
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
@@ -117,7 +117,7 @@ def _get_test_images_for_lang(lang, release_arg, image_path_prefix):
                                                     tag)
             image_tuple = (tag, image_name)
 
-            if not images.has_key(runtime):
+            if runtime not in images:
                 images[runtime] = []
             images[runtime].append(image_tuple)
     return images
@@ -166,6 +166,7 @@ def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
 
     job_spec_list = []
     for line in testcase_lines:
+        print("Creating jobspec with cmdline '{}'".format(line))
         # TODO(jtattermusch): revisit the logic for updating test case commands
         # what it currently being done seems fragile.
 

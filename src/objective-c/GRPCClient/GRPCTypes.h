@@ -192,3 +192,6 @@ typedef char* _Nonnull GRPCTransportID;
 - (void)getTokenWithHandler:(void (^_Nonnull)(NSString* _Nullable token))handler;
 
 @end
+
+/** gRPC metadata dictionary typedef */
+typedef NSDictionary<NSString*, id> GRPCMetadataDictionary;

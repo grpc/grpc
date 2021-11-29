@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
 #include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"

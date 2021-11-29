@@ -262,6 +262,8 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_CircuitBr
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_cluster_v3_circuit_breaker_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
