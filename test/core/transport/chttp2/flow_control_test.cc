@@ -44,6 +44,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "third_party/absl/synchronization/mutex.h"
 
 namespace {
 
@@ -55,6 +56,9 @@ class TransportTargetWindowSizeMocker
 
   double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
       double /* current_target */) override {
+    // Protecting access to variable window_size_ shared between client and
+    // server.
+    absl::MutexLock lock(&mu_);
     if (alternating_initial_window_sizes_) {
       window_size_ = (window_size_ == kLargeInitialWindowSize)
                          ? kSmallInitialWindowSize
@@ -70,6 +74,9 @@ class TransportTargetWindowSizeMocker
   }
 
   void Reset() {
+    // Protecting access to variable window_size_ shared between client and
+    // server.
+    absl::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = false;
     window_size_ = kLargeInitialWindowSize;
   }
@@ -77,6 +84,7 @@ class TransportTargetWindowSizeMocker
  private:
   bool alternating_initial_window_sizes_ = false;
   double window_size_ = kLargeInitialWindowSize;
+  absl::Mutex mu_;
 };
 
 TransportTargetWindowSizeMocker* g_target_initial_window_size_mocker;
