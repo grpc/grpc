@@ -214,10 +214,10 @@ class XdsRouteConfigResourceType : public XdsResourceType {
 
   std::unique_ptr<ResourceData> CopyResource(
       const ResourceData* resource) const override {
-    auto resource_copy = absl::make_unique<RouteConfigData>();
+    auto* resource_copy = new RouteConfigData();
     resource_copy->resource =
         static_cast<const RouteConfigData*>(resource)->resource;
-    return resource_copy;
+    return std::unique_ptr<ResourceData>(resource_copy);
   }
 
   void InitUpbSymtab(upb_symtab* symtab) const override {

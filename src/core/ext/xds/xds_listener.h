@@ -214,10 +214,10 @@ class XdsListenerResourceType : public XdsResourceType {
 
   std::unique_ptr<ResourceData> CopyResource(
       const ResourceData* resource) const override {
-    auto resource_copy = absl::make_unique<ListenerData>();
+    auto* resource_copy = new ListenerData();
     resource_copy->resource =
         static_cast<const ListenerData*>(resource)->resource;
-    return resource_copy;
+    return std::unique_ptr<ResourceData>(resource_copy);
   }
 
   bool AllResourcesRequiredInSotW() const override { return true; }

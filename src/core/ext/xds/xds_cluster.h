@@ -106,10 +106,10 @@ class XdsClusterResourceType : public XdsResourceType {
 
   std::unique_ptr<ResourceData> CopyResource(
       const ResourceData* resource) const override {
-    auto resource_copy = absl::make_unique<ClusterData>();
+    auto* resource_copy = new ClusterData();
     resource_copy->resource =
         static_cast<const ClusterData*>(resource)->resource;
-    return resource_copy;
+    return std::unique_ptr<ResourceData>(resource_copy);
   }
 
   bool AllResourcesRequiredInSotW() const override { return true; }

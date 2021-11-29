@@ -135,10 +135,10 @@ class XdsEndpointResourceType : public XdsResourceType {
 
   std::unique_ptr<ResourceData> CopyResource(
       const ResourceData* resource) const override {
-    auto resource_copy = absl::make_unique<EndpointData>();
+    auto* resource_copy = new EndpointData();
     resource_copy->resource =
         static_cast<const EndpointData*>(resource)->resource;
-    return resource_copy;
+    return std::unique_ptr<ResourceData>(resource_copy);
   }
 
   void InitUpbSymtab(upb_symtab* symtab) const override {
