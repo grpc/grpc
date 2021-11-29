@@ -379,32 +379,8 @@ absl::Status StatusFromProto(google_rpc_Status* msg) {
   return status;
 }
 
-uintptr_t StatusAllocPtr(absl::Status s) {
-  // This relies the fact that absl::Status has only one member, StatusRep*
-  // so the sizeof(absl::Status) has the same size of intptr_t and StatusRep*
-  // can be stolen using placement allocation.
-  static_assert(sizeof(intptr_t) == sizeof(absl::Status),
-                "absl::Status should be as big as intptr_t");
-  // This does two things;
-  // 1. Copies StatusRep* of absl::Status to ptr
-  // 2. Increases the counter of StatusRep if it's not inlined
-  uintptr_t ptr;
-  new (&ptr) absl::Status(s);
-  return ptr;
-}
-
-void StatusFreePtr(uintptr_t ptr) {
-  // Decreases the counter of StatusRep if it's not inlined.
-  reinterpret_cast<absl::Status*>(&ptr)->~Status();
-}
-
-absl::Status StatusGetFromPtr(uintptr_t ptr) {
-  // Constructs Status from ptr having the address of StatusRep.
-  return *reinterpret_cast<absl::Status*>(&ptr);
-}
-
 uintptr_t StatusAllocHeapPtr(absl::Status s) {
-  if (s.ok()) return kOkStatusPtr;
+  if (s.ok()) return 0;
   absl::Status* ptr = new absl::Status(s);
   return reinterpret_cast<uintptr_t>(ptr);
 }
@@ -415,10 +391,21 @@ void StatusFreeHeapPtr(uintptr_t ptr) {
 }
 
 absl::Status StatusGetFromHeapPtr(uintptr_t ptr) {
-  if (ptr == kOkStatusPtr) {
+  if (ptr == 0) {
     return absl::OkStatus();
   } else {
     return *reinterpret_cast<absl::Status*>(ptr);
+  }
+}
+
+absl::Status StatusMoveFromHeapPtr(uintptr_t ptr) {
+  if (ptr == 0) {
+    return absl::OkStatus();
+  } else {
+    absl::Status* s = reinterpret_cast<absl::Status*>(ptr);
+    absl::Status ret = std::move(*s);
+    delete s;
+    return ret;
   }
 }
 
