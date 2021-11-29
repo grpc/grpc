@@ -190,8 +190,7 @@ class WeakRefCountedPtr {
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  WeakRefCountedPtr(Y* value) {
+  explicit WeakRefCountedPtr(Y* value) {
     value_ = value;
   }
 
