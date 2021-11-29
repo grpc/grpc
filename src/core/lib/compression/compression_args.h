@@ -47,12 +47,4 @@ const grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
     const grpc_channel_args** a, grpc_compression_algorithm algorithm,
     int state);
 
-/** Returns the bitset representing the support state (true for enabled, false
- * for disabled) for compression algorithms.
- *
- * The i-th bit of the returned bitset corresponds to the i-th entry in the
- * grpc_compression_algorithm enum. */
-uint32_t grpc_channel_args_compression_algorithm_get_states(
-    const grpc_channel_args* a);
-
 #endif /* GRPC_CORE_LIB_COMPRESSION_COMPRESSION_ARGS_H */

@@ -36,7 +36,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -644,13 +643,6 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb* finish_after_write = nullptr;
   size_t sending_bytes = 0;
 
-  /* Stream compression method to be used. */
-  grpc_stream_compression_method stream_compression_method =
-      GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
-  /* Stream decompression method to be used. */
-  grpc_stream_compression_method stream_decompression_method =
-      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
-
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
   bool unprocessed_incoming_frames_decompressed = false;
@@ -660,22 +652,6 @@ struct grpc_chttp2_stream {
   size_t decompressed_header_bytes = 0;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
-
-  /** Amount of uncompressed bytes sent out when compressed_data_buffer is
-   * emptied */
-  size_t uncompressed_data_size;
-  /** Stream compression compress context */
-  grpc_stream_compression_context* stream_compression_ctx;
-  /** Buffer storing data that is compressed but not sent */
-  grpc_slice_buffer compressed_data_buffer;
-
-  /** Stream compression decompress context */
-  grpc_stream_compression_context* stream_decompression_ctx;
-  /** Temporary buffer storing decompressed data.
-   * Initialized, used, and destroyed only when stream uses (non-identity)
-   * compression.
-   */
-  grpc_slice_buffer decompressed_data_buffer;
 };
 
 /** Transport writing call flow:

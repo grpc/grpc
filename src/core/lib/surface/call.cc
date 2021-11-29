@@ -39,7 +39,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/string.h"

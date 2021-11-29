@@ -25,7 +25,6 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -164,15 +163,11 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
         "to happen in a healthy program that is not seeing flow control stalls."
         " However, if you know that there are unwanted stalls, here is some "
-        "helpful data: [fc:pending=%" PRIdPTR ":pending-compressed=%" PRIdPTR
+        "helpful data: [fc:pending=%" PRIdPTR
         ":flowed=%" PRId64 ":peer_initwin=%d:t_win=%" PRId64
         ":s_win=%d:s_delta=%" PRId64 "]",
         t->peer_string.c_str(), t, s->id, staller,
         s->flow_controlled_buffer.length,
-        s->stream_compression_method ==
-                GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
-            ? 0
-            : s->compressed_data_buffer.length,
         s->flow_controlled_bytes_flowed,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
@@ -344,7 +339,7 @@ class DataSendContext {
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
 
-  void FlushUncompressedBytes() {
+  void FlushBytes() {
     uint32_t send_bytes = static_cast<uint32_t>(
         std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
@@ -355,60 +350,6 @@ class DataSendContext {
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
     s_->sending_bytes += send_bytes;
-  }
-
-  void FlushCompressedBytes() {
-    GPR_DEBUG_ASSERT(s_->stream_compression_method !=
-                     GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS);
-
-    uint32_t send_bytes = static_cast<uint32_t>(
-        std::min(size_t(max_outgoing()), s_->compressed_data_buffer.length));
-    bool is_last_data_frame =
-        (send_bytes == s_->compressed_data_buffer.length &&
-         s_->flow_controlled_buffer.length == 0 &&
-         s_->fetching_send_message == nullptr);
-    if (is_last_data_frame && s_->send_trailing_metadata != nullptr &&
-        s_->stream_compression_ctx != nullptr) {
-      if (GPR_UNLIKELY(!grpc_stream_compress(
-              s_->stream_compression_ctx, &s_->flow_controlled_buffer,
-              &s_->compressed_data_buffer, nullptr, MAX_SIZE_T,
-              GRPC_STREAM_COMPRESSION_FLUSH_FINISH))) {
-        gpr_log(GPR_ERROR, "Stream compression failed.");
-      }
-      grpc_stream_compression_context_destroy(s_->stream_compression_ctx);
-      s_->stream_compression_ctx = nullptr;
-      /* After finish, bytes in s->compressed_data_buffer may be
-       * more than max_outgoing. Start another round of the current
-       * while loop so that send_bytes and is_last_data_frame are
-       * recalculated. */
-      return;
-    }
-    is_last_frame_ = is_last_data_frame &&
-                     s_->send_trailing_metadata != nullptr &&
-                     s_->send_trailing_metadata->empty();
-    grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
-                            is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
-    s_->flow_control->SentData(send_bytes);
-    if (s_->compressed_data_buffer.length == 0) {
-      s_->sending_bytes += s_->uncompressed_data_size;
-    }
-  }
-
-  void CompressMoreBytes() {
-    GPR_DEBUG_ASSERT(s_->stream_compression_method !=
-                     GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS);
-
-    if (s_->stream_compression_ctx == nullptr) {
-      s_->stream_compression_ctx =
-          grpc_stream_compression_context_create(s_->stream_compression_method);
-    }
-    s_->uncompressed_data_size = s_->flow_controlled_buffer.length;
-    if (GPR_UNLIKELY(!grpc_stream_compress(
-            s_->stream_compression_ctx, &s_->flow_controlled_buffer,
-            &s_->compressed_data_buffer, nullptr, MAX_SIZE_T,
-            GRPC_STREAM_COMPRESSION_FLUSH_SYNC))) {
-      gpr_log(GPR_ERROR, "Stream compression failed.");
-    }
   }
 
   bool is_last_frame() const { return is_last_frame_; }

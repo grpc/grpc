@@ -33,7 +33,6 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
@@ -114,7 +113,7 @@ class CallData {
   // Fields for handling recv_message_ready callback
   bool seen_recv_message_ready_ = false;
   int max_recv_message_length_;
-  grpc_message_compression_algorithm algorithm_ = GRPC_MESSAGE_COMPRESS_NONE;
+  grpc_compression_algorithm algorithm_ = GRPC_COMPRESS_NONE;
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
   grpc_closure on_recv_message_next_done_;
@@ -133,30 +132,11 @@ class CallData {
   grpc_error_handle on_recv_trailing_metadata_ready_error_ = GRPC_ERROR_NONE;
 };
 
-grpc_message_compression_algorithm DecodeMessageCompressionAlgorithm(
-    grpc_mdelem md) {
-  grpc_message_compression_algorithm algorithm =
-      grpc_message_compression_algorithm_from_slice(GRPC_MDVALUE(md));
-  if (algorithm == GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT) {
-    char* md_c_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    gpr_log(GPR_ERROR,
-            "Invalid incoming message compression algorithm: '%s'. "
-            "Interpreting incoming data as uncompressed.",
-            md_c_str);
-    gpr_free(md_c_str);
-    return GRPC_MESSAGE_COMPRESS_NONE;
-  }
-  return algorithm;
-}
-
 void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
   if (error == GRPC_ERROR_NONE) {
-    grpc_linked_mdelem* grpc_encoding =
-        calld->recv_initial_metadata_->legacy_index()->named.grpc_encoding;
-    if (grpc_encoding != nullptr) {
-      calld->algorithm_ = DecodeMessageCompressionAlgorithm(grpc_encoding->md);
-    }
+    calld->algorithm_ = 
+        calld->recv_initial_metadata_->get(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
   }
   calld->MaybeResumeOnRecvMessageReady();
   calld->MaybeResumeOnRecvTrailingMetadataReady();
@@ -184,7 +164,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
                               "OnRecvInitialMetadataReady");
       return;
     }
-    if (calld->algorithm_ != GRPC_MESSAGE_COMPRESS_NONE) {
+    if (calld->algorithm_ != GRPC_COMPRESS_NONE) {
       // recv_message can be NULL if trailing metadata is received instead of
       // message, or it's possible that the message was not compressed.
       if (*calld->recv_message_ == nullptr ||

@@ -171,8 +171,7 @@ int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
     GPR_ASSERT(grpc_msg_decompress(
-        grpc_compression_algorithm_to_message_compression_algorithm(
-            bb->data.raw.compression),
+        bb->data.raw.compression,
         &bb->data.raw.slice_buffer, &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
         decompressed_buffer.slices, decompressed_buffer.count);
