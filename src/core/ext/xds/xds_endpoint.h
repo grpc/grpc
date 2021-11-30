@@ -27,6 +27,7 @@
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -116,11 +117,42 @@ class XdsEndpointResourceType : public XdsResourceType {
     XdsEndpointResource resource;
   };
 
+  class WatcherInterface : public XdsClient::ResourceWatcherInterface {
+   public:
+    virtual void OnEndpointChanged(XdsEndpointResource update) = 0;
+
+   private:
+    void OnResourceChanged(
+        const XdsResourceType::ResourceData* resource) override {
+      OnEndpointChanged(
+          static_cast<const XdsEndpointResourceType::EndpointData*>(resource)
+              ->resource);
+    }
+  };
+
+  static const XdsEndpointResourceType* Get() {
+    static const XdsEndpointResourceType* g_instance =
+        new XdsEndpointResourceType();
+    return g_instance;
+  }
+
   absl::string_view type_url() const override {
     return "envoy.config.endpoint.v3.ClusterLoadAssignment";
   }
   absl::string_view v2_type_url() const override {
     return "envoy.api.v2.ClusterLoadAssignment";
+  }
+
+  static void StartWatch(XdsClient* xds_client, absl::string_view resource_name,
+                         RefCountedPtr<WatcherInterface> watcher) {
+    xds_client->WatchResource(Get(), resource_name, std::move(watcher));
+  }
+
+  static void CancelWatch(XdsClient* xds_client, absl::string_view resource_name,
+                          WatcherInterface* watcher,
+                          bool delay_unsubscription = false) {
+    xds_client->CancelResourceWatch(Get(), resource_name, watcher,
+                                    delay_unsubscription);
   }
 
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,

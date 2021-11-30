@@ -26,6 +26,8 @@
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_listener.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -85,7 +87,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
 // update received was a fatal error (resource does not exist), the server
 // listener is made to stop listening.
 class XdsServerConfigFetcher::ListenerWatcher
-    : public XdsClient::ListenerWatcherInterface {
+    : public XdsListenerResourceType::WatcherInterface {
  public:
   ListenerWatcher(RefCountedPtr<XdsClient> xds_client,
                   std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
@@ -216,7 +218,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
 // with the latest updates and new connections do not need to wait for the RDS
 // resources to be fetched.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    RouteConfigWatcher : public XdsClient::RouteConfigWatcherInterface {
+    RouteConfigWatcher : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   RouteConfigWatcher(
       std::string resource_name,
@@ -380,7 +382,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // DynamicXdsServerConfigSelectorProvider
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::RouteConfigWatcher
-    : public XdsClient::RouteConfigWatcherInterface {
+    : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   explicit RouteConfigWatcher(
       RefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent)
@@ -417,7 +419,8 @@ void XdsServerConfigFetcher::StartWatch(
       xds_client_, std::move(watcher), serving_status_notifier_,
       listening_address);
   auto* listener_watcher_ptr = listener_watcher.get();
-  xds_client_->WatchListenerData(
+  XdsListenerResourceType::StartWatch(
+      xds_client_.get(),
       absl::StrReplaceAll(
           xds_client_->bootstrap().server_listener_resource_name_template(),
           {{"%s", listening_address}}),
@@ -432,7 +435,8 @@ void XdsServerConfigFetcher::CancelWatch(
   auto it = listener_watchers_.find(watcher);
   if (it != listener_watchers_.end()) {
     // Cancel the watch on the listener before erasing
-    xds_client_->CancelListenerDataWatch(
+    XdsListenerResourceType::CancelWatch(
+        xds_client_.get(),
         absl::StrReplaceAll(
             xds_client_->bootstrap().server_listener_resource_name_template(),
             {{"%s", it->second->listening_address()}}),
@@ -617,8 +621,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           MakeRefCounted<RouteConfigWatcher>(resource_name, WeakRef());
       rds_map_.emplace(resource_name, RdsUpdateState{route_config_watcher.get(),
                                                      absl::nullopt});
-      xds_client_->WatchRouteConfigData(resource_name,
-                                        std::move(route_config_watcher));
+      XdsRouteConfigResourceType::StartWatch(
+          xds_client_.get(), resource_name, std::move(route_config_watcher));
     }
     if (rds_resources_yet_to_fetch_ != 0) {
       listener_watcher_ = std::move(listener_watcher);
@@ -637,7 +641,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   MutexLock lock(&mu_);
   // Cancel the RDS watches to clear up the weak refs
   for (const auto& entry : rds_map_) {
-    xds_client_->CancelRouteConfigDataWatch(entry.first, entry.second.watcher,
+    XdsRouteConfigResourceType::CancelWatch(xds_client_.get(), entry.first,
+                                            entry.second.watcher,
                                             false /* delay_unsubscription */);
   }
   // Also give up the ref on ListenerWatcher since it won't be needed anymore
@@ -1158,8 +1163,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   GPR_ASSERT(!resource_name_.empty());
   auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
   route_config_watcher_ = route_config_watcher.get();
-  xds_client_->WatchRouteConfigData(resource_name_,
-                                    std::move(route_config_watcher));
+  XdsRouteConfigResourceType::StartWatch(
+      xds_client_.get(), resource_name_, std::move(route_config_watcher));
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
@@ -1183,7 +1188,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::CancelWatch() {
-  xds_client_->CancelRouteConfigDataWatch(resource_name_, route_config_watcher_,
+  XdsRouteConfigResourceType::CancelWatch(xds_client_.get(), resource_name_,
+                                          route_config_watcher_,
                                           false /* delay_unsubscription */);
   MutexLock lock(&mu_);
   watcher_.reset();

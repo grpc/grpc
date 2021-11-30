@@ -31,6 +31,8 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_listener.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -79,7 +81,7 @@ class XdsResolver : public Resolver {
   }
 
  private:
-  class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
+  class ListenerWatcher : public XdsListenerResourceType::WatcherInterface {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
@@ -117,7 +119,7 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class RouteConfigWatcher : public XdsClient::RouteConfigWatcherInterface {
+  class RouteConfigWatcher : public XdsRouteConfigResourceType::WatcherInterface {
    public:
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
@@ -291,14 +293,14 @@ class XdsResolver : public Resolver {
 
   RefCountedPtr<XdsClient> xds_client_;
 
-  XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
+  ListenerWatcher* listener_watcher_ = nullptr;
   // This will not contain the RouteConfiguration, even if it comes with the
   // LDS response; instead, the relevant VirtualHost from the
   // RouteConfiguration will be saved in current_virtual_host_.
   XdsListenerResource current_listener_;
 
   std::string route_config_name_;
-  XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
+  RouteConfigWatcher* route_config_watcher_ = nullptr;
   XdsRouteConfigResource::VirtualHost current_virtual_host_;
 
   ClusterState::ClusterStateMap cluster_state_map_;
@@ -689,7 +691,8 @@ void XdsResolver::StartLocked() {
                                    interested_parties_);
   auto watcher = MakeRefCounted<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
-  xds_client_->WatchListenerData(server_name_, std::move(watcher));
+  XdsListenerResourceType::StartWatch(xds_client_.get(), server_name_,
+                                      std::move(watcher));
 }
 
 void XdsResolver::ShutdownLocked() {
@@ -698,12 +701,14 @@ void XdsResolver::ShutdownLocked() {
   }
   if (xds_client_ != nullptr) {
     if (listener_watcher_ != nullptr) {
-      xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
+      XdsListenerResourceType::CancelWatch(xds_client_.get(), server_name_,
+                                           listener_watcher_,
                                            /*delay_unsubscription=*/false);
     }
     if (route_config_watcher_ != nullptr) {
-      xds_client_->CancelRouteConfigDataWatch(
-          server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+      XdsRouteConfigResourceType::CancelWatch(
+          xds_client_.get(), route_config_name_, route_config_watcher_,
+          /*delay_unsubscription=*/false);
     }
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties_);
@@ -721,8 +726,8 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
   if (listener.http_connection_manager.route_config_name !=
       route_config_name_) {
     if (route_config_watcher_ != nullptr) {
-      xds_client_->CancelRouteConfigDataWatch(
-          route_config_name_, route_config_watcher_,
+      XdsRouteConfigResourceType::CancelWatch(
+          xds_client_.get(), route_config_name_, route_config_watcher_,
           /*delay_unsubscription=*/
           !listener.http_connection_manager.route_config_name.empty());
       route_config_watcher_ = nullptr;
@@ -733,7 +738,8 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
       current_virtual_host_.routes.clear();
       auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
       route_config_watcher_ = watcher.get();
-      xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
+      XdsRouteConfigResourceType::StartWatch(
+          xds_client_.get(), route_config_name_, std::move(watcher));
     }
   }
   current_listener_ = std::move(listener);
