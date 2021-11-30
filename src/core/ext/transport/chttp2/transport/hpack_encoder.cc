@@ -22,6 +22,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include "hpack_constants.h"
 
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this
@@ -523,6 +524,27 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
   } else if (should_add_key) {
     compressor_->AddKey(elem, decoder_space_usage, key_hash);
   }
+}
+
+void HPackCompressor::SliceIndex::EmitTo(const grpc_slice &key, const Slice &value, Framer *framer) {
+  auto& table = framer->compressor_->table_;
+  auto index = index_.Lookup(SliceRef(&value));
+  if (GPR_LIKELY(index.has_value() && table.ConvertableToDynamicIndex(*index))) {
+    framer->EmitIndexed(table.DynamicIndex(*index));
+  } else {
+    framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value.c_slice());
+    const uint32_t element_size = GRPC_SLICE_LENGTH(key) + value.size() + hpack_constants::kEntryOverhead;
+    uint32_t new_index = table.AllocateIndex(element_size);
+    index_.Insert(SliceRef(&value), new_index);
+  }
+}
+
+void HPackCompressor::Framer::Encode(PathMetadata, const Slice& value) {
+  compressor_->path_index_.EmitTo(GRPC_MDSTR_PATH, value, this);
+}
+
+void HPackCompressor::Framer::Encode(AuthorityMetadata, const Slice& value) {
+  compressor_->path_index_.EmitTo(GRPC_MDSTR_AUTHORITY, value, this);
 }
 
 void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
