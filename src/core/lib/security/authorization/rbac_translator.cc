@@ -104,10 +104,6 @@ absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
     if (it->second.type() != Json::Type::ARRAY) {
       return absl::InvalidArgumentError("\"principals\" is not an array.");
     }
-    if (it->second.array_value().empty()) {
-      return Rbac::Principal(Rbac::Principal::RuleType::kPrincipalName,
-                             /*string_matcher=*/absl::nullopt);
-    }
     auto principal_names_or = ParsePrincipalsArray(it->second);
     if (!principal_names_or.ok()) return principal_names_or.status();
     if (!principal_names_or.value().principals.empty()) {

@@ -398,7 +398,7 @@ TEST_F(
 }
 
 TEST_F(SdkAuthzEnd2EndTest,
-       StaticInitAllowsRpcRequestWithEmptyPrincipalsOnAuthenticatedConnection) {
+       StaticInitAllowsRpcRequestWithPrincipalsFieldOnAuthenticatedConnection) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -406,7 +406,7 @@ TEST_F(SdkAuthzEnd2EndTest,
       "    {"
       "      \"name\": \"allow_authenticated\","
       "      \"source\": {"
-      "        \"principals\": []"
+      "        \"principals\": [\"*\"]"
       "      }"
       "    }"
       "  ]"
@@ -418,32 +418,6 @@ TEST_F(SdkAuthzEnd2EndTest,
   grpc::Status status = SendRpc(channel, &context, &resp);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp.message(), kMessage);
-}
-
-TEST_F(
-    SdkAuthzEnd2EndTest,
-    StaticInitDeniesRpcRequestWithEmptyPrincipalsOnUnauthenticatedConnection) {
-  std::string policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_authenticated\","
-      "      \"source\": {"
-      "        \"principals\": []"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  UseInsecureCredentials();
-  InitServer(CreateStaticAuthzPolicyProvider(policy));
-  auto channel = BuildChannel();
-  ClientContext context;
-  grpc::testing::EchoResponse resp;
-  grpc::Status status = SendRpc(channel, &context, &resp);
-  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
-  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
-  EXPECT_TRUE(resp.message().empty());
 }
 
 TEST_F(SdkAuthzEnd2EndTest,

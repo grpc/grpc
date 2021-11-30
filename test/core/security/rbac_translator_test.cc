@@ -354,40 +354,6 @@ TEST(GenerateRbacPoliciesTest, ParseSourceSuccess) {
                                       "")))))))))))));
 }
 
-TEST(GenerateRbacPoliciesTest, ParseSourceSuccessEmptyPrincipals) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_authenticated\","
-      "      \"source\": {"
-      "        \"principals\": []"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  auto rbac_policies = GenerateRbacPolicies(authz_policy);
-  ASSERT_TRUE(rbac_policies.ok());
-  EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::kAllow);
-  EXPECT_THAT(rbac_policies.value().allow_policy.policies,
-              ::testing::ElementsAre(::testing::Pair(
-                  "authz_allow_authenticated",
-                  ::testing::AllOf(
-                      ::testing::Field(
-                          &Rbac::Policy::permissions,
-                          ::testing::Field(&Rbac::Permission::type,
-                                           Rbac::Permission::RuleType::kAny)),
-                      ::testing::Field(
-                          &Rbac::Policy::principals,
-                          ::testing::AllOf(
-                              ::testing::Field(
-                                  &Rbac::Principal::type,
-                                  Rbac::Principal::RuleType::kPrincipalName),
-                              ::testing::Field(&Rbac::Principal::string_matcher,
-                                               absl::nullopt)))))));
-}
-
 TEST(GenerateRbacPoliciesTest, IncorrectRequestType) {
   const char* authz_policy =
       "{"
