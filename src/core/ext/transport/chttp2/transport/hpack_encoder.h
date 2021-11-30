@@ -273,9 +273,7 @@ class HPackCompressor {
     SliceRef& operator=(const SliceRef&) = delete;
 
     uint32_t hash() const { return grpc_slice_hash_internal(ref_->c_slice()); }
-    Stored stored() const {
-      return ref_->Ref();
-    }
+    Stored stored() const { return ref_->Ref(); }
 
     bool operator==(const Stored& stored) const noexcept {
       return *ref_ == stored;
