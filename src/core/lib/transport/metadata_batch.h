@@ -148,6 +148,7 @@ struct ContentTypeMetadata {
   // IF we want to start verifying more, we can expand this type.
   enum ValueType {
     kApplicationGrpc,
+    kEmpty,
     kInvalid,
   };
   using MementoType = ValueType;
@@ -161,6 +162,8 @@ struct ContentTypeMetadata {
       out = kApplicationGrpc;
     } else if (absl::StartsWith(value_string, "application/grpc+")) {
       out = kApplicationGrpc;
+    } else if (value_string.empty()) {
+      out = kEmpty;
     }
     return out;
   }
@@ -168,13 +171,23 @@ struct ContentTypeMetadata {
     return content_type;
   }
   static StaticSlice Encode(ValueType x) {
-    GPR_ASSERT(x == kApplicationGrpc);
-    return StaticSlice::FromStaticString("application/grpc");
+    switch (x) {
+      case kEmpty:
+        return StaticSlice::FromStaticString("");
+      case kApplicationGrpc:
+        return StaticSlice::FromStaticString("application/grpc");
+      case kInvalid:
+        abort();
+    }
+    GPR_UNREACHABLE_CODE(
+        return StaticSlice::FromStaticString("unrepresentable value"));
   }
   static const char* DisplayValue(MementoType content_type) {
     switch (content_type) {
       case ValueType::kApplicationGrpc:
         return "application/grpc";
+      case ValueType::kEmpty:
+        return "";
       default:
         return "<discarded-invalid-value>";
     }
