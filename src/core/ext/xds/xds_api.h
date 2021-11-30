@@ -55,6 +55,7 @@ class XdsApi {
   static const char* kEdsTypeUrl;
 
   struct Duration {
+    Duration() {}
     int64_t seconds = 0;
     int32_t nanos = 0;
     bool operator==(const Duration& other) const {
