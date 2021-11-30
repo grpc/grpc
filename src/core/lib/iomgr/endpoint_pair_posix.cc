@@ -60,13 +60,15 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
   std::string final_name = absl::StrCat(name, ":client");
-  args = grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  const grpc_channel_args* new_args = grpc_core::CoreConfiguration::Get()
+                                          .channel_args_preconditioning()
+                                          .PreconditionChannelArgs(args);
   p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
-                             args, "socketpair-server");
+                             new_args, "socketpair-server");
   final_name = absl::StrCat(name, ":server");
   p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name.c_str(), false),
-                             args, "socketpair-client");
-  grpc_channel_args_destroy(args);
+                             new_args, "socketpair-client");
+  grpc_channel_args_destroy(new_args);
   return p;
 }
 

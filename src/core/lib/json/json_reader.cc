@@ -471,6 +471,11 @@ JsonReader::Status JsonReader::Run() {
             }
             if (c == '"') {
               state_ = State::GRPC_JSON_STATE_OBJECT_KEY_END;
+              // Once the key is parsed, there should no un-matched utf8
+              // encoded bytes.
+              if (utf8_bytes_remaining_ != 0) {
+                return Status::GRPC_JSON_PARSE_ERROR;
+              }
               SetKey();
             } else {
               if (c < 32) return Status::GRPC_JSON_PARSE_ERROR;
@@ -484,6 +489,11 @@ JsonReader::Status JsonReader::Run() {
             }
             if (c == '"') {
               state_ = State::GRPC_JSON_STATE_VALUE_END;
+              // Once the value is parsed, there should no un-matched utf8
+              // encoded bytes.
+              if (utf8_bytes_remaining_ != 0) {
+                return Status::GRPC_JSON_PARSE_ERROR;
+              }
               SetString();
             } else {
               if (c < 32) return Status::GRPC_JSON_PARSE_ERROR;

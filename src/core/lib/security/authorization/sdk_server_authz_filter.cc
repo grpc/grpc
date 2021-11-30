@@ -96,11 +96,13 @@ bool SdkServerAuthzFilter::CallData::IsAuthorized(SdkServerAuthzFilter* chand) {
     gpr_log(
         GPR_DEBUG,
         "checking request: url_path=%s, transport_security_type=%s, "
-        "uri_sans=[%s], dns_sans=[%s], local_address=%s:%d, peer_address=%s:%d",
+        "uri_sans=[%s], dns_sans=[%s], subject=%s, local_address=%s:%d, "
+        "peer_address=%s:%d",
         std::string(args.GetPath()).c_str(),
         std::string(args.GetTransportSecurityType()).c_str(),
         absl::StrJoin(args.GetUriSans(), ",").c_str(),
         absl::StrJoin(args.GetDnsSans(), ",").c_str(),
+        std::string(args.GetSubject()).c_str(),
         std::string(args.GetLocalAddressString()).c_str(), args.GetLocalPort(),
         std::string(args.GetPeerAddressString()).c_str(), args.GetPeerPort());
   }

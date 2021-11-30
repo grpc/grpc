@@ -968,6 +968,7 @@ grpc_cc_library(
         "src/core/lib/config/core_configuration.h",
     ],
     deps = [
+        "channel_args_preconditioning",
         "channel_init",
         "gpr_base",
         "handshaker_registry",
@@ -1084,6 +1085,21 @@ grpc_cc_library(
         "gpr_platform",
         "poll",
         "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "arena_promise",
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/arena_promise.h",
+    ],
+    deps = [
+        "gpr_base",
+        "poll",
     ],
 )
 
@@ -1665,12 +1681,46 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel_args",
+    srcs = [
+        "src/core/lib/channel/channel_args.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_args.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "channel_stack_type",
+        "gpr_base",
+        "gpr_codegen",
+        "grpc_codegen",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_args_preconditioning",
+    srcs = [
+        "src/core/lib/channel/channel_args_preconditioning.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_args_preconditioning.h",
+    ],
+    deps = [
+        "channel_args",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/address_utils/sockaddr_utils.cc",
         "src/core/lib/backoff/backoff.cc",
-        "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
         "src/core/lib/channel/channel_trace.cc",
@@ -1804,6 +1854,7 @@ grpc_cc_library(
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/metadata.cc",
         "src/core/lib/transport/metadata_batch.cc",
+        "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/static_metadata.cc",
         "src/core/lib/transport/status_conversion.cc",
@@ -1832,7 +1883,6 @@ grpc_cc_library(
         "src/core/lib/address_utils/sockaddr_utils.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
-        "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_trace.h",
@@ -1965,6 +2015,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
+        "src/core/lib/channel/channel_args.h",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
     # integrated, or when it becomes obvious the glue code is unnecessary.
@@ -1993,6 +2044,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "bitset",
+        "channel_args",
         "channel_stack_type",
         "chunked_vector",
         "closure",
@@ -2645,6 +2697,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_server_config_selector",
