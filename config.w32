@@ -608,6 +608,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\transport\\error_utils.cc " +
     "src\\core\\lib\\transport\\metadata.cc " +
     "src\\core\\lib\\transport\\metadata_batch.cc " +
+    "src\\core\\lib\\transport\\parsed_metadata.cc " +
     "src\\core\\lib\\transport\\pid_controller.cc " +
     "src\\core\\lib\\transport\\static_metadata.cc " +
     "src\\core\\lib\\transport\\status_conversion.cc " +
@@ -763,7 +764,6 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\asn1_lib.c " +
     "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\asn1_par.c " +
     "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\asn_pack.c " +
-    "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\f_enum.c " +
     "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\f_int.c " +
     "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\f_string.c " +
     "third_party\\boringssl-with-bazel\\src\\crypto\\asn1\\tasn_dec.c " +

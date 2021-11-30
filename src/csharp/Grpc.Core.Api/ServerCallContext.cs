@@ -28,7 +28,7 @@ namespace Grpc.Core
     /// </summary>
     public abstract class ServerCallContext
     {
-        private Dictionary<object, object> userState;
+        private Dictionary<object, object>? userState;
 
         /// <summary>
         /// Creates a new instance of <c>ServerCallContext</c>.
@@ -52,7 +52,7 @@ namespace Grpc.Core
         /// <summary>
         /// Creates a propagation token to be used to propagate call context to a child call.
         /// </summary>
-        public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
+        public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions? options = null)
         {
             return CreatePropagationTokenCore(options);
         }
@@ -125,7 +125,7 @@ namespace Grpc.Core
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract Task WriteResponseHeadersAsyncCore(Metadata responseHeaders);
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options);
+        protected abstract ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options);
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract string MethodCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>

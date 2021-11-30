@@ -269,8 +269,6 @@ static void request_with_payload_template(
     uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
-    grpc_compression_algorithm /*expected_client_compression_algorithm*/,
-    grpc_compression_algorithm /*expected_server_compression_algorithm*/,
     grpc_metadata* client_init_metadata, bool set_server_level,
     grpc_compression_level server_compression_level,
     bool send_message_before_initial_metadata,
@@ -557,7 +555,6 @@ static void test_invoke_request_with_compressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
-      GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP,
       GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP, nullptr,
       false, /* ignored */
       GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
@@ -567,44 +564,9 @@ static void test_invoke_request_with_send_message_before_initial_metadata(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_send_message_before_initial_metadata",
-      0, GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP,
-      GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP, nullptr,
+      0, GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP, nullptr,
       false, /* ignored */
       GRPC_COMPRESS_LEVEL_NONE, true, false, GRPC_COMPRESS_NONE);
-}
-
-static void test_invoke_request_with_compressed_payload_md_override(
-    grpc_end2end_test_config config) {
-  grpc_metadata gzip_compression_override;
-  grpc_metadata identity_compression_override;
-
-  gzip_compression_override.key =
-      GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST;
-  gzip_compression_override.value =
-      grpc_slice_from_static_string("stream/gzip");
-  memset(&gzip_compression_override.internal_data, 0,
-         sizeof(gzip_compression_override.internal_data));
-
-  identity_compression_override.key =
-      GRPC_MDSTR_GRPC_INTERNAL_STREAM_ENCODING_REQUEST;
-  identity_compression_override.value =
-      grpc_slice_from_static_string("identity");
-  memset(&identity_compression_override.internal_data, 0,
-         sizeof(identity_compression_override.internal_data));
-
-  /* Channel default NONE (aka IDENTITY), call override to stream GZIP */
-  request_with_payload_template(
-      config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
-      GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE, GRPC_COMPRESS_STREAM_GZIP,
-      GRPC_COMPRESS_NONE, &gzip_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
-
-  /* Channel default stream GZIP, call override to NONE (aka IDENTITY) */
-  request_with_payload_template(
-      config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
-      GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_NONE, GRPC_COMPRESS_NONE,
-      GRPC_COMPRESS_NONE, &identity_compression_override, false,
-      /*ignored*/ GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
 }
 
 static void test_invoke_request_with_disabled_algorithm(
@@ -618,7 +580,6 @@ static void test_invoke_request_with_disabled_algorithm(
 void stream_compression_compressed_payload(grpc_end2end_test_config config) {
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_send_message_before_initial_metadata(config);
-  test_invoke_request_with_compressed_payload_md_override(config);
   test_invoke_request_with_disabled_algorithm(config);
 }
 

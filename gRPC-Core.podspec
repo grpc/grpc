@@ -169,7 +169,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.22'
+    ss.dependency 'BoringSSL-GRPC', '0.0.23'
     ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -1345,6 +1345,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.cc',
                       'src/core/lib/transport/metadata_batch.h',
+                      'src/core/lib/transport/parsed_metadata.cc',
                       'src/core/lib/transport/parsed_metadata.h',
                       'src/core/lib/transport/pid_controller.cc',
                       'src/core/lib/transport/pid_controller.h',

@@ -150,8 +150,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!read_buf_has_data_);
     read_buf_ = GRPC_SLICE_MALLOC(4192);
     if (connect_done_) {
-      work_serializer_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
-                            DEBUG_LOCATION);
+      ContinueRegisterForOnReadableLocked();
     } else {
       GPR_ASSERT(pending_continue_register_for_on_readable_locked_ == false);
       pending_continue_register_for_on_readable_locked_ = true;
@@ -160,7 +159,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnReadableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnReadableLocked "
+        "fd:|%s| ContinueRegisterForOnReadableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
@@ -207,8 +206,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (connect_done_) {
-      work_serializer_->Run(
-          [this]() { ContinueRegisterForOnWriteableLocked(); }, DEBUG_LOCATION);
+      ContinueRegisterForOnWriteableLocked();
     } else {
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
       pending_continue_register_for_on_writeable_locked_ = true;
@@ -217,7 +215,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnWriteableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnWriteableLocked "
+        "fd:|%s| ContinueRegisterForOnWriteableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
@@ -466,12 +464,10 @@ class GrpcPolledFdWindows {
       wsa_connect_error_ = WSA_OPERATION_ABORTED;
     }
     if (pending_continue_register_for_on_readable_locked_) {
-      work_serializer_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
-                            DEBUG_LOCATION);
+      ContinueRegisterForOnReadableLocked();
     }
     if (pending_continue_register_for_on_writeable_locked_) {
-      work_serializer_->Run(
-          [this]() { ContinueRegisterForOnWriteableLocked(); }, DEBUG_LOCATION);
+      ContinueRegisterForOnWriteableLocked();
     }
     GRPC_ERROR_UNREF(error);
   }
