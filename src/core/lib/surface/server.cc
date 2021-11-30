@@ -1474,13 +1474,12 @@ void Server::CallData::StartTransportStreamOpBatch(
 
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
-  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  grpc_channel_args* new_args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  const grpc_channel_args* new_args = grpc_core::CoreConfiguration::Get()
+                                          .channel_args_preconditioning()
+                                          .PreconditionChannelArgs(args);
   grpc_core::Server* server = new grpc_core::Server(new_args);
   grpc_channel_args_destroy(new_args);
-  grpc_channel_args_destroy(args);
   return server->c_ptr();
 }
 
