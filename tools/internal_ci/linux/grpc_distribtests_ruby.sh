@@ -44,7 +44,8 @@ cp -r artifacts/ruby_native_gem_*/* input_artifacts/ || true
 # Run all ruby linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
-tools/run_tests/task_runner.py -f distribtest linux ruby -j 6 -x distribtests/sponge_log.xml || FAILED="true"
+# [DO-NOT-SUBMIT]
+tools/run_tests/task_runner.py -f distribtest linux ruby presubmit -j 6 -x distribtests/sponge_log.xml || FAILED="true"
 
 if [ "$FAILED" != "" ]
 then
