@@ -293,9 +293,11 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
     b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
     b->Set(grpc_core::PathMetadata(),
-           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("/foo/bar/bm_chttp2_transport")));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "/foo/bar/bm_chttp2_transport")));
     b->Set(grpc_core::AuthorityMetadata(),
-           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("foo.test.google.fr:1234")));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd",
         b->Append(
