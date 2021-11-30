@@ -37,6 +37,8 @@ extern grpc_core::TraceFlag grpc_http_trace;
 namespace grpc_core {
 
 class HPackCompressor {
+  class SliceIndex;
+
  public:
   HPackCompressor() = default;
   ~HPackCompressor() = default;
@@ -76,6 +78,8 @@ class HPackCompressor {
     Framer& operator=(const Framer&) = delete;
 
     void Encode(grpc_mdelem md);
+    void Encode(PathMetadata, const Slice& value);
+    void Encode(AuthorityMetadata, const Slice& value);
     void Encode(StatusMetadata, uint32_t status);
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
@@ -105,6 +109,8 @@ class HPackCompressor {
     }
 
    private:
+    friend class SliceIndex;
+
     struct FramePrefix {
       // index (in output_) of the header for the frame
       size_t header_idx;
@@ -258,6 +264,35 @@ class HPackCompressor {
     uint32_t hash_;
   };
 
+  class SliceRef {
+   public:
+    using Stored = Slice;
+
+    explicit SliceRef(const Slice* slice) : ref_(slice) {}
+    SliceRef(const SliceRef&) = delete;
+    SliceRef& operator=(const SliceRef&) = delete;
+
+    uint32_t hash() const { return grpc_slice_hash_internal(ref_->c_slice()); }
+    Stored stored() const {
+      return ref_->Ref();
+    }
+
+    bool operator==(const Stored& stored) const noexcept {
+      return *ref_ == stored;
+    }
+
+   private:
+    const Slice* const ref_;
+  };
+
+  class SliceIndex {
+   public:
+    void EmitTo(const grpc_slice& key, const Slice& value, Framer* framer);
+
+   private:
+    HPackEncoderIndex<SliceRef, kNumFilterValues> index_;
+  };
+
   // entry tables for keys & elems: these tables track values that have been
   // seen and *may* be in the decompressor table
   HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
@@ -272,6 +307,8 @@ class HPackCompressor {
   uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};
   // The user-agent string referred to by user_agent_index_
   Slice user_agent_;
+  SliceIndex path_index_;
+  SliceIndex authority_index_;
 };
 
 }  // namespace grpc_core
