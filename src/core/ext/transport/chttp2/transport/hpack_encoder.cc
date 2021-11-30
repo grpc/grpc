@@ -22,6 +22,7 @@
 
 #include <assert.h>
 #include <string.h>
+
 #include "hpack_constants.h"
 
 /* This is here for grpc_is_binary_header
@@ -526,14 +527,17 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
   }
 }
 
-void HPackCompressor::SliceIndex::EmitTo(const grpc_slice &key, const Slice &value, Framer *framer) {
+void HPackCompressor::SliceIndex::EmitTo(const grpc_slice& key,
+                                         const Slice& value, Framer* framer) {
   auto& table = framer->compressor_->table_;
   auto index = index_.Lookup(SliceRef(&value));
-  if (GPR_LIKELY(index.has_value() && table.ConvertableToDynamicIndex(*index))) {
+  if (GPR_LIKELY(index.has_value() &&
+                 table.ConvertableToDynamicIndex(*index))) {
     framer->EmitIndexed(table.DynamicIndex(*index));
   } else {
     framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value.c_slice());
-    const uint32_t element_size = GRPC_SLICE_LENGTH(key) + value.size() + hpack_constants::kEntryOverhead;
+    const uint32_t element_size =
+        GRPC_SLICE_LENGTH(key) + value.size() + hpack_constants::kEntryOverhead;
     uint32_t new_index = table.AllocateIndex(element_size);
     index_.Insert(SliceRef(&value), new_index);
   }
