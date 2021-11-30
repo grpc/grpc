@@ -926,7 +926,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     absl::string_view uri_scheme;
     if (GetParam().use_fake_resolver()) {
       // Authority not allowed when using fake resolver.
-      GPR_ASSERT(xds_authority == "");
+      GPR_ASSERT(std::string(xds_authority).empty());
       uri_scheme = "fake";
     } else {
       uri_scheme = "xds";
