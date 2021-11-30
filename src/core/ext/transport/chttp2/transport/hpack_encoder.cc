@@ -589,22 +589,22 @@ void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
     case 200:
       index = 8;  // :status: 200
       break;
-      case 204:
+    case 204:
       index = 9;  // :status: 204
       break;
-      case 206:
+    case 206:
       index = 10;  // :status: 206
       break;
-      case 304:
+    case 304:
       index = 11;  // :status: 304
       break;
-      case 400:
+    case 400:
       index = 12;  // :status: 400
       break;
-   case 404:
+    case 404:
       index = 13;  // :status: 404
       break;
-      case 500:
+    case 500:
       index = 14;  // :status: 500
       break;
   }
@@ -613,8 +613,8 @@ void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
   } else {
     char buffer[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, buffer);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(GRPC_MDSTR_STATUS,
-                                           Slice::FromCopiedString(buffer).c_slice());
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(
+        GRPC_MDSTR_STATUS, Slice::FromCopiedString(buffer).c_slice());
   }
 }
 
