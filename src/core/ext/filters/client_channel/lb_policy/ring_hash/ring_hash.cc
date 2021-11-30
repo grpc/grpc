@@ -747,9 +747,8 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 }  // namespace
 
 void GrpcLbPolicyRingHashInit() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::RingHashFactory>());
+  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<RingHashFactory>());
 }
 
 void GrpcLbPolicyRingHashShutdown() {}

@@ -62,6 +62,9 @@ spec:
             % if xds_server_uri:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
+            % if config_scope:
+            - "--config-scope-experimental=${config_scope_experimental}"
+            % endif
             - "--include-v3-features-experimental"
             - "--include-psm-security-experimental"
           resources:

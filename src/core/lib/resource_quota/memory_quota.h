@@ -27,6 +27,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice.h>
 
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
@@ -77,6 +78,7 @@ static constexpr size_t kNumReclamationPasses = 4;
 // then that reclamation is complete and we may continue the reclamation loop.
 class ReclamationSweep {
  public:
+  ReclamationSweep() = default;
   ReclamationSweep(std::shared_ptr<BasicMemoryQuota> memory_quota,
                    uint64_t sweep_token)
       : memory_quota_(std::move(memory_quota)), sweep_token_(sweep_token) {}
@@ -93,6 +95,13 @@ class ReclamationSweep {
   // can stop more efficiently than going through the reclaimer queue once per
   // work item.
   bool IsSufficient() const;
+
+  // Explicit finish for users that wish to write it.
+  // Just destroying the object is enough, but sometimes the additional
+  // explicitness is warranted.
+  void Finish() {
+    [](ReclamationSweep) {}(std::move(*this));
+  }
 
  private:
   std::shared_ptr<BasicMemoryQuota> memory_quota_;
@@ -170,6 +179,8 @@ class ReclaimerQueue {
 class BasicMemoryQuota final
     : public std::enable_shared_from_this<BasicMemoryQuota> {
  public:
+  explicit BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
+
   // Start the reclamation activity.
   void Start();
   // Stop the reclamation activity.
@@ -188,7 +199,8 @@ class BasicMemoryQuota final
   // Return some memory to the quota.
   void Return(size_t amount);
   // Instantaneous memory pressure approximation.
-  size_t InstantaneousPressure() const;
+  std::pair<double, size_t>
+  InstantaneousPressureAndMaxRecommendedAllocationSize() const;
   // Cancel a reclaimer
   ReclamationFunction CancelReclaimer(
       size_t reclaimer, typename ReclaimerQueue::Index index,
@@ -202,6 +214,9 @@ class BasicMemoryQuota final
       ReclamationFunction fn, ReclaimerQueue::Index* index) {
     reclaimers_[reclaimer].Insert(std::move(allocator), std::move(fn), index);
   }
+
+  // The name of this quota
+  absl::string_view name() const { return name_; }
 
  private:
   friend class ReclamationSweep;
@@ -228,6 +243,8 @@ class BasicMemoryQuota final
   // We also increment this counter on completion of a sweep, as an indicator
   // that the wait has ended.
   std::atomic<uint64_t> reclamation_counter_{0};
+  // The name of this quota - used for debugging/tracing/etc..
+  std::string name_;
 };
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an
@@ -235,7 +252,7 @@ class BasicMemoryQuota final
 class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  public:
   explicit GrpcMemoryAllocatorImpl(
-      std::shared_ptr<BasicMemoryQuota> memory_quota);
+      std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name);
   ~GrpcMemoryAllocatorImpl() override;
 
   // Rebind - Swaps the underlying quota for this allocator, taking care to
@@ -263,6 +280,16 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Shutdown the allocator.
   void Shutdown() override;
 
+  // Read the instantaneous memory pressure
+  double InstantaneousPressure() const {
+    MutexLock lock(&memory_quota_mu_);
+    return memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize()
+        .first;
+  }
+
+  // Name of this allocator
+  absl::string_view name() const { return name_; }
+
  private:
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
@@ -281,7 +308,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // pressure.
   std::atomic<size_t> free_bytes_{0};
   // Mutex guarding the backing resource quota.
-  Mutex memory_quota_mu_;
+  mutable Mutex memory_quota_mu_;
   // Backing resource quota.
   std::shared_ptr<BasicMemoryQuota> memory_quota_
       ABSL_GUARDED_BY(memory_quota_mu_);
@@ -296,35 +323,65 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
           memory_quota_mu_) = {
           ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex,
           ReclaimerQueue::kInvalidIndex, ReclaimerQueue::kInvalidIndex};
+  // Name of this allocator.
+  std::string name_;
 };
 
 // MemoryOwner is an enhanced MemoryAllocator that can also reclaim memory, and
 // be rebound to a different memory quota.
-class MemoryOwner {
+// Different modules should not share a MemoryOwner between themselves, instead
+// each module that requires a MemoryOwner should create one from a resource
+// quota. This is because the MemoryOwner reclaimers are tied to the
+// MemoryOwner's lifetime, and are not queryable, so passing a MemoryOwner to a
+// new owning module means that module cannot reason about which reclaimers are
+// active, nor what they might do.
+class MemoryOwner final : public MemoryAllocator {
  public:
-  explicit MemoryOwner(std::shared_ptr<GrpcMemoryAllocatorImpl> allocator)
-      : allocator_(std::move(allocator)) {}
+  MemoryOwner() = default;
 
-  MemoryAllocator* allocator() { return &allocator_; }
+  explicit MemoryOwner(std::shared_ptr<GrpcMemoryAllocatorImpl> allocator)
+      : MemoryAllocator(std::move(allocator)) {}
 
   // Post a reclaimer for some reclamation pass.
   void PostReclaimer(ReclamationPass pass, ReclamationFunction fn) {
-    static_cast<GrpcMemoryAllocatorImpl*>(allocator_.get_internal_impl_ptr())
-        ->PostReclaimer(pass, std::move(fn));
+    impl()->PostReclaimer(pass, std::move(fn));
   }
 
   // Rebind to a different quota.
   void Rebind(MemoryQuota* quota);
 
+  // Instantaneous memory pressure in the underlying quota.
+  double InstantaneousPressure() const {
+    return impl()->InstantaneousPressure();
+  }
+
+  template <typename T, typename... Args>
+  OrphanablePtr<T> MakeOrphanable(Args&&... args) {
+    return OrphanablePtr<T>(New<T>(std::forward<Args>(args)...));
+  }
+
+  // Name of this object
+  absl::string_view name() const { return impl()->name(); }
+
+  // Is this object valid (ie has not been moved out of or reset)
+  bool is_valid() const { return impl() != nullptr; }
+
  private:
-  MemoryAllocator allocator_;
+  const GrpcMemoryAllocatorImpl* impl() const {
+    return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
+  }
+
+  GrpcMemoryAllocatorImpl* impl() {
+    return static_cast<GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
+  }
 };
 
 // MemoryQuota tracks the amount of memory available as part of a ResourceQuota.
 class MemoryQuota final
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
  public:
-  MemoryQuota() : memory_quota_(std::make_shared<BasicMemoryQuota>()) {
+  explicit MemoryQuota(std::string name)
+      : memory_quota_(std::make_shared<BasicMemoryQuota>(std::move(name))) {
     memory_quota_->Start();
   }
   ~MemoryQuota() override {
@@ -336,23 +393,28 @@ class MemoryQuota final
   MemoryQuota(MemoryQuota&&) = default;
   MemoryQuota& operator=(MemoryQuota&&) = default;
 
-  MemoryAllocator CreateMemoryAllocator() override {
-    auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
-    return MemoryAllocator(std::move(impl));
-  }
-
-  MemoryOwner CreateMemoryOwner() {
-    auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
-    return MemoryOwner(std::move(impl));
-  }
+  MemoryAllocator CreateMemoryAllocator(absl::string_view name) override;
+  MemoryOwner CreateMemoryOwner(absl::string_view name);
 
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
+
+  // Return true if the instantaneous memory pressure is high.
+  bool IsMemoryPressureHigh() const {
+    static constexpr double kMemoryPressureHighThreshold = 0.9;
+    return memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize()
+               .first > kMemoryPressureHighThreshold;
+  }
 
  private:
   friend class MemoryOwner;
   std::shared_ptr<BasicMemoryQuota> memory_quota_;
 };
+
+using MemoryQuotaRefPtr = std::shared_ptr<MemoryQuota>;
+inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
+  return std::make_shared<MemoryQuota>(std::move(name));
+}
 
 }  // namespace grpc_core
 

@@ -331,10 +331,10 @@ class TransportFlowControl final : public TransportFlowControlBase {
   const bool enable_bdp_probe_;
 
   /* bdp estimation */
-  grpc_core::BdpEstimator bdp_estimator_;
+  BdpEstimator bdp_estimator_;
 
   /* pid controller */
-  grpc_core::PidController pid_controller_;
+  PidController pid_controller_;
   grpc_millis last_pid_update_ = 0;
 };
 

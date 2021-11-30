@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -341,6 +341,6 @@ def generate_client_referred_to_backend_multiple_balancers():
 
 all_scenarios += generate_client_referred_to_backend_multiple_balancers()
 
-print(yaml.dump({
+print((yaml.dump({
     'lb_interop_test_scenarios': all_scenarios,
-}))
+})))

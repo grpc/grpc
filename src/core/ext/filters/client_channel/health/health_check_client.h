@@ -94,7 +94,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_polling_entity pollent_;
 
     Arena* arena_;
-    grpc_core::CallCombiner call_combiner_;
+    CallCombiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
     // The streaming call to the backend. Always non-null.

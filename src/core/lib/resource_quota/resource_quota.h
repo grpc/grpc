@@ -17,27 +17,41 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
 
 namespace grpc_core {
 
-class ResourceQuota : public RefCounted<ResourceQuota> {
+class ResourceQuota;
+using ResourceQuotaRefPtr = RefCountedPtr<ResourceQuota>;
+
+class ResourceQuota : public RefCounted<ResourceQuota>,
+                      public CppImplOf<ResourceQuota, grpc_resource_quota> {
  public:
-  ResourceQuota();
+  explicit ResourceQuota(std::string name);
   ~ResourceQuota() override;
 
   ResourceQuota(const ResourceQuota&) = delete;
   ResourceQuota& operator=(const ResourceQuota&) = delete;
 
-  std::shared_ptr<MemoryQuota> memory_quota() { return memory_quota_; }
+  MemoryQuotaRefPtr memory_quota() { return memory_quota_; }
 
   const RefCountedPtr<ThreadQuota>& thread_quota() { return thread_quota_; }
 
+  // The default global resource quota
+  static ResourceQuotaRefPtr Default();
+
  private:
-  std::shared_ptr<MemoryQuota> memory_quota_;
+  MemoryQuotaRefPtr memory_quota_;
   RefCountedPtr<ThreadQuota> thread_quota_;
 };
+
+inline ResourceQuotaRefPtr MakeResourceQuota(std::string name) {
+  return MakeRefCounted<ResourceQuota>(std::move(name));
+}
 
 }  // namespace grpc_core
 

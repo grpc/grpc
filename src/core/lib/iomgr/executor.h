@@ -36,7 +36,7 @@ struct ThreadState {
   size_t depth;  // Number of closures in the closure list
   bool shutdown;
   bool queued_long_job;
-  grpc_core::Thread thd;
+  Thread thd;
 };
 
 enum class ExecutorType {

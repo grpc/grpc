@@ -23,6 +23,9 @@ extern "C" {
 struct udpa_annotations_VersioningAnnotation;
 typedef struct udpa_annotations_VersioningAnnotation udpa_annotations_VersioningAnnotation;
 extern const upb_msglayout udpa_annotations_VersioningAnnotation_msginit;
+extern const upb_msglayout_ext udpa_annotations_versioning_ext;
+struct google_protobuf_MessageOptions;
+extern const upb_msglayout google_protobuf_MessageOptions_msginit;
 
 
 /* udpa.annotations.VersioningAnnotation */
@@ -56,6 +59,10 @@ UPB_INLINE upb_strview udpa_annotations_VersioningAnnotation_previous_message_ty
 UPB_INLINE void udpa_annotations_VersioningAnnotation_set_previous_message_type(udpa_annotations_VersioningAnnotation *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
+
+UPB_INLINE bool udpa_annotations_has_versioning(const struct google_protobuf_MessageOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_versioning_ext) != NULL; }
+UPB_INLINE const udpa_annotations_VersioningAnnotation* udpa_annotations_versioning(const struct google_protobuf_MessageOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_versioning_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_VersioningAnnotation*); }
+extern const upb_msglayout_file udpa_annotations_versioning_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -8,64 +8,7 @@
 
 #include "upb/def.h"
 #include "google/protobuf/descriptor.upbdefs.h"
-
-extern const upb_msglayout google_protobuf_FileDescriptorSet_msginit;
-extern const upb_msglayout google_protobuf_FileDescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_DescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_DescriptorProto_ExtensionRange_msginit;
-extern const upb_msglayout google_protobuf_DescriptorProto_ReservedRange_msginit;
-extern const upb_msglayout google_protobuf_ExtensionRangeOptions_msginit;
-extern const upb_msglayout google_protobuf_FieldDescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_OneofDescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_EnumDescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_EnumDescriptorProto_EnumReservedRange_msginit;
-extern const upb_msglayout google_protobuf_EnumValueDescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_ServiceDescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_MethodDescriptorProto_msginit;
-extern const upb_msglayout google_protobuf_FileOptions_msginit;
-extern const upb_msglayout google_protobuf_MessageOptions_msginit;
-extern const upb_msglayout google_protobuf_FieldOptions_msginit;
-extern const upb_msglayout google_protobuf_OneofOptions_msginit;
-extern const upb_msglayout google_protobuf_EnumOptions_msginit;
-extern const upb_msglayout google_protobuf_EnumValueOptions_msginit;
-extern const upb_msglayout google_protobuf_ServiceOptions_msginit;
-extern const upb_msglayout google_protobuf_MethodOptions_msginit;
-extern const upb_msglayout google_protobuf_UninterpretedOption_msginit;
-extern const upb_msglayout google_protobuf_UninterpretedOption_NamePart_msginit;
-extern const upb_msglayout google_protobuf_SourceCodeInfo_msginit;
-extern const upb_msglayout google_protobuf_SourceCodeInfo_Location_msginit;
-extern const upb_msglayout google_protobuf_GeneratedCodeInfo_msginit;
-extern const upb_msglayout google_protobuf_GeneratedCodeInfo_Annotation_msginit;
-
-static const upb_msglayout *layouts[27] = {
-  &google_protobuf_FileDescriptorSet_msginit,
-  &google_protobuf_FileDescriptorProto_msginit,
-  &google_protobuf_DescriptorProto_msginit,
-  &google_protobuf_DescriptorProto_ExtensionRange_msginit,
-  &google_protobuf_DescriptorProto_ReservedRange_msginit,
-  &google_protobuf_ExtensionRangeOptions_msginit,
-  &google_protobuf_FieldDescriptorProto_msginit,
-  &google_protobuf_OneofDescriptorProto_msginit,
-  &google_protobuf_EnumDescriptorProto_msginit,
-  &google_protobuf_EnumDescriptorProto_EnumReservedRange_msginit,
-  &google_protobuf_EnumValueDescriptorProto_msginit,
-  &google_protobuf_ServiceDescriptorProto_msginit,
-  &google_protobuf_MethodDescriptorProto_msginit,
-  &google_protobuf_FileOptions_msginit,
-  &google_protobuf_MessageOptions_msginit,
-  &google_protobuf_FieldOptions_msginit,
-  &google_protobuf_OneofOptions_msginit,
-  &google_protobuf_EnumOptions_msginit,
-  &google_protobuf_EnumValueOptions_msginit,
-  &google_protobuf_ServiceOptions_msginit,
-  &google_protobuf_MethodOptions_msginit,
-  &google_protobuf_UninterpretedOption_msginit,
-  &google_protobuf_UninterpretedOption_NamePart_msginit,
-  &google_protobuf_SourceCodeInfo_msginit,
-  &google_protobuf_SourceCodeInfo_Location_msginit,
-  &google_protobuf_GeneratedCodeInfo_msginit,
-  &google_protobuf_GeneratedCodeInfo_Annotation_msginit,
-};
+#include "google/protobuf/descriptor.upb.h"
 
 static const char descriptor[7619] = {'\n', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 
 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 
@@ -380,7 +323,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init google_protobuf_descriptor_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_protobuf_descriptor_proto_upb_file_layout,
   "google/protobuf/descriptor.proto",
   UPB_STRVIEW_INIT(descriptor, 7619)
 };

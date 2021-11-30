@@ -37,17 +37,17 @@ dotnet restore Grpc.sln
 mkdir -p ../../cmake/build
 cp nativelibs/csharp_ext_linux_x64/libgrpc_csharp_ext.so ../../cmake/build
 
-dotnet pack --configuration Release Grpc.Core.Api --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Core --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Core.Testing --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Auth --output ../../../artifacts
-dotnet pack --configuration Release Grpc.HealthCheck --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Reflection --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Tools --output ../../../artifacts
+dotnet pack --configuration Release Grpc.Core.Api --output ../../artifacts
+dotnet pack --configuration Release Grpc.Core --output ../../artifacts
+dotnet pack --configuration Release Grpc.Core.Testing --output ../../artifacts
+dotnet pack --configuration Release Grpc.Auth --output ../../artifacts
+dotnet pack --configuration Release Grpc.HealthCheck --output ../../artifacts
+dotnet pack --configuration Release Grpc.Reflection --output ../../artifacts
+dotnet pack --configuration Release Grpc.Tools --output ../../artifacts
 # rem build auxiliary packages
-dotnet pack --configuration Release Grpc --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Core.NativeDebug --output ../../../artifacts
-dotnet pack --configuration Release Grpc.Core.Xamarin --output ../../../artifacts
+dotnet pack --configuration Release Grpc --output ../../artifacts
+dotnet pack --configuration Release Grpc.Core.NativeDebug --output ../../artifacts
+dotnet pack --configuration Release Grpc.Core.Xamarin --output ../../artifacts
 
 # Create a zipfile with all the nugets we just created
 cd ../../artifacts

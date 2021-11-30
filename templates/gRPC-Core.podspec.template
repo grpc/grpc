@@ -132,7 +132,7 @@
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '1.20210324.0'
+    abseil_version = '1.20211102.0'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -195,7 +195,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.22'
+      ss.dependency 'BoringSSL-GRPC', '0.0.23'
       ss.dependency 'Libuv-gRPC', '0.0.10'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version

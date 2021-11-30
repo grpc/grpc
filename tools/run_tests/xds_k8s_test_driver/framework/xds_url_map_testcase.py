@@ -29,7 +29,7 @@ from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
-import packaging
+import packaging.version
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources

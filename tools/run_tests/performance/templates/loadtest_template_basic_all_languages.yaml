@@ -35,6 +35,8 @@ spec:
   - build:
       args:
       - build
+      - --config
+      - opt
       - //test/cpp/qps:qps_worker
       command:
       - bazel
@@ -89,8 +91,7 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+            /run_scripts/run_worker.sh
       command:
       - bash
   - build:
@@ -148,6 +149,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests/qps:qps_worker
       command:
       - bazel
@@ -168,6 +171,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests_aio/benchmark:worker
       command:
       - bazel
@@ -229,6 +234,8 @@ spec:
   - build:
       args:
       - build
+      - --config
+      - opt
       - //test/cpp/qps:qps_worker
       command:
       - bazel
@@ -284,8 +291,7 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+            /run_scripts/run_worker.sh
       command:
       - bash
   - build:
@@ -309,6 +315,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests/qps:qps_worker
       command:
       - bazel
@@ -329,6 +337,8 @@ spec:
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests_aio/benchmark:worker
       command:
       - bazel
