@@ -20,18 +20,6 @@ grpc_package(name="test/core/compression")
 licenses(["notice"])
 
 grpc_cc_test(
-    name="algorithm_test",
-    srcs=["algorithm_test.cc"],
-    language="C++",
-    uses_polling=False,
-    deps=[
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name="compression_test",
     srcs=["compression_test.cc"],
     language="C++",

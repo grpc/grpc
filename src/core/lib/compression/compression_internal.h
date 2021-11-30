@@ -20,6 +20,7 @@
 #define GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
+#include <initializer_list>
 
 #include <grpc/compression.h>
 #include <grpc/slice.h>
@@ -37,15 +38,19 @@ const char *CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
 
 class CompressionAlgorithmSet {
  public:
- static CompressionAlgorithmSet FromUint32(uint32_t value);
+  static CompressionAlgorithmSet FromUint32(uint32_t value);
   static CompressionAlgorithmSet FromChannelArgs(const grpc_channel_args* args);
   static CompressionAlgorithmSet FromString(absl::string_view value);
+  CompressionAlgorithmSet();
+  CompressionAlgorithmSet(std::initializer_list<grpc_compression_algorithm> algorithms);
 
   grpc_compression_algorithm CompressionAlgorithmForLevel(grpc_compression_level level)const;
   bool IsSet(grpc_compression_algorithm algorithm)const;
 
   std::string ToString() const;
   Slice ToSlice() const;
+
+  uint32_t ToLegacyBitmask() const;
 
  private:
   BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT> set_;
