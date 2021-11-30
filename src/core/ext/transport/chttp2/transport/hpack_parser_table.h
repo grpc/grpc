@@ -71,7 +71,12 @@ class HPackTable {
   struct StaticMementos {
     StaticMementos() {
       for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
-        memento[i] = Memento(g_static_mdelem_manifested[i]);
+        const grpc_mdelem_data& sm = g_static_mdelem_table[i].data();
+        memento[i] = grpc_metadata_batch::Parse(
+            StringViewFromSlice(sm.key),
+            Slice(grpc_slice_ref_internal(sm.value)),
+            GRPC_SLICE_LENGTH(sm.key) + GRPC_SLICE_LENGTH(sm.value) +
+                hpack_constants::kEntryOverhead);
       }
     }
     Memento memento[hpack_constants::kLastStaticEntry];

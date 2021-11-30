@@ -536,7 +536,7 @@ void HPackCompressor::Framer::Encode(ContentTypeMetadata,
                                      ContentTypeMetadata::ValueType value) {
   GPR_ASSERT(value == ContentTypeMetadata::ValueType::kApplicationGrpc);
   EncodeAlwaysIndexed(
-      &compressor_->te_index_, GRPC_MDSTR_CONTENT_TYPE,
+      &compressor_->content_type_index_, GRPC_MDSTR_CONTENT_TYPE,
       StaticSlice::FromStaticString("application/grpc").c_slice(),
       12 /* content-type */ + 16 /* application/grpc */ +
           hpack_constants::kEntryOverhead);
@@ -546,10 +546,10 @@ void HPackCompressor::Framer::Encode(SchemeMetadata,
                                      SchemeMetadata::ValueType value) {
   switch (value) {
     case SchemeMetadata::ValueType::kHttp:
-      EmitIndexed(5);  // :scheme: http
+      EmitIndexed(6);  // :scheme: http
       break;
     case SchemeMetadata::ValueType::kHttps:
-      EmitIndexed(6);  // :scheme: https
+      EmitIndexed(7);  // :scheme: https
       break;
     case SchemeMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
@@ -559,7 +559,7 @@ void HPackCompressor::Framer::Encode(SchemeMetadata,
 
 void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
   GPR_DEBUG_ASSERT(status == 200);
-  EmitIndexed(7);  // :status: 200
+  EmitIndexed(8);  // :status: 200
 }
 
 void HPackCompressor::Framer::Encode(MethodMetadata,

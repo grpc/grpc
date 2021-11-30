@@ -183,9 +183,6 @@ struct ContentTypeMetadata {
 
 // scheme metadata trait.
 struct SchemeMetadata {
-  // gRPC says that content-type can be application/grpc[;something]
-  // Core has only ever verified the prefix.
-  // IF we want to start verifying more, we can expand this type.
   enum ValueType {
     kHttp,
     kHttps,
@@ -231,9 +228,6 @@ struct SchemeMetadata {
 
 // method metadata trait.
 struct MethodMetadata {
-  // gRPC says that content-type can be application/grpc[;something]
-  // Core has only ever verified the prefix.
-  // IF we want to start verifying more, we can expand this type.
   enum ValueType {
     kPost,
     kPut,
@@ -245,11 +239,11 @@ struct MethodMetadata {
   static MementoType ParseMemento(Slice value) {
     auto out = kInvalid;
     auto value_string = value.as_string_view();
-    if (value_string == "post") {
+    if (value_string == "POST") {
       out = kPost;
-    } else if (value_string == "put") {
+    } else if (value_string == "PUT") {
       out = kPut;
-    } else if (value_string == "get") {
+    } else if (value_string == "GET") {
       out = kGet;
     }
     return out;
@@ -260,11 +254,11 @@ struct MethodMetadata {
   static StaticSlice Encode(ValueType x) {
     switch (x) {
       case kPost:
-        return StaticSlice::FromStaticString("post");
+        return StaticSlice::FromStaticString("POST");
       case kPut:
-        return StaticSlice::FromStaticString("put");
+        return StaticSlice::FromStaticString("PUT");
       case kGet:
-        return StaticSlice::FromStaticString("get");
+        return StaticSlice::FromStaticString("GET");
       default:
         abort();
     }
@@ -272,11 +266,11 @@ struct MethodMetadata {
   static const char* DisplayValue(MementoType content_type) {
     switch (content_type) {
       case kPost:
-        return "post";
+        return "POST";
       case kPut:
-        return "put";
+        return "PUT";
       case kGet:
-        return "get";
+        return "GET";
       default:
         return "<discarded-invalid-value>";
     }
