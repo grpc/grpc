@@ -18,14 +18,6 @@
 
 namespace grpc_core {
 
-TEST(StringMatcherTest, ExactMatchEmptyMatcher) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kExact,
-                                              /*matcher=*/"");
-  ASSERT_TRUE(string_matcher.ok());
-  EXPECT_TRUE(string_matcher->Match(""));
-  EXPECT_FALSE(string_matcher->Match("exact"));
-}
-
 TEST(StringMatcherTest, ExactMatchCaseSensitive) {
   auto string_matcher =
       StringMatcher::Create(StringMatcher::Type::kExact,

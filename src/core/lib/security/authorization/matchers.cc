@@ -200,7 +200,7 @@ bool AuthenticatedAuthorizationMatcher::Matches(
       }
     }
   }
-  return matcher_.Match(args.GetSubject());
+  return matcher_->Match(args.GetSubject());
 }
 
 bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {
