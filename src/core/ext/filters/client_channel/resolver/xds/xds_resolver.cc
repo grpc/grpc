@@ -835,7 +835,8 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
   }
   // Find the relevant VirtualHost from the RouteConfiguration.
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
-      VirtualHostListIterator(&rds_update.virtual_hosts), data_plane_authority_);
+      VirtualHostListIterator(&rds_update.virtual_hosts),
+      data_plane_authority_);
   if (!vhost_index.has_value()) {
     OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("could not find VirtualHost for ", data_plane_authority_,

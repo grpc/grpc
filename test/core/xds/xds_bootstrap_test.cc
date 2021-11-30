@@ -204,7 +204,8 @@ TEST(XdsBootstrapTest, MissingChannelCreds) {
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex("\"channel_creds\" field not present"));
+              ::testing::ContainsRegex(
+                  "\"field:channel_creds error:does not exist.\""));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -270,10 +271,11 @@ TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
-                                       "errors parsing index 0.*"
-                                       "\"server_uri\" field not present"));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
+                               "errors parsing xds server.*"
+                               "\"field:server_uri error:does not exist.\","));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -291,12 +293,12 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  EXPECT_THAT(
-      grpc_error_std_string(error),
-      ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
-                               "errors parsing index 0.*"
-                               "\"server_uri\" field is not a string.*"
-                               "\"channel_creds\" field is not an array"));
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing \"xds_servers\" array.*"
+                  "errors parsing xds server.*"
+                  "\"field:server_uri error:type should be STRING.*"
+                  "\"field:channel_creds error:type should be ARRAY\""));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -322,11 +324,11 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
-                               "errors parsing index 0.*"
+                               "errors parsing xds server.*"
                                "errors parsing \"channel_creds\" array.*"
                                "errors parsing index 0.*"
-                               "\"type\" field is not a string.*"
-                               "\"config\" field is not an object"));
+                               "\"field:type error:type should be STRING.*"
+                               "\"field:config error:type should be OBJECT\""));
   GRPC_ERROR_UNREF(error);
 }
 
