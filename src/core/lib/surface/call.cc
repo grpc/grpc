@@ -193,8 +193,6 @@ struct grpc_call {
      Element 0 is initial metadata, element 1 is trailing metadata. */
   grpc_metadata_array* buffered_metadata[2] = {};
 
-  grpc_metadata compression_md;
-
   // A char* indicating the peer name.
   gpr_atm peer_string = 0;
 
@@ -769,32 +767,18 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call* call) {
   return flags;
 }
 
-static void destroy_encodings_accepted_by_peer(void* /*p*/) {}
-
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call) {
   return call->encodings_accepted_by_peer.ToLegacyBitmask();
 }
 
-static grpc_metadata* get_md_elem(grpc_metadata* metadata,
-                                  grpc_metadata* additional_metadata, int i,
-                                  int count) {
-  grpc_metadata* res =
-      i < count ? &metadata[i] : &additional_metadata[i - count];
-  GPR_ASSERT(res);
-  return res;
-}
-
 static int prepare_application_metadata(grpc_call* call, int count,
                                         grpc_metadata* metadata,
-                                        int is_trailing,
-                                        grpc_metadata* additional_metadata,
-                                        int additional_metadata_count) {
-  int total_count = count + additional_metadata_count;
+                                        int is_trailing) {
   int i;
   grpc_metadata_batch* batch = is_trailing ? &call->send_trailing_metadata
                                            : &call->send_initial_metadata;
-  for (i = 0; i < total_count; i++) {
-    grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
+  for (i = 0; i < count; i++) {
+    grpc_metadata* md = &metadata[i];
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
       return 0;
@@ -1196,14 +1180,6 @@ static void receiving_stream_ready_in_call_combiner(void* bctlp,
   receiving_stream_ready(bctlp, error);
 }
 
-static void GPR_ATTRIBUTE_NOINLINE handle_invalid_compression(
-    grpc_call* call, grpc_compression_algorithm compression_algorithm) {
-  std::string error_msg = absl::StrFormat(
-      "Invalid compression algorithm value '%d'.", compression_algorithm);
-  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
-  cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg.c_str());
-}
-
 static void GPR_ATTRIBUTE_NOINLINE handle_compression_algorithm_disabled(
     grpc_call* call, grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
@@ -1219,9 +1195,9 @@ static void GPR_ATTRIBUTE_NOINLINE handle_compression_algorithm_not_accepted(
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
   gpr_log(GPR_ERROR,
-          "Compression algorithm ('%s') not present in the bitset of "
-          "accepted encodings ('0x%x')",
-          algo_name, call->encodings_accepted_by_peer);
+          "Compression algorithm ('%s') not present in the "
+          "accepted encodings (%s)",
+          algo_name, call->encodings_accepted_by_peer.ToString().c_str());
 }
 
 static void validate_filtered_metadata(batch_control* bctl) {
@@ -1236,8 +1212,7 @@ static void validate_filtered_metadata(batch_control* bctl) {
     }
     /* GRPC_COMPRESS_NONE is always set. */
     GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer.IsSet(GRPC_COMPRESS_NONE));
-    if (GPR_UNLIKELY(!grpc_core::GetBit(call->encodings_accepted_by_peer,
-                                        compression_algorithm))) {
+    if (GPR_UNLIKELY(!call->encodings_accepted_by_peer.IsSet(compression_algorithm))) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
         handle_compression_algorithm_not_accepted(call, compression_algorithm);
       }
@@ -1404,10 +1379,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
         // with the compression algorithm mapped from compression level.
         /* process compression level */
-        grpc_metadata& compression_md = call->compression_md;
-        compression_md.key = grpc_empty_slice();
-        compression_md.value = grpc_empty_slice();
-        size_t additional_metadata_count = 0;
         grpc_compression_level effective_compression_level =
             GRPC_COMPRESS_LEVEL_NONE;
         bool level_set = false;
@@ -1430,11 +1401,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           // The following metadata will be checked and removed by the message
           // compression filter. It will be used as the call's compression
           // algorithm.
-          compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
-          compression_md.value = grpc_compression_algorithm_slice(calgo);
-          additional_metadata_count++;
+          call->send_initial_metadata.Set(grpc_core::GrpcInternalEncodingRequest(), calgo);
         }
-        if (op->data.send_initial_metadata.count + additional_metadata_count >
+        if (op->data.send_initial_metadata.count >
             INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
@@ -1443,8 +1412,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->sent_initial_metadata = true;
         if (!prepare_application_metadata(
                 call, static_cast<int>(op->data.send_initial_metadata.count),
-                op->data.send_initial_metadata.metadata, 0, &compression_md,
-                static_cast<int>(additional_metadata_count))) {
+                op->data.send_initial_metadata.metadata, 0)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1541,8 +1509,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                 call,
                 static_cast<int>(
                     op->data.send_status_from_server.trailing_metadata_count),
-                op->data.send_status_from_server.trailing_metadata, 1, nullptr,
-                0)) {
+                op->data.send_status_from_server.trailing_metadata, 1)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1795,9 +1762,7 @@ uint8_t grpc_call_is_client(grpc_call* call) { return call->is_client; }
 
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level) {
-  grpc_compression_algorithm algo =
-      compression_algorithm_for_level_locked(call, level);
-  return algo;
+  return call->encodings_accepted_by_peer.CompressionAlgorithmForLevel(level);
 }
 
 bool grpc_call_is_trailers_only(const grpc_call* call) {
