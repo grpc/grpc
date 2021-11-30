@@ -56,20 +56,29 @@ RUN apt-get update && apt-get install -y \
   && apt-get clean
 
 #====================
-# Python dependencies to run tools/run_tests scripts
+# run_tests.py python dependencies
 
-# Install dependencies
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
+RUN apt-get update && apt-get install -y \
+  python3 \
+  python3-pip \
+  python3-setuptools \
+  python3-yaml \
+  && apt-get clean
 
-RUN apt-get update && apt-get install -y python3-all-dev python3-pip
-
-# Install Python packages from PyPI
+# use pinned version of pip to avoid sudden breakages
 RUN python3 -m pip install --upgrade pip==19.3.1
-RUN python3 -m pip install virtualenv==16.7.9
-RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
+
+# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
+# but since our python2 usage is deprecated, we should get rid of it.
+RUN python3 -m pip install six==1.16.0
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+
 
 #=================
 # C++ dependencies
