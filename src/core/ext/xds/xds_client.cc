@@ -41,7 +41,6 @@
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -2236,23 +2235,9 @@ std::string XdsClient::DumpClientConfigBinary() {
 // accessors for global state
 //
 
-namespace {
-
-void InitResourceTypeRegistry() {
-  auto* registry = XdsResourceTypeRegistry::GetOrCreate();
-  registry->RegisterType(XdsListenerResourceType::Get());
-  registry->RegisterType(XdsRouteConfigResourceType::Get());
-  registry->RegisterType(XdsClusterResourceType::Get());
-  registry->RegisterType(XdsEndpointResourceType::Get());
-}
-
-}  // namespace
-
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
-  static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, InitResourceTypeRegistry);
 }
 
 // TODO(roth): Find a better way to clear the fallback config that does

@@ -152,6 +152,11 @@ class XdsClusterResourceType : public XdsResourceType {
     envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
         symtab);
   }
+
+ private:
+  XdsClusterResourceType() {
+    XdsResourceTypeRegistry::GetOrCreate()->RegisterType(this);
+  }
 };
 
 }  // namespace grpc_core
