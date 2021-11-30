@@ -23,13 +23,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/compression.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "absl/container/inlined_vector.h"
 
 namespace grpc_core {
 
@@ -46,7 +47,9 @@ const char* CompressionAlgorithmToString(grpc_compression_algorithm algorithm) {
   }
 }
 
-grpc_compression_algorithm CompressionAlgorithmSet::CompressionAlgorithmForLevel(grpc_compression_level level) const{
+grpc_compression_algorithm
+CompressionAlgorithmSet::CompressionAlgorithmForLevel(
+    grpc_compression_level level) const {
   GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
@@ -65,8 +68,10 @@ grpc_compression_algorithm CompressionAlgorithmSet::CompressionAlgorithmForLevel
    * compression.
    * This is simplistic and we will probably want to introduce other dimensions
    * in the future (cpu/memory cost, etc). */
-  absl::InlinedVector<grpc_compression_algorithm, GRPC_COMPRESS_ALGORITHMS_COUNT> algos;
-  for (size_t i=0; i<GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+  absl::InlinedVector<grpc_compression_algorithm,
+                      GRPC_COMPRESS_ALGORITHMS_COUNT>
+      algos;
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (set_.is_set(i)) {
       algos.push_back(static_cast<grpc_compression_algorithm>(i));
     }

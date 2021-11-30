@@ -396,7 +396,7 @@ static void request_with_payload_template(
                         GRPC_COMPRESS_GZIP) != 0);
   GPR_ASSERT(
       grpc_core::GetBit(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_STREAM_GZIP) != 0);
+                        GRPC_COMPRESS_GZIP) != 0);
   GPR_ASSERT(grpc_core::BitCount(
                  grpc_call_test_only_get_encodings_accepted_by_peer(s)) ==
              GRPC_COMPRESS_ALGORITHMS_COUNT);
@@ -555,8 +555,7 @@ static void test_invoke_request_with_compressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload", 0,
-      GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP, nullptr,
-      false, /* ignored */
+      GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, nullptr, false, /* ignored */
       GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
 }
 
@@ -564,17 +563,16 @@ static void test_invoke_request_with_send_message_before_initial_metadata(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_send_message_before_initial_metadata",
-      0, GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP, nullptr,
-      false, /* ignored */
+      0, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, nullptr, false, /* ignored */
       GRPC_COMPRESS_LEVEL_NONE, true, false, GRPC_COMPRESS_NONE);
 }
 
 static void test_invoke_request_with_disabled_algorithm(
     grpc_end2end_test_config config) {
-  request_for_disabled_algorithm(
-      config, "test_invoke_request_with_disabled_algorithm", 0,
-      GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP,
-      GRPC_STATUS_UNIMPLEMENTED, nullptr);
+  request_for_disabled_algorithm(config,
+                                 "test_invoke_request_with_disabled_algorithm",
+                                 0, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+                                 GRPC_STATUS_UNIMPLEMENTED, nullptr);
 }
 
 void stream_compression_compressed_payload(grpc_end2end_test_config config) {

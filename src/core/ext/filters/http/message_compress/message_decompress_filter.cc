@@ -135,8 +135,9 @@ class CallData {
 void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
   if (error == GRPC_ERROR_NONE) {
-    calld->algorithm_ = 
-        calld->recv_initial_metadata_->get(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+    calld->algorithm_ =
+        calld->recv_initial_metadata_->get(GrpcEncodingMetadata())
+            .value_or(GRPC_COMPRESS_NONE);
   }
   calld->MaybeResumeOnRecvMessageReady();
   calld->MaybeResumeOnRecvTrailingMetadataReady();

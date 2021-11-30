@@ -34,6 +34,7 @@
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -43,7 +44,6 @@
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-#include "src/core/lib/compression/compression_internal.h"
 
 typedef struct grpc_linked_mdelem {
   grpc_linked_mdelem() {}
@@ -284,7 +284,8 @@ struct CompressionAlgorithmBasedMetadata {
   using ValueType = grpc_compression_algorithm;
   using MementoType = ValueType;
   static MementoType ParseMemento(Slice value) {
-    return ParseCompressionAlgorithm(value.as_string_view()).value_or(GRPC_COMPRESS_NONE);
+    return ParseCompressionAlgorithm(value.as_string_view())
+        .value_or(GRPC_COMPRESS_NONE);
   }
   static ValueType MementoToValue(MementoType x) { return x; }
   static StaticSlice Encode(ValueType x) {
@@ -319,12 +320,8 @@ struct GrpcAcceptEncodingMetadata {
     return CompressionAlgorithmSet::FromString(value.as_string_view());
   }
   static ValueType MementoToValue(MementoType x) { return x; }
-  static Slice Encode(ValueType x) {
-    return x.ToSlice();
-  }
-  static std::string DisplayValue(MementoType x) {
-    return x.ToString();
-  }
+  static Slice Encode(ValueType x) { return x.ToSlice(); }
+  static std::string DisplayValue(MementoType x) { return x.ToString(); }
 };
 
 struct SimpleSliceBasedMetadata {
@@ -1096,9 +1093,8 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     // Non-colon prefixed headers begin here
     grpc_core::ContentTypeMetadata, grpc_core::TeMetadata,
     grpc_core::GrpcEncodingMetadata, grpc_core::GrpcInternalEncodingRequest,
-    grpc_core::GrpcAcceptEncodingMetadata,
-    grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
-    grpc_core::GrpcPreviousRpcAttemptsMetadata,
+    grpc_core::GrpcAcceptEncodingMetadata, grpc_core::GrpcStatusMetadata,
+    grpc_core::GrpcTimeoutMetadata, grpc_core::GrpcPreviousRpcAttemptsMetadata,
     grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata,
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
     grpc_core::XEndpointLoadMetricsBinMetadata,

@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/surface/call.h"
 
 #include <assert.h>
@@ -40,6 +39,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/string.h"
@@ -205,7 +205,8 @@ struct grpc_call {
       GRPC_COMPRESS_NONE;
   /* Supported encodings (compression algorithms), a bitset.
    * Always support no compression. */
-  grpc_core::CompressionAlgorithmSet encodings_accepted_by_peer {GRPC_COMPRESS_NONE};
+  grpc_core::CompressionAlgorithmSet encodings_accepted_by_peer{
+      GRPC_COMPRESS_NONE};
   /* Supported stream encodings (stream compression algorithms), a bitset */
   uint32_t stream_encodings_accepted_by_peer = 0;
 
@@ -862,8 +863,11 @@ static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
 }
 
 static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
-  call->incoming_compression_algorithm = b->Take(grpc_core::GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
-  call->encodings_accepted_by_peer = b->Take(grpc_core::GrpcAcceptEncodingMetadata()).value_or(grpc_core::CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
+  call->incoming_compression_algorithm =
+      b->Take(grpc_core::GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  call->encodings_accepted_by_peer =
+      b->Take(grpc_core::GrpcAcceptEncodingMetadata())
+          .value_or(grpc_core::CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
   publish_app_metadata(call, b, false);
 }
 
@@ -1138,8 +1142,8 @@ static void process_data_after_md(batch_control* bctl) {
     call->test_only_last_message_flags = call->receiving_stream->flags();
     if ((call->receiving_stream->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
         (call->incoming_compression_algorithm != GRPC_COMPRESS_NONE)) {
-      *call->receiving_buffer =
-          grpc_raw_compressed_byte_buffer_create(nullptr, 0, call->incoming_compression_algorithm);
+      *call->receiving_buffer = grpc_raw_compressed_byte_buffer_create(
+          nullptr, 0, call->incoming_compression_algorithm);
     } else {
       *call->receiving_buffer = grpc_raw_byte_buffer_create(nullptr, 0);
     }
@@ -1203,20 +1207,24 @@ static void GPR_ATTRIBUTE_NOINLINE handle_compression_algorithm_not_accepted(
 static void validate_filtered_metadata(batch_control* bctl) {
   grpc_call* call = bctl->call;
 
-    const grpc_compression_options compression_options =
-        grpc_channel_compression_options(call->channel);
-    const grpc_compression_algorithm compression_algorithm = call->incoming_compression_algorithm;
-    if (GPR_UNLIKELY(!grpc_core::CompressionAlgorithmSet::FromUint32(compression_options.enabled_algorithms_bitset).IsSet(compression_algorithm))) {
-      /* check if algorithm is supported by current channel config */
-      handle_compression_algorithm_disabled(call, compression_algorithm);
+  const grpc_compression_options compression_options =
+      grpc_channel_compression_options(call->channel);
+  const grpc_compression_algorithm compression_algorithm =
+      call->incoming_compression_algorithm;
+  if (GPR_UNLIKELY(!grpc_core::CompressionAlgorithmSet::FromUint32(
+                        compression_options.enabled_algorithms_bitset)
+                        .IsSet(compression_algorithm))) {
+    /* check if algorithm is supported by current channel config */
+    handle_compression_algorithm_disabled(call, compression_algorithm);
+  }
+  /* GRPC_COMPRESS_NONE is always set. */
+  GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer.IsSet(GRPC_COMPRESS_NONE));
+  if (GPR_UNLIKELY(
+          !call->encodings_accepted_by_peer.IsSet(compression_algorithm))) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+      handle_compression_algorithm_not_accepted(call, compression_algorithm);
     }
-    /* GRPC_COMPRESS_NONE is always set. */
-    GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer.IsSet(GRPC_COMPRESS_NONE));
-    if (GPR_UNLIKELY(!call->encodings_accepted_by_peer.IsSet(compression_algorithm))) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-        handle_compression_algorithm_not_accepted(call, compression_algorithm);
-      }
-    }
+  }
 }
 
 static void receiving_initial_metadata_ready(void* bctlp,
@@ -1396,15 +1404,16 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         // Currently, only server side supports compression level setting.
         if (level_set && !call->is_client) {
-          const grpc_compression_algorithm calgo = 
-              call->encodings_accepted_by_peer.CompressionAlgorithmForLevel(effective_compression_level);
+          const grpc_compression_algorithm calgo =
+              call->encodings_accepted_by_peer.CompressionAlgorithmForLevel(
+                  effective_compression_level);
           // The following metadata will be checked and removed by the message
           // compression filter. It will be used as the call's compression
           // algorithm.
-          call->send_initial_metadata.Set(grpc_core::GrpcInternalEncodingRequest(), calgo);
+          call->send_initial_metadata.Set(
+              grpc_core::GrpcInternalEncodingRequest(), calgo);
         }
-        if (op->data.send_initial_metadata.count >
-            INT_MAX) {
+        if (op->data.send_initial_metadata.count > INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
