@@ -9252,7 +9252,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
 
 TEST_P(XdsEnabledServerStatusNotificationTest,
        ExistingRpcsFailOnResourceUpdateAfterDrainGraceTimeExpires) {
-  xds_drain_grace_time_ms_ = 100;
+  constexpr int kDrainGraceTimeMs = 100;
+  xds_drain_grace_time_ms_ = kDrainGraceTimeMs;
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   g_fake1_cert_data_map = &fake1_cert_map;
@@ -9283,6 +9284,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
     streaming_rpcs[i].stream->Read(&response);
     EXPECT_EQ(request.message(), response.message());
   }
+  grpc_millis update_time = NowFromCycleCounter();
   // Update the resource.
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   // Wait for the updated resource to take effect.
@@ -9292,6 +9294,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   for (int i = 0; i < kNumChannels; i++) {
     // Wait for the drain grace time to expire
     EXPECT_FALSE(streaming_rpcs[i].stream->Read(&response));
+    // Make sure that the drain grace interval is honored.
+    EXPECT_TRUE(NowFromCycleCounter() - kDrainGraceTimeMs >= update_time);
     auto status = streaming_rpcs[i].stream->Finish();
     EXPECT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE)
         << status.error_code() << ", " << status.error_message() << ", "

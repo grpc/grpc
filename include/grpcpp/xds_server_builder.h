@@ -54,10 +54,6 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
     explicit experimental_type(XdsServerBuilder* builder)
         : ServerBuilder::experimental_type(builder), builder_(builder) {}
 
-    // TODO(review): ServerBuilder uses the mixed naming style
-    // `SetDefaultGraceTime` but we already ended up using the variable
-    // `set_status_notifier` below.
-    // TODO(review): Maybe use absl::Duration?
     // EXPERIMENTAL: Sets the drain grace period in ms for older connections
     // when updates to a Listener is received.
     void set_drain_grace_time(int drain_grace_time_ms) {

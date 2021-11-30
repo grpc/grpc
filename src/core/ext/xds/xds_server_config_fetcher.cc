@@ -65,7 +65,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     return xds_client_->interested_parties();
   }
 
-  int drain_grace_time() override { return drain_grace_time_ms_; }
+  int drain_grace_time_ms() override { return drain_grace_time_ms_; }
 
  private:
   class ListenerWatcher;
