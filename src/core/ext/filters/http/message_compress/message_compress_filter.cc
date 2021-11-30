@@ -48,12 +48,14 @@ class ChannelData {
  public:
   explicit ChannelData(grpc_channel_element_args* args) {
     // Get the enabled and the default algorithms from channel args.
-    enabled_compression_algorithms_ = grpc_core::CompressionAlgorithmSet::FromChannelArgs(args->channel_args);
+    enabled_compression_algorithms_ =
+        grpc_core::CompressionAlgorithmSet::FromChannelArgs(args->channel_args);
     default_compression_algorithm_ =
         grpc_channel_args_get_channel_default_compression_algorithm(
             args->channel_args);
     // Make sure the default is enabled.
-    if (!enabled_compression_algorithms_.IsSet(default_compression_algorithm_)) {
+    if (!enabled_compression_algorithms_.IsSet(
+            default_compression_algorithm_)) {
       const char* name;
       if (!grpc_compression_algorithm_name(default_compression_algorithm_,
                                            &name)) {
@@ -89,9 +91,8 @@ class CallData {
     ChannelData* channeld = static_cast<ChannelData*>(elem->channel_data);
     // The call's message compression algorithm is set to channel's default
     // setting. It can be overridden later by initial metadata.
-    if (GPR_LIKELY(
-      channeld->enabled_compression_algorithms().IsSet(
-        channeld->default_compression_algorithm()))) {
+    if (GPR_LIKELY(channeld->enabled_compression_algorithms().IsSet(
+            channeld->default_compression_algorithm()))) {
       compression_algorithm_ = channeld->default_compression_algorithm();
     }
     GRPC_CLOSURE_INIT(&start_send_message_batch_in_call_combiner_,
@@ -112,8 +113,8 @@ class CallData {
   bool SkipMessageCompression();
   void InitializeState(grpc_call_element* elem);
 
-  void ProcessSendInitialMetadata(
-      grpc_call_element* elem, grpc_metadata_batch* initial_metadata);
+  void ProcessSendInitialMetadata(grpc_call_element* elem,
+                                  grpc_metadata_batch* initial_metadata);
 
   // Methods for processing a send_message batch
   static void StartSendMessageBatch(void* elem_arg, grpc_error_handle unused);
@@ -128,8 +129,7 @@ class CallData {
   static void SendMessageOnComplete(void* calld_arg, grpc_error_handle error);
 
   grpc_core::CallCombiner* call_combiner_;
-  grpc_compression_algorithm compression_algorithm_ =
-      GRPC_COMPRESS_NONE;
+  grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
@@ -178,20 +178,23 @@ void CallData::ProcessSendInitialMetadata(
   ChannelData* channeld = static_cast<ChannelData*>(elem->channel_data);
   // Find the compression algorithm.
   grpc_compression_algorithm compression_algorithm =
-initial_metadata->Take(grpc_core::GrpcInternalEncodingRequest()).value_or(channeld->default_compression_algorithm());
+      initial_metadata->Take(grpc_core::GrpcInternalEncodingRequest())
+          .value_or(channeld->default_compression_algorithm());
   switch (compression_algorithm) {
     case GRPC_COMPRESS_NONE:
       break;
     case GRPC_COMPRESS_DEFLATE:
     case GRPC_COMPRESS_GZIP:
       InitializeState(elem);
-      initial_metadata->Set(grpc_core::GrpcEncodingMetadata(), compression_algorithm);
+      initial_metadata->Set(grpc_core::GrpcEncodingMetadata(),
+                            compression_algorithm);
       break;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       abort();
   }
   // Convey supported compression algorithms.
-  initial_metadata->Set(grpc_core::GrpcAcceptEncodingMetadata(), channeld->enabled_compression_algorithms());
+  initial_metadata->Set(grpc_core::GrpcAcceptEncodingMetadata(),
+                        channeld->enabled_compression_algorithms());
 }
 
 void CallData::SendMessageOnComplete(void* calld_arg, grpc_error_handle error) {
@@ -217,8 +220,7 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
       send_message_batch_->payload->send_message.send_message->flags();
-  bool did_compress =
-      grpc_msg_compress(compression_algorithm_, &slices_, &tmp);
+  bool did_compress = grpc_msg_compress(compression_algorithm_, &slices_, &tmp);
   if (did_compress) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
@@ -226,8 +228,8 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
       const size_t after_size = tmp.length;
       const float savings_ratio = 1.0f - static_cast<float>(after_size) /
                                              static_cast<float>(before_size);
-      GPR_ASSERT(grpc_compression_algorithm_name(
-          compression_algorithm_, &algo_name));
+      GPR_ASSERT(
+          grpc_compression_algorithm_name(compression_algorithm_, &algo_name));
       gpr_log(GPR_INFO,
               "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
               " bytes (%.2f%% savings)",
@@ -238,8 +240,8 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
-      GPR_ASSERT(grpc_compression_algorithm_name(
-          compression_algorithm_, &algo_name));
+      GPR_ASSERT(
+          grpc_compression_algorithm_name(compression_algorithm_, &algo_name));
       gpr_log(GPR_INFO,
               "Algorithm '%s' enabled but decided not to compress. Input size: "
               "%" PRIuPTR,
@@ -371,7 +373,7 @@ void CallData::CompressStartTransportStreamOpBatch(
   // Handle send_initial_metadata.
   if (batch->send_initial_metadata) {
     GPR_ASSERT(!seen_initial_metadata_);
-   ProcessSendInitialMetadata(
+    ProcessSendInitialMetadata(
         elem, batch->payload->send_initial_metadata.send_initial_metadata);
     seen_initial_metadata_ = true;
     // If we had previously received a batch containing a send_message op,

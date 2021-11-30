@@ -40,7 +40,9 @@ int grpc_compression_algorithm_is_stream(grpc_compression_algorithm algorithm) {
 
 int grpc_compression_algorithm_parse(grpc_slice name,
                                      grpc_compression_algorithm* algorithm) {
-  absl::optional<grpc_compression_algorithm> alg = grpc_core::ParseCompressionAlgorithm(grpc_core::StringViewFromSlice(name));
+  absl::optional<grpc_compression_algorithm> alg =
+      grpc_core::ParseCompressionAlgorithm(
+          grpc_core::StringViewFromSlice(name));
   if (alg.has_value()) {
     *algorithm = alg.value();
     return 1;
@@ -52,7 +54,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     const char** name) {
   GRPC_API_TRACE("grpc_compression_algorithm_name(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
-                 const char* result = grpc_core::CompressionAlgorithmAsString(algorithm);
+  const char* result = grpc_core::CompressionAlgorithmAsString(algorithm);
   if (name != nullptr) {
     *name = result;
     return 1;
@@ -85,6 +87,7 @@ void grpc_compression_options_disable_algorithm(
 int grpc_compression_options_is_algorithm_enabled(
     const grpc_compression_options* opts,
     grpc_compression_algorithm algorithm) {
-  return grpc_core::CompressionAlgorithmSet::FromUint32(opts->enabled_algorithms_bitset)
+  return grpc_core::CompressionAlgorithmSet::FromUint32(
+             opts->enabled_algorithms_bitset)
       .IsSet(algorithm);
 }

@@ -1836,9 +1836,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
                                  &s->frame_storage);
           s->unprocessed_incoming_frames_decompressed = false;
         }
-          error = grpc_deframe_unprocessed_incoming_frames(
-              &s->data_parser, s, &s->unprocessed_incoming_frames_buffer,
-              nullptr, s->recv_message);
+        error = grpc_deframe_unprocessed_incoming_frames(
+            &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, nullptr,
+            s->recv_message);
         if (error != GRPC_ERROR_NONE) {
           s->seen_error = true;
           grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
@@ -1886,15 +1886,14 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         !s->seen_error && s->recv_trailing_metadata_finished != nullptr) {
       // Maybe some SYNC_FLUSH data is left in frame_storage. Consume them and
       // maybe decompress the next 5 bytes in the stream.
-        grpc_slice_buffer_move_first(
-            &s->frame_storage,
-            std::min(s->frame_storage.length,
-                     size_t(GRPC_HEADER_SIZE_IN_BYTES)),
-            &s->unprocessed_incoming_frames_buffer);
-        if (s->unprocessed_incoming_frames_buffer.length > 0) {
-          s->unprocessed_incoming_frames_decompressed = true;
-          pending_data = true;
-        }
+      grpc_slice_buffer_move_first(
+          &s->frame_storage,
+          std::min(s->frame_storage.length, size_t(GRPC_HEADER_SIZE_IN_BYTES)),
+          &s->unprocessed_incoming_frames_buffer);
+      if (s->unprocessed_incoming_frames_buffer.length > 0) {
+        s->unprocessed_incoming_frames_decompressed = true;
+        pending_data = true;
+      }
     }
     if (s->read_closed && s->frame_storage.length == 0 && !pending_data &&
         s->recv_trailing_metadata_finished != nullptr) {

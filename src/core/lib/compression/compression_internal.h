@@ -20,21 +20,24 @@
 #define GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
+
 #include <initializer_list>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
 #include <grpc/compression.h>
-#include <grpc/slice.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/slice/slice.h"
-#include "absl/types/optional.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
-absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(absl::string_view algorithm);
-const char *CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
+absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
+    absl::string_view algorithm);
+const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
 
 class CompressionAlgorithmSet {
  public:
@@ -42,10 +45,12 @@ class CompressionAlgorithmSet {
   static CompressionAlgorithmSet FromChannelArgs(const grpc_channel_args* args);
   static CompressionAlgorithmSet FromString(absl::string_view value);
   CompressionAlgorithmSet();
-  CompressionAlgorithmSet(std::initializer_list<grpc_compression_algorithm> algorithms);
+  CompressionAlgorithmSet(
+      std::initializer_list<grpc_compression_algorithm> algorithms);
 
-  grpc_compression_algorithm CompressionAlgorithmForLevel(grpc_compression_level level)const;
-  bool IsSet(grpc_compression_algorithm algorithm)const;
+  grpc_compression_algorithm CompressionAlgorithmForLevel(
+      grpc_compression_level level) const;
+  bool IsSet(grpc_compression_algorithm algorithm) const;
 
   std::string ToString() const;
   Slice ToSlice() const;

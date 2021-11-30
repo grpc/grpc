@@ -163,12 +163,10 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
         "to happen in a healthy program that is not seeing flow control stalls."
         " However, if you know that there are unwanted stalls, here is some "
-        "helpful data: [fc:pending=%" PRIdPTR
-        ":flowed=%" PRId64 ":peer_initwin=%d:t_win=%" PRId64
-        ":s_win=%d:s_delta=%" PRId64 "]",
+        "helpful data: [fc:pending=%" PRIdPTR ":flowed=%" PRId64
+        ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
         t->peer_string.c_str(), t, s->id, staller,
-        s->flow_controlled_buffer.length,
-        s->flow_controlled_bytes_flowed,
+        s->flow_controlled_buffer.length, s->flow_controlled_bytes_flowed,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         t->flow_control->remote_window(),
@@ -459,7 +457,7 @@ class StreamWriteContext {
     }
 
     while (s_->flow_controlled_buffer.length > 0 &&
-            data_send_context.max_outgoing() > 0) {
+           data_send_context.max_outgoing() > 0) {
       data_send_context.FlushBytes();
     }
     grpc_chttp2_reset_ping_clock(t_);
