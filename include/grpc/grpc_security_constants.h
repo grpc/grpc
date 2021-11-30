@@ -28,6 +28,7 @@ extern "C" {
 #define GRPC_TLS_TRANSPORT_SECURITY_TYPE "tls"
 
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
+#define GRPC_X509_SUBJECT_PROPERTY_NAME "x509_subject"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
 // Please note that internally, we just faithfully pass whatever value we got by
