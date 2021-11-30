@@ -342,7 +342,7 @@ size_t grpc_call_get_initial_size_estimate() {
          sizeof(grpc_linked_mdelem) * ESTIMATED_MDELEM_COUNT;
 }
 
-grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
+grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
 

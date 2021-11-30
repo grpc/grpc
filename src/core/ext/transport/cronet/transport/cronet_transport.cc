@@ -727,7 +727,7 @@ class CronetMetadataEncoder {
     /* Cronet populates these fields on its own */
   }
   void Encode(grpc_core::AuthorityMetadata,
-              grpc_core::AuthorityMetadata::ValueType) {
+              const grpc_core::AuthorityMetadata::ValueType&) {
     /* Cronet populates these fields on its own */
   }
 
@@ -749,7 +749,7 @@ class CronetMetadataEncoder {
   }
 
   void Encode(grpc_core::PathMetadata,
-              grpc_core::PathMetadata::ValueType path) {
+              const grpc_core::PathMetadata::ValueType& path) {
     /* Create URL by appending :path value to the hostname */
     *url_ = absl::StrCat("https://", host_, path.as_string_view());
   }

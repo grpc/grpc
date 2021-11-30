@@ -260,9 +260,9 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
     b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
     b->Set(grpc_core::PathMetadata(),
-           grpc_slice_from_static_string("/foo/bar"));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("/foo/bar")));
     b->Set(grpc_core::AuthorityMetadata(),
-           grpc_slice_from_static_string("foo.test.google.fr:1234"));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("foo.test.google.fr:1234")));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd",
         b->Append(
@@ -271,8 +271,8 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
     b->Set(grpc_core::UserAgentMetadata(),
-           grpc_slice_from_static_string(
-               "grpc-c/3.0.0-dev (linux; chttp2; green)"));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)")));
   }
 };
 
@@ -286,9 +286,10 @@ class MoreRepresentativeClientInitialMetadata {
     b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
     b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
     b->Set(grpc_core::PathMetadata(),
-           grpc_slice_from_static_string("/grpc.test.FooService/BarMethod"));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+             "/grpc.test.FooService/BarMethod")));
     b->Set(grpc_core::AuthorityMetadata(),
-           grpc_slice_from_static_string("foo.test.google.fr:1234"));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("foo.test.google.fr:1234")));
     b->Set(grpc_core::GrpcTraceBinMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -311,8 +312,8 @@ class MoreRepresentativeClientInitialMetadata {
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
     b->Set(grpc_core::UserAgentMetadata(),
-           grpc_slice_from_static_string(
-               "grpc-c/3.0.0-dev (linux; chttp2; green)"));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)")));
   }
 };
 
