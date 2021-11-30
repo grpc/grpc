@@ -207,7 +207,7 @@ def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
 def _pull_image_for_lang(lang, image, release):
     """Pull an image for a given language form the image registry."""
     cmdline = [
-        'time gcloud docker -- pull %s && time docker run --rm=true %s /bin/true'
+        'gcloud auth configure-docker && time docker pull %s && time docker run --rm=true %s /bin/true'
         % (image, image)
     ]
     return jobset.JobSpec(cmdline=cmdline,
