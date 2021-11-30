@@ -1071,7 +1071,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
     case WRR_EMPTIED:
       if (pollset->active_pollable != worker->pollable_obj) {
         // pollable no longer being polled: flush events
-        pollable_process_events(pollset, worker->pollable_obj, true);
+        (void)pollable_process_events(pollset, worker->pollable_obj, true);
       }
       break;
     case WRR_REMOVED:

@@ -88,10 +88,17 @@ message Metadatum {
     ByteSlice value = 2;
 }
 
+message ChannelAction {
+  uint64 add_n_bytes_writable = 1;
+  uint64 add_n_bytes_readable = 2;
+  uint64 wait_ms = 3;
+}
+
 message CreateChannel {
     string target = 1;
     repeated ChannelArg channel_args = 2;
     ChannelCreds channel_creds = 3;
+    repeated ChannelAction channel_actions = 4;
 }
 
 message CreateServer {
@@ -110,7 +117,7 @@ message SendInitialMetadata {
 }
 
 message SendMessage {
-    ByteSlice message = 1;
+    repeated ByteSlice message = 1;
 }
 
 message SendCloseFromClient {
@@ -144,7 +151,6 @@ message BatchOp {
         ReceiveMessage receive_message = 6;
         ReceiveStatusOnClient receive_status_on_client = 7;
         ReceiveCloseOnServer receive_close_on_server = 8;
-        int32 illegal_op = 9;
     }
     uint32 flags = 100;
 }

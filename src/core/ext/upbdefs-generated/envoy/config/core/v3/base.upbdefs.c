@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/base.upbdefs.h"
+#include "envoy/config/core/v3/base.upb.h"
 
 extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_backoff_proto_upbdefinit;
@@ -23,58 +24,6 @@ extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_Locality_msginit;
-extern const upb_msglayout envoy_config_core_v3_BuildVersion_msginit;
-extern const upb_msglayout envoy_config_core_v3_Extension_msginit;
-extern const upb_msglayout envoy_config_core_v3_Node_msginit;
-extern const upb_msglayout envoy_config_core_v3_Node_DynamicParametersEntry_msginit;
-extern const upb_msglayout envoy_config_core_v3_Metadata_msginit;
-extern const upb_msglayout envoy_config_core_v3_Metadata_FilterMetadataEntry_msginit;
-extern const upb_msglayout envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_msginit;
-extern const upb_msglayout envoy_config_core_v3_RuntimeUInt32_msginit;
-extern const upb_msglayout envoy_config_core_v3_RuntimePercent_msginit;
-extern const upb_msglayout envoy_config_core_v3_RuntimeDouble_msginit;
-extern const upb_msglayout envoy_config_core_v3_RuntimeFeatureFlag_msginit;
-extern const upb_msglayout envoy_config_core_v3_QueryParameter_msginit;
-extern const upb_msglayout envoy_config_core_v3_HeaderValue_msginit;
-extern const upb_msglayout envoy_config_core_v3_HeaderValueOption_msginit;
-extern const upb_msglayout envoy_config_core_v3_HeaderMap_msginit;
-extern const upb_msglayout envoy_config_core_v3_WatchedDirectory_msginit;
-extern const upb_msglayout envoy_config_core_v3_DataSource_msginit;
-extern const upb_msglayout envoy_config_core_v3_RetryPolicy_msginit;
-extern const upb_msglayout envoy_config_core_v3_RemoteDataSource_msginit;
-extern const upb_msglayout envoy_config_core_v3_AsyncDataSource_msginit;
-extern const upb_msglayout envoy_config_core_v3_TransportSocket_msginit;
-extern const upb_msglayout envoy_config_core_v3_RuntimeFractionalPercent_msginit;
-extern const upb_msglayout envoy_config_core_v3_ControlPlane_msginit;
-
-static const upb_msglayout *layouts[24] = {
-  &envoy_config_core_v3_Locality_msginit,
-  &envoy_config_core_v3_BuildVersion_msginit,
-  &envoy_config_core_v3_Extension_msginit,
-  &envoy_config_core_v3_Node_msginit,
-  &envoy_config_core_v3_Node_DynamicParametersEntry_msginit,
-  &envoy_config_core_v3_Metadata_msginit,
-  &envoy_config_core_v3_Metadata_FilterMetadataEntry_msginit,
-  &envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_msginit,
-  &envoy_config_core_v3_RuntimeUInt32_msginit,
-  &envoy_config_core_v3_RuntimePercent_msginit,
-  &envoy_config_core_v3_RuntimeDouble_msginit,
-  &envoy_config_core_v3_RuntimeFeatureFlag_msginit,
-  &envoy_config_core_v3_QueryParameter_msginit,
-  &envoy_config_core_v3_HeaderValue_msginit,
-  &envoy_config_core_v3_HeaderValueOption_msginit,
-  &envoy_config_core_v3_HeaderMap_msginit,
-  &envoy_config_core_v3_WatchedDirectory_msginit,
-  &envoy_config_core_v3_DataSource_msginit,
-  &envoy_config_core_v3_RetryPolicy_msginit,
-  &envoy_config_core_v3_RemoteDataSource_msginit,
-  &envoy_config_core_v3_AsyncDataSource_msginit,
-  &envoy_config_core_v3_TransportSocket_msginit,
-  &envoy_config_core_v3_RuntimeFractionalPercent_msginit,
-  &envoy_config_core_v3_ControlPlane_msginit,
-};
-
 static const char descriptor[5228] = {'\n', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 
 's', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 
 'r', 'e', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 
@@ -307,7 +256,7 @@ static upb_def_init *deps[15] = {
 
 upb_def_init envoy_config_core_v3_base_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_base_proto_upb_file_layout,
   "envoy/config/core/v3/base.proto",
   UPB_STRVIEW_INIT(descriptor, 5228)
 };

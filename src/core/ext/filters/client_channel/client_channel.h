@@ -396,6 +396,7 @@ class ClientChannel::LoadBalancedCall
   class LbQueuedCallCanceller;
   class Metadata;
   class LbCallState;
+  class BackendMetricAccessor;
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -477,10 +478,10 @@ class ClientChannel::LoadBalancedCall
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
-  std::function<void(absl::Status, LoadBalancingPolicy::MetadataInterface*,
-                     LoadBalancingPolicy::CallState*)>
-      lb_recv_trailing_metadata_ready_;
+  const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+      backend_metric_data_ = nullptr;
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      lb_subchannel_call_tracker_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 

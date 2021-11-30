@@ -34,7 +34,7 @@
 #include "src/core/lib/slice/static_slice.h"
 #include "src/core/lib/transport/metadata.h"
 
-#define GRPC_STATIC_MDELEM_COUNT 85
+#define GRPC_STATIC_MDELEM_COUNT 84
 
 namespace grpc_core {
 extern StaticMetadata g_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
@@ -207,57 +207,55 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "grpc-encoding": "deflate" */
 #define GRPC_MDELEM_GRPC_ENCODING_DEFLATE \
   (::grpc_core::g_static_mdelem_manifested[66])
-/* "te": "trailers" */
-#define GRPC_MDELEM_TE_TRAILERS (::grpc_core::g_static_mdelem_manifested[67])
 /* "content-type": "application/grpc" */
 #define GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC \
-  (::grpc_core::g_static_mdelem_manifested[68])
+  (::grpc_core::g_static_mdelem_manifested[67])
 /* ":scheme": "grpc" */
-#define GRPC_MDELEM_SCHEME_GRPC (::grpc_core::g_static_mdelem_manifested[69])
+#define GRPC_MDELEM_SCHEME_GRPC (::grpc_core::g_static_mdelem_manifested[68])
 /* ":method": "PUT" */
-#define GRPC_MDELEM_METHOD_PUT (::grpc_core::g_static_mdelem_manifested[70])
+#define GRPC_MDELEM_METHOD_PUT (::grpc_core::g_static_mdelem_manifested[69])
 /* "accept-encoding": "" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_EMPTY \
-  (::grpc_core::g_static_mdelem_manifested[71])
+  (::grpc_core::g_static_mdelem_manifested[70])
 /* "content-encoding": "identity" */
 #define GRPC_MDELEM_CONTENT_ENCODING_IDENTITY \
-  (::grpc_core::g_static_mdelem_manifested[72])
+  (::grpc_core::g_static_mdelem_manifested[71])
 /* "content-encoding": "gzip" */
 #define GRPC_MDELEM_CONTENT_ENCODING_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[73])
+  (::grpc_core::g_static_mdelem_manifested[72])
 /* "lb-cost-bin": "" */
 #define GRPC_MDELEM_LB_COST_BIN_EMPTY \
-  (::grpc_core::g_static_mdelem_manifested[74])
+  (::grpc_core::g_static_mdelem_manifested[73])
 /* "grpc-accept-encoding": "identity" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY \
-  (::grpc_core::g_static_mdelem_manifested[75])
+  (::grpc_core::g_static_mdelem_manifested[74])
 /* "grpc-accept-encoding": "deflate" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE \
-  (::grpc_core::g_static_mdelem_manifested[76])
+  (::grpc_core::g_static_mdelem_manifested[75])
 /* "grpc-accept-encoding": "identity,deflate" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE \
-  (::grpc_core::g_static_mdelem_manifested[77])
+  (::grpc_core::g_static_mdelem_manifested[76])
 /* "grpc-accept-encoding": "gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[78])
+  (::grpc_core::g_static_mdelem_manifested[77])
 /* "grpc-accept-encoding": "identity,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[79])
+  (::grpc_core::g_static_mdelem_manifested[78])
 /* "grpc-accept-encoding": "deflate,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[80])
+  (::grpc_core::g_static_mdelem_manifested[79])
 /* "grpc-accept-encoding": "identity,deflate,gzip" */
 #define GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[81])
+  (::grpc_core::g_static_mdelem_manifested[80])
 /* "accept-encoding": "identity" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY \
-  (::grpc_core::g_static_mdelem_manifested[82])
+  (::grpc_core::g_static_mdelem_manifested[81])
 /* "accept-encoding": "gzip" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[83])
+  (::grpc_core::g_static_mdelem_manifested[82])
 /* "accept-encoding": "identity,gzip" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
-  (::grpc_core::g_static_mdelem_manifested[84])
+  (::grpc_core::g_static_mdelem_manifested[83])
 
 grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b);
 typedef enum {
@@ -266,25 +264,15 @@ typedef enum {
   GRPC_BATCH_STATUS,
   GRPC_BATCH_AUTHORITY,
   GRPC_BATCH_SCHEME,
-  GRPC_BATCH_TE,
-  GRPC_BATCH_GRPC_MESSAGE,
   GRPC_BATCH_GRPC_STATUS,
-  GRPC_BATCH_GRPC_PAYLOAD_BIN,
   GRPC_BATCH_GRPC_ENCODING,
   GRPC_BATCH_GRPC_ACCEPT_ENCODING,
-  GRPC_BATCH_GRPC_SERVER_STATS_BIN,
-  GRPC_BATCH_GRPC_TAGS_BIN,
-  GRPC_BATCH_GRPC_TRACE_BIN,
   GRPC_BATCH_CONTENT_TYPE,
   GRPC_BATCH_CONTENT_ENCODING,
   GRPC_BATCH_ACCEPT_ENCODING,
   GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST,
-  GRPC_BATCH_GRPC_INTERNAL_STREAM_ENCODING_REQUEST,
-  GRPC_BATCH_USER_AGENT,
-  GRPC_BATCH_HOST,
   GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS,
   GRPC_BATCH_GRPC_RETRY_PUSHBACK_MS,
-  GRPC_BATCH_X_ENDPOINT_LOAD_METRICS_BIN,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
@@ -296,25 +284,15 @@ typedef union {
     struct grpc_linked_mdelem* status;
     struct grpc_linked_mdelem* authority;
     struct grpc_linked_mdelem* scheme;
-    struct grpc_linked_mdelem* te;
-    struct grpc_linked_mdelem* grpc_message;
     struct grpc_linked_mdelem* grpc_status;
-    struct grpc_linked_mdelem* grpc_payload_bin;
     struct grpc_linked_mdelem* grpc_encoding;
     struct grpc_linked_mdelem* grpc_accept_encoding;
-    struct grpc_linked_mdelem* grpc_server_stats_bin;
-    struct grpc_linked_mdelem* grpc_tags_bin;
-    struct grpc_linked_mdelem* grpc_trace_bin;
     struct grpc_linked_mdelem* content_type;
     struct grpc_linked_mdelem* content_encoding;
     struct grpc_linked_mdelem* accept_encoding;
     struct grpc_linked_mdelem* grpc_internal_encoding_request;
-    struct grpc_linked_mdelem* grpc_internal_stream_encoding_request;
-    struct grpc_linked_mdelem* user_agent;
-    struct grpc_linked_mdelem* host;
     struct grpc_linked_mdelem* grpc_previous_rpc_attempts;
     struct grpc_linked_mdelem* grpc_retry_pushback_ms;
-    struct grpc_linked_mdelem* x_endpoint_load_metrics_bin;
   } named;
 } grpc_metadata_batch_callouts;
 

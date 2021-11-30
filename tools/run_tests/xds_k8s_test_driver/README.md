@@ -69,7 +69,7 @@ gcloud container clusters create "${CLUSTER_NAME}" \
  --zone="${ZONE}" \
  --enable-ip-alias \
  --workload-pool="${PROJECT_ID}.svc.id.goog" \
- --enable-workload-certificates \
+ --enable-mesh-certificates \
  --workload-metadata=GKE_METADATA \
  --tags=allow-health-checks
 ```

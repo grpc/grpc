@@ -58,6 +58,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_config.h"
 
@@ -94,42 +95,6 @@ constexpr char kDefaultServiceConfig[] =
     "    { \"grpclb\":{} }\n"
     "  ]\n"
     "}";
-
-template <typename ServiceType>
-class CountedService : public ServiceType {
- public:
-  size_t request_count() {
-    grpc::internal::MutexLock lock(&mu_);
-    return request_count_;
-  }
-
-  size_t response_count() {
-    grpc::internal::MutexLock lock(&mu_);
-    return response_count_;
-  }
-
-  void IncreaseResponseCount() {
-    grpc::internal::MutexLock lock(&mu_);
-    ++response_count_;
-  }
-  void IncreaseRequestCount() {
-    grpc::internal::MutexLock lock(&mu_);
-    ++request_count_;
-  }
-
-  void ResetCounters() {
-    grpc::internal::MutexLock lock(&mu_);
-    request_count_ = 0;
-    response_count_ = 0;
-  }
-
- protected:
-  grpc::internal::Mutex mu_;
-
- private:
-  size_t request_count_ = 0;
-  size_t response_count_ = 0;
-};
 
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
@@ -172,9 +137,8 @@ class BackendServiceImpl : public BackendService {
     clients_.insert(client);
   }
 
-  grpc::internal::Mutex mu_;
   grpc::internal::Mutex clients_mu_;
-  std::set<std::string> clients_;
+  std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
 };
 
 std::string Ip4ToPackedString(const char* ip_str) {

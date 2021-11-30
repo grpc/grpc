@@ -133,12 +133,12 @@ class GrpcPolledFdWindows {
   }
 
   void ScheduleAndNullReadClosure(grpc_error_handle error) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
+    ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
     read_closure_ = nullptr;
   }
 
   void ScheduleAndNullWriteClosure(grpc_error_handle error) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
+    ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
     write_closure_ = nullptr;
   }
 
@@ -150,8 +150,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!read_buf_has_data_);
     read_buf_ = GRPC_SLICE_MALLOC(4192);
     if (connect_done_) {
-      work_serializer_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
-                            DEBUG_LOCATION);
+      ContinueRegisterForOnReadableLocked();
     } else {
       GPR_ASSERT(pending_continue_register_for_on_readable_locked_ == false);
       pending_continue_register_for_on_readable_locked_ = true;
@@ -160,7 +159,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnReadableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnReadableLocked "
+        "fd:|%s| ContinueRegisterForOnReadableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
@@ -207,8 +206,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (connect_done_) {
-      work_serializer_->Run(
-          [this]() { ContinueRegisterForOnWriteableLocked(); }, DEBUG_LOCATION);
+      ContinueRegisterForOnWriteableLocked();
     } else {
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
       pending_continue_register_for_on_writeable_locked_ = true;
@@ -217,7 +215,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnWriteableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnWriteableLocked "
+        "fd:|%s| ContinueRegisterForOnWriteableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
@@ -424,7 +422,7 @@ class GrpcPolledFdWindows {
   static void OnTcpConnect(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
-    GRPC_ERROR_REF(error);  // ref owned by lambda
+    (void)GRPC_ERROR_REF(error);  // ref owned by lambda
     grpc_polled_fd->work_serializer_->Run(
         [grpc_polled_fd, error]() {
           grpc_polled_fd->OnTcpConnectLocked(error);
@@ -466,12 +464,10 @@ class GrpcPolledFdWindows {
       wsa_connect_error_ = WSA_OPERATION_ABORTED;
     }
     if (pending_continue_register_for_on_readable_locked_) {
-      work_serializer_->Run([this]() { ContinueRegisterForOnReadableLocked(); },
-                            DEBUG_LOCATION);
+      ContinueRegisterForOnReadableLocked();
     }
     if (pending_continue_register_for_on_writeable_locked_) {
-      work_serializer_->Run(
-          [this]() { ContinueRegisterForOnWriteableLocked(); }, DEBUG_LOCATION);
+      ContinueRegisterForOnWriteableLocked();
     }
     GRPC_ERROR_UNREF(error);
   }
@@ -579,7 +575,7 @@ class GrpcPolledFdWindows {
 
   static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    GRPC_ERROR_REF(error);  // ref owned by lambda
+    (void)GRPC_ERROR_REF(error);  // ref owned by lambda
     polled_fd->work_serializer_->Run(
         [polled_fd, error]() { polled_fd->OnIocpReadableLocked(error); },
         DEBUG_LOCATION);
@@ -624,7 +620,7 @@ class GrpcPolledFdWindows {
 
   static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    GRPC_ERROR_REF(error);  // error owned by lambda
+    (void)GRPC_ERROR_REF(error);  // error owned by lambda
     polled_fd->work_serializer_->Run(
         [polled_fd, error]() { polled_fd->OnIocpWriteableLocked(error); },
         DEBUG_LOCATION);

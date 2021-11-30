@@ -424,8 +424,10 @@ class CLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat'] +
-                    self._cmake_configure_extra_args]
+            return [[
+                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+                '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % args.jobs
+            ] + self._cmake_configure_extra_args]
         elif self._use_cmake:
             return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
                     self._cmake_configure_extra_args]
@@ -460,14 +462,16 @@ class CLanguage(object):
             # so we only allow the non-specific choices.
             _check_compiler(compiler, ['default', 'cmake'])
 
-        if compiler == 'gcc4.9' or compiler == 'default' or compiler == 'cmake':
-            return ('jessie', [])
+        if compiler == 'default' or compiler == 'cmake':
+            return ('debian9', [])
+        elif compiler == 'gcc4.9':
+            return ('gcc_4.9', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
         elif compiler == 'gcc8.3':
-            return ('buster', [])
+            return ('debian10', [])
         elif compiler == 'gcc8.3_openssl102':
-            return ('buster_openssl102', [
+            return ('debian10_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
         elif compiler == 'gcc11':
@@ -756,7 +760,7 @@ class PythonLanguage(object):
 
         if args.iomgr_platform in ('asyncio', 'gevent'):
             if args.compiler not in ('default', 'python3.6', 'python3.7',
-                                     'python3.8'):
+                                     'python3.8', 'python3.9'):
                 raise Exception(
                     'Compiler %s not supported with IO Manager platform: %s' %
                     (args.compiler, args.iomgr_platform))
@@ -901,7 +905,7 @@ class CSharpLanguage(object):
         assembly_extension = '.exe'
 
         if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp2.1'
+            assembly_subdir += '/netcoreapp3.1'
             runtime_cmd = ['dotnet', 'exec']
             assembly_extension = '.dll'
         else:
@@ -1405,6 +1409,7 @@ argp.add_argument(
         'python3.6',
         'python3.7',
         'python3.8',
+        'python3.9',
         'pypy',
         'pypy3',
         'python_alpine',

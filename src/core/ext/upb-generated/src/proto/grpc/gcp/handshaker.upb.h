@@ -796,6 +796,8 @@ UPB_INLINE struct grpc_gcp_HandshakerStatus* grpc_gcp_HandshakerResp_mutable_sta
   return sub;
 }
 
+extern const upb_msglayout_file src_proto_grpc_gcp_handshaker_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

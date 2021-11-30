@@ -22,11 +22,12 @@
 #include <list>
 #include <memory>
 
+#include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/resource_quota/api.h"
 
 namespace grpc {
 
@@ -154,7 +155,7 @@ class ThreadManager {
   // object (that contains the actual max thread quota) and a grpc_resource_user
   // object through which quota is requested whenever new threads need to be
   // created
-  grpc_resource_user* resource_user_;
+  grpc_core::ThreadQuotaPtr thread_quota_;
 
   // Number of threads doing polling
   int num_pollers_;

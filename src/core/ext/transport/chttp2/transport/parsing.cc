@@ -324,6 +324,15 @@ static HPackParser::Boundary hpack_boundary_type(grpc_chttp2_transport* t,
   }
 }
 
+static HPackParser::LogInfo hpack_parser_log_info(
+    grpc_chttp2_transport* t, HPackParser::LogInfo::Type type) {
+  return HPackParser::LogInfo{
+      t->incoming_stream_id,
+      type,
+      t->is_client,
+  };
+}
+
 static grpc_error_handle init_header_skip_frame_parser(
     grpc_chttp2_transport* t, HPackParser::Priority priority_type) {
   bool is_eoh = t->expect_continuation_stream_id != 0;
@@ -333,7 +342,8 @@ static grpc_error_handle init_header_skip_frame_parser(
       nullptr,
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
-      hpack_boundary_type(t, is_eoh), priority_type);
+      hpack_boundary_type(t, is_eoh), priority_type,
+      hpack_parser_log_info(t, HPackParser::LogInfo::kDontKnow));
   return GRPC_ERROR_NONE;
 }
 
@@ -504,6 +514,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     s->eos_received = true;
   }
   grpc_metadata_batch* incoming_metadata_buffer = nullptr;
+  HPackParser::LogInfo::Type frame_type = HPackParser::LogInfo::kDontKnow;
   switch (s->header_frames_received) {
     case 0:
       if (t->is_client && t->header_eof) {
@@ -512,14 +523,17 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           *s->trailing_metadata_available = true;
         }
         incoming_metadata_buffer = &s->trailing_metadata_buffer;
+        frame_type = HPackParser::LogInfo::kTrailers;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
         incoming_metadata_buffer = &s->initial_metadata_buffer;
+        frame_type = HPackParser::LogInfo::kHeaders;
       }
       break;
     case 1:
       GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
       incoming_metadata_buffer = &s->trailing_metadata_buffer;
+      frame_type = HPackParser::LogInfo::kTrailers;
       break;
     case 2:
       gpr_log(GPR_ERROR, "too many header frames received");
@@ -529,7 +543,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       incoming_metadata_buffer,
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
-      hpack_boundary_type(t, is_eoh), priority_type);
+      hpack_boundary_type(t, is_eoh), priority_type,
+      hpack_parser_log_info(t, frame_type));
   return GRPC_ERROR_NONE;
 }
 

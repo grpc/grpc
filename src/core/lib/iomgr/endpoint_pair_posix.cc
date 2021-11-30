@@ -40,6 +40,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resource_quota/api.h"
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -59,18 +60,15 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
   std::string final_name = absl::StrCat(name, ":client");
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_from_channel_args(args, true);
-  p.client = grpc_tcp_create(
-      grpc_fd_create(sv[1], final_name.c_str(), false), args,
-      "socketpair-server",
-      grpc_slice_allocator_create(resource_quota, "server_endpoint", args));
+  const grpc_channel_args* new_args = grpc_core::CoreConfiguration::Get()
+                                          .channel_args_preconditioning()
+                                          .PreconditionChannelArgs(args);
+  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
+                             new_args, "socketpair-server");
   final_name = absl::StrCat(name, ":server");
-  p.server = grpc_tcp_create(
-      grpc_fd_create(sv[0], final_name.c_str(), false), args,
-      "socketpair-client",
-      grpc_slice_allocator_create(resource_quota, "client_endpoint", args));
-  grpc_resource_quota_unref_internal(resource_quota);
+  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name.c_str(), false),
+                             new_args, "socketpair-client");
+  grpc_channel_args_destroy(new_args);
   return p;
 }
 

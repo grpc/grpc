@@ -8,16 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/config/listener/v3/api_listener.upbdefs.h"
+#include "envoy/config/listener/v3/api_listener.upb.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_config_listener_v3_ApiListener_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_listener_v3_ApiListener_msginit,
-};
-
 static const char descriptor[359] = {'\n', '+', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
 '3', '/', 'a', 'p', 'i', '_', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 
 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', '\032', '\031', 'g', 'o', 
@@ -44,7 +39,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_config_listener_v3_api_listener_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_listener_v3_api_listener_proto_upb_file_layout,
   "envoy/config/listener/v3/api_listener.proto",
   UPB_STRVIEW_INIT(descriptor, 359)
 };

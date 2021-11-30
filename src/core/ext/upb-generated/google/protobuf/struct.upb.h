@@ -222,6 +222,8 @@ UPB_INLINE struct google_protobuf_Value* google_protobuf_ListValue_add_values(go
   return sub;
 }
 
+extern const upb_msglayout_file google_protobuf_struct_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -64,7 +64,10 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
         max_length = frame.max_metadata_length();
       }
 
-      parser->BeginFrame(&b, max_length, boundary, priority);
+      parser->BeginFrame(
+          &b, max_length, boundary, priority,
+          grpc_core::HPackParser::LogInfo{
+              1, grpc_core::HPackParser::LogInfo::kHeaders, false});
       int stop_buffering_ctr =
           std::max(-1, frame.stop_buffering_after_segments());
       for (const auto& parse : frame.parse()) {

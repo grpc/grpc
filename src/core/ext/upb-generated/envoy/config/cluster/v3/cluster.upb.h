@@ -2107,6 +2107,8 @@ UPB_INLINE void envoy_config_cluster_v3_TrackClusterStats_set_request_response_s
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
+extern const upb_msglayout_file envoy_config_cluster_v3_cluster_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

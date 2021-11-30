@@ -565,7 +565,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(
     void* arg, grpc_error_handle error) {
   WeightedChild* self = static_cast<WeightedChild*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->weighted_target_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
       DEBUG_LOCATION);

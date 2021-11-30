@@ -59,8 +59,9 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   void SetUp() override {
     if (GetParam().table_size.has_value()) {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
-      parser_->hpack_table()->SetCurrentTableSize(
-          GetParam().table_size.value());
+      EXPECT_EQ(parser_->hpack_table()->SetCurrentTableSize(
+                    GetParam().table_size.value()),
+                GRPC_ERROR_NONE);
     }
   }
 
@@ -75,8 +76,11 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
     grpc_metadata_batch b(arena.get());
 
-    parser_->BeginFrame(&b, 4096, grpc_core::HPackParser::Boundary::None,
-                        grpc_core::HPackParser::Priority::None);
+    parser_->BeginFrame(
+        &b, 4096, grpc_core::HPackParser::Boundary::None,
+        grpc_core::HPackParser::Priority::None,
+        grpc_core::HPackParser::LogInfo{
+            1, grpc_core::HPackParser::LogInfo::kHeaders, false});
 
     grpc_split_slices(mode, &input, 1, &slices, &nslices);
     grpc_slice_unref(input);
@@ -113,7 +117,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     }
 
     template <typename T, typename V>
-    void Encode(T, V) {
+    void Encode(T, const V&) {
       abort();  // not implemented
     }
 

@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:python_rules.bzl", "py2and3_test")
-
-py2and3_test(
+py_test(
     name = "test_admin",
     size = "small",
     srcs = ["test_admin.py"],
     main = "test_admin.py",
+    python_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_admin/grpc_admin",
+        "@com_google_protobuf//:protobuf_python",
     ],
 )

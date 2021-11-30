@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../../python_stretch.include"/>
+  <%include file="../../python_bullseye.include"/>
 
-  RUN apt-get update && apt-get -t stable install -y python3.7 python3-all-dev
-  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+  RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
+  RUN ln -s $(which python2) /usr/bin/python

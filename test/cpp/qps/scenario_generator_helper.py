@@ -59,6 +59,18 @@ def _mutate_scenario(scenario_json):
     scenario_json['client_config']['outstanding_rpcs_per_channel'] = max(
         1, scenario_json['client_config']['outstanding_rpcs_per_channel'] //
         outstanding_rpcs_divisor)
+    # Some scenarios use high channel count since when actually
+    # benchmarking, we want to saturate the machine that runs the benchmark.
+    # For unit test, this is an overkill.
+    max_client_channels = 16
+    if scenario_json['client_config']['rpc_type'] == 'STREAMING_FROM_SERVER':
+        # streaming from server scenarios tend to have trouble shutting down
+        # quickly if there are too many channels.
+        max_client_channels = 4
+
+    scenario_json['client_config']['client_channels'] = min(
+        max_client_channels, scenario_json['client_config']['client_channels'])
+
     return scenario_config.remove_nonproto_fields(scenario_json)
 
 

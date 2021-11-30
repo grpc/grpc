@@ -100,7 +100,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
     grpc_error_handle parse_error = GRPC_ERROR_NONE;
     parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
         it->second, &parse_error);
-    if (parsed_lb_config == nullptr) {
+    if (parse_error != GRPC_ERROR_NONE) {
       std::vector<grpc_error_handle> lb_errors;
       lb_errors.push_back(parse_error);
       error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
