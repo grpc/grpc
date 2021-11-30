@@ -75,8 +75,6 @@
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_BATCHES 6
 
-#define MAX_SEND_EXTRA_METADATA_COUNT 3
-
 // Used to create arena for the first call.
 #define ESTIMATED_MDELEM_COUNT 16
 
@@ -216,10 +214,6 @@ struct grpc_call {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
 
-  /* for the client, extra metadata is initial metadata; for the
-     server, it's trailing metadata */
-  grpc_linked_mdelem send_extra_metadata[MAX_SEND_EXTRA_METADATA_COUNT];
-  int send_extra_metadata_count;
   grpc_millis send_deadline;
 
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sending_stream;
@@ -379,7 +373,6 @@ grpc_error_handle grpc_call_create(grpc_call_create_args* args,
     GRPC_STATS_INC_SERVER_CALLS_CREATED();
     call->final_op.server.cancelled = nullptr;
     call->final_op.server.core_server = args->server;
-    call->send_extra_metadata_count = 0;
   }
 
   grpc_millis send_deadline = args->send_deadline;
@@ -539,9 +532,6 @@ static void destroy_call(void* call, grpc_error_handle /*error*/) {
   parent_call* pc = get_parent_call(c);
   if (pc != nullptr) {
     pc->~parent_call();
-  }
-  for (int i = 0; i < c->send_extra_metadata_count; i++) {
-    GRPC_MDELEM_UNREF(c->send_extra_metadata[i].md);
   }
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
@@ -818,7 +808,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
       return 0;
     }
     batch->Append(grpc_core::StringViewFromSlice(md->key),
-                  grpc_core::Slice(grpc_slice_ref(md->value)));
+                  grpc_core::Slice(grpc_slice_ref_internal(md->value)));
   }
 
   return 1;
@@ -1451,16 +1441,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         stream_op->send_initial_metadata = true;
         call->sent_initial_metadata = true;
-        if (call->is_client) {
-          // TODO(ctiller): this will turn into explicit Set() calls once we
-          // migrate :path, :authority.
-          for (int i = 0; i < call->send_extra_metadata_count; i++) {
-            GRPC_LOG_IF_ERROR("prepare_client_metadata",
-                              call->send_initial_metadata.LinkTail(
-                                  &call->send_extra_metadata[i]));
-          }
-          call->send_extra_metadata_count = 0;
-        }
         if (!prepare_application_metadata(
                 call, static_cast<int>(op->data.send_initial_metadata.count),
                 op->data.send_initial_metadata.metadata, 0, &compression_md,

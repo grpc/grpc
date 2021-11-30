@@ -1345,6 +1345,7 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "Failed call creation: %s", grpc_error_string(error));
     calld->FailCallCreation();
     return;
   }

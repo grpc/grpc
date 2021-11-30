@@ -259,10 +259,12 @@ class RepresentativeClientInitialMetadata {
   static void Prepare(grpc_metadata_batch* b) {
     b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
     b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
-    b->Set(grpc_core::PathMetadata(),
-           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("/foo/bar")));
+    b->Set(
+        grpc_core::PathMetadata(),
+        grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("/foo/bar")));
     b->Set(grpc_core::AuthorityMetadata(),
-           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("foo.test.google.fr:1234")));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd",
         b->Append(
@@ -287,9 +289,10 @@ class MoreRepresentativeClientInitialMetadata {
     b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
     b->Set(grpc_core::PathMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
-             "/grpc.test.FooService/BarMethod")));
+               "/grpc.test.FooService/BarMethod")));
     b->Set(grpc_core::AuthorityMetadata(),
-           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("foo.test.google.fr:1234")));
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
     b->Set(grpc_core::GrpcTraceBinMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "\x00\x01\x02\x03\x04\x05\x06\x07\x08"

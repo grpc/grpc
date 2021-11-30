@@ -114,7 +114,7 @@ static grpc_error_handle client_filter_incoming_metadata(
     const grpc_status_code* grpc_status =
         b->get_pointer(grpc_core::GrpcStatusMetadata());
     if (grpc_status != nullptr || *status == 200) {
-      b->Remove(grpc_core::GrpcStatusMetadata());
+      b->Remove(grpc_core::StatusMetadata());
     } else {
       std::string msg =
           absl::StrCat("Received http2 header with status: ", *status);

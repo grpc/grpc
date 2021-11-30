@@ -488,12 +488,12 @@ class StreamWriteContext {
                               &s_->stats.outgoing, &t_->outbuf);
     } else {
       if (send_status_.has_value()) {
-        s_->send_initial_metadata->Set(grpc_core::StatusMetadata(),
-                                       *send_status_);
+        s_->send_trailing_metadata->Set(grpc_core::StatusMetadata(),
+                                        *send_status_);
       }
       if (send_content_type_.has_value()) {
-        s_->send_initial_metadata->Set(grpc_core::ContentTypeMetadata(),
-                                       *send_content_type_);
+        s_->send_trailing_metadata->Set(grpc_core::ContentTypeMetadata(),
+                                        *send_content_type_);
       }
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
