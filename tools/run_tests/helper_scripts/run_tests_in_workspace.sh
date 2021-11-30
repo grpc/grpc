@@ -31,4 +31,4 @@ git submodule foreach 'cd "${repo_root}/${WORKSPACE_NAME}" \
     && git submodule update --init --reference ${repo_root}/${name} ${name}'
 
 echo "Running run_tests.py in workspace ${WORKSPACE_NAME}" 
-python "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" "$@"
+python3 "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" "$@"
