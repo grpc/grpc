@@ -915,7 +915,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
       return 0;
     }
     batch->Append(grpc_core::StringViewFromSlice(md->key),
-                  grpc_core::Slice(grpc_slice_ref(md->value)));
+                  grpc_core::Slice(grpc_slice_ref_internal(md->value)));
   }
 
   return 1;
