@@ -26,4 +26,11 @@ set -e  # rvm commands are very verbose
 rvm --default use ruby-2.4.1
 set -ex
 
-tools/run_tests/task_runner.py -f artifact linux -j 12
+tools/run_tests/task_runner.py -f artifact linux -j 12 || FAILED="true"
+
+tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
