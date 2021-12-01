@@ -42,4 +42,4 @@
 - 1.40 'g' stands for ['guileless'](https://github.com/grpc/grpc/tree/v1.40.x)
 - 1.41 'g' stands for ['goat'](https://github.com/grpc/grpc/tree/v1.41.x)
 - 1.42 'g' stands for ['granola'](https://github.com/grpc/grpc/tree/v1.42.x)
-- 1.43 'g' stands for ['green'](https://github.com/grpc/grpc/tree/master)
+- 1.43 'g' stands for ['green'](https://github.com/grpc/grpc/tree/v1.43.x)
