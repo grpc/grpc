@@ -584,11 +584,12 @@ void HPackCompressor::Framer::Encode(SchemeMetadata,
 }
 
 void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
+  if (status == 200) {
+    EmitIndexed(8);  // :status: 200
+    return;
+  }
   uint8_t index = 0;
   switch (status) {
-    case 200:
-      index = 8;  // :status: 200
-      break;
     case 204:
       index = 9;  // :status: 204
       break;

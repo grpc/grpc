@@ -2441,11 +2441,8 @@ class ClientChannel::LoadBalancedCall::Metadata
   class Encoder {
    public:
     void Encode(grpc_mdelem md) {
-      auto key = StringViewFromSlice(GRPC_MDKEY(md));
-      if (key != ":path") {
-        out_.emplace_back(std::string(key),
-                          std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
-      }
+      out_.emplace_back(std::string(StringViewFromSlice(GRPC_MDKEY(md))),
+                        std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
     }
 
     template <class Which>
