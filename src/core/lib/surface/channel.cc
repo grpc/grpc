@@ -373,8 +373,10 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, nullptr,
-      grpc_core::Slice(method),
-      host != nullptr ? absl::optional<grpc_core::Slice>(*host) : absl::nullopt,
+      grpc_core::Slice(grpc_slice_ref_internal(method)),
+      host != nullptr
+          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
+          : absl::nullopt,
       grpc_timespec_to_millis_round_up(deadline));
 
   return call;

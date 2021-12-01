@@ -821,20 +821,18 @@ class MetadataMap {
 
   // Encoder to compute TransportSize
   class TransportSizeEncoder {
-    public:
-      void Encode(grpc_mdelem elem) {
-        size_ += GRPC_MDELEM_LENGTH(elem);
-      }
+   public:
+    void Encode(grpc_mdelem elem) { size_ += GRPC_MDELEM_LENGTH(elem); }
 
-      template <typename Which>
-      void Encode(Which, const typename Which::ValueType& value) {
-        size_ += Which::key().length() + Which::Encode(value).length() + 32;
-      }
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      size_ += Which::key().length() + Which::Encode(value).length() + 32;
+    }
 
-      size_t size() const { return size_; }
+    size_t size() const { return size_; }
 
-    private:
-      uint32_t size_ = 0;
+   private:
+    uint32_t size_ = 0;
   };
 
   void AssertValidCallouts();
