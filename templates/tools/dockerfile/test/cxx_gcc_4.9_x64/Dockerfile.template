@@ -16,11 +16,10 @@
   
   FROM gcc:4.9
   
-  <%include file="../../apt_get_basic.include"/>
+  RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
   <%include file="../../run_tests_python_deps.include"/>
-  <%include file="../../cxx_deps.include"/>
-  <%include file="../../run_tests_addons.include"/>
   <%include file="../../cmake_jessie_backports.include"/>
+  <%include file="../../run_tests_addons.include"/>
 
   # Define the default command.
   CMD ["bash"]

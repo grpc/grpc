@@ -41,10 +41,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
-
-#=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 

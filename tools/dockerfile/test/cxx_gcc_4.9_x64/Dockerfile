@@ -14,47 +14,7 @@
 
 FROM gcc:4.9
 
-#=================
-# Basic C core dependencies
-
-# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  autoconf \
-  libtool \
-  pkg-config \
-  && apt-get clean
-
-# GCC
-RUN apt-get update && apt-get install -y \
-  gcc \
-  gcc-multilib \
-  g++ \
-  g++-multilib  \
-  && apt-get clean
-
-# libc6
-RUN apt-get update && apt-get install -y \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  && apt-get clean
-
-# Tools
-RUN apt-get update && apt-get install -y \
-  bzip2 \
-  curl \
-  dnsutils \
-  git \
-  lcov \
-  make \
-  strace \
-  time \
-  unzip \
-  wget \
-  zip \
-  && apt-get clean
-
+RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
 #====================
 # run_tests.py python dependencies
 
@@ -81,13 +41,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 
 
 #=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
-
-
-RUN mkdir /var/local/jenkins
-
-#=================
 # Use cmake 3.6 from jessie-backports
 # should only be used for images based on debian jessie.
 
@@ -95,6 +48,9 @@ RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+
+
+RUN mkdir /var/local/jenkins
 
 
 # Define the default command.
