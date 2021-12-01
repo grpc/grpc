@@ -78,12 +78,30 @@ namespace :suite do
   end
 end
 
-desc 'Build the Windows gRPC DLLs for Ruby'
-task 'dlls' do
+desc 'Build the Windows gRPC DLLs for Ruby. Optionally one can pass argument to build only dll for given platform.'
+task 'dlls', [:plat] do |t, args|
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
   # use env variable to set artifact build paralellism
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
+  selected_plat = "#{args[:plat]}"
+
+  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
+  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
+
+  if selected_plat.empty?
+    build_configs = [w64, w32]
+  elsif selected_plat == 'x64-mingw32'
+    build_configs = [w64]
+    # touch grpc_c.*.ruby for skipped configs
+    FileUtils.touch 'grpc_c.32.ruby'
+  elsif selected_plat == 'x86-mingw32'
+    build_configs = [w32]
+    # touch grpc_c.*.ruby for skipped configs
+    FileUtils.touch 'grpc_c.64.ruby'
+  else
+    fail "Unsupported platform '#{selected_plat}' passed as an argument."
+  end
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
@@ -99,10 +117,7 @@ task 'dlls' do
 
   out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
-  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
-  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
-
-  [ w64, w32 ].each do |opt|
+  build_configs.each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
@@ -116,14 +131,19 @@ task 'dlls' do
   end
 end
 
-desc 'Build the native gem file under rake_compiler_dock'
-task 'gem:native' do
+desc 'Build the native gem file under rake_compiler_dock. Optionally one can pass argument to build only native gem for a chosen platform.'
+task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
+  selected_plat = "#{args[:plat]}"
 
   if RUBY_PLATFORM =~ /darwin/
+    if !selected_plat.empty? && selected_plat != 'darwin'
+      fail "Cannot pass platform as an argument when on Darwin."
+    end
+
     FileUtils.touch 'grpc_c.32.ruby'
     FileUtils.touch 'grpc_c.64.ruby'
     unless '2.5' == /(\d+\.\d+)/.match(RUBY_VERSION).to_s
@@ -136,8 +156,37 @@ task 'gem:native' do
     # use env variable to set artifact build paralellism
     nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
-    Rake::Task['dlls'].execute
-    ['x86-mingw32', 'x64-mingw32'].each do |plat|
+    supported_windows_platforms = ['x86-mingw32', 'x64-mingw32']
+    supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin']
+    supported_platforms = supported_windows_platforms + supported_unix_platforms
+
+    if selected_plat.empty?
+      # build everything
+      windows_platforms = supported_windows_platforms
+      unix_platforms = supported_unix_platforms
+    else
+      # build only selected platform
+      if supported_windows_platforms.include?(selected_plat)
+        windows_platforms = [selected_plat]
+        unix_platforms = []
+      elsif supported_unix_platforms.include?(selected_plat)
+        windows_platforms = []
+        unix_platforms = [selected_plat]
+      else
+        fail "Unsupported platform '#{selected_plat}' passed as an argument."
+      end
+    end
+
+    if !windows_platforms.empty?
+      if windows_platforms.length() == 1
+        # TODO: handle touching grpc_c.*
+        Rake::Task['dlls'].execute(plat: windows_platforms[0])
+      else
+        Rake::Task['dlls'].execute
+      end
+    end
+
+    windows_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
@@ -149,10 +198,15 @@ task 'gem:native' do
           GRPC_RUBY_BUILD_PROCS=#{nproc_override}
       EOT
     end
+
     # Truncate grpc_c.*.ruby files because they're for Windows only.
+    # Touch them first to make sure they exist even if windows build haven't run previously.
+    FileUtils.touch 'grpc_c.32.ruby'
     File.truncate('grpc_c.32.ruby', 0)
+    FileUtils.touch 'grpc_c.64.ruby'
     File.truncate('grpc_c.64.ruby', 0)
-    ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin'].each do |plat|
+
+    unix_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \

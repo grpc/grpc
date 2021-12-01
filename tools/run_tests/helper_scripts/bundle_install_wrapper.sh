@@ -26,6 +26,10 @@ if [ "$SYSTEM" == "Darwin" ] ; then
   # See suggestion in https://github.com/bundler/bundler/issues/3692
   BUNDLE_SPECIFIC_PLATFORM=true bundle install
 else
-  bundle install
+  # on linux artifact build, multiple instances of "bundle install" run in parallel
+  # in different workspaces. That should work fine since the workspaces
+  # are isolated, but causes occasional
+  # failures (builder/gem bug?). Retrying fixes the issue.
+  bundle install --retry 5 || (sleep 10; bundle install)
 fi
 
