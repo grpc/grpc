@@ -157,9 +157,10 @@ bool JsonReader::StringAddChar(uint32_t c) {
 }
 
 bool JsonReader::StringAddUtf32(uint32_t c) {
-  if (c <= 0x7f) {
-    return StringAddChar(c);
-  } else if (c <= 0x7ff) {
+  // (b/208085307): This argument of this function is an Utf32 encoded
+  // character. So we need to treat it as such and not as a simple ASCII
+  // character even if it is <= 0x7f.
+  if (c <= 0x7ff) {
     uint32_t b1 = 0xc0 | ((c >> 6) & 0x1f);
     uint32_t b2 = 0x80 | (c & 0x3f);
     return StringAddChar(b1) && StringAddChar(b2);
