@@ -2890,9 +2890,6 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 }
 
 // Tests that secure naming check fails if target name is unexpected.
-// XdsTest/SecureNamingTest.TargetNameIsUnexpected/XdsResolverV3
-// failed, but SecureNamingTest should only run with fake resolver?
-/*
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
   SetNextResolution({});
@@ -2906,7 +2903,7 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
-}*/
+}
 
 using LdsTest = BasicTest;
 
@@ -11197,9 +11194,7 @@ TEST_P(BalancerUpdateTest, Repeated) {
 // Tests that if the balancer is down, the RPCs will still be sent to the
 // backends according to the last balancer response, until a new balancer is
 // reachable.
-// How should I regenerate the bootstrap file inside a test as the content
-// in particular the server name has changed.
-/*TEST_P(BalancerUpdateTest, DeadUpdate) {
+TEST_P(BalancerUpdateTest, DeadUpdate) {
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -11275,7 +11270,7 @@ TEST_P(BalancerUpdateTest, Repeated) {
             AdsServiceImpl::ResponseState::NOT_SENT)
       << "Error Message:"
       << balancers_[2]->ads_service()->eds_response_state().error_message;
-}*/
+}
 
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:
@@ -12905,13 +12900,19 @@ INSTANTIATE_TEST_SUITE_P(
         TestType().set_use_fake_resolver().set_enable_load_reporting()),
     &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, BalancerUpdateTest,
-    ::testing::Values(
-        TestType().set_use_fake_resolver(),
-        TestType().set_use_fake_resolver().set_enable_load_reporting(),
-        TestType().set_enable_load_reporting()),
-    &TestTypeName);
+// BalancerUpdateTest should only run with fake resolver for now.  For now a
+// real resolver will result in xds server uri to be localhost://<port> which
+// will use a non fake resolver to resolve the xds server name, but the
+// DeadUpdate test relies on the use of a fake resolver to inject new balancer
+// address.
+// TODO(donnadionne): Move all tests to use a real resolver for xds server uri
+// and rewrite the DeadUpdate test.
+INSTANTIATE_TEST_SUITE_P(XdsTest, BalancerUpdateTest,
+                         ::testing::Values(TestType().set_use_fake_resolver(),
+                                           TestType()
+                                               .set_use_fake_resolver()
+                                               .set_enable_load_reporting()),
+                         &TestTypeName);
 
 // Load reporting tests are not run with load reporting disabled.
 INSTANTIATE_TEST_SUITE_P(
