@@ -79,7 +79,7 @@ void client_authority_destroy_call_elem(
 /* Constructor for channel_data */
 grpc_error_handle client_authority_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  channel_data* chand = new (elem->channel_data) channel_data;
   const grpc_arg* default_authority_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority_arg == nullptr) {

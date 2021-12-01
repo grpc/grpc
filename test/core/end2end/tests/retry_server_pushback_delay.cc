@@ -285,7 +285,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "message2"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
