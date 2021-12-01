@@ -76,7 +76,7 @@ def _docker_jobspec(name,
         timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
     shortname = 'run_tests_%s' % name
     test_job = jobset.JobSpec(cmdline=[
-        'python', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
+        'python3', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
         str(inner_jobs), '-x',
         'run_tests/%s' % _report_filename(name), '--report_suite_name',
         '%s' % _safe_report_name(name)
@@ -230,7 +230,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php7'],
+    test_jobs += _generate_jobs(languages=['ruby', 'php7'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
