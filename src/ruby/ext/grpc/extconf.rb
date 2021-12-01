@@ -73,9 +73,12 @@ unless windows
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS']
   unless nproc_override.nil? or nproc_override.size == 0
     nproc = nproc_override
+    puts "Overriding make parallelism to #{nproc}"
   end
   make = bsd ? 'gmake' : 'make'
-  system("#{make} -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q=")
+  cmd = "#{make} -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q="
+  puts "Building grpc native library: #{cmd}"
+  system(cmd)
   exit 1 unless $? == 0
 end
 
