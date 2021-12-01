@@ -405,16 +405,6 @@ class TestType {
     return *this;
   }
 
-  TestType& set_top_balancer_index(size_t index) {
-    top_balancer_index_ = index;
-    return *this;
-  }
-
-  TestType& set_authority_balancer_index(size_t index) {
-    authority_balancer_index_ = index;
-    return *this;
-  }
-
   bool use_fake_resolver() const { return use_fake_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
@@ -423,8 +413,6 @@ class TestType {
   bool use_csds_streaming() const { return use_csds_streaming_; }
   FilterConfigSetup filter_config_setup() const { return filter_config_setup_; }
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
-  size_t top_balancer_index() const { return top_balancer_index_; }
-  size_t authority_balancer_index() const { return authority_balancer_index_; }
 
   std::string AsString() const {
     std::string retval = (use_fake_resolver_ ? "FakeResolver" : "XdsResolver");
@@ -453,8 +441,6 @@ class TestType {
   bool use_csds_streaming_ = false;
   FilterConfigSetup filter_config_setup_ = kHTTPConnectionManagerOriginal;
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
-  size_t top_balancer_index_ = 0;
-  size_t authority_balancer_index_ = 1;
 };
 
 std::string ReadFile(const char* file_path) {
@@ -707,14 +693,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds = 100,
                  int xds_resource_does_not_exist_timeout_ms = 0,
-                 bool use_xds_enabled_server = false)
+                 bool use_xds_enabled_server = false,
+                 size_t top_balancer_index = 5,
+                 size_t authority_balancer_index = 5)
       : num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         xds_resource_does_not_exist_timeout_ms_(
             xds_resource_does_not_exist_timeout_ms),
-        use_xds_enabled_server_(use_xds_enabled_server) {
+        use_xds_enabled_server_(use_xds_enabled_server),
+        top_balancer_index_(top_balancer_index),
+        authority_balancer_index_(authority_balancer_index) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -822,14 +812,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().use_v2()) {
       builder.SetV2();
     }
-    if (!GetParam().use_fake_resolver() &&
-        num_balancers_ > GetParam().top_balancer_index() &&
-        num_balancers_ > GetParam().authority_balancer_index()) {
-      builder.SetDefaultServer(absl::StrCat(
-          "localhost:", balancers_[GetParam().top_balancer_index()]->port()));
+    if (num_balancers_ > top_balancer_index_ &&
+        num_balancers_ > authority_balancer_index_) {
+      builder.SetDefaultServer(
+          absl::StrCat("localhost:", balancers_[top_balancer_index_]->port()));
       builder.SetAuthorityServer(absl::StrCat(
-          "localhost:",
-          balancers_[GetParam().authority_balancer_index()]->port()));
+          "localhost:", balancers_[authority_balancer_index_]->port()));
     }
     bootstrap_ = builder.Build();
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
@@ -2015,6 +2003,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   const size_t num_backends_;
   const size_t num_balancers_;
   const int client_load_reporting_interval_seconds_;
+  const size_t top_balancer_index_;
+  const size_t authority_balancer_index_;
   bool ipv6_only_ = false;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
@@ -2554,7 +2544,9 @@ TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
 
 class GlobalXdsClientTest : public XdsEnd2endTest {
  public:
-  GlobalXdsClientTest() : XdsEnd2endTest(4, 3) { StartAllBackends(); }
+  GlobalXdsClientTest() : XdsEnd2endTest(4, 3, 100, 0, false, 0, 1) {
+    StartAllBackends();
+  }
 };
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
@@ -12900,19 +12892,13 @@ INSTANTIATE_TEST_SUITE_P(
         TestType().set_use_fake_resolver().set_enable_load_reporting()),
     &TestTypeName);
 
-// BalancerUpdateTest should only run with fake resolver for now.  For now a
-// real resolver will result in xds server uri to be localhost://<port> which
-// will use a non fake resolver to resolve the xds server name, but the
-// DeadUpdate test relies on the use of a fake resolver to inject new balancer
-// address.
-// TODO(donnadionne): Move all tests to use a real resolver for xds server uri
-// and rewrite the DeadUpdate test.
-INSTANTIATE_TEST_SUITE_P(XdsTest, BalancerUpdateTest,
-                         ::testing::Values(TestType().set_use_fake_resolver(),
-                                           TestType()
-                                               .set_use_fake_resolver()
-                                               .set_enable_load_reporting()),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, BalancerUpdateTest,
+    ::testing::Values(
+        TestType().set_use_fake_resolver(),
+        TestType().set_use_fake_resolver().set_enable_load_reporting(),
+        TestType().set_enable_load_reporting()),
+    &TestTypeName);
 
 // Load reporting tests are not run with load reporting disabled.
 INSTANTIATE_TEST_SUITE_P(
