@@ -550,6 +550,8 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 //   // Convert a value to its canonical text wire format (the format that
 //   // ParseMemento will accept!)
 //   static Slice Encode(const ValueType& value);
+//   // Calculate the transport size of a value (len(key)+len(value)+32)
+//   static uint32_t TransportSize(const ValueType& value);
 //   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(MementoType value) { ... }
@@ -815,6 +817,24 @@ class MetadataMap {
     void operator()(const Value<Which>& which) {
       encoder->Encode(Which(), which.value);
     }
+  };
+
+  // Encoder to compute TransportSize
+  class TransportSizeEncoder {
+    public:
+      void Encode(grpc_mdelem elem) {
+        size_ += GRPC_MDELEM_LENGTH(elem);
+      }
+
+      template <typename Which>
+      void Encode(Which, const typename Which::ValueType& value) {
+        size_ += Which::key().length() + Which::Encode(value).length() + 32;
+      }
+
+      size_t size() const { return size_; }
+
+    private:
+      uint32_t size_ = 0;
   };
 
   void AssertValidCallouts();
@@ -1174,12 +1194,9 @@ void MetadataMap<Traits...>::Clear() {
 
 template <typename... Traits>
 size_t MetadataMap<Traits...>::TransportSize() const {
-  size_t size = 0;
-  for (grpc_linked_mdelem* elem = list_.head; elem != nullptr;
-       elem = elem->next) {
-    size += GRPC_MDELEM_LENGTH(elem->md);
-  }
-  return size;
+  TransportSizeEncoder enc;
+  Encode(&enc);
+  return enc.size();
 }
 
 template <typename... Traits>
