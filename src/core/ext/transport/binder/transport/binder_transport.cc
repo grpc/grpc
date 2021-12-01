@@ -333,7 +333,7 @@ class MetadataEncoder {
     // TODO(b/192208403): Figure out if it is correct to simply drop '/'
     // prefix and treat it as rpc method name
     GPR_ASSERT(value[0] == '/');
-    std::string path = std::string(value.as_string_view()).substr(1);
+    std::string path = std::string(value.as_string_view().substr(1));
 
     // Only client send method ref.
     GPR_ASSERT(is_client_);
