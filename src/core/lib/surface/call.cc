@@ -362,6 +362,7 @@ grpc_error_handle grpc_call_create(grpc_call_create_args* args,
     call->final_op.client.status = nullptr;
     call->final_op.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
+    path = grpc_slice_ref_internal(args->path->c_slice());
     call->send_initial_metadata.Set(grpc_core::PathMetadata(),
                                     std::move(*args->path));
     if (args->authority.has_value()) {

@@ -80,6 +80,7 @@ ReclamationFunction ReclaimerQueue::Cancel(
   Entry& entry = entries_[index];
   if (entry.allocator.get() != allocator) return {};
   entry.allocator.reset();
+  free_entries_.push_back(index);
   return std::move(entry.reclaimer);
 }
 

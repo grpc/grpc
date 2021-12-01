@@ -149,6 +149,7 @@ struct ContentTypeMetadata {
   // IF we want to start verifying more, we can expand this type.
   enum ValueType {
     kApplicationGrpc,
+    kEmpty,
     kInvalid,
   };
   using MementoType = ValueType;
@@ -162,6 +163,8 @@ struct ContentTypeMetadata {
       out = kApplicationGrpc;
     } else if (absl::StartsWith(value_string, "application/grpc+")) {
       out = kApplicationGrpc;
+    } else if (value_string.empty()) {
+      out = kEmpty;
     }
     return out;
   }
@@ -169,13 +172,23 @@ struct ContentTypeMetadata {
     return content_type;
   }
   static StaticSlice Encode(ValueType x) {
-    GPR_ASSERT(x == kApplicationGrpc);
-    return StaticSlice::FromStaticString("application/grpc");
+    switch (x) {
+      case kEmpty:
+        return StaticSlice::FromStaticString("");
+      case kApplicationGrpc:
+        return StaticSlice::FromStaticString("application/grpc");
+      case kInvalid:
+        abort();
+    }
+    GPR_UNREACHABLE_CODE(
+        return StaticSlice::FromStaticString("unrepresentable value"));
   }
   static const char* DisplayValue(MementoType content_type) {
     switch (content_type) {
       case ValueType::kApplicationGrpc:
         return "application/grpc";
+      case ValueType::kEmpty:
+        return "";
       default:
         return "<discarded-invalid-value>";
     }
@@ -584,6 +597,8 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 //   // Convert a value to its canonical text wire format (the format that
 //   // ParseMemento will accept!)
 //   static Slice Encode(const ValueType& value);
+//   // Calculate the transport size of a value (len(key)+len(value)+32)
+//   static uint32_t TransportSize(const ValueType& value);
 //   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(MementoType value) { ... }
@@ -842,6 +857,22 @@ class MetadataMap {
     }
   };
 
+  // Encoder to compute TransportSize
+  class TransportSizeEncoder {
+   public:
+    void Encode(grpc_mdelem elem) { size_ += GRPC_MDELEM_LENGTH(elem); }
+
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      size_ += Which::key().length() + Which::Encode(value).length() + 32;
+    }
+
+    size_t size() const { return size_; }
+
+   private:
+    uint32_t size_ = 0;
+  };
+
   static void assert_valid_list(grpc_mdelem_list* list) {
 #ifndef NDEBUG
     grpc_linked_mdelem* l;
@@ -1062,12 +1093,9 @@ void MetadataMap<Traits...>::Clear() {
 
 template <typename... Traits>
 size_t MetadataMap<Traits...>::TransportSize() const {
-  size_t size = 0;
-  for (grpc_linked_mdelem* elem = list_.head; elem != nullptr;
-       elem = elem->next) {
-    size += GRPC_MDELEM_LENGTH(elem->md);
-  }
-  return size;
+  TransportSizeEncoder enc;
+  Encode(&enc);
+  return enc.size();
 }
 
 template <typename... Traits>
