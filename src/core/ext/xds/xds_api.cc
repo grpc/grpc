@@ -741,29 +741,19 @@ bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
     if (is_v2 != nullptr) *is_v2 = true;
     return true;
   }
-  if (type_url ==
-      absl::StripPrefix(XdsApi::kLdsTypeUrl, "type.googleapis.com/")) {
-    return true;
-  }
   return false;
 }
 
 bool IsRdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl ||
-         type_url ==
-             absl::StripPrefix(XdsApi::kRdsTypeUrl, "type.googleapis.com/");
+  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
 }
 
 bool IsCdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl ||
-         type_url ==
-             absl::StripPrefix(XdsApi::kCdsTypeUrl, "type.googleapis.com/");
+  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
 }
 
 bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl ||
-         type_url ==
-             absl::StripPrefix(XdsApi::kEdsTypeUrl, "type.googleapis.com/");
+  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
 }
 
 absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(

@@ -539,8 +539,8 @@ std::string XdsBootstrap::ToString() const {
                         "      {\n"
                         "        uri=\"%s\",\n"
                         "        creds_type=%s,\n",
-                        entry.second.server().server_uri,
-                        entry.second.server().channel_creds_type));
+                        entry.second.xds_servers[0].server_uri,
+                        entry.second.xds_servers[0].channel_creds_type));
     parts.push_back("      },\n");
   }
   parts.push_back("}");

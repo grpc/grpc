@@ -82,8 +82,6 @@ class XdsBootstrap {
   struct Authority {
     std::string client_listener_resource_name_template;
     absl::InlinedVector<XdsServer, 1> xds_servers;
-
-    const XdsServer& server() const { return xds_servers[0]; }
   };
 
   // Creates bootstrap object from json_string.
