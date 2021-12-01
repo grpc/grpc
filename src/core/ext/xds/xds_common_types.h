@@ -36,6 +36,8 @@ struct Duration {
   int64_t seconds = 0;
   int32_t nanos = 0;
 
+  Duration() = default;
+
   bool operator==(const Duration& other) const {
     return seconds == other.seconds && nanos == other.nanos;
   }

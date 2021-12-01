@@ -43,7 +43,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Intercepts a simple blocking call with the registered interceptor.
         /// </summary>
-        public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
+        public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
         {
             return interceptor.BlockingUnaryCall(
                 request,
@@ -54,7 +54,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Intercepts a simple asynchronous call with the registered interceptor.
         /// </summary>
-        public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
+        public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
         {
             return interceptor.AsyncUnaryCall(
                 request,
@@ -65,7 +65,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Intercepts an asynchronous server streaming call with the registered interceptor.
         /// </summary>
-        public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
+        public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
         {
             return interceptor.AsyncServerStreamingCall(
                 request,
@@ -76,7 +76,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Intercepts an asynchronous client streaming call with the registered interceptor.
         /// </summary>
-        public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
+        public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options)
         {
             return interceptor.AsyncClientStreamingCall(
                 new ClientInterceptorContext<TRequest, TResponse>(method, host, options),
@@ -86,7 +86,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Intercepts an asynchronous duplex streaming call with the registered interceptor.
         /// </summary>
-        public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
+        public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options)
         {
             return interceptor.AsyncDuplexStreamingCall(
                 new ClientInterceptorContext<TRequest, TResponse>(method, host, options),
