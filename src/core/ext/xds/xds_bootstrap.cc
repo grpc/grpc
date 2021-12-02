@@ -264,7 +264,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
 
 const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
     const std::string& name) const {
-  auto it = authorities_.find(std::string(absl::StripPrefix(name, "xdstp:")));
+  auto it = authorities_.find(name);
   if (it != authorities_.end()) {
     return &it->second;
   }

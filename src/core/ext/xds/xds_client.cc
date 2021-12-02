@@ -2140,7 +2140,8 @@ void XdsClient::WatchListenerData(
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(bootstrap_->server());
       } else {
-        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        auto* authority = bootstrap_->LookupAuthority(
+            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
         GPR_ASSERT(authority != nullptr);
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(authority->xds_servers[0]);
@@ -2173,7 +2174,8 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
     xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
         XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
   } else {
-    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    auto* authority = bootstrap_->LookupAuthority(
+        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
     GPR_ASSERT(authority != nullptr);
     xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
         XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
@@ -2234,7 +2236,8 @@ void XdsClient::WatchRouteConfigData(
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(bootstrap_->server());
       } else {
-        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        auto* authority = bootstrap_->LookupAuthority(
+            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
         GPR_ASSERT(authority != nullptr);
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(authority->xds_servers[0]);
@@ -2268,7 +2271,8 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
     xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
         XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
   } else {
-    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    auto* authority = bootstrap_->LookupAuthority(
+        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
     GPR_ASSERT(authority != nullptr);
     xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
         XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
@@ -2325,7 +2329,8 @@ void XdsClient::WatchClusterData(
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(bootstrap_->server());
       } else {
-        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        auto* authority = bootstrap_->LookupAuthority(
+            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
         GPR_ASSERT(authority != nullptr);
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(authority->xds_servers[0]);
@@ -2358,7 +2363,8 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
     xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
         XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
   } else {
-    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    auto* authority = bootstrap_->LookupAuthority(
+        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
     GPR_ASSERT(authority != nullptr);
     xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
         XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
@@ -2414,7 +2420,8 @@ void XdsClient::WatchEndpointData(
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(bootstrap_->server());
       } else {
-        auto* authority = bootstrap_->LookupAuthority(resource->authority);
+        auto* authority = bootstrap_->LookupAuthority(
+            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
         GPR_ASSERT(authority != nullptr);
         authority_state.channel_state =
             GetOrCreateChannelStateLocked(authority->xds_servers[0]);
@@ -2447,7 +2454,8 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
     xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
         XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
   } else {
-    auto* authority = bootstrap_->LookupAuthority(resource->authority);
+    auto* authority = bootstrap_->LookupAuthority(
+        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
     GPR_ASSERT(authority != nullptr);
     xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
         XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
