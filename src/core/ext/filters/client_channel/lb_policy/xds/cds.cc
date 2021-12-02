@@ -612,9 +612,9 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
   return GRPC_ERROR_NONE;
 }
 
-void CdsLb::CancelClusterDataWatch(
-    absl::string_view cluster_name, ClusterWatcher* watcher,
-    bool delay_unsubscription) {
+void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
+                                   ClusterWatcher* watcher,
+                                   bool delay_unsubscription) {
   if (xds_certificate_provider_ != nullptr) {
     std::string name(cluster_name);
     xds_certificate_provider_->UpdateRootCertNameAndDistributor(name, "",

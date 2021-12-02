@@ -119,7 +119,8 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class RouteConfigWatcher : public XdsRouteConfigResourceType::WatcherInterface {
+  class RouteConfigWatcher
+      : public XdsRouteConfigResourceType::WatcherInterface {
    public:
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}

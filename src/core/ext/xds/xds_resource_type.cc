@@ -51,7 +51,8 @@ const XdsResourceType* XdsResourceTypeRegistry::GetType(
   return nullptr;
 }
 
-void XdsResourceTypeRegistry::RegisterType(const XdsResourceType* resource_type) {
+void XdsResourceTypeRegistry::RegisterType(
+    const XdsResourceType* resource_type) {
   GPR_ASSERT(resource_types_.find(resource_type->type_url()) ==
              resource_types_.end());
   GPR_ASSERT(v2_resource_types_.find(resource_type->v2_type_url()) ==

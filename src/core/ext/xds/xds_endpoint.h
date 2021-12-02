@@ -148,7 +148,8 @@ class XdsEndpointResourceType : public XdsResourceType {
     xds_client->WatchResource(Get(), resource_name, std::move(watcher));
   }
 
-  static void CancelWatch(XdsClient* xds_client, absl::string_view resource_name,
+  static void CancelWatch(XdsClient* xds_client,
+                          absl::string_view resource_name,
                           WatcherInterface* watcher,
                           bool delay_unsubscription = false) {
     xds_client->CancelResourceWatch(Get(), resource_name, watcher,

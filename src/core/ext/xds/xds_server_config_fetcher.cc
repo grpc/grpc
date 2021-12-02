@@ -622,8 +622,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           MakeRefCounted<RouteConfigWatcher>(resource_name, WeakRef());
       rds_map_.emplace(resource_name, RdsUpdateState{route_config_watcher.get(),
                                                      absl::nullopt});
-      XdsRouteConfigResourceType::StartWatch(
-          xds_client_.get(), resource_name, std::move(route_config_watcher));
+      XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name,
+                                             std::move(route_config_watcher));
     }
     if (rds_resources_yet_to_fetch_ != 0) {
       listener_watcher_ = std::move(listener_watcher);
@@ -1164,8 +1164,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   GPR_ASSERT(!resource_name_.empty());
   auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
   route_config_watcher_ = route_config_watcher.get();
-  XdsRouteConfigResourceType::StartWatch(
-      xds_client_.get(), resource_name_, std::move(route_config_watcher));
+  XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name_,
+                                         std::move(route_config_watcher));
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
