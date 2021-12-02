@@ -116,12 +116,6 @@ proto_files=( \
   "envoy/type/v3/percent.proto" \
   "envoy/type/v3/range.proto" \
   "envoy/type/v3/semantic_version.proto" \
-  "google/api/annotations.proto" \
-  "google/api/expr/v1alpha1/checked.proto" \
-  "google/api/expr/v1alpha1/syntax.proto" \
-  "google/api/http.proto" \
-  "google/protobuf/descriptor.proto" \
-  "google/rpc/status.proto" \
   "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/security.proto" \

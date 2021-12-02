@@ -14,65 +14,70 @@
 
 FROM debian:bullseye
 
-# Install Git and basic packages.
+#=================
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
   build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  dnsutils \
+  autoconf \
+  libtool \
+  pkg-config \
+  && apt-get clean
+
+# GCC
+RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
+  g++ \
+  g++-multilib  \
+  && apt-get clean
+
+# libc6
+RUN apt-get update && apt-get install -y \
   libc6 \
   libc6-dbg \
   libc6-dev \
-  libgtest-dev \
-  libtool \
+  && apt-get clean
+
+# Tools
+RUN apt-get update && apt-get install -y \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
   make \
-  perl \
   strace \
-  telnet \
+  time \
   unzip \
   wget \
-  zip && apt-get clean
+  zip \
+  && apt-get clean
 
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+
 
 # Install Python 3.7 from source (and installed as a default python3)
 # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                                 libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
+                            libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
 RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
-    tar -xf Python-3.7.9.tar.xz && \
-    cd Python-3.7.9 && \
-    ./configure && \
-    make -j 4 && \
-    make install
+tar -xf Python-3.7.9.tar.xz && \
+cd Python-3.7.9 && \
+./configure && \
+make -j 4 && \
+make install
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 
-# Install Python 2.7
-RUN apt-get update && apt-get install -y python2 python2-dev
-RUN ln -s /usr/bin/python2 /usr/bin/python
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2
-
-# Google Cloud platform API libraries
-RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+# Google Cloud Platform API libraries
+# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
+RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
 RUN mkdir /var/local/jenkins
-
-
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 
 #========================
@@ -84,18 +89,19 @@ RUN apt-get update && apt-get install -y \
       libtool \
       curl \
       shellcheck
-RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
+
+# otherwise clang-tidy will report missing <gtest/gtest.h> header
+RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
+
 RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
 
 # Upgrade Python's YAML library
-RUN python2 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
 # Install clang, clang-format, and clang-tidy
 RUN apt-get update && apt-get install -y clang clang-format-11 clang-tidy-11 jq
 ENV CLANG_FORMAT=clang-format-11
 ENV CLANG_TIDY=clang-tidy-11
-
 
 #========================
 # Bazel installation
