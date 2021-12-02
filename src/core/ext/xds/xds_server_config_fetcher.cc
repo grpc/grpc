@@ -51,8 +51,7 @@ TraceFlag grpc_xds_server_config_fetcher_trace(false,
 class XdsServerConfigFetcher : public grpc_server_config_fetcher {
  public:
   XdsServerConfigFetcher(RefCountedPtr<XdsClient> xds_client,
-                         grpc_server_xds_status_notifier notifier,
-                         int drain_grace_time_ms);
+                         grpc_server_xds_status_notifier notifier);
 
   void StartWatch(std::string listening_address,
                   std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
@@ -66,14 +65,11 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     return xds_client_->interested_parties();
   }
 
-  int drain_grace_time_ms() override { return drain_grace_time_ms_; }
-
  private:
   class ListenerWatcher;
 
   const RefCountedPtr<XdsClient> xds_client_;
   const grpc_server_xds_status_notifier serving_status_notifier_;
-  const int drain_grace_time_ms_;
   Mutex mu_;
   std::map<grpc_server_config_fetcher::WatcherInterface*, ListenerWatcher*>
       listener_watchers_ ABSL_GUARDED_BY(mu_);
@@ -409,10 +405,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 XdsServerConfigFetcher::XdsServerConfigFetcher(
     RefCountedPtr<XdsClient> xds_client,
-    grpc_server_xds_status_notifier notifier, int drain_grace_time_ms)
-    : xds_client_(std::move(xds_client)),
-      serving_status_notifier_(notifier),
-      drain_grace_time_ms_(drain_grace_time_ms) {
+    grpc_server_xds_status_notifier notifier)
+    : xds_client_(std::move(xds_client)), serving_status_notifier_(notifier) {
   GPR_ASSERT(xds_client_ != nullptr);
 }
 
@@ -1235,8 +1229,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }  // namespace grpc_core
 
 grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-    grpc_server_xds_status_notifier notifier, int drain_grace_time_ms,
-    const grpc_channel_args* args) {
+    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   args = grpc_core::CoreConfiguration::Get()
@@ -1244,10 +1237,8 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
              .PreconditionChannelArgs(args);
   GRPC_API_TRACE(
       "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
-      "update=%p, user_data=%p}, drain_grace_time_ms=%d, args=%p)",
-      4,
-      (notifier.on_serving_status_update, notifier.user_data,
-       drain_grace_time_ms, args));
+      "update=%p, user_data=%p}, args=%p)",
+      3, (notifier.on_serving_status_update, notifier.user_data, args));
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
       grpc_core::XdsClient::GetOrCreate(args, &error);
@@ -1266,6 +1257,5 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
             "file.");
     return nullptr;
   }
-  return new grpc_core::XdsServerConfigFetcher(std::move(xds_client), notifier,
-                                               drain_grace_time_ms);
+  return new grpc_core::XdsServerConfigFetcher(std::move(xds_client), notifier);
 }

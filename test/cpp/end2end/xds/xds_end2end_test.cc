@@ -9325,7 +9325,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
     // Wait for the drain grace time to expire
     EXPECT_FALSE(streaming_rpcs[i].stream->Read(&response));
     // Make sure that the drain grace interval is honored.
-    EXPECT_TRUE(NowFromCycleCounter() - kDrainGraceTimeMs >= update_time);
+    EXPECT_GE(NowFromCycleCounter() - update_time, kDrainGraceTimeMs);
     auto status = streaming_rpcs[i].stream->Finish();
     EXPECT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE)
         << status.error_code() << ", " << status.error_message() << ", "

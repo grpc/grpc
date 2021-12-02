@@ -491,9 +491,6 @@ struct grpc_server_config_fetcher {
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;
-  // The drain grace period in ms for older connections when a new
-  // ConnectionManager is received.
-  virtual int drain_grace_time_ms() = 0;
 };
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

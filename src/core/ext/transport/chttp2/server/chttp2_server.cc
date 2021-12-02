@@ -556,14 +556,12 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
     Ref().release();  // Ref held by OnDrainGraceTimeExpiry
     GRPC_CLOSURE_INIT(&on_drain_grace_time_expiry_, OnDrainGraceTimeExpiry,
                       this, nullptr);
-    // TODO(yashykt): Fix the API between the server and the transport listener
-    // such that the transport does not need to access config_fetcher()
-    // directly.
-    grpc_timer_init(
-        &drain_grace_timer_,
-        ExecCtx::Get()->Now() +
-            listener_->server_->config_fetcher()->drain_grace_time_ms(),
-        &on_drain_grace_time_expiry_);
+    grpc_timer_init(&drain_grace_timer_,
+                    ExecCtx::Get()->Now() +
+                        grpc_channel_args_find_integer(
+                            listener_->args_, GRPC_ARG_DRAIN_GRACE_TIME_MS,
+                            {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
+                    &on_drain_grace_time_expiry_);
     drain_grace_timer_expiry_callback_pending_ = true;
   }
 }

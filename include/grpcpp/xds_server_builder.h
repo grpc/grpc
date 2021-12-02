@@ -81,10 +81,12 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   // Called at the beginning of BuildAndStart().
   ChannelArguments BuildChannelArgs() override {
     ChannelArguments args = ServerBuilder::BuildChannelArgs();
+    if (drain_grace_time_ms_ >= 0) {
+      args.SetInt(GRPC_ARG_DRAIN_GRACE_TIME_MS, drain_grace_time_ms_);
+    }
     grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
-        {OnServingStatusUpdate, notifier_}, drain_grace_time_ms_,
-        &c_channel_args);
+        {OnServingStatusUpdate, notifier_}, &c_channel_args);
     if (fetcher != nullptr) set_fetcher(fetcher);
     return args;
   }
@@ -100,8 +102,7 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   }
 
   XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
-  constexpr static int kDefaultDrainGraceTimeMs = 10 * 60 * 1000;  // 10 minutes
-  int drain_grace_time_ms_ = kDefaultDrainGraceTimeMs;
+  int drain_grace_time_ms_ = -1;
 };
 
 namespace experimental {
