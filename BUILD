@@ -148,7 +148,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "green"  # @unused
 
-core_version = "20.0.0"  # @unused
+core_version = "21.0.0"  # @unused
 
 version = "1.43.0-dev"  # @unused
 
