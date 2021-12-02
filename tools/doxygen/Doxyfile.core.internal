@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 20.0.0
+PROJECT_NUMBER         = 21.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1235,12 +1235,20 @@ src/core/ext/upb-generated/google/api/annotations.upb.c \
 src/core/ext/upb-generated/google/api/annotations.upb.h \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h \
 src/core/ext/upb-generated/google/api/http.upb.c \
 src/core/ext/upb-generated/google/api/http.upb.h \
 src/core/ext/upb-generated/google/protobuf/any.upb.c \
 src/core/ext/upb-generated/google/protobuf/any.upb.h \
+src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
+src/core/ext/upb-generated/google/protobuf/descriptor.upb.h \
 src/core/ext/upb-generated/google/protobuf/duration.upb.c \
 src/core/ext/upb-generated/google/protobuf/duration.upb.h \
 src/core/ext/upb-generated/google/protobuf/empty.upb.c \
@@ -1443,6 +1451,8 @@ src/core/ext/upbdefs-generated/google/api/http.upbdefs.c \
 src/core/ext/upbdefs-generated/google/api/http.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h \
+src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
+src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \

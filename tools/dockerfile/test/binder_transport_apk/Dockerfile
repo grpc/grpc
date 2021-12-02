@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,11 @@
 # Image(c7f1523ebd92) is built on Jul 29, 2021
 FROM gcr.io/oss-fuzz-base/base-builder@sha256:c7f1523ebd9234b9ff57e5240f8c06569143373be019c92f1e6df18a1e048f37
 
-# This Dockerfile creates the environment for compiling and e2e testing of Android binder transport implementation
+# -------------------------- WARNING --------------------------------------
+# If you are making changes to this file, consider changing
+# https://github.com/google/oss-fuzz/blob/master/projects/grpc/Dockerfile
+# accordingly.
+# -------------------------------------------------------------------------
 
 # Install basic packages and Bazel dependencies.
 RUN apt-get update && apt-get install -y software-properties-common python-software-properties
@@ -33,24 +37,41 @@ RUN apt-get update && apt-get -y install \
   openjdk-8-jdk \
   vim
 
-#========================
-# Android SDK/NDK installation
-ENV SDK_ROOT=/opt/android-sdk
-RUN mkdir -p ${SDK_ROOT}
-RUN wget -O cmd.zip dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip && \
-    unzip cmd.zip && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=${SDK_ROOT} 'tools' && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=${SDK_ROOT} 'platform-tools' && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=${SDK_ROOT} 'build-tools;30.0.3' && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=${SDK_ROOT} 'platforms;android-29' && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=${SDK_ROOT} 'ndk-bundle' && \
-    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=${SDK_ROOT} 'ndk;21.4.7075529'
+#====================
+# Python dependencies
 
-RUN rm cmd.zip
+# Install dependencies
+# TODO(jtattermusch): This installs python3.5. Is it even needed
+# when we install python3.6 in the next step?
+RUN apt-get update && apt-get install -y \
+    python3-all-dev
 
-# Set environment variables for Bazel rules
-ENV ANDROID_HOME=/opt/android-sdk
-ENV ANDROID_NDK_HOME=/opt/android-sdk/ndk/21.4.7075529
+#=================
+# Compile CPython 3.6.9 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
+    tar xzvf Python-3.6.9.tgz && \
+    cd Python-3.6.9 && \
+    ./configure && \
+    make install
+
+RUN cd /tmp && \
+    echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.6 -m ensurepip && \
+    python3.6 -m pip install coverage
+
+
+# Python2's python.h still needs to be present in order for the bazel build
+# to work.
+# TODO(jtattermusch): remove once https://github.com/grpc/grpc/issues/28026
+# is fixed.
+RUN apt-get update && apt-get install -y python-all-dev python-setuptools
 
 #========================
 # Bazel installation
@@ -66,6 +87,16 @@ RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/b
   bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
   rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
 
+
+#========================
+# Android SDK/NDK installation
+ENV SDK_ROOT=/opt/android-sdk
+RUN mkdir -p $SDK_ROOT
+RUN wget -O cmd.zip dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip &&     unzip cmd.zip && rm cmd.zip &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'tools' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'platform-tools' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'build-tools;30.0.3' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'platforms;android-29' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'ndk-bundle' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'ndk;21.4.7075529'
+
+# Set environment variables for Bazel rules
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_NDK_HOME=/opt/android-sdk/ndk/21.4.7075529
 
 RUN mkdir -p /var/local/jenkins
 

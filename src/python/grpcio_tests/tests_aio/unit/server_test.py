@@ -191,7 +191,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
             assert _REQUEST == request
             request_count += 1
             if request_count >= 1:
-                raise ValueError('The test server has a bug!')
+                raise ValueError('A testing RuntimeError!')
 
     async def _error_without_raise_in_unary_unary(self, request, context):
         assert _REQUEST == request
@@ -527,13 +527,9 @@ class TestServer(AioTestBase):
     async def test_error_in_stream_unary(self):
         stream_unary_call = self._channel.stream_unary(_ERROR_IN_STREAM_UNARY)
 
-        finished = False
-
-        def request_gen():
+        async def request_gen():
             for _ in range(_NUM_STREAM_REQUESTS):
                 yield _REQUEST
-            nonlocal finished
-            finished = True
 
         call = stream_unary_call(request_gen())
 
@@ -541,7 +537,6 @@ class TestServer(AioTestBase):
             await call
         rpc_error = exception_context.exception
         self.assertEqual(grpc.StatusCode.UNKNOWN, rpc_error.code())
-        self.assertEqual(finished, False)
 
     async def test_port_binding_exception(self):
         server = aio.server(options=(('grpc.so_reuseport', 0),))

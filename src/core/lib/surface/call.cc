@@ -944,6 +944,9 @@ class PublishToAppEncoder {
 
   void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
 
+  // Catch anything that is not explicitly handled, and do not publish it to the
+  // application. If new metadata is added to a batch that needs to be
+  // published, it should be called out here.
   template <typename Which>
   void Encode(Which, const typename Which::ValueType&) {}
 
@@ -961,10 +964,8 @@ class PublishToAppEncoder {
 
  private:
   void Append(absl::string_view key, int64_t value) {
-    char buffer[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(value, buffer);
     Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
-           grpc_core::Slice::FromCopiedString(buffer).c_slice());
+           grpc_core::Slice::FromInt64(value).c_slice());
   }
 
   void Append(absl::string_view key, const grpc_core::Slice& value) {
@@ -1932,7 +1933,9 @@ done_with_error:
   }
   if (stream_op->send_message) {
     call->sending_message = false;
-    call->sending_stream->Orphan();
+    // No need to invoke call->sending_stream->Orphan() explicitly.
+    // stream_op_payload->send_message.send_message.reset() calls Deletor
+    // of call->sending_stream which in-turn invokes the Orphan() method.
     stream_op_payload->send_message.send_message.reset();
   }
   if (stream_op->send_trailing_metadata) {
