@@ -31,7 +31,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
@@ -51,8 +50,8 @@ class ChannelData {
     enabled_compression_algorithms_ =
         grpc_core::CompressionAlgorithmSet::FromChannelArgs(args->channel_args);
     default_compression_algorithm_ =
-        grpc_channel_args_get_channel_default_compression_algorithm(
-            args->channel_args);
+        grpc_core::DefaultCompressionAlgorithmFromChannelArgs(
+            args->channel_args).value_or(GRPC_COMPRESS_NONE);
     // Make sure the default is enabled.
     if (!enabled_compression_algorithms_.IsSet(
             default_compression_algorithm_)) {

@@ -17,6 +17,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/compression/args_utils.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
@@ -26,6 +27,7 @@ libs:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/util/test_lb_policies.h
   src:
+  - test/core/compression/args_utils.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
@@ -117,9 +119,6 @@ libs:
   - test/core/end2end/tests/simple_delayed_request.cc
   - test/core/end2end/tests/simple_metadata.cc
   - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/stream_compression_compressed_payload.cc
-  - test/core/end2end/tests/stream_compression_payload.cc
-  - test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   - test/core/end2end/tests/streaming_error_response.cc
   - test/core/end2end/tests/trailing_metadata.cc
   - test/core/end2end/tests/write_buffering.cc
@@ -137,6 +136,7 @@ libs:
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
+  - test/core/compression/args_utils.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
@@ -151,6 +151,7 @@ libs:
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/compression/args_utils.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
@@ -244,9 +245,6 @@ libs:
   - test/core/end2end/tests/simple_delayed_request.cc
   - test/core/end2end/tests/simple_metadata.cc
   - test/core/end2end/tests/simple_request.cc
-  - test/core/end2end/tests/stream_compression_compressed_payload.cc
-  - test/core/end2end/tests/stream_compression_payload.cc
-  - test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   - test/core/end2end/tests/streaming_error_response.cc
   - test/core/end2end/tests/trailing_metadata.cc
   - test/core/end2end/tests/write_buffering.cc
@@ -744,7 +742,6 @@ libs:
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/status_util.h
-  - src/core/lib/compression/compression_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -1306,7 +1303,6 @@ libs:
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
-  - src/core/lib/compression/compression_args.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
@@ -1817,7 +1813,6 @@ libs:
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/status_util.h
-  - src/core/lib/compression/compression_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
@@ -2096,7 +2091,6 @@ libs:
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
-  - src/core/lib/compression/compression_args.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
@@ -3278,8 +3272,10 @@ targets:
 - name: compression_test
   build: test
   language: c
-  headers: []
+  headers:
+  - test/core/compression/args_utils.h
   src:
+  - test/core/compression/args_utils.cc
   - test/core/compression/compression_test.cc
   deps:
   - grpc_test_util

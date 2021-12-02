@@ -38,12 +38,13 @@ namespace grpc_core {
 absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
     absl::string_view algorithm);
 const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
+absl::optional<grpc_compression_algorithm> DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args);
 
 class CompressionAlgorithmSet {
  public:
   static CompressionAlgorithmSet FromUint32(uint32_t value);
   static CompressionAlgorithmSet FromChannelArgs(const grpc_channel_args* args);
-  static CompressionAlgorithmSet FromString(absl::string_view value);
+  static CompressionAlgorithmSet FromString(absl::string_view str);
   CompressionAlgorithmSet();
   CompressionAlgorithmSet(
       std::initializer_list<grpc_compression_algorithm> algorithms);
@@ -51,6 +52,7 @@ class CompressionAlgorithmSet {
   grpc_compression_algorithm CompressionAlgorithmForLevel(
       grpc_compression_level level) const;
   bool IsSet(grpc_compression_algorithm algorithm) const;
+  void Set(grpc_compression_algorithm algorithm);
 
   std::string ToString() const;
   Slice ToSlice() const;
@@ -62,5 +64,6 @@ class CompressionAlgorithmSet {
 };
 
 }  // namespace grpc_core
+
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H */

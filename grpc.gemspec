@@ -774,8 +774,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/status_util.cc )
   s.files += %w( src/core/lib/channel/status_util.h )
   s.files += %w( src/core/lib/compression/compression.cc )
-  s.files += %w( src/core/lib/compression/compression_args.cc )
-  s.files += %w( src/core/lib/compression/compression_args.h )
   s.files += %w( src/core/lib/compression/compression_internal.cc )
   s.files += %w( src/core/lib/compression/compression_internal.h )
   s.files += %w( src/core/lib/compression/message_compress.cc )

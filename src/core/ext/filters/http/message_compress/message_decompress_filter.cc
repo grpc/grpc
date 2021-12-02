@@ -33,7 +33,6 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"

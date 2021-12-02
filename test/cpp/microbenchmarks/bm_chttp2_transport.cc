@@ -298,10 +298,7 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::AuthorityMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "foo.test.google.fr:1234")));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::GrpcAcceptEncodingMetadata(), grpc_core::CompressionAlgorithmSet({GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);

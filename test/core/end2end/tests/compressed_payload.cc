@@ -31,12 +31,13 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_args.h"
+
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/compression/args_utils.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -642,12 +643,12 @@ static void test_invoke_request_with_compressed_payload_md_override(
   grpc_metadata gzip_compression_override;
   grpc_metadata identity_compression_override;
 
-  gzip_compression_override.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+  gzip_compression_override.key = grpc_slice_from_static_string("grpc-internal-encoding-request");
   gzip_compression_override.value = grpc_slice_from_static_string("gzip");
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));
 
-  identity_compression_override.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+  identity_compression_override.key = grpc_slice_from_static_string("grpc-internal-encoding-request");
   identity_compression_override.value =
       grpc_slice_from_static_string("identity");
   memset(&identity_compression_override.internal_data, 0,

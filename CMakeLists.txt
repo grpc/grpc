@@ -1052,6 +1052,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(end2end_nosec_tests
+  test/core/compression/args_utils.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
@@ -1143,9 +1144,6 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/simple_delayed_request.cc
   test/core/end2end/tests/simple_metadata.cc
   test/core/end2end/tests/simple_request.cc
-  test/core/end2end/tests/stream_compression_compressed_payload.cc
-  test/core/end2end/tests/stream_compression_payload.cc
-  test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   test/core/end2end/tests/streaming_error_response.cc
   test/core/end2end/tests/trailing_metadata.cc
   test/core/end2end/tests/write_buffering.cc
@@ -1197,6 +1195,7 @@ add_library(end2end_tests
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
+  test/core/compression/args_utils.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
@@ -1290,9 +1289,6 @@ add_library(end2end_tests
   test/core/end2end/tests/simple_delayed_request.cc
   test/core/end2end/tests/simple_metadata.cc
   test/core/end2end/tests/simple_request.cc
-  test/core/end2end/tests/stream_compression_compressed_payload.cc
-  test/core/end2end/tests/stream_compression_payload.cc
-  test/core/end2end/tests/stream_compression_ping_pong_streaming.cc
   test/core/end2end/tests/streaming_error_response.cc
   test/core/end2end/tests/trailing_metadata.cc
   test/core/end2end/tests/write_buffering.cc
@@ -1835,7 +1831,6 @@ add_library(grpc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_args.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
@@ -2478,7 +2473,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_args.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
@@ -4879,6 +4873,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(compression_test
+  test/core/compression/args_utils.cc
   test/core/compression/compression_test.cc
 )
 

@@ -1749,8 +1749,6 @@ src/core/lib/channel/handshaker_registry.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/compression.cc \
-src/core/lib/compression/compression_args.cc \
-src/core/lib/compression/compression_args.h \
 src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.cc \

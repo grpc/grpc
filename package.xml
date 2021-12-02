@@ -754,8 +754,6 @@
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/compression_args.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/compression_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
