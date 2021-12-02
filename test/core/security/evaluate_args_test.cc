@@ -92,6 +92,7 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EXPECT_TRUE(args.GetSpiffeId().empty());
   EXPECT_TRUE(args.GetUriSans().empty());
   EXPECT_TRUE(args.GetDnsSans().empty());
+  EXPECT_TRUE(args.GetSubject().empty());
   EXPECT_TRUE(args.GetCommonName().empty());
 }
 
@@ -149,6 +150,22 @@ TEST_F(EvaluateArgsTest, GetCommonNameFailDuplicateProperty) {
   util_.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetCommonName().empty());
+}
+
+TEST_F(EvaluateArgsTest, GetSubjectSuccessOneProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=abc,OU=Google");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetSubject(), "CN=abc,OU=Google");
+}
+
+TEST_F(EvaluateArgsTest, GetSubjectFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=abc,OU=Google");
+  util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=def,OU=Google");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetSubject().empty());
 }
 
 }  // namespace grpc_core

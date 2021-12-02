@@ -71,6 +71,8 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
     dns_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_DNS_PROPERTY_NAME);
     common_name =
         GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
+    subject =
+        GetAuthPropertyValue(auth_context, GRPC_X509_SUBJECT_PROPERTY_NAME);
   }
   if (endpoint != nullptr) {
     local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
@@ -193,6 +195,13 @@ absl::string_view EvaluateArgs::GetCommonName() const {
     return "";
   }
   return channel_args_->common_name;
+}
+
+absl::string_view EvaluateArgs::GetSubject() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->subject;
 }
 
 }  // namespace grpc_core

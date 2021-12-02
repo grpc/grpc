@@ -59,6 +59,26 @@ def parse_bazel_rule(elem):
     return Rule(elem.attrib['name'], elem.attrib['class'], srcs, deps, [])
 
 
+def get_transitive_protos(rules, t):
+    que = [
+        t,
+    ]
+    visited = set()
+    ret = []
+    while que:
+        name = que.pop(0)
+        rule = rules.get(name, None)
+        if rule:
+            for dep in rule.deps:
+                if dep not in visited:
+                    visited.add(dep)
+                    que.append(dep)
+            for src in rule.srcs:
+                if src.endswith('.proto'):
+                    ret.append(src)
+    return list(set(ret))
+
+
 def read_upb_bazel_rules():
     '''Runs bazel query on given package file and returns all upb rules.'''
     # Use a wrapper version of bazel in gRPC not to use system-wide bazel
@@ -78,19 +98,20 @@ def read_upb_bazel_rules():
     all_deps = [dep for rule in rules for dep in rule.deps]
     result = subprocess.check_output([
         BAZEL_BIN, 'query', '--output', 'xml', '--noimplicit_deps',
-        ' union '.join(all_deps)
+        ' union '.join('deps({0})'.format(d) for d in all_deps)
     ])
     root = xml.etree.ElementTree.fromstring(result)
     dep_rules = {}
     for dep_rule in (
             parse_bazel_rule(elem) for elem in root if elem.tag == 'rule'):
         dep_rules[dep_rule.name] = dep_rule
-    # add proto files to upb rules
+    # add proto files to upb rules transitively
     for rule in rules:
+        if not rule.type.startswith('upb_proto_'):
+            continue
         if len(rule.deps) == 1:
-            dep_rule = dep_rules.get(rule.deps[0], None)
-            if dep_rule:
-                rule.proto_files.extend(dep_rule.srcs)
+            rule.proto_files.extend(
+                get_transitive_protos(dep_rules, rule.deps[0]))
     return rules
 
 
@@ -114,38 +135,39 @@ def get_bazel_bin_root_path(elink):
         return BAZEL_BIN_ROOT
 
 
+def get_external_link(file):
+    EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
+                      ('@com_google_googleapis//', '')]
+    for external_link in EXTERNAL_LINKS:
+        if file.startswith(external_link[0]):
+            return external_link
+    return ('//', '')
+
+
 def copy_upb_generated_files(rules, args):
-    EXTERNAL_LINKS = [
-        ('@com_google_protobuf//', ':src/'),
-    ]
+    files = {}
     for rule in rules:
-        files = []
-        elink = ('//', '')
-        for external_link in EXTERNAL_LINKS:
-            if rule.proto_files[0].startswith(external_link[0]):
-                elink = external_link
-                break
         if rule.type == 'upb_proto_library':
-            for proto_file in rule.proto_files:
-                proto_file = proto_file[len(elink[0]) + len(elink[1]):]
-                files.append(get_upb_path(proto_file, '.upb.h'))
-                files.append(get_upb_path(proto_file, '.upb.c'))
+            frag = '.upb'
             output_dir = args.upb_out
         else:
-            for proto_file in rule.proto_files:
-                proto_file = proto_file[len(elink[0]) + len(elink[1]):]
-                files.append(get_upb_path(proto_file, '.upbdefs.h'))
-                files.append(get_upb_path(proto_file, '.upbdefs.c'))
+            frag = '.upbdefs'
             output_dir = args.upbdefs_out
-        for file in files:
-            src = os.path.join(get_bazel_bin_root_path(elink), file)
-            dst = os.path.join(output_dir, file)
-            if args.verbose:
-                print('Copy:')
-                print('    {0}'.format(src))
-                print(' -> {0}'.format(dst))
-            os.makedirs(os.path.split(dst)[0], exist_ok=True)
-            shutil.copyfile(src, dst)
+        for proto_file in rule.proto_files:
+            elink = get_external_link(proto_file)
+            proto_file = proto_file[len(elink[0]) + len(elink[1]):]
+            for ext in ('.h', '.c'):
+                file = get_upb_path(proto_file, frag + ext)
+                src = os.path.join(get_bazel_bin_root_path(elink), file)
+                dst = os.path.join(output_dir, file)
+                files[src] = dst
+    for src, dst in files.items():
+        if args.verbose:
+            print('Copy:')
+            print('    {0}'.format(src))
+            print(' -> {0}'.format(dst))
+        os.makedirs(os.path.split(dst)[0], exist_ok=True)
+        shutil.copyfile(src, dst)
 
 
 parser = argparse.ArgumentParser(description='UPB code-gen from bazel')

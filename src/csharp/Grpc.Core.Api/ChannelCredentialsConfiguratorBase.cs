@@ -34,7 +34,7 @@ namespace Grpc.Core
         /// <summary>
         /// Configures the credentials to use <c>SslCredentials</c>.
         /// </summary>
-        public abstract void SetSslCredentials(object state, string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback);
+        public abstract void SetSslCredentials(object state, string? rootCertificates, KeyCertificatePair? keyCertificatePair, VerifyPeerCallback? verifyPeerCallback);
 
         /// <summary>
         /// Configures the credentials to use composite channel credentials (a composite of channel credentials and call credentials).
