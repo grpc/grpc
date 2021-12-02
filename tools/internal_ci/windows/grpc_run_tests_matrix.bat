@@ -12,6 +12,12 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+@rem avoid slow finalization after the script has exited.
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  exit /b %errorlevel%
+)
+
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
