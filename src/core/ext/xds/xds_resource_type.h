@@ -34,7 +34,9 @@ class XdsResourceType {
   // A base type for resource data.
   // Subclasses will extend this, and their DecodeResults will be
   // downcastable to their extended type.
-  struct ResourceData {};
+  struct ResourceData {
+    virtual ~ResourceData() = default;
+  };
 
   // Result returned by Decode().
   struct DecodeResult {
