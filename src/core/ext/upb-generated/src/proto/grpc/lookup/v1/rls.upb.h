@@ -145,6 +145,8 @@ UPB_INLINE bool grpc_lookup_v1_RouteLookupResponse_add_targets(grpc_lookup_v1_Ro
       arena);
 }
 
+extern const upb_msglayout_file src_proto_grpc_lookup_v1_rls_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

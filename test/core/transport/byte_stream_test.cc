@@ -41,7 +41,7 @@ void NotCalledClosure(void* /*arg*/, grpc_error_handle /*error*/) {
 }
 
 TEST(SliceBufferByteStream, Basic) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -73,7 +73,7 @@ TEST(SliceBufferByteStream, Basic) {
 }
 
 TEST(SliceBufferByteStream, Shutdown) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -117,7 +117,7 @@ TEST(SliceBufferByteStream, Shutdown) {
 //
 
 TEST(CachingByteStream, Basic) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -152,7 +152,7 @@ TEST(CachingByteStream, Basic) {
 }
 
 TEST(CachingByteStream, Reset) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -194,7 +194,7 @@ TEST(CachingByteStream, Reset) {
 }
 
 TEST(CachingByteStream, SharedCache) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);

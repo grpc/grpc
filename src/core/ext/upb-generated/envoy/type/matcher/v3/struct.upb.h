@@ -127,6 +127,8 @@ UPB_INLINE void envoy_type_matcher_v3_StructMatcher_PathSegment_set_key(envoy_ty
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 1);
 }
 
+extern const upb_msglayout_file envoy_type_matcher_v3_struct_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

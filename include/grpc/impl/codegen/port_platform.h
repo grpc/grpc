@@ -126,10 +126,14 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
-#ifdef __ANDROID_API__
-#if (__ANDROID_API__) >= 29
-#define GPR_SUPPORT_BINDER_TRANSPORT 1
+#ifndef __ANDROID_API__
+#error "__ANDROID_API__ must be defined for Android builds."
 #endif
+#if __ANDROID_API__ < 21
+#error "Requires Android API v21 and above"
+#endif
+#if (__ANDROID_API__) >= 23
+#define GPR_SUPPORT_BINDER_TRANSPORT 1
 #endif
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.

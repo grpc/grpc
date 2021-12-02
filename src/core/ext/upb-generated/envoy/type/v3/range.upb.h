@@ -139,6 +139,8 @@ UPB_INLINE void envoy_type_v3_DoubleRange_set_end(envoy_type_v3_DoubleRange *msg
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double) = value;
 }
 
+extern const upb_msglayout_file envoy_type_v3_range_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

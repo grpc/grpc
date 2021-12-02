@@ -252,6 +252,8 @@ UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEnt
   _upb_msg_map_set_value(msg, &value, sizeof(struct envoy_config_endpoint_v3_Endpoint*));
 }
 
+extern const upb_msglayout_file envoy_config_endpoint_v3_endpoint_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

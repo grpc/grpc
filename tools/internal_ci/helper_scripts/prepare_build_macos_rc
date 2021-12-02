@@ -164,6 +164,14 @@ then
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
+  
+  # Installed versions should be kept in sync with
+  # templates/tools/dockerfile/csharp_dotnetcli_deps.include
+  time curl -O https://download.visualstudio.microsoft.com/download/pr/e0fe8c99-e33c-4d75-bd4e-2478ed3ee35a/ff06e47afc7c13bdbbaa50a9713ac772/dotnet-sdk-3.1.415-osx-x64.pkg
+  time sudo installer -pkg ./dotnet-sdk-3.1.415-osx-x64.pkg -target /
+
+  time curl -O https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg
+  time sudo installer -pkg ./dotnet-sdk-6.0.100-osx-x64.pkg -target /
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]

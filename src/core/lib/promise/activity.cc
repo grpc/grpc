@@ -16,6 +16,8 @@
 
 #include "src/core/lib/promise/activity.h"
 
+#include "absl/base/attributes.h"
+
 #include "src/core/lib/gprpp/atomic_utils.h"
 
 namespace grpc_core {
@@ -23,8 +25,7 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
-ABSL_CONST_INIT GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_ =
-    nullptr;
+GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
 Waker::Unwakeable Waker::unwakeable_;
 
 ///////////////////////////////////////////////////////////////////////////////

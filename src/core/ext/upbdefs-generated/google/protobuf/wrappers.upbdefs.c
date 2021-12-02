@@ -8,28 +8,7 @@
 
 #include "upb/def.h"
 #include "google/protobuf/wrappers.upbdefs.h"
-
-extern const upb_msglayout google_protobuf_DoubleValue_msginit;
-extern const upb_msglayout google_protobuf_FloatValue_msginit;
-extern const upb_msglayout google_protobuf_Int64Value_msginit;
-extern const upb_msglayout google_protobuf_UInt64Value_msginit;
-extern const upb_msglayout google_protobuf_Int32Value_msginit;
-extern const upb_msglayout google_protobuf_UInt32Value_msginit;
-extern const upb_msglayout google_protobuf_BoolValue_msginit;
-extern const upb_msglayout google_protobuf_StringValue_msginit;
-extern const upb_msglayout google_protobuf_BytesValue_msginit;
-
-static const upb_msglayout *layouts[9] = {
-  &google_protobuf_DoubleValue_msginit,
-  &google_protobuf_FloatValue_msginit,
-  &google_protobuf_Int64Value_msginit,
-  &google_protobuf_UInt64Value_msginit,
-  &google_protobuf_Int32Value_msginit,
-  &google_protobuf_UInt32Value_msginit,
-  &google_protobuf_BoolValue_msginit,
-  &google_protobuf_StringValue_msginit,
-  &google_protobuf_BytesValue_msginit,
-};
+#include "google/protobuf/wrappers.upb.h"
 
 static const char descriptor[518] = {'\n', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'w', 'r', 'a', 'p', 'p', 'e', 'r', 
 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '\"', 
@@ -60,7 +39,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init google_protobuf_wrappers_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_protobuf_wrappers_proto_upb_file_layout,
   "google/protobuf/wrappers.proto",
   UPB_STRVIEW_INIT(descriptor, 518)
 };

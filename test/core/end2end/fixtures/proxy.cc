@@ -84,9 +84,9 @@ typedef struct {
 static void thread_main(void* arg);
 static void request_call(grpc_end2end_proxy* proxy);
 
-grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
-                                              grpc_channel_args* client_args,
-                                              grpc_channel_args* server_args) {
+grpc_end2end_proxy* grpc_end2end_proxy_create(
+    const grpc_end2end_proxy_def* def, const grpc_channel_args* client_args,
+    const grpc_channel_args* server_args) {
   int proxy_port = grpc_pick_unused_port_or_die();
   int server_port = grpc_pick_unused_port_or_die();
 
@@ -104,7 +104,7 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   const char* arg_to_remove = GRPC_ARG_ENABLE_RETRIES;
   grpc_arg arg_to_add = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0);
-  grpc_channel_args* proxy_client_args =
+  const grpc_channel_args* proxy_client_args =
       grpc_channel_args_copy_and_add_and_remove(client_args, &arg_to_remove, 1,
                                                 &arg_to_add, 1);
   proxy->client =

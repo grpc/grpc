@@ -56,7 +56,7 @@ class TraceFlagList {
 };
 
 namespace testing {
-void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
+void grpc_tracer_enable_flag(TraceFlag* flag);
 }
 
 class TraceFlag {
@@ -90,7 +90,7 @@ class TraceFlag {
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
  private:
-  friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
+  friend void testing::grpc_tracer_enable_flag(TraceFlag* flag);
   friend class TraceFlagList;
 
   void set_enabled(bool enabled) {

@@ -18,8 +18,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <type_traits>
 
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"

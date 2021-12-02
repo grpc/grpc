@@ -225,22 +225,6 @@ grpc_cc_test(
     deps = [":fullstack_streaming_pump_h"],
 )
 
-grpc_cc_test(
-    name = "bm_fullstack_trickle",
-    size = "large",
-    srcs = ["bm_fullstack_trickle.cc"],
-    args = grpc_benchmark_args(),
-    external_deps = [
-        "absl/flags:flag",
-    ],
-    tags = [
-        "manual",
-        "no_windows",
-        "notap",
-    ],
-    deps = [":helpers"],
-)
-
 grpc_cc_library(
     name = "fullstack_unary_ping_pong_h",
     testonly = 1,
