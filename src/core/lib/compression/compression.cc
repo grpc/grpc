@@ -29,8 +29,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-int grpc_compression_algorithm_is_message(
-    grpc_compression_algorithm) {
+int grpc_compression_algorithm_is_message(grpc_compression_algorithm) {
   return 1;
 }
 

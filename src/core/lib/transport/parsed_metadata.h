@@ -26,7 +26,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -46,7 +45,6 @@ union Buffer {
   uint64_t trivial;
   void* pointer;
   grpc_slice slice;
-  grpc_mdelem mdelem;
 };
 
 // Given a key and a value, concatenate together to make a debug string.
@@ -132,13 +130,12 @@ class ParsedMetadata {
         transport_size_(transport_size) {
     value_.slice = value.TakeCSlice();
   }
-  // Takes ownership of elem
-  explicit ParsedMetadata(grpc_mdelem elem)
-      : vtable_(grpc_is_binary_header_internal(GRPC_MDKEY(elem))
-                    ? MdelemVtable<true>()
-                    : MdelemVtable<false>()),
-        transport_size_(GRPC_MDELEM_LENGTH(elem)) {
-    value_.mdelem = elem;
+  // Construct metadata from a string key, slice value pair.
+  ParsedMetadata(std::string key, Slice value)
+      : vtable_(ParsedMetadata::template StringSliceVTable()),
+        transport_size_(value.size()) {
+    value_.pointer =
+        new std::pair<std::string, Slice>(std::move(key), std::move(value));
   }
   ParsedMetadata() : vtable_(EmptyVTable()), transport_size_(0) {}
   ~ParsedMetadata() { vtable_->destroy(value_); }
