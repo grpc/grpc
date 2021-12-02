@@ -44,17 +44,6 @@ namespace {
 class MetadataListEncoder {
  public:
   explicit MetadataListEncoder(std::vector<std::string>* out) : out_(out) {}
-  void Encode(const grpc_mdelem& md) {
-    MaybeAddComma();
-    out_->push_back("key=");
-    char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    out_->push_back(dump);
-    gpr_free(dump);
-    out_->push_back(" value=");
-    dump = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    out_->push_back(dump);
-    gpr_free(dump);
-  }
 
   void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis deadline) {
     MaybeAddComma();

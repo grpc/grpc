@@ -1547,13 +1547,11 @@ grpc_cc_library(
     name = "slice_refcount",
     srcs = [
         "src/core/lib/slice/slice_refcount.cc",
-        "src/core/lib/slice/static_slice.cc",
     ],
     hdrs = [
         "src/core/lib/slice/slice_refcount.h",
         "src/core/lib/slice/slice_refcount_base.h",
         "src/core/lib/slice/slice_utils.h",
-        "src/core/lib/slice/static_slice.h",
     ],
     public_hdrs = [
         "include/grpc/slice.h",

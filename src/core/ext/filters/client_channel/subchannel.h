@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 

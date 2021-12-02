@@ -41,7 +41,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/parsed_metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -99,7 +98,7 @@ struct TeMetadata {
   static ValueType MementoToValue(MementoType te) { return te; }
   static StaticSlice Encode(ValueType x) {
     GPR_ASSERT(x == kTrailers);
-    return StaticSlice(GRPC_MDSTR_TRAILERS);
+    return StaticSlice::FromStaticString("trailers");
   }
   static const char* DisplayValue(MementoType te) {
     switch (te) {
@@ -505,11 +504,7 @@ class AppendHelper {
   }
 
   GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
-    GPR_ASSERT(GRPC_ERROR_NONE ==
-               container_->Append(grpc_mdelem_from_slices(
-                   grpc_slice_intern(
-                       grpc_slice_from_static_buffer(key.data(), key.length())),
-                   value_.TakeCSlice())));
+    container_->AppendUnknown(key, std::move(value_));
   }
 
  private:

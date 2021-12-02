@@ -131,11 +131,11 @@ class ParsedMetadata {
     value_.slice = value.TakeCSlice();
   }
   // Construct metadata from a string key, slice value pair.
-  ParsedMetadata(std::string key, Slice value)
-      : vtable_(ParsedMetadata::template StringSliceVTable()),
+  ParsedMetadata(Slice key, Slice value)
+      : vtable_(ParsedMetadata::KeyValueVTable()),
         transport_size_(value.size()) {
     value_.pointer =
-        new std::pair<std::string, Slice>(std::move(key), std::move(value));
+        new std::pair<Slice, Slice>(std::move(key), std::move(value));
   }
   ParsedMetadata() : vtable_(EmptyVTable()), transport_size_(0) {}
   ~ParsedMetadata() { vtable_->destroy(value_); }
@@ -196,20 +196,17 @@ class ParsedMetadata {
     // result is a bitwise copy of the originating ParsedMetadata.
     void (*const with_new_value)(Slice* new_value, ParsedMetadata* result);
     std::string (*const debug_string)(const Buffer& value);
-    // TODO(ctiller): when we delete mdelem, make this a simple integer constant
-    // on the vtable
     size_t (*const key_length)(const Buffer& value);
   };
 
   static const VTable* EmptyVTable();
+  static const VTable* KeyValueVTable();
   template <typename Which>
   static const VTable* TrivialTraitVTable();
   template <typename Which>
   static const VTable* NonTrivialTraitVTable();
   template <typename Which>
   static const VTable* SliceTraitVTable();
-  template <bool kIsBinaryHeader>
-  static const VTable* MdelemVtable();
 
   template <Slice (*ParseMemento)(Slice)>
   GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetSlice(
@@ -339,45 +336,6 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       // key_length
       [](const Buffer&) { return Which::key().size(); },
   };
-  return &vtable;
-}
-
-template <typename MetadataContainer>
-template <bool kIsBinaryHeader>
-const typename ParsedMetadata<MetadataContainer>::VTable*
-ParsedMetadata<MetadataContainer>::MdelemVtable() {
-  static const VTable vtable = {
-      kIsBinaryHeader,
-      // destroy
-      [](const Buffer& value) { GRPC_MDELEM_UNREF(value.mdelem); },
-      // set
-      [](const Buffer& value, MetadataContainer* map) {
-        auto md = GRPC_MDELEM_REF(value.mdelem);
-        auto err = map->Append(md);
-        // If an error occurs, md is not consumed and we need to.
-        // This is an awful API, but that's why we're replacing it.
-        if (err != GRPC_ERROR_NONE) {
-          GRPC_MDELEM_UNREF(md);
-        }
-        return err;
-      },
-      // with_new_value
-      [](Slice* value_slice, ParsedMetadata* result) {
-        result->value_.mdelem = grpc_mdelem_from_slices(
-            static_cast<const ManagedMemorySlice&>(
-                grpc_slice_ref_internal(GRPC_MDKEY(result->value_.mdelem))),
-            value_slice->TakeCSlice());
-      },
-      // debug_string
-      [](const Buffer& value) {
-        return metadata_detail::MakeDebugString(
-            StringViewFromSlice(GRPC_MDKEY(value.mdelem)),
-            StringViewFromSlice(GRPC_MDVALUE(value.mdelem)));
-      },
-      // key_length
-      [](const Buffer& value) {
-        return GRPC_SLICE_LENGTH(GRPC_MDKEY(value.mdelem));
-      }};
   return &vtable;
 }
 
