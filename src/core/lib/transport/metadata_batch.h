@@ -470,9 +470,7 @@ class ParseHelper {
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
       absl::string_view key) {
-    return ParsedMetadata<Container>(
-        std::string(key),
-        std::move(value_));
+    return ParsedMetadata<Container>(std::string(key), std::move(value_));
   }
 
  private:
@@ -735,7 +733,9 @@ class MetadataMap {
   // Encoder to compute TransportSize
   class TransportSizeEncoder {
    public:
-    void Encode(absl::string_view key, const Slice& value) { size_ += key.length() + value.length() + 32; }
+    void Encode(absl::string_view key, const Slice& value) {
+      size_ += key.length() + value.length() + 32;
+    }
 
     template <typename Which>
     void Encode(Which, const typename Which::ValueType& value) {
@@ -755,13 +755,11 @@ class MetadataMap {
 };
 
 template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {
-}
+MetadataMap<Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
 
 template <typename... Traits>
 MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept
-    : table_(std::move(other.table_)), unknown_(std::move(other.unknown_)) {
-}
+    : table_(std::move(other.table_)), unknown_(std::move(other.unknown_)) {}
 
 template <typename... Traits>
 MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(
