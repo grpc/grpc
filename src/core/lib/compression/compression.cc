@@ -30,11 +30,11 @@
 #include "src/core/lib/transport/static_metadata.h"
 
 int grpc_compression_algorithm_is_message(
-    grpc_compression_algorithm algorithm) {
+    grpc_compression_algorithm) {
   return 1;
 }
 
-int grpc_compression_algorithm_is_stream(grpc_compression_algorithm algorithm) {
+int grpc_compression_algorithm_is_stream(grpc_compression_algorithm) {
   return 0;
 }
 
