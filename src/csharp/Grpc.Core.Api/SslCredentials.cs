@@ -38,9 +38,9 @@ namespace Grpc.Core
     /// </summary>
     public sealed class SslCredentials : ChannelCredentials
     {
-        readonly string rootCertificates;
-        readonly KeyCertificatePair keyCertificatePair;
-        readonly VerifyPeerCallback verifyPeerCallback;
+        readonly string? rootCertificates;
+        readonly KeyCertificatePair? keyCertificatePair;
+        readonly VerifyPeerCallback? verifyPeerCallback;
 
         /// <summary>
         /// Creates client-side SSL credentials loaded from
@@ -76,7 +76,7 @@ namespace Grpc.Core
         /// <param name="keyCertificatePair">a key certificate pair.</param>
         /// <param name="verifyPeerCallback">a callback to verify peer's target name and certificate.</param>
         /// Note: experimental API that can change or be removed without any prior notice.
-        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
+        public SslCredentials(string? rootCertificates, KeyCertificatePair? keyCertificatePair, VerifyPeerCallback? verifyPeerCallback)
         {
             this.rootCertificates = rootCertificates;
             this.keyCertificatePair = keyCertificatePair;
@@ -86,7 +86,7 @@ namespace Grpc.Core
         /// <summary>
         /// PEM encoding of the server root certificates.
         /// </summary>
-        public string RootCertificates
+        public string? RootCertificates
         {
             get
             {
@@ -98,7 +98,7 @@ namespace Grpc.Core
         /// Client side key and certificate pair.
         /// If null, client will not use key and certificate pair.
         /// </summary>
-        public KeyCertificatePair KeyCertificatePair
+        public KeyCertificatePair? KeyCertificatePair
         {
             get
             {

@@ -43,6 +43,8 @@
 
 namespace grpc_core {
 
+bool XdsRbacEnabled();
+
 class XdsClient;
 
 class XdsApi {
@@ -53,6 +55,7 @@ class XdsApi {
   static const char* kEdsTypeUrl;
 
   struct Duration {
+    Duration() {}
     int64_t seconds = 0;
     int32_t nanos = 0;
     bool operator==(const Duration& other) const {
@@ -206,7 +209,6 @@ class XdsApi {
       return virtual_hosts == other.virtual_hosts;
     }
     std::string ToString() const;
-    VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
 
   struct CommonTlsContext {

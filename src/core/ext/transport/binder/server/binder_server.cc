@@ -173,7 +173,7 @@ class BinderServerListener : public Server::ListenerInterface {
  private:
   absl::Status OnSetupTransport(transaction_code_t code,
                                 grpc_binder::ReadableParcel* parcel, int uid) {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     if (grpc_binder::BinderTransportTxCode(code) !=
         grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
@@ -212,8 +212,8 @@ class BinderServerListener : public Server::ListenerInterface {
         std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
     grpc_channel_args* args = grpc_channel_args_copy(server_->channel_args());
-    grpc_error_handle error = server_->SetupTransport(server_transport, nullptr,
-                                                      args, nullptr, nullptr);
+    grpc_error_handle error =
+        server_->SetupTransport(server_transport, nullptr, args, nullptr);
     grpc_channel_args_destroy(args);
     return grpc_error_to_absl_status(error);
   }
@@ -238,11 +238,10 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
     return false;
   }
   std::string conn_id = addr.substr(kBinderUriScheme.size());
-  grpc_core::Server* core_server = server->core_server.get();
+  Server* core_server = Server::FromC(server);
   core_server->AddListener(
-      grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(
-          new grpc_core::BinderServerListener(
-              core_server, conn_id, std::move(factory), security_policy)));
+      OrphanablePtr<Server::ListenerInterface>(new BinderServerListener(
+          core_server, conn_id, std::move(factory), security_policy)));
   return true;
 }
 

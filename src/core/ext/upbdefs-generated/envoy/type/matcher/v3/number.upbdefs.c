@@ -8,17 +8,12 @@
 
 #include "upb/def.h"
 #include "envoy/type/matcher/v3/number.upbdefs.h"
+#include "envoy/type/matcher/v3/number.upb.h"
 
 extern upb_def_init envoy_type_v3_range_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_type_matcher_v3_DoubleMatcher_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_type_matcher_v3_DoubleMatcher_msginit,
-};
-
 static const char descriptor[404] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'n', 
 'u', 'm', 'b', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 
 'a', 't', 'c', 'h', 'e', 'r', '.', 'v', '3', '\032', '\031', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'v', '3', '/', 
@@ -48,7 +43,7 @@ static upb_def_init *deps[5] = {
 
 upb_def_init envoy_type_matcher_v3_number_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_type_matcher_v3_number_proto_upb_file_layout,
   "envoy/type/matcher/v3/number.proto",
   UPB_STRVIEW_INIT(descriptor, 404)
 };

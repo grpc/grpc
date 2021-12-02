@@ -263,7 +263,7 @@ static void test_compression_enable_disable_algorithm(void) {
 
 static void test_channel_args_set_compression_algorithm(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_args* ch_args;
+  const grpc_channel_args* ch_args;
 
   ch_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, GRPC_COMPRESS_GZIP);
@@ -277,8 +277,10 @@ static void test_channel_args_set_compression_algorithm(void) {
 
 static void test_channel_args_compression_algorithm_states(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate,
-      *ch_args_wo_gzip_deflate_gzip;
+  const grpc_channel_args* ch_args;
+  const grpc_channel_args* ch_args_wo_gzip;
+  const grpc_channel_args* ch_args_wo_gzip_deflate;
+  const grpc_channel_args* ch_args_wo_gzip_deflate_gzip;
   unsigned states_bitset;
   size_t i;
 

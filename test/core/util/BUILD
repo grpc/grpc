@@ -46,7 +46,6 @@ grpc_cc_library(
         "port_server_client.cc",
         "reconnect_server.cc",
         "resolve_localhost_ip46.cc",
-        "resource_user_util.cc",
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
@@ -69,7 +68,6 @@ grpc_cc_library(
         "port_server_client.h",
         "reconnect_server.h",
         "resolve_localhost_ip46.h",
-        "resource_user_util.h",
         "slice_splitter.h",
         "subprocess.h",
         "test_config.h",
@@ -83,6 +81,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        ":build",
         ":grpc_suppressions",
         ":stack_tracer",
         "//:gpr",
@@ -207,4 +206,10 @@ grpc_cc_library(
     deps = [
         "//:grpc",
     ],
+)
+
+grpc_cc_library(
+    name = "build",
+    srcs = ["build.cc"],
+    hdrs = ["build.h"],
 )

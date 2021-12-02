@@ -114,6 +114,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
+    src/core/ext/filters/server_config_selector/server_config_selector.cc \
+    src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
     src/core/ext/service_config/service_config.cc \
     src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
@@ -225,7 +227,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
     src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c \
     src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
@@ -362,12 +367,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
+    src/core/ext/xds/xds_routing.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
@@ -391,6 +397,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/event_engine_factory.cc \
+    src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
@@ -498,7 +505,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
-    src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
@@ -540,6 +546,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/matchers/matchers.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
+    src/core/lib/promise/activity.cc \
+    src/core/lib/resource_quota/api.cc \
+    src/core/lib/resource_quota/memory_quota.cc \
+    src/core/lib/resource_quota/resource_quota.cc \
+    src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/sdk_server_authz_filter.cc \
@@ -633,6 +645,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/static_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
@@ -680,7 +693,6 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
-    third_party/abseil-cpp/absl/base/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
@@ -701,8 +713,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
-    third_party/abseil-cpp/absl/hash/internal/wyhash.cc \
+    third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
+    third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -713,7 +726,14 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_internal.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_btree.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
+    third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
+    third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
+    third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \
     third_party/abseil-cpp/absl/strings/internal/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/memutil.cc \
     third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
@@ -781,7 +801,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/f_enum.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c \
@@ -1095,6 +1114,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/max_age)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
@@ -1190,7 +1210,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
@@ -1206,6 +1225,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
@@ -1251,6 +1272,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/profiling/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)

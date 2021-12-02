@@ -23,6 +23,9 @@ extern "C" {
 struct envoy_annotations_ResourceAnnotation;
 typedef struct envoy_annotations_ResourceAnnotation envoy_annotations_ResourceAnnotation;
 extern const upb_msglayout envoy_annotations_ResourceAnnotation_msginit;
+extern const upb_msglayout_ext envoy_annotations_resource_ext;
+struct google_protobuf_ServiceOptions;
+extern const upb_msglayout google_protobuf_ServiceOptions_msginit;
 
 
 /* envoy.annotations.ResourceAnnotation */
@@ -56,6 +59,10 @@ UPB_INLINE upb_strview envoy_annotations_ResourceAnnotation_type(const envoy_ann
 UPB_INLINE void envoy_annotations_ResourceAnnotation_set_type(envoy_annotations_ResourceAnnotation *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
+
+UPB_INLINE bool envoy_annotations_has_resource(const struct google_protobuf_ServiceOptions *msg) { return _upb_msg_getext(msg, &envoy_annotations_resource_ext) != NULL; }
+UPB_INLINE const envoy_annotations_ResourceAnnotation* envoy_annotations_resource(const struct google_protobuf_ServiceOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &envoy_annotations_resource_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const envoy_annotations_ResourceAnnotation*); }
+extern const upb_msglayout_file envoy_annotations_resource_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

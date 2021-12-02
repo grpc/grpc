@@ -157,18 +157,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "stream_owned_slice_test",
-    srcs = ["stream_owned_slice_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "timeout_encoding_test",
     srcs = ["timeout_encoding_test.cc"],
     language = "C++",

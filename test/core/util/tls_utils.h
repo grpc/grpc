@@ -26,18 +26,18 @@ namespace testing {
 
 class TmpFile {
  public:
-  // Create a temporary file with |credential_data| written in.
-  explicit TmpFile(absl::string_view credential_data);
+  // Create a temporary file with |data| written in.
+  explicit TmpFile(absl::string_view data);
 
   ~TmpFile();
 
   const std::string& name() { return name_; }
 
-  // Rewrite |credential_data| to the temporary file, in an atomic way.
-  void RewriteFile(absl::string_view credential_data);
+  // Rewrite |data| to the temporary file, in an atomic way.
+  void RewriteFile(absl::string_view data);
 
  private:
-  std::string CreateTmpFileAndWriteData(absl::string_view credential_data);
+  std::string CreateTmpFileAndWriteData(absl::string_view data);
 
   std::string name_;
 };
@@ -125,7 +125,7 @@ class AsyncExternalVerifier {
   static void WorkerThread(void* arg);
 
   bool success_ = false;
-  grpc_core::Thread thread_;
+  Thread thread_;
   grpc_tls_certificate_verifier_external base_;
   Mutex mu_;
   std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
