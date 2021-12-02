@@ -18,6 +18,8 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
 
 bool squelch = true;
@@ -27,7 +29,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
@@ -43,9 +45,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
     grpc_transport* server_transport = grpc_create_binder_transport_server(
-        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(data, size));
-    server->core_server->SetupTransport(server_transport, nullptr, nullptr,
-                                        nullptr);
+        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+            input.incoming_parcels()),
+        std::make_shared<
+            grpc::experimental::binder::UntrustedSecurityPolicy>());
+    grpc_core::Server::FromC(server)->SetupTransport(server_transport, nullptr,
+                                                     nullptr, nullptr);
 
     grpc_call* call1 = nullptr;
     grpc_call_details call_details1;
@@ -118,5 +123,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_completion_queue_destroy(cq);
   }
   grpc_shutdown();
-  return 0;
 }
