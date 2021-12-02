@@ -187,16 +187,15 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
+// We separate SimpleIntBasedMetadata into two pieces: one that does not depend
+// on the invalid value, and one that does. This allows the compiler to easily
+// see the functions that are shared, and helps reduce code bloat here.
 template <typename Int>
 struct SimpleIntBasedMetadataBase {
   using ValueType = Int;
   using MementoType = Int;
   static ValueType MementoToValue(MementoType value) { return value; }
-  static Slice Encode(ValueType x) {
-    char tmp[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(x, tmp);
-    return Slice::FromCopiedString(tmp);
-  }
+  static Slice Encode(ValueType x) { return Slice::FromInt64(x); }
   static Int DisplayValue(MementoType x) { return x; }
 };
 

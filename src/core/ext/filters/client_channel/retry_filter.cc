@@ -396,7 +396,6 @@ class RetryFilter::CallData {
     void MaybeSwitchToFastPath();
 
     // Returns true if the call should be retried.
-    // If server_pushback_md is non-null, sets *server_pushback_ms.
     bool ShouldRetry(absl::optional<grpc_status_code> status, bool is_lb_drop,
                      absl::optional<grpc_millis> server_pushback_ms);
 
@@ -1678,7 +1677,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   call_attempt->MaybeCancelPerAttemptRecvTimer();
   // Get the call's status and check for server pushback metadata.
   grpc_status_code status = GRPC_STATUS_OK;
-  absl::optional<grpc_millis> server_pushback_ms = absl::nullopt;
+  absl::optional<grpc_millis> server_pushback_ms;
   grpc_metadata_batch* md_batch =
       batch_data->batch_.payload->recv_trailing_metadata.recv_trailing_metadata;
   bool is_lb_drop = false;
