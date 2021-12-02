@@ -47,7 +47,8 @@ struct fullstack_fixture_data {
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* client_args, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* client_args,
+    const grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
   fullstack_fixture_data* ffd = new fullstack_fixture_data();
@@ -66,7 +67,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 }
 
 void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* client_args) {
+                                  const grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   /* If testing for proxy auth, add credentials to proxy uri */
@@ -90,7 +91,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
 }
 
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* server_args) {
+                                  const grpc_channel_args* server_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   if (f->server) {

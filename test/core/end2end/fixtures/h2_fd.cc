@@ -51,7 +51,8 @@ static void create_sockets(int sv[2]) {
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   sp_fixture_data* fixture_data =
       static_cast<sp_fixture_data*>(gpr_malloc(sizeof(*fixture_data)));
 
@@ -66,8 +67,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   return f;
 }
 
-static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
-                                          grpc_channel_args* client_args) {
+static void chttp2_init_client_socketpair(
+    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
   grpc_core::ExecCtx exec_ctx;
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
 
@@ -77,8 +78,8 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   GPR_ASSERT(f->client);
 }
 
-static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
-                                          grpc_channel_args* server_args) {
+static void chttp2_init_server_socketpair(
+    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args) {
   grpc_core::ExecCtx exec_ctx;
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
   GPR_ASSERT(!f->server);

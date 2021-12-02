@@ -249,18 +249,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bm_metadata",
-    srcs = ["bm_metadata.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_polling = False,
-    deps = [":helpers"],
-)
-
-grpc_cc_test(
     name = "bm_chttp2_hpack",
     srcs = ["bm_chttp2_hpack.cc"],
     args = grpc_benchmark_args(),

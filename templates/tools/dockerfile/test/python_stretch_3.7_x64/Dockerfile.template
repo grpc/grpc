@@ -14,10 +14,12 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  <%include file="../../python_stretch.include"/>
+  <%include file="../../python_stretch_base.include"/>
 
   RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
   RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
   # for Python test coverage reporting
-  RUN pip install coverage
+  RUN python3.7 -m pip install coverage
+
+  <%include file="../../gcp_api_libraries.include"/>
