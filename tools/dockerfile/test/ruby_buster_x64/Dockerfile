@@ -106,5 +106,8 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 RUN mkdir /var/local/jenkins
 
+
+RUN python3 -m pip install virtualenv==16.7.9
+
 # Define the default command.
 CMD ["bash"]
