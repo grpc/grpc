@@ -30,7 +30,7 @@ cdef class Server:
     notifier.user_data = NULL
     if xds:
       grpc_server_set_config_fetcher(self.c_server,
-        grpc_server_config_fetcher_xds_create(notifier, 10 * 60 * 1000, channel_args.c_args()))
+        grpc_server_config_fetcher_xds_create(notifier, channel_args.c_args()))
     self.references.append(arguments)
 
   def request_call(
