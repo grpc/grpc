@@ -37,4 +37,4 @@ set -ex
 mv ${KOKORO_GFILE_DIR}/github/grpc/artifacts input_artifacts || true
 ls -R input_artifacts || true
 
-tools/run_tests/task_runner.py -f distribtest linux -j 6
+tools/run_tests/task_runner.py -f distribtest linux -j 12

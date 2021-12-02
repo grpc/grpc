@@ -1,6 +1,6 @@
 %YAML 1.2
 --- |
-  # Copyright 2015 gRPC authors.
+  # Copyright 2016 gRPC authors.
   #
   # Licensed under the Apache License, Version 2.0 (the "License");
   # you may not use this file except in compliance with the License.
@@ -13,27 +13,27 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-
-  <%include file="../../debian_8_header.include"/>
-
-  <%include file="../../apt_get_basic.include"/>
-
-  # Install Electron apt dependencies
+  
+  FROM php:7.3-zts-stretch
+  
   RUN apt-get update && apt-get install -y ${'\\'}
-    libasound2 ${'\\'}
-    libgconf-2-4 ${'\\'}
-    libgtk2.0-0 ${'\\'}
-    libnss3 ${'\\'}
-    libxss1 ${'\\'}
-    libxtst6 ${'\\'}
-    xvfb
+    autoconf automake build-essential git libtool curl ${'\\'}
+    zlib1g-dev ${'\\'}
+    && apt-get clean
 
-  <%include file="../../python_deps.include"/>
-  <%include file="../../gcp_api_libraries.include"/>
-  <%include file="../../node_deps.include"/>
+  # install php pthreads from source
+  # TODO(jtattermusch): is this really needed?
+  # See https://github.com/grpc/grpc/pull/23056
+  WORKDIR /tmp
+  RUN git clone https://github.com/krakjoe/pthreads
+  RUN cd pthreads && ${'\\'}
+    phpize && ${'\\'}
+    ./configure && ${'\\'}
+    make && ${'\\'}
+    make install
+
+  <%include file="../../run_tests_python_deps.include"/>
+  <%include file="../../php_common_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
-  # Install Mako to generate files in grpc/grpc-node
-  RUN pip install Mako
-
   # Define the default command.
   CMD ["bash"]

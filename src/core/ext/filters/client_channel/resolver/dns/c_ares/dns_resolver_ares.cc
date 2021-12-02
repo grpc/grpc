@@ -354,7 +354,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
                          grpc_error_std_string(error).c_str());
     std::string error_message =
-        absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
+        absl::StrCat("DNS resolution failed for ", name_to_resolve_);
     result_handler_->ReturnError(grpc_error_set_int(
         GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
                                                          &error, 1),

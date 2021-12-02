@@ -148,7 +148,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "green"  # @unused
 
-core_version = "20.0.0"  # @unused
+core_version = "21.0.0"  # @unused
 
 version = "1.43.0-dev"  # @unused
 
@@ -866,7 +866,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "debug_location",
-        "google_api_upb",
+        "google_rpc_status_upb",
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
@@ -2497,7 +2497,6 @@ grpc_cc_library(
     deps = [
         "config",
         "error",
-        "google_api_upb",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -2540,7 +2539,6 @@ grpc_cc_library(
     deps = [
         "config",
         "error",
-        "google_api_upb",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -2643,7 +2641,7 @@ grpc_cc_library(
         "envoy_core_upbdefs",
         "envoy_type_upb",
         "error",
-        "google_api_upb",
+        "google_rpc_status_upb",
         "gpr_base",
         "gpr_codegen",
         "grpc_base",
@@ -3412,7 +3410,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "grpc_base",
     ],
 )
@@ -3526,7 +3523,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_ads_upb",
-        "google_api_upb",
         "gpr_base",
         "grpc_base",
         "grpc_mock_cel",
@@ -4478,7 +4474,9 @@ grpc_cc_library(
         "envoy_annotations_upb",
         "envoy_core_upb",
         "envoy_type_upb",
-        "google_api_upb",
+        "google_api_annotations_upb",
+        "google_api_expr_upb",
+        "google_rpc_status_upb",
         "proto_gen_validate_upb",
         "protobuf_any_upb",
         "protobuf_duration_upb",
@@ -4593,8 +4591,15 @@ grpc_cc_library(
         "envoy_annotations_upbdefs",
         "envoy_core_upbdefs",
         "envoy_type_upbdefs",
-        "google_api_upbdefs",
+        "google_api_annotations_upbdefs",
+        "google_rpc_status_upbdefs",
         "proto_gen_validate_upbdefs",
+        "protobuf_any_upbdefs",
+        "protobuf_duration_upbdefs",
+        "protobuf_empty_upbdefs",
+        "protobuf_struct_upbdefs",
+        "protobuf_timestamp_upbdefs",
+        "protobuf_wrappers_upbdefs",
         "udpa_annotations_upbdefs",
         "xds_core_upbdefs",
     ],
@@ -4617,7 +4622,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
     ],
 )
 
@@ -4641,7 +4645,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_annotations_upb",
-        "google_api_upbdefs",
     ],
 )
 
@@ -4686,7 +4689,6 @@ grpc_cc_library(
     deps = [
         "envoy_annotations_upb",
         "envoy_type_upb",
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_any_upb",
         "protobuf_duration_upb",
@@ -4743,8 +4745,8 @@ grpc_cc_library(
         "envoy_annotations_upbdefs",
         "envoy_core_upb",
         "envoy_type_upbdefs",
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
+        "protobuf_empty_upbdefs",
         "xds_core_upbdefs",
     ],
 )
@@ -4791,7 +4793,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_annotations_upb",
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_wrappers_upb",
         "udpa_annotations_upb",
@@ -4842,7 +4843,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_type_upb",
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
     ],
 )
@@ -4862,7 +4862,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "protobuf_duration_upb",
         "protobuf_timestamp_upb",
     ],
@@ -4885,8 +4884,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "proto_gen_validate_upb",
+        "protobuf_timestamp_upbdefs",
     ],
 )
 
@@ -4938,7 +4937,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "proto_gen_validate_upb",
     ],
 )
@@ -4968,7 +4966,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "udpa_annotations_upb",
     ],
 )
@@ -5035,7 +5032,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_any_upb",
         "udpa_annotations_upb",
@@ -5070,7 +5066,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
         "udpa_annotations_upbdefs",
         "xds_annotations_upbdefs",
@@ -5093,7 +5088,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_struct_upb",
     ],
@@ -5116,7 +5110,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
         "xds_type_upb",
     ],
@@ -5146,68 +5139,29 @@ WELL_KNOWN_PROTO_TARGETS = [
     deps = ["@com_google_protobuf//:" + target + "_proto"],
 ) for target in WELL_KNOWN_PROTO_TARGETS]
 
-# Once upb code-gen issue is resolved, remove this.
-grpc_cc_library(
-    name = "google_api_upb",
-    srcs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.c",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c",
-        "src/core/ext/upb-generated/google/api/http.upb.c",
-        "src/core/ext/upb-generated/google/rpc/status.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.h",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h",
-        "src/core/ext/upb-generated/google/api/http.upb.h",
-        "src/core/ext/upb-generated/google/rpc/status.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "protobuf_any_upb",
-        "protobuf_duration_upb",
-        "protobuf_empty_upb",
-        "protobuf_struct_upb",
-        "protobuf_timestamp_upb",
-        "protobuf_wrappers_upb",
-    ],
+grpc_upb_proto_library(
+    name = "google_api_annotations_upb",
+    deps = ["@com_google_googleapis//google/api:annotations_proto"],
 )
 
-grpc_cc_library(
-    name = "google_api_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/api/http.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/api/http.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "google_api_upb",
-        "protobuf_any_upbdefs",
-        "protobuf_duration_upbdefs",
-        "protobuf_empty_upbdefs",
-        "protobuf_struct_upbdefs",
-        "protobuf_timestamp_upbdefs",
-        "protobuf_wrappers_upbdefs",
-    ],
+grpc_upb_proto_reflection_library(
+    name = "google_api_annotations_upbdefs",
+    deps = ["@com_google_googleapis//google/api:annotations_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "google_api_expr_upb",
+    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "google_rpc_status_upb",
+    deps = ["@com_google_googleapis//google/rpc:status_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "google_rpc_status_upbdefs",
+    deps = ["@com_google_googleapis//google/rpc:status_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5234,7 +5188,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "protobuf_duration_upb",
     ],
 )
