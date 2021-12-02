@@ -2094,14 +2094,12 @@ void XdsClient::WatchListenerData(
     RefCountedPtr<ListenerWatcherInterface> watcher) {
   std::string listener_name_str = std::string(listener_name);
   ListenerWatcherInterface* w = watcher.get();
-  auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
-  if (!resource.ok()) {
+  // Lambda for handling failure cases.
+  auto fail = [&](grpc_error_handle error) mutable {
     {
       MutexLock lock(&mu_);
       invalid_listener_watchers_[w] = watcher;
     }
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-        "Unable to parse resource name for listener %s", listener_name));
     work_serializer_.Run(
         // TODO(yashykt): When we move to C++14, capture watcher using
         // std::move()
@@ -2109,8 +2107,30 @@ void XdsClient::WatchListenerData(
           watcher->OnError(error);
         },
         DEBUG_LOCATION);
+  };
+  // Parse resource name.
+  auto resource = XdsApi::ParseResourceName(listener_name, XdsApi::IsLds);
+  if (!resource.ok()) {
+    fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Unable to parse resource name for listener %s", listener_name)));
     return;
   }
+  // Find server to use.
+  const XdsBootstrap::XdsServer* xds_server = nullptr;
+  absl::string_view authority_name = resource->authority;
+  if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
+    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+    if (authority == nullptr) {
+      fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("authority \"", authority_name,
+                       "\" not present in bootstrap config")));
+      return;
+    }
+    if (!authority->xds_servers.empty()) {
+      xds_server = &authority->xds_servers[0];
+    }
+  }
+  if (xds_server == nullptr) xds_server = &bootstrap_->server();
   {
     MutexLock lock(&mu_);
     AuthorityState& authority_state = authority_state_map_[resource->authority];
@@ -2136,16 +2156,8 @@ void XdsClient::WatchListenerData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      if (resource->authority == "old:") {
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(bootstrap_->server());
-      } else {
-        auto* authority = bootstrap_->LookupAuthority(
-            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-        GPR_ASSERT(authority != nullptr);
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(authority->xds_servers[0]);
-      }
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(*xds_server);
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kLdsTypeUrl,
                                                    *resource);
@@ -2170,16 +2182,8 @@ void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
   listener_state.watchers.erase(it);
   if (!listener_state.watchers.empty()) return;
   authority_state.listener_map.erase(resource->id);
-  if (resource->authority == "old:") {
-    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-        XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
-  } else {
-    auto* authority = bootstrap_->LookupAuthority(
-        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-    GPR_ASSERT(authority != nullptr);
-    xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
-        XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
-  }
+  authority_state.channel_state->UnsubscribeLocked(
+      XdsApi::kLdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2190,15 +2194,12 @@ void XdsClient::WatchRouteConfigData(
     RefCountedPtr<RouteConfigWatcherInterface> watcher) {
   std::string route_config_name_str = std::string(route_config_name);
   RouteConfigWatcherInterface* w = watcher.get();
-  auto resource = XdsApi::ParseResourceName(route_config_name, XdsApi::IsRds);
-  if (!resource.ok()) {
+  // Lambda for handling failure cases.
+  auto fail = [&](grpc_error_handle error) mutable {
     {
       MutexLock lock(&mu_);
       invalid_route_config_watchers_[w] = watcher;
     }
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrFormat("Unable to parse resource name for route config %s",
-                        route_config_name));
     work_serializer_.Run(
         // TODO(yashykt): When we move to C++14, capture watcher using
         // std::move()
@@ -2206,8 +2207,31 @@ void XdsClient::WatchRouteConfigData(
           watcher->OnError(error);
         },
         DEBUG_LOCATION);
+  };
+  // Parse resource name.
+  auto resource = XdsApi::ParseResourceName(route_config_name, XdsApi::IsRds);
+  if (!resource.ok()) {
+    fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Unable to parse resource name for route config %s",
+                        route_config_name)));
     return;
   }
+  // Find server to use.
+  const XdsBootstrap::XdsServer* xds_server = nullptr;
+  absl::string_view authority_name = resource->authority;
+  if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
+    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+    if (authority == nullptr) {
+      fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("authority \"", authority_name,
+                       "\" not present in bootstrap config")));
+      return;
+    }
+    if (!authority->xds_servers.empty()) {
+      xds_server = &authority->xds_servers[0];
+    }
+  }
+  if (xds_server == nullptr) xds_server = &bootstrap_->server();
   {
     MutexLock lock(&mu_);
     auto& authority_state = authority_state_map_[resource->authority];
@@ -2232,16 +2256,8 @@ void XdsClient::WatchRouteConfigData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      if (resource->authority == "old:") {
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(bootstrap_->server());
-      } else {
-        auto* authority = bootstrap_->LookupAuthority(
-            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-        GPR_ASSERT(authority != nullptr);
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(authority->xds_servers[0]);
-      }
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(*xds_server);
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kRdsTypeUrl,
                                                    *resource);
@@ -2267,16 +2283,8 @@ void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
   route_config_state.watchers.erase(it);
   if (!route_config_state.watchers.empty()) return;
   authority_state.route_config_map.erase(resource->id);
-  if (resource->authority == "old:") {
-    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-        XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
-  } else {
-    auto* authority = bootstrap_->LookupAuthority(
-        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-    GPR_ASSERT(authority != nullptr);
-    xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
-        XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
-  }
+  authority_state.channel_state->UnsubscribeLocked(
+      XdsApi::kRdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2287,19 +2295,39 @@ void XdsClient::WatchClusterData(
     RefCountedPtr<ClusterWatcherInterface> watcher) {
   std::string cluster_name_str = std::string(cluster_name);
   ClusterWatcherInterface* w = watcher.get();
-  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
-  if (!resource.ok()) {
+  // Lambda for handling failure cases.
+  auto fail = [&](grpc_error_handle error) mutable {
     {
       MutexLock lock(&mu_);
       invalid_cluster_watchers_[w] = watcher;
     }
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-        "Unable to parse resource name for cluster %s", cluster_name));
     work_serializer_.Run([watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
                              work_serializer_) { watcher->OnError(error); },
                          DEBUG_LOCATION);
+  };
+  // Parse resource name.
+  auto resource = XdsApi::ParseResourceName(cluster_name, XdsApi::IsCds);
+  if (!resource.ok()) {
+    fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Unable to parse resource name for cluster %s", cluster_name)));
     return;
   }
+  // Find server to use.
+  const XdsBootstrap::XdsServer* xds_server = nullptr;
+  absl::string_view authority_name = resource->authority;
+  if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
+    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+    if (authority == nullptr) {
+      fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("authority \"", authority_name,
+                       "\" not present in bootstrap config")));
+      return;
+    }
+    if (!authority->xds_servers.empty()) {
+      xds_server = &authority->xds_servers[0];
+    }
+  }
+  if (xds_server == nullptr) xds_server = &bootstrap_->server();
   {
     MutexLock lock(&mu_);
     auto& authority_state = authority_state_map_[resource->authority];
@@ -2325,16 +2353,8 @@ void XdsClient::WatchClusterData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      if (resource->authority == "old:") {
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(bootstrap_->server());
-      } else {
-        auto* authority = bootstrap_->LookupAuthority(
-            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-        GPR_ASSERT(authority != nullptr);
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(authority->xds_servers[0]);
-      }
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(*xds_server);
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kCdsTypeUrl,
                                                    *resource);
@@ -2359,16 +2379,8 @@ void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
   cluster_state.watchers.erase(it);
   if (!cluster_state.watchers.empty()) return;
   authority_state.cluster_map.erase(resource->id);
-  if (resource->authority == "old:") {
-    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-        XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
-  } else {
-    auto* authority = bootstrap_->LookupAuthority(
-        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-    GPR_ASSERT(authority != nullptr);
-    xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
-        XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
-  }
+  authority_state.channel_state->UnsubscribeLocked(
+      XdsApi::kCdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
@@ -2379,20 +2391,39 @@ void XdsClient::WatchEndpointData(
     RefCountedPtr<EndpointWatcherInterface> watcher) {
   std::string eds_service_name_str = std::string(eds_service_name);
   EndpointWatcherInterface* w = watcher.get();
-  auto resource = XdsApi::ParseResourceName(eds_service_name, XdsApi::IsEds);
-  if (!resource.ok()) {
+  // Lambda for handling failure cases.
+  auto fail = [&](grpc_error_handle error) mutable {
     {
       MutexLock lock(&mu_);
       invalid_endpoint_watchers_[w] = watcher;
     }
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrFormat("Unable to parse resource name for endpoint service %s",
-                        eds_service_name));
     work_serializer_.Run([watcher, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
                              work_serializer_) { watcher->OnError(error); },
                          DEBUG_LOCATION);
+  };
+  auto resource = XdsApi::ParseResourceName(eds_service_name, XdsApi::IsEds);
+  if (!resource.ok()) {
+    fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Unable to parse resource name for endpoint service %s",
+                        eds_service_name)));
     return;
   }
+  // Find server to use.
+  const XdsBootstrap::XdsServer* xds_server = nullptr;
+  absl::string_view authority_name = resource->authority;
+  if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
+    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+    if (authority == nullptr) {
+      fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("authority \"", authority_name,
+                       "\" not present in bootstrap config")));
+      return;
+    }
+    if (!authority->xds_servers.empty()) {
+      xds_server = &authority->xds_servers[0];
+    }
+  }
+  if (xds_server == nullptr) xds_server = &bootstrap_->server();
   {
     MutexLock lock(&mu_);
     auto& authority_state = authority_state_map_[resource->authority];
@@ -2416,16 +2447,8 @@ void XdsClient::WatchEndpointData(
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.
     if (authority_state.channel_state == nullptr) {
-      if (resource->authority == "old:") {
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(bootstrap_->server());
-      } else {
-        auto* authority = bootstrap_->LookupAuthority(
-            std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-        GPR_ASSERT(authority != nullptr);
-        authority_state.channel_state =
-            GetOrCreateChannelStateLocked(authority->xds_servers[0]);
-      }
+      authority_state.channel_state =
+          GetOrCreateChannelStateLocked(*xds_server);
     }
     authority_state.channel_state->SubscribeLocked(XdsApi::kEdsTypeUrl,
                                                    *resource);
@@ -2450,16 +2473,8 @@ void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
   endpoint_state.watchers.erase(it);
   if (!endpoint_state.watchers.empty()) return;
   authority_state.endpoint_map.erase(resource->id);
-  if (resource->authority == "old:") {
-    xds_server_channel_map_[bootstrap_->server()]->UnsubscribeLocked(
-        XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
-  } else {
-    auto* authority = bootstrap_->LookupAuthority(
-        std::string(absl::StripPrefix(resource->authority, "xdstp:")));
-    GPR_ASSERT(authority != nullptr);
-    xds_server_channel_map_[authority->xds_servers[0]]->UnsubscribeLocked(
-        XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
-  }
+  authority_state.channel_state->UnsubscribeLocked(
+      XdsApi::kEdsTypeUrl, *resource, delay_unsubscription);
   if (!authority_state.HasSubscribedResources()) {
     authority_state.channel_state.reset();
   }
