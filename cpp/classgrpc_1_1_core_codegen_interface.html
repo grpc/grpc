@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.41.0</span>
+   &#160;<span id="projectnumber">1.42.0</span>
    </div>
   </td>
  </tr>
@@ -149,6 +149,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:afb1b9c470647c82b8f6e5a206d8f287d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a936e26e1e6a40892eb41462660adf052"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a936e26e1e6a40892eb41462660adf052">grpc_call_cancel_with_status</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, const char *description, void *reserved)=0</td></tr>
 <tr class="separator:a936e26e1e6a40892eb41462660adf052"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87f304cd261d77195a620efb137002b6"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a87f304cd261d77195a620efb137002b6">grpc_call_failed_before_recv_message</a> (const <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *c)=0</td></tr>
+<tr class="separator:a87f304cd261d77195a620efb137002b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a715e4e7dfab8362f01a8199489215404"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a715e4e7dfab8362f01a8199489215404">grpc_call_ref</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call)=0</td></tr>
 <tr class="separator:a715e4e7dfab8362f01a8199489215404"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a40df30e7435089121f7fa03f76031124"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen_interface.html#a40df30e7435089121f7fa03f76031124">grpc_call_unref</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call)=0</td></tr>
@@ -956,6 +958,32 @@ Public Member Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a>&#160;</td>
           <td class="paramname"><em>error</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a87f304cd261d77195a620efb137002b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a87f304cd261d77195a620efb137002b6">&#9670;&nbsp;</a></span>grpc_call_failed_before_recv_message()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual int grpc::CoreCodegenInterface::grpc_call_failed_before_recv_message </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>c</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -1904,7 +1932,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 2 2021 18:50:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

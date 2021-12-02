@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['zerocopyinputstream_3868',['ZeroCopyInputStream',['../namespacegrpc_1_1protobuf_1_1io.html#ae16bb38d6b730de308f0be4eb43931b4',1,'grpc::protobuf::io']]],
-  ['zerocopyoutputstream_3869',['ZeroCopyOutputStream',['../namespacegrpc_1_1protobuf_1_1io.html#aafcf83341d287d00418952374bc82ce1',1,'grpc::protobuf::io']]]
+  ['value_5ftype_3954',['value_type',['../classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#ac80fa61f538822111ea9597115cfaa49',1,'grpc_event_engine::experimental::MemoryAllocator::Container']]]
 ];

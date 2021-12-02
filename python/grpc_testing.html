@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>gRPC Testing &#8212; gRPC Python 1.41.0 documentation</title>
+    <title>gRPC Testing &#8212; gRPC Python 1.42.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -32,7 +32,7 @@
 
 
 
-<p class="blurb">1.41.0</p>
+<p class="blurb">1.42.0</p>
 
 
 
@@ -99,11 +99,11 @@
 <p>Objects for use in testing gRPC Python-using application code.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.Channel">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><a class="reference internal" href="_modules/grpc_testing.html#Channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">Channel</span></span><a class="reference internal" href="_modules/grpc_testing.html#Channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>A grpc.Channel double with which to test a system that invokes RPCs.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Channel.take_stream_stream">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_stream_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_stream_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_stream_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_stream_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_stream_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_stream_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws an RPC currently being made by the system under test.</p>
 <p>If the given descriptor does not identify any RPC currently being made
 by the system under test, this method blocks until the system under
@@ -126,7 +126,7 @@ stream-stream RPC method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Channel.take_stream_unary">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_stream_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_stream_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_stream_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_stream_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_stream_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_stream_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws an RPC currently being made by the system under test.</p>
 <p>If the given descriptor does not identify any RPC currently being made
 by the system under test, this method blocks until the system under
@@ -149,7 +149,7 @@ server” for the RPC.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Channel.take_unary_stream">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_unary_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_unary_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_unary_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_unary_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_unary_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_unary_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws an RPC currently being made by the system under test.</p>
 <p>If the given descriptor does not identify any RPC currently being made
 by the system under test, this method blocks until the system under
@@ -172,7 +172,7 @@ UnaryStreamChannelRpc with which to “play server” for the RPC.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Channel.take_unary_unary">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_unary_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_unary_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_unary_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_unary_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_unary_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Channel.take_unary_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws an RPC currently being made by the system under test.</p>
 <p>If the given descriptor does not identify any RPC currently being made
 by the system under test, this method blocks until the system under
@@ -197,11 +197,11 @@ UnaryUnaryChannelRpc with which to “play server” for the RPC.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.Server">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">Server</span></span><a class="reference internal" href="_modules/grpc_testing.html#Server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">Server</span></span><a class="reference internal" href="_modules/grpc_testing.html#Server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server" title="Permalink to this definition">¶</a></dt>
 <dd><p>A server with which to test a system that services RPCs.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Server.invoke_stream_stream">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">invoke_stream_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_stream_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_stream_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">invoke_stream_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_stream_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_stream_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes an RPC to be serviced by the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -221,7 +221,7 @@ indicate that the RPC has no time limit.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Server.invoke_stream_unary">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">invoke_stream_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_stream_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_stream_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">invoke_stream_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_stream_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_stream_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes an RPC to be serviced by the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -241,7 +241,7 @@ indicate that the RPC has no time limit.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Server.invoke_unary_stream">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">invoke_unary_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_unary_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_unary_stream" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">invoke_unary_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_unary_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_unary_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes an RPC to be serviced by the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -262,7 +262,7 @@ indicate that the RPC has no time limit.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Server.invoke_unary_unary">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">invoke_unary_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_unary_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_unary_unary" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">invoke_unary_unary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invocation_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_unary_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Server.invoke_unary_unary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes an RPC to be serviced by the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -285,24 +285,24 @@ indicate that the RPC has no time limit.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamChannelRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamStreamChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamStreamChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a stream-stream RPC invoked by a system under test.</p>
 <p>Enables users to “play server” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamChannelRpc.cancelled">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has cancelled the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamChannelRpc.requests_closed">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has closed the request stream.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamChannelRpc.send_initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends the RPC’s initial metadata to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -314,7 +314,7 @@ system under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamChannelRpc.send_response">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.send_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.send_response" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.send_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.send_response" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends a response to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -325,7 +325,7 @@ system under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamChannelRpc.take_request">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.take_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.take_request" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.take_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.take_request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws one of the requests added to the RPC by the system under test.</p>
 <p>This method blocks until the system under test has added to the RPC
 the request to be returned.</p>
@@ -340,7 +340,7 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamChannelRpc.terminate">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminates the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -357,18 +357,18 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamServerRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamStreamServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamStreamServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a stream-stream RPC serviced by a system under test.</p>
 <p>Enables users to “play client” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamServerRpc.cancel">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancels the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamServerRpc.initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the initial metadata emitted by the system under test.</p>
 <p>This method blocks until the system under test has added initial
 metadata to the RPC (or has provided one or more response messages or
@@ -383,13 +383,13 @@ synthesize initial metadata for the RPC).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamServerRpc.requests_closed">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates the end of the RPC’s request stream.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamServerRpc.send_request">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.send_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.send_request" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.send_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.send_request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends a request to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -401,7 +401,7 @@ under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamServerRpc.take_response">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_response</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.take_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.take_response" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_response</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.take_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.take_response" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws one of the responses added to the RPC by the system under test.</p>
 <p>Successive calls to this method return responses in the same order in
 which the system under test added them to the RPC.</p>
@@ -414,7 +414,7 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamStreamServerRpc.termination">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.termination" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has terminated the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -431,24 +431,24 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryChannelRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamUnaryChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamUnaryChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a stream-unary RPC invoked by a system under test.</p>
 <p>Enables users to “play server” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryChannelRpc.cancelled">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has cancelled the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryChannelRpc.requests_closed">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has closed the request stream.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryChannelRpc.send_initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends the RPC’s initial metadata to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -460,7 +460,7 @@ the system under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryChannelRpc.take_request">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.take_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.take_request" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.take_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.take_request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws one of the requests added to the RPC by the system under test.</p>
 <p>This method blocks until the system under test has added to the RPC
 the request to be returned.</p>
@@ -475,7 +475,7 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryChannelRpc.terminate">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminates the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -493,18 +493,18 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryServerRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamUnaryServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">StreamUnaryServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a stream-unary RPC serviced by a system under test.</p>
 <p>Enables users to “play client” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryServerRpc.cancel">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancels the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryServerRpc.initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the initial metadata emitted by the system under test.</p>
 <p>This method blocks until the system under test has added initial
 metadata to the RPC (or has provided one or more response messages or
@@ -519,13 +519,13 @@ synthesize initial metadata for the RPC).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryServerRpc.requests_closed">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">requests_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.requests_closed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates the end of the RPC’s request stream.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryServerRpc.send_request">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.send_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.send_request" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.send_request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.send_request" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends a request to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -537,7 +537,7 @@ under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.StreamUnaryServerRpc.termination">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.termination" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has terminated the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -554,7 +554,7 @@ under test.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.Time">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">Time</span></span><a class="reference internal" href="_modules/grpc_testing.html#Time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">Time</span></span><a class="reference internal" href="_modules/grpc_testing.html#Time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time" title="Permalink to this definition">¶</a></dt>
 <dd><p>A simulation of time.</p>
 <p>Implementations needn’t be connected with real time as provided by the
 Python interpreter, but as long as systems under test use
@@ -562,7 +562,7 @@ RpcContext.is_active and RpcContext.time_remaining for querying RPC liveness
 implementations may be used to change passage of time in tests.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Time.call_at">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">call_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.call_at"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.call_at" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">call_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.call_at"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.call_at" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a behavior to be called at a specific time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -583,7 +583,7 @@ implementations may be used to change passage of time in tests.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Time.call_in">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">call_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.call_in"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.call_in" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">call_in</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">behavior</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.call_in"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.call_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a behavior to be called after some time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -604,7 +604,7 @@ implementations may be used to change passage of time in tests.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Time.sleep_for">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">sleep_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.sleep_for"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.sleep_for" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sleep_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">duration</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.sleep_for"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.sleep_for" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks for some length of test time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -615,7 +615,7 @@ implementations may be used to change passage of time in tests.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Time.sleep_until">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">sleep_until</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.sleep_until"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.sleep_until" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sleep_until</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.sleep_until"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.sleep_until" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until some test time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -626,7 +626,7 @@ implementations may be used to change passage of time in tests.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.Time.time">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.time" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.Time.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the current test time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -639,18 +639,18 @@ implementations may be used to change passage of time in tests.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamChannelRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryStreamChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryStreamChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a unary-stream RPC invoked by a system under test.</p>
 <p>Enables users to “play server” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamChannelRpc.cancelled">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has cancelled the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamChannelRpc.send_initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends the RPC’s initial metadata to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -662,7 +662,7 @@ the system under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamChannelRpc.send_response">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.send_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.send_response" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.send_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.send_response" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends a response to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -673,7 +673,7 @@ the system under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamChannelRpc.terminate">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminates the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -690,18 +690,18 @@ the system under test.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamServerRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryStreamServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryStreamServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a unary-stream RPC serviced by a system under test.</p>
 <p>Enables users to “play client” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamServerRpc.cancel">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancels the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamServerRpc.initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the initial metadata emitted by the system under test.</p>
 <p>This method blocks until the system under test has added initial
 metadata to the RPC (or has provided one or more response messages or
@@ -716,7 +716,7 @@ synthesize initial metadata for the RPC).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamServerRpc.take_response">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">take_response</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.take_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.take_response" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">take_response</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.take_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.take_response" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draws one of the responses added to the RPC by the system under test.</p>
 <p>Successive calls to this method return responses in the same order in
 which the system under test added them to the RPC.</p>
@@ -729,7 +729,7 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryStreamServerRpc.termination">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.termination" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has terminated the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -746,18 +746,18 @@ which the system under test added them to the RPC.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryChannelRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryChannelRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a unary-unary RPC invoked by a system under test.</p>
 <p>Enables users to “play server” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryChannelRpc.cancelled">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has cancelled the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryChannelRpc.send_initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">send_initial_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_metadata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.send_initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sends the RPC’s initial metadata to the system under test.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -769,7 +769,7 @@ the system under test.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryChannelRpc.terminate">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">terminate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trailing_metadata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.terminate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminates the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -787,18 +787,18 @@ the system under test.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryServerRpc">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_testing.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryServerRpc</span></span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fixture for a unary-unary RPC serviced by a system under test.</p>
 <p>Enables users to “play client” for the RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryServerRpc.cancel">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancels the RPC.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryServerRpc.initial_metadata">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">initial_metadata</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.initial_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accesses the initial metadata emitted by the system under test.</p>
 <p>This method blocks until the system under test has added initial
 metadata to the RPC (or has provided one or more response messages or
@@ -813,7 +813,7 @@ synthesize initial metadata for the RPC).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc_testing.UnaryUnaryServerRpc.termination">
-<em class="property"><span class="pre">abstract</span> </em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">termination</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.termination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.termination" title="Permalink to this definition">¶</a></dt>
 <dd><p>Blocks until the system under test has terminated the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>

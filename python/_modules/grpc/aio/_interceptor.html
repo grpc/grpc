@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._interceptor &#8212; gRPC Python 1.41.0 documentation</title>
+    <title>grpc.aio._interceptor &#8212; gRPC Python 1.42.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.41.0</p>
+<p class="blurb">1.42.0</p>
 
 
 
@@ -566,6 +566,7 @@
 
     <span class="n">_write_to_iterator_async_gen</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AsyncIterable</span><span class="p">[</span><span class="n">RequestType</span><span class="p">]]</span>
     <span class="n">_write_to_iterator_queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">]</span>
+    <span class="n">_status_code_task</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]</span>
 
     <span class="n">_FINISH_ITERATOR_SENTINEL</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
 
@@ -579,6 +580,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_queue</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_async_gen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxy_writes_as_request_iterator</span><span class="p">(</span>
             <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_status_code_task</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">request_iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_async_gen</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_queue</span> <span class="o">=</span> <span class="kc">None</span>
@@ -593,6 +595,19 @@
             <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="n">_InterceptedStreamRequestMixin</span><span class="o">.</span><span class="n">_FINISH_ITERATOR_SENTINEL</span><span class="p">:</span>
                 <span class="k">break</span>
             <span class="k">yield</span> <span class="n">value</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_write_to_iterator_queue_interruptible</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
+                                                     <span class="n">call</span><span class="p">:</span> <span class="n">InterceptedCall</span><span class="p">):</span>
+        <span class="c1"># Write the specified &#39;request&#39; to the request iterator queue using the</span>
+        <span class="c1"># specified &#39;call&#39; to allow for interruption of the write in the case</span>
+        <span class="c1"># of abrupt termination of the call.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status_code_task</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_status_code_task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">())</span>
+
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">request</span><span class="p">)),</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">_status_code_task</span><span class="p">),</span>
+            <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># If no queue was created it means that requests</span>
@@ -611,11 +626,7 @@
         <span class="k">elif</span> <span class="n">call</span><span class="o">.</span><span class="n">_done_writing_flag</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">InvalidStateError</span><span class="p">(</span><span class="n">_RPC_HALF_CLOSED_DETAILS</span><span class="p">)</span>
 
-        <span class="c1"># Write might never end up since the call could abrubtly finish,</span>
-        <span class="c1"># we give up on the first awaitable object that finishes.</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span>
-            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">request</span><span class="p">),</span> <span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">()),</span>
-            <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">)</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_queue_interruptible</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">call</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
             <span class="k">raise</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">InvalidStateError</span><span class="p">(</span><span class="n">_RPC_ALREADY_FINISHED_DETAILS</span><span class="p">)</span>
@@ -636,12 +647,8 @@
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">InvalidStateError</span><span class="p">(</span><span class="n">_RPC_ALREADY_FINISHED_DETAILS</span><span class="p">)</span>
 
-        <span class="c1"># Write might never end up since the call could abrubtly finish,</span>
-        <span class="c1"># we give up on the first awaitable object that finishes.</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
-            <span class="n">_InterceptedStreamRequestMixin</span><span class="o">.</span><span class="n">_FINISH_ITERATOR_SENTINEL</span><span class="p">),</span>
-                                   <span class="n">call</span><span class="o">.</span><span class="n">code</span><span class="p">()),</span>
-                                  <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">)</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_iterator_queue_interruptible</span><span class="p">(</span>
+            <span class="n">_InterceptedStreamRequestMixin</span><span class="o">.</span><span class="n">_FINISH_ITERATOR_SENTINEL</span><span class="p">,</span> <span class="n">call</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="InterceptedUnaryUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.InterceptedUnaryUnaryCall">[docs]</a><span class="k">class</span> <span class="nc">InterceptedUnaryUnaryCall</span><span class="p">(</span><span class="n">_InterceptedUnaryResponseMixin</span><span class="p">,</span> <span class="n">InterceptedCall</span><span class="p">,</span>

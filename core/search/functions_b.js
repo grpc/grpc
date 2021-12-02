@@ -1,10 +1,7 @@
 var searchData=
 [
-  ['_7ednsresolver_1513',['~DNSResolver',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae8966e8aee5db98a0380cbfc5526227b',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]],
-  ['_7eendpoint_1514',['~Endpoint',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]],
-  ['_7eendpointconfig_1515',['~EndpointConfig',['../classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html#af86d519833129ea7950b5449857c9c6e',1,'grpc_event_engine::experimental::EndpointConfig']]],
-  ['_7eeventengine_1516',['~EventEngine',['../classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aa283885518525b71339f166e15932cd1',1,'grpc_event_engine::experimental::EventEngine']]],
-  ['_7elistener_1517',['~Listener',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a691cbfd1fc82bed7d7dc04c9e7bba3cd',1,'grpc_event_engine::experimental::EventEngine::Listener']]],
-  ['_7esliceallocator_1518',['~SliceAllocator',['../classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a5369f5c10223066a299562f582524077',1,'grpc_event_engine::experimental::SliceAllocator']]],
-  ['_7esliceallocatorfactory_1519',['~SliceAllocatorFactory',['../classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#a57ff1f0d3096da1f16b9c0a9ace02f3d',1,'grpc_event_engine::experimental::SliceAllocatorFactory']]]
+  ['shutdown_1568',['Shutdown',['../classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#abeee43fc002c4f3cc8cdb976424ec9c6',1,'grpc_event_engine::experimental::internal::MemoryAllocatorImpl']]],
+  ['size_1569',['size',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#a139d2e8182d9b96905b19db907b8bc68',1,'grpc_event_engine::experimental::EventEngine::ResolvedAddress']]],
+  ['slicebuffer_1570',['SliceBuffer',['../classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a63efd26d98882e9247861e61550d8ad9',1,'grpc_event_engine::experimental::SliceBuffer::SliceBuffer()'],['../classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#ac896d876c45b5306c16d31860332bca2',1,'grpc_event_engine::experimental::SliceBuffer::SliceBuffer(grpc_slice_buffer *)']]],
+  ['start_1571',['Start',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#abe5c11d2747373e1d07ed422a7976714',1,'grpc_event_engine::experimental::EventEngine::Listener']]]
 ];

@@ -10,6 +10,6 @@ var searchData=
   ['createdefault_347',['createDefault',['../class_grpc_1_1_channel_credentials.html#ae6cfccd4ab1f09fc3e326e4cc98c0507',1,'Grpc::ChannelCredentials']]],
   ['createfromplugin_348',['createFromPlugin',['../class_grpc_1_1_call_credentials.html#a1a1bbc0082e41f40873d9c3a97574bed',1,'Grpc::CallCredentials']]],
   ['createinsecure_349',['createInsecure',['../class_grpc_1_1_channel_credentials.html#ab8ca6b64ea261b0c9344878b2348f320',1,'Grpc::ChannelCredentials']]],
-  ['createssl_350',['createSsl',['../class_grpc_1_1_channel_credentials.html#a5f8365f36d4b11101039e86811571203',1,'Grpc\ChannelCredentials\createSsl()'],['../class_grpc_1_1_server_credentials.html#a989cd8014095723815535effc0d8c052',1,'Grpc\ServerCredentials\createSsl()']]],
+  ['createssl_350',['createSsl',['../class_grpc_1_1_channel_credentials.html#a21a46268a69dcc263360c63193b89955',1,'Grpc\ChannelCredentials\createSsl()'],['../class_grpc_1_1_server_credentials.html#a989cd8014095723815535effc0d8c052',1,'Grpc\ServerCredentials\createSsl()']]],
   ['createxds_351',['createXds',['../class_grpc_1_1_channel_credentials.html#aafd024703e87b413ba6862c20cb5565e',1,'Grpc::ChannelCredentials']]]
 ];
