@@ -82,7 +82,8 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   ChannelArguments BuildChannelArgs() override {
     ChannelArguments args = ServerBuilder::BuildChannelArgs();
     if (drain_grace_time_ms_ >= 0) {
-      args.SetInt(GRPC_ARG_DRAIN_GRACE_TIME_MS, drain_grace_time_ms_);
+      args.SetInt(GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
+                  drain_grace_time_ms_);
     }
     grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(

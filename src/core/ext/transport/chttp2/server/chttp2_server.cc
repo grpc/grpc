@@ -559,7 +559,8 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
     grpc_timer_init(&drain_grace_timer_,
                     ExecCtx::Get()->Now() +
                         grpc_channel_args_find_integer(
-                            listener_->args_, GRPC_ARG_DRAIN_GRACE_TIME_MS,
+                            listener_->args_,
+                            GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
                             {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
                     &on_drain_grace_time_expiry_);
     drain_grace_timer_expiry_callback_pending_ = true;

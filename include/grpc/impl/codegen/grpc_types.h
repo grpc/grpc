@@ -449,7 +449,8 @@ typedef struct {
  * example, listener updates from xDS) cause all older connections to be
  * gracefully shut down (i.e., "drained") with a grace period configured by this
  * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
-#define GRPC_ARG_DRAIN_GRACE_TIME_MS "grpc.experimental.drain_grace_time_ms"
+#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
+  "grpc.experimental.server_config_change_drain_grace_time_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
