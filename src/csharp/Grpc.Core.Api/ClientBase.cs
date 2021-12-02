@@ -151,12 +151,12 @@ namespace Grpc.Core
         {
             private class ClientBaseConfigurationInterceptor : Interceptor
             {
-                readonly Func<IMethod, string, CallOptions, ClientBaseConfigurationInfo> interceptor;
+                readonly Func<IMethod, string?, CallOptions, ClientBaseConfigurationInfo> interceptor;
 
                 /// <summary>
                 /// Creates a new instance of ClientBaseConfigurationInterceptor given the specified header and host interceptor function.
                 /// </summary>
-                public ClientBaseConfigurationInterceptor(Func<IMethod, string, CallOptions, ClientBaseConfigurationInfo> interceptor)
+                public ClientBaseConfigurationInterceptor(Func<IMethod, string?, CallOptions, ClientBaseConfigurationInfo> interceptor)
                 {
                     this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
                 }
@@ -197,10 +197,10 @@ namespace Grpc.Core
 
             internal struct ClientBaseConfigurationInfo
             {
-                internal readonly string Host;
+                internal readonly string? Host;
                 internal readonly CallOptions CallOptions;
 
-                internal ClientBaseConfigurationInfo(string host, CallOptions callOptions)
+                internal ClientBaseConfigurationInfo(string? host, CallOptions callOptions)
                 {
                     Host = host;
                     CallOptions = callOptions;
@@ -208,9 +208,9 @@ namespace Grpc.Core
             }
 
             readonly CallInvoker undecoratedCallInvoker;
-            readonly string host;
+            readonly string? host;
 
-            internal ClientBaseConfiguration(CallInvoker undecoratedCallInvoker, string host)
+            internal ClientBaseConfiguration(CallInvoker undecoratedCallInvoker, string? host)
             {
                 this.undecoratedCallInvoker = GrpcPreconditions.CheckNotNull(undecoratedCallInvoker);
                 this.host = host;

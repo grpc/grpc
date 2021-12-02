@@ -55,6 +55,9 @@ class TransportTargetWindowSizeMocker
 
   double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
       double /* current_target */) override {
+    // Protecting access to variable window_size_ shared between client and
+    // server.
+    absl::MutexLock lock(&mu_);
     if (alternating_initial_window_sizes_) {
       window_size_ = (window_size_ == kLargeInitialWindowSize)
                          ? kSmallInitialWindowSize
@@ -66,17 +69,22 @@ class TransportTargetWindowSizeMocker
   // Alternates the initial window size targets. Computes a low values if it was
   // previously high, or a high value if it was previously low.
   void AlternateTargetInitialWindowSizes() {
+    absl::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = true;
   }
 
   void Reset() {
+    // Protecting access to variable window_size_ shared between client and
+    // server.
+    absl::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = false;
     window_size_ = kLargeInitialWindowSize;
   }
 
  private:
-  bool alternating_initial_window_sizes_ = false;
-  double window_size_ = kLargeInitialWindowSize;
+  absl::Mutex mu_;
+  bool alternating_initial_window_sizes_ ABSL_GUARDED_BY(mu_) = false;
+  double window_size_ ABSL_GUARDED_BY(mu_) = kLargeInitialWindowSize;
 };
 
 TransportTargetWindowSizeMocker* g_target_initial_window_size_mocker;

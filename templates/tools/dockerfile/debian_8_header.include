@@ -1,1 +1,0 @@
-FROM debian:8

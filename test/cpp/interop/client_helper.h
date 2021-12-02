@@ -103,6 +103,24 @@ class AdditionalMetadataInterceptorFactory
   const std::multimap<std::string, std::string> additional_metadata_;
 };
 
+class MetadataAndStatusLoggerInterceptor : public experimental::Interceptor {
+ public:
+  explicit MetadataAndStatusLoggerInterceptor() {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override;
+};
+
+class MetadataAndStatusLoggerInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  explicit MetadataAndStatusLoggerInterceptorFactory() {}
+
+  experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* /*info*/) override {
+    return new MetadataAndStatusLoggerInterceptor();
+  }
+};
+
 }  // namespace testing
 }  // namespace grpc
 

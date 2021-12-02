@@ -169,6 +169,7 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
+extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_XDS
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
@@ -185,9 +186,10 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
-  #ifndef GRPC_NO_XDS
+  RegisterResourceQuota(builder);
+#ifndef GRPC_NO_XDS
   RegisterXdsChannelStackModifier(builder);
-  #endif
+#endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

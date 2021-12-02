@@ -169,7 +169,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.22'
+    ss.dependency 'BoringSSL-GRPC', '0.0.23'
     ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -542,8 +542,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/google/api/annotations.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                       'src/core/ext/upb-generated/google/api/http.upb.c',
                       'src/core/ext/upb-generated/google/api/http.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/any.upb.c',
@@ -831,6 +837,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/call_tracer.h',
                       'src/core/lib/channel/channel_args.cc',
                       'src/core/lib/channel/channel_args.h',
+                      'src/core/lib/channel/channel_args_preconditioning.cc',
+                      'src/core/lib/channel/channel_args_preconditioning.h',
                       'src/core/lib/channel/channel_stack.cc',
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.cc',
@@ -1343,6 +1351,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.cc',
                       'src/core/lib/transport/metadata_batch.h',
+                      'src/core/lib/transport/parsed_metadata.cc',
                       'src/core/lib/transport/parsed_metadata.h',
                       'src/core/lib/transport/pid_controller.cc',
                       'src/core/lib/transport/pid_controller.h',
@@ -1656,7 +1665,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h',
                               'src/core/ext/upb-generated/google/api/annotations.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                               'src/core/ext/upb-generated/google/api/http.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/any.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
@@ -1802,6 +1814,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/backoff/backoff.h',
                               'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
+                              'src/core/lib/channel/channel_args_preconditioning.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_trace.h',
