@@ -79,6 +79,10 @@ class CompressionAlgorithmSet {
   // Return a bitmask of the algorithms in this set.
   uint32_t ToLegacyBitmask() const;
 
+  bool operator==(const CompressionAlgorithmSet& other) const {
+    return set_ == other.set_;
+  }
+
  private:
   BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT> set_;
 };
