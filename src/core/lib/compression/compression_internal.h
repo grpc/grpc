@@ -35,18 +35,23 @@
 
 namespace grpc_core {
 
-// Given a string naming a compression algorithm, return the corresponding enum or nullopt on error.
+// Given a string naming a compression algorithm, return the corresponding enum
+// or nullopt on error.
 absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
     absl::string_view algorithm);
-// Convert a compression algorithm to a string. Returns nullptr if a name is not known.
+// Convert a compression algorithm to a string. Returns nullptr if a name is not
+// known.
 const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
-// Retrieve the default compression algorithm from channel args, return nullopt if not found.
-absl::optional<grpc_compression_algorithm> DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args);
+// Retrieve the default compression algorithm from channel args, return nullopt
+// if not found.
+absl::optional<grpc_compression_algorithm>
+DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args);
 
 // A set of grpc_compression_algorithm values.
 class CompressionAlgorithmSet {
  public:
- // Construct from a uint32_t bitmask - bit 0 => algorithm 0, bit 1 => algorithm 1, etc.
+  // Construct from a uint32_t bitmask - bit 0 => algorithm 0, bit 1 =>
+  // algorithm 1, etc.
   static CompressionAlgorithmSet FromUint32(uint32_t value);
   // Locate in channel args and construct from the found value.
   static CompressionAlgorithmSet FromChannelArgs(const grpc_channel_args* args);
@@ -54,13 +59,14 @@ class CompressionAlgorithmSet {
   static CompressionAlgorithmSet FromString(absl::string_view str);
   // Construct an empty set.
   CompressionAlgorithmSet();
-  // Construct from a std::initializer_list of grpc_compression_algorithm values.
+  // Construct from a std::initializer_list of grpc_compression_algorithm
+  // values.
   CompressionAlgorithmSet(
       std::initializer_list<grpc_compression_algorithm> algorithms);
 
   // Given a compression level, choose an appropriate algorithm from this set.
   grpc_compression_algorithm CompressionAlgorithmForLevel(
-       grpc_compression_level level) const;
+      grpc_compression_level level) const;
   // Return true if this set contains algorithm, false otherwise.
   bool IsSet(grpc_compression_algorithm algorithm) const;
   // Add algorithm to this set.
@@ -78,6 +84,5 @@ class CompressionAlgorithmSet {
 };
 
 }  // namespace grpc_core
-
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H */

@@ -167,7 +167,9 @@ class SingleStaticElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
   static void Prepare(grpc_metadata_batch* b) {
-    b->Set(grpc_core::GrpcAcceptEncodingMetadata(), grpc_core::CompressionAlgorithmSet({GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE}));
+    b->Set(grpc_core::GrpcAcceptEncodingMetadata(),
+           grpc_core::CompressionAlgorithmSet(
+               {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE}));
   }
 };
 
@@ -263,7 +265,10 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::AuthorityMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "foo.test.google.fr:1234")));
-    b->Set(grpc_core::GrpcAcceptEncodingMetadata(), grpc_core::CompressionAlgorithmSet({GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
@@ -302,7 +307,10 @@ class MoreRepresentativeClientInitialMetadata {
                "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
                "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
                "\x10\x11\x12\x13")));
-    b->Set(grpc_core::GrpcAcceptEncodingMetadata(), grpc_core::CompressionAlgorithmSet({GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
@@ -319,7 +327,10 @@ class RepresentativeServerInitialMetadata {
     b->Set(grpc_core::StatusMetadata(), 200);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
-    b->Set(grpc_core::GrpcAcceptEncodingMetadata(), grpc_core::CompressionAlgorithmSet({GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
   }
 };
 

@@ -24,16 +24,16 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/compression.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
 
 namespace grpc_core {
 
@@ -50,7 +50,8 @@ const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm) {
   }
 }
 
-absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(absl::string_view algorithm) {
+absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
+    absl::string_view algorithm) {
   if (algorithm == "identity") {
     return GRPC_COMPRESS_NONE;
   } else if (algorithm == "deflate") {
@@ -116,12 +117,13 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromUint32(uint32_t value) {
   return set;
 }
 
-CompressionAlgorithmSet CompressionAlgorithmSet::FromChannelArgs(const grpc_channel_args *args) {
+CompressionAlgorithmSet CompressionAlgorithmSet::FromChannelArgs(
+    const grpc_channel_args* args) {
   CompressionAlgorithmSet set;
   if (args != nullptr) {
-    set = CompressionAlgorithmSet::FromUint32(grpc_channel_args_find_integer(args, GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET, grpc_integer_options {
-      0, 0, INT_MAX
-    }));
+    set = CompressionAlgorithmSet::FromUint32(grpc_channel_args_find_integer(
+        args, GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+        grpc_integer_options{0, 0, INT_MAX}));
   }
   set.Set(GRPC_COMPRESS_NONE);
   return set;
@@ -129,33 +131,36 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromChannelArgs(const grpc_chan
 
 CompressionAlgorithmSet::CompressionAlgorithmSet() = default;
 
-CompressionAlgorithmSet::CompressionAlgorithmSet(std::initializer_list<grpc_compression_algorithm> algorithms) {
+CompressionAlgorithmSet::CompressionAlgorithmSet(
+    std::initializer_list<grpc_compression_algorithm> algorithms) {
   for (auto algorithm : algorithms) {
     Set(algorithm);
   }
 }
 
-bool CompressionAlgorithmSet::IsSet(grpc_compression_algorithm algorithm) const {
-    size_t i = static_cast<size_t>(algorithm);
-    if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
-        return set_.is_set(i);
-    } else {
-        return false;
-    }
+bool CompressionAlgorithmSet::IsSet(
+    grpc_compression_algorithm algorithm) const {
+  size_t i = static_cast<size_t>(algorithm);
+  if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
+    return set_.is_set(i);
+  } else {
+    return false;
+  }
 }
 
 void CompressionAlgorithmSet::Set(grpc_compression_algorithm algorithm) {
-    size_t i = static_cast<size_t>(algorithm);
-    if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
-        set_.set(i);
-    }
+  size_t i = static_cast<size_t>(algorithm);
+  if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
+    set_.set(i);
+  }
 }
 
 std::string CompressionAlgorithmSet::ToString() const {
   absl::InlinedVector<const char*, GRPC_COMPRESS_ALGORITHMS_COUNT> segments;
   for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (set_.is_set(i)) {
-      segments.push_back(CompressionAlgorithmAsString(static_cast<grpc_compression_algorithm>(i)));
+      segments.push_back(CompressionAlgorithmAsString(
+          static_cast<grpc_compression_algorithm>(i)));
     }
   }
   return absl::StrJoin(segments, ", ");
@@ -165,10 +170,12 @@ Slice CompressionAlgorithmSet::ToSlice() const {
   return Slice::FromCopiedString(ToString());
 }
 
-CompressionAlgorithmSet CompressionAlgorithmSet::FromString(absl::string_view str) {
+CompressionAlgorithmSet CompressionAlgorithmSet::FromString(
+    absl::string_view str) {
   CompressionAlgorithmSet set;
   for (auto algorithm : absl::StrSplit(str, ',')) {
-    auto parsed = ParseCompressionAlgorithm(absl::StripAsciiWhitespace(algorithm));
+    auto parsed =
+        ParseCompressionAlgorithm(absl::StripAsciiWhitespace(algorithm));
     if (parsed.has_value()) {
       set.Set(*parsed);
     }
@@ -178,7 +185,7 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromString(absl::string_view st
 
 uint32_t CompressionAlgorithmSet::ToLegacyBitmask() const {
   uint32_t x = 0;
-  for (size_t i=0; i<GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (set_.is_set(i)) {
       x |= (1u << i);
     }
@@ -186,12 +193,15 @@ uint32_t CompressionAlgorithmSet::ToLegacyBitmask() const {
   return x;
 }
 
-absl::optional<grpc_compression_algorithm> DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args) {
+absl::optional<grpc_compression_algorithm>
+DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args) {
   if (args == nullptr) return absl::nullopt;
   for (size_t i = 0; i < args->num_args; i++) {
-    if (strcmp(args->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0) {
+    if (strcmp(args->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) ==
+        0) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
-        return static_cast<grpc_compression_algorithm>(args->args[i].value.integer);
+        return static_cast<grpc_compression_algorithm>(
+            args->args[i].value.integer);
       } else if (args->args[i].type == GRPC_ARG_STRING) {
         return ParseCompressionAlgorithm(args->args[i].value.string);
       }

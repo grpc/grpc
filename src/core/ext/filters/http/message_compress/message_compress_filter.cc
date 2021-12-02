@@ -51,7 +51,8 @@ class ChannelData {
         grpc_core::CompressionAlgorithmSet::FromChannelArgs(args->channel_args);
     default_compression_algorithm_ =
         grpc_core::DefaultCompressionAlgorithmFromChannelArgs(
-            args->channel_args).value_or(GRPC_COMPRESS_NONE);
+            args->channel_args)
+            .value_or(GRPC_COMPRESS_NONE);
     // Make sure the default is enabled.
     if (!enabled_compression_algorithms_.IsSet(
             default_compression_algorithm_)) {
