@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['resolvedaddress_1094',['ResolvedAddress',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html',1,'grpc_event_engine::experimental::EventEngine']]]
+  ['listener_1123',['Listener',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html',1,'grpc_event_engine::experimental::EventEngine']]],
+  ['lookuptaskhandle_1124',['LookupTaskHandle',['../structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]]
 ];

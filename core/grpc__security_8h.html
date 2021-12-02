@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">19.0.0</span>
+   &#160;<span id="projectnumber">20.0.0</span>
    </div>
   </td>
  </tr>
@@ -420,6 +420,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a7baf4df54030f3d5c7afb562e6cecf4d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a0a971586c2e177c739bfe180ef440d21">grpc_authorization_policy_provider</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7baf4df54030f3d5c7afb562e6cecf4d">grpc_authorization_policy_provider_static_data_create</a> (const char *authz_policy, <a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *code, const char **error_details)</td></tr>
 <tr class="memdesc:a7baf4df54030f3d5c7afb562e6cecf4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL - Subject to change.  <a href="grpc__security_8h.html#a7baf4df54030f3d5c7afb562e6cecf4d">More...</a><br /></td></tr>
 <tr class="separator:a7baf4df54030f3d5c7afb562e6cecf4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1af848db3753b7bd14aaf3565d3c4102"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a0a971586c2e177c739bfe180ef440d21">grpc_authorization_policy_provider</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a1af848db3753b7bd14aaf3565d3c4102">grpc_authorization_policy_provider_file_watcher_create</a> (const char *authz_policy_path, unsigned int refresh_interval_sec, <a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *code, const char **error_details)</td></tr>
+<tr class="memdesc:a1af848db3753b7bd14aaf3565d3c4102"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL - Subject to change.  <a href="grpc__security_8h.html#a1af848db3753b7bd14aaf3565d3c4102">More...</a><br /></td></tr>
+<tr class="separator:a1af848db3753b7bd14aaf3565d3c4102"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5367215eba06ef320f4999abc378e663"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5367215eba06ef320f4999abc378e663">grpc_authorization_policy_provider_release</a> (<a class="el" href="grpc__security_8h.html#a0a971586c2e177c739bfe180ef440d21">grpc_authorization_policy_provider</a> *provider)</td></tr>
 <tr class="memdesc:a5367215eba06ef320f4999abc378e663"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL - Subject to change.  <a href="grpc__security_8h.html#a5367215eba06ef320f4999abc378e663">More...</a><br /></td></tr>
 <tr class="separator:a5367215eba06ef320f4999abc378e663"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1087,7 +1090,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>&ndash; The following auth context methods should only be called by a server metadata </p>
-<h2><a class="anchor" id="autotoc_md317"></a>
+<h2><a class="anchor" id="autotoc_md313"></a>
 processor to set properties extracted from auth metadata.</h2>
 <p>Add a property. </p>
 
@@ -1324,6 +1327,54 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>Returns NULL when the iterator is at the end. </p>
+
+</div>
+</div>
+<a id="a1af848db3753b7bd14aaf3565d3c4102"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1af848db3753b7bd14aaf3565d3c4102">&#9670;&nbsp;</a></span>grpc_authorization_policy_provider_file_watcher_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a0a971586c2e177c739bfe180ef440d21">grpc_authorization_policy_provider</a>* grpc_authorization_policy_provider_file_watcher_create </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>authz_policy_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>refresh_interval_sec</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *&#160;</td>
+          <td class="paramname"><em>code</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char **&#160;</td>
+          <td class="paramname"><em>error_details</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL - Subject to change. </p>
+<p>Creates a grpc_authorization_policy_provider by watching for SDK authorization policy changes in filesystem.</p><ul>
+<li>authz_policy is the file path of SDK authorization policy.</li>
+<li>refresh_interval_sec is the amount of time the internal thread would wait before checking for file updates.</li>
+<li>code is the error status code on failure. On success, it equals GRPC_STATUS_OK.</li>
+<li>error_details contains details about the error if any. If the initialization is successful, it will be null. Caller must use gpr_free to destroy this string. </li>
+</ul>
 
 </div>
 </div>
@@ -3087,7 +3138,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 5 2021 22:54:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 2 2021 18:50:16 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

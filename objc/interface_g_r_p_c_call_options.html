@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.41.0</span>
+   &#160;<span id="projectnumber">1.42.0</span>
    </div>
   </td>
  </tr>
@@ -101,9 +101,9 @@ Properties</h2></td></tr>
 <tr class="memitem:ad2aa5130b2af506268df213eda81c94d"><td class="memItemLeft" align="right" valign="top">id&lt; <a class="el" href="protocol_g_r_p_c_authorization_protocol-p.html">GRPCAuthorizationProtocol</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#ad2aa5130b2af506268df213eda81c94d">authTokenProvider</a></td></tr>
 <tr class="memdesc:ad2aa5130b2af506268df213eda81c94d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The interface to get the OAuth2 access token string.  <a href="interface_g_r_p_c_call_options.html#ad2aa5130b2af506268df213eda81c94d">More...</a><br /></td></tr>
 <tr class="separator:ad2aa5130b2af506268df213eda81c94d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2ef8624337871abd6f55b8459de1531"><td class="memItemLeft" align="right" valign="top">NSDictionary *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#ad2ef8624337871abd6f55b8459de1531">initialMetadata</a></td></tr>
-<tr class="memdesc:ad2ef8624337871abd6f55b8459de1531"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial metadata key-value pairs that should be included in the request.  <a href="interface_g_r_p_c_call_options.html#ad2ef8624337871abd6f55b8459de1531">More...</a><br /></td></tr>
-<tr class="separator:ad2ef8624337871abd6f55b8459de1531"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a079b0912cd4399524268a81430a92b05"><td class="memItemLeft" align="right" valign="top">NSDictionary&lt; NSString *, id &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a079b0912cd4399524268a81430a92b05">initialMetadata</a></td></tr>
+<tr class="memdesc:a079b0912cd4399524268a81430a92b05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial metadata key-value pairs that should be included in the request.  <a href="interface_g_r_p_c_call_options.html#a079b0912cd4399524268a81430a92b05">More...</a><br /></td></tr>
+<tr class="separator:a079b0912cd4399524268a81430a92b05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b242934e525531f24bb6ef944b977ca"><td class="memItemLeft" align="right" valign="top">NSString *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a0b242934e525531f24bb6ef944b977ca">userAgentPrefix</a></td></tr>
 <tr class="memdesc:a0b242934e525531f24bb6ef944b977ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Custom string that is prefixed to a request's user-agent header field before gRPC's internal user-agent string.  <a href="interface_g_r_p_c_call_options.html#a0b242934e525531f24bb6ef944b977ca">More...</a><br /></td></tr>
 <tr class="separator:a0b242934e525531f24bb6ef944b977ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,6 +170,7 @@ Properties</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Immutable user configurable options for a gRPC call. </p>
+<p>Caller can obtain a mutable copy of type <b><a class="el" href="interface_g_r_p_c_mutable_call_options.html" title="Mutable user configurable options for a gRPC call.">GRPCMutableCallOptions</a></b> by calling [option mutableCopy] </p>
 </div><h2 class="groupheader">Method Documentation</h2>
 <a id="a5ae8dd4e3119e8940a5b8ecccd6b0c81"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5ae8dd4e3119e8940a5b8ecccd6b0c81">&#9670;&nbsp;</a></span>hasChannelOptionsEqualTo:</h2>
@@ -456,8 +457,8 @@ Properties</h2></td></tr>
 
 </div>
 </div>
-<a id="ad2ef8624337871abd6f55b8459de1531"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad2ef8624337871abd6f55b8459de1531">&#9670;&nbsp;</a></span>initialMetadata</h2>
+<a id="a079b0912cd4399524268a81430a92b05"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a079b0912cd4399524268a81430a92b05">&#9670;&nbsp;</a></span>initialMetadata</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -466,7 +467,7 @@ Properties</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">- (NSDictionary*) initialMetadata</td>
+          <td class="memname">- (NSDictionary&lt;NSString *, id&gt;*) initialMetadata</td>
         </tr>
       </table>
   </td>
@@ -477,6 +478,7 @@ Properties</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Initial metadata key-value pairs that should be included in the request. </p>
+<p>Dictionary key is of type NSString, value should be either NSString or NSData containing binary bytes data. </p>
 
 </div>
 </div>
@@ -942,7 +944,7 @@ Properties</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 5 2021 22:54:34 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 2 2021 18:50:49 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

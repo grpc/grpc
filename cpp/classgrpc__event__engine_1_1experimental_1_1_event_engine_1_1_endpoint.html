@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.41.0</span>
+   &#160;<span id="projectnumber">1.42.0</span>
    </div>
   </td>
  </tr>
@@ -83,12 +83,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">~Endpoint</a> ()=default</td></tr>
 <tr class="memdesc:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuts down all connections and invokes all pending read or write callbacks with an error status.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">More...</a><br /></td></tr>
 <tr class="separator:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2e56a79f0684626eb5c14755fe89abfa"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a2e56a79f0684626eb5c14755fe89abfa">Read</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a> on_read, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *buffer)=0</td></tr>
-<tr class="memdesc:a2e56a79f0684626eb5c14755fe89abfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a2e56a79f0684626eb5c14755fe89abfa">More...</a><br /></td></tr>
-<tr class="separator:a2e56a79f0684626eb5c14755fe89abfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38ca50d6f431b7085d96ff2de350c220"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a38ca50d6f431b7085d96ff2de350c220">Write</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a> on_writable, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *data)=0</td></tr>
-<tr class="memdesc:a38ca50d6f431b7085d96ff2de350c220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a38ca50d6f431b7085d96ff2de350c220">More...</a><br /></td></tr>
-<tr class="separator:a38ca50d6f431b7085d96ff2de350c220"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25317aa30057c43c0045e10f2a28519b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a25317aa30057c43c0045e10f2a28519b">Read</a> (std::function&lt; void(absl::Status)&gt; on_read, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *buffer)=0</td></tr>
+<tr class="memdesc:a25317aa30057c43c0045e10f2a28519b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a25317aa30057c43c0045e10f2a28519b">More...</a><br /></td></tr>
+<tr class="separator:a25317aa30057c43c0045e10f2a28519b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac8070c9104065fc0ce0175af644e97b6"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac8070c9104065fc0ce0175af644e97b6">Write</a> (std::function&lt; void(absl::Status)&gt; on_writable, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *data)=0</td></tr>
+<tr class="memdesc:ac8070c9104065fc0ce0175af644e97b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac8070c9104065fc0ce0175af644e97b6">More...</a><br /></td></tr>
+<tr class="separator:ac8070c9104065fc0ce0175af644e97b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">GetPeerAddress</a> () const =0</td></tr>
 <tr class="memdesc:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">More...</a><br /></td></tr>
 <tr class="separator:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -98,7 +98,7 @@ Public Member Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>One end of a connection between a gRPC client and server. </p>
 <p>Endpoints are created when connections are established, and <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> operations are gRPC's primary means of communication.</p>
-<p>Endpoints must use the provided <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html">SliceAllocator</a> for all data buffer memory allocations. gRPC allows applications to set memory constraints per Channel or Server, and the implementation depends on all dynamic memory allocation being handled by the quota system. </p>
+<p>Endpoints must use the provided <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> for all data buffer memory allocations. gRPC allows applications to set memory constraints per Channel or Server, and the implementation depends on all dynamic memory allocation being handled by the quota system. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ac2549a2052ff34c77674c5dd95e0d8cd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac2549a2052ff34c77674c5dd95e0d8cd">&#9670;&nbsp;</a></span>~Endpoint()</h2>
@@ -181,8 +181,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a2e56a79f0684626eb5c14755fe89abfa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2e56a79f0684626eb5c14755fe89abfa">&#9670;&nbsp;</a></span>Read()</h2>
+<a id="a25317aa30057c43c0045e10f2a28519b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a25317aa30057c43c0045e10f2a28519b">&#9670;&nbsp;</a></span>Read()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -193,7 +193,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::Endpoint::Read </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a>&#160;</td>
+          <td class="paramtype">std::function&lt; void(absl::Status)&gt;&#160;</td>
           <td class="paramname"><em>on_read</em>, </td>
         </tr>
         <tr>
@@ -222,8 +222,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a38ca50d6f431b7085d96ff2de350c220"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a38ca50d6f431b7085d96ff2de350c220">&#9670;&nbsp;</a></span>Write()</h2>
+<a id="ac8070c9104065fc0ce0175af644e97b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac8070c9104065fc0ce0175af644e97b6">&#9670;&nbsp;</a></span>Write()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -234,7 +234,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::Endpoint::Write </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ae2d013587133788e31d8984cf0783050">Callback</a>&#160;</td>
+          <td class="paramtype">std::function&lt; void(absl::Status)&gt;&#160;</td>
           <td class="paramname"><em>on_writable</em>, </td>
         </tr>
         <tr>
@@ -269,7 +269,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 2 2021 18:50:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

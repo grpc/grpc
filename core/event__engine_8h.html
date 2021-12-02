@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">19.0.0</span>
+   &#160;<span id="projectnumber">20.0.0</span>
    </div>
   </td>
  </tr>
@@ -81,8 +81,8 @@ $(function() {
 <code>#include &quot;absl/status/statusor.h&quot;</code><br />
 <code>#include &quot;absl/time/time.h&quot;</code><br />
 <code>#include &lt;<a class="el" href="endpoint__config_8h_source.html">grpc/event_engine/endpoint_config.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="memory__allocator_8h_source.html">grpc/event_engine/memory_allocator.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="port_8h_source.html">grpc/event_engine/port.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="slice__allocator_8h_source.html">grpc/event_engine/slice_allocator.h</a>&gt;</code><br />
 </div>
 <p><a href="event__engine_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -91,8 +91,11 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html">grpc_event_engine::experimental::EventEngine</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> encapsulates all platform-specific behaviors related to low level network I/O, timers, asynchronous execution, and DNS resolution.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">grpc_event_engine::experimental::EventEngine::Closure</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A custom closure type for <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> task execution.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">grpc_event_engine::experimental::EventEngine::TaskHandle</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback handle, used to cancel a callback.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents a scheduled task.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">grpc_event_engine::experimental::EventEngine::ResolvedAddress</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thin wrapper around a platform-specific sockaddr type.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#details">More...</a><br /></td></tr>
@@ -128,7 +131,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 5 2021 22:54:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 2 2021 18:50:16 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

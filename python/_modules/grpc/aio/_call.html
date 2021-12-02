@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._call &#8212; gRPC Python 1.41.0 documentation</title>
+    <title>grpc.aio._call &#8212; gRPC Python 1.42.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.41.0</p>
+<p class="blurb">1.42.0</p>
 
 
 
@@ -256,7 +256,7 @@
     <span class="n">_loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span>
     <span class="n">_code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span>
     <span class="n">_cython_call</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">_AioCall</span>
-    <span class="n">_metadata</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">MetadatumType</span><span class="p">]</span>
+    <span class="n">_metadata</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">MetadatumType</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
     <span class="n">_request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span>
     <span class="n">_response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span>
 
@@ -462,7 +462,7 @@
 
     <span class="k">def</span> <span class="nf">_init_stream_request_mixin</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_done_writing_flag</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># If user passes in an async iterator, create a consumer Task.</span>
@@ -535,6 +535,8 @@
                                                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">send_serialized_message</span><span class="p">(</span><span class="n">serialized_request</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">InternalError</span><span class="p">:</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">()</span>
         <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>

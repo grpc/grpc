@@ -328,7 +328,9 @@ var Search = {
     var results = [];
 
     for (var prefix in objects) {
-      for (var name in objects[prefix]) {
+      for (var iMatch = 0; iMatch != objects[prefix].length; ++iMatch) {
+        var match = objects[prefix][iMatch];
+        var name = match[4];
         var fullname = (prefix ? prefix + '.' : '') + name;
         var fullnameLower = fullname.toLowerCase()
         if (fullnameLower.indexOf(object) > -1) {
@@ -342,7 +344,6 @@ var Search = {
           } else if (parts[parts.length - 1].indexOf(object) > -1) {
             score += Scorer.objPartialMatch;
           }
-          var match = objects[prefix][name];
           var objname = objnames[match[1]][2];
           var title = titles[match[0]];
           // If more than one term searched for, we require other words to be

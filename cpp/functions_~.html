@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.41.0</span>
+   &#160;<span id="projectnumber">1.42.0</span>
    </div>
   </td>
  </tr>
@@ -155,6 +155,9 @@ $(function() {
 <li>~ClientStreamingInterface()
 : <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_interface.html#ab1a7a2664187d88d0354b69138db7eb1">grpc::internal::ClientStreamingInterface</a>
 </li>
+<li>~Closure()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html#a3ff7f740a90cc5f3077e5ea2418334a3">grpc_event_engine::experimental::EventEngine::Closure</a>
+</li>
 <li>~CompletionQueue()
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a776f9e04c58eaf26611d1d4360a055ed">grpc::CompletionQueue</a>
 </li>
@@ -194,6 +197,9 @@ $(function() {
 <li>~ExternalConnectionAcceptor()
 : <a class="el" href="classgrpc_1_1experimental_1_1_external_connection_acceptor.html#a99dcec8dfbb6619dc4ac49f1d281bc5c">grpc::experimental::ExternalConnectionAcceptor</a>
 </li>
+<li>~FileWatcherAuthorizationPolicyProvider()
+: <a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_authorization_policy_provider.html#aa99f16782996a244875ac2404b220831">grpc::experimental::FileWatcherAuthorizationPolicyProvider</a>
+</li>
 <li>~FileWatcherCertificateProvider()
 : <a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#a74b0da79f08e7d99612784b284c4535f">grpc::experimental::FileWatcherCertificateProvider</a>
 </li>
@@ -228,8 +234,20 @@ $(function() {
 <li>~InterceptorBatchMethodsImpl()
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a5760f29c2d1897a1891caf818bbc04ac">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
+<li>~InternalOnlySecurityPolicy()
+: <a class="el" href="classgrpc_1_1experimental_1_1binder_1_1_internal_only_security_policy.html#ae19550dafb9c4906a1c009f561a543a2">grpc::experimental::binder::InternalOnlySecurityPolicy</a>
+</li>
 <li>~Listener()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a691cbfd1fc82bed7d7dc04c9e7bba3cd">grpc_event_engine::experimental::EventEngine::Listener</a>
+</li>
+<li>~MemoryAllocator()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a5b8216c9544320d49c221719eabdf3bf">grpc_event_engine::experimental::MemoryAllocator</a>
+</li>
+<li>~MemoryAllocatorFactory()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a3fe1d4c4a49b933e870a469fd0211fd0">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
+</li>
+<li>~MemoryAllocatorImpl()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a16bcdb29ea62d54e3f8c14f4c7af64eb">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
 </li>
 <li>~MessageAllocator()
 : <a class="el" href="classgrpc_1_1_message_allocator.html#ad41a6c118205e81ad6e2f507f52210f6">grpc::MessageAllocator&lt; RequestT, ResponseT &gt;</a>
@@ -264,11 +282,17 @@ $(function() {
 <li>~ReleasableMutexLock()
 : <a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a9747c89dd1f00dfd81694f20b1b35690">grpc::internal::ReleasableMutexLock</a>
 </li>
+<li>~Reservation()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html#aad8b840ec2122e0317f0705fe7c06984">grpc_event_engine::experimental::MemoryAllocator::Reservation</a>
+</li>
 <li>~ResourceQuota()
 : <a class="el" href="classgrpc_1_1_resource_quota.html#a96d81328bf6fe9009ac1fa4ba19c7eaa">grpc::ResourceQuota</a>
 </li>
 <li>~RpcAllocatorState()
 : <a class="el" href="classgrpc_1_1_rpc_allocator_state.html#a94dde81dc4d0a18ed3c48b2226a0a5e5">grpc::RpcAllocatorState</a>
+</li>
+<li>~SecurityPolicy()
+: <a class="el" href="classgrpc_1_1experimental_1_1binder_1_1_security_policy.html#accb61d39200ed58f55d894359f006da5">grpc::experimental::binder::SecurityPolicy</a>
 </li>
 <li>~Server()
 : <a class="el" href="classgrpc_1_1_server.html#a4745b387f1834b1eb08b1132199af615">grpc::Server</a>
@@ -339,12 +363,6 @@ $(function() {
 <li>~Slice()
 : <a class="el" href="classgrpc_1_1_slice.html#a1f89af608ad9e5bbc2870d4ee7140c94">grpc::Slice</a>
 </li>
-<li>~SliceAllocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator.html#a5369f5c10223066a299562f582524077">grpc_event_engine::experimental::SliceAllocator</a>
-</li>
-<li>~SliceAllocatorFactory()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_allocator_factory.html#a57ff1f0d3096da1f16b9c0a9ace02f3d">grpc_event_engine::experimental::SliceAllocatorFactory</a>
-</li>
 <li>~StaticDataAuthorizationPolicyProvider()
 : <a class="el" href="classgrpc_1_1experimental_1_1_static_data_authorization_policy_provider.html#a1e6f840673fdcf0613b651c1a2648df5">grpc::experimental::StaticDataAuthorizationPolicyProvider</a>
 </li>
@@ -360,6 +378,9 @@ $(function() {
 <li>~TlsServerAuthorizationCheckInterface()
 : <a class="el" href="structgrpc_1_1experimental_1_1_tls_server_authorization_check_interface.html#a1807f55ff6689090b5a2b5a9aca4dcd4">grpc::experimental::TlsServerAuthorizationCheckInterface</a>
 </li>
+<li>~UntrustedSecurityPolicy()
+: <a class="el" href="classgrpc_1_1experimental_1_1binder_1_1_untrusted_security_policy.html#aaf985f8d2ebc5dc645e11fe4ad470dc3">grpc::experimental::binder::UntrustedSecurityPolicy</a>
+</li>
 <li>~WriterInterface()
 : <a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a0f3bb9c5625b43d600d33d2bf8c17b60">grpc::internal::WriterInterface&lt; W &gt;</a>
 </li>
@@ -370,7 +391,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 5 2021 22:54:13 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Dec 2 2021 18:50:19 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
