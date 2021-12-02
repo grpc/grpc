@@ -57,7 +57,7 @@ grpc_service_account_jwt_access_credentials::
 
 bool grpc_service_account_jwt_access_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array,
+    grpc_core::CredentialsMetadataArray* md_array,
     grpc_closure* /*on_request_metadata*/, grpc_error_handle* error) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
@@ -114,7 +114,7 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
 }
 
 void grpc_service_account_jwt_access_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

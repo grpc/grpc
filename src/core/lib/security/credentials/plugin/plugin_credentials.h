@@ -33,7 +33,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   struct pending_request {
     bool cancelled;
     struct grpc_plugin_credentials* creds;
-    grpc_credentials_mdelem_array* md_array;
+    grpc_core::CredentialsMetadataArray* md_array;
     grpc_closure* on_request_metadata;
     struct pending_request* prev;
     struct pending_request* next;
@@ -45,11 +45,11 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
+                            grpc_core::CredentialsMetadataArray* md_array,
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+  void cancel_get_request_metadata(grpc_core::CredentialsMetadataArray* md_array,
                                    grpc_error_handle error) override;
 
   // Checks if the request has been cancelled.

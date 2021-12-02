@@ -37,7 +37,7 @@ typedef struct {
   grpc_polling_entity pops;
   bool is_done;
 
-  grpc_credentials_mdelem_array md_array;
+  grpc_core::CredentialsMetadataArray md_array;
   grpc_closure on_request_metadata;
 } synchronizer;
 

@@ -159,6 +159,9 @@ struct CopyConstructors {
   static Out FromCopiedString(const char* s) {
     return Out(grpc_slice_from_copied_string(s));
   }
+  static Out FromCopiedString(absl::string_view s) {
+    return FromCopiedBuffer(s.data(), s.size());
+  }
   static Out FromCopiedString(std::string s) {
     return Out(grpc_slice_from_cpp_string(std::move(s)));
   }

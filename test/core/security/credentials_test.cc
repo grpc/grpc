@@ -309,7 +309,7 @@ static grpc_httpcli_response http_response(int status, const char* body) {
 
 static void test_empty_md_array(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_credentials_mdelem_array md_array;
+  grpc_core::CredentialsMetadataArray md_array;
   md_array = {};
   GPR_ASSERT(md_array.md == nullptr);
   GPR_ASSERT(md_array.size == 0);
@@ -318,7 +318,7 @@ static void test_empty_md_array(void) {
 
 static void test_add_to_empty_md_array(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_credentials_mdelem_array md_array;
+  grpc_core::CredentialsMetadataArray md_array;
   md_array = {};
   const char* key = "hello";
   const char* value = "there blah blah blah blah blah blah blah";
@@ -333,7 +333,7 @@ static void test_add_to_empty_md_array(void) {
 
 static void test_add_abunch_to_md_array(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_credentials_mdelem_array md_array;
+  grpc_core::CredentialsMetadataArray md_array;
   md_array = {};
   const char* key = "hello";
   const char* value = "there blah blah blah blah blah blah blah";
@@ -520,7 +520,7 @@ class RequestMetadataState {
   }
 
   static void CheckMetadata(const std::map<std::string, std::string>& expected,
-                            grpc_credentials_mdelem_array* md_array) {
+                            grpc_core::CredentialsMetadataArray* md_array) {
     for (auto const& i : expected) {
       size_t j;
       for (j = 0; j < md_array->size; ++j) {
@@ -543,7 +543,7 @@ class RequestMetadataState {
  private:
   grpc_error_handle expected_error_;
   std::map<std::string, std::string> expected_;
-  grpc_credentials_mdelem_array md_array_;
+  grpc_core::CredentialsMetadataArray md_array_;
   grpc_closure on_request_metadata_;
   grpc_polling_entity pollent_;
 };
@@ -1801,14 +1801,14 @@ struct fake_call_creds : public grpc_call_credentials {
 
   bool get_request_metadata(grpc_polling_entity* /*pollent*/,
                             grpc_auth_metadata_context /*context*/,
-                            grpc_credentials_mdelem_array* md_array,
+                            grpc_core::CredentialsMetadataArray* md_array,
                             grpc_closure* /*on_request_metadata*/,
                             grpc_error_handle* /*error*/) override {
     grpc_credentials_mdelem_array_add(md_array, phony_md_);
     return true;
   }
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* /*md_array*/,
+  void cancel_get_request_metadata(grpc_core::CredentialsMetadataArray* /*md_array*/,
                                    grpc_error_handle /*error*/) override {}
 
  private:

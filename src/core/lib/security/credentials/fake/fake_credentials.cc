@@ -91,7 +91,7 @@ const char* grpc_fake_transport_get_expected_targets(
 
 bool grpc_md_only_test_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
+    grpc_core::CredentialsMetadataArray* md_array, grpc_closure* on_request_metadata,
     grpc_error_handle* /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, md_);
   if (is_async_) {
@@ -103,7 +103,7 @@ bool grpc_md_only_test_credentials::get_request_metadata(
 }
 
 void grpc_md_only_test_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

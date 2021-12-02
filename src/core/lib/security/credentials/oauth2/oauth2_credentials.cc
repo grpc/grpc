@@ -277,7 +277,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
 
 bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_polling_entity* pollent, grpc_auth_metadata_context /*context*/,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
+    grpc_core::CredentialsMetadataArray* md_array, grpc_closure* on_request_metadata,
     grpc_error_handle* /*error*/) {
   // Check if we can use the cached token.
   grpc_millis refresh_threshold =
@@ -326,7 +326,7 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
 }
 
 void grpc_oauth2_token_fetcher_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* md_array, grpc_error_handle error) {
   gpr_mu_lock(&mu_);
   grpc_oauth2_pending_get_request_metadata* prev = nullptr;
   grpc_oauth2_pending_get_request_metadata* pending_request = pending_requests_;
@@ -711,14 +711,14 @@ grpc_access_token_credentials::~grpc_access_token_credentials() {
 
 bool grpc_access_token_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
-    grpc_credentials_mdelem_array* md_array,
+    grpc_core::CredentialsMetadataArray* md_array,
     grpc_closure* /*on_request_metadata*/, grpc_error_handle* /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, access_token_md_);
   return true;
 }
 
 void grpc_access_token_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* /*md_array*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

@@ -45,33 +45,6 @@ static_assert(
     std::is_trivially_destructible<std::atomic<uint32_t>>::value,
     "the active fault counter needs to have a trivially destructible type");
 
-inline int GetMetadatumValueInt(grpc_mdelem md) {
-  int res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md)), &res)) {
-    return res;
-  } else {
-    return -1;
-  }
-}
-
-inline uint32_t GetMetadatumValueUnsignedInt(grpc_mdelem md) {
-  uint32_t res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md)), &res)) {
-    return res;
-  } else {
-    return -1;
-  }
-}
-
-inline int64_t GetMetadatumValueInt64(grpc_mdelem md) {
-  int64_t res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md)), &res)) {
-    return res;
-  } else {
-    return -1;
-  }
-}
-
 inline bool UnderFraction(const uint32_t numerator,
                           const uint32_t denominator) {
   if (numerator <= 0) return false;

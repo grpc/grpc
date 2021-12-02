@@ -64,7 +64,7 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 //  from an http service.
 
 struct grpc_oauth2_pending_get_request_metadata {
-  grpc_credentials_mdelem_array* md_array;
+  grpc_core::CredentialsMetadataArray* md_array;
   grpc_closure* on_request_metadata;
   grpc_polling_entity* pollent;
   struct grpc_oauth2_pending_get_request_metadata* next;
@@ -77,11 +77,11 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
+                            grpc_core::CredentialsMetadataArray* md_array,
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+  void cancel_get_request_metadata(grpc_core::CredentialsMetadataArray* md_array,
                                    grpc_error_handle error) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
@@ -137,11 +137,11 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
+                            grpc_core::CredentialsMetadataArray* md_array,
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
+  void cancel_get_request_metadata(grpc_core::CredentialsMetadataArray* md_array,
                                    grpc_error_handle error) override;
 
   std::string debug_string() override;

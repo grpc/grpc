@@ -54,7 +54,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -763,13 +762,13 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
   // Create a call with the specified method name.
-  const auto& method =
+  const char* method =
       chand()->server_.ShouldUseV3()
-          ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V3_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES
-          : GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES;
+          ? "/envoy.service.discovery.v3.AggregatedDiscoveryService/StreamAggregatedResources"
+          : "/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources";
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xds_client()->interested_parties_, method, nullptr,
+      xds_client()->interested_parties_, StaticSlice::FromStaticString(method).c_slice(), nullptr,
       GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init data associated with the call.
@@ -1698,13 +1697,13 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  const auto& method =
+  const char* method =
       chand()->server_.ShouldUseV3()
-          ? GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V3_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS
-          : GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS;
+          ? "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats"
+          : "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats";
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xds_client()->interested_parties_, method, nullptr,
+      xds_client()->interested_parties_, StaticSlice::FromStaticString(method).c_slice(), nullptr,
       GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.

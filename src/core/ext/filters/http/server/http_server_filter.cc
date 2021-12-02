@@ -32,7 +32,6 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 static void hs_recv_initial_metadata_ready(void* user_data,
                                            grpc_error_handle err);
@@ -63,9 +62,6 @@ struct call_data {
   }
 
   grpc_core::CallCombiner* call_combiner;
-
-  // Outgoing headers to add to send_initial_metadata.
-  grpc_linked_mdelem status;
 
   // If we see the recv_message contents in the GET query string, we
   // store it here.

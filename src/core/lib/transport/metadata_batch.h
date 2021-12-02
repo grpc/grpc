@@ -470,7 +470,7 @@ class ParseHelper {
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
       absl::string_view key) {
-    return ParsedMetadata<Container>(std::string(key), std::move(value_));
+    return ParsedMetadata<Container>(Slice::FromCopiedString(key), std::move(value_));
   }
 
  private:
@@ -660,6 +660,9 @@ class MetadataMap {
   // Remove some metadata by name
   void Remove(absl::string_view name);
 
+  // Retrieve some metadata by name
+  absl::string_view Get(absl::string_view name, std::string* buffer) const;
+
   // Extract a piece of known metadata.
   // Returns nullopt if the metadata was not present, or the value if it was.
   // The same as:
@@ -702,6 +705,8 @@ class MetadataMap {
 
   size_t TransportSize() const;
 
+  MetadataMap Copy() const;
+
  private:
   // Generate a strong type for metadata values per trait.
   template <typename Which>
@@ -733,7 +738,7 @@ class MetadataMap {
   // Encoder to compute TransportSize
   class TransportSizeEncoder {
    public:
-    void Encode(absl::string_view key, const Slice& value) {
+    void Encode(const Slice& key, const Slice& value) {
       size_ += key.length() + value.length() + 32;
     }
 
@@ -751,7 +756,7 @@ class MetadataMap {
   // Table of known metadata types.
   Table<Value<Traits>...> table_;
   // Backing store for added metadata.
-  ChunkedVector<std::pair<std::string, Slice>, 10> unknown_;
+  ChunkedVector<std::pair<Slice, Slice>, 10> unknown_;
 };
 
 template <typename... Traits>
@@ -774,7 +779,7 @@ MetadataMap<Traits...>::~MetadataMap() = default;
 
 template <typename... Traits>
 void MetadataMap<Traits...>::Clear() {
-  table_.clear();
+  table_.ClearAll();
   unknown_.Clear();
 }
 

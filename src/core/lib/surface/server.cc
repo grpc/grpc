@@ -1034,7 +1034,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
         host = ExternallyManagedSlice(rm->host.c_str());
       }
       uint32_t hash =
-          GRPC_MDSTR_KV_HASH(has_host ? host.Hash() : 0, method.Hash());
+          MixHash32(has_host ? host.Hash() : 0, method.Hash());
       uint32_t probes = 0;
       for (probes = 0; (*registered_methods_)[(hash + probes) % slots]
                            .server_registered_method != nullptr;
@@ -1078,7 +1078,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
   if (registered_methods_ == nullptr) return nullptr;
   /* TODO(ctiller): unify these two searches */
   /* check for an exact match with host */
-  uint32_t hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash_internal(host),
+  uint32_t hash = MixHash32(grpc_slice_hash_internal(host),
                                      grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
@@ -1094,7 +1094,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     return rm;
   }
   /* check for a wildcard method definition (no host set) */
-  hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash_internal(path));
+  hash = MixHash32(0, grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
         &(*registered_methods_)[(hash + i) % registered_methods_->size()];

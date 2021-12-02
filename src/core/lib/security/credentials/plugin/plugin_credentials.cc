@@ -155,7 +155,7 @@ static void plugin_md_request_metadata_ready(void* request,
 
 bool grpc_plugin_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
+    grpc_core::CredentialsMetadataArray* md_array, grpc_closure* on_request_metadata,
     grpc_error_handle* error) {
   bool retval = true;  // Synchronous return.
   if (plugin_.get_metadata != nullptr) {
@@ -229,7 +229,7 @@ bool grpc_plugin_credentials::get_request_metadata(
 }
 
 void grpc_plugin_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* md_array, grpc_error_handle error) {
   gpr_mu_lock(&mu_);
   for (pending_request* pending_request = pending_requests_;
        pending_request != nullptr; pending_request = pending_request->next) {

@@ -48,8 +48,9 @@ class ChunkedVector {
   }
   ChunkedVector(const ChunkedVector& other)
       : ChunkedVector(other.arena_, other.begin(), other.end()) {}
-  ChunkedVector& operator=(ChunkedVector other) {
-    Swap(&other);
+  ChunkedVector& operator=(const ChunkedVector& other) {
+    ChunkedVector tmp(other);
+    Swap(&tmp);
     return *this;
   }
   ChunkedVector(ChunkedVector&& other) noexcept

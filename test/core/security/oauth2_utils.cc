@@ -36,7 +36,7 @@ typedef struct {
   bool is_done;
   char* token;
 
-  grpc_credentials_mdelem_array md_array;
+  grpc_core::CredentialsMetadataArray md_array;
   grpc_closure closure;
 } oauth2_request;
 

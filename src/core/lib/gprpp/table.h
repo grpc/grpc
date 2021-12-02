@@ -311,6 +311,11 @@ class Table {
   // Count the number of set fields in the table
   size_t count() const { return present_bits_.count(); }
 
+  // Clear all elements in the table.
+  void ClearAll() {
+    *this = Table();
+  }
+
  private:
   // Bit field for which elements of the table are set (true) or un-set (false,
   // the default) -- one bit for each type in Ts.
