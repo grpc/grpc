@@ -238,7 +238,7 @@ struct NameLookup;
 template <typename Trait, typename... Traits>
 struct NameLookup<Trait, Traits...> {
   // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
-  // Traits. If not found, call op->NotFount().
+  // Traits. If not found, call op->NotFound().
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->Found(Trait())) {
@@ -324,7 +324,7 @@ class AppendHelper {
   }
 
   GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
-    GPR_ASSERT(GRPC_ERROR_NONE ==
+    GRPC_LOG_IF_ERROR("AppendMetadata",
                container_->Append(grpc_mdelem_from_slices(
                    grpc_slice_intern(
                        grpc_slice_from_static_buffer(key.data(), key.length())),
