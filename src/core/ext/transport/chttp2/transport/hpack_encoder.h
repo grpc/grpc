@@ -20,6 +20,7 @@
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 
 #include <grpc/support/port_platform.h>
+
 #include <cstdint>
 
 #include <grpc/slice.h>
@@ -175,7 +176,8 @@ class HPackCompressor {
 
    private:
     struct ValueIndex {
-      ValueIndex(Slice value, uint32_t index) : value(std::move(value)), index(index) {}
+      ValueIndex(Slice value, uint32_t index)
+          : value(std::move(value)), index(index) {}
       Slice value;
       uint32_t index;
     };

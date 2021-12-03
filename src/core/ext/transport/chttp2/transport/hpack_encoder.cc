@@ -338,10 +338,13 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
         it->index = table.AllocateIndex(transport_length);
         framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key), value.c_slice());
       }
-      // Bubble this entry up if we can - ensures that the most used values end up towards the start of the array.
+      // Bubble this entry up if we can - ensures that the most used values end
+      // up towards the start of the array.
       if (prev != values_.end()) std::swap(*prev, *it);
-      // If there are entries at the end of the array, and those entries are no longer in the table, remove them.
-      while (!values_.empty() && !table.ConvertableToDynamicIndex(values_.back().index)) {
+      // If there are entries at the end of the array, and those entries are no
+      // longer in the table, remove them.
+      while (!values_.empty() &&
+             !table.ConvertableToDynamicIndex(values_.back().index)) {
         values_.pop_back();
       }
       // All done, early out.
