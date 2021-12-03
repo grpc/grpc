@@ -1833,8 +1833,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   std::vector<std::unique_ptr<BackendServerThread>> backends_;
   std::unique_ptr<BalancerServerThread> balancer_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator_;
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       logical_dns_cluster_resolver_response_generator_;
