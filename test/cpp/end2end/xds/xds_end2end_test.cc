@@ -158,31 +158,6 @@ constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
-constexpr char kDefaultServiceConfig[] =
-    "{\n"
-    "  \"loadBalancingConfig\":[\n"
-    "    { \"does_not_exist\":{} },\n"
-    "    { \"xds_cluster_resolver_experimental\":{\n"
-    "      \"discoveryMechanisms\": [\n"
-    "      { \"clusterName\": \"server.example.com\",\n"
-    "        \"type\": \"EDS\",\n"
-    "        \"lrsLoadReportingServerName\": \"\"\n"
-    "      } ]\n"
-    "    } }\n"
-    "  ]\n"
-    "}";
-constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
-    "{\n"
-    "  \"loadBalancingConfig\":[\n"
-    "    { \"does_not_exist\":{} },\n"
-    "    { \"xds_cluster_resolver_experimental\":{\n"
-    "      \"discoveryMechanisms\": [\n"
-    "      { \"clusterName\": \"server.example.com\",\n"
-    "        \"type\": \"EDS\"\n"
-    "      } ]\n"
-    "    } }\n"
-    "  ]\n"
-    "}";
 
 constexpr char kBootstrapFileV3[] =
     "{\n"
