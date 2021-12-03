@@ -285,7 +285,11 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(
     } else {
       grpc_error_handle parse_error;
       servers->emplace_back(XdsServer::Parse(child, &parse_error));
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      if (parse_error != GRPC_ERROR_NONE) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("errors parsing index ", i)));
+        error_list.push_back(parse_error);
+      }
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"xds_servers\" array",

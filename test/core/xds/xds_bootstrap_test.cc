@@ -274,6 +274,7 @@ TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
+                               "errors parsing index 0.*"
                                "errors parsing xds server.*"
                                "\"field:server_uri error:does not exist.\","));
   GRPC_ERROR_UNREF(error);
@@ -296,6 +297,7 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "errors parsing \"xds_servers\" array.*"
+                  "errors parsing index 0.*"
                   "errors parsing xds server.*"
                   "\"field:server_uri error:type should be STRING.*"
                   "\"field:channel_creds error:type should be ARRAY\""));
@@ -324,6 +326,7 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
+                               "errors parsing index 0.*"
                                "errors parsing xds server.*"
                                "errors parsing \"channel_creds\" array.*"
                                "errors parsing index 0.*"
