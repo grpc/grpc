@@ -594,11 +594,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       top_server_ = server;
       return *this;
     }
-    BootstrapBuilder& SetAuthorityServer(const std::string& server) {
-      authority_server_ = server;
+    BootstrapBuilder& SetAuthorityServer(
+        const std::string& authority, const std::string& servers = "",
+        const std::string& listener_resource_name_template = "") {
+      authority_ = authority;
+      authority_servers_ = servers;
+      listener_resource_name_template_ = listener_resource_name_template;
       return *this;
     }
-    const std::string& AuthorityServer() const { return authority_server_; }
+    const std::string& AuthorityServer() const { return authority_; }
     std::string Build() {
       constexpr char kBootstrapFileHeaderAndXdsServers[] =
           "{\n"
@@ -615,7 +619,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           "  ],\n";
       constexpr char kBootstrapFileAuthorities[] =
           "  \"authorities\": {\n"
-          "    \"xds.example.com\": {\n"
+          "    \"fake_authority\": {\n"
           "      \"xds_servers\": [\n"
           "        {\n"
           "          \"server_uri\": \"fake:///xds_server\",\n"
@@ -692,10 +696,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           "  }\n"
           "}\n";
       std::string authorities;
-      if (!authority_server_.empty()) {
-        authorities =
-            absl::StrReplaceAll(kBootstrapFileAuthorities,
-                                {{"fake:///xds_server", authority_server_}});
+      if (!authority_.empty()) {
+        authorities = absl::StrReplaceAll(kBootstrapFileAuthorities,
+                                          {{"fake_authority", authority_}});
+      }
+      if (!authority_servers_.empty()) {
+        std::vector<std::string> servers =
+            absl::StrSplit(authority_servers_, ",");
+        GPR_ASSERT(servers.size() > 0);
+        authorities = absl::StrReplaceAll(kBootstrapFileAuthorities,
+                                          {{"fake:///xds_server", servers[0]}});
       }
       std::string header;
       if (!top_server_.empty()) {
@@ -707,8 +717,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                : absl::StrCat(
                      (top_server_.empty() ? kBootstrapFileHeaderAndXdsServers
                                           : header),
-                     (authority_server_.empty() ? kBootstrapFileAuthorities
-                                                : authorities),
+                     (authority_.empty() ? kBootstrapFileAuthorities
+                                         : authorities),
                      kBootstrapFileServerNameTemplate,
                      kBootstrapFileCertificateProviders,
                      kBootstrapFileNodeAndFooter)));
@@ -717,7 +727,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
    private:
     bool v2_ = false;
     std::string top_server_;
-    std::string authority_server_;
+    std::string authority_;
+    std::string authority_servers_;
+    std::string listener_resource_name_template_;
   };
 
   // TODO(roth): We currently set the number of backends on a per-test-suite
@@ -2689,9 +2701,11 @@ class XdsFederationTest : public XdsEnd2endTest {
  public:
   XdsFederationTest()
       : authority_balancer_(CreateAndStartBalancer()),
-        XdsEnd2endTest(4, 100, 0, false, nullptr,
-                       BootstrapBuilder().SetAuthorityServer(absl::StrCat(
-                           "localhost:", authority_balancer_->port()))) {
+        XdsEnd2endTest(
+            4, 100, 0, false, nullptr,
+            BootstrapBuilder().SetAuthorityServer(
+                "xds.example.com",
+                absl::StrCat("localhost:", authority_balancer_->port()))) {
     StartAllBackends();
   }
 
