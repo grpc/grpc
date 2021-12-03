@@ -19,4 +19,6 @@ cd "$(dirname "$0")/../../.."
 
 pyenv local 3.6.1
 python3 -m pip install dataclasses
-python3 tools/gcp/utils/cleanup_xds_resources.py
+# flag resource_prefix is required by the gke test framework, but doesn't
+# matter for the cleanup script.
+python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py --project=grpc-testing --network=default-vpc --resource_prefix="required but does not matter"
