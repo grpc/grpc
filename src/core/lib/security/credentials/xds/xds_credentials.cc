@@ -61,41 +61,39 @@ bool XdsVerifySubjectAlternativeNames(
   return false;
 }
 
-class ServerAuthCheck {
+class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
-  ServerAuthCheck(
+  XdsCertificateVerifier(
       RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
       std::string cluster_name)
       : xds_certificate_provider_(std::move(xds_certificate_provider)),
         cluster_name_(std::move(cluster_name)) {}
 
-  static int Schedule(void* config_user_data,
-                      grpc_tls_server_authorization_check_arg* arg) {
-    return static_cast<ServerAuthCheck*>(config_user_data)->ScheduleImpl(arg);
+  bool Verify(grpc_tls_custom_verification_check_request* request,
+              std::function<void(absl::Status)>,
+              absl::Status* sync_status) override {
+    GPR_ASSERT(request != nullptr);
+    if (!XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.uri_names,
+            request->peer_info.san_names.uri_names_size,
+            xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
+        !XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.ip_names,
+            request->peer_info.san_names.ip_names_size,
+            xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
+        !XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.dns_names,
+            request->peer_info.san_names.dns_names_size,
+            xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
+      *sync_status = absl::Status(
+          absl::StatusCode::kUnauthenticated,
+          "SANs from certificate did not match SANs from xDS control plane");
+    }
+    return true; /* synchronous check */
   }
-
-  static void Destroy(void* config_user_data) {
-    delete static_cast<ServerAuthCheck*>(config_user_data);
-  }
+  void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
  private:
-  int ScheduleImpl(grpc_tls_server_authorization_check_arg* arg) {
-    if (XdsVerifySubjectAlternativeNames(
-            arg->subject_alternative_names, arg->subject_alternative_names_size,
-            xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
-      arg->success = 1;
-      arg->status = GRPC_STATUS_OK;
-    } else {
-      arg->success = 0;
-      arg->status = GRPC_STATUS_UNAUTHENTICATED;
-      if (arg->error_details) {
-        arg->error_details->set_error_details(
-            "SANs from certificate did not match SANs from xDS control plane");
-      }
-    }
-    return 0; /* synchronous check */
-  }
-
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
   std::string cluster_name_;
 };
@@ -161,14 +159,11 @@ XdsCredentials::create_security_connector(
         tls_credentials_options->set_watch_identity_pair(true);
         tls_credentials_options->set_identity_cert_name(cluster_name);
       }
-      tls_credentials_options->set_server_verification_option(
-          GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-      auto* server_auth_check = new ServerAuthCheck(xds_certificate_provider,
-                                                    std::move(cluster_name));
-      tls_credentials_options->set_server_authorization_check_config(
-          MakeRefCounted<grpc_tls_server_authorization_check_config>(
-              server_auth_check, ServerAuthCheck::Schedule, nullptr,
-              ServerAuthCheck::Destroy));
+      tls_credentials_options->set_verify_server_cert(true);
+      tls_credentials_options->set_certificate_verifier(
+          MakeRefCounted<XdsCertificateVerifier>(xds_certificate_provider,
+                                                 std::move(cluster_name)));
+      tls_credentials_options->set_check_call_host(false);
       // TODO(yashkt): Creating a new TlsCreds object each time we create a
       // security connector means that the security connector's cmp() method
       // returns unequal for each instance, which means that every time an LB

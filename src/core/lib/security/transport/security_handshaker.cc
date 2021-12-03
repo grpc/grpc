@@ -116,13 +116,10 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
       connector_(connector->Ref(DEBUG_LOCATION, "handshake")),
       handshake_buffer_size_(GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE),
       handshake_buffer_(
-          static_cast<uint8_t*>(gpr_malloc(handshake_buffer_size_))) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_TSI_MAX_FRAME_SIZE);
-  if (arg != nullptr && arg->type == GRPC_ARG_INTEGER) {
-    max_frame_size_ = grpc_channel_arg_get_integer(
-        arg, {0, 0, std::numeric_limits<int>::max()});
-  }
+          static_cast<uint8_t*>(gpr_malloc(handshake_buffer_size_))),
+      max_frame_size_(grpc_channel_args_find_integer(
+          args, GRPC_ARG_TSI_MAX_FRAME_SIZE,
+          {0, 0, std::numeric_limits<int>::max()})) {
   grpc_slice_buffer_init(&outgoing_);
   GRPC_CLOSURE_INIT(&on_peer_checked_, &SecurityHandshaker::OnPeerCheckedFn,
                     this, grpc_schedule_on_exec_ctx);
@@ -232,49 +229,83 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
     HandshakeFailedLocked(error);
     return;
   }
-  // Create zero-copy frame protector, if implemented.
-  tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
-  tsi_result result = tsi_handshaker_result_create_zero_copy_grpc_protector(
-      handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
-      &zero_copy_protector);
-  if (result != TSI_OK && result != TSI_UNIMPLEMENTED) {
-    error = grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Zero-copy frame protector creation failed"),
-        result);
-    HandshakeFailedLocked(error);
-    return;
-  }
-  // Create frame protector if zero-copy frame protector is NULL.
-  tsi_frame_protector* protector = nullptr;
-  if (zero_copy_protector == nullptr) {
-    result = tsi_handshaker_result_create_frame_protector(
-        handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
-        &protector);
-    if (result != TSI_OK) {
-      error = grpc_set_tsi_error_result(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                            "Frame protector creation failed"),
-                                        result);
-      HandshakeFailedLocked(error);
-      return;
-    }
-  }
   // Get unused bytes.
   const unsigned char* unused_bytes = nullptr;
   size_t unused_bytes_size = 0;
-  result = tsi_handshaker_result_get_unused_bytes(
+  tsi_result result = tsi_handshaker_result_get_unused_bytes(
       handshaker_result_, &unused_bytes, &unused_bytes_size);
-  // Create secure endpoint.
-  if (unused_bytes_size > 0) {
+  if (result != TSI_OK) {
+    HandshakeFailedLocked(grpc_set_tsi_error_result(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "TSI handshaker result does not provide unused bytes"),
+        result));
+    return;
+  }
+  // Check whether we need to wrap the endpoint.
+  tsi_frame_protector_type frame_protector_type;
+  result = tsi_handshaker_result_get_frame_protector_type(
+      handshaker_result_, &frame_protector_type);
+  if (result != TSI_OK) {
+    HandshakeFailedLocked(grpc_set_tsi_error_result(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "TSI handshaker result does not implement "
+            "get_frame_protector_type"),
+        result));
+    return;
+  }
+  tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
+  tsi_frame_protector* protector = nullptr;
+  switch (frame_protector_type) {
+    case TSI_FRAME_PROTECTOR_ZERO_COPY:
+      ABSL_FALLTHROUGH_INTENDED;
+    case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY:
+      // Create zero-copy frame protector.
+      result = tsi_handshaker_result_create_zero_copy_grpc_protector(
+          handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
+          &zero_copy_protector);
+      if (result != TSI_OK) {
+        HandshakeFailedLocked(grpc_set_tsi_error_result(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Zero-copy frame protector creation failed"),
+            result));
+        return;
+      }
+      break;
+    case TSI_FRAME_PROTECTOR_NORMAL:
+      // Create normal frame protector.
+      result = tsi_handshaker_result_create_frame_protector(
+          handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
+          &protector);
+      if (result != TSI_OK) {
+        HandshakeFailedLocked(
+            grpc_set_tsi_error_result(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                          "Frame protector creation failed"),
+                                      result));
+        return;
+      }
+      break;
+    case TSI_FRAME_PROTECTOR_NONE:
+      break;
+  }
+  // If we have a frame protector, create a secure endpoint.
+  if (zero_copy_protector != nullptr || protector != nullptr) {
+    if (unused_bytes_size > 0) {
+      grpc_slice slice = grpc_slice_from_copied_buffer(
+          reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
+      args_->endpoint = grpc_secure_endpoint_create(
+          protector, zero_copy_protector, args_->endpoint, &slice, 1);
+      grpc_slice_unref_internal(slice);
+    } else {
+      args_->endpoint = grpc_secure_endpoint_create(
+          protector, zero_copy_protector, args_->endpoint, nullptr, 0);
+    }
+  } else if (unused_bytes_size > 0) {
+    // Not wrapping the endpoint, so just pass along unused bytes.
     grpc_slice slice = grpc_slice_from_copied_buffer(
         reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
-    args_->endpoint = grpc_secure_endpoint_create(
-        protector, zero_copy_protector, args_->endpoint, &slice, 1);
-    grpc_slice_unref_internal(slice);
-  } else {
-    args_->endpoint = grpc_secure_endpoint_create(
-        protector, zero_copy_protector, args_->endpoint, nullptr, 0);
+    grpc_slice_buffer_add(args_->read_buffer, slice);
   }
+  // Done with handshaker result.
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
   // Add auth context to channel args.
@@ -409,7 +440,7 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     void* arg, grpc_error_handle error) {
   SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
-  grpc_core::ExecCtx::Run(
+  ExecCtx::Run(
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&h->on_handshake_data_received_from_peer_,
                         &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn,
@@ -430,7 +461,6 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(
   size_t bytes_received_size = h->MoveReadBufferIntoHandshakeBuffer();
   // Call TSI handshaker.
   error = h->DoHandshakerNextLocked(h->handshake_buffer_, bytes_received_size);
-
   if (error != GRPC_ERROR_NONE) {
     h->HandshakeFailedLocked(error);
   } else {
@@ -443,7 +473,7 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(
 void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
     void* arg, grpc_error_handle error) {
   SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
-  grpc_core::ExecCtx::Run(
+  ExecCtx::Run(
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&h->on_handshake_data_sent_to_peer_,
                         &SecurityHandshaker::OnHandshakeDataSentToPeerFn, h,

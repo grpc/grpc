@@ -35,6 +35,8 @@ def _handle_unary_unary(unused_request, unused_servicer_context):
     return _RESPONSE
 
 
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "Test is nondeterministic under gevent.")
 class ReconnectTest(unittest.TestCase):
 
     def test_reconnect(self):

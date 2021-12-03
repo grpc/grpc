@@ -161,7 +161,8 @@ static void verify(const verify_params params, const char* expected,
   va_list l;
   grpc_linked_mdelem* e =
       static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e) * nheaders));
-  grpc_metadata_batch b;
+  auto arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch b(arena.get());
 
   va_start(l, nheaders);
   for (i = 0; i < nheaders; i++) {
@@ -243,6 +244,7 @@ static void test_basic_headers() {
 
 static void verify_continuation_headers(const char* key, const char* value,
                                         bool is_eof) {
+  auto arena = grpc_core::MakeScopedArena(1024);
   grpc_slice_buffer output;
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
@@ -251,7 +253,7 @@ static void verify_continuation_headers(const char* key, const char* value,
   e.md = elem;
   e.prev = nullptr;
   e.next = nullptr;
-  grpc_metadata_batch b;
+  grpc_metadata_batch b(arena.get());
   GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e));
   grpc_slice_buffer_init(&output);
 
@@ -325,6 +327,7 @@ static void test_decode_table_overflow() {
 static void verify_table_size_change_match_elem_size(const char* key,
                                                      const char* value,
                                                      bool use_true_binary) {
+  auto arena = grpc_core::MakeScopedArena(1024);
   grpc_slice_buffer output;
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
@@ -335,7 +338,7 @@ static void verify_table_size_change_match_elem_size(const char* key,
   e.md = elem;
   e.prev = nullptr;
   e.next = nullptr;
-  grpc_metadata_batch b;
+  grpc_metadata_batch b(arena.get());
   GPR_ASSERT(GRPC_ERROR_NONE == b.LinkTail(&e));
   grpc_slice_buffer_init(&output);
 

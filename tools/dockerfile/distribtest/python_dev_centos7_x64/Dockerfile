@@ -18,8 +18,8 @@ RUN yum install -y python3
 RUN yum install -y python3-devel
 RUN yum install -y epel-release
 RUN yum install -y python3-pip
-RUN pip3 install --upgrade pip==19.3.1
-RUN pip3 install -U virtualenv
+RUN python3 -m pip install --upgrade pip==19.3.1
+RUN python3 -m pip install -U virtualenv
 
 # The default gcc of CentOS 7 is gcc 4.8 which is older than gcc 4.9,
 # the minimum supported gcc version for gRPC Core so let's upgrade to

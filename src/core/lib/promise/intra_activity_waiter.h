@@ -15,9 +15,10 @@
 #ifndef GRPC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
 #define GRPC_CORE_LIB_PROMISE_INTRA_ACTIVITY_WAITER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 

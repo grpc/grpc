@@ -35,19 +35,15 @@ namespace {
 void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 }  // namespace
 
-Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
-                     const OutgoingMetadataContainer& metadata,
+Status CliCall::Call(const std::string& request, std::string* response,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata) {
-  CliCall call(channel, method, metadata);
-  call.Write(request);
-  call.WritesDone();
-  if (!call.Read(response, server_initial_metadata)) {
+  Write(request);
+  WritesDone();
+  if (!Read(response, server_initial_metadata)) {
     fprintf(stderr, "Failed to read response.\n");
   }
-  return call.Finish(server_trailing_metadata);
+  return Finish(server_trailing_metadata);
 }
 
 CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,

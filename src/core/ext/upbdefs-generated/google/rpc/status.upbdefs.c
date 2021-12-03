@@ -8,14 +8,9 @@
 
 #include "upb/def.h"
 #include "google/rpc/status.upbdefs.h"
+#include "google/rpc/status.upb.h"
 
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern const upb_msglayout google_rpc_Status_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &google_rpc_Status_msginit,
-};
-
 static const char descriptor[275] = {'\n', '\027', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'r', 'p', 'c', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', 
 '\022', '\n', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'r', 'p', 'c', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 
 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 't', 'o', '\"', 'f', '\n', '\006', 'S', 't', 'a', 't', 'u', 's', '\022', 
@@ -36,7 +31,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init google_rpc_status_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_rpc_status_proto_upb_file_layout,
   "google/rpc/status.proto",
   UPB_STRVIEW_INIT(descriptor, 275)
 };

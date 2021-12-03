@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <android/binder_auto_utils.h>
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
-#include <android/binder_interface_utils.h>
 #include <android/log.h>
 #include <jni.h>
 
@@ -23,9 +19,8 @@
 #include "examples/protos/helloworld.pb.h"
 
 #include <grpcpp/grpcpp.h>
-
-#include "src/core/ext/transport/binder/server/binder_server.h"
-#include "src/core/ext/transport/binder/server/binder_server_credentials.h"
+#include <grpcpp/security/binder_credentials.h>
+#include <grpcpp/security/binder_security_policy.h>
 
 namespace {
 class GreeterService : public helloworld::Greeter::Service {
@@ -60,23 +55,12 @@ Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_init_1grpc_1server
   grpc::ServerBuilder server_builder;
   server_builder.RegisterService(&service);
 
+  // TODO(mingcl): Use same signature security after it become available
   server_builder.AddListeningPort(
-      "binder://example.service",
-      grpc::experimental::BinderServerCredentials());
+      "binder:example.service",
+      grpc::experimental::BinderServerCredentials(
+          std::make_shared<
+              grpc::experimental::binder::UntrustedSecurityPolicy>()));
 
   server = server_builder.BuildAndStart();
-}
-
-extern "C" JNIEXPORT jobject JNICALL
-Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_get_1endpoint_1binder(
-    JNIEnv* env, jobject /*this*/) {
-  __android_log_print(ANDROID_LOG_INFO, "DemoServer", "Line number %d",
-                      __LINE__);
-
-  auto ai_binder = static_cast<AIBinder*>(
-      grpc::experimental::binder::GetEndpointBinder("example.service"));
-
-  __android_log_print(ANDROID_LOG_INFO, "DemoServer", "ai_binder = %p",
-                      ai_binder);
-  return AIBinder_toJavaBinder(env, ai_binder);
 }

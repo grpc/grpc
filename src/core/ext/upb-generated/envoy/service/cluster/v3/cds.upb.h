@@ -53,6 +53,8 @@ UPB_INLINE char *envoy_service_cluster_v3_CdsDummy_serialize(const envoy_service
 
 
 
+extern const upb_msglayout_file envoy_service_cluster_v3_cds_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

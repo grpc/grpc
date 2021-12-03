@@ -104,18 +104,10 @@ struct channel_data {
 }  // namespace
 
 static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
-  if (b->legacy_index()->named.grpc_message != nullptr) {
-    grpc_slice pct_encoded_msg = grpc_core::PercentEncodeSlice(
-        GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md),
-        grpc_core::PercentEncodingType::Compatible);
-    if (grpc_slice_is_equivalent(
-            pct_encoded_msg,
-            GRPC_MDVALUE(b->legacy_index()->named.grpc_message->md))) {
-      grpc_slice_unref_internal(pct_encoded_msg);
-    } else {
-      grpc_metadata_batch_set_value(b->legacy_index()->named.grpc_message,
-                                    pct_encoded_msg);
-    }
+  if (grpc_core::Slice* grpc_message =
+          b->get_pointer(grpc_core::GrpcMessageMetadata())) {
+    *grpc_message = grpc_core::PercentEncodeSlice(
+        std::move(*grpc_message), grpc_core::PercentEncodingType::Compatible);
   }
   return GRPC_ERROR_NONE;
 }
@@ -187,27 +179,23 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     }
     b->Remove(GRPC_BATCH_METHOD);
   } else {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
-  }
-
-  if (b->legacy_index()->named.te != nullptr) {
-    if (!grpc_mdelem_static_value_eq(b->legacy_index()->named.te->md,
-                                     GRPC_MDELEM_TE_TRAILERS)) {
-      hs_add_error(error_name, &error,
-                   grpc_attach_md_to_error(
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->legacy_index()->named.te->md));
-    }
-    b->Remove(GRPC_BATCH_TE);
-  } else {
     hs_add_error(error_name, &error,
                  grpc_error_set_str(
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-                     GRPC_ERROR_STR_KEY, grpc_slice_from_static_string("te")));
+                     GRPC_ERROR_STR_KEY, ":method"));
+  }
+
+  auto te = b->Take(grpc_core::TeMetadata());
+  if (te == grpc_core::TeMetadata::kTrailers) {
+    // Do nothing, ok.
+  } else if (!te.has_value()) {
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, "te"));
+  } else {
+    hs_add_error(error_name, &error,
+                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad te header"));
   }
 
   if (b->legacy_index()->named.scheme != nullptr) {
@@ -224,11 +212,10 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     }
     b->Remove(GRPC_BATCH_SCHEME);
   } else {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, ":scheme"));
   }
 
   if (b->legacy_index()->named.content_type != nullptr) {
@@ -265,11 +252,10 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   }
 
   if (b->legacy_index()->named.path == nullptr) {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, ":path"));
   } else if (*calld->recv_initial_metadata_flags &
              GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
     /* We have a cacheable request made with GET verb. The path contains the
@@ -291,7 +277,8 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
           GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-      b->Substitute(b->legacy_index()->named.path, mdelem_path_without_query);
+      (void)b->Substitute(b->legacy_index()->named.path,
+                          mdelem_path_without_query);
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
@@ -311,33 +298,23 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     }
   }
 
-  if (b->legacy_index()->named.host != nullptr &&
-      b->legacy_index()->named.authority == nullptr) {
-    grpc_linked_mdelem* el = b->legacy_index()->named.host;
-    grpc_mdelem md = GRPC_MDELEM_REF(el->md);
-    b->Remove(el);
-    hs_add_error(
-        error_name, &error,
-        grpc_metadata_batch_add_head(
-            b, el,
-            grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                    grpc_slice_ref_internal(GRPC_MDVALUE(md))),
-            GRPC_BATCH_AUTHORITY));
-    GRPC_MDELEM_UNREF(md);
+  if (b->legacy_index()->named.authority == nullptr) {
+    absl::optional<grpc_core::Slice> host = b->Take(grpc_core::HostMetadata());
+    if (host.has_value()) {
+      b->Append(":authority", std::move(*host));
+    }
   }
 
   if (b->legacy_index()->named.authority == nullptr) {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, ":authority"));
   }
 
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (!chand->surface_user_agent &&
-      b->legacy_index()->named.user_agent != nullptr) {
-    b->Remove(GRPC_BATCH_USER_AGENT);
+  if (!chand->surface_user_agent) {
+    b->Remove(grpc_core::UserAgentMetadata());
   }
 
   return error;
@@ -368,7 +345,7 @@ static void hs_recv_initial_metadata_ready(void* user_data,
           "resuming recv_message_ready from recv_initial_metadata_ready");
     }
   } else {
-    GRPC_ERROR_REF(err);
+    (void)GRPC_ERROR_REF(err);
   }
   if (calld->seen_recv_trailing_metadata_ready) {
     GRPC_CALL_COMBINER_START(calld->call_combiner,

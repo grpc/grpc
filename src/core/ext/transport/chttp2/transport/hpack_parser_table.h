@@ -27,6 +27,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
@@ -37,30 +38,16 @@ class HPackTable {
   HPackTable();
   ~HPackTable();
 
-  HPackTable(const HPackTable&);
-  HPackTable& operator=(const HPackTable&);
+  HPackTable(const HPackTable&) = delete;
+  HPackTable& operator=(const HPackTable&) = delete;
 
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
 
+  using Memento = ParsedMetadata<grpc_metadata_batch>;
+
   // Lookup, but don't ref.
-  grpc_mdelem Peek(uint32_t index) const { return Lookup<false>(index); }
-  // Lookup, taking a ref if found.
-  grpc_mdelem Fetch(uint32_t index) const { return Lookup<true>(index); }
-
-  // add a table entry to the index
-  grpc_error_handle Add(grpc_mdelem md) GRPC_MUST_USE_RESULT;
-
-  // Current entry count in the table.
-  uint32_t num_entries() const { return num_entries_; }
-
- private:
-  enum { kInlineEntries = hpack_constants::kInitialTableEntries };
-  using EntriesVec = absl::InlinedVector<grpc_mdelem, kInlineEntries>;
-
-  /* lookup a table entry based on its hpack index */
-  template <bool take_ref>
-  grpc_mdelem Lookup(uint32_t index) const {
+  const Memento* Lookup(uint32_t index) const {
     // Static table comes first, just return an entry from it.
     // NB: This imposes the constraint that the first
     // GRPC_CHTTP2_LAST_STATIC_ENTRY entries in the core static metadata table
@@ -68,27 +55,45 @@ class HPackTable {
     // reading the core static metadata table here; at that point we'd need our
     // own singleton static metadata in the correct order.
     if (index <= hpack_constants::kLastStaticEntry) {
-      return g_static_mdelem_manifested[index - 1];
+      return &static_metadata_.memento[index - 1];
     } else {
-      return LookupDynamic<take_ref>(index);
+      return LookupDynamic(index);
     }
   }
 
-  template <bool take_ref>
-  grpc_mdelem LookupDynamic(uint32_t index) const {
+  // add a table entry to the index
+  grpc_error_handle Add(Memento md) GRPC_MUST_USE_RESULT;
+
+  // Current entry count in the table.
+  uint32_t num_entries() const { return num_entries_; }
+
+ private:
+  struct StaticMementos {
+    StaticMementos() {
+      for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
+        memento[i] = Memento(g_static_mdelem_manifested[i]);
+      }
+    }
+    Memento memento[hpack_constants::kLastStaticEntry];
+  };
+  static const StaticMementos& GetStaticMementos() {
+    static const StaticMementos static_mementos;
+    return static_mementos;
+  }
+
+  enum { kInlineEntries = hpack_constants::kInitialTableEntries };
+  using EntriesVec = absl::InlinedVector<Memento, kInlineEntries>;
+
+  const Memento* LookupDynamic(uint32_t index) const {
     // Not static - find the value in the list of valid entries
     const uint32_t tbl_index = index - (hpack_constants::kLastStaticEntry + 1);
     if (tbl_index < num_entries_) {
       uint32_t offset =
           (num_entries_ - 1u - tbl_index + first_entry_) % entries_.size();
-      grpc_mdelem md = entries_[offset];
-      if (take_ref) {
-        GRPC_MDELEM_REF(md);
-      }
-      return md;
+      return &entries_[offset];
     }
     // Invalid entry: return error
-    return GRPC_MDNULL;
+    return nullptr;
   }
 
   void EvictOne();
@@ -110,6 +115,8 @@ class HPackTable {
   uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
   // HPack table entries
   EntriesVec entries_{hpack_constants::kInitialTableEntries};
+  // Mementos for static data
+  const StaticMementos& static_metadata_;
 };
 
 }  // namespace grpc_core

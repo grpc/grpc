@@ -161,7 +161,7 @@ void grpc_enable_error_creation();
 #define GRPC_ERROR_CANCELLED absl::CancelledError()
 
 #define GRPC_ERROR_REF(err) (err)
-#define GRPC_ERROR_UNREF(err)
+#define GRPC_ERROR_UNREF(err) (void)(err)
 
 #define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
@@ -364,15 +364,12 @@ grpc_error_handle grpc_error_set_int(grpc_error_handle src,
 /// intptr_t for `p`, even if the value of `p` is not used.
 bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
                         intptr_t* p);
-/// This call takes ownership of the slice; the error is responsible for
-/// eventually unref-ing it.
 grpc_error_handle grpc_error_set_str(
     grpc_error_handle src, grpc_error_strs which,
-    const grpc_slice& str) GRPC_MUST_USE_RESULT;
+    absl::string_view str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
-/// Caller does NOT own the slice.
 bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
-                        grpc_slice* s);
+                        std::string* str);
 
 /// Add a child error: an error that is believed to have contributed to this
 /// error occurring. Allows root causing high level errors from lower level

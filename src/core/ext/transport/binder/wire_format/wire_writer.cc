@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+
+#ifndef GRPC_NO_BINDER
 
 #include <utility>
 
@@ -179,3 +181,4 @@ void WireWriterImpl::OnAckReceived(int64_t num_bytes) {
 }
 
 }  // namespace grpc_binder
+#endif

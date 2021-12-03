@@ -15,15 +15,26 @@
 #include "upb/port_def.inc"
 
 static const upb_msglayout_field envoy_type_v3_SemanticVersion__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 13, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(4, 4), 0, 0, 13, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(8, 8), 0, 0, 13, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(0, 0), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(4, 4), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(8, 8), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_type_v3_SemanticVersion_msginit = {
   NULL,
   &envoy_type_v3_SemanticVersion__fields[0],
-  UPB_SIZE(16, 16), 3, false, 3, 255,
+  UPB_SIZE(16, 16), 3, _UPB_MSGEXT_NONE, 3, 255,
+};
+
+static const upb_msglayout *messages_layout[1] = {
+  &envoy_type_v3_SemanticVersion_msginit,
+};
+
+const upb_msglayout_file envoy_type_v3_semantic_version_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  1,
+  0,
 };
 
 #include "upb/port_undef.inc"

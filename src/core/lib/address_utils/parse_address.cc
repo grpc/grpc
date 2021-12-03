@@ -83,6 +83,7 @@ namespace grpc_core {
 
 grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
                                        grpc_resolved_address* resolved_addr) {
+  memset(resolved_addr, 0, sizeof(*resolved_addr));
   struct sockaddr_un* un =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
@@ -99,6 +100,7 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
 
 grpc_error_handle UnixAbstractSockaddrPopulate(
     absl::string_view path, grpc_resolved_address* resolved_addr) {
+  memset(resolved_addr, 0, sizeof(*resolved_addr));
   struct sockaddr_un* un =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;

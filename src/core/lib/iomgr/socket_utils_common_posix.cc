@@ -443,8 +443,7 @@ static grpc_error_handle error_for_fd(int fd,
   if (fd >= 0) return GRPC_ERROR_NONE;
   std::string addr_str = grpc_sockaddr_to_string(addr, false);
   grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(addr_str.c_str()));
+      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
   return err;
 }
 

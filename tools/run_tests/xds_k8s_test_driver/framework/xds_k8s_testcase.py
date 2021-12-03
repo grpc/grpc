@@ -16,12 +16,14 @@ import datetime
 import enum
 import hashlib
 import logging
+import re
 import time
 from typing import List, Optional, Tuple
 
 from absl import flags
 from absl.testing import absltest
 from google.protobuf import json_format
+import grpc
 
 from framework import xds_flags
 from framework import xds_k8s_flags
@@ -85,11 +87,13 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value
+        cls.config_scope: str = xds_flags.ROUTER_SCOPE.value
         cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
         cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
         cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
+        cls.compute_api_version = xds_flags.COMPUTE_API_VERSION.value
 
         # Resource names.
         cls.resource_prefix = xds_flags.RESOURCE_PREFIX.value
@@ -239,6 +243,46 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
+    @staticmethod
+    def diffAccumulatedStatsPerMethod(
+            before: grpc_testing.LoadBalancerAccumulatedStatsResponse,
+            after: grpc_testing.LoadBalancerAccumulatedStatsResponse):
+        """Only diffs stats_per_method, as the other fields are deprecated."""
+        diff = grpc_testing.LoadBalancerAccumulatedStatsResponse()
+        for method, method_stats in after.stats_per_method.items():
+            for status, count in method_stats.result.items():
+                count -= before.stats_per_method[method].result[status]
+                if count < 0:
+                    raise AssertionError("Diff of count shouldn't be negative")
+                if count > 0:
+                    diff.stats_per_method[method].result[status] = count
+        return diff
+
+    def assertRpcStatusCodes(self, test_client: XdsTestClient, *,
+                             status_code: grpc.StatusCode, duration: _timedelta,
+                             method: str) -> None:
+        """Assert all RPCs for a method are completing with a certain status."""
+        # Sending with pre-set QPS for a period of time
+        before_stats = test_client.get_load_balancer_accumulated_stats()
+        logging.info(
+            'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
+            test_client.ip, before_stats)
+        time.sleep(duration.total_seconds())
+        after_stats = test_client.get_load_balancer_accumulated_stats()
+        logging.info(
+            'Received LoadBalancerAccumulatedStatsResponse from test client %s: after:\n%s',
+            test_client.ip, after_stats)
+
+        diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
+                                                        after_stats)
+        stats = diff_stats.stats_per_method[method]
+        status = status_code.value[0]
+        for found_status, count in stats.result.items():
+            if found_status != status and count > 0:
+                self.fail(f"Expected only status {status} but found status "
+                          f"{found_status} for method {method}:\n{diff_stats}")
+        self.assertGreater(stats.result[status_code.value[0]], 0)
+
     def assertRpcsEventuallyGoToGivenServers(self,
                                              test_client: XdsTestClient,
                                              servers: List[XdsTestServer],
@@ -285,6 +329,17 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         ])
         for xds_config in config.xds_config:
             seen.add(xds_config.WhichOneof('per_xds_config'))
+        for generic_xds_config in config.generic_xds_configs:
+            if re.search(r'\.Listener$', generic_xds_config.type_url):
+                seen.add('listener_config')
+            elif re.search(r'\.RouteConfiguration$',
+                           generic_xds_config.type_url):
+                seen.add('route_config')
+            elif re.search(r'\.Cluster$', generic_xds_config.type_url):
+                seen.add('cluster_config')
+            elif re.search(r'\.ClusterLoadAssignment$',
+                           generic_xds_config.type_url):
+                seen.add('endpoint_config')
         logger.debug('Received xDS config dump: %s',
                      json_format.MessageToJson(config, indent=2))
         self.assertSameElements(want, seen)
@@ -329,11 +384,13 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
 
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:
-        return TrafficDirectorManager(self.gcp_api_manager,
-                                      project=self.project,
-                                      resource_prefix=self.resource_prefix,
-                                      resource_suffix=self.resource_suffix,
-                                      network=self.network)
+        return TrafficDirectorManager(
+            self.gcp_api_manager,
+            project=self.project,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=self.resource_suffix,
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
     def initKubernetesServerRunner(self) -> KubernetesServerRunner:
         return KubernetesServerRunner(
@@ -362,6 +419,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            config_scope=self.config_scope,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port,
@@ -400,7 +458,9 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
-            network=self.network)
+            network=self.network,
+            config_scope=self.config_scope,
+            compute_api_version=self.compute_api_version)
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
@@ -431,7 +491,8 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
-            network=self.network)
+            network=self.network,
+            compute_api_version=self.compute_api_version)
 
     def initKubernetesServerRunner(self) -> KubernetesServerRunner:
         return KubernetesServerRunner(
@@ -460,6 +521,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            config_scope=self.config_scope,
             deployment_template='client-secure.deployment.yaml',
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace,

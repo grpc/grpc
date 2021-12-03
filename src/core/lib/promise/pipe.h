@@ -15,11 +15,21 @@
 #ifndef GRPC_CORE_LIB_PROMISE_PIPE_H
 #define GRPC_CORE_LIB_PROMISE_PIPE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
+#include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <new>
+#include <type_traits>
+#include <utility>
+
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -30,10 +40,8 @@ namespace grpc_core {
 
 template <typename T>
 struct Pipe;
-
 template <typename T>
 class PipeSender;
-
 template <typename T>
 class PipeReceiver;
 
@@ -41,7 +49,6 @@ namespace pipe_detail {
 
 template <typename T>
 class Push;
-
 template <typename T>
 class Next;
 

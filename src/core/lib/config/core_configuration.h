@@ -15,10 +15,11 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 #define GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/surface/channel_init.h"
 
@@ -35,6 +36,10 @@ class CoreConfiguration {
   // their configuration and assemble the published CoreConfiguration.
   class Builder {
    public:
+    ChannelArgsPreconditioning::Builder* channel_args_preconditioning() {
+      return &channel_args_preconditioning_;
+    }
+
     ChannelInit::Builder* channel_init() { return &channel_init_; }
 
     HandshakerRegistry::Builder* handshaker_registry() {
@@ -44,6 +49,7 @@ class CoreConfiguration {
    private:
     friend class CoreConfiguration;
 
+    ChannelArgsPreconditioning::Builder channel_args_preconditioning_;
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
 
@@ -111,6 +117,10 @@ class CoreConfiguration {
 
   // Accessors
 
+  const ChannelArgsPreconditioning& channel_args_preconditioning() const {
+    return channel_args_preconditioning_;
+  }
+
   const ChannelInit& channel_init() const { return channel_init_; }
 
   const HandshakerRegistry& handshaker_registry() const {
@@ -135,6 +145,7 @@ class CoreConfiguration {
   // Extra registered builders
   static std::atomic<RegisteredBuilder*> builders_;
 
+  ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
 };

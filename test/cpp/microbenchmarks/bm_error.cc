@@ -74,7 +74,7 @@ static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
             GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)0),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_static_string("raw bytes")));
+        GRPC_ERROR_STR_RAW_BYTES, "raw bytes"));
   }
   track_counters.Finish(state);
 }
@@ -97,8 +97,7 @@ static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
   const char* str = "hello";
   for (auto _ : state) {
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                               grpc_slice_from_static_string(str));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, str);
   }
   GRPC_ERROR_UNREF(error);
   track_counters.Finish(state);
@@ -253,9 +252,9 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_status_code status;
-    grpc_slice slice;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
-                          nullptr, nullptr);
+    std::string message;
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status,
+                          &message, nullptr, nullptr);
   }
 
   track_counters.Finish(state);

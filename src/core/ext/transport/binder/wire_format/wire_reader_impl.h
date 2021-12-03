@@ -15,13 +15,15 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <memory>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/notification.h"
+
+#include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
@@ -34,7 +36,10 @@ class WireReaderImpl : public WireReader {
  public:
   WireReaderImpl(
       std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,
-      bool is_client, std::function<void()> on_destruct_callback = nullptr);
+      bool is_client,
+      std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+          security_policy,
+      std::function<void()> on_destruct_callback = nullptr);
   ~WireReaderImpl() override;
 
   void Orphan() override { Unref(); }
@@ -113,6 +118,7 @@ class WireReaderImpl : public WireReader {
       ABSL_GUARDED_BY(mu_);
   std::unique_ptr<TransactionReceiver> tx_receiver_;
   bool is_client_;
+  std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy_;
   // When WireReaderImpl gets destructed, call on_destruct_callback_. This is
   // mostly for decrementing the reference count of its transport.
   std::function<void()> on_destruct_callback_;

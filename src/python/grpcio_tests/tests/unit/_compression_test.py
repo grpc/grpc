@@ -259,6 +259,8 @@ def _stream_stream_client(channel, multicallable_kwargs, message):
                 i, response))
 
 
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "This test is nondeterministic under gevent.")
 class CompressionTest(unittest.TestCase):
 
     def assertCompressed(self, compression_ratio):

@@ -312,8 +312,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'ws2_32',
+        'bcrypt',
         'dbghelp',
+        'ws2_32',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
@@ -536,6 +537,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
+    python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

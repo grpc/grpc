@@ -90,6 +90,13 @@ TYPED_TEST(BitSetTest, Count) {
   }
 }
 
+TEST(EmptyBitSet, Empty) {
+  BitSet<0> b;
+  EXPECT_TRUE(b.all());
+  EXPECT_TRUE(b.none());
+  EXPECT_EQ(b.count(), 0);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

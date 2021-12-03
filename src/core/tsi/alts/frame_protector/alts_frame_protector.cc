@@ -370,8 +370,7 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
     return TSI_INTERNAL_ERROR;
   }
   char* error_details = nullptr;
-  alts_frame_protector* impl =
-      static_cast<alts_frame_protector*>(gpr_zalloc(sizeof(*impl)));
+  alts_frame_protector* impl = grpc_core::Zalloc<alts_frame_protector>();
   grpc_status_code status = create_alts_crypters(
       key, key_size, is_client, is_rekey, impl, &error_details);
   if (status != GRPC_STATUS_OK) {

@@ -15,8 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_CORE_LIB_PROMISE_CONTEXT_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/gpr/tls.h"

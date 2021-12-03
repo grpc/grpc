@@ -15,7 +15,10 @@
 #ifndef GRPC_CORE_LIB_PROMISE_FOR_EACH_H
 #define GRPC_CORE_LIB_PROMISE_FOR_EACH_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <type_traits>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
@@ -45,6 +48,7 @@ Poll<absl::Status> FinishIteration(absl::Status* r, Reader* reader,
 // easily.
 template <typename T>
 struct Done;
+
 template <>
 struct Done<absl::Status> {
   static absl::Status Make() { return absl::OkStatus(); }

@@ -84,6 +84,10 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
   grpc_slice_buffer_reset_and_unref_internal(sb);
   if (sb->base_slices != sb->inlined) {
     gpr_free(sb->base_slices);
+    // As a precaution, set sb->base_slices to equal sb->inlined
+    // to prevent a double free attempt if grpc_slice_buffer_destroy_internal
+    // is invoked two times on the same slice buffer.
+    sb->base_slices = sb->slices = sb->inlined;
   }
 }
 

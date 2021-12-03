@@ -288,6 +288,7 @@ setuptools.setup(name='grpcio-tools',
                  classifiers=CLASSIFIERS,
                  ext_modules=extension_modules(),
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=[
                      'protobuf>=3.5.0.post1, < 4.0dev',
                      'grpcio>={version}'.format(version=grpc_version.VERSION),

@@ -27,8 +27,9 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/ext/service_config/service_config.h"
+#include "src/core/ext/service_config/service_config_call_data.h"
+#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -44,8 +45,6 @@ namespace grpc_core {
 // MethodConfig and provide input to LB policies on a per-call basis.
 class ConfigSelector : public RefCounted<ConfigSelector> {
  public:
-  using CallAttributes = std::map<const char*, absl::string_view>;
-
   // An interface to be used by the channel when dispatching calls.
   class CallDispatchController {
    public:
@@ -76,7 +75,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     // the call to ensure that method_configs lives long enough.
     RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
-    CallAttributes call_attributes;
+    ServiceConfigCallData::CallAttributes call_attributes;
     // Call dispatch controller.
     CallDispatchController* call_dispatch_controller = nullptr;
   };

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+
+licenses(["notice"])
 
 grpc_package(
     name = "reflection",

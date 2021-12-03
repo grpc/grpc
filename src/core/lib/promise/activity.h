@@ -15,12 +15,26 @@
 #ifndef GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
+#include <atomic>
 #include <functional>
+#include <memory>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
@@ -341,7 +355,7 @@ class PromiseActivity final
   }
 
   void RunScheduledWakeup() {
-    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_relaxed));
+    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
     Step();
     WakeupComplete();
   }
@@ -360,9 +374,12 @@ class PromiseActivity final
       WakeupComplete();
       return;
     }
-    if (!wakeup_scheduled_.exchange(true, std::memory_order_relaxed)) {
+    if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       wakeup_scheduler_.ScheduleWakeup(this);
+    } else {
+      // Already a wakeup scheduled for later, drop ref.
+      WakeupComplete();
     }
   }
 

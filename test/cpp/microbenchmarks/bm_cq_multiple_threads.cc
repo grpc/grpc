@@ -162,7 +162,7 @@ static void teardown() {
 */
 static void BM_Cq_Throughput(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  auto thd_idx = state.thread_index;
+  auto thd_idx = state.thread_index();
 
   gpr_mu_lock(&g_mu);
   g_threads_active++;

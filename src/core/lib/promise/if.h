@@ -15,12 +15,15 @@
 #ifndef GRPC_CORE_LIB_PROMISE_IF_H
 #define GRPC_CORE_LIB_PROMISE_IF_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <type_traits>
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {

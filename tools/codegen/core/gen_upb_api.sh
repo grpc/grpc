@@ -116,40 +116,24 @@ proto_files=( \
   "envoy/type/v3/percent.proto" \
   "envoy/type/v3/range.proto" \
   "envoy/type/v3/semantic_version.proto" \
-  "google/api/annotations.proto" \
-  "google/api/expr/v1alpha1/checked.proto" \
-  "google/api/expr/v1alpha1/syntax.proto" \
-  "google/api/http.proto" \
-  "google/protobuf/any.proto" \
-  "google/protobuf/descriptor.proto" \
-  "google/protobuf/duration.proto" \
-  "google/protobuf/empty.proto" \
-  "google/protobuf/struct.proto" \
-  "google/protobuf/timestamp.proto" \
-  "google/protobuf/wrappers.proto" \
-  "google/rpc/status.proto" \
-  "src/proto/grpc/gcp/altscontext.proto" \
-  "src/proto/grpc/gcp/handshaker.proto" \
-  "src/proto/grpc/gcp/transport_security_common.proto" \
-  "src/proto/grpc/health/v1/health.proto" \
-  "src/proto/grpc/lb/v1/load_balancer.proto" \
   "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/security.proto" \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
   "udpa/annotations/versioning.proto" \
-  "udpa/data/orca/v1/orca_load_report.proto" \
-  "udpa/type/v1/typed_struct.proto" \
   "validate/validate.proto" \
+  "xds/annotations/v3/status.proto" \
   "xds/core/v3/authority.proto" \
   "xds/core/v3/collection_entry.proto" \
   "xds/core/v3/context_params.proto" \
   "xds/core/v3/resource_locator.proto" \
   "xds/core/v3/resource_name.proto" \
-  "xds/core/v3/resource.proto")
+  "xds/core/v3/resource.proto" \
+  "xds/data/orca/v3/orca_load_report.proto" \
+  "xds/type/v3/typed_struct.proto")
 
-INCLUDE_OPTIONS="-I=$PWD/third_party/udpa \
+INCLUDE_OPTIONS="-I=$PWD/third_party/xds \
   -I=$PWD/third_party/envoy-api \
   -I=$PWD/third_party/googleapis \
   -I=$PWD/third_party/protobuf/src \
@@ -173,3 +157,9 @@ do
     --upb_out=$UPBDEFS_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPBDEFS_PLUGIN
 done
+
+# generate upb files from bazel rules
+python3 tools/codegen/core/gen_upb_api_from_bazel_xml.py \
+  --upb_out=$UPB_OUTPUT_DIR \
+  --upbdefs_out=$UPBDEFS_OUTPUT_DIR \
+  --verbose

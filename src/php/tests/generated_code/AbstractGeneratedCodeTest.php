@@ -31,6 +31,34 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
      */
     protected static $client;
 
+    protected static $clientOptions = array(
+        'grpc.service_config' => '{
+            "loadBalancingPolicy": "round_robin",
+            "methodConfig": [
+              {
+                "name": [
+                  {
+                    "service": "math.Math"
+                  }
+                ],
+                "waitForReady": true,
+                "retryPolicy": {
+                  "maxAttempts": 2,
+                  "initialBackoff": "0.2s",
+                  "maxBackoff": "4s",
+                  "backoffMultiplier": 2,
+                  "retryableStatusCodes": [
+                    "UNAVAILABLE",
+                    "RESOURCE_EXHAUSTED",
+                    "DEADLINE_EXCEEDED"
+                  ]
+                }
+              }
+            ]
+          }',
+        'grpc.enable_retries' => 1,
+    );
+
     public function testWaitForNotReady()
     {
         $this->assertFalse(self::$client->waitForReady(1));
@@ -129,6 +157,22 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $call->cancel();
         list($response, $status) = $call->wait();
         $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+    }
+
+    public function testRetry()
+    {
+        $metadata = [
+            'response-unavailable' => [
+                'server response STATUS_UNAVAILABLE so client will retry'
+            ],
+        ];
+        $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
+        $call = self::$client->Div($div_arg, $metadata);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_UNAVAILABLE, $status->code);
+        $this->assertSame('1', $status->metadata['unavailable-retry-attempts'][0]);
     }
 
     public function testCallCredentialsCallback()

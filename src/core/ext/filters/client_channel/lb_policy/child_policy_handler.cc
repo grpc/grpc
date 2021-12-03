@@ -90,6 +90,10 @@ class ChildPolicyHandler::Helper
     parent_->channel_control_helper()->RequestReresolution();
   }
 
+  absl::string_view GetAuthority() override {
+    return parent_->channel_control_helper()->GetAuthority();
+  }
+
   void AddTraceEvent(TraceSeverity severity,
                      absl::string_view message) override {
     if (parent_->shutting_down_) return;

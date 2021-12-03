@@ -13,16 +13,9 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/port.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
-
-#include "src/core/lib/event_engine/sockaddr.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -39,12 +32,6 @@ const struct sockaddr* EventEngine::ResolvedAddress::address() const {
 }
 
 socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
-
-std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-DefaultEventEngineFactory() {
-  // TODO(nnoble): delete when uv-ee is merged
-  abort();
-}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

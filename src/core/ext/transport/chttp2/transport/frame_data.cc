@@ -133,10 +133,10 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
                 absl::StrFormat("Bad GRPC frame type 0x%02x", p->frame_type));
             p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                           static_cast<intptr_t>(s->id));
-            p->error = grpc_error_set_str(
-                p->error, GRPC_ERROR_STR_RAW_BYTES,
-                grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(
-                    grpc_dump_slice(*slice, GPR_DUMP_HEX | GPR_DUMP_ASCII))));
+            grpc_core::UniquePtr<char> dmp(
+                grpc_dump_slice(*slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+            p->error = grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES,
+                                          dmp.get());
             p->error =
                 grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);
             p->state = GRPC_CHTTP2_DATA_ERROR;

@@ -187,11 +187,9 @@ static int is_metadata_server_reachable() {
   request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST);
   request.http.path = const_cast<char*>("/");
   grpc_httpcli_context_init(&context);
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("google_default_credentials");
   grpc_httpcli_get(
-      &context, &detector.pollent, resource_quota, &request,
-      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
+      &context, &detector.pollent, grpc_core::ResourceQuota::Default(),
+      &request, grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
@@ -290,7 +288,7 @@ static grpc_error_handle create_default_creds_from_path(
   if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_ref_internal(creds_data));
+        GRPC_ERROR_STR_RAW_BYTES, grpc_core::StringViewFromSlice(creds_data));
     goto end;
   }
 
@@ -441,9 +439,9 @@ void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
 }
 
 void grpc_flush_cached_google_default_credentials(void) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
-  grpc_core::MutexLock lock(g_state_mu);
+  MutexLock lock(g_state_mu);
   g_metadata_server_available = 0;
 }
 

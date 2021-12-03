@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channelz.h"
 
@@ -398,7 +398,7 @@ void SecurityArgDestroy(void* p) {
   xds_certificate_provider->Unref();
 }
 
-int SecurityArgCmp(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
+int SecurityArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
     SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};

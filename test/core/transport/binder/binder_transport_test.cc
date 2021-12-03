@@ -29,6 +29,7 @@
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
+#include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "test/core/transport/binder/mock_objects.h"
@@ -46,7 +47,9 @@ class BinderTransportTest : public ::testing::Test {
   BinderTransportTest()
       : arena_(grpc_core::Arena::Create(/* initial_size = */ 1)),
         transport_(grpc_create_binder_transport_client(
-            absl::make_unique<NiceMock<MockBinder>>())) {
+            absl::make_unique<NiceMock<MockBinder>>(),
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>())) {
     auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
     gbt->wire_writer = absl::make_unique<MockWireWriter>();
     GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
@@ -143,18 +146,36 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
   return absl::StrContains(grpc_error_std_string(arg), msg);
 }
 
+namespace {
+class MetadataEncoder {
+ public:
+  void Encode(grpc_mdelem elem) {
+    metadata_.emplace_back(
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDKEY(elem))),
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem))));
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    metadata_.emplace_back(
+        std::string(Which::key()),
+        std::string(grpc_core::Slice(Which::Encode(value)).as_string_view()));
+  }
+
+  const Metadata& metadata() const { return metadata_; }
+
+ private:
+  Metadata metadata_;
+};
+}  // namespace
+
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
 void VerifyMetadataEqual(const Metadata& md,
                          const grpc_metadata_batch& grpc_md) {
-  size_t i = 0;
-  grpc_md.ForEach([&](grpc_mdelem mdelm) {
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(mdelm)), md[i].first);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(mdelm)),
-              md[i].second);
-    i++;
-  });
-  EXPECT_EQ(md.size(), i);
+  MetadataEncoder encoder;
+  grpc_md.Encode(&encoder);
+  EXPECT_EQ(encoder.metadata(), md);
 }
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.
@@ -190,7 +211,8 @@ struct MakeSendInitialMetadata {
 
   std::vector<grpc_linked_mdelem> storage;
   grpc_linked_mdelem method_ref_storage;
-  grpc_metadata_batch grpc_initial_metadata{};
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_initial_metadata{arena.get()};
 };
 
 struct MakeSendMessage {
@@ -221,7 +243,8 @@ struct MakeSendTrailingMetadata {
         &grpc_trailing_metadata;
   }
 
-  grpc_metadata_batch grpc_trailing_metadata{};
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_trailing_metadata{arena.get()};
 };
 
 struct MakeRecvInitialMetadata {
@@ -243,7 +266,8 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_metadata_batch grpc_initial_metadata;
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_initial_metadata{arena.get()};
   absl::Notification notification;
 };
 
@@ -285,7 +309,8 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_metadata_batch grpc_trailing_metadata;
+  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_metadata_batch grpc_trailing_metadata{arena.get()};
   absl::Notification notification;
 };
 
@@ -515,7 +540,7 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -579,7 +604,7 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
                       recv_trailing_metadata.grpc_trailing_metadata);
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -656,7 +681,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kRecvMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));

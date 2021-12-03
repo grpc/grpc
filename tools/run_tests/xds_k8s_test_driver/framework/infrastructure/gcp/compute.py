@@ -40,8 +40,11 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     class ZonalGcpResource(GcpResource):
         zone: str
 
-    def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
-        super().__init__(api_manager.compute('v1'), project)
+    def __init__(self,
+                 api_manager: gcp.api.GcpApiManager,
+                 project: str,
+                 version: str = 'v1'):
+        super().__init__(api_manager.compute(version), project)
 
     class HealthCheckProtocol(enum.Enum):
         TCP = enum.auto()

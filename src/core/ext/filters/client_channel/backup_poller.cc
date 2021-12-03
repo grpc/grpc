@@ -28,6 +28,7 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -138,7 +139,7 @@ static void run_poller(void* arg, grpc_error_handle error) {
 
 static void g_poller_init_locked() {
   if (g_poller == nullptr) {
-    g_poller = static_cast<backup_poller*>(gpr_zalloc(sizeof(backup_poller)));
+    g_poller = grpc_core::Zalloc<backup_poller>();
     g_poller->pollset =
         static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     g_poller->shutting_down = false;

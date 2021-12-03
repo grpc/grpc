@@ -214,6 +214,15 @@ class WorkspaceFileFunctions(object):
   def upb_deps(self):
     pass
 
+  def rules_fuzzing_dependencies(self):
+    pass
+
+  def rules_fuzzing_init(self):
+    pass
+
+  def system_python(self, **kwargs):
+    pass
+
 
 class Converter(object):
   def __init__(self):

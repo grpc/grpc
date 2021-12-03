@@ -40,28 +40,47 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
-  out->push_back("key=");
-  char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  out->push_back(dump);
-  gpr_free(dump);
-  out->push_back(" value=");
-  dump = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  out->push_back(dump);
-  gpr_free(dump);
-}
+namespace {
+class MetadataListEncoder {
+ public:
+  explicit MetadataListEncoder(std::vector<std::string>* out) : out_(out) {}
+  void Encode(const grpc_mdelem& md) {
+    MaybeAddComma();
+    out_->push_back("key=");
+    char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    out_->push_back(dump);
+    gpr_free(dump);
+    out_->push_back(" value=");
+    dump = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    out_->push_back(dump);
+    gpr_free(dump);
+  }
+
+  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis deadline) {
+    MaybeAddComma();
+    out_->push_back(absl::StrFormat("deadline=%" PRId64, deadline));
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    MaybeAddComma();
+    out_->push_back(
+        absl::StrCat(Which::key(), "=", Which::DisplayValue(value)));
+  }
+
+ private:
+  void MaybeAddComma() {
+    if (out_->size() != initial_size_) out_->push_back(", ");
+  }
+  std::vector<std::string>* const out_;
+  const size_t initial_size_ = out_->size();
+};
+}  // namespace
 
 static void put_metadata_list(const grpc_metadata_batch& md,
                               std::vector<std::string>* out) {
-  bool first = true;
-  md.ForEach([&](grpc_mdelem elem) {
-    if (!first) out->push_back(", ");
-    first = false;
-    put_metadata(elem, out);
-  });
-  if (md.deadline() != GRPC_MILLIS_INF_FUTURE) {
-    out->push_back(absl::StrFormat(" deadline=%" PRId64, md.deadline()));
-  }
+  MetadataListEncoder encoder(out);
+  md.Encode(&encoder);
 }
 
 std::string grpc_transport_stream_op_batch_string(

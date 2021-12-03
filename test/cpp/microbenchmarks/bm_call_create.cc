@@ -45,7 +45,6 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -324,6 +323,7 @@ static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
+      const grpc_resolved_address& /*address*/,
       const grpc_channel_args* /*args*/) override {
     return nullptr;
   }
@@ -449,7 +449,7 @@ class NoOp {
  public:
   class Op {
    public:
-    Op(NoOp* /*p*/, grpc_call_stack* /*s*/) {}
+    Op(NoOp* /*p*/, grpc_call_stack* /*s*/, grpc_core::Arena*) {}
     void Finish() {}
   };
 };
@@ -466,8 +466,8 @@ class SendEmptyMetadata {
 
   class Op {
    public:
-    Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/) {
-      batch_.Clear();
+    Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/, grpc_core::Arena* arena)
+        : batch_(arena) {
       p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
     void Finish() {}
@@ -547,7 +547,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(
         grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
-    typename TestOp::Op op(&test_op_data, call_stack);
+    typename TestOp::Op op(&test_op_data, call_stack, call_args.arena);
     grpc_call_stack_destroy(call_stack, &final_info, nullptr);
     op.Finish();
     grpc_core::ExecCtx::Get()->Flush();
@@ -704,9 +704,8 @@ class IsolatedCallFixture : public TrackCounters {
         nullptr));
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(
-          builder, GRPC_CLIENT_CHANNEL, grpc_resource_user_create_unlimited(),
-          0);
+      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL,
+                                                  nullptr);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }

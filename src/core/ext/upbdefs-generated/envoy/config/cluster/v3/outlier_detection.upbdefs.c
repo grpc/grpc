@@ -8,18 +8,13 @@
 
 #include "upb/def.h"
 #include "envoy/config/cluster/v3/outlier_detection.upbdefs.h"
+#include "envoy/config/cluster/v3/outlier_detection.upb.h"
 
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_cluster_v3_OutlierDetection_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_cluster_v3_OutlierDetection_msginit,
-};
-
 static const char descriptor[2423] = {'\n', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', 
 '/', 'o', 'u', 't', 'l', 'i', 'e', 'r', '_', 'd', 'e', 't', 'e', 'c', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', 
 '\027', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', '\032', 
@@ -130,7 +125,7 @@ static upb_def_init *deps[6] = {
 
 upb_def_init envoy_config_cluster_v3_outlier_detection_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_cluster_v3_outlier_detection_proto_upb_file_layout,
   "envoy/config/cluster/v3/outlier_detection.proto",
   UPB_STRVIEW_INIT(descriptor, 2423)
 };

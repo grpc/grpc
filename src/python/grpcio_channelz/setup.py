@@ -98,6 +98,7 @@ setuptools.setup(
     url='https://grpc.io',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
+    python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS)

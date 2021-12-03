@@ -24,8 +24,8 @@
 #include "absl/time/time.h"
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
-#include <grpc/event_engine/slice_allocator.h>
 
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -97,6 +97,12 @@ class EventEngine {
   struct TaskHandle {
     intptr_t keys[2];
   };
+  /// A handle to a cancellable connection attempt.
+  ///
+  /// Returned by \a Connect, and can be passed to \a CancelConnect.
+  struct ConnectionHandle {
+    intptr_t keys[2];
+  };
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///
@@ -123,7 +129,7 @@ class EventEngine {
   /// created when connections are established, and Endpoint operations are
   /// gRPC's primary means of communication.
   ///
-  /// Endpoints must use the provided SliceAllocator for all data buffer memory
+  /// Endpoints must use the provided MemoryAllocator for all data buffer memory
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
@@ -192,7 +198,7 @@ class EventEngine {
    public:
     /// Called when the listener has accepted a new client connection.
     using AcceptCallback = std::function<void(
-        std::unique_ptr<Endpoint>, const SliceAllocator& slice_allocator)>;
+        std::unique_ptr<Endpoint>, MemoryAllocator memory_allocator)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
     ///
@@ -215,32 +221,39 @@ class EventEngine {
   /// exactly once, when the Listener is shut down. The status passed to it will
   /// indicate if there was a problem during shutdown.
   ///
-  /// The provided \a SliceAllocatorFactory is used to create \a SliceAllocators
-  /// for Endpoint construction.
+  /// The provided \a MemoryAllocatorFactory is used to create \a
+  /// MemoryAllocators for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
       std::function<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
-      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) = 0;
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
-  /// May return an error status immediately if there was a failure in the
-  /// synchronous part of establishing a connection. In that event, the \a
-  /// on_connect callback *will not* have been executed. Otherwise, it is
-  /// expected that the \a on_connect callback will be asynchronously executed
-  /// exactly once by the EventEngine.
+  /// Even in the event of an error, it is expected that the \a on_connect
+  /// callback will be asynchronously executed exactly once by the EventEngine.
+  /// A connection attempt can be cancelled using the \a CancelConnect method.
   ///
-  /// Implementation Note: it is important that the \a slice_allocator be used
+  /// Implementation Note: it is important that the \a memory_allocator be used
   /// for all read/write buffer allocations in the EventEngine implementation.
   /// This allows gRPC's \a ResourceQuota system to monitor and control memory
   /// usage with graceful degradation mechanisms. Please see the \a
-  /// SliceAllocator API for more information.
-  virtual absl::Status Connect(OnConnectCallback on_connect,
-                               const ResolvedAddress& addr,
-                               const EndpointConfig& args,
-                               std::unique_ptr<SliceAllocator> slice_allocator,
-                               absl::Time deadline) = 0;
+  /// MemoryAllocator API for more information.
+  virtual ConnectionHandle Connect(OnConnectCallback on_connect,
+                                   const ResolvedAddress& addr,
+                                   const EndpointConfig& args,
+                                   MemoryAllocator memory_allocator,
+                                   absl::Time deadline) = 0;
 
+  /// Request cancellation of a connection attempt.
+  ///
+  /// If the associated connection has already been completed, it will not be
+  /// cancelled, and this method will return false.
+  ///
+  /// If the associated connection has not been completed, it will be cancelled,
+  /// and this method will return true. The \a OnConnectCallback will not be
+  /// called.
+  virtual bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
   class DNSResolver {
    public:
@@ -365,9 +378,20 @@ class EventEngine {
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
-// TODO(hork): finalize the API and document it. We need to firm up the story
-// around user-provided EventEngines.
-std::shared_ptr<EventEngine> DefaultEventEngineFactory();
+/// Replace gRPC's default EventEngine factory
+///
+/// Applications may call \a SetDefaultEventEngineFactory at any time to replace
+/// the default factory used within gRPC. EventEngines will be created when
+/// necessary, when they are otherwise not provided by the application.
+///
+/// To be certain that none of the gRPC-provided built-in EventEngines are
+/// created, applications must set a custom EventEngine factory method *before*
+/// grpc is initialized.
+void SetDefaultEventEngineFactory(
+    const std::function<std::unique_ptr<EventEngine>()>* factory);
+
+/// Create an EventEngine using the default factory
+std::unique_ptr<EventEngine> CreateEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -44,13 +44,26 @@ constexpr uint32_t
 
 grpc_error_handle CensusClientCallData::Init(
     grpc_call_element* /* elem */, const grpc_call_element_args* args) {
-  auto tracer = args->arena->New<OpenCensusCallTracer>(args);
+  tracer_ = args->arena->New<OpenCensusCallTracer>(args);
   GPR_DEBUG_ASSERT(args->context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
-  args->context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
+  args->context[GRPC_CONTEXT_CALL_TRACER].value = tracer_;
   args->context[GRPC_CONTEXT_CALL_TRACER].destroy = [](void* tracer) {
     (static_cast<OpenCensusCallTracer*>(tracer))->~OpenCensusCallTracer();
   };
   return GRPC_ERROR_NONE;
+}
+
+void CensusClientCallData::StartTransportStreamOpBatch(
+    grpc_call_element* elem, TransportStreamOpBatch* op) {
+  // Note that we are generating the overall call context here instead of in
+  // the constructor of `OpenCensusCallTracer` due to the semantics of
+  // `grpc_census_call_set_context` which allows the application to set the
+  // census context for a call anytime before the first call to
+  // `grpc_call_start_batch`.
+  if (op->op()->send_initial_metadata) {
+    tracer_->GenerateContext();
+  }
+  grpc_call_next_op(elem, op->op());
 }
 
 //
@@ -78,35 +91,25 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       start_time_(absl::Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
-  memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
-  memset(&tracing_bin_, 0, sizeof(grpc_linked_mdelem));
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
                               uint32_t /* flags */) {
-  size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
+  char tracing_buf[kMaxTraceContextLen];
+  size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                              kMaxTraceContextLen);
   if (tracing_len > 0) {
-    GRPC_LOG_IF_ERROR(
-        "census grpc_filter",
-        grpc_metadata_batch_add_tail(
-            send_initial_metadata, &tracing_bin_,
-            grpc_mdelem_from_slices(
-                GRPC_MDSTR_GRPC_TRACE_BIN,
-                grpc_core::UnmanagedMemorySlice(tracing_buf_, tracing_len)),
-            GRPC_BATCH_GRPC_TRACE_BIN));
+    send_initial_metadata->Set(grpc_core::GrpcTraceBinMetadata(),
+                               grpc_core::Slice(grpc_core::UnmanagedMemorySlice(
+                                   tracing_buf, tracing_len)));
   }
   grpc_slice tags = grpc_empty_slice();
   // TODO(unknown): Add in tagging serialization.
   size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
   if (encoded_tags_len > 0) {
-    GRPC_LOG_IF_ERROR(
-        "census grpc_filter",
-        grpc_metadata_batch_add_tail(
-            send_initial_metadata, &stats_bin_,
-            grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TAGS_BIN, tags),
-            GRPC_BATCH_GRPC_TAGS_BIN));
+    send_initial_metadata->Set(grpc_core::GrpcTagsBinMetadata(),
+                               grpc_core::Slice(tags));
   }
 }
 
@@ -123,14 +126,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
 namespace {
 
 void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
-  if (b->legacy_index()->named.grpc_server_stats_bin != nullptr) {
+  absl::optional<grpc_core::Slice> grpc_server_stats_bin =
+      b->Take(grpc_core::GrpcServerStatsBinMetadata());
+  if (grpc_server_stats_bin.has_value()) {
     ServerStatsDeserialize(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(
-            GRPC_MDVALUE(b->legacy_index()->named.grpc_server_stats_bin->md))),
-        GRPC_SLICE_LENGTH(
-            GRPC_MDVALUE(b->legacy_index()->named.grpc_server_stats_bin->md)),
-        elapsed_time);
-    b->Remove(b->legacy_index()->named.grpc_server_stats_bin);
+        reinterpret_cast<const char*>(grpc_server_stats_bin->data()),
+        grpc_server_stats_bin->size(), elapsed_time);
   }
 }
 
@@ -213,6 +214,13 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
   grpc_slice_unref_internal(path_);
 }
 
+void OpenCensusCallTracer::GenerateContext() {
+  auto* parent_context = reinterpret_cast<CensusContext*>(
+      call_context_[GRPC_CONTEXT_TRACING].value);
+  GenerateClientContext(absl::StrCat("Sent.", method_), &context_,
+                        (parent_context == nullptr) ? nullptr : parent_context);
+}
+
 OpenCensusCallTracer::OpenCensusCallAttemptTracer*
 OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   // We allocate the first attempt on the arena and all subsequent attempts on
@@ -237,16 +245,6 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     ++num_active_rpcs_;
   }
   if (is_first_attempt) {
-    // Note that we are generating the overall call context here instead of in
-    // the constructor of `OpenCensusCallTracer` due to the semantics of
-    // `grpc_census_call_set_context` which allows the application to set the
-    // census context for a call anytime before the first call to
-    // `grpc_call_start_batch`.
-    auto* parent_context = reinterpret_cast<CensusContext*>(
-        call_context_[GRPC_CONTEXT_TRACING].value);
-    GenerateClientContext(
-        absl::StrCat("Sent.", method_), &context_,
-        (parent_context == nullptr) ? nullptr : parent_context);
     return arena_->New<OpenCensusCallAttemptTracer>(
         this, attempt_num, is_transparent_retry, true /* arena_allocated */);
   }

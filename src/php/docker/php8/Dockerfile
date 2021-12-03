@@ -14,7 +14,7 @@
 
 FROM php:8.0.0-zts-buster
 
-RUN apt-get -qq update && apt-get -qq install -y \
+RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
   valgrind wget zlib1g-dev
 

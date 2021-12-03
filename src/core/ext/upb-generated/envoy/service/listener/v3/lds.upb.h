@@ -53,6 +53,8 @@ UPB_INLINE char *envoy_service_listener_v3_LdsDummy_serialize(const envoy_servic
 
 
 
+extern const upb_msglayout_file envoy_service_listener_v3_lds_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <deque>
 #include <memory>
@@ -43,16 +41,16 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/transport/authority_override.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
@@ -60,6 +58,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_config.h"
 
@@ -96,42 +95,6 @@ constexpr char kDefaultServiceConfig[] =
     "    { \"grpclb\":{} }\n"
     "  ]\n"
     "}";
-
-template <typename ServiceType>
-class CountedService : public ServiceType {
- public:
-  size_t request_count() {
-    grpc::internal::MutexLock lock(&mu_);
-    return request_count_;
-  }
-
-  size_t response_count() {
-    grpc::internal::MutexLock lock(&mu_);
-    return response_count_;
-  }
-
-  void IncreaseResponseCount() {
-    grpc::internal::MutexLock lock(&mu_);
-    ++response_count_;
-  }
-  void IncreaseRequestCount() {
-    grpc::internal::MutexLock lock(&mu_);
-    ++request_count_;
-  }
-
-  void ResetCounters() {
-    grpc::internal::MutexLock lock(&mu_);
-    request_count_ = 0;
-    response_count_ = 0;
-  }
-
- protected:
-  grpc::internal::Mutex mu_;
-
- private:
-  size_t request_count_ = 0;
-  size_t response_count_ = 0;
-};
 
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
@@ -174,9 +137,8 @@ class BackendServiceImpl : public BackendService {
     clients_.insert(client);
   }
 
-  grpc::internal::Mutex mu_;
   grpc::internal::Mutex clients_mu_;
-  std::set<std::string> clients_;
+  std::set<std::string> clients_ ABSL_GUARDED_BY(&clients_mu_);
 };
 
 std::string Ip4ToPackedString(const char* ip_str) {
@@ -442,13 +404,18 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
-                 const std::string& expected_targets = "") {
+                 const std::string& expected_targets = "",
+                 int subchannel_cache_delay_ms = 0) {
     ChannelArguments args;
     if (fallback_timeout > 0) args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+    }
+    if (subchannel_cache_delay_ms > 0) {
+      args.SetInt(GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
+                  subchannel_cache_delay_ms);
     }
     std::ostringstream uri;
     uri << "fake:///" << kApplicationTargetName_;
@@ -546,8 +513,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
-          addr.balancer_name.c_str());
+      grpc_arg arg = grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+          const_cast<char*>(addr.balancer_name.c_str()));
       grpc_channel_args* args =
           grpc_channel_args_copy_and_add(nullptr, &arg, 1);
       addresses.emplace_back(address.addr, address.len, args);
@@ -779,6 +747,52 @@ TEST_F(SingleBalancerTest, Vanilla) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, SubchannelCaching) {
+  ResetStub(/*fallback_timeout=*/0, /*expected_targets=*/"",
+            /*subchannel_cache_delay_ms=*/1500);
+  SetNextResolutionAllBalancers();
+  // Initially send all backends.
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
+  // Then remove backends 0 and 1.
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(2), {}), 1000);
+  // Now re-add backend 1.
+  ScheduleResponseForBalancer(
+      0, BuildResponseForBackends(GetBackendPorts(1), {}), 1000);
+  // Wait for all backends to come online.
+  WaitForAllBackends();
+  // Send RPCs for long enough to get all responses.
+  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(3000);
+  do {
+    CheckRpcSendOk();
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
+  // Backend 0 should have received less traffic than the others.
+  // Backend 1 would have received less traffic than 2 and 3.
+  gpr_log(GPR_INFO, "BACKEND 0: %" PRIuPTR " requests",
+          backends_[0]->service_.request_count());
+  EXPECT_GT(backends_[0]->service_.request_count(), 0);
+  for (size_t i = 1; i < backends_.size(); ++i) {
+    gpr_log(GPR_INFO, "BACKEND %" PRIuPTR ": %" PRIuPTR " requests", i,
+            backends_[i]->service_.request_count());
+    EXPECT_GT(backends_[i]->service_.request_count(),
+              backends_[0]->service_.request_count())
+        << "backend " << i;
+    if (i >= 2) {
+      EXPECT_GT(backends_[i]->service_.request_count(),
+                backends_[1]->service_.request_count())
+          << "backend " << i;
+    }
+  }
+  // Backend 1 should never have lost its connection from the client.
+  EXPECT_EQ(1UL, backends_[1]->service_.clients().size());
+  balancers_[0]->service_.NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancers_[0]->service_.request_count());
+  // And sent 3 responses.
+  EXPECT_EQ(3U, balancers_[0]->service_.response_count());
 }
 
 TEST_F(SingleBalancerTest, ReturnServerStatus) {

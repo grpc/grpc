@@ -164,6 +164,7 @@
   set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
   set(gRPC_INSTALL_CMAKEDIR "lib/cmake/<%text>${PACKAGE_NAME}</%text>" CACHE STRING "Installation directory for cmake config files")
   set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
+  set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for MSVC /MP option")
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -282,6 +283,12 @@
   if(MSVC)
     include(cmake/msvc_static_runtime.cmake)
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+    # Set /MP option
+    if (gRPC_BUILD_MSVC_MP_COUNT GREATER 0)
+      set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS} /MP${gRPC_BUILD_MSVC_MP_COUNT}</%text>")
+    elseif (gRPC_BUILD_MSVC_MP_COUNT LESS 0)
+      set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /MP")
+    endif()
     # needed to compile protobuf
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4065 /wd4506")
     # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
@@ -344,7 +351,7 @@
   endif()
 
   if(WIN32)
-    set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
+    set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
   endif()
 
   # Create directory for generated .proto files
@@ -695,8 +702,6 @@
   # grpcpp_channelz doesn't build with protobuf-lite, so no install required
   # See https://github.com/grpc/grpc/issues/22826
   if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
-  % elif tgt.build == 'protoc':
-  if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   % else:
   if(gRPC_INSTALL)
   % endif

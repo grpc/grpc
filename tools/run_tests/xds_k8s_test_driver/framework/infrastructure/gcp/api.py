@@ -115,6 +115,8 @@ class GcpApiManager:
                 return self._build_from_file(self.compute_v1_discovery_file)
             else:
                 return self._build_from_discovery_v1(api_name, version)
+        elif version == 'v1alpha':
+            return self._build_from_discovery_v1(api_name, 'alpha')
 
         raise NotImplementedError(f'Compute {version} not supported')
 

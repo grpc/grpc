@@ -57,7 +57,7 @@ static grpc_error_handle posix_blocking_resolve_address(
   if (host.empty()) {
     err = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto done;
   }
 
@@ -65,7 +65,7 @@ static grpc_error_handle posix_blocking_resolve_address(
     if (default_port == nullptr) {
       err = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS, name);
       goto done;
     }
     port = default_port;
@@ -101,11 +101,9 @@ static grpc_error_handle posix_blocking_resolve_address(
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
                     GRPC_ERROR_INT_ERRNO, s),
-                GRPC_ERROR_STR_OS_ERROR,
-                grpc_slice_from_static_string(gai_strerror(s))),
-            GRPC_ERROR_STR_SYSCALL,
-            grpc_slice_from_static_string("getaddrinfo")),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+                GRPC_ERROR_STR_OS_ERROR, gai_strerror(s)),
+            GRPC_ERROR_STR_SYSCALL, "getaddrinfo"),
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto done;
   }
 

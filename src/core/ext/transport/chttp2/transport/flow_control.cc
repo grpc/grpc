@@ -47,10 +47,10 @@ bool g_test_only_transport_flow_control_window_check;
 
 namespace {
 
-static constexpr const int kTracePadding = 30;
-static constexpr const int64_t kMaxWindowUpdateSize = (1u << 31) - 1;
+constexpr const int kTracePadding = 30;
+constexpr const int64_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
-static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
+char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   std::string str;
   if (old_val != new_val) {
     str = absl::StrFormat("%" PRId64 " -> %" PRId64 "", old_val, new_val);
@@ -60,7 +60,7 @@ static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   return gpr_leftpad(str.c_str(), ' ', kTracePadding);
 }
 
-static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
+char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
   std::string str;
   if (old_val != new_val) {
     str = absl::StrFormat("%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
@@ -324,10 +324,8 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
 }
 
 // Take in a target and modifies it based on the memory pressure of the system
-static double AdjustForMemoryPressure(grpc_resource_quota* quota,
-                                      double target) {
+static double AdjustForMemoryPressure(double memory_pressure, double target) {
   // do not increase window under heavy memory pressure.
-  double memory_pressure = grpc_resource_quota_get_memory_pressure(quota);
   static const double kLowMemPressure = 0.1;
   static const double kZeroTarget = 22;
   static const double kHighMemPressure = 0.8;
@@ -343,7 +341,9 @@ static double AdjustForMemoryPressure(grpc_resource_quota* quota,
 }
 
 double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(grpc_resource_user_quota(t_->resource_user),
+  return AdjustForMemoryPressure(t_->memory_owner.is_valid()
+                                     ? t_->memory_owner.InstantaneousPressure()
+                                     : 0.0,
                                  1 + log2(bdp_estimator_.EstimateBdp()));
 }
 

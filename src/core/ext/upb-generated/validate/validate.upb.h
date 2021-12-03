@@ -89,9 +89,19 @@ extern const upb_msglayout validate_MapRules_msginit;
 extern const upb_msglayout validate_AnyRules_msginit;
 extern const upb_msglayout validate_DurationRules_msginit;
 extern const upb_msglayout validate_TimestampRules_msginit;
+extern const upb_msglayout_ext validate_disabled_ext;
+extern const upb_msglayout_ext validate_ignored_ext;
+extern const upb_msglayout_ext validate_required_ext;
+extern const upb_msglayout_ext validate_rules_ext;
 struct google_protobuf_Duration;
+struct google_protobuf_FieldOptions;
+struct google_protobuf_MessageOptions;
+struct google_protobuf_OneofOptions;
 struct google_protobuf_Timestamp;
 extern const upb_msglayout google_protobuf_Duration_msginit;
+extern const upb_msglayout google_protobuf_FieldOptions_msginit;
+extern const upb_msglayout google_protobuf_MessageOptions_msginit;
+extern const upb_msglayout google_protobuf_OneofOptions_msginit;
 extern const upb_msglayout google_protobuf_Timestamp_msginit;
 
 typedef enum {
@@ -2437,6 +2447,16 @@ UPB_INLINE struct google_protobuf_Duration* validate_TimestampRules_mutable_with
   }
   return sub;
 }
+
+UPB_INLINE bool validate_has_disabled(const struct google_protobuf_MessageOptions *msg) { return _upb_msg_getext(msg, &validate_disabled_ext) != NULL; }
+UPB_INLINE bool validate_disabled(const struct google_protobuf_MessageOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_disabled_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
+UPB_INLINE bool validate_has_ignored(const struct google_protobuf_MessageOptions *msg) { return _upb_msg_getext(msg, &validate_ignored_ext) != NULL; }
+UPB_INLINE bool validate_ignored(const struct google_protobuf_MessageOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_ignored_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
+UPB_INLINE bool validate_has_required(const struct google_protobuf_OneofOptions *msg) { return _upb_msg_getext(msg, &validate_required_ext) != NULL; }
+UPB_INLINE bool validate_required(const struct google_protobuf_OneofOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_required_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
+UPB_INLINE bool validate_has_rules(const struct google_protobuf_FieldOptions *msg) { return _upb_msg_getext(msg, &validate_rules_ext) != NULL; }
+UPB_INLINE const validate_FieldRules* validate_rules(const struct google_protobuf_FieldOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_rules_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const validate_FieldRules*); }
+extern const upb_msglayout_file validate_validate_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

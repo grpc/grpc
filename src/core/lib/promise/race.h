@@ -15,9 +15,12 @@
 #ifndef GRPC_CORE_LIB_PROMISE_RACE_H
 #define GRPC_CORE_LIB_PROMISE_RACE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <tuple>
+#include <type_traits>
+
+#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/poll.h"
 

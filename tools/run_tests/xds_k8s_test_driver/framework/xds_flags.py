@@ -36,6 +36,14 @@ RESOURCE_SUFFIX = flags.DEFINE_string(
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
+ROUTER_SCOPE = flags.DEFINE_string(
+    "config_scope",
+    default=None,
+    help="Scope specified in router if using AppNet APIs")
+COMPUTE_API_VERSION = flags.DEFINE_string(
+    "compute_api_version",
+    default='v1',
+    help="The version of the GCP Compute API, e.g., v1, v1alpha")
 # Mirrors --xds-server-uri argument of Traffic Director gRPC Bootstrap
 XDS_SERVER_URI = flags.DEFINE_string(
     "xds_server_uri",

@@ -15,16 +15,23 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
+#include <assert.h>
+#include <stddef.h>
+
+#include <array>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
+#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {

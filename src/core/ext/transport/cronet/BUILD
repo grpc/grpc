@@ -19,7 +19,7 @@ load(
     "grpc_cc_library",
 )
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],

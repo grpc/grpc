@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
-grpc_package(name = "test/core/ext/census")
+grpc_package(name = "test/cpp/ext/filters/census")
 
 grpc_cc_test(
     name = "grpc_opencensus_plugin_test",
