@@ -68,8 +68,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
  private:
   class ListenerWatcher;
 
-  RefCountedPtr<XdsClient> xds_client_;
-  grpc_server_xds_status_notifier serving_status_notifier_;
+  const RefCountedPtr<XdsClient> xds_client_;
+  const grpc_server_xds_status_notifier serving_status_notifier_;
   Mutex mu_;
   std::map<grpc_server_config_fetcher::WatcherInterface*, ListenerWatcher*>
       listener_watchers_ ABSL_GUARDED_BY(mu_);
@@ -1238,7 +1238,10 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
   args = grpc_core::CoreConfiguration::Get()
              .channel_args_preconditioning()
              .PreconditionChannelArgs(args);
-  GRPC_API_TRACE("grpc_server_config_fetcher_xds_create()", 0, ());
+  GRPC_API_TRACE(
+      "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
+      "update=%p, user_data=%p}, args=%p)",
+      3, (notifier.on_serving_status_update, notifier.user_data, args));
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
       grpc_core::XdsClient::GetOrCreate(args, &error);
