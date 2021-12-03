@@ -16,10 +16,12 @@
 
 import argparse
 import os
+import six
 import ssl
 import sys
 
-import BaseHTTPServer
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
+from six.moves.BaseHTTPServer import HTTPServer
 
 _PEM = os.path.abspath(
     os.path.join(os.path.dirname(sys.argv[0]), '../../..',
@@ -38,7 +40,7 @@ args = argp.parse_args()
 print('server running on port %d' % args.port)
 
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+class Handler(BaseHTTPRequestHandler):
 
     def good(self):
         self.send_response(200)
@@ -57,7 +59,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.good()
 
 
-httpd = BaseHTTPServer.HTTPServer(('localhost', args.port), Handler)
+httpd = HTTPServer(('localhost', args.port), Handler)
 if args.ssl:
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    certfile=_PEM,
