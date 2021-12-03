@@ -1,0 +1,20 @@
+runtime: custom
+env: flexible
+service: ${GCP_GRAFANA_SERVICE}
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 2
+resources:
+  cpu: 1
+  memory_gb: 1
+beta_settings:
+  cloud_sql_instances: ${CLOUD_SQL_INSTANCE}=tcp:5432
+liveness_check:
+  path: "/"
+readiness_check:
+  path: "/"
+env_variables:
+  PG_USER: ${PG_USER}
+  PG_PASS: ${PG_PASS}
+  PG_DATABASE: ${PG_DATABASE}
+  GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASS}

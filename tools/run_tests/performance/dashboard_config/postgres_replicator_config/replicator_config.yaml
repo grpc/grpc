@@ -1,0 +1,18 @@
+bigQuery:
+  projectID: ${BQ_PROJECT_ID}
+
+postgres:
+  dbHost: 172.17.0.1
+  dbPort: 5432
+  dbUser: ${PG_USER}
+  dbPass:
+  dbName: ${PG_DATABASE}
+
+transfer:
+  datasets:
+  - name: e2e_benchmarks
+    tables:
+      - name: ci_master_results_8core
+        dateField: metadata.created
+      - name: ci_master_results_32core
+        dateField: metadata.created
