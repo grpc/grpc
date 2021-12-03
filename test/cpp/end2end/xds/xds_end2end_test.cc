@@ -685,6 +685,46 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // here to avoid the need for this forward declaration.
   class BalancerServerThread;
 
+  class BootstrapBuilder {
+   public:
+    BootstrapBuilder() {}
+    void SetV2() { v2_ = true; }
+    void SetDefaultServer(const std::string& server) { top_server_ = server; }
+    BootstrapBuilder& SetAuthorityServer(const std::string& server) {
+      authority_server_ = server;
+      return *this;
+    }
+    const std::string& AuthorityServer() const { return authority_server_; }
+    std::string Build() {
+      std::string authorities;
+      if (!authority_server_.empty()) {
+        authorities =
+            absl::StrReplaceAll(kBootstrapFileAuthorities,
+                                {{"fake:///xds_server", authority_server_}});
+      }
+      std::string header;
+      if (!top_server_.empty()) {
+        header = absl::StrReplaceAll(kBootstrapFileHeaderAndXdsServers,
+                                     {{"fake:///xds_server", top_server_}});
+      }
+      return std::string(
+          (v2_ ? kBootstrapFileV2
+               : absl::StrCat(
+                     (top_server_.empty() ? kBootstrapFileHeaderAndXdsServers
+                                          : header),
+                     (authority_server_.empty() ? kBootstrapFileAuthorities
+                                                : authorities),
+                     kBootstrapFileServerNameTemplate,
+                     kBootstrapFileCertificateProviders,
+                     kBootstrapFileNodeAndFooter)));
+    }
+
+   private:
+    bool v2_ = false;
+    std::string top_server_;
+    std::string authority_server_;
+  };
+
   // TODO(roth): We currently set the number of backends on a per-test-suite
   // basis, not a per-test-case basis.  However, not every individual test
   // case in a given test suite uses the same number of backends, so we wind
@@ -698,6 +738,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                  int xds_resource_does_not_exist_timeout_ms = 0,
                  bool use_xds_enabled_server = false,
                  const char* lb_expected_authority = nullptr,
+                 BootstrapBuilder bootstrap_builder = BootstrapBuilder(),
                  size_t top_balancer_index = 5,
                  size_t authority_balancer_index = 5)
       : num_backends_(num_backends),
@@ -767,8 +808,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       backends_.emplace_back(new BackendServerThread(this));
     }
     // Start the load balancer.
-    balancer_ = CreateBalancer();
-    balancer_->Start();
+    balancer_ = CreateAndStartBalancer();
     // Create fake resolver response generators used by client.
     if (GetParam().use_fake_resolver()) {
       response_generator_ =
@@ -799,18 +839,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // bootstrap config in each individual test instead of hard-coding
     // the contents here.  That would allow us to use an ipv4: or ipv6:
     // URI for the xDS server instead of using the fake resolver.
-    BootstrapBuilder builder;
-    if (GetParam().use_v2()) {
-      builder.SetV2();
+    if (!bootstrap_builder.AuthorityServer().empty()) {
+      // We should be setting everyone to use localhost: instead of
+      // fake://xds_server; but using localhost: seems to break any
+      // of the tests that use
+      // grpc.TEST_ONLY_DO_NOT_USE_IN_PROD.xds_bootstrap_config.
+      // Will investigate and fix those test before moving every test to
+      // localhost.
+      bootstrap_builder.SetDefaultServer(
+          absl::StrCat("localhost:", balancer_->port()));
     }
-    /*if (num_balancers_ > top_balancer_index_ &&
-        num_balancers_ > authority_balancer_index_) {
-      builder.SetDefaultServer(
-          absl::StrCat("localhost:", balancers_[top_balancer_index_]->port()));
-      builder.SetAuthorityServer(absl::StrCat(
-          "localhost:", balancers_[authority_balancer_index_]->port()));
-    }*/
-    bootstrap_ = builder.Build();
+    if (GetParam().use_v2()) {
+      bootstrap_builder.SetV2();
+    }
+    bootstrap_ = bootstrap_builder.Build();
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
@@ -861,8 +903,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
-  std::unique_ptr<BalancerServerThread> CreateBalancer() {
-    return absl::make_unique<BalancerServerThread>(this);
+  std::unique_ptr<BalancerServerThread> CreateAndStartBalancer() {
+    std::unique_ptr<BalancerServerThread> balancer =
+        absl::make_unique<BalancerServerThread>(this);
+    balancer->Start();
+    return balancer;
   }
 
   void ResetStub(int failover_timeout = 0) {
@@ -1945,44 +1990,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return rpcs;
   }
 
-  class BootstrapBuilder {
-   public:
-    BootstrapBuilder() {}
-    void SetV2() { v2_ = true; }
-    void SetDefaultServer(const std::string& server) { top_server_ = server; }
-    void SetAuthorityServer(const std::string& server) {
-      authority_server_ = server;
-    }
-    std::string Build() {
-      std::string authorities;
-      if (!authority_server_.empty()) {
-        authorities =
-            absl::StrReplaceAll(kBootstrapFileAuthorities,
-                                {{"fake:///xds_server", authority_server_}});
-      }
-      std::string header;
-      if (!top_server_.empty()) {
-        header = absl::StrReplaceAll(kBootstrapFileHeaderAndXdsServers,
-                                     {{"fake:///xds_server", top_server_}});
-      }
-      return std::string(
-          (v2_ ? kBootstrapFileV2
-               : absl::StrCat(
-                     (top_server_.empty() ? kBootstrapFileHeaderAndXdsServers
-                                          : header),
-                     (authority_server_.empty() ? kBootstrapFileAuthorities
-                                                : authorities),
-                     kBootstrapFileServerNameTemplate,
-                     kBootstrapFileCertificateProviders,
-                     kBootstrapFileNodeAndFooter)));
-    }
-
-   private:
-    bool v2_ = false;
-    std::string top_server_;
-    std::string authority_server_;
-  };
-
   const size_t num_backends_;
   const int client_load_reporting_interval_seconds_;
   const size_t top_balancer_index_;
@@ -2577,71 +2584,6 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
 
-// Tests federation basic with URL "xds.example.com/new-server.example.com"
-// and resource name
-// "xdstp://xds.example.com/type.googleapis.com/"
-// "envoy.config.listener.v3.Listener/new-server.example.com"
-// Ensure resource name parsing and re-construction are all working internally.
-/*TEST_P(GlobalXdsClientTest, FederationBasic) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
-  const char* kNewListenerName =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "new_server.example.com";
-  const char* kNewEdsServiceName =
-      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "new_edsservice_name";
-  const char* kNewClusterName =
-      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "new_cluster_name";
-  const char* kAuthority = "xds.example.com";
-  const char* kNewTarget = "new_server.example.com";
-  // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
-  // and RPCs sent using the new stub go to backend 1.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancers_[1]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  // New cluster
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancers_[1]->ads_service()->SetCdsResource(new_cluster);
-  // New Route
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  // New Listener
-  Listener listener = default_listener_;
-  listener.set_name(kNewListenerName);
-  SetListenerAndRouteConfiguration(1, listener, new_route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Ensure update has reached and send 10 RPCs to the current stub.
-  WaitForAllBackends(0, 1);
-  backends_[0]->backend_service()->ResetCounters();
-  CheckRpcSendOk(10);
-  // Create second channel to new target uri and send 1 RPC .
-  auto channel2 = CreateChannel(/*failover_timeout=*0, kNewTarget, kAuthority);
-  channel2->GetState(/*try_to_connect=*true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  grpc::Status status = stub2->Echo(&context, request, &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
-}*/
-
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 TEST_P(GlobalXdsClientTest, MultipleBadResources) {
   constexpr char kServerName2[] = "server.other.com";
@@ -2738,6 +2680,90 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
                   "Listener has neither address nor ApiListener")));
   // Check one more time, just to make sure it still works after NACK.
   CheckRpcSendOk();
+}
+
+class XdsFederationTest : public XdsEnd2endTest {
+ public:
+  XdsFederationTest()
+      : authority_balancer_(CreateAndStartBalancer()),
+        XdsEnd2endTest(4, 100, 0, false, nullptr,
+                       BootstrapBuilder().SetAuthorityServer(absl::StrCat(
+                           "localhost:", authority_balancer_->port()))) {
+    StartAllBackends();
+  }
+
+  ~XdsFederationTest() { authority_balancer_->Shutdown(); }
+
+  std::unique_ptr<BalancerServerThread> authority_balancer_;
+};
+
+// Tests federation basic with URL "xds.example.com/new-server.example.com"
+// and resource name
+// "xdstp://xds.example.com/type.googleapis.com/"
+// "envoy.config.listener.v3.Listener/new-server.example.com"
+// Ensure resource name parsing and re-construction are all working internally.
+TEST_P(XdsFederationTest, FederationBasic) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* kNewListenerName =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "new_server.example.com";
+  const char* kNewEdsServiceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "new_edsservice_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "new_cluster_name";
+  const char* kAuthority = "xds.example.com";
+  const char* kNewTarget = "new_server.example.com";
+  // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
+  // and RPCs sent using the new stub go to backend 1.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  authority_balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsServiceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New Route
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  // New Listener
+  Listener listener = default_listener_;
+  listener.set_name(kNewListenerName);
+  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
+                                   new_route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Ensure update has reached and send 10 RPCs to the current stub.
+  WaitForAllBackends(0, 1);
+  backends_[0]->backend_service()->ResetCounters();
+  CheckRpcSendOk(10);
+  // Create second channel to new target uri and send 1 RPC .
+  auto channel2 = CreateChannel(/*failover_timeout=*0/, kNewTarget, kAuthority);
+  channel2->GetState(/*try_to_connect=*/
+                                true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  grpc::Status status = stub2->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // The correct combination should be 10-1 but the test is currently broken due
+  // to the authority server localhost set incorrectly.
+  EXPECT_EQ(11U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
@@ -12689,6 +12715,15 @@ INSTANTIATE_TEST_SUITE_P(
 // Runs with bootstrap from env var, so that there's a global XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, GlobalXdsClientTest,
+    ::testing::Values(
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_enable_load_reporting()),
+    &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsFederationTest,
     ::testing::Values(
         TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
