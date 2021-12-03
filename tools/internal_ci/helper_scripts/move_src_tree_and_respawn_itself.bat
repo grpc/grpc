@@ -41,10 +41,11 @@ echo "Moving workspace from T:\src to T:\altsrc and respawning the CI script."
 cd /d T:\
 @rem We cannot simply rename "src" to "altsrc" as on linux since the currently running batch file is in it
 @rem and windows holds a lock that prevents moving the dir.
-bash -c "set -ex; time cp -r src altsrc;"
-@rem Delete files we can under the original "src" directory, skipping the directory that contains CI scripts
+bash -c "set -ex; mkdir -p altsrc; time cp -r src/github altsrc;"
+@rem Delete files we can under the original "src/github" directory, skipping the directory that contains CI scripts
 @rem (as on of the scripts is currently running and cannot be deleted)
-bash -c "set -ex; cd src; time find . -type f -not -path './github/grpc/tools/internal_ci/*' -exec rm -f {} +"
+@rem We don't want to delete files in "src" outside of "src/github" since they contain e.g kokoro input artifacts.
+bash -c "set -ex; cd src/github; time find . -type f -not -path './grpc/tools/internal_ci/*' -exec rm -f {} +; ls grpc"
 cd altsrc
 
 @rem scripts in tools/run_tests generate test reports and we need to make sure these reports

@@ -36,12 +36,15 @@ elif [ "${CURRENT_DIR}" == "/tmpfs/src" ]
 then
   # we need to respawn now
   # - step out of current directory
-  # - rename src to altsrc (/tmpfs/src is the directory that gets rsynced back to kokoro agent once the CI script finishes)
+  # - rename src/github to altsrc/github (/tmpfs/src is the directory that gets rsynced back to kokoro agent once the CI script finishes).
+  #   Note that we don't want to move the entire /tmpfs/src tree (which contains e.g. the input artifacts as well,
+  #   and their path is referenced by kokoro env variables), just /tmpfs/src/github
+  #   which contains all the cloned github repositories (=our workspace in which the build happens)
   echo "Moving workspace from /tmpfs/src to /tmpfs/altsrc and respawning the CI script."
   # once "exec bash" starts, the CI script in the original location will no longer be in use and it will be safe to move
-  # the entire "/tmpfs/src" tree (moving the bash script file while running is probably safe anyway on unix, but it doesn't
+  # the entire "/tmpfs/src/github" tree (moving the bash script file while running is probably safe anyway on unix, but it doesn't
   # hurt to be extra careful)
-  exec bash -c "set -ex; cd /tmpfs; mv src altsrc; mkdir src; cd altsrc; exec '${CI_SCRIPT_RELATIVE_TO_SRC}'"
+  exec bash -c "set -ex; cd /tmpfs; mkdir -p altsrc; mv src/github altsrc; cd altsrc; exec '${CI_SCRIPT_RELATIVE_TO_SRC}'"
 else
   # avoid messing with the workspace if we don't see the directory layout
   # that's standard on kokoro (in case this script gets accidentally invoked outside of kokoro)
