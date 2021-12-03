@@ -502,6 +502,8 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     return;
   }
   // Convert resolver result to EDS update.
+  // TODO(roth): Figure out a way to pass resolution_note through to the
+  // child policy.
   XdsApi::EdsUpdate update;
   XdsApi::EdsUpdate::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
