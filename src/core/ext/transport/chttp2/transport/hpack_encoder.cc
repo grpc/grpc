@@ -530,17 +530,36 @@ void HPackCompressor::Framer::EncodeDynamic(grpc_mdelem elem) {
 void HPackCompressor::SliceIndex::EmitTo(const grpc_slice& key,
                                          const Slice& value, Framer* framer) {
   auto& table = framer->compressor_->table_;
-  auto index = index_.Lookup(SliceRef(&value));
-  if (GPR_LIKELY(index.has_value() &&
-                 table.ConvertableToDynamicIndex(*index))) {
-    framer->EmitIndexed(table.DynamicIndex(*index));
-  } else {
-    framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value.c_slice());
-    const uint32_t element_size =
-        GRPC_SLICE_LENGTH(key) + value.size() + hpack_constants::kEntryOverhead;
-    uint32_t new_index = table.AllocateIndex(element_size);
-    index_.Insert(SliceRef(&value), new_index);
+  using It = std::vector<ValueIndex>::iterator;
+  It prev = values_.end();
+  uint32_t transport_length = GRPC_SLICE_LENGTH(key) + value.length() + hpack_constants::kEntryOverhead;
+  // Linear scan through previous values to see if we find the value.
+  for (It it = values_.begin(); it != values_.end(); ++it) {
+    if (value == it->value) {
+      // Got a hit... is it still in the decode table?
+      if (table.ConvertableToDynamicIndex(it->index)) {
+        // Yes, emit the index and proceed to cleanup.
+        framer->EmitIndexed(table.DynamicIndex(it->index));
+      } else {
+        // Not current, emit a new literal and update the index.
+        it->index = table.AllocateIndex(transport_length);
+        framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value.c_slice());
+      }
+      // Bubble this entry up if we can - ensures that the most used values end up towards the start of the array.
+      if (prev != values_.end()) std::swap(*prev, *it);
+      // If there are entries at the end of the array, and those entries are no longer in the table, remove them.
+      while (!values_.empty() && !table.ConvertableToDynamicIndex(values_.back().index)) {
+        values_.pop_back();
+      }
+      // All done, early out.
+      return;
+    }
+    prev = it;
   }
+  // No hit, emit a new literal and add it to the index.
+  uint32_t index = table.AllocateIndex(transport_length);
+  framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value.c_slice());
+  values_.emplace_back(value.Ref(), index);
 }
 
 void HPackCompressor::Framer::Encode(PathMetadata, const Slice& value) {

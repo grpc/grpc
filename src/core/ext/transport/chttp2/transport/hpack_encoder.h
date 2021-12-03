@@ -20,6 +20,7 @@
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H
 
 #include <grpc/support/port_platform.h>
+#include <cstdint>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -264,31 +265,17 @@ class HPackCompressor {
     uint32_t hash_;
   };
 
-  class SliceRef {
-   public:
-    using Stored = Slice;
-
-    explicit SliceRef(const Slice* slice) : ref_(slice) {}
-    SliceRef(const SliceRef&) = delete;
-    SliceRef& operator=(const SliceRef&) = delete;
-
-    uint32_t hash() const { return grpc_slice_hash_internal(ref_->c_slice()); }
-    Stored stored() const { return ref_->Ref(); }
-
-    bool operator==(const Stored& stored) const noexcept {
-      return *ref_ == stored;
-    }
-
-   private:
-    const Slice* const ref_;
-  };
-
   class SliceIndex {
    public:
     void EmitTo(const grpc_slice& key, const Slice& value, Framer* framer);
 
    private:
-    HPackEncoderIndex<SliceRef, kNumFilterValues> index_;
+    struct ValueIndex {
+      ValueIndex(Slice value, uint32_t index) : value(std::move(value)), index(index) {}
+      Slice value;
+      uint32_t index;
+    };
+    std::vector<ValueIndex> values_;
   };
 
   // entry tables for keys & elems: these tables track values that have been
