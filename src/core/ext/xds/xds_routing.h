@@ -51,7 +51,7 @@ class XdsRouting {
     // Number of routes.
     virtual size_t Size() const = 0;
     // Returns the matchers for the route at the specified index.
-    virtual const XdsApi::Route::Matchers& GetMatchersForRoute(
+    virtual const XdsRouteConfigResource::Route::Matchers& GetMatchersForRoute(
         size_t index) const = 0;
   };
 
@@ -86,10 +86,12 @@ class XdsRouting {
 
   // Generates a map of per_filter_configs. \a args is consumed.
   static GeneratePerHttpFilterConfigsResult GeneratePerHTTPFilterConfigs(
-      const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
+      const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
-      const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
-      const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight,
+      const XdsRouteConfigResource::VirtualHost& vhost,
+      const XdsRouteConfigResource::Route& route,
+      const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+          cluster_weight,
       grpc_channel_args* args);
 };
 
