@@ -712,3 +712,7 @@ cdef extern from "include/grpc/impl/codegen/log.h":
     GPR_LOG_SEVERITY_ERROR
 
   void gpr_log(const char* file, int line, gpr_log_severity severity, const char* message, ...)
+
+# cdef extern from "<mutex>" namespace "std" nogil:
+#   cdef cppclass mutex:
+#     mutex()

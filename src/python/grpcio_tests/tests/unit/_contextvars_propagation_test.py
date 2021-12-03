@@ -33,6 +33,7 @@ _REQUEST = b"0000"
 
 
 def _unary_unary_handler(request, context):
+    print("Server received request")
     return request
 
 
@@ -79,9 +80,9 @@ if contextvars_supported():
 
         def __call__(self, context, callback):
             sys.stderr.write("TestCallCredentials called.\n"); sys.stderr.flush()
-            if test_var.get() != _EXPECTED_VALUE:
-                raise AssertionError("{} != {}".format(test_var.get(),
-                                                       _EXPECTED_VALUE))
+            # if test_var.get() != _EXPECTED_VALUE:
+            #     raise AssertionError("{} != {}".format(test_var.get(),
+            #                                            _EXPECTED_VALUE))
             callback((), None)
 
         def assert_called(self, test):
@@ -127,10 +128,10 @@ class ContextVarsPropagationTest(unittest.TestCase):
     #             self.assertEqual(_REQUEST, response)
 
     def test_concurrent_propagation(self):
-        # _THREAD_COUNT = 10
-        # _RPC_COUNT = 100
-        _THREAD_COUNT = 1
-        _RPC_COUNT = 32
+        _THREAD_COUNT = 10
+        _RPC_COUNT = 100
+        # _THREAD_COUNT = 1
+        # _RPC_COUNT = 32
 
         set_up_expected_context()
         with _server() as port:
@@ -153,6 +154,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
                         wait_group.done()
                         wait_group.wait()
                         for i in range(_RPC_COUNT):
+                            print("Client sending message")
                             response = stub(_REQUEST, wait_for_ready=True)
                             self.assertEqual(_REQUEST, response)
                 except Exception as e:  # pylint: disable=broad-except
@@ -174,13 +176,14 @@ class ContextVarsPropagationTest(unittest.TestCase):
             import gevent; gevent.sleep(3)
             for thread, q in threads:
                 marker("Joining thread")
-                import gevent.util
-                gevent.util.print_run_info()
+                # import gevent.util
+                # gevent.util.print_run_info()
                 thread.join()
                 marker("Joined thread")
                 if not q.empty():
                     marker("Found exception")
                     raise q.get()
+
 
 
 if __name__ == '__main__':

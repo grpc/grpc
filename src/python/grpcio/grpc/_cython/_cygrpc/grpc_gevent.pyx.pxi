@@ -14,6 +14,10 @@
 # distutils: language=c++
 
 from libc cimport string
+from cython.operator cimport dereference
+from python_ref cimport Py_INCREF, Py_DECREF
+from libc.stdio cimport printf
+# from libcpp.queue cimport queue
 import errno
 import sys
 gevent_g = None
@@ -23,11 +27,30 @@ gevent_event = None
 g_event = None
 g_pool = None
 
+# cdef object g_next_greenlet = cython.NULL
+cdef queue[void*] g_greenlets_to_run
+cdef condition_variable g_greenlets_cv
+cdef mutex g_greenlets_mu
+
+
 g_gevent_threadpool = None
+
+cdef _submit_to_greenlet_queue(object to_call):
+  cdef unique_lock[mutex]* lk
+  Py_INCREF(to_call)
+  with nogil:
+    lk = new unique_lock[mutex](g_greenlets_mu)
+    printf("CCC: Submitting to queue\n")
+    g_greenlets_to_run.push(<void*>(to_call))
+    del lk
+    printf("CCC: Notified CV!\n")
+    g_greenlets_cv.notify_all()
 
 def _spawn_greenlet(*args):
   sys.stderr.write("Calling _spawn_greenlet with args {}\n".format(args)); sys.stderr.flush()
-  greenlet = g_pool.spawn(*args)
+  # greenlet = g_pool.spawn(*args)
+  # import gevent; gevent.spawn(*args)
+  _submit_to_greenlet_queue(args)
   sys.stderr.write("Called _spawn_greenlet\n"); sys.stderr.flush()
 
 ###############################
@@ -371,6 +394,43 @@ cdef grpc_error_handle run_loop(size_t timeout_ms) with gil:
     cpython.PyErr_SetObject(exc_info[0], exc_info[1])
     return GRPC_ERROR_CANCELLED
 
+cdef object await_next_greenlet():
+  sys.stderr.write("BBB: await_next_greenlet called!\n"); sys.stderr.flush()
+  cdef unique_lock[mutex]* lk
+  with nogil:
+    # Cython doesn't allow us to do proper stack allocations, so we can't take
+    # advantage of RAII.
+    lk = new unique_lock[mutex](g_greenlets_mu)
+    while True:
+      printf("BBB: Waiting on CV!\n")
+      g_greenlets_cv.wait(dereference(lk))
+      printf("BBB: Waited on CV!\n")
+      if not g_greenlets_to_run.empty():
+        break
+  cdef object to_call = <object>g_greenlets_to_run.back()
+  Py_DECREF(to_call)
+  # TODO: Decref?
+  g_greenlets_to_run.pop()
+  sys.stderr.write("BBB: Got event from queue!\n"); sys.stderr.flush()
+  del lk
+  return to_call
+
+def spawn_greenlets():
+  import gevent
+  while True:
+    sys.stderr.write("AAA: Running await_next_greenlet in threadpool!\n"); sys.stderr.flush()
+    to_call = g_gevent_threadpool.apply(await_next_greenlet, ())
+    sys.stderr.write("AAA: Ran await_next_greenlet in threadpool!\n"); sys.stderr.flush()
+    # gevent.spawn(*to_call)
+    fn = to_call[0]
+    args = to_call[1:]
+    sys.stderr.write("AAA: About to call {} with args {}\n".format(fn, args)); sys.stderr.flush()
+    fn(*args)
+    sys.stderr.write("AAA: Called.\n"); sys.stderr.flush()
+    # Don't foget to decref.
+    # print("Theoretically spawning greenlets")
+    # gevent.sleep(1)
+
 ###############################
 ### Initializer ###############
 ###############################
@@ -406,6 +466,16 @@ def init_grpc_gevent():
   # g_event = gevent.event.Event()
   g_pool = gevent.pool.Group()
 
+  gevent.spawn(spawn_greenlets)
+  # TODO: Move this import up.
+  # setDaemon cannot be set directly through the greenlet API, so we use the
+  # Thread wrapper instead.
+  # import gevent.threading
+  # spawn_greenlets_greenlet = gevent.threading.Thread(target=spawn_greenlets)
+  # spawn_greenlets_greenlet.setDaemon(True)
+  # spawn_greenlets_greenlet.start()
+
+  sys.stderr.write("Past spawn of spawn_greenlets")
   def cb_func(cb, args):
     _spawn_greenlet(cb, *args)
   set_async_callback_func(cb_func)
