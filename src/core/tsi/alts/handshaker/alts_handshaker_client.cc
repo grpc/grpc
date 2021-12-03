@@ -721,7 +721,6 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,
                     grpc_schedule_on_exec_ctx);
-  grpc_slice_unref_internal(slice);
   return &client->base;
 }
 
