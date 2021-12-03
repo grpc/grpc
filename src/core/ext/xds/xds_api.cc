@@ -803,7 +803,9 @@ struct EncodingContext {
 class XdsResourceType {
  public:
   // A base type for resource data.
-  struct ResourceData {};
+  struct ResourceData {
+    virtual ~ResourceData() = default;
+  };
 
   struct DecodeResult {
     std::string name;

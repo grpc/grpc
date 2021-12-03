@@ -851,6 +851,7 @@ grpc_cc_library(
         "absl/base",
         "absl/base:core_headers",
         "absl/memory",
+        "absl/random",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",

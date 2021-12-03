@@ -34,14 +34,6 @@ ifeq ($(SYSTEM),MINGW64)
 SYSTEM = MINGW32
 endif
 
-# Basic machine detection
-HOST_MACHINE = $(shell uname -m)
-ifeq ($(HOST_MACHINE),x86_64)
-HOST_IS_X86_64 = true
-else
-HOST_IS_X86_64 = false
-endif
-
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 ifndef BUILDDIR
 BUILDDIR_ABSOLUTE = $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
@@ -418,7 +410,7 @@ LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m pthread ws2_32 dbghelp
+LIBS = m pthread ws2_32 dbghelp bcrypt
 LDFLAGS += -pthread
 endif
 
@@ -578,11 +570,6 @@ CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
 GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
 GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-ifeq ($(HOST_IS_X86_64),true)
-ABSL_RANDOM_HWAES_FLAGS = -maes
-else
-ABSL_RANDOM_HWAES_FLAGS =
-endif
 
 # Setup re2 dependency
 
@@ -2640,6 +2627,17 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
+    third_party/abseil-cpp/absl/random/discrete_distribution.cc \
+    third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
+    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
+    third_party/abseil-cpp/absl/random/internal/randen.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_slow.cc \
+    third_party/abseil-cpp/absl/random/internal/seed_material.cc \
+    third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
+    third_party/abseil-cpp/absl/random/seed_sequences.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -2704,7 +2702,7 @@ LIBGRPC_ABSEIL_SRC = \
 
 LIBGRPC_ABSEIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_ABSEIL_SRC))))
 
-$(LIBGRPC_ABSEIL_OBJS): CPPFLAGS += -g $(ABSL_RANDOM_HWAES_FLAGS) -Ithird_party/abseil-cpp
+$(LIBGRPC_ABSEIL_OBJS): CPPFLAGS += -g -Ithird_party/abseil-cpp
 
 $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a:  $(LIBGRPC_ABSEIL_OBJS) 
 	$(E) "[AR]      Creating $@"
