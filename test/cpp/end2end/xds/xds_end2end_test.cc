@@ -895,9 +895,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
-    // if (bootstrap_file_ != nullptr) {
-    //  gpr_free(bootstrap_file_);
-    //}
+    if (bootstrap_file_ != nullptr) {
+      remove(bootstrap_file_);
+      gpr_free(bootstrap_file_);
+    }
   }
 
   const char* DefaultEdsServiceName() const {
@@ -2033,7 +2034,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   bool use_xds_enabled_server_;
   bool bootstrap_contents_from_env_var_;
   std::string bootstrap_;
-  char* bootstrap_file_;
+  char* bootstrap_file_ = nullptr;
 };
 
 class BasicTest : public XdsEnd2endTest {
