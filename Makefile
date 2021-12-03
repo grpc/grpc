@@ -1587,7 +1587,6 @@ LIBGRPC_SRC = \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/static_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/status_metadata.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
@@ -2027,7 +2026,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/static_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/status_metadata.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
