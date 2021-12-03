@@ -409,6 +409,19 @@ struct StatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
   static absl::string_view key() { return ":status"; }
 };
 
+// "secret" metadata trait used to pass load balancing token between filters.
+// This should not be exposed outside of gRPC core.
+class GrpcLbClientStats;
+struct GrpcLbClientStatsMetadata {
+  static absl::string_view key() { return "grpclb_client_stats";}
+  using ValueType = GrpcLbClientStats*;
+  using MementoType = ValueType;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(ValueType x) { abort(); }
+  static const char* DisplayValue(MementoType x) { return "<internal-lb-stats>"; }
+  static MementoType ParseMemento(Slice value) { return nullptr; }
+};
+
 namespace metadata_detail {
 
 // Helper type - maps a string name to a trait.
@@ -660,7 +673,7 @@ class MetadataMap {
   void Remove(absl::string_view name);
 
   // Retrieve some metadata by name
-  absl::string_view Get(absl::string_view name, std::string* buffer) const;
+  absl::string_view GetStringValue(absl::string_view name, std::string* buffer) const;
 
   // Extract a piece of known metadata.
   // Returns nullopt if the metadata was not present, or the value if it was.
@@ -706,7 +719,11 @@ class MetadataMap {
 
   MetadataMap Copy() const;
 
+  bool empty() const;
+
  private:
+  friend class metadata_detail::AppendHelper<MetadataMap>;
+
   // Generate a strong type for metadata values per trait.
   template <typename Which>
   struct Value {
@@ -751,6 +768,8 @@ class MetadataMap {
    private:
     uint32_t size_ = 0;
   };
+
+  void AppendUnknown(absl::string_view key, Slice value);
 
   // Table of known metadata types.
   Table<Value<Traits>...> table_;

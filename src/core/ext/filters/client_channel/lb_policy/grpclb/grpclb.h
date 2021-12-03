@@ -38,7 +38,6 @@
 
 namespace grpc_core {
 
-extern const char kGrpcLbClientStatsMetadataKey[];
 extern const char kGrpcLbLbTokenMetadataKey[];
 
 }  // namespace grpc_core

@@ -174,7 +174,7 @@ absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
-  return initial_metadata->Get(header_name, concatenated_value);
+  return initial_metadata->GetStringValue(header_name, concatenated_value);
 }
 
 namespace {

@@ -112,7 +112,6 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_glb_trace(false, "glb");
 
-const char kGrpcLbClientStatsMetadataKey[] = "grpclb_client_stats";
 const char kGrpcLbLbTokenMetadataKey[] = "lb-token";
 
 const char kGrpcLbAddressAttributeKey[] = "grpclb";
@@ -652,7 +651,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
       args.initial_metadata->Add(
-          kGrpcLbClientStatsMetadataKey,
+          GrpcLbClientStatsMetadata::key(),
           absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
       // Update calls-started.
       client_stats->AddCallStarted();
@@ -793,7 +792,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   lb_call_ = grpc_channel_create_pollset_set_call(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       grpclb_policy_->interested_parties(),
-      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
+      Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad").c_slice(),
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   upb::Arena arena;

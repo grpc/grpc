@@ -3526,20 +3526,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "hpack_encoder_index",
-    hdrs = [
-        "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
-    ],
-    external_deps = [
-        "absl/types:optional",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "hpack_encoder_table",
     srcs = [
         "src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc",
@@ -3621,7 +3607,6 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "hpack_constants",
-        "hpack_encoder_index",
         "hpack_encoder_table",
         "memory_quota",
         "resource_quota_trace",

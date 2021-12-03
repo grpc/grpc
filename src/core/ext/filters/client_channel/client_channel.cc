@@ -70,7 +70,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
+
 #include "src/core/lib/transport/metadata_batch.h"
 
 //
@@ -2412,16 +2412,11 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
 class ClientChannel::LoadBalancedCall::Metadata
     : public LoadBalancingPolicy::MetadataInterface {
  public:
-  Metadata(LoadBalancedCall* lb_call, grpc_metadata_batch* batch)
-      : lb_call_(lb_call), batch_(batch) {}
+  explicit Metadata(grpc_metadata_batch* batch)
+      : batch_(batch) {}
 
   void Add(absl::string_view key, absl::string_view value) override {
-    grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
-        lb_call_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
-    linked_mdelem->md = grpc_mdelem_from_slices(
-        ExternallyManagedSlice(key.data(), key.size()),
-        ExternallyManagedSlice(value.data(), value.size()));
-    GPR_ASSERT(batch_->LinkTail(linked_mdelem) == GRPC_ERROR_NONE);
+    batch_->Append(key, Slice::FromCopiedString(value));
   }
 
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
@@ -2433,15 +2428,14 @@ class ClientChannel::LoadBalancedCall::Metadata
 
   absl::optional<absl::string_view> Lookup(absl::string_view key,
                                            std::string* buffer) const override {
-    return batch_->GetValue(key, buffer);
+    return batch_->GetStringValue(key, buffer);
   }
 
  private:
   class Encoder {
    public:
-    void Encode(grpc_mdelem md) {
-      out_.emplace_back(std::string(StringViewFromSlice(GRPC_MDKEY(md))),
-                        std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
+    void Encode(const Slice& key, const Slice& value) {
+      out_.emplace_back(key.as_string_view(), value.as_string_view());
     }
 
     template <class Which>
@@ -2462,7 +2456,6 @@ class ClientChannel::LoadBalancedCall::Metadata
     std::vector<std::pair<std::string, std::string>> out_;
   };
 
-  LoadBalancedCall* lb_call_;
   grpc_metadata_batch* batch_;
 };
 
@@ -2892,7 +2885,7 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
     // If the LB policy requested a callback for trailing metadata, invoke
     // the callback.
     if (self->lb_subchannel_call_tracker_ != nullptr) {
-      Metadata trailing_metadata(self, self->recv_trailing_metadata_);
+      Metadata trailing_metadata(self->recv_trailing_metadata_);
       BackendMetricAccessor backend_metric_accessor(self);
       LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
           status, &trailing_metadata, &backend_metric_accessor};
@@ -3060,7 +3053,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
   pick_args.path = StringViewFromSlice(path_);
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
-  Metadata initial_metadata(this, initial_metadata_batch);
+  Metadata initial_metadata(initial_metadata_batch);
   pick_args.initial_metadata = &initial_metadata;
   auto result = chand_->picker_->Pick(pick_args);
   return HandlePickResult<bool>(
