@@ -33,5 +33,5 @@ cd "$(dirname "$0")/../../.."
 # we need to copy the artifacts produced by the build to a location that's stored by kokoro.
 
 # artifacts in this directory will be stored by kokoro
-mkdir -p /tmpfs/src/github/grpc/artifacts
-time cp -r /tmpfs/altsrc/github/grpc/artifacts/* /tmpfs/src/github/grpc/artifacts || true
+mkdir -p "${GRPC_TEST_REPORT_BASE_DIR}/artifacts"
+time cp -r artifacts/* "${GRPC_TEST_REPORT_BASE_DIR}/artifacts" || true
