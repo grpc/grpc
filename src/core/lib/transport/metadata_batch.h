@@ -324,10 +324,10 @@ class AppendHelper {
   }
 
   GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
-    grpc_mdelem elem = grpc_mdelem_from_slices(
-                   grpc_slice_intern(
-                       grpc_slice_from_static_buffer(key.data(), key.length())),
-                   value_.TakeCSlice());
+    grpc_mdelem elem =
+        grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
+                                    key.data(), key.length())),
+                                value_.TakeCSlice());
     if (!GRPC_LOG_IF_ERROR("AppendMetadata", container_->Append(elem))) {
       GRPC_MDELEM_UNREF(elem);
     }
