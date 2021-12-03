@@ -1359,6 +1359,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/dynamic_annotations.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/errno_saver.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/fast_type_id.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/hide_ptr.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/identity.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/inline_variable.h" role="src" />
@@ -1466,6 +1467,51 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/exponential_biased.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/sample_recorder.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/bernoulli_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/beta_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/distributions.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/exponential_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/gaussian_distribution.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/gaussian_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/distribution_caller.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/fast_uniform_bits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/fastmath.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/generate_real.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/iostream_state_saver.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/nonsecure_base.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/pcg_engine.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/platform.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/pool_urbg.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/pool_urbg.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_detect.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_detect.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_engine.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_hwaes.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_slow.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_slow.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/salted_seed_seq.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/seed_material.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/seed_material.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/uniform_helper.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/wide_multiply.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/log_uniform_int_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/poisson_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/random.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_gen_exception.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_gen_exception.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_sequences.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_sequences.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/uniform_int_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/uniform_real_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/zipf_distribution.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/internal/status_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/internal/statusor_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/status.cc" role="src" />
