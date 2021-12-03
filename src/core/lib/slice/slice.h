@@ -183,26 +183,30 @@ struct CopyConstructors {
   }
 };
 
+template <typename Out>
+struct StaticConstructors {
+  static Out FromStaticString(const char* s) {
+    return Out(grpc_slice_from_static_string(s));
+  }
+
+  static Out FromStaticString(absl::string_view s) {
+    return Out(ExternallyManagedSlice(s.data(), s.size()));
+  }
+};
+
 }  // namespace slice_detail
 
-class StaticSlice : public slice_detail::BaseSlice {
+class StaticSlice : public slice_detail::BaseSlice,
+                    public slice_detail::StaticConstructors<StaticSlice> {
  public:
   StaticSlice() = default;
   explicit StaticSlice(const grpc_slice& slice)
       : slice_detail::BaseSlice(slice) {
-    GPR_DEBUG_ASSERT(
-        slice.refcount->GetType() == grpc_slice_refcount::Type::NOP);
+    GPR_DEBUG_ASSERT(slice.refcount->GetType() ==
+                     grpc_slice_refcount::Type::NOP);
   }
   explicit StaticSlice(const StaticMetadataSlice& slice)
       : slice_detail::BaseSlice(slice) {}
-
-  static StaticSlice FromStaticString(const char* s) {
-    return StaticSlice(grpc_slice_from_static_string(s));
-  }
-
-  static StaticSlice FromStaticString(absl::string_view s) {
-    return StaticSlice(ExternallyManagedSlice(s.data(), s.size()));
-  }
 
   StaticSlice(const StaticSlice& other)
       : slice_detail::BaseSlice(other.c_slice()) {}
@@ -257,7 +261,8 @@ class MutableSlice : public slice_detail::BaseSlice,
 };
 
 class Slice : public slice_detail::BaseSlice,
-              public slice_detail::CopyConstructors<Slice> {
+              public slice_detail::CopyConstructors<Slice>,
+              public slice_detail::StaticConstructors<Slice> {
  public:
   Slice() = default;
   ~Slice() { grpc_slice_unref_internal(c_slice()); }
