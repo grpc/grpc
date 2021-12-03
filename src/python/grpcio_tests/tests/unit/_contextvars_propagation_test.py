@@ -110,8 +110,6 @@ def marker(msg="marker"):
 
 # TODO(https://github.com/grpc/grpc/issues/22257)
 @unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
-@unittest.skipIf(test_common.running_under_gevent(),
-                 "ThreadLocals do not work under gevent.")
 class ContextVarsPropagationTest(unittest.TestCase):
 
     # def test_propagation_to_auth_plugin(self):
