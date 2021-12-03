@@ -714,12 +714,10 @@ class MetadataMap {
   }
 
   void Clear();
-
   size_t TransportSize() const;
-
   MetadataMap Copy() const;
-
   bool empty() const;
+  size_t count() const;
 
  private:
   friend class metadata_detail::AppendHelper<MetadataMap>;

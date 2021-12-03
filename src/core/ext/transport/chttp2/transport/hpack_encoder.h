@@ -132,7 +132,7 @@ class HPackCompressor {
     void EmitLitHdrWithNonBinaryStringKeyNotIdx(const grpc_slice& key_slice,
                                                 const grpc_slice& value_slice);
 
-    void EncodeAlwaysIndexed(uint32_t* index, const grpc_slice& key,
+    void EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
                              const grpc_slice& value,
                              uint32_t transport_length);
 
