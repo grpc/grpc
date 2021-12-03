@@ -185,98 +185,6 @@ constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
     "  ]\n"
     "}";
 
-constexpr char kBootstrapFileHeaderAndXdsServers[] =
-    "{\n"
-    "  \"xds_servers\": [\n"
-    "    {\n"
-    "      \"server_uri\": \"fake:///xds_server\",\n"
-    "      \"channel_creds\": [\n"
-    "        {\n"
-    "          \"type\": \"fake\"\n"
-    "        }\n"
-    "      ],\n"
-    "      \"server_features\": [\"xds_v3\"]\n"
-    "    }\n"
-    "  ],\n";
-constexpr char kBootstrapFileAuthorities[] =
-    "  \"authorities\": {\n"
-    "    \"xds.example.com\": {\n"
-    "      \"xds_servers\": [\n"
-    "        {\n"
-    "          \"server_uri\": \"fake:///xds_server\",\n"
-    "          \"channel_creds\": [\n"
-    "            {\n"
-    "              \"type\": \"fake\"\n"
-    "            }\n"
-    "          ],\n"
-    "          \"server_features\": [\"xds_v3\"]\n"
-    "        }\n"
-    "      ]\n"
-    "    }\n"
-    "  },\n";
-
-constexpr char kBootstrapFileServerNameTemplate[] =
-    "  \"server_listener_resource_name_template\": "
-    "\"grpc/server?xds.resource.listening_address=%s\",\n";
-
-constexpr char kBootstrapFileCertificateProviders[] =
-    "  \"certificate_providers\": {\n"
-    "    \"fake_plugin1\": {\n"
-    "      \"plugin_name\": \"fake1\"\n"
-    "    },\n"
-    "    \"fake_plugin2\": {\n"
-    "      \"plugin_name\": \"fake2\"\n"
-    "    },\n"
-    "    \"file_plugin\": {\n"
-    "      \"plugin_name\": \"file_watcher\",\n"
-    "      \"config\": {\n"
-    "        \"certificate_file\": \"src/core/tsi/test_creds/client.pem\",\n"
-    "        \"private_key_file\": \"src/core/tsi/test_creds/client.key\",\n"
-    "        \"ca_certificate_file\": \"src/core/tsi/test_creds/ca.pem\"\n"
-    "      }"
-    "    }\n"
-    "  },\n";
-
-constexpr char kBootstrapFileNodeAndFooter[] =
-    "  \"node\": {\n"
-    "    \"id\": \"xds_end2end_test\",\n"
-    "    \"cluster\": \"test\",\n"
-    "    \"metadata\": {\n"
-    "      \"foo\": \"bar\"\n"
-    "    },\n"
-    "    \"locality\": {\n"
-    "      \"region\": \"corp\",\n"
-    "      \"zone\": \"svl\",\n"
-    "      \"sub_zone\": \"mp3\"\n"
-    "    }\n"
-    "  }\n"
-    "}\n";
-
-constexpr char kBootstrapFileV2[] =
-    "{\n"
-    "  \"xds_servers\": [\n"
-    "    {\n"
-    "      \"server_uri\": \"fake:///xds_server\",\n"
-    "      \"channel_creds\": [\n"
-    "        {\n"
-    "          \"type\": \"fake\"\n"
-    "        }\n"
-    "      ]\n"
-    "    }\n"
-    "  ],\n"
-    "  \"node\": {\n"
-    "    \"id\": \"xds_end2end_test\",\n"
-    "    \"cluster\": \"test\",\n"
-    "    \"metadata\": {\n"
-    "      \"foo\": \"bar\"\n"
-    "    },\n"
-    "    \"locality\": {\n"
-    "      \"region\": \"corp\",\n"
-    "      \"zone\": \"svl\",\n"
-    "      \"sub_zone\": \"mp3\"\n"
-    "    }\n"
-    "  }\n"
-    "}\n";
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
@@ -284,16 +192,6 @@ constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
-
-char* g_bootstrap_file;
-
-void WriteBootstrapFiles(const std::string& bootstrap) {
-  char* bootstrap_file;
-  FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
-  fputs(bootstrap.c_str(), out);
-  fclose(out);
-  g_bootstrap_file = bootstrap_file;
-}
 
 template <typename RpcService>
 class BackendServiceImpl
@@ -688,14 +586,111 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   class BootstrapBuilder {
    public:
     BootstrapBuilder() {}
-    void SetV2() { v2_ = true; }
-    void SetDefaultServer(const std::string& server) { top_server_ = server; }
+    BootstrapBuilder& SetV2() {
+      v2_ = true;
+      return *this;
+    }
+    BootstrapBuilder& SetDefaultServer(const std::string& server) {
+      top_server_ = server;
+      return *this;
+    }
     BootstrapBuilder& SetAuthorityServer(const std::string& server) {
       authority_server_ = server;
       return *this;
     }
     const std::string& AuthorityServer() const { return authority_server_; }
     std::string Build() {
+      constexpr char kBootstrapFileHeaderAndXdsServers[] =
+          "{\n"
+          "  \"xds_servers\": [\n"
+          "    {\n"
+          "      \"server_uri\": \"fake:///xds_server\",\n"
+          "      \"channel_creds\": [\n"
+          "        {\n"
+          "          \"type\": \"fake\"\n"
+          "        }\n"
+          "      ],\n"
+          "      \"server_features\": [\"xds_v3\"]\n"
+          "    }\n"
+          "  ],\n";
+      constexpr char kBootstrapFileAuthorities[] =
+          "  \"authorities\": {\n"
+          "    \"xds.example.com\": {\n"
+          "      \"xds_servers\": [\n"
+          "        {\n"
+          "          \"server_uri\": \"fake:///xds_server\",\n"
+          "          \"channel_creds\": [\n"
+          "            {\n"
+          "              \"type\": \"fake\"\n"
+          "            }\n"
+          "          ],\n"
+          "          \"server_features\": [\"xds_v3\"]\n"
+          "        }\n"
+          "      ]\n"
+          "    }\n"
+          "  },\n";
+      constexpr char kBootstrapFileServerNameTemplate[] =
+          "  \"server_listener_resource_name_template\": "
+          "\"grpc/server?xds.resource.listening_address=%s\",\n";
+      constexpr char kBootstrapFileCertificateProviders[] =
+          "  \"certificate_providers\": {\n"
+          "    \"fake_plugin1\": {\n"
+          "      \"plugin_name\": \"fake1\"\n"
+          "    },\n"
+          "    \"fake_plugin2\": {\n"
+          "      \"plugin_name\": \"fake2\"\n"
+          "    },\n"
+          "    \"file_plugin\": {\n"
+          "      \"plugin_name\": \"file_watcher\",\n"
+          "      \"config\": {\n"
+          "        \"certificate_file\": "
+          "\"src/core/tsi/test_creds/client.pem\",\n"
+          "        \"private_key_file\": "
+          "\"src/core/tsi/test_creds/client.key\",\n"
+          "        \"ca_certificate_file\": "
+          "\"src/core/tsi/test_creds/ca.pem\"\n"
+          "      }"
+          "    }\n"
+          "  },\n";
+      constexpr char kBootstrapFileNodeAndFooter[] =
+          "  \"node\": {\n"
+          "    \"id\": \"xds_end2end_test\",\n"
+          "    \"cluster\": \"test\",\n"
+          "    \"metadata\": {\n"
+          "      \"foo\": \"bar\"\n"
+          "    },\n"
+          "    \"locality\": {\n"
+          "      \"region\": \"corp\",\n"
+          "      \"zone\": \"svl\",\n"
+          "      \"sub_zone\": \"mp3\"\n"
+          "    }\n"
+          "  }\n"
+          "}\n";
+      constexpr char kBootstrapFileV2[] =
+          "{\n"
+          "  \"xds_servers\": [\n"
+          "    {\n"
+          "      \"server_uri\": \"fake:///xds_server\",\n"
+          "      \"channel_creds\": [\n"
+          "        {\n"
+          "          \"type\": \"fake\"\n"
+          "        }\n"
+          "      ]\n"
+          "    }\n"
+          "  ],\n"
+          "  \"node\": {\n"
+          "    \"id\": \"xds_end2end_test\",\n"
+          "    \"cluster\": \"test\",\n"
+          "    \"metadata\": {\n"
+          "      \"foo\": \"bar\"\n"
+          "    },\n"
+          "    \"locality\": {\n"
+          "      \"region\": \"corp\",\n"
+          "      \"zone\": \"svl\",\n"
+          "      \"sub_zone\": \"mp3\"\n"
+          "    }\n"
+          "  }\n"
+          "}\n";
       std::string authorities;
       if (!authority_server_.empty()) {
         authorities =
@@ -856,8 +851,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
-      grpc::testing::WriteBootstrapFiles(bootstrap_);
-      gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file);
+      char* bootstrap_file;
+      FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
+      fputs(bootstrap_.c_str(), out);
+      fclose(out);
+      bootstrap_file_ = bootstrap_file;
+      gpr_setenv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
     }
     if (GetParam().bootstrap_source() != TestType::kBootstrapFromChannelArg) {
       // If getting bootstrap from channel arg, we'll pass these args in
@@ -884,6 +883,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
+    // if (bootstrap_file_ != nullptr) {
+    //  gpr_free(bootstrap_file_);
+    //}
   }
 
   const char* DefaultEdsServiceName() const {
@@ -954,7 +956,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     absl::string_view uri_scheme;
     if (GetParam().use_fake_resolver()) {
       // Authority not allowed when using fake resolver.
-      GPR_ASSERT(std::string(xds_authority).empty());
+      GPR_ASSERT(xds_authority == "");
       uri_scheme = "fake";
     } else {
       uri_scheme = "xds";
@@ -2019,6 +2021,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   bool use_xds_enabled_server_;
   bool bootstrap_contents_from_env_var_;
   std::string bootstrap_;
+  char* bootstrap_file_;
 };
 
 class BasicTest : public XdsEnd2endTest {
@@ -2745,7 +2748,6 @@ TEST_P(XdsFederationTest, FederationBasic) {
   // Ensure update has reached and send 10 RPCs to the current stub.
   WaitForAllBackends(0, 1);
   backends_[0]->backend_service()->ResetCounters();
-  CheckRpcSendOk(10);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 = CreateChannel(/*failover_timeout=*0/, kNewTarget, kAuthority);
   channel2->GetState(/*try_to_connect=*/
@@ -2760,9 +2762,9 @@ TEST_P(XdsFederationTest, FederationBasic) {
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
-  // The correct combination should be 10-1 but the test is currently broken due
+  // We should b reaching backend 1, not 0, but the test is currently broken due
   // to the authority server localhost set incorrectly.
-  EXPECT_EQ(11U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
