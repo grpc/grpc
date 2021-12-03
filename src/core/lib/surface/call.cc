@@ -954,6 +954,10 @@ class PublishToAppEncoder {
     Append(grpc_core::UserAgentMetadata::key(), slice);
   }
 
+  void Encode(grpc_core::HostMetadata, const grpc_core::Slice& slice) {
+    Append(grpc_core::HostMetadata::key(), slice);
+  }
+
   void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
     Append(grpc_core::GrpcPreviousRpcAttemptsMetadata::key(), count);
   }

@@ -707,6 +707,7 @@
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
@@ -720,10 +721,21 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
