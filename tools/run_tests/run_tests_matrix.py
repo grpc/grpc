@@ -62,8 +62,14 @@ def _matrix_job_logfilename(shortname_for_multi_target):
     # for the corresponding 'sponge_log.xml' report.
     # the shortname_for_multi_target component must be set to match the sponge_log.xml location
     # because the top-level render_junit_xml_report is called with multi_target=True
-    return '%s/%s/%s' % (_MATRIX_REPORT_NAME, shortname_for_multi_target,
-                         'sponge_log.log')
+    sponge_log_name = '%s/%s/%s' % (
+        _MATRIX_REPORT_NAME, shortname_for_multi_target, 'sponge_log.log')
+    # env variable can be used to override the base location for the reports
+    # so we need to match that behavior here too
+    base_dir = os.getenv('GRPC_TEST_REPORT_BASE_DIR', None)
+    if base_dir:
+        sponge_log_name = os.path.join(base_dir, sponge_log_name)
+    return sponge_log_name
 
 
 def _docker_jobspec(name,
@@ -102,11 +108,15 @@ def _workspace_jobspec(name,
     shortname = 'run_tests_%s' % name
     env = {'WORKSPACE_NAME': workspace_name}
     env.update(runtests_envs)
+    # if report base dir is set, we don't need to ".." to come out of the workspace dir
+    report_dir_prefix = '' if os.getenv('GRPC_TEST_REPORT_BASE_DIR',
+                                        None) else '../'
     test_job = jobset.JobSpec(cmdline=[
         'bash', 'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
         '-t', '-j',
         str(inner_jobs), '-x',
-        '../run_tests/%s' % _report_filename(name), '--report_suite_name',
+        '%srun_tests/%s' %
+        (report_dir_prefix, _report_filename(name)), '--report_suite_name',
         '%s' % _safe_report_name(name)
     ] + runtests_args,
                               environ=env,
