@@ -760,6 +760,7 @@ void HPackCompressor::Framer::Encode(GrpcAcceptEncodingMetadata,
       key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
   compressor_->grpc_accept_encoding_index_ =
       compressor_->table_.AllocateIndex(transport_length);
+  compressor_->grpc_accept_encoding_ = value;
   EmitLitHdrWithNonBinaryStringKeyIncIdx(key.c_slice(),
                                          encoded_value.c_slice());
 }
