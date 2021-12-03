@@ -86,6 +86,9 @@ Slice SliceFromBuffer(const Buffer& buffer);
 // Unref the grpc_slice part of a Buffer (assumes it is in fact a grpc_slice).
 void DestroySliceValue(const Buffer& value);
 
+// Destroy a trivial memento (empty function).
+void DestroyTrivialMemento(const Buffer& value);
+
 }  // namespace metadata_detail
 
 // A parsed metadata value.
@@ -212,8 +215,16 @@ class ParsedMetadata {
   static const VTable* MdelemVtable();
 
   template <Slice (*ParseMemento)(Slice)>
-  GPR_ATTRIBUTE_NOINLINE void WithNewValueSetSlice(Slice* slice) {
-    value_.slice = ParseMemento(std::move(*slice)).TakeCSlice();
+  GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetSlice(
+      Slice* slice, ParsedMetadata* result) {
+    result->value_.slice = ParseMemento(std::move(*slice)).TakeCSlice();
+  }
+
+  template <typename T, T (*ParseMemento)(Slice)>
+  GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetTrivial(
+      Slice* slice, ParsedMetadata* result) {
+    result->value_.trivial =
+        static_cast<uint64_t>(ParseMemento(std::move(*slice)));
   }
 
   const VTable* vtable_;
@@ -229,7 +240,7 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
   static const VTable vtable = {
       false,
       // destroy
-      [](const Buffer&) {},
+      metadata_detail::DestroyTrivialMemento,
       // set
       [](const Buffer&, MetadataContainer*) { return GRPC_ERROR_NONE; },
       // with_new_value
@@ -249,7 +260,7 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
   static const VTable vtable = {
       absl::EndsWith(Which::key(), "-bin"),
       // destroy
-      [](const Buffer&) {},
+      metadata_detail::DestroyTrivialMemento,
       // set
       [](const Buffer& value, MetadataContainer* map) {
         map->Set(Which(),
@@ -258,9 +269,7 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
         return GRPC_ERROR_NONE;
       },
       // with_new_value
-      [](Slice* value, ParsedMetadata* result) {
-        result->value_.trivial = Which::ParseMemento(std::move(*value));
-      },
+      WithNewValueSetTrivial<typename Which::MementoType, Which::ParseMemento>,
       // debug_string
       [](const Buffer& value) {
         return metadata_detail::MakeDebugStringPipeline(
@@ -323,9 +332,7 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
         return GRPC_ERROR_NONE;
       },
       // with_new_value
-      [](Slice* value, ParsedMetadata* result) {
-        result->WithNewValueSetSlice<Which::ParseMemento>(value);
-      },
+      WithNewValueSetSlice<Which::ParseMemento>,
       // debug_string
       [](const Buffer& value) {
         return metadata_detail::MakeDebugStringPipeline(

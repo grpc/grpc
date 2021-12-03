@@ -380,14 +380,33 @@ def update_test_metadata_with_transitive_metadata(
             lib_dict['language'] = 'c++'
 
 
+def _get_transitive_protos(bazel_rules, t):
+    que = [
+        t,
+    ]
+    visited = set()
+    ret = []
+    while que:
+        name = que.pop(0)
+        rule = bazel_rules.get(name, None)
+        if rule:
+            for dep in rule['deps']:
+                if dep not in visited:
+                    visited.add(dep)
+                    que.append(dep)
+            for src in rule['srcs']:
+                if src.endswith('.proto'):
+                    ret.append(src)
+    return list(set(ret))
+
+
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
     # upb.h and upb.c files.
     GEN_UPB_ROOT = '//:src/core/ext/upb-generated/'
     GEN_UPBDEFS_ROOT = '//:src/core/ext/upbdefs-generated/'
-    EXTERNAL_LINKS = [
-        ('@com_google_protobuf//', ':src/'),
-    ]
+    EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
+                      ('@com_google_googleapis//', '')]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get('generator_function', None)
         if gen_func in ('grpc_upb_proto_library',
@@ -398,12 +417,6 @@ def _expand_upb_proto_library_rules(bazel_rules):
                 raise Exception(
                     'upb rule "{0}" should have 1 proto dependency but has "{1}"'
                     .format(name, deps))
-            proto_dep = deps[0]
-            proto_rule = bazel_rules.get(proto_dep, None)
-            if proto_rule is None:
-                raise Exception(
-                    'upb rule "{0}"\'s dependency "{1}" is not found'.format(
-                        name, proto_rule))
             # deps is not properly fetched from bazel query for upb_proto_library target
             # so add the upb dependency manually
             bazel_rule['deps'] = [
@@ -412,14 +425,21 @@ def _expand_upb_proto_library_rules(bazel_rules):
             ]
             # populate the upb_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
+            protos = _get_transitive_protos(bazel_rules, deps[0])
+            if len(protos) == 0:
+                raise Exception(
+                    'upb rule "{0}" should have at least one proto file.'.
+                    format(name))
             srcs = []
             hdrs = []
-            for proto_src in proto_rule['srcs']:
+            for proto_src in protos:
                 for external_link in EXTERNAL_LINKS:
                     if proto_src.startswith(external_link[0]):
                         proto_src = proto_src[len(external_link[0]) +
                                               len(external_link[1]):]
                         break
+                if proto_src.startswith('@'):
+                    raise Exception('"{0}" is unknown workspace.'.format(name))
                 proto_src = _extract_source_file_path(proto_src)
                 ext = '.upb' if gen_func == 'grpc_upb_proto_library' else '.upbdefs'
                 root = GEN_UPB_ROOT if gen_func == 'grpc_upb_proto_library' else GEN_UPBDEFS_ROOT

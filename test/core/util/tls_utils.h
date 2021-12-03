@@ -26,18 +26,18 @@ namespace testing {
 
 class TmpFile {
  public:
-  // Create a temporary file with |credential_data| written in.
-  explicit TmpFile(absl::string_view credential_data);
+  // Create a temporary file with |data| written in.
+  explicit TmpFile(absl::string_view data);
 
   ~TmpFile();
 
   const std::string& name() { return name_; }
 
-  // Rewrite |credential_data| to the temporary file, in an atomic way.
-  void RewriteFile(absl::string_view credential_data);
+  // Rewrite |data| to the temporary file, in an atomic way.
+  void RewriteFile(absl::string_view data);
 
  private:
-  std::string CreateTmpFileAndWriteData(absl::string_view credential_data);
+  std::string CreateTmpFileAndWriteData(absl::string_view data);
 
   std::string name_;
 };

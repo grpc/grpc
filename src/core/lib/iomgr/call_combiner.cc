@@ -150,7 +150,11 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
       gpr_log(GPR_INFO, "  QUEUING");
     }
     // Queue was not empty, so add closure to queue.
-    closure->error_data.error = error;
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    closure->error_data.error = internal::StatusAllocHeapPtr(error);
+#else
+    closure->error_data.error = reinterpret_cast<intptr_t>(error);
+#endif
     queue_.Push(
         reinterpret_cast<MultiProducerSingleConsumerQueue::Node*>(closure));
   }
@@ -185,12 +189,19 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         }
         continue;
       }
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+      grpc_error_handle error =
+          internal::StatusMoveFromHeapPtr(closure->error_data.error);
+#else
+      grpc_error_handle error =
+          reinterpret_cast<grpc_error_handle>(closure->error_data.error);
+#endif
+      closure->error_data.error = 0;
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
         gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
-                closure,
-                grpc_error_std_string(closure->error_data.error).c_str());
+                closure, grpc_error_std_string(error).c_str());
       }
-      ScheduleClosure(closure, closure->error_data.error);
+      ScheduleClosure(closure, error);
       break;
     }
   } else if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {

@@ -46,7 +46,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Listener data watcher interface.  Implemented by callers.
   class ListenerWatcherInterface : public RefCounted<ListenerWatcherInterface> {
    public:
-    virtual void OnListenerChanged(XdsApi::LdsUpdate listener)
+    virtual void OnListenerChanged(XdsListenerResource listener)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -58,7 +58,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class RouteConfigWatcherInterface
       : public RefCounted<RouteConfigWatcherInterface> {
    public:
-    virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config)
+    virtual void OnRouteConfigChanged(XdsRouteConfigResource route_config)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -69,7 +69,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Cluster data watcher interface.  Implemented by callers.
   class ClusterWatcherInterface : public RefCounted<ClusterWatcherInterface> {
    public:
-    virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data)
+    virtual void OnClusterChanged(XdsClusterResource cluster_data)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -80,7 +80,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Endpoint data watcher interface.  Implemented by callers.
   class EndpointWatcherInterface : public RefCounted<EndpointWatcherInterface> {
    public:
-    virtual void OnEndpointChanged(XdsApi::EdsUpdate update)
+    virtual void OnEndpointChanged(XdsEndpointResource update)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -268,7 +268,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<ListenerWatcherInterface*, RefCountedPtr<ListenerWatcherInterface>>
         watchers;
     // The latest data seen from LDS.
-    absl::optional<XdsApi::LdsUpdate> update;
+    absl::optional<XdsListenerResource> update;
     XdsApi::ResourceMetadata meta;
   };
 
@@ -277,7 +277,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
              RefCountedPtr<RouteConfigWatcherInterface>>
         watchers;
     // The latest data seen from RDS.
-    absl::optional<XdsApi::RdsUpdate> update;
+    absl::optional<XdsRouteConfigResource> update;
     XdsApi::ResourceMetadata meta;
   };
 
@@ -285,7 +285,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<ClusterWatcherInterface*, RefCountedPtr<ClusterWatcherInterface>>
         watchers;
     // The latest data seen from CDS.
-    absl::optional<XdsApi::CdsUpdate> update;
+    absl::optional<XdsClusterResource> update;
     XdsApi::ResourceMetadata meta;
   };
 
@@ -293,7 +293,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<EndpointWatcherInterface*, RefCountedPtr<EndpointWatcherInterface>>
         watchers;
     // The latest data seen from EDS.
-    absl::optional<XdsApi::EdsUpdate> update;
+    absl::optional<XdsEndpointResource> update;
     XdsApi::ResourceMetadata meta;
   };
 

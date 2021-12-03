@@ -227,7 +227,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/google/api/annotations.upb.c \
     src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c \
     src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
+    src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
@@ -362,8 +365,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
+    src/core/ext/xds/xds_cluster.cc \
+    src/core/ext/xds/xds_common_types.cc \
+    src/core/ext/xds/xds_endpoint.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
+    src/core/ext/xds/xds_listener.cc \
+    src/core/ext/xds/xds_route_config.cc \
     src/core/ext/xds/xds_routing.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/address_utils/parse_address.cc \
@@ -646,7 +654,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/static_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/status_metadata.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
@@ -713,6 +720,17 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
+    third_party/abseil-cpp/absl/random/discrete_distribution.cc \
+    third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
+    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
+    third_party/abseil-cpp/absl/random/internal/randen.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc \
+    third_party/abseil-cpp/absl/random/internal/randen_slow.cc \
+    third_party/abseil-cpp/absl/random/internal/seed_material.cc \
+    third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
+    third_party/abseil-cpp/absl/random/seed_sequences.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -1270,6 +1288,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/profiling/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)

@@ -300,16 +300,7 @@ libs:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -341,16 +332,7 @@ libs:
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -401,6 +383,7 @@ libs:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -597,6 +580,21 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
@@ -692,6 +690,7 @@ libs:
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h
@@ -716,6 +715,7 @@ libs:
   - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
   - src/core/ext/xds/file_watcher_certificate_provider_factory.h
+  - src/core/ext/xds/upb_utils.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_certificate_provider.h
@@ -723,8 +723,14 @@ libs:
   - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
+  - src/core/ext/xds/xds_cluster.h
+  - src/core/ext/xds/xds_common_types.h
+  - src/core/ext/xds/xds_endpoint.h
   - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
+  - src/core/ext/xds/xds_listener.h
+  - src/core/ext/xds/xds_resource_type.h
+  - src/core/ext/xds/xds_route_config.h
   - src/core/ext/xds/xds_routing.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -949,7 +955,6 @@ libs:
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
-  - src/core/lib/transport/status_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -1168,6 +1173,21 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
@@ -1263,6 +1283,7 @@ libs:
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c
@@ -1292,8 +1313,13 @@ libs:
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
+  - src/core/ext/xds/xds_cluster.cc
+  - src/core/ext/xds/xds_common_types.cc
+  - src/core/ext/xds/xds_endpoint.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
+  - src/core/ext/xds/xds_listener.cc
+  - src/core/ext/xds/xds_route_config.cc
   - src/core/ext/xds/xds_routing.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -1531,7 +1557,6 @@ libs:
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
-  - src/core/lib/transport/status_metadata.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -1804,6 +1829,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
@@ -1982,7 +2009,6 @@ libs:
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
-  - src/core/lib/transport/status_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -2091,6 +2117,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
@@ -2273,7 +2301,6 @@ libs:
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
-  - src/core/lib/transport/status_metadata.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -4314,16 +4341,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -4371,16 +4389,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -4434,6 +4443,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -4546,16 +4556,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -4589,16 +4590,7 @@ targets:
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/poll.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -4650,6 +4642,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -4813,7 +4806,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - absl/random:random
   - grpc++_test_util
 - name: binder_transport_test
   gtest: true
@@ -5110,16 +5102,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -5152,16 +5135,7 @@ targets:
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -5213,6 +5187,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -5419,16 +5394,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
@@ -5467,16 +5433,7 @@ targets:
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -5534,6 +5491,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -5615,7 +5573,6 @@ targets:
   - test/core/transport/binder/end2end/testing_channel_create.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - absl/random:random
   - grpc++_test_util
 - name: end2end_test
   gtest: true
@@ -5948,7 +5905,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
-  - absl/random:random
   - grpc_test_util
   uses_polling: false
 - name: file_watcher_certificate_provider_factory_test
@@ -6004,16 +5960,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -6065,16 +6012,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -6128,6 +6066,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -6665,16 +6604,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -6722,16 +6652,7 @@ targets:
   - src/core/lib/promise/seq.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -6784,6 +6705,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -7019,16 +6941,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -7074,16 +6987,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -7137,6 +7041,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -7203,16 +7108,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -7261,16 +7157,7 @@ targets:
   - src/core/lib/promise/seq.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
-  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -7323,6 +7210,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -8013,16 +7901,6 @@ targets:
   headers: []
   src:
   - test/core/gprpp/status_helper_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: status_metadata_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/status_metadata_test.cc
   deps:
   - grpc_test_util
   uses_polling: false

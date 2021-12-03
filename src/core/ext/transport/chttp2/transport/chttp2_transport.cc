@@ -27,6 +27,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -1219,37 +1220,49 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         write_state_name(t->write_state));
   }
   if (error != GRPC_ERROR_NONE) {
-    if (closure->error_data.error == GRPC_ERROR_NONE) {
-      closure->error_data.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    grpc_error_handle cl_err =
+        grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
+#else
+    grpc_error_handle cl_err =
+        reinterpret_cast<grpc_error_handle>(closure->error_data.error);
+#endif
+    if (cl_err == GRPC_ERROR_NONE) {
+      cl_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error in HTTP transport completing operation");
-      closure->error_data.error =
-          grpc_error_set_str(closure->error_data.error,
-                             GRPC_ERROR_STR_TARGET_ADDRESS, t->peer_string);
+      cl_err = grpc_error_set_str(cl_err, GRPC_ERROR_STR_TARGET_ADDRESS,
+                                  t->peer_string);
     }
-    closure->error_data.error =
-        grpc_error_add_child(closure->error_data.error, error);
+    cl_err = grpc_error_add_child(cl_err, error);
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);
+#else
+    closure->error_data.error = reinterpret_cast<intptr_t>(cl_err);
+#endif
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       // Using GRPC_CLOSURE_SCHED instead of GRPC_CLOSURE_RUN to avoid running
       // closures earlier than when it is safe to do so.
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
-                              closure->error_data.error);
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+      grpc_error_handle run_error =
+          grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
+#else
+      grpc_error_handle run_error =
+          reinterpret_cast<grpc_error_handle>(closure->error_data.error);
+#endif
+      closure->error_data.error = 0;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, run_error);
     } else {
-      grpc_closure_list_append(&t->run_after_write, closure,
-                               closure->error_data.error);
+      grpc_closure_list_append(&t->run_after_write, closure);
     }
   }
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
-  if (batch->legacy_index()->named.grpc_status != nullptr) {
-    return !grpc_mdelem_static_value_eq(
-        batch->legacy_index()->named.grpc_status->md,
-        GRPC_MDELEM_GRPC_STATUS_0);
-  }
-  return false;
+  return batch->get(grpc_core::GrpcStatusMetadata()).value_or(GRPC_STATUS_OK) !=
+         GRPC_STATUS_OK;
 }
 
 static void maybe_become_writable_due_to_send_msg(grpc_chttp2_transport* t,
@@ -1386,7 +1399,7 @@ static void perform_stream_op_locked(void* stream_op,
     // This batch has send ops. Use final_data as a barrier until enqueue time;
     // the initial counter is dropped at the end of this function.
     on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
-    on_complete->error_data.error = GRPC_ERROR_NONE;
+    on_complete->error_data.error = 0;
   }
 
   if (op->cancel_stream) {
@@ -2095,12 +2108,7 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   //   about the metadata yet
   if (s->published_metadata[1] == GRPC_METADATA_NOT_PUBLISHED ||
       s->recv_trailing_metadata_finished != nullptr) {
-    char status_string[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(status, status_string);
-    GRPC_LOG_IF_ERROR("add_status",
-                      s->trailing_metadata_buffer.ReplaceOrAppend(
-                          GRPC_MDSTR_GRPC_STATUS,
-                          grpc_core::UnmanagedMemorySlice(status_string)));
+    s->trailing_metadata_buffer.Set(grpc_core::GrpcStatusMetadata(), status);
     if (!message.empty()) {
       s->trailing_metadata_buffer.Set(
           grpc_core::GrpcMessageMetadata(),

@@ -350,8 +350,7 @@ class RepresentativeServerTrailingMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_GRPC_STATUS_0)));
+    b->Set(grpc_core::GrpcStatusMetadata(), GRPC_STATUS_OK);
   }
 };
 
