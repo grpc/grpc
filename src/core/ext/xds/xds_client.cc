@@ -994,7 +994,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
   for (auto& p : lds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::LdsUpdate& lds_update = p.second.resource;
+    XdsListenerResource& lds_update = p.second.resource;
     auto it = lds_state.subscribed_resources.find(name.authority);
     if (it != lds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);
@@ -1094,7 +1094,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdateLocked(
   auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
   for (auto& p : rds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::RdsUpdate& rds_update = p.second.resource;
+    XdsRouteConfigResource& rds_update = p.second.resource;
     auto it = rds_state.subscribed_resources.find(name.authority);
     if (it != rds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);
@@ -1151,7 +1151,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
   auto& cds_state = state_map_[XdsApi::kCdsTypeUrl];
   for (auto& p : cds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::CdsUpdate& cds_update = p.second.resource;
+    XdsClusterResource& cds_update = p.second.resource;
     auto it = cds_state.subscribed_resources.find(name.authority);
     if (it != cds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);
@@ -1245,7 +1245,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
   auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
   for (auto& p : eds_update_map) {
     const XdsApi::ResourceName& name = p.first;
-    XdsApi::EdsUpdate& eds_update = p.second.resource;
+    XdsEndpointResource& eds_update = p.second.resource;
     auto it = eds_state.subscribed_resources.find(name.authority);
     if (it != eds_state.subscribed_resources.end()) {
       auto res_it = it->second.find(name.id);

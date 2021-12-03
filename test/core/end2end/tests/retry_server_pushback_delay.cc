@@ -120,7 +120,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
 
   grpc_metadata pushback_md;
   memset(&pushback_md, 0, sizeof(pushback_md));
-  pushback_md.key = GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS;
+  pushback_md.key = grpc_slice_from_static_string("grpc-retry-pushback-ms");
   pushback_md.value = grpc_slice_from_static_string("2000");
 
   grpc_arg args[] = {

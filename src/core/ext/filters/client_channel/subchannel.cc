@@ -26,6 +26,7 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -50,7 +51,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // Strong and weak refs.
@@ -252,12 +252,7 @@ void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
-    if (md_batch->legacy_index()->named.grpc_status != nullptr) {
-      *status = grpc_get_status_code_from_metadata(
-          md_batch->legacy_index()->named.grpc_status->md);
-    } else {
-      *status = GRPC_STATUS_UNKNOWN;
-    }
+    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   }
   GRPC_ERROR_UNREF(error);
 }

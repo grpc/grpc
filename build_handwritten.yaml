@@ -165,7 +165,7 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 defaults:
   abseil:
-    CPPFLAGS: -g $(ABSL_RANDOM_HWAES_FLAGS) -Ithird_party/abseil-cpp
+    CPPFLAGS: -g -Ithird_party/abseil-cpp
   ares:
     CFLAGS: -g
     CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE
