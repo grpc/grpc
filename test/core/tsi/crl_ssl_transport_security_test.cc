@@ -54,7 +54,8 @@ namespace {
 
 const int kSslTsiTestRevokedKeyCertPairsNum = 1;
 const int kSslTsiTestValidKeyCertPairsNum = 1;
-const char* kSslTsiTestCrlSupportedCredentialsDir = "test/core/tsi/test_creds/";
+const char* kSslTsiTestCrlSupportedCredentialsDir =
+    "test/core/tsi/test_creds/crl_data/";
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
