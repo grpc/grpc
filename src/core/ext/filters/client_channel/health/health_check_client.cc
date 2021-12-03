@@ -132,8 +132,7 @@ void HealthCheckClient::StartCallLocked() {
   if (shutting_down_) return;
   GPR_ASSERT(call_state_ == nullptr);
   SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING, "starting health watch");
-  call_state_ =
-      MakeOrphanable<CallState>(Ref(), interested_parties_, &call_allocator_);
+  call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthCheckClient %p: created CallState %p", this,
             call_state_.get());
@@ -255,12 +254,12 @@ bool DecodeResponse(grpc_slice_buffer* slice_buffer, grpc_error_handle* error) {
 
 HealthCheckClient::CallState::CallState(
     RefCountedPtr<HealthCheckClient> health_check_client,
-    grpc_pollset_set* interested_parties, MemoryAllocator* allocator)
+    grpc_pollset_set* interested_parties)
     : health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(Arena::Create(health_check_client_->connected_subchannel_
                                ->GetInitialCallSizeEstimate(),
-                           allocator)),
+                           &health_check_client_->call_allocator_)),
       payload_(context_),
       send_initial_metadata_(arena_),
       send_trailing_metadata_(arena_),

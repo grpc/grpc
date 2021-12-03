@@ -202,6 +202,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
@@ -416,7 +417,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h',
                       'src/core/ext/upb-generated/google/api/annotations.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                       'src/core/ext/upb-generated/google/api/http.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/any.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
@@ -1130,7 +1134,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h',
                               'src/core/ext/upb-generated/google/api/annotations.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                               'src/core/ext/upb-generated/google/api/http.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/any.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',

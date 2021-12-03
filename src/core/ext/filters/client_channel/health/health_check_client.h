@@ -60,7 +60,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   class CallState : public Orphanable {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
-              grpc_pollset_set* interested_parties, MemoryAllocator* allocator);
+              grpc_pollset_set* interested_parties);
     ~CallState() override;
 
     void Orphan() override;
