@@ -21,6 +21,7 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
@@ -173,6 +174,12 @@ struct CopyConstructors {
   static Out FromCopiedBuffer(const Buffer& buffer) {
     return FromCopiedBuffer(reinterpret_cast<const char*>(buffer.data()),
                             buffer.size());
+  }
+
+  static Out FromInt64(int64_t i) {
+    char buffer[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(i, buffer);
+    return FromCopiedString(buffer);
   }
 };
 

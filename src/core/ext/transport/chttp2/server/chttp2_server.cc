@@ -160,6 +160,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
    private:
     static void OnClose(void* arg, grpc_error_handle error);
+    static void OnDrainGraceTimeExpiry(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Chttp2ServerListener> listener_;
     Mutex mu_ ABSL_ACQUIRED_AFTER(&listener_->mu_);
@@ -170,6 +171,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     // created.
     grpc_chttp2_transport* transport_ ABSL_GUARDED_BY(&mu_) = nullptr;
     grpc_closure on_close_;
+    grpc_timer drain_grace_timer_;
+    grpc_closure on_drain_grace_time_expiry_;
+    bool drain_grace_timer_expiry_callback_pending_ = false;
     bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
@@ -221,10 +225,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   Chttp2ServerArgsModifier const args_modifier_;
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
   grpc_channel_args* args_;
-  Mutex connection_manager_mu_;
-  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
-      connection_manager_ ABSL_GUARDED_BY(connection_manager_mu_);
   Mutex mu_;
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager_ ABSL_GUARDED_BY(mu_);
   // Signals whether grpc_tcp_server_start() has been called.
   bool started_ ABSL_GUARDED_BY(mu_) = false;
   // Signals whether grpc_tcp_server_start() has completed.
@@ -250,13 +253,31 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
         connection_manager) {
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_to_destroy;
-  {
-    MutexLock lock(&listener_->connection_manager_mu_);
-    connection_manager_to_destroy = listener_->connection_manager_;
-    listener_->connection_manager_ = std::move(connection_manager);
-  }
+  class GracefulShutdownExistingConnections {
+   public:
+    ~GracefulShutdownExistingConnections() {
+      // Send GOAWAYs on the transports so that they get disconnected when
+      // existing RPCs finish, and so that no new RPC is started on them.
+      for (auto& connection : connections_) {
+        connection.first->SendGoAway();
+      }
+    }
+
+    void set_connections(
+        std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>>
+            connections) {
+      GPR_ASSERT(connections_.empty());
+      connections_ = std::move(connections);
+    }
+
+   private:
+    std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections_;
+  } connections_to_shutdown;
   {
     MutexLock lock(&listener_->mu_);
+    connection_manager_to_destroy = listener_->connection_manager_;
+    listener_->connection_manager_ = std::move(connection_manager);
+    connections_to_shutdown.set_connections(std::move(listener_->connections_));
     if (listener_->shutdown_) {
       return;
     }
@@ -532,6 +553,17 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
     op->goaway_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Server is stopping to serve requests.");
     grpc_transport_perform_op(&transport->base, op);
+    Ref().release();  // Ref held by OnDrainGraceTimeExpiry
+    GRPC_CLOSURE_INIT(&on_drain_grace_time_expiry_, OnDrainGraceTimeExpiry,
+                      this, nullptr);
+    grpc_timer_init(&drain_grace_timer_,
+                    ExecCtx::Get()->Now() +
+                        grpc_channel_args_find_integer(
+                            listener_->args_,
+                            GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
+                            {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
+                    &on_drain_grace_time_expiry_);
+    drain_grace_timer_expiry_callback_pending_ = true;
   }
 }
 
@@ -566,6 +598,29 @@ void Chttp2ServerListener::ActiveConnection::OnClose(
         self->listener_->connections_.erase(it);
       }
     }
+    // Cancel the drain_grace_timer_ if needed.
+    if (self->drain_grace_timer_expiry_callback_pending_) {
+      grpc_timer_cancel(&self->drain_grace_timer_);
+    }
+  }
+  self->Unref();
+}
+
+void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry(
+    void* arg, grpc_error_handle error) {
+  ActiveConnection* self = static_cast<ActiveConnection*>(arg);
+  // If the drain_grace_timer_ was not cancelled, disconnect the transport
+  // immediately.
+  if (error == GRPC_ERROR_NONE) {
+    grpc_chttp2_transport* transport = nullptr;
+    {
+      MutexLock lock(&self->mu_);
+      transport = self->transport_;
+    }
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->disconnect_with_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Drain grace time expired. Closing connection immediately.");
+    grpc_transport_perform_op(&transport->base, op);
   }
   self->Unref();
 }
@@ -700,7 +755,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager;
   {
-    MutexLock lock(&self->connection_manager_mu_);
+    MutexLock lock(&self->mu_);
     connection_manager = self->connection_manager_;
   }
   auto endpoint_cleanup = [&](grpc_error_handle error) {
@@ -751,8 +806,10 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   RefCountedPtr<Chttp2ServerListener> listener_ref;
   {
     MutexLock lock(&self->mu_);
-    // Shutdown the the connection if listener's stopped serving.
-    if (!self->shutdown_ && self->is_serving_) {
+    // Shutdown the the connection if listener's stopped serving or if the
+    // connection manager has changed.
+    if (!self->shutdown_ && self->is_serving_ &&
+        connection_manager == self->connection_manager_) {
       // This ref needs to be taken in the critical region after having made
       // sure that the listener has not been Orphaned, so as to avoid
       // heap-use-after-free issues where `Ref()` is invoked when the ref of

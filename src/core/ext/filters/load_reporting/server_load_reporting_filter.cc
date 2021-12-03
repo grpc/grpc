@@ -238,10 +238,11 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
       if (calld->client_ip_and_lr_token_ == nullptr) {
         calld->StoreClientIpAndLrToken(lb_token->data(), lb_token->size());
       }
-      calld->recv_initial_metadata_->Remove(
+      auto old = calld->recv_initial_metadata_->Remove(
           grpc_core::Slice::FromCopiedString(
               grpc_core::kGrpcLbLbTokenMetadataKey)
               .c_slice());
+      if (old.has_value()) grpc_slice_unref_internal(*old);
     }
     // If the LB token was not found in the recv_initial_metadata, only the
     // client IP part will be recorded (with an empty LB token).

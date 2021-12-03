@@ -399,6 +399,7 @@
         'absl/base:base',
         'absl/base:core_headers',
         'absl/memory:memory',
+        'absl/random:random',
         'absl/status:status',
         'absl/strings:cord',
         'absl/strings:str_format',
