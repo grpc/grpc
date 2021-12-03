@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/transport/static_metadata.h"
-
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
