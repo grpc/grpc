@@ -532,7 +532,8 @@ void HPackCompressor::SliceIndex::EmitTo(const grpc_slice& key,
   auto& table = framer->compressor_->table_;
   using It = std::vector<ValueIndex>::iterator;
   It prev = values_.end();
-  uint32_t transport_length = GRPC_SLICE_LENGTH(key) + value.length() + hpack_constants::kEntryOverhead;
+  uint32_t transport_length =
+      GRPC_SLICE_LENGTH(key) + value.length() + hpack_constants::kEntryOverhead;
   // Linear scan through previous values to see if we find the value.
   for (It it = values_.begin(); it != values_.end(); ++it) {
     if (value == it->value) {
@@ -545,10 +546,13 @@ void HPackCompressor::SliceIndex::EmitTo(const grpc_slice& key,
         it->index = table.AllocateIndex(transport_length);
         framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value.c_slice());
       }
-      // Bubble this entry up if we can - ensures that the most used values end up towards the start of the array.
+      // Bubble this entry up if we can - ensures that the most used values end
+      // up towards the start of the array.
       if (prev != values_.end()) std::swap(*prev, *it);
-      // If there are entries at the end of the array, and those entries are no longer in the table, remove them.
-      while (!values_.empty() && !table.ConvertableToDynamicIndex(values_.back().index)) {
+      // If there are entries at the end of the array, and those entries are no
+      // longer in the table, remove them.
+      while (!values_.empty() &&
+             !table.ConvertableToDynamicIndex(values_.back().index)) {
         values_.pop_back();
       }
       // All done, early out.
