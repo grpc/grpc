@@ -37,6 +37,7 @@ namespace testing {
 namespace {
 
 TEST(XdsBootstrapTest, Basic) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -64,6 +65,24 @@ TEST(XdsBootstrapTest, Basic) {
       "      \"ignore\": 0"
       "    }"
       "  ],"
+      "  \"authorities\": {"
+      "    \"xds.example.com\": {"
+      "      \"client_listener_resource_name_template\": "
+      "\"xdstp://xds.example.com/envoy.config.listener.v3.Listener/grpc/server/"
+      "%s\","
+      "      \"xds_servers\": ["
+      "        {"
+      "          \"server_uri\": \"fake:///xds_server\","
+      "          \"channel_creds\": ["
+      "            {"
+      "              \"type\": \"fake\""
+      "            }"
+      "          ],"
+      "          \"server_features\": [\"xds_v3\"]"
+      "        }"
+      "      ]"
+      "    }"
+      "  },"
       "  \"node\": {"
       "    \"id\": \"foo\","
       "    \"cluster\": \"bar\","
@@ -112,6 +131,7 @@ TEST(XdsBootstrapTest, Basic) {
                           ::testing::Property(&Json::string_value, "1")))));
   EXPECT_EQ(bootstrap.server_listener_resource_name_template(),
             "example/resource");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 TEST(XdsBootstrapTest, ValidWithoutNode) {
@@ -458,6 +478,83 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
                   "errors parsing element \"plugin\".*"
                   "Unrecognized plugin name: unknown"));
   GRPC_ERROR_UNREF(error);
+}
+
+TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "    }"
+      "  ],"
+      "  \"authorities\": {"
+      "    \"xds.example.com\": {"
+      "      \"client_listener_resource_name_template\": "
+      "\"xds://xds.example.com/envoy.config.listener.v3.Listener/grpc/server/"
+      "%s\","
+      "      \"xds_servers\": ["
+      "        {"
+      "          \"server_uri\": \"fake:///xds_server\","
+      "          \"channel_creds\": ["
+      "            {"
+      "              \"type\": \"fake\""
+      "            }"
+      "          ],"
+      "          \"server_features\": [\"xds_v3\"]"
+      "        }"
+      "      ]"
+      "    }"
+      "  }"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  XdsBootstrap bootstrap(std::move(json), &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing \"authorities\".*"
+                  "errors parsing authority xds.example.com\".*"
+                  "field must begin with \"xdstp://xds.example.com/\""));
+  GRPC_ERROR_UNREF(error);
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+}
+
+TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": [{\"type\": \"fake\"}]"
+      "    }"
+      "  ],"
+      "  \"authorities\": {"
+      "    \"xds.example.com\": {"
+      "      \"client_listener_resource_name_template\": "
+      "\"xdstp://xds.example.com/envoy.config.listener.v3.Listener/grpc/server/"
+      "%s\","
+      "      \"xds_servers\":[{}]"
+      "    }"
+      "  }"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  XdsBootstrap bootstrap(std::move(json), &error);
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex("errors parsing \"authorities\".*"
+                               "errors parsing authority xds.example.com\".*"
+                               "errors parsing \"xds_servers\" array.*"
+                               "errors parsing index 0.*"
+                               "errors parsing xds server.*"
+                               "\"field:server_uri error:does not exist.\","));
+  GRPC_ERROR_UNREF(error);
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class FakeCertificateProviderFactory : public CertificateProviderFactory {

@@ -2780,6 +2780,7 @@ TEST_P(XdsFederationTest, FederationBasic) {
   // to the authority server localhost set incorrectly.
   EXPECT_EQ(1U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
