@@ -121,8 +121,8 @@ static void chttp2_init_client_socketpair(
   cs.f = f;
   transport =
       grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
-  grpc_channel_args_destroy(client_args);
   client_setup_transport(&cs, transport);
+  grpc_channel_args_destroy(client_args);
   GPR_ASSERT(f->client);
 }
 
