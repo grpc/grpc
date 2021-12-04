@@ -23,12 +23,15 @@
 
 #include <stdbool.h>
 
+#include <limits>
+
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/chunked_vector.h"
@@ -184,6 +187,48 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
+// We separate SimpleIntBasedMetadata into two pieces: one that does not depend
+// on the invalid value, and one that does. This allows the compiler to easily
+// see the functions that are shared, and helps reduce code bloat here.
+template <typename Int>
+struct SimpleIntBasedMetadataBase {
+  using ValueType = Int;
+  using MementoType = Int;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(ValueType x) { return Slice::FromInt64(x); }
+  static Int DisplayValue(MementoType x) { return x; }
+};
+
+template <typename Int, Int kInvalidValue>
+struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
+  static constexpr Int invalid_value() { return kInvalidValue; }
+  static Int ParseMemento(Slice value) {
+    Int out;
+    if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
+      out = kInvalidValue;
+    }
+    return out;
+  }
+};
+
+// grpc-status metadata trait.
+struct GrpcStatusMetadata
+    : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
+  static absl::string_view key() { return "grpc-status"; }
+};
+
+// grpc-previous-rpc-attempts metadata trait.
+struct GrpcPreviousRpcAttemptsMetadata
+    : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
+};
+
+// grpc-retry-pushback-ms metadata trait.
+struct GrpcRetryPushbackMsMetadata
+    : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
+  static absl::string_view key() { return "grpc-retry-pushback-ms"; }
+};
+
 namespace metadata_detail {
 
 // Helper type - maps a string name to a trait.
@@ -193,7 +238,7 @@ struct NameLookup;
 template <typename Trait, typename... Traits>
 struct NameLookup<Trait, Traits...> {
   // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
-  // Traits. If not found, call op->NotFount().
+  // Traits. If not found, call op->NotFound().
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->Found(Trait())) {
@@ -235,9 +280,11 @@ class ParseHelper {
       : value_(std::move(value)), transport_size_(transport_size) {}
 
   template <typename Trait>
-  ParsedMetadata<Container> Found(Trait trait) {
+  GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
-        trait, Trait::ParseMemento(std::move(value_)), transport_size_);
+        trait,
+        ParseValueToMemento<typename Trait::MementoType, Trait::ParseMemento>(),
+        transport_size_);
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
@@ -249,6 +296,11 @@ class ParseHelper {
   }
 
  private:
+  template <typename T, T (*parse_memento)(Slice)>
+  GPR_ATTRIBUTE_NOINLINE T ParseValueToMemento() {
+    return parse_memento(std::move(value_));
+  }
+
   Slice value_;
   const size_t transport_size_;
 };
@@ -271,12 +323,14 @@ class AppendHelper {
                        &value_));
   }
 
-  void NotFound(absl::string_view key) {
-    GPR_ASSERT(GRPC_ERROR_NONE ==
-               container_->Append(grpc_mdelem_from_slices(
-                   grpc_slice_intern(
-                       grpc_slice_from_static_buffer(key.data(), key.length())),
-                   value_.TakeCSlice())));
+  GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
+    grpc_mdelem elem =
+        grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
+                                    key.data(), key.length())),
+                                value_.TakeCSlice());
+    if (!GRPC_LOG_IF_ERROR("AppendMetadata", container_->Append(elem))) {
+      GRPC_MDELEM_UNREF(elem);
+    }
   }
 
  private:
@@ -285,6 +339,21 @@ class AppendHelper {
 };
 
 }  // namespace metadata_detail
+
+// Helper function for encoders
+// Given a metadata trait, convert the value to a slice.
+template <typename Which>
+absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value,
+                  const Slice&>
+MetadataValueAsSlice(const Slice& slice) {
+  return slice;
+}
+
+template <typename Which>
+absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
+MetadataValueAsSlice(typename Which::ValueType value) {
+  return Which::Encode(value);
+}
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
@@ -968,7 +1037,9 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 }  // namespace grpc_core
 
 using grpc_metadata_batch = grpc_core::MetadataMap<
-    grpc_core::GrpcTimeoutMetadata, grpc_core::TeMetadata,
+    grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
+    grpc_core::GrpcPreviousRpcAttemptsMetadata,
+    grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::TeMetadata,
     grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata,
     grpc_core::HostMetadata, grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,

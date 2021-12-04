@@ -81,7 +81,13 @@ docker run \
 # run_tests.py runs 
 TEMP_REPORTS_ZIP=$(mktemp)
 docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" "${TEMP_REPORTS_ZIP}" || true
-unzip -o "${TEMP_REPORTS_ZIP}" -d "$git_root" || true
+if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
+then
+  REPORTS_DEST_DIR="${GRPC_TEST_REPORT_BASE_DIR}"
+else
+  REPORTS_DEST_DIR="${git_root}"
+fi
+unzip -o "${TEMP_REPORTS_ZIP}" -d "${REPORTS_DEST_DIR}" || true
 rm -f "${TEMP_REPORTS_ZIP}"
 
 # remove the container, possibly killing it first
