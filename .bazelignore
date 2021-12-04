@@ -17,8 +17,8 @@ third_party/opencensus-proto
 third_party/protobuf
 third_party/protoc-gen-validate
 third_party/re2
-third_party/udpa
 third_party/upb
+third_party/xds
 
 bazel/test/python_test_repo
 

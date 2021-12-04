@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <functional>
 #include <string>
 #include <utility>
@@ -250,3 +252,4 @@ void TransportStreamReceiverImpl::CancelStream(StreamIdentifier id) {
   pending_trailing_metadata_.erase(id);
 }
 }  // namespace grpc_binder
+#endif

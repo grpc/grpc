@@ -8,16 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/service/discovery/v3/ads.upbdefs.h"
+#include "envoy/service/discovery/v3/ads.upb.h"
 
 extern upb_def_init envoy_service_discovery_v3_discovery_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_service_discovery_v3_AdsDummy_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_service_discovery_v3_AdsDummy_msginit,
-};
-
 static const char descriptor[604] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', 
 '/', 'v', '3', '/', 'a', 'd', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\032', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 
 'i', 'c', 'e', '.', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', '.', 'v', '3', '\032', '*', 'e', 'n', 'v', 'o', 'y', '/', 's', 
@@ -54,7 +49,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_service_discovery_v3_ads_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_service_discovery_v3_ads_proto_upb_file_layout,
   "envoy/service/discovery/v3/ads.proto",
   UPB_STRVIEW_INIT(descriptor, 604)
 };

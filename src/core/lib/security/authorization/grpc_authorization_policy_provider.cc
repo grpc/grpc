@@ -110,7 +110,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       }
     }
   };
-  refresh_thread_ = absl::make_unique<grpc_core::Thread>(
+  refresh_thread_ = absl::make_unique<Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();
@@ -130,7 +130,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (!rbac_policies_or.ok()) {
     return rbac_policies_or.status();
   }
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->allow_policy));
   deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(

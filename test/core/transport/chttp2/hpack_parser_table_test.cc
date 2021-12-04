@@ -47,7 +47,7 @@ void AssertIndex(const HPackTable* tbl, uint32_t idx, const char* key,
 }  // namespace
 
 TEST(HpackParserTableTest, StaticTable) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   HPackTable tbl;
 
   AssertIndex(&tbl, 1, ":authority", "");
@@ -117,7 +117,7 @@ TEST(HpackParserTableTest, ManyAdditions) {
   HPackTable tbl;
   int i;
 
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
 
   for (i = 0; i < 100000; i++) {
     grpc_mdelem elem;
@@ -126,13 +126,13 @@ TEST(HpackParserTableTest, ManyAdditions) {
     elem = grpc_mdelem_from_slices(grpc_slice_from_cpp_string(key),
                                    grpc_slice_from_cpp_string(value));
     ASSERT_EQ(tbl.Add(HPackTable::Memento(elem)), GRPC_ERROR_NONE);
-    AssertIndex(&tbl, 1 + grpc_core::hpack_constants::kLastStaticEntry,
-                key.c_str(), value.c_str());
+    AssertIndex(&tbl, 1 + hpack_constants::kLastStaticEntry, key.c_str(),
+                value.c_str());
     if (i) {
       std::string key = absl::StrCat("K.", i - 1);
       std::string value = absl::StrCat("VALUE.", i - 1);
-      AssertIndex(&tbl, 2 + grpc_core::hpack_constants::kLastStaticEntry,
-                  key.c_str(), value.c_str());
+      AssertIndex(&tbl, 2 + hpack_constants::kLastStaticEntry, key.c_str(),
+                  value.c_str());
     }
   }
 }

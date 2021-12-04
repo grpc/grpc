@@ -76,13 +76,11 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
   optional(GRPC_SERVER_CHANNEL, false, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
            &grpc_message_compress_filter);
   optional(GRPC_CLIENT_SUBCHANNEL, true,
-           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION,
-           &grpc_core::MessageDecompressFilter);
+           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
   optional(GRPC_CLIENT_DIRECT_CHANNEL, true,
-           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION,
-           &grpc_core::MessageDecompressFilter);
+           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
   optional(GRPC_SERVER_CHANNEL, true, GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION,
-           &grpc_core::MessageDecompressFilter);
+           &MessageDecompressFilter);
   required(GRPC_CLIENT_SUBCHANNEL, &grpc_http_client_filter);
   required(GRPC_CLIENT_DIRECT_CHANNEL, &grpc_http_client_filter);
   required(GRPC_SERVER_CHANNEL, &grpc_http_server_filter);

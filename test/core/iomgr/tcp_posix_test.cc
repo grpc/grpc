@@ -40,7 +40,6 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu* g_mu;
@@ -213,13 +212,17 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  grpc_arg a[1];
+  grpc_arg a[2];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER,
   a[0].value.integer = static_cast<int>(slice_size);
+  a[1].key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
+  a[1].type = GRPC_ARG_POINTER;
+  a[1].value.pointer.p = grpc_resource_quota_create("test");
+  a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test", false), &args, "test",
-                       grpc_slice_allocator_create_unlimited());
+  ep =
+      grpc_tcp_create(grpc_fd_create(sv[1], "read_test", false), &args, "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -247,6 +250,8 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   grpc_slice_buffer_destroy_internal(&state.incoming);
   grpc_endpoint_destroy(ep);
+  grpc_resource_quota_unref(
+      static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 }
 
 /* Write to a socket until it fills up, then read from it using the grpc_tcp
@@ -264,13 +269,17 @@ static void large_read_test(size_t slice_size) {
 
   create_sockets(sv);
 
-  grpc_arg a[1];
+  grpc_arg a[2];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
+  a[1].key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
+  a[1].type = GRPC_ARG_POINTER;
+  a[1].value.pointer.p = grpc_resource_quota_create("test");
+  a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test", false), &args,
-                       "test", grpc_slice_allocator_create_unlimited());
+                       "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   written_bytes = fill_socket(sv[0]);
@@ -298,6 +307,8 @@ static void large_read_test(size_t slice_size) {
 
   grpc_slice_buffer_destroy_internal(&state.incoming);
   grpc_endpoint_destroy(ep);
+  grpc_resource_quota_unref(
+      static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 }
 
 struct write_socket_state {
@@ -425,13 +436,17 @@ static void write_test(size_t num_bytes, size_t slice_size,
     create_sockets(sv);
   }
 
-  grpc_arg a[1];
+  grpc_arg a[2];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER,
   a[0].value.integer = static_cast<int>(slice_size);
+  a[1].key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
+  a[1].type = GRPC_ARG_POINTER;
+  a[1].value.pointer.p = grpc_resource_quota_create("test");
+  a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test", collect_timestamps),
-                       &args, "test", grpc_slice_allocator_create_unlimited());
+                       &args, "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   state.ep = ep;
@@ -471,6 +486,8 @@ static void write_test(size_t num_bytes, size_t slice_size,
   grpc_slice_buffer_destroy_internal(&outgoing);
   grpc_endpoint_destroy(ep);
   gpr_free(slices);
+  grpc_resource_quota_unref(
+      static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 }
 
 void on_fd_released(void* arg, grpc_error_handle /*errors*/) {
@@ -502,13 +519,17 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  grpc_arg a[1];
+  grpc_arg a[2];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
+  a[1].key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
+  a[1].type = GRPC_ARG_POINTER;
+  a[1].value.pointer.p = grpc_resource_quota_create("test");
+  a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test", false), &args, "test",
-                       grpc_slice_allocator_create_unlimited());
+  ep =
+      grpc_tcp_create(grpc_fd_create(sv[1], "read_test", false), &args, "test");
   GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
@@ -556,6 +577,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   written_bytes = fill_socket_partial(fd, num_bytes);
   drain_socket_blocking(sv[0], written_bytes, written_bytes);
   close(fd);
+  grpc_resource_quota_unref(
+      static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 }
 
 void run_tests(void) {
@@ -597,19 +620,23 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_core::ExecCtx exec_ctx;
 
   create_sockets(sv);
-  grpc_arg a[1];
+  grpc_arg a[2];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
+  a[1].key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
+  a[1].type = GRPC_ARG_POINTER;
+  a[1].value.pointer.p = grpc_resource_quota_create("test");
+  a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  f.client_ep =
-      grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client", false), &args,
-                      "test", grpc_slice_allocator_create_unlimited());
-  f.server_ep =
-      grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server", false), &args,
-                      "test", grpc_slice_allocator_create_unlimited());
+  f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client", false),
+                                &args, "test");
+  f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server", false),
+                                &args, "test");
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
+  grpc_resource_quota_unref(
+      static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 
   return f;
 }

@@ -388,6 +388,8 @@ UPB_INLINE void envoy_config_endpoint_v3_ClusterStats_DroppedRequests_set_droppe
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = value;
 }
 
+extern const upb_msglayout_file envoy_config_endpoint_v3_load_report_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

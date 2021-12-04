@@ -59,8 +59,9 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   void SetUp() override {
     if (GetParam().table_size.has_value()) {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
-      parser_->hpack_table()->SetCurrentTableSize(
-          GetParam().table_size.value());
+      EXPECT_EQ(parser_->hpack_table()->SetCurrentTableSize(
+                    GetParam().table_size.value()),
+                GRPC_ERROR_NONE);
     }
   }
 
@@ -116,7 +117,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     }
 
     template <typename T, typename V>
-    void Encode(T, V) {
+    void Encode(T, const V&) {
       abort();  // not implemented
     }
 

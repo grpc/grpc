@@ -15,4 +15,4 @@
 # this an aarch64 image, qemu emulator will be used to run the tests
 FROM arm64v8/python:3.8-buster
 
-RUN pip install virtualenv
+RUN python3 -m pip install virtualenv

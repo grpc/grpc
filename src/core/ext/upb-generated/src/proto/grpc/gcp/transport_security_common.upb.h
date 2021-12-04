@@ -128,6 +128,8 @@ UPB_INLINE void grpc_gcp_RpcProtocolVersions_Version_set_minor(grpc_gcp_RpcProto
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
 }
 
+extern const upb_msglayout_file src_proto_grpc_gcp_transport_security_common_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

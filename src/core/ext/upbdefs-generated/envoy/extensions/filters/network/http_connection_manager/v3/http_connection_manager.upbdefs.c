@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 
 extern upb_def_init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
@@ -29,48 +30,6 @@ extern upb_def_init udpa_annotations_security_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit;
-extern const upb_msglayout envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit;
-
-static const upb_msglayout *layouts[19] = {
-  &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_Tracing_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_SetCurrentClientCertDetails_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_LocalReplyConfig_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ResponseMapper_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_Rds_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRouteConfigurationsList_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes_ScopeKeyBuilder_FragmentBuilder_HeaderValueExtractor_KvElement_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_ScopedRds_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_RequestIDExtension_msginit,
-  &envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit,
-};
-
 static const char descriptor[11539] = {'\n', 'Y', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
 's', '/', 'n', 'e', 't', 'w', 'o', 'r', 'k', '/', 'h', 't', 't', 'p', '_', 'c', 'o', 'n', 'n', 'e', 'c', 't', 'i', 'o', 'n', 
 '_', 'm', 'a', 'n', 'a', 'g', 'e', 'r', '/', 'v', '3', '/', 'h', 't', 't', 'p', '_', 'c', 'o', 'n', 'n', 'e', 'c', 't', 'i', 
@@ -561,7 +520,7 @@ static upb_def_init *deps[21] = {
 
 upb_def_init envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upb_file_layout,
   "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto",
   UPB_STRVIEW_INIT(descriptor, 11539)
 };

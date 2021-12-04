@@ -78,6 +78,8 @@ UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_
   return sub;
 }
 
+extern const upb_msglayout_file google_rpc_status_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

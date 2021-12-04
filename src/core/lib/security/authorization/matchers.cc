@@ -203,8 +203,7 @@ bool AuthenticatedAuthorizationMatcher::Matches(
       }
     }
   }
-  // TODO(ashithasantosh): Check Subject field from certificate.
-  return false;
+  return matcher_.Match(args.GetSubject());
 }
 
 bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {

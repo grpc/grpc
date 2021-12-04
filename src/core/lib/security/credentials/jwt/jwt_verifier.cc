@@ -134,7 +134,7 @@ static void jose_header_destroy(jose_header* h) {
 static jose_header* jose_header_from_json(Json json) {
   const char* alg_value;
   Json::Object::const_iterator it;
-  jose_header* h = static_cast<jose_header*>(gpr_zalloc(sizeof(jose_header)));
+  jose_header* h = grpc_core::Zalloc<jose_header>();
   if (json.type() != Json::Type::OBJECT) {
     gpr_log(GPR_ERROR, "JSON value is not an object");
     goto error;
@@ -238,8 +238,7 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims* claims) {
 }
 
 grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
-  grpc_jwt_claims* claims =
-      static_cast<grpc_jwt_claims*>(gpr_zalloc(sizeof(grpc_jwt_claims)));
+  grpc_jwt_claims* claims = grpc_core::Zalloc<grpc_jwt_claims>();
   claims->json.Init(std::move(json));
   claims->iat = gpr_inf_past(GPR_CLOCK_REALTIME);
   claims->nbf = gpr_inf_past(GPR_CLOCK_REALTIME);
@@ -356,8 +355,7 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
     grpc_jwt_verification_done_cb cb) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  verifier_cb_ctx* ctx =
-      static_cast<verifier_cb_ctx*>(gpr_zalloc(sizeof(verifier_cb_ctx)));
+  verifier_cb_ctx* ctx = new verifier_cb_ctx();
   ctx->verifier = verifier;
   ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
   ctx->header = header;
@@ -367,7 +365,6 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
   ctx->signed_data = grpc_slice_from_copied_buffer(signed_jwt, signed_jwt_len);
   ctx->user_data = user_data;
   ctx->user_cb = cb;
-
   return ctx;
 }
 
@@ -381,7 +378,7 @@ void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
     grpc_http_response_destroy(&ctx->responses[i]);
   }
   /* TODO: see what to do with claims... */
-  gpr_free(ctx);
+  delete ctx;
 }
 
 /* --- grpc_jwt_verifier object. --- */
@@ -674,7 +671,6 @@ static void on_openid_config_retrieved(void* user_data,
   Json json = json_from_http(response);
   grpc_httpcli_request req;
   const char* jwks_uri;
-  grpc_resource_quota* resource_quota = nullptr;
   const Json* cur;
 
   /* TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time. */
@@ -703,9 +699,9 @@ static void on_openid_config_retrieved(void* user_data,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  resource_quota = grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
+      &ctx->verifier->http_ctx, &ctx->pollent,
+      grpc_core::ResourceQuota::Default(), &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
@@ -768,7 +764,6 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   char* path_prefix = nullptr;
   const char* iss;
   grpc_httpcli_request req;
-  grpc_resource_quota* resource_quota = nullptr;
   memset(&req, 0, sizeof(grpc_httpcli_request));
   req.handshaker = &grpc_httpcli_ssl;
   http_response_index rsp_idx;
@@ -828,9 +823,9 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  resource_quota = grpc_resource_quota_create("jwt_verifier");
   grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
+      &ctx->verifier->http_ctx, &ctx->pollent,
+      grpc_core::ResourceQuota::Default(), &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
   gpr_free(req.host);
@@ -890,8 +885,7 @@ error:
 grpc_jwt_verifier* grpc_jwt_verifier_create(
     const grpc_jwt_verifier_email_domain_key_url_mapping* mappings,
     size_t num_mappings) {
-  grpc_jwt_verifier* v =
-      static_cast<grpc_jwt_verifier*>(gpr_zalloc(sizeof(grpc_jwt_verifier)));
+  grpc_jwt_verifier* v = grpc_core::Zalloc<grpc_jwt_verifier>();
   grpc_httpcli_context_init(&v->http_ctx);
 
   /* We know at least of one mapping. */

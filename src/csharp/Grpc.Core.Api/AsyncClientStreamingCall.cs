@@ -111,12 +111,25 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Allows awaiting this object directly.
+        /// Gets an awaiter used to await this <see cref="AsyncClientStreamingCall{TRequest,TResponse}"/>.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An awaiter instance.</returns>
+        /// <remarks>This method is intended for compiler use rather than use directly in code.</remarks>
         public TaskAwaiter<TResponse> GetAwaiter()
         {
             return responseAsync.GetAwaiter();
+        }
+
+        /// <summary>
+        /// Configures an awaiter used to await this <see cref="AsyncClientStreamingCall{TRequest,TResponse}"/>.
+        /// </summary>
+        /// <param name="continueOnCapturedContext">
+        /// true to attempt to marshal the continuation back to the original context captured; otherwise, false.
+        /// </param>
+        /// <returns>An object used to await this task.</returns>
+        public ConfiguredTaskAwaitable<TResponse> ConfigureAwait(bool continueOnCapturedContext)
+        {
+            return responseAsync.ConfigureAwait(continueOnCapturedContext);
         }
 
         /// <summary>

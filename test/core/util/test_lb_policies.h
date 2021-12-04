@@ -36,7 +36,8 @@ void RegisterTestPickArgsLoadBalancingPolicy(
     TestPickArgsCallback cb, const char* delegate_policy_name = "pick_first");
 
 struct TrailingMetadataArgsSeen {
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data;
+  const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+      backend_metric_data;
   MetadataVector metadata;
 };
 
@@ -53,6 +54,10 @@ using AddressTestCallback = std::function<void(const ServerAddress&)>;
 // Registers an LB policy called "address_test_lb" that invokes cb for each
 // address used to create a subchannel.
 void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb);
+
+// Registers an LB policy called "fixed_address_lb" that provides a
+// single subchannel whose address is in its configuration.
+void RegisterFixedAddressLoadBalancingPolicy();
 
 }  // namespace grpc_core
 

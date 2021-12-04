@@ -116,23 +116,6 @@ proto_files=( \
   "envoy/type/v3/percent.proto" \
   "envoy/type/v3/range.proto" \
   "envoy/type/v3/semantic_version.proto" \
-  "google/api/annotations.proto" \
-  "google/api/expr/v1alpha1/checked.proto" \
-  "google/api/expr/v1alpha1/syntax.proto" \
-  "google/api/http.proto" \
-  "google/protobuf/any.proto" \
-  "google/protobuf/descriptor.proto" \
-  "google/protobuf/duration.proto" \
-  "google/protobuf/empty.proto" \
-  "google/protobuf/struct.proto" \
-  "google/protobuf/timestamp.proto" \
-  "google/protobuf/wrappers.proto" \
-  "google/rpc/status.proto" \
-  "src/proto/grpc/gcp/altscontext.proto" \
-  "src/proto/grpc/gcp/handshaker.proto" \
-  "src/proto/grpc/gcp/transport_security_common.proto" \
-  "src/proto/grpc/health/v1/health.proto" \
-  "src/proto/grpc/lb/v1/load_balancer.proto" \
   "third_party/istio/security/proto/providers/google/meshca.proto" \
   "udpa/annotations/migrate.proto" \
   "udpa/annotations/security.proto" \
@@ -174,3 +157,9 @@ do
     --upb_out=$UPBDEFS_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPBDEFS_PLUGIN
 done
+
+# generate upb files from bazel rules
+python3 tools/codegen/core/gen_upb_api_from_bazel_xml.py \
+  --upb_out=$UPB_OUTPUT_DIR \
+  --upbdefs_out=$UPBDEFS_OUTPUT_DIR \
+  --verbose

@@ -29,6 +29,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/memory.h"
+
 /* Use little endian to interpret a string of bytes as uint32_t. */
 static uint32_t load_32_le(const unsigned char* buffer) {
   return (static_cast<uint32_t>(buffer[3]) << 24) |
@@ -47,9 +49,7 @@ static void store_32_le(uint32_t value, unsigned char* buffer) {
 
 /* Frame writer implementation. */
 alts_frame_writer* alts_create_frame_writer() {
-  alts_frame_writer* writer =
-      static_cast<alts_frame_writer*>(gpr_zalloc(sizeof(*writer)));
-  return writer;
+  return grpc_core::Zalloc<alts_frame_writer>();
 }
 
 bool alts_reset_frame_writer(alts_frame_writer* writer,
@@ -120,8 +120,7 @@ void alts_destroy_frame_writer(alts_frame_writer* writer) { gpr_free(writer); }
 
 /* Frame reader implementation. */
 alts_frame_reader* alts_create_frame_reader() {
-  alts_frame_reader* reader =
-      static_cast<alts_frame_reader*>(gpr_zalloc(sizeof(*reader)));
+  alts_frame_reader* reader = grpc_core::Zalloc<alts_frame_reader>();
   return reader;
 }
 

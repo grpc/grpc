@@ -41,34 +41,52 @@ void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
   GRPC_MDELEM_UNREF(old_mdelem);
 }
 
-void grpc_metadata_batch_copy(grpc_metadata_batch* src,
-                              grpc_metadata_batch* dst,
-                              grpc_linked_mdelem* storage) {
-  dst->Clear();
-  // TODO(ctiller): this should be templated and automatically derived.
-  if (auto* p = src->get_pointer(grpc_core::GrpcTimeoutMetadata())) {
-    dst->Set(grpc_core::GrpcTimeoutMetadata(), *p);
-  }
-  size_t i = 0;
-  src->ForEach([&](grpc_mdelem md) {
+namespace {
+
+class CopySink {
+ public:
+  explicit CopySink(grpc_metadata_batch* dst) : dst_(dst) {}
+
+  void Encode(grpc_mdelem md) {
     // If the mdelem is not external, take a ref.
     // Otherwise, create a new copy, holding its own refs to the
     // underlying slices.
     if (GRPC_MDELEM_STORAGE(md) != GRPC_MDELEM_STORAGE_EXTERNAL) {
       md = GRPC_MDELEM_REF(md);
     } else {
-      md = grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                   grpc_slice_ref_internal(GRPC_MDVALUE(md)));
+      md = grpc_mdelem_from_slices(grpc_slice_copy(GRPC_MDKEY(md)),
+                                   grpc_slice_copy(GRPC_MDVALUE(md)));
     }
     // Error unused in non-debug builds.
-    grpc_error_handle GRPC_UNUSED error =
-        grpc_metadata_batch_add_tail(dst, &storage[i++], md);
-    // The only way that grpc_metadata_batch_add_tail() can fail is if
+    grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
+    // The only way that Append() can fail is if
     // there's a duplicate entry for a callout.  However, that can't be
     // the case here, because we would not have been allowed to create
     // a source batch that had that kind of conflict.
     GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
-  });
+  }
+
+  template <class T, class V>
+  void Encode(T trait, V value) {
+    dst_->Set(trait, value);
+  }
+
+  template <class T>
+  void Encode(T trait, const grpc_core::Slice& value) {
+    dst_->Set(trait, std::move(value.AsOwned()));
+  }
+
+ private:
+  grpc_metadata_batch* dst_;
+};
+
+}  // namespace
+
+void grpc_metadata_batch_copy(const grpc_metadata_batch* src,
+                              grpc_metadata_batch* dst) {
+  dst->Clear();
+  CopySink sink(dst);
+  src->Encode(&sink);
 }
 
 grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,

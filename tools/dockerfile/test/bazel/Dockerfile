@@ -41,16 +41,16 @@ RUN apt-get update && apt-get -y install \
 # Python dependencies
 
 # Install dependencies
+# TODO(jtattermusch): This installs python3.5. Is it even needed
+# when we install python3.6 in the next step?
 RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
+    python3-all-dev
 
 #=================
 # Compile CPython 3.6.9 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
@@ -66,6 +66,12 @@ RUN cd /tmp && \
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
 
+
+# Python2's python.h still needs to be present in order for the bazel build
+# to work.
+# TODO(jtattermusch): remove once https://github.com/grpc/grpc/issues/28026
+# is fixed.
+RUN apt-get update && apt-get install -y python-all-dev python-setuptools
 
 #========================
 # Bazel installation

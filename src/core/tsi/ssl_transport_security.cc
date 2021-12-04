@@ -323,6 +323,30 @@ static tsi_result peer_property_from_x509_common_name(
   return result;
 }
 
+/* Gets the subject of an X509 cert as a tsi_peer_property. */
+static tsi_result peer_property_from_x509_subject(X509* cert,
+                                                  tsi_peer_property* property) {
+  X509_NAME* subject_name = X509_get_subject_name(cert);
+  if (subject_name == nullptr) {
+    gpr_log(GPR_INFO, "Could not get subject name from certificate.");
+    return TSI_NOT_FOUND;
+  }
+  BIO* bio = BIO_new(BIO_s_mem());
+  X509_NAME_print_ex(bio, subject_name, 0, XN_FLAG_RFC2253);
+  char* contents;
+  long len = BIO_get_mem_data(bio, &contents);
+  if (len < 0) {
+    gpr_log(GPR_ERROR, "Could not get subject entry from certificate.");
+    BIO_free(bio);
+    return TSI_INTERNAL_ERROR;
+  }
+  tsi_result result = tsi_construct_string_peer_property(
+      TSI_X509_SUBJECT_PEER_PROPERTY, contents, static_cast<size_t>(len),
+      property);
+  BIO_free(bio);
+  return result;
+}
+
 /* Gets the X509 cert in PEM format as a tsi_peer_property. */
 static tsi_result add_pem_certificate(X509* cert, tsi_peer_property* property) {
   BIO* bio = BIO_new(BIO_s_mem());
@@ -439,7 +463,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   tsi_result result;
   GPR_ASSERT(subject_alt_name_count >= 0);
   property_count = (include_certificate_type ? static_cast<size_t>(1) : 0) +
-                   2 /* common name, certificate */ +
+                   3 /* subject, common name, certificate */ +
                    static_cast<size_t>(subject_alt_name_count);
   for (int i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
@@ -465,6 +489,11 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
           &peer->properties[current_insert_index++]);
       if (result != TSI_OK) break;
     }
+
+    result = peer_property_from_x509_subject(
+        cert, &peer->properties[current_insert_index++]);
+    if (result != TSI_OK) break;
+
     result = peer_property_from_x509_common_name(
         cert, &peer->properties[current_insert_index++]);
     if (result != TSI_OK) break;
@@ -1390,7 +1419,7 @@ static tsi_result ssl_handshaker_result_create(
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker_result* result =
-      static_cast<tsi_ssl_handshaker_result*>(gpr_zalloc(sizeof(*result)));
+      grpc_core::Zalloc<tsi_ssl_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
   /* Transfer ownership of ssl and network_io to the handshaker result. */
   result->ssl = handshaker->ssl;
@@ -1669,7 +1698,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     SSL_set_accept_state(ssl);
   }
 
-  impl = static_cast<tsi_ssl_handshaker*>(gpr_zalloc(sizeof(*impl)));
+  impl = grpc_core::Zalloc<tsi_ssl_handshaker>();
   impl->ssl = ssl;
   impl->network_io = network_io;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;

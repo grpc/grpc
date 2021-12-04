@@ -8,17 +8,12 @@
 
 #include "upb/def.h"
 #include "envoy/type/matcher/v3/node.upbdefs.h"
+#include "envoy/type/matcher/v3/node.upb.h"
 
 extern upb_def_init envoy_type_matcher_v3_string_proto_upbdefinit;
 extern upb_def_init envoy_type_matcher_v3_struct_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_type_matcher_v3_NodeMatcher_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_type_matcher_v3_NodeMatcher_msginit,
-};
-
 static const char descriptor[458] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'n', 
 'o', 'd', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 
 'c', 'h', 'e', 'r', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 
@@ -50,7 +45,7 @@ static upb_def_init *deps[5] = {
 
 upb_def_init envoy_type_matcher_v3_node_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_type_matcher_v3_node_proto_upb_file_layout,
   "envoy/type/matcher/v3/node.proto",
   UPB_STRVIEW_INIT(descriptor, 458)
 };

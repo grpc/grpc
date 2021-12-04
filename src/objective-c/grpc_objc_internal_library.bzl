@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#
-# This is for the gRPC build system. This isn't intended to be used outsite of
-# the BUILD file for gRPC. It contains the mapping for the template system we
-# use to generate other platform's build system files.
-#
-# Please consider that there should be a high bar for additions and changes to
-# this file.
-# Each rule listed must be re-written for Google's internal build system, and
-# each change must be ported from one to the other.
-#
+"""
+This is for the gRPC build system. This isn't intended to be used outsite of
+the BUILD file for gRPC. It contains the mapping for the template system we
+use to generate other platform's build system files.
+
+Please consider that there should be a high bar for additions and changes to
+this file.
+Each rule listed must be re-written for Google's internal build system, and
+each change must be ported from one to the other.
+"""
 
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
@@ -37,8 +37,13 @@ def proto_library_objc_wrapper(
         srcs,
         deps = [],
         use_well_known_protos = False):
-    """proto_library for adding dependencies to google/protobuf protos
-    use_well_known_protos - ignored in open source version
+    """proto_library for adding dependencies to google/protobuf protos.
+
+    Args:
+      name: The name of the target.
+      srcs: The sources to include.
+      deps: The dependencies of the target.
+      use_well_known_protos: ignored in open source version.
     """
     proto_library(
         name = name,
@@ -109,7 +114,7 @@ def grpc_objc_testing_library(
     ]
 
     if not name == "TestConfigs":
-        additional_deps += [":TestConfigs"]
+        additional_deps.append(":TestConfigs")
 
     native.objc_library(
         name = name,
@@ -123,7 +128,17 @@ def grpc_objc_testing_library(
     )
 
 def local_objc_grpc_library(name, deps, testing = True, srcs = [], use_well_known_protos = False, **kwargs):
-    """!!For local targets within the gRPC repository only!! Will not work outside of the repo
+    """objc_library for use within the repo.
+
+    For local targets within the gRPC repository only. Will not work outside of the repo.
+
+    Args:
+      name: The name of the library.
+      deps: The library dependencies.
+      testing: Whether or not to include testing dependencies.
+      srcs: The source files for the rule.
+      use_well_known_protos: Whether or not to include well known protos.
+      **kwargs: Other arguments to apply to the library.
     """
     objc_grpc_library_name = "_" + name + "_objc_grpc_library"
 
@@ -155,9 +170,9 @@ def local_objc_grpc_library(name, deps, testing = True, srcs = [], use_well_know
 
     library_deps = ["@com_google_protobuf//:protobuf_objc"]
     if testing:
-        library_deps += ["//src/objective-c:grpc_objc_client_internal_testing"]
+        library_deps.append("//src/objective-c:grpc_objc_client_internal_testing")
     else:
-        library_deps += ["//src/objective-c:proto_objc_rpc"]
+        library_deps.append("//src/objective-c:proto_objc_rpc")
 
     native.objc_library(
         name = name,

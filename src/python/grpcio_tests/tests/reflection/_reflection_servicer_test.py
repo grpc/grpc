@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests of grpc_reflection.v1alpha.reflection."""
 
+import sys
 import unittest
 
 from google.protobuf import descriptor_pb2
@@ -46,6 +47,8 @@ def _file_descriptor_to_proto(descriptor):
     return proto.SerializeToString()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class ReflectionServicerTest(unittest.TestCase):
 
     # TODO(https://github.com/grpc/grpc/issues/17844)

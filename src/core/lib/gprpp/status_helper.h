@@ -160,22 +160,6 @@ google_rpc_Status* StatusToProto(const absl::Status& status,
 /// This is for internal implementation & test only
 absl::Status StatusFromProto(google_rpc_Status* msg) GRPC_MUST_USE_RESULT;
 
-/// The same value of grpc_core::internal::StatusAllocPtr(absl::OkStatus())
-static constexpr uintptr_t kOkStatusPtr = 0;
-
-/// Returns ptr where the given status is copied into.
-/// This ptr can be used to get Status later and should be freed by
-/// StatusFreePtr. This shouldn't be used except migration purpose.
-uintptr_t StatusAllocPtr(absl::Status s);
-
-/// Frees the allocated status at ptr.
-/// This shouldn't be used except migration purpose.
-void StatusFreePtr(uintptr_t ptr);
-
-/// Get the status from ptr.
-/// This shouldn't be used except migration purpose.
-absl::Status StatusGetFromPtr(uintptr_t ptr);
-
 /// Returns ptr that is allocated in the heap memory and the given status is
 /// copied into. This ptr can be used to get Status later and should be
 /// freed by StatusFreeHeapPtr. This can be 0 in case of OkStatus.
@@ -186,6 +170,9 @@ void StatusFreeHeapPtr(uintptr_t ptr);
 
 /// Get the status from a heap ptr.
 absl::Status StatusGetFromHeapPtr(uintptr_t ptr);
+
+/// Move the status from a heap ptr. (GetFrom & FreeHeap)
+absl::Status StatusMoveFromHeapPtr(uintptr_t ptr);
 
 }  // namespace internal
 

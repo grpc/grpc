@@ -29,8 +29,8 @@
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
+#include <grpcpp/security/binder_security_policy.h>
 
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -146,18 +146,36 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
   return absl::StrContains(grpc_error_std_string(arg), msg);
 }
 
+namespace {
+class MetadataEncoder {
+ public:
+  void Encode(grpc_mdelem elem) {
+    metadata_.emplace_back(
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDKEY(elem))),
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem))));
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    metadata_.emplace_back(
+        std::string(Which::key()),
+        std::string(grpc_core::Slice(Which::Encode(value)).as_string_view()));
+  }
+
+  const Metadata& metadata() const { return metadata_; }
+
+ private:
+  Metadata metadata_;
+};
+}  // namespace
+
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
 void VerifyMetadataEqual(const Metadata& md,
                          const grpc_metadata_batch& grpc_md) {
-  size_t i = 0;
-  grpc_md.ForEach([&](grpc_mdelem mdelm) {
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(mdelm)), md[i].first);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(mdelm)),
-              md[i].second);
-    i++;
-  });
-  EXPECT_EQ(md.size(), i);
+  MetadataEncoder encoder;
+  grpc_md.Encode(&encoder);
+  EXPECT_EQ(encoder.metadata(), md);
 }
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.
@@ -522,7 +540,7 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -586,7 +604,7 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
                       recv_trailing_metadata.grpc_trailing_metadata);
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));
@@ -663,7 +681,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
 
   EXPECT_TRUE(recv_message.grpc_message->Next(SIZE_MAX, nullptr));
   grpc_slice slice;
-  recv_message.grpc_message->Pull(&slice);
+  EXPECT_EQ(recv_message.grpc_message->Pull(&slice), GRPC_ERROR_NONE);
   EXPECT_EQ(kRecvMessage,
             std::string(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
                         GRPC_SLICE_LENGTH(slice)));

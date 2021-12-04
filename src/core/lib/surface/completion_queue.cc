@@ -58,8 +58,8 @@ namespace {
 // with a cq cache will go into that cache, and
 // will only be returned on the thread that initialized the cache.
 // NOTE: Only one event will ever be cached.
-static GPR_THREAD_LOCAL(grpc_cq_completion*) g_cached_event;
-static GPR_THREAD_LOCAL(grpc_completion_queue*) g_cached_cq;
+GPR_THREAD_LOCAL(grpc_cq_completion*) g_cached_event;
+GPR_THREAD_LOCAL(grpc_completion_queue*) g_cached_cq;
 
 struct plucker {
   grpc_pollset_worker** worker;
@@ -1067,7 +1067,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   if (cqd->queue.num_items() > 0 &&
       cqd->pending_events.load(std::memory_order_acquire) > 0) {
     gpr_mu_lock(cq->mu);
-    cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
+    (void)cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
     gpr_mu_unlock(cq->mu);
   }
 

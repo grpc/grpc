@@ -71,36 +71,37 @@ class CdsLb : public LoadBalancingPolicy {
     ClusterWatcher(RefCountedPtr<CdsLb> parent, std::string name)
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
-    void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override {
-      new Notifier(parent_, name_, std::move(cluster_data));
+    void OnClusterChanged(XdsClusterResource cluster_data) override {
+      Ref().release();  // Ref held by lambda
+      parent_->work_serializer()->Run(
+          // TODO(roth): When we move to C++14, capture cluster_data with
+          // std::move().
+          [this, cluster_data]() mutable {
+            parent_->OnClusterChanged(name_, std::move(cluster_data));
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
     void OnError(grpc_error_handle error) override {
-      new Notifier(parent_, name_, error);
+      Ref().release();  // Ref held by lambda
+      parent_->work_serializer()->Run(
+          [this, error]() {
+            parent_->OnError(name_, error);
+            Unref();
+          },
+          DEBUG_LOCATION);
     }
-    void OnResourceDoesNotExist() override { new Notifier(parent_, name_); }
+    void OnResourceDoesNotExist() override {
+      Ref().release();  // Ref held by lambda
+      parent_->work_serializer()->Run(
+          [this]() {
+            parent_->OnResourceDoesNotExist(name_);
+            Unref();
+          },
+          DEBUG_LOCATION);
+    }
 
    private:
-    class Notifier {
-     public:
-      Notifier(RefCountedPtr<CdsLb> parent, std::string name,
-               XdsApi::CdsUpdate update);
-      Notifier(RefCountedPtr<CdsLb> parent, std::string name,
-               grpc_error_handle error);
-      explicit Notifier(RefCountedPtr<CdsLb> parent, std::string name);
-
-     private:
-      enum Type { kUpdate, kError, kDoesNotExist };
-
-      static void RunInExecCtx(void* arg, grpc_error_handle error);
-      void RunInWorkSerializer(grpc_error_handle error);
-
-      RefCountedPtr<CdsLb> parent_;
-      std::string name_;
-      grpc_closure closure_;
-      XdsApi::CdsUpdate update_;
-      Type type_;
-    };
-
     RefCountedPtr<CdsLb> parent_;
     std::string name_;
   };
@@ -110,7 +111,7 @@ class CdsLb : public LoadBalancingPolicy {
     // Not owned, so do not dereference.
     ClusterWatcher* watcher = nullptr;
     // Most recent update obtained from this watcher.
-    absl::optional<XdsApi::CdsUpdate> update;
+    absl::optional<XdsClusterResource> update;
   };
 
   // Delegating helper to be passed to child policy.
@@ -138,12 +139,12 @@ class CdsLb : public LoadBalancingPolicy {
       const std::string& name, Json::Array* discovery_mechanisms,
       std::set<std::string>* clusters_needed);
   void OnClusterChanged(const std::string& name,
-                        XdsApi::CdsUpdate cluster_data);
+                        XdsClusterResource cluster_data);
   void OnError(const std::string& name, grpc_error_handle error);
   void OnResourceDoesNotExist(const std::string& name);
 
   grpc_error_handle UpdateXdsCertificateProvider(
-      const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data);
+      const std::string& cluster_name, const XdsClusterResource& cluster_data);
 
   void CancelClusterDataWatch(absl::string_view cluster_name,
                               XdsClient::ClusterWatcherInterface* watcher,
@@ -173,60 +174,6 @@ class CdsLb : public LoadBalancingPolicy {
   // Internal state.
   bool shutting_down_ = false;
 };
-
-//
-// CdsLb::ClusterWatcher::Notifier
-//
-
-CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
-                                          std::string name,
-                                          XdsApi::CdsUpdate update)
-    : parent_(std::move(parent)),
-      name_(std::move(name)),
-      update_(std::move(update)),
-      type_(kUpdate) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
-                                          std::string name,
-                                          grpc_error_handle error)
-    : parent_(std::move(parent)), name_(std::move(name)), type_(kError) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
-}
-
-CdsLb::ClusterWatcher::Notifier::Notifier(RefCountedPtr<CdsLb> parent,
-                                          std::string name)
-    : parent_(std::move(parent)), name_(std::move(name)), type_(kDoesNotExist) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-void CdsLb::ClusterWatcher::Notifier::RunInExecCtx(void* arg,
-                                                   grpc_error_handle error) {
-  Notifier* self = static_cast<Notifier*>(arg);
-  GRPC_ERROR_REF(error);
-  self->parent_->work_serializer()->Run(
-      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
-}
-
-void CdsLb::ClusterWatcher::Notifier::RunInWorkSerializer(
-    grpc_error_handle error) {
-  switch (type_) {
-    case kUpdate:
-      parent_->OnClusterChanged(name_, std::move(update_));
-      break;
-    case kError:
-      parent_->OnError(name_, error);
-      break;
-    case kDoesNotExist:
-      parent_->OnResourceDoesNotExist(name_);
-      break;
-  };
-  delete this;
-}
 
 //
 // CdsLb::Helper
@@ -352,7 +299,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
       }
       watchers_.clear();
     }
-    auto watcher = absl::make_unique<ClusterWatcher>(Ref(), config_->cluster());
+    auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), config_->cluster());
     watchers_[config_->cluster()].watcher = watcher.get();
     xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
   }
@@ -373,7 +320,7 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
   auto& state = watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
-    auto watcher = absl::make_unique<ClusterWatcher>(Ref(), name);
+    auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), name);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO, "[cdslb %p] starting watch for cluster %s", this,
               name.c_str());
@@ -385,7 +332,8 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
   // Don't have the update we need yet.
   if (!state.update.has_value()) return false;
   // For AGGREGATE clusters, recursively expand to child clusters.
-  if (state.update->cluster_type == XdsApi::CdsUpdate::ClusterType::AGGREGATE) {
+  if (state.update->cluster_type ==
+      XdsClusterResource::ClusterType::AGGREGATE) {
     bool missing_cluster = false;
     for (const std::string& child_name :
          state.update->prioritized_cluster_names) {
@@ -401,13 +349,13 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
       {"max_concurrent_requests", state.update->max_concurrent_requests},
   };
   switch (state.update->cluster_type) {
-    case XdsApi::CdsUpdate::ClusterType::EDS:
+    case XdsClusterResource::ClusterType::EDS:
       mechanism["type"] = "EDS";
       if (!state.update->eds_service_name.empty()) {
         mechanism["edsServiceName"] = state.update->eds_service_name;
       }
       break;
-    case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+    case XdsClusterResource::ClusterType::LOGICAL_DNS:
       mechanism["type"] = "LOGICAL_DNS";
       mechanism["dnsHostname"] = state.update->dns_hostname;
       break;
@@ -424,7 +372,7 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
 }
 
 void CdsLb::OnClusterChanged(const std::string& name,
-                             XdsApi::CdsUpdate cluster_data) {
+                             XdsClusterResource cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(
         GPR_INFO,
@@ -562,7 +510,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
 }
 
 grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
-    const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data) {
+    const std::string& cluster_name, const XdsClusterResource& cluster_data) {
   // Early out if channel is not configured to use xds security.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args_);

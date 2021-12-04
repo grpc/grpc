@@ -294,6 +294,8 @@ UPB_INLINE void envoy_extensions_filters_http_fault_v3_HTTPFault_set_disable_dow
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
+extern const upb_msglayout_file envoy_extensions_filters_http_fault_v3_fault_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

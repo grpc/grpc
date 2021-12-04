@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -26,4 +29,11 @@ set -e  # rvm commands are very verbose
 rvm --default use ruby-2.4.1
 set -ex
 
-tools/run_tests/task_runner.py -f artifact linux -j 6
+tools/run_tests/task_runner.py -f artifact linux -j 12 || FAILED="true"
+
+tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

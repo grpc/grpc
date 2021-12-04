@@ -175,41 +175,58 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       ~EndpointWatcher() override {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
-      void OnEndpointChanged(XdsApi::EdsUpdate update) override {
-        new Notifier(discovery_mechanism_, std::move(update));
+      void OnEndpointChanged(XdsEndpointResource update) override {
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            // TODO(yashykt): When we move to C++14, capture update with
+            // std::move
+            [this, update]() mutable {
+              OnEndpointChangedHelper(std::move(update));
+              Unref();
+            },
+            DEBUG_LOCATION);
       }
       void OnError(grpc_error_handle error) override {
-        new Notifier(discovery_mechanism_, error);
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            [this, error]() {
+              OnErrorHelper(error);
+              Unref();
+            },
+            DEBUG_LOCATION);
       }
       void OnResourceDoesNotExist() override {
-        new Notifier(discovery_mechanism_);
+        Ref().release();  // ref held by callback
+        discovery_mechanism_->parent()->work_serializer()->Run(
+            [this]() {
+              OnResourceDoesNotExistHelper();
+              Unref();
+            },
+            DEBUG_LOCATION);
       }
 
      private:
-      class Notifier {
-       public:
-        Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
-                 XdsApi::EdsUpdate update);
-        Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
-                 grpc_error_handle error);
-        explicit Notifier(
-            RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism);
-        ~Notifier() { discovery_mechanism_.reset(DEBUG_LOCATION, "Notifier"); }
-
-       private:
-        enum Type { kUpdate, kError, kDoesNotExist };
-
-        static void RunInExecCtx(void* arg, grpc_error_handle error);
-        void RunInWorkSerializer(grpc_error_handle error);
-
-        RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
-        grpc_closure closure_;
-        XdsApi::EdsUpdate update_;
-        Type type_;
-      };
-
+      // Code accessing protected methods of `DiscoveryMechanism` need to be
+      // in methods of this class rather than in lambdas to work around an MSVC
+      // bug.
+      void OnEndpointChangedHelper(XdsEndpointResource update) {
+        discovery_mechanism_->parent()->OnEndpointChanged(
+            discovery_mechanism_->index(), std::move(update));
+      }
+      void OnErrorHelper(grpc_error_handle error) {
+        discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
+                                                error);
+      }
+      void OnResourceDoesNotExistHelper() {
+        discovery_mechanism_->parent()->OnResourceDoesNotExist(
+            discovery_mechanism_->index());
+      }
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
+
+    // This is necessary only because of a bug in msvc where nested class
+    // cannot access protected member in base class.
+    friend class EndpointWatcher;
 
     absl::string_view GetEdsResourceName() const {
       if (!parent()->is_xds_uri_) return parent()->server_name_;
@@ -275,10 +292,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // (The sum of this across all discovery mechanisms should always equal
     // the number of priorities in priority_list_.)
     uint32_t num_priorities = 0;
-    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config;
+    RefCountedPtr<XdsEndpointResource::DropConfig> drop_config;
     // Populated only when an update has been delivered by the mechanism
     // but has not yet been applied to the LB policy's combined priority_list_.
-    absl::optional<XdsApi::EdsUpdate::PriorityList> pending_priority_list;
+    absl::optional<XdsEndpointResource::PriorityList> pending_priority_list;
   };
 
   class Helper : public ChannelControlHelper {
@@ -311,13 +328,13 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void OnEndpointChanged(size_t index, XdsApi::EdsUpdate update);
+  void OnEndpointChanged(size_t index, XdsEndpointResource update);
   void OnError(size_t index, grpc_error_handle error);
   void OnResourceDoesNotExist(size_t index);
 
   void MaybeDestroyChildPolicyLocked();
 
-  void UpdatePriorityList(XdsApi::EdsUpdate::PriorityList priority_list);
+  void UpdatePriorityList(XdsEndpointResource::PriorityList priority_list);
   void UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const grpc_channel_args* args);
@@ -344,7 +361,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   std::vector<DiscoveryMechanismEntry> discovery_mechanisms_;
 
   // The latest data from the endpoint watcher.
-  XdsApi::EdsUpdate::PriorityList priority_list_;
+  XdsEndpointResource::PriorityList priority_list_;
   // State used to retain child policy names for priority policy.
   std::vector<size_t /*child_number*/> priority_child_numbers_;
 
@@ -403,7 +420,7 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
             ":%p starting xds watch for %s",
             parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  auto watcher = absl::make_unique<EndpointWatcher>(
+  auto watcher = MakeRefCounted<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
   parent()->xds_client_->WatchEndpointData(GetEdsResourceName(),
@@ -420,66 +437,6 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
   parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
                                                  watcher_);
   Unref();
-}
-
-//
-// XdsClusterResolverLb::EndpointWatcher::Notifier
-//
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism,
-             XdsApi::EdsUpdate update)
-    : discovery_mechanism_(std::move(discovery_mechanism)),
-      update_(std::move(update)),
-      type_(kUpdate) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism,
-             grpc_error_handle error)
-    : discovery_mechanism_(std::move(discovery_mechanism)), type_(kError) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
-}
-
-XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
-                 discovery_mechanism)
-    : discovery_mechanism_(std::move(discovery_mechanism)),
-      type_(kDoesNotExist) {
-  GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-}
-
-void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInExecCtx(void* arg, grpc_error_handle error) {
-  Notifier* self = static_cast<Notifier*>(arg);
-  GRPC_ERROR_REF(error);
-  self->discovery_mechanism_->parent()->work_serializer()->Run(
-      [self, error]() { self->RunInWorkSerializer(error); }, DEBUG_LOCATION);
-}
-
-void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInWorkSerializer(grpc_error_handle error) {
-  switch (type_) {
-    case kUpdate:
-      discovery_mechanism_->parent()->OnEndpointChanged(
-          discovery_mechanism_->index(), std::move(update_));
-      break;
-    case kError:
-      discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
-                                              error);
-      break;
-    case kDoesNotExist:
-      discovery_mechanism_->parent()->OnResourceDoesNotExist(
-          discovery_mechanism_->index());
-      break;
-  };
-  delete this;
 }
 
 //
@@ -541,12 +498,12 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     ReturnResult(Resolver::Result result) {
   // convert result to eds update
-  XdsApi::EdsUpdate update;
-  XdsApi::EdsUpdate::Priority::Locality locality;
+  XdsEndpointResource update;
+  XdsEndpointResource::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
   locality.endpoints = std::move(result.addresses);
-  XdsApi::EdsUpdate::Priority priority;
+  XdsEndpointResource::Priority priority;
   priority.localities.emplace(locality.name.get(), std::move(locality));
   update.priorities.emplace_back(std::move(priority));
   discovery_mechanism_->parent()->OnEndpointChanged(
@@ -638,14 +595,13 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
       DiscoveryMechanismEntry entry;
       if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
                              DiscoveryMechanismType::EDS) {
-        entry.discovery_mechanism =
-            grpc_core::MakeOrphanable<EdsDiscoveryMechanism>(
-                Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"),
-                discovery_mechanisms_.size());
+        entry.discovery_mechanism = MakeOrphanable<EdsDiscoveryMechanism>(
+            Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"),
+            discovery_mechanisms_.size());
       } else if (config.type == XdsClusterResolverLbConfig::DiscoveryMechanism::
                                     DiscoveryMechanismType::LOGICAL_DNS) {
         entry.discovery_mechanism =
-            grpc_core::MakeOrphanable<LogicalDNSDiscoveryMechanism>(
+            MakeOrphanable<LogicalDNSDiscoveryMechanism>(
                 Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism"),
                 discovery_mechanisms_.size());
       } else {
@@ -674,7 +630,7 @@ void XdsClusterResolverLb::ExitIdleLocked() {
 }
 
 void XdsClusterResolverLb::OnEndpointChanged(size_t index,
-                                             XdsApi::EdsUpdate update) {
+                                             XdsEndpointResource update) {
   if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
@@ -704,7 +660,7 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
     if (!mechanism.first_update_received) return;
   }
   // Construct new priority list.
-  XdsApi::EdsUpdate::PriorityList priority_list;
+  XdsEndpointResource::PriorityList priority_list;
   size_t priority_index = 0;
   for (DiscoveryMechanismEntry& mechanism : discovery_mechanisms_) {
     // If the mechanism has a pending update, use that.
@@ -738,7 +694,7 @@ void XdsClusterResolverLb::OnError(size_t index, grpc_error_handle error) {
   if (!discovery_mechanisms_[index].first_update_received) {
     // Call OnEndpointChanged with an empty update just like
     // OnResourceDoesNotExist.
-    OnEndpointChanged(index, XdsApi::EdsUpdate());
+    OnEndpointChanged(index, XdsEndpointResource());
   }
 }
 
@@ -749,7 +705,7 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index) {
           this, index);
   if (shutting_down_) return;
   // Call OnEndpointChanged with an empty update.
-  OnEndpointChanged(index, XdsApi::EdsUpdate());
+  OnEndpointChanged(index, XdsEndpointResource());
 }
 
 //
@@ -757,7 +713,7 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index) {
 //
 
 void XdsClusterResolverLb::UpdatePriorityList(
-    XdsApi::EdsUpdate::PriorityList priority_list) {
+    XdsEndpointResource::PriorityList priority_list) {
   // Build some maps from locality to child number and the reverse from
   // the old data in priority_list_ and priority_child_numbers_.
   std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>

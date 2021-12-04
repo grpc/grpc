@@ -57,6 +57,8 @@ UPB_INLINE void xds_core_v3_Authority_set_name(xds_core_v3_Authority *msg, upb_s
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
+extern const upb_msglayout_file xds_core_v3_authority_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2018 gRPC authors.
 #
@@ -23,7 +23,7 @@ subprocess.check_call(['./json_run_localhost_scenario_gen.py'])
 subprocess.check_call(['./qps_json_driver_scenario_gen.py'])
 subprocess.check_call(['buildifier', '-v', '-r', '.'])
 
-output = subprocess.check_output(['git', 'status', '--porcelain'])
+output = subprocess.check_output(['git', 'status', '--porcelain']).decode()
 qps_json_driver_bzl = 'test/cpp/qps/qps_json_driver_scenarios.bzl'
 json_run_localhost_bzl = 'test/cpp/qps/json_run_localhost_scenarios.bzl'
 

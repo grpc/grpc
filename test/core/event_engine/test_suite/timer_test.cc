@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <random>
 #include <thread>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
-#include "absl/random/random.h"
 #include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -146,11 +146,12 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   threads.reserve(thread_count);
   for (int thread_n = 0; thread_n < thread_count; ++thread_n) {
     threads.emplace_back([&]() {
-      absl::BitGen bitgen;
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::uniform_real_distribution<> dis(timeout_min_seconds,
+                                           timeout_max_seconds);
       for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
-        absl::Time when = absl::Now() + absl::Seconds(absl::Uniform(
-                                            bitgen, timeout_min_seconds,
-                                            timeout_max_seconds));
+        absl::Time when = absl::Now() + absl::Seconds(dis(gen));
         engine->RunAt(
             when, absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB, this,
                                    when, &call_count, &failed_call_count,

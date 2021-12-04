@@ -13,29 +13,41 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const xds_core_v3_ContextParams_submsgs[1] = {
-  &xds_core_v3_ContextParams_ParamsEntry_msginit,
+static const upb_msglayout_sub xds_core_v3_ContextParams_submsgs[1] = {
+  {.submsg = &xds_core_v3_ContextParams_ParamsEntry_msginit},
 };
 
 static const upb_msglayout_field xds_core_v3_ContextParams__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_MAP},
+  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_MAP | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout xds_core_v3_ContextParams_msginit = {
   &xds_core_v3_ContextParams_submsgs[0],
   &xds_core_v3_ContextParams__fields[0],
-  UPB_SIZE(8, 8), 1, false, 1, 255,
+  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
 };
 
 static const upb_msglayout_field xds_core_v3_ContextParams_ParamsEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout xds_core_v3_ContextParams_ParamsEntry_msginit = {
   NULL,
   &xds_core_v3_ContextParams_ParamsEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false, 2, 255,
+  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+};
+
+static const upb_msglayout *messages_layout[2] = {
+  &xds_core_v3_ContextParams_msginit,
+  &xds_core_v3_ContextParams_ParamsEntry_msginit,
+};
+
+const upb_msglayout_file xds_core_v3_context_params_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  2,
+  0,
 };
 
 #include "upb/port_undef.inc"
