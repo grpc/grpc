@@ -96,7 +96,7 @@ class XdsServerConfigFetcher::ListenerWatcher
                   grpc_server_xds_status_notifier serving_status_notifier,
                   std::string listening_address);
 
-  void OnListenerChanged(XdsListenerResource listener) override;
+  void OnResourceChanged(XdsListenerResource listener) override;
 
   void OnError(grpc_error_handle error) override;
 
@@ -227,7 +227,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       : resource_name_(std::move(resource_name)),
         filter_chain_match_manager_(std::move(filter_chain_match_manager)) {}
 
-  void OnRouteConfigChanged(XdsRouteConfigResource route_config) override {
+  void OnResourceChanged(XdsRouteConfigResource route_config) override {
     filter_chain_match_manager_->OnRouteConfigChanged(resource_name_,
                                                       std::move(route_config));
   }
@@ -389,7 +389,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       RefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent)
       : parent_(std::move(parent)) {}
 
-  void OnRouteConfigChanged(XdsRouteConfigResource route_config) override {
+  void OnResourceChanged(XdsRouteConfigResource route_config) override {
     parent_->OnRouteConfigChanged(std::move(route_config));
   }
 
@@ -461,7 +461,7 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
       serving_status_notifier_(serving_status_notifier),
       listening_address_(std::move(listening_address)) {}
 
-void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
+void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     XdsListenerResource listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_server_config_fetcher_trace)) {
     gpr_log(GPR_INFO,

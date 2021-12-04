@@ -72,7 +72,7 @@ class CdsLb : public LoadBalancingPolicy {
     ClusterWatcher(RefCountedPtr<CdsLb> parent, std::string name)
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
-    void OnClusterChanged(XdsClusterResource cluster_data) override {
+    void OnResourceChanged(XdsClusterResource cluster_data) override {
       Ref().release();  // Ref held by lambda
       parent_->work_serializer()->Run(
           // TODO(roth): When we move to C++14, capture cluster_data with
