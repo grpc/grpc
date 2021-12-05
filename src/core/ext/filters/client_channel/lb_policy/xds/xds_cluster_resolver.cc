@@ -138,6 +138,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // to use for LRS load reporting. Caller must ensure that config_ is set
     // before calling.
     std::pair<absl::string_view, absl::string_view> GetLrsClusterKey() const {
+      if (!parent_->is_xds_uri_)
+        return {parent_->server_name_, absl::string_view{}};
       return {
           parent_->config_->discovery_mechanisms()[index_].cluster_name,
           parent_->config_->discovery_mechanisms()[index_].eds_service_name};
