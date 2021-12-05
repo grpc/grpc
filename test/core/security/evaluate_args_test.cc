@@ -66,6 +66,16 @@ TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
   EXPECT_EQ(value.value(), "value123");
 }
 
+TEST_F(EvaluateArgsTest, GetHeaderValueAliasesHost) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      args.GetHeaderValue("host", &concatenated_value);
+  ASSERT_TRUE(value.has_value());
+  EXPECT_EQ(value.value(), "test.google.com");
+}
+
 TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
   util_.SetLocalEndpoint("ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
