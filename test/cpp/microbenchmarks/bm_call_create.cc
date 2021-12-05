@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -703,9 +704,13 @@ class IsolatedCallFixture : public TrackCounters {
     // the grpc_shutdown() run by grpc_channel_destroy().  So we need to
     // call grpc_init() manually here to balance things out.
     grpc_init();
+    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                        .channel_args_preconditioning()
+                                        .PreconditionChannelArgs(nullptr);
     grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
     grpc_channel_stack_builder_set_name(builder, "phony");
     grpc_channel_stack_builder_set_target(builder, "phony_target");
+    grpc_channel_stack_builder_set_channel_arguments(builder, args);
     GPR_ASSERT(grpc_channel_stack_builder_append_filter(
         builder, &isolated_call_filter::isolated_call_filter, nullptr,
         nullptr));
@@ -715,6 +720,7 @@ class IsolatedCallFixture : public TrackCounters {
                                                   nullptr);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel_args_destroy(args);
   }
 
   void Finish(benchmark::State& state) override {

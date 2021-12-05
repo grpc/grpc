@@ -62,12 +62,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>("test-authority"));
     args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    const grpc_channel_args* channel_args =
-        grpc_core::CoreConfiguration::Get()
-            .channel_args_preconditioning()
-            .PreconditionChannelArgs(args);
-    grpc_channel* channel = grpc_channel_create(
-        "test-target", channel_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr);
+    const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
+                                                .channel_args_preconditioning()
+                                                .PreconditionChannelArgs(args);
+    grpc_channel* channel =
+        grpc_channel_create("test-target", channel_args,
+                            GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr);
     grpc_channel_args_destroy(args);
     grpc_channel_args_destroy(channel_args);
     grpc_slice host = grpc_slice_from_static_string("localhost");

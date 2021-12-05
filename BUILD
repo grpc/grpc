@@ -609,6 +609,7 @@ grpc_cc_library(
         "include/grpcpp/security/binder_credentials.h",
     ],
     deps = [
+        "config",
         "gpr",
         "gpr_base",
         "gpr_platform",
