@@ -34,7 +34,7 @@ common name which is set to revoked.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in revoked.csr \
   -out revoked.pem -days 3650
 
-$ openssl ca -revoke revoked.pem -keyfile ca.key -cert ca.pem -days 3650
+$ openssl ca -revoke revoked.pem -keyfile ca.key -cert ca.pem -config ca-openssl.cnf
 
 Generate the CRL file:
 ----------------------------------------------------------------------------
