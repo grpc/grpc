@@ -57,11 +57,12 @@ class Resolver : public InternallyRefCounted<Resolver> {
     absl::StatusOr<ServerAddressList> addresses;
     /// A service config, or an error.
     absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config = nullptr;
-    /// A human-readable note describing context about the resolution, to be
-    /// passed along to the LB policy for optional inclusion in RPC failure
-    /// status messages.  For example, a resolver that returns an empty
-    /// address list may set to this to something like "no DNS entries
-    /// found for <name>".
+    /// An optional human-readable note describing context about the resolution,
+    /// to be passed along to the LB policy for inclusion in RPC failure status
+    /// messages in cases where neither \a addresses nor \a service_config
+    /// has a non-OK status.  For example, a resolver that returns an empty
+    /// address list but a valid service config may set to this to something
+    /// like "no DNS entries found for <name>".
     std::string resolution_note;
     // TODO(roth): Before making this a public API, figure out a way to
     // avoid exposing channel args this way.
