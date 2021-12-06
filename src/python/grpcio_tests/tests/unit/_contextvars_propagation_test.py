@@ -112,20 +112,20 @@ def marker(msg="marker"):
 @unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
 class ContextVarsPropagationTest(unittest.TestCase):
 
-    # def test_propagation_to_auth_plugin(self):
-    #     set_up_expected_context()
-    #     with _server() as port:
-    #         target = "localhost:{}".format(port)
-    #         local_credentials = grpc.local_channel_credentials()
-    #         test_call_credentials = TestCallCredentials()
-    #         call_credentials = grpc.metadata_call_credentials(
-    #             test_call_credentials, "test call credentials")
-    #         composite_credentials = grpc.composite_channel_credentials(
-    #             local_credentials, call_credentials)
-    #         with grpc.secure_channel(target, composite_credentials) as channel:
-    #             stub = channel.unary_unary(_UNARY_UNARY)
-    #             response = stub(_REQUEST, wait_for_ready=True)
-    #             self.assertEqual(_REQUEST, response)
+    def test_propagation_to_auth_plugin(self):
+        set_up_expected_context()
+        with _server() as port:
+            target = "localhost:{}".format(port)
+            local_credentials = grpc.local_channel_credentials()
+            test_call_credentials = TestCallCredentials()
+            call_credentials = grpc.metadata_call_credentials(
+                test_call_credentials, "test call credentials")
+            composite_credentials = grpc.composite_channel_credentials(
+                local_credentials, call_credentials)
+            with grpc.secure_channel(target, composite_credentials) as channel:
+                stub = channel.unary_unary(_UNARY_UNARY)
+                response = stub(_REQUEST, wait_for_ready=True)
+                self.assertEqual(_REQUEST, response)
 
     def test_concurrent_propagation(self):
         _THREAD_COUNT = 10

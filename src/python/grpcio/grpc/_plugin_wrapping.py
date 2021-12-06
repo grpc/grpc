@@ -82,7 +82,6 @@ class _Plugin(object):
             pass
 
     def __call__(self, service_url, method_name, callback):
-        sys.stderr.write("Calling _Plugin object.\n"); sys.stderr.flush()
         context = _AuthMetadataContext(_common.decode(service_url),
                                        _common.decode(method_name))
         callback_state = _CallbackState()

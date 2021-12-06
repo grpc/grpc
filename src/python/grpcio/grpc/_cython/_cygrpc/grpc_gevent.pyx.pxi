@@ -17,7 +17,8 @@ from libc cimport string
 from cython.operator cimport dereference
 from python_ref cimport Py_INCREF, Py_DECREF
 from libc.stdio cimport printf
-# from libcpp.queue cimport queue
+
+import atexit
 import errno
 import sys
 gevent_g = None
@@ -31,6 +32,7 @@ g_pool = None
 cdef queue[void*] g_greenlets_to_run
 cdef condition_variable g_greenlets_cv
 cdef mutex g_greenlets_mu
+cdef bint g_shutdown_greenlets_to_run_queue = False
 
 
 g_gevent_threadpool = None
@@ -43,8 +45,8 @@ cdef _submit_to_greenlet_queue(object to_call):
     printf("CCC: Submitting to queue\n")
     g_greenlets_to_run.push(<void*>(to_call))
     del lk
-    printf("CCC: Notified CV!\n")
     g_greenlets_cv.notify_all()
+    printf("CCC: Notified CV!\n")
 
 def _spawn_greenlet(*args):
   sys.stderr.write("Calling _spawn_greenlet with args {}\n".format(args)); sys.stderr.flush()
@@ -401,17 +403,18 @@ cdef object await_next_greenlet():
     # Cython doesn't allow us to do proper stack allocations, so we can't take
     # advantage of RAII.
     lk = new unique_lock[mutex](g_greenlets_mu)
-    while True:
+    while not g_shutdown_greenlets_to_run_queue:
+      printf("g_shutdown_greenlets_to_run_queue: %d\n", g_shutdown_greenlets_to_run_queue)
+      if not g_greenlets_to_run.empty():
+        break
       printf("BBB: Waiting on CV!\n")
       g_greenlets_cv.wait(dereference(lk))
       printf("BBB: Waited on CV!\n")
-      if not g_greenlets_to_run.empty():
-        break
-  cdef object to_call = <object>g_greenlets_to_run.back()
+  cdef object to_call = <object>g_greenlets_to_run.front()
   Py_DECREF(to_call)
-  # TODO: Decref?
   g_greenlets_to_run.pop()
   sys.stderr.write("BBB: Got event from queue!\n"); sys.stderr.flush()
+  sys.stderr.write("BBB: Queue size: {}!\n".format(g_greenlets_to_run.size())); sys.stderr.flush()
   del lk
   return to_call
 
@@ -430,6 +433,17 @@ def spawn_greenlets():
     # Don't foget to decref.
     # print("Theoretically spawning greenlets")
     # gevent.sleep(1)
+
+def shutdown_await_next_greenlet():
+  sys.stderr.write("Shutting down greenlet queue!\n"); sys.stderr.flush()
+  global g_shutdown_greenlets_to_run_queue
+  cdef unique_lock[mutex]* lk
+  with nogil:
+    lk = new unique_lock[mutex](g_greenlets_mu)
+    g_shutdown_greenlets_to_run_queue = True
+    printf("Set g_shutdown_greenlets_to_run_queue to %d\n", g_shutdown_greenlets_to_run_queue)
+  del lk
+  g_greenlets_cv.notify_all()
 
 ###############################
 ### Initializer ###############
@@ -466,7 +480,7 @@ def init_grpc_gevent():
   # g_event = gevent.event.Event()
   g_pool = gevent.pool.Group()
 
-  gevent.spawn(spawn_greenlets)
+  g_pool.spawn(spawn_greenlets)
   # TODO: Move this import up.
   # setDaemon cannot be set directly through the greenlet API, so we use the
   # Thread wrapper instead.
@@ -479,6 +493,9 @@ def init_grpc_gevent():
   def cb_func(cb, args):
     _spawn_greenlet(cb, *args)
   set_async_callback_func(cb_func)
+
+  atexit.register(shutdown_await_next_greenlet)
+
 
   # gevent_resolver_vtable.resolve = socket_resolve
   # gevent_resolver_vtable.resolve_async = socket_resolve_async
