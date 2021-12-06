@@ -178,6 +178,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
@@ -1373,8 +1374,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/static_metadata.h',
                       'src/core/lib/transport/status_conversion.cc',
                       'src/core/lib/transport/status_conversion.h',
-                      'src/core/lib/transport/status_metadata.cc',
-                      'src/core/lib/transport/status_metadata.h',
                       'src/core/lib/transport/timeout_encoding.cc',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.cc',
@@ -2082,7 +2081,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/pid_controller.h',
                               'src/core/lib/transport/static_metadata.h',
                               'src/core/lib/transport/status_conversion.h',
-                              'src/core/lib/transport/status_metadata.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
                               'src/core/lib/transport/transport_impl.h',
@@ -2364,8 +2362,7 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-END_OF_COMMAND
     set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
-    find src/core -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <uv.h>;#if COCOAPODS==1\\\n  #include <uv/uv.h>\\\n#else\\\n  #include  <uv.h>\\\n#endif;g'
     find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
-    find src/core/ third_party/xxhash/ third_party/uv/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

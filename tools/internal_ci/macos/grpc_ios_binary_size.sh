@@ -16,6 +16,9 @@
 # This script is invoked by Jenkins and runs a diff on the microbenchmarks
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # List of benchmarks that provide good signal for analyzing performance changes in pull requests
 
 # Enter the gRPC repo root

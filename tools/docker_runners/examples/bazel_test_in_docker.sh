@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2018 The gRPC Authors
+#!/bin/bash
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ set -ex
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
-# After kokoro build finishes, the workspace gets rsync'ed to another machine,
-# from where the artifacts and reports are processed.
-# Especially on Windows, the rsync can take long time, so we cleanup the workspace
-# after finishing each build. We only leave files we want to keep:
-# - reports and artifacts
-# - directory containing the kokoro scripts to prevent deleting a script while being executed.
-time find . -type f -not -iname "*sponge_log.*" -not -path "./reports/*" -not -path "./artifacts/*" -not -path "./tools/internal_ci/*" -exec rm -f {} +
+# TODO(jtattermusch): make sure bazel cache is persisted between runs
+
+# Note that the port server must be running so that the bazel tests can pass.
+
+# use the default docker image used for bazel builds
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+# TODO(jtattermusch): interestingly, the bazel build fails when "--privileged" docker arg is used (it probably has to do with sandboxing)
+export DOCKER_EXTRA_ARGS="--privileged=false"
+tools/docker_runners/run_in_docker.sh bazel test //test/...

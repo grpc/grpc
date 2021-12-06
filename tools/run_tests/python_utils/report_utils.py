@@ -80,6 +80,10 @@ def render_junit_xml_report(resultset,
 
 def create_xml_report_file(tree, report_file):
     """Generate JUnit-like report file from xml tree ."""
+    # env variable can be used to override the base location for the reports
+    base_dir = os.getenv('GRPC_TEST_REPORT_BASE_DIR', None)
+    if base_dir:
+        report_file = os.path.join(base_dir, report_file)
     # ensure the report directory exists
     report_dir = os.path.dirname(os.path.abspath(report_file))
     if not os.path.exists(report_dir):

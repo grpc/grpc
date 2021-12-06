@@ -25,11 +25,12 @@
 
 #include "upb/upb.hpp"
 
+#include <grpc/status.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
 #define HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -553,15 +554,13 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_,
                           "recv_trailing_metadata_ready");
   // Get call status.
-  grpc_status_code status = GRPC_STATUS_UNKNOWN;
+  grpc_status_code status =
+      self->recv_trailing_metadata_.get(GrpcStatusMetadata())
+          .value_or(GRPC_STATUS_UNKNOWN);
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);
-  } else if (self->recv_trailing_metadata_.legacy_index()->named.grpc_status !=
-             nullptr) {
-    status = grpc_get_status_code_from_metadata(
-        self->recv_trailing_metadata_.legacy_index()->named.grpc_status->md);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO,

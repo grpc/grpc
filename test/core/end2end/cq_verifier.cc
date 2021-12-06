@@ -166,6 +166,7 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
 }
 
 int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
+  if (bb == nullptr) return 0;
   if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
