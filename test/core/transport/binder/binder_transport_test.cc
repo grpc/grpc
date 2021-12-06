@@ -32,8 +32,13 @@
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 namespace grpc_binder {
 namespace {
@@ -45,7 +50,8 @@ using ::testing::Return;
 class BinderTransportTest : public ::testing::Test {
  public:
   BinderTransportTest()
-      : arena_(grpc_core::Arena::Create(/* initial_size = */ 1)),
+      : arena_(grpc_core::Arena::Create(/* initial_size = */ 1,
+                                        g_memory_allocator)),
         transport_(grpc_create_binder_transport_client(
             absl::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
@@ -227,7 +233,8 @@ struct MakeSendInitialMetadata {
   }
   ~MakeSendInitialMetadata() {}
 
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
 };
 
@@ -259,7 +266,8 @@ struct MakeSendTrailingMetadata {
         &grpc_trailing_metadata;
   }
 
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
 };
 
@@ -282,7 +290,8 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
   absl::Notification notification;
 };
@@ -325,7 +334,8 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
   absl::Notification notification;
 };
