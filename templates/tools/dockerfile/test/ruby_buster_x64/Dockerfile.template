@@ -21,5 +21,8 @@
   <%include file="../../ruby_deps.include"/>
   <%include file="../../cmake.include"/>
   <%include file="../../run_tests_addons.include"/>
+
+  RUN python3 -m pip install virtualenv==16.7.9
+
   # Define the default command.
   CMD ["bash"]

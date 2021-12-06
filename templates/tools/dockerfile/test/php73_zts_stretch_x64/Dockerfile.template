@@ -35,5 +35,8 @@
   <%include file="../../run_tests_python_deps.include"/>
   <%include file="../../php_common_deps.include"/>
   <%include file="../../run_tests_addons.include"/>
+
+  RUN python3 -m pip install virtualenv==16.7.9
+
   # Define the default command.
   CMD ["bash"]

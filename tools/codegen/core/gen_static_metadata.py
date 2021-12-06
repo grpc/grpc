@@ -40,14 +40,7 @@ CONFIG = [
     'grpc-encoding',
     'grpc-accept-encoding',
     ':authority',
-    'grpc-status',
-    'grpc-previous-rpc-attempts',
-    'grpc-retry-pushback-ms',
     'grpc-timeout',
-    '1',
-    '2',
-    '3',
-    '4',
     '',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
@@ -127,9 +120,6 @@ CONFIG = [
     ('via', ''),
     ('www-authenticate', ''),
     # end hpack static elements
-    ('grpc-status', '0'),
-    ('grpc-status', '1'),
-    ('grpc-status', '2'),
     ('grpc-encoding', 'identity'),
     ('grpc-encoding', 'gzip'),
     ('grpc-encoding', 'deflate'),
@@ -150,15 +140,12 @@ METADATA_BATCH_CALLOUTS = [
     ':status',
     ':authority',
     ':scheme',
-    'grpc-status',
     'grpc-encoding',
     'grpc-accept-encoding',
     'content-type',
     'content-encoding',
     'accept-encoding',
     'grpc-internal-encoding-request',
-    'grpc-previous-rpc-attempts',
-    'grpc-retry-pushback-ms',
 ]
 
 COMPRESSION_ALGORITHMS = [

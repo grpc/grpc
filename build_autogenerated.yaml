@@ -383,6 +383,7 @@ libs:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -954,7 +955,6 @@ libs:
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
-  - src/core/lib/transport/status_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -1558,7 +1558,6 @@ libs:
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
-  - src/core/lib/transport/status_metadata.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -2011,7 +2010,6 @@ libs:
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
-  - src/core/lib/transport/status_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -2304,7 +2302,6 @@ libs:
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
-  - src/core/lib/transport/status_metadata.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -4447,6 +4444,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -4645,6 +4643,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -4808,7 +4807,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - absl/random:random
   - grpc++_test_util
 - name: binder_transport_test
   gtest: true
@@ -5190,6 +5188,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -5493,6 +5492,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -5574,7 +5574,6 @@ targets:
   - test/core/transport/binder/end2end/testing_channel_create.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - absl/random:random
   - grpc++_test_util
 - name: end2end_test
   gtest: true
@@ -5907,7 +5906,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
-  - absl/random:random
   - grpc_test_util
   uses_polling: false
 - name: file_watcher_certificate_provider_factory_test
@@ -6069,6 +6067,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -6707,6 +6706,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -7042,6 +7042,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -7210,6 +7211,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -7900,16 +7902,6 @@ targets:
   headers: []
   src:
   - test/core/gprpp/status_helper_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: status_metadata_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/status_metadata_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
