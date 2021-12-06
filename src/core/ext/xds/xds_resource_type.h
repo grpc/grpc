@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -29,6 +30,8 @@
 
 namespace grpc_core {
 
+// Interface for an xDS resource type.
+// Used to inject type-specific logic into XdsClient.
 class XdsResourceType {
  public:
   // A base type for resource data.
@@ -61,15 +64,58 @@ class XdsResourceType {
       const XdsEncodingContext& context, absl::string_view serialized_resource,
       bool is_v2) const = 0;
 
-  // Convenient method for checking if a resource type matches this type.
-  bool IsType(absl::string_view resource_type, bool* is_v2) const {
-    if (resource_type == type_url()) return true;
-    if (resource_type == v2_type_url()) {
-      if (is_v2 != nullptr) *is_v2 = true;
-      return true;
-    }
-    return false;
-  }
+  // Returns true if r1 and r2 are equal.
+  // Must be invoked only on resources returned by this object's Decode()
+  // method.
+  virtual bool ResourcesEqual(const ResourceData* r1,
+                              const ResourceData* r2) const = 0;
+
+  // Returns a copy of resource.
+  // Must be invoked only on resources returned by this object's Decode()
+  // method.
+  virtual std::unique_ptr<ResourceData> CopyResource(
+      const ResourceData* resource) const = 0;
+
+  // Indicates whether the resource type requires that all resources must
+  // be present in every SotW response from the server.  If true, a
+  // response that does not include a previously seen resource will be
+  // interpreted as a deletion of that resource.
+  virtual bool AllResourcesRequiredInSotW() const { return false; }
+
+  // Populate upb symtab with xDS proto messages that we want to print
+  // properly in logs.
+  // Note: This won't actually work properly until upb adds support for
+  // Any fields in textproto printing (internal b/178821188).
+  virtual void InitUpbSymtab(upb_symtab* symtab) const = 0;
+
+  // Convenience method for checking if resource_type matches this type.
+  // Checks against both type_url() and v2_type_url().
+  // If is_v2 is non-null, it will be set to true if matching v2_type_url().
+  bool IsType(absl::string_view resource_type, bool* is_v2) const;
+};
+
+// Global registry of xDS resource types.
+class XdsResourceTypeRegistry {
+ public:
+  // Gets the global registry, creating it if needed.
+  static XdsResourceTypeRegistry* GetOrCreate();
+
+  // Gets the type for resource_type, or null if the type is unknown.
+  const XdsResourceType* GetType(absl::string_view resource_type);
+
+  // Registers a resource type.
+  // All types must be registered before they can be used in the XdsClient.
+  void RegisterType(std::unique_ptr<XdsResourceType> resource_type);
+
+  // Calls func for each resource type.
+  void ForEach(std::function<void(const XdsResourceType*)> func);
+
+ private:
+  std::map<absl::string_view /*resource_type*/,
+           std::unique_ptr<XdsResourceType>>
+      resource_types_;
+  std::map<absl::string_view /*v2_resource_type*/, XdsResourceType*>
+      v2_resource_types_;
 };
 
 }  // namespace grpc_core

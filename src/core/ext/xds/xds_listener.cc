@@ -1001,9 +1001,19 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
   grpc_error_handle error =
       LdsResourceParse(context, resource, is_v2, &listener_data->resource);
   if (error != GRPC_ERROR_NONE) {
-    result.resource = absl::InvalidArgumentError(grpc_error_std_string(error));
+    std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+      gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
+              context.client, result.name.c_str(), error_str.c_str());
+    }
+    result.resource = absl::InvalidArgumentError(error_str);
   } else {
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+      gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
+              context.client, result.name.c_str(),
+              listener_data->resource.ToString().c_str());
+    }
     result.resource = std::move(listener_data);
   }
   return std::move(result);

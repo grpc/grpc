@@ -27,6 +27,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -203,6 +205,29 @@ class XdsListenerResourceType : public XdsResourceType {
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
+
+  bool ResourcesEqual(const ResourceData* r1,
+                      const ResourceData* r2) const override {
+    return static_cast<const ListenerData*>(r1)->resource ==
+           static_cast<const ListenerData*>(r2)->resource;
+  }
+
+  std::unique_ptr<ResourceData> CopyResource(
+      const ResourceData* resource) const override {
+    auto* resource_copy = new ListenerData();
+    resource_copy->resource =
+        static_cast<const ListenerData*>(resource)->resource;
+    return std::unique_ptr<ResourceData>(resource_copy);
+  }
+
+  bool AllResourcesRequiredInSotW() const override { return true; }
+
+  void InitUpbSymtab(upb_symtab* symtab) const override {
+    envoy_config_listener_v3_Listener_getmsgdef(symtab);
+    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+        symtab);
+    XdsHttpFilterRegistry::PopulateSymtab(symtab);
+  }
 };
 
 }  // namespace grpc_core
