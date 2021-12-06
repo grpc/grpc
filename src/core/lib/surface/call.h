@@ -26,7 +26,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
