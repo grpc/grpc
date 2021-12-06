@@ -1,4 +1,3 @@
-//
 // Copyright 2017 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -708,12 +707,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                           {{"fake:///xds_server", servers[0]}});
       }
       std::string header;
+      std::string bootstrap_v2;
       if (!top_server_.empty()) {
         header = absl::StrReplaceAll(kBootstrapFileHeaderAndXdsServers,
                                      {{"fake:///xds_server", top_server_}});
+        bootstrap_v2 = absl::StrReplaceAll(
+            kBootstrapFileV2, {{"fake:///xds_server", top_server_}});
       }
       return std::string(
-          (v2_ ? kBootstrapFileV2
+          (v2_ ? bootstrap_v2
                : absl::StrCat(
                      (top_server_.empty() ? kBootstrapFileHeaderAndXdsServers
                                           : header),
@@ -823,12 +825,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    lb_channel_response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    // Construct channel args for XdsClient.
-    xds_channel_args_to_add_.emplace_back(
-        grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-            lb_channel_response_generator_.get()));
     if (xds_resource_does_not_exist_timeout_ms_ > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -1264,10 +1260,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
-    if (response_generator == nullptr) {
-      response_generator = lb_channel_response_generator_.get();
+    if (response_generator != nullptr) {
+      response_generator->SetResponse(std::move(result));
     }
-    response_generator->SetResponse(std::move(result));
   }
 
   void SetNextReresolutionResponse(const std::vector<int>& ports) {
@@ -2010,8 +2005,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   std::unique_ptr<BalancerServerThread> balancer_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator_;
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      lb_channel_response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       logical_dns_cluster_resolver_response_generator_;
   int xds_resource_does_not_exist_timeout_ms_ = 0;
