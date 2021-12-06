@@ -1,0 +1,2086 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+    channel_actions {
+      add_n_bytes_writable: 1320
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 1
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 199
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 1
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 199
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_readable: 20
+      wait_ms: 2432595770428919637
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "/foo"
+    }
+    host {
+      value: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      receive_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "hello wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwworld"
+        }
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "-3333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  cancel_all_calls_if_shutdown {
+  }
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  enable_tracer: "\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031\031"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      receive_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  queue_batch {
+    operations {
+      flags: 8069235
+    }
+    operations {
+      send_status_from_server {
+      }
+      flags: 219
+    }
+    operations {
+      send_close_from_client {
+      }
+    }
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1131758447
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  ping {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1449353472
+}
+actions {
+  get_target {
+  }
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449197568
+}
+actions {
+  advance_time: 262144
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  get_peer {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  get_target {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1633051392
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1510145
+}
+actions {
+  check_connectivity: true
+}
+actions {
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  watch_connectivity: 4244570112
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: false
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  cancel_call {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: false
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 5134505
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: false
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  watch_connectivity: 474896553
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  enable_tracer: ""
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 656
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "2"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  advance_time: 0
+}
+actions {
+  ping {
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  disable_tracer: "33333"
+}
+actions {
+  advance_time: 1449353472
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 779436911
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1
+}
+actions {
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_status_on_client {
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_status_from_server {
+      }
+    }
+    operations {
+      receive_close_on_server {
+      }
+    }
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  queue_batch {
+    operations {
+      send_close_from_client {
+      }
+    }
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
