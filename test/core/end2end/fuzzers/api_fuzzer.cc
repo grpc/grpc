@@ -189,8 +189,7 @@ static void do_connect(void* arg, grpc_error_handle error) {
         core_server->channel_args(), server, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport",
-        core_server->SetupTransport(transport, nullptr,
-                                    core_server->channel_args(), nullptr)));
+        core_server->SetupTransport(transport, nullptr, nullptr, nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);

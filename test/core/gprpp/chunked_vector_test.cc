@@ -16,25 +16,20 @@
 
 #include <gtest/gtest.h>
 
-#include "src/core/lib/resource_quota/resource_quota.h"
-
 namespace grpc_core {
 namespace testing {
-
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
 static constexpr size_t kInitialArenaSize = 1024;
 static constexpr size_t kChunkSize = 3;
 
 TEST(ChunkedVector, Noop) {
-  auto arena = MakeScopedArena(kInitialArenaSize, g_memory_allocator);
+  auto arena = MakeScopedArena(kInitialArenaSize);
   ChunkedVector<int, kChunkSize> v(arena.get());
   EXPECT_EQ(0, v.size());
 }
 
 TEST(ChunkedVector, Stack) {
-  auto arena = MakeScopedArena(kInitialArenaSize, g_memory_allocator);
+  auto arena = MakeScopedArena(kInitialArenaSize);
   ChunkedVector<int, kChunkSize> v(arena.get());
 
   // Populate 2 chunks of memory, and 2/3 of a final chunk.
@@ -76,7 +71,7 @@ TEST(ChunkedVector, Stack) {
 }
 
 TEST(ChunkedVector, Iterate) {
-  auto arena = MakeScopedArena(kInitialArenaSize, g_memory_allocator);
+  auto arena = MakeScopedArena(kInitialArenaSize);
   ChunkedVector<int, kChunkSize> v(arena.get());
   v.EmplaceBack(1);
   v.EmplaceBack(2);
@@ -108,7 +103,7 @@ TEST(ChunkedVector, Iterate) {
 }
 
 TEST(ChunkedVector, ConstIterate) {
-  auto arena = MakeScopedArena(kInitialArenaSize, g_memory_allocator);
+  auto arena = MakeScopedArena(kInitialArenaSize);
   ChunkedVector<int, kChunkSize> v(arena.get());
   v.EmplaceBack(1);
   v.EmplaceBack(2);
@@ -140,7 +135,7 @@ TEST(ChunkedVector, ConstIterate) {
 }
 
 TEST(ChunkedVector, Clear) {
-  auto arena = MakeScopedArena(kInitialArenaSize, g_memory_allocator);
+  auto arena = MakeScopedArena(kInitialArenaSize);
   ChunkedVector<int, kChunkSize> v(arena.get());
   v.EmplaceBack(1);
   EXPECT_EQ(v.size(), 1);
