@@ -26,12 +26,5 @@ set -e  # rvm commands are very verbose
 rvm --default use ruby-2.4.1
 set -ex
 
-tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 12 || FAILED="true"
-
-tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 12
 
