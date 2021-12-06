@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC authors.
+#!/bin/bash
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_bazel_distribtest_latest.sh"
-timeout_mins: 120
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+# change to grpc repo root
+cd "$(dirname "$0")/../../.."
+
+# use the docker image used as the default for C++ by run_tests.py
+# TODO(jtattermusch): document how to get the right docker image name
+# for given run_tests.py --compiler/--arch params.
+export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian9_x64
+tools/docker_runners/run_in_docker.sh tools/run_tests/run_tests.py -l c c++ -c dbg
