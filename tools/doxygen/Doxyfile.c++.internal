@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.43.0-dev
+PROJECT_NUMBER         = 1.44.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1842,8 +1842,6 @@ src/core/lib/gpr/tmpfile_posix.cc \
 src/core/lib/gpr/tmpfile_windows.cc \
 src/core/lib/gpr/useful.h \
 src/core/lib/gpr/wrap_memcpy.cc \
-src/core/lib/gprpp/arena.cc \
-src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic_utils.h \
 src/core/lib/gprpp/bitset.h \
 src/core/lib/gprpp/chunked_vector.h \
@@ -2083,6 +2081,8 @@ src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
 src/core/lib/resource_quota/api.cc \
 src/core/lib/resource_quota/api.h \
+src/core/lib/resource_quota/arena.cc \
+src/core/lib/resource_quota/arena.h \
 src/core/lib/resource_quota/memory_quota.cc \
 src/core/lib/resource_quota/memory_quota.h \
 src/core/lib/resource_quota/resource_quota.cc \

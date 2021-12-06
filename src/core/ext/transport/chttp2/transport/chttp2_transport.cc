@@ -650,10 +650,6 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
     : t(t),
       refcount(refcount),
       reffer(this),
-      stream_reservation(t->memory_owner.MakeReservation(
-          grpc_core::kResourceQuotaCallSize)),  // TODO(ctiller): sizeof(*this),
-                                                // or better, move allocation to
-                                                // memory quota.
       initial_metadata_buffer(arena),
       trailing_metadata_buffer(arena) {
   if (server_data) {
