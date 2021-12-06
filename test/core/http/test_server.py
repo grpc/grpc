@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,10 @@
 
 import argparse
 import os
-import six
 import ssl
 import sys
 
+import six
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
 from six.moves.BaseHTTPServer import HTTPServer
 
@@ -46,15 +46,22 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
         self.end_headers()
-        self.wfile.write('<html><head><title>Hello world!</title></head>')
-        self.wfile.write('<body><p>This is a test</p></body></html>')
+        self.wfile.write(
+            '<html><head><title>Hello world!</title></head>'.encode('ascii'))
+        self.wfile.write(
+            '<body><p>This is a test</p></body></html>'.encode('ascii'))
 
     def do_GET(self):
         if self.path == '/get':
             self.good()
 
     def do_POST(self):
-        content = self.rfile.read(int(self.headers.getheader('content-length')))
+        if hasattr(self.headers, 'getheader'):
+            # python2 compatibility
+            content_len = self.headers.getheader('content-length')
+        else:
+            content_len = self.headers.get('content-length')
+        content = self.rfile.read(int(content_len)).decode('ascii')
         if self.path == '/post' and content == 'hello':
             self.good()
 
