@@ -523,6 +523,8 @@ struct grpc_chttp2_stream {
     explicit Reffer(grpc_chttp2_stream* s);
   } reffer;
 
+  grpc_core::MemoryAllocator::Reservation stream_reservation;
+
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
 

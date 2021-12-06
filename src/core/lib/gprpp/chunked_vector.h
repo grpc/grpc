@@ -17,8 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 

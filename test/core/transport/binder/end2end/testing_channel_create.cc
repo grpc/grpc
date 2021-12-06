@@ -21,7 +21,6 @@
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -108,16 +107,14 @@ std::shared_ptr<grpc::Channel> BinderChannelForTesting(
 }  // namespace end2end_testing
 }  // namespace grpc_binder
 
-grpc_channel* grpc_binder_channel_create_for_testing(
-    grpc_server* server, const grpc_channel_args* args, void* /*reserved*/) {
+grpc_channel* grpc_binder_channel_create_for_testing(grpc_server* server,
+                                                     grpc_channel_args* args,
+                                                     void* /*reserved*/) {
   grpc_core::ExecCtx exec_ctx;
 
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>("test.authority"));
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args);
   grpc_channel_args* client_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
@@ -131,7 +128,6 @@ grpc_channel* grpc_binder_channel_create_for_testing(
       grpc_channel_create("binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
                           client_transport, &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_channel_args_destroy(args);
   grpc_channel_args_destroy(client_args);
   return channel;
 }

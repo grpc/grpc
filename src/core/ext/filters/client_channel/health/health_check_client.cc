@@ -29,7 +29,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
@@ -61,10 +60,6 @@ HealthCheckClient::HealthCheckClient(
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
       channelz_node_(std::move(channelz_node)),
-      call_allocator_(
-          ResourceQuotaFromChannelArgs(connected_subchannel_->args())
-              ->memory_quota()
-              ->CreateMemoryAllocator(service_name_)),
       watcher_(std::move(watcher)),
       retry_backoff_(
           BackOff::Options()
@@ -259,8 +254,7 @@ HealthCheckClient::CallState::CallState(
     : health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(Arena::Create(health_check_client_->connected_subchannel_
-                               ->GetInitialCallSizeEstimate(),
-                           &health_check_client_->call_allocator_)),
+                               ->GetInitialCallSizeEstimate())),
       payload_(context_),
       send_initial_metadata_(arena_),
       send_trailing_metadata_(arena_),
