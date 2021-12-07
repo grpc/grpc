@@ -105,15 +105,16 @@ class XdsResourceTypeRegistry {
 
   // Registers a resource type.
   // All types must be registered before they can be used in the XdsClient.
-  void RegisterType(const XdsResourceType* resource_type);
+  void RegisterType(std::unique_ptr<XdsResourceType> resource_type);
 
   // Calls func for each resource type.
   void ForEach(std::function<void(const XdsResourceType*)> func);
 
  private:
-  std::map<absl::string_view /*resource_type*/, const XdsResourceType*>
+  std::map<absl::string_view /*resource_type*/,
+           std::unique_ptr<XdsResourceType>>
       resource_types_;
-  std::map<absl::string_view /*v2_resource_type*/, const XdsResourceType*>
+  std::map<absl::string_view /*v2_resource_type*/, XdsResourceType*>
       v2_resource_types_;
 };
 

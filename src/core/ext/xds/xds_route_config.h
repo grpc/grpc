@@ -29,7 +29,6 @@
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
 
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
@@ -196,44 +195,11 @@ class XdsRouteConfigResourceType : public XdsResourceType {
     XdsRouteConfigResource resource;
   };
 
-  class WatcherInterface : public XdsClient::ResourceWatcherInterface {
-   public:
-    virtual void OnRouteConfigChanged(XdsRouteConfigResource route_config) = 0;
-
-   private:
-    void OnResourceChanged(
-        const XdsResourceType::ResourceData* resource) override {
-      OnRouteConfigChanged(
-          static_cast<const XdsRouteConfigResourceType::RouteConfigData*>(
-              resource)
-              ->resource);
-    }
-  };
-
-  static const XdsRouteConfigResourceType* Get() {
-    static const XdsRouteConfigResourceType* g_instance =
-        new XdsRouteConfigResourceType();
-    return g_instance;
-  }
-
   absl::string_view type_url() const override {
     return "envoy.config.route.v3.RouteConfiguration";
   }
   absl::string_view v2_type_url() const override {
     return "envoy.api.v2.RouteConfiguration";
-  }
-
-  static void StartWatch(XdsClient* xds_client, absl::string_view resource_name,
-                         RefCountedPtr<WatcherInterface> watcher) {
-    xds_client->WatchResource(Get(), resource_name, std::move(watcher));
-  }
-
-  static void CancelWatch(XdsClient* xds_client,
-                          absl::string_view resource_name,
-                          WatcherInterface* watcher,
-                          bool delay_unsubscription = false) {
-    xds_client->CancelResourceWatch(Get(), resource_name, watcher,
-                                    delay_unsubscription);
   }
 
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
@@ -256,11 +222,6 @@ class XdsRouteConfigResourceType : public XdsResourceType {
 
   void InitUpbSymtab(upb_symtab* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
-  }
-
- private:
-  XdsRouteConfigResourceType() {
-    XdsResourceTypeRegistry::GetOrCreate()->RegisterType(this);
   }
 };
 
