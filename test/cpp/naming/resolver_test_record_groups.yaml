@@ -464,7 +464,7 @@ resolver_component_tests:
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
   do_ordered_address_comparison: false
-  expected_chosen_service_config: '{"loadBalancingPolicy":["round_robin"]}'
+  expected_chosen_service_config: null
   expected_service_config_error: 'field:loadBalancingPolicy error:type should be string'
   expected_lb_policy: null
   enable_srv_queries: true
