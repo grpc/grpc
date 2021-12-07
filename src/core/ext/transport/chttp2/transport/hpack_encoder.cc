@@ -572,7 +572,7 @@ void HPackCompressor::Framer::Encode(HttpPathMetadata, const Slice& value) {
 
 void HPackCompressor::Framer::Encode(HttpAuthorityMetadata,
                                      const Slice& value) {
-  compressor_->path_index_.EmitTo(GRPC_MDSTR_AUTHORITY, value, this);
+  compressor_->authority_index_.EmitTo(GRPC_MDSTR_AUTHORITY, value, this);
 }
 
 void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
