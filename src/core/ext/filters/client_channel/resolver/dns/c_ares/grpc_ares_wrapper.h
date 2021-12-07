@@ -64,7 +64,7 @@ struct grpc_ares_request {
   /** number of ongoing queries */
   size_t pending_queries ABSL_GUARDED_BY(mu) = 0;
   /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error ABSL_GUARDED_BY(mu) = GRPC_ERROR_NONE;
 };
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
