@@ -45,7 +45,7 @@ struct ServerMetadataElements {
 
 void FilterInitialMetadata(grpc_metadata_batch* b,
                            ServerMetadataElements* sml) {
-  const auto* path = b->get_pointer(grpc_core::PathMetadata());
+  const auto* path = b->get_pointer(grpc_core::HttpPathMetadata());
   if (path != nullptr) {
     sml->path = path->Ref();
   }

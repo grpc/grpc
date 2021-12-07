@@ -262,12 +262,14 @@ class RepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
-    b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
     b->Set(
-        grpc_core::PathMetadata(),
+        grpc_core::HttpPathMetadata(),
         grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("/foo/bar")));
-    b->Set(grpc_core::AuthorityMetadata(),
+    b->Set(grpc_core::HttpAuthorityMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "foo.test.google.fr:1234")));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -290,12 +292,14 @@ class MoreRepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
-    b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
-    b->Set(grpc_core::PathMetadata(),
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
+    b->Set(grpc_core::HttpPathMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "/grpc.test.FooService/BarMethod")));
-    b->Set(grpc_core::AuthorityMetadata(),
+    b->Set(grpc_core::HttpAuthorityMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "foo.test.google.fr:1234")));
     b->Set(grpc_core::GrpcTraceBinMetadata(),
@@ -329,7 +333,7 @@ class RepresentativeServerInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    b->Set(grpc_core::StatusMetadata(), 200);
+    b->Set(grpc_core::HttpStatusMetadata(), 200);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(

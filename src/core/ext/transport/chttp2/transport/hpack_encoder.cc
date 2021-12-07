@@ -566,11 +566,12 @@ void HPackCompressor::SliceIndex::EmitTo(const grpc_slice& key,
   values_.emplace_back(value.Ref(), index);
 }
 
-void HPackCompressor::Framer::Encode(PathMetadata, const Slice& value) {
+void HPackCompressor::Framer::Encode(HttpPathMetadata, const Slice& value) {
   compressor_->path_index_.EmitTo(GRPC_MDSTR_PATH, value, this);
 }
 
-void HPackCompressor::Framer::Encode(AuthorityMetadata, const Slice& value) {
+void HPackCompressor::Framer::Encode(HttpAuthorityMetadata,
+                                     const Slice& value) {
   compressor_->path_index_.EmitTo(GRPC_MDSTR_AUTHORITY, value, this);
 }
 
@@ -591,22 +592,22 @@ void HPackCompressor::Framer::Encode(ContentTypeMetadata,
           hpack_constants::kEntryOverhead);
 }
 
-void HPackCompressor::Framer::Encode(SchemeMetadata,
-                                     SchemeMetadata::ValueType value) {
+void HPackCompressor::Framer::Encode(HttpSchemeMetadata,
+                                     HttpSchemeMetadata::ValueType value) {
   switch (value) {
-    case SchemeMetadata::ValueType::kHttp:
+    case HttpSchemeMetadata::ValueType::kHttp:
       EmitIndexed(6);  // :scheme: http
       break;
-    case SchemeMetadata::ValueType::kHttps:
+    case HttpSchemeMetadata::ValueType::kHttps:
       EmitIndexed(7);  // :scheme: https
       break;
-    case SchemeMetadata::ValueType::kInvalid:
+    case HttpSchemeMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
       break;
   }
 }
 
-void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
+void HPackCompressor::Framer::Encode(HttpStatusMetadata, uint32_t status) {
   if (status == 200) {
     EmitIndexed(8);  // :status: 200
     return;
@@ -642,21 +643,21 @@ void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
   }
 }
 
-void HPackCompressor::Framer::Encode(MethodMetadata,
-                                     MethodMetadata::ValueType method) {
+void HPackCompressor::Framer::Encode(HttpMethodMetadata,
+                                     HttpMethodMetadata::ValueType method) {
   switch (method) {
-    case MethodMetadata::ValueType::kGet:
+    case HttpMethodMetadata::ValueType::kGet:
       EmitIndexed(2);  // :method: GET
       break;
-    case MethodMetadata::ValueType::kPost:
+    case HttpMethodMetadata::ValueType::kPost:
       EmitIndexed(3);  // :method: POST
       break;
-    case MethodMetadata::ValueType::kPut:
+    case HttpMethodMetadata::ValueType::kPut:
       EmitLitHdrWithNonBinaryStringKeyNotIdx(
           StaticSlice::FromStaticString(":method").c_slice(),
           StaticSlice::FromStaticString("PUT").c_slice());
       break;
-    case MethodMetadata::ValueType::kInvalid:
+    case HttpMethodMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
       break;
   }

@@ -327,7 +327,7 @@ void HealthCheckClient::CallState::StartCall() {
                                          grpc_schedule_on_exec_ctx);
   // Add send_initial_metadata op.
   send_initial_metadata_.Set(
-      PathMetadata(),
+      HttpPathMetadata(),
       Slice(GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   payload_.send_initial_metadata.send_initial_metadata =

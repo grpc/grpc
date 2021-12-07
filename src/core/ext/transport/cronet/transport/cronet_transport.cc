@@ -417,7 +417,14 @@ static void convert_cronet_array_to_metadata(
       value = grpc_slice_intern(
           grpc_slice_from_static_string(header_array->headers[i].value));
     }
-    mds->Append(header_array->headers[i].key, grpc_core::Slice(value));
+    mds->Append(header_array->headers[i].key, grpc_core::Slice(value),
+                [&](absl::string_view error, const grpc_core::Slice& value) {
+                  gpr_log(GPR_DEBUG, "Failed to parse metadata: %s",
+                          absl::StrCat("key=", header_array->headers[i].key,
+                                       " error=", error,
+                                       " value=", value.as_string_view())
+                              .c_str());
+                });
   }
 }
 
@@ -723,33 +730,34 @@ class CronetMetadataEncoder {
     GRPC_MDELEM_UNREF(mdelem);
   }
 
-  void Encode(grpc_core::SchemeMetadata, grpc_core::SchemeMetadata::ValueType) {
+  void Encode(grpc_core::HttpSchemeMetadata,
+              grpc_core::HttpSchemeMetadata::ValueType) {
     /* Cronet populates these fields on its own */
   }
-  void Encode(grpc_core::AuthorityMetadata,
-              const grpc_core::AuthorityMetadata::ValueType&) {
+  void Encode(grpc_core::HttpAuthorityMetadata,
+              const grpc_core::HttpAuthorityMetadata::ValueType&) {
     /* Cronet populates these fields on its own */
   }
 
-  void Encode(grpc_core::MethodMetadata,
-              grpc_core::MethodMetadata::ValueType method) {
+  void Encode(grpc_core::HttpMethodMetadata,
+              grpc_core::HttpMethodMetadata::ValueType method) {
     switch (method) {
-      case grpc_core::MethodMetadata::kPost:
+      case grpc_core::HttpMethodMetadata::kPost:
         *method_ = "POST";
         break;
-      case grpc_core::MethodMetadata::kPut:
+      case grpc_core::HttpMethodMetadata::kPut:
         *method_ = "PUT";
         break;
-      case grpc_core::MethodMetadata::kGet:
+      case grpc_core::HttpMethodMetadata::kGet:
         *method_ = "GET";
         break;
-      case grpc_core::MethodMetadata::kInvalid:
+      case grpc_core::HttpMethodMetadata::kInvalid:
         abort();
     }
   }
 
-  void Encode(grpc_core::PathMetadata,
-              const grpc_core::PathMetadata::ValueType& path) {
+  void Encode(grpc_core::HttpPathMetadata,
+              const grpc_core::HttpPathMetadata::ValueType& path) {
     /* Create URL by appending :path value to the hostname */
     *url_ = absl::StrCat("https://", host_, path.as_string_view());
   }
@@ -806,7 +814,7 @@ static void parse_grpc_header(const uint8_t* data, int* length,
 }
 
 static bool header_has_authority(const grpc_metadata_batch* b) {
-  return b->get_pointer(grpc_core::AuthorityMetadata()) != nullptr;
+  return b->get_pointer(grpc_core::HttpAuthorityMetadata()) != nullptr;
 }
 
 /*

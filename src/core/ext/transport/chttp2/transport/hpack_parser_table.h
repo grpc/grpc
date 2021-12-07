@@ -76,7 +76,8 @@ class HPackTable {
             StringViewFromSlice(sm.key),
             Slice(grpc_slice_ref_internal(sm.value)),
             GRPC_SLICE_LENGTH(sm.key) + GRPC_SLICE_LENGTH(sm.value) +
-                hpack_constants::kEntryOverhead);
+                hpack_constants::kEntryOverhead,
+            [](absl::string_view, const Slice&) {});
       }
     }
     Memento memento[hpack_constants::kLastStaticEntry];

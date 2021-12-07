@@ -368,10 +368,10 @@ grpc_error_handle grpc_call_create(grpc_call_create_args* args,
     call->final_op.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     path = grpc_slice_ref_internal(args->path->c_slice());
-    call->send_initial_metadata.Set(grpc_core::PathMetadata(),
+    call->send_initial_metadata.Set(grpc_core::HttpPathMetadata(),
                                     std::move(*args->path));
     if (args->authority.has_value()) {
-      call->send_initial_metadata.Set(grpc_core::AuthorityMetadata(),
+      call->send_initial_metadata.Set(grpc_core::HttpAuthorityMetadata(),
                                       std::move(*args->authority));
     }
   } else {
@@ -899,8 +899,16 @@ static int prepare_application_metadata(grpc_call* call, int count,
       // HTTP2 hpack encoding has a maximum limit.
       return 0;
     }
-    batch->Append(grpc_core::StringViewFromSlice(md->key),
-                  grpc_core::Slice(grpc_slice_ref_internal(md->value)));
+    batch->Append(
+        grpc_core::StringViewFromSlice(md->key),
+        grpc_core::Slice(grpc_slice_ref_internal(md->value)),
+        [md](absl::string_view error, const grpc_core::Slice& value) {
+          gpr_log(
+              GPR_DEBUG, "Append error: %s",
+              absl::StrCat("key=", grpc_core::StringViewFromSlice(md->key),
+                           " error=", error, " value=", value.as_string_view())
+                  .c_str());
+        });
   }
 
   return 1;
