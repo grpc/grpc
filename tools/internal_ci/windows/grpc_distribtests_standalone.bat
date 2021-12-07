@@ -24,7 +24,7 @@ cd /d %~dp0\..\..\..
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-python tools/run_tests/task_runner.py -f distribtest windows cpp %TASK_RUNNER_EXTRA_FILTERS% -j 4
+python tools/run_tests/task_runner.py -f distribtest windows cpp -j 4
 set RUNTESTS_EXITCODE=%errorlevel%
 
 exit /b %RUNTESTS_EXITCODE%
