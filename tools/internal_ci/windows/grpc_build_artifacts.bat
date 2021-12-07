@@ -12,6 +12,13 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  exit /b %errorlevel%
+)
+
 @rem Boringssl build no longer supports yasm
 choco uninstall yasm -y --limit-output
 choco install nasm -y --limit-output
@@ -22,9 +29,9 @@ cd /d %~dp0\..\..\..
 set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-python tools/run_tests/task_runner.py -f artifact windows -j 4
+python tools/run_tests/task_runner.py -f artifact windows %TASK_RUNNER_EXTRA_FILTERS% -j 4
 set RUNTESTS_EXITCODE=%errorlevel%
 
-bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
+bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
 exit /b %RUNTESTS_EXITCODE%

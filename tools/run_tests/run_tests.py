@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -594,7 +594,7 @@ class Php7Language(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_debian9_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_stretch_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -1586,7 +1586,7 @@ if args.use_docker:
         dockerfile_dir = next(iter(dockerfile_dirs))
 
     child_argv = [arg for arg in sys.argv if not arg == '--use_docker']
-    run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(
+    run_tests_cmd = 'python3 tools/run_tests/run_tests.py %s' % ' '.join(
         child_argv[1:])
 
     env = os.environ.copy()

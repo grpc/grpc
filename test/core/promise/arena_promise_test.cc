@@ -18,10 +18,15 @@
 
 #include <gtest/gtest.h>
 
+#include "src/core/lib/resource_quota/resource_quota.h"
+
 namespace grpc_core {
 
+static auto* g_memory_allocator = new MemoryAllocator(
+    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+
 TEST(ArenaPromiseTest, AllocatedWorks) {
-  auto arena = MakeScopedArena(1024);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   int x = 42;
   ArenaPromise<int> p(arena.get(), [x] { return Poll<int>(x); });
   EXPECT_EQ(p(), Poll<int>(42));
@@ -30,7 +35,7 @@ TEST(ArenaPromiseTest, AllocatedWorks) {
 }
 
 TEST(ArenaPromiseTest, DestructionWorks) {
-  auto arena = MakeScopedArena(1024);
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
   auto x = std::make_shared<int>(42);
   auto p = ArenaPromise<int>(arena.get(), [x] { return Poll<int>(*x); });
   ArenaPromise<int> q(std::move(p));

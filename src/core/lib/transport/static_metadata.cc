@@ -35,507 +35,489 @@ StaticMetadata g_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[3].base, 10,
                             g_static_metadata_bytes + 19),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         0),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[1].base, 7,
                             g_static_metadata_bytes + 5),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[39].base, 3,
-                            g_static_metadata_bytes + 720),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[24].base, 3,
+                            g_static_metadata_bytes + 540),
         1),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[1].base, 7,
                             g_static_metadata_bytes + 5),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[40].base, 4,
-                            g_static_metadata_bytes + 723),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[25].base, 4,
+                            g_static_metadata_bytes + 543),
         2),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[0].base, 5,
                             g_static_metadata_bytes + 0),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[41].base, 1,
-                            g_static_metadata_bytes + 727),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[26].base, 1,
+                            g_static_metadata_bytes + 547),
         3),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[0].base, 5,
                             g_static_metadata_bytes + 0),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[42].base, 11,
-                            g_static_metadata_bytes + 728),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 11,
+                            g_static_metadata_bytes + 548),
         4),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[4].base, 7,
                             g_static_metadata_bytes + 29),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[43].base, 4,
-                            g_static_metadata_bytes + 739),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[28].base, 4,
+                            g_static_metadata_bytes + 559),
         5),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[4].base, 7,
                             g_static_metadata_bytes + 29),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[44].base, 5,
-                            g_static_metadata_bytes + 743),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[29].base, 5,
+                            g_static_metadata_bytes + 563),
         6),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[2].base, 7,
                             g_static_metadata_bytes + 12),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[45].base, 3,
-                            g_static_metadata_bytes + 748),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[30].base, 3,
+                            g_static_metadata_bytes + 568),
         7),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[2].base, 7,
                             g_static_metadata_bytes + 12),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[46].base, 3,
-                            g_static_metadata_bytes + 751),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[31].base, 3,
+                            g_static_metadata_bytes + 571),
         8),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[2].base, 7,
                             g_static_metadata_bytes + 12),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[47].base, 3,
-                            g_static_metadata_bytes + 754),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[32].base, 3,
+                            g_static_metadata_bytes + 574),
         9),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[2].base, 7,
                             g_static_metadata_bytes + 12),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[48].base, 3,
-                            g_static_metadata_bytes + 757),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[33].base, 3,
+                            g_static_metadata_bytes + 577),
         10),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[2].base, 7,
                             g_static_metadata_bytes + 12),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[49].base, 3,
-                            g_static_metadata_bytes + 760),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[34].base, 3,
+                            g_static_metadata_bytes + 580),
         11),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[2].base, 7,
                             g_static_metadata_bytes + 12),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[50].base, 3,
-                            g_static_metadata_bytes + 763),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[35].base, 3,
+                            g_static_metadata_bytes + 583),
         12),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[2].base, 7,
                             g_static_metadata_bytes + 12),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[51].base, 3,
-                            g_static_metadata_bytes + 766),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[36].base, 3,
+                            g_static_metadata_bytes + 586),
         13),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[52].base, 14,
-                            g_static_metadata_bytes + 769),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[37].base, 14,
+                            g_static_metadata_bytes + 589),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         14),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[15].base, 15,
-                            g_static_metadata_bytes + 184),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[53].base, 13,
-                            g_static_metadata_bytes + 783),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 15,
+                            g_static_metadata_bytes + 97),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[38].base, 13,
+                            g_static_metadata_bytes + 603),
         15),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[54].base, 15,
-                            g_static_metadata_bytes + 796),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[39].base, 15,
+                            g_static_metadata_bytes + 616),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         16),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[55].base, 13,
-                            g_static_metadata_bytes + 811),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[40].base, 13,
+                            g_static_metadata_bytes + 631),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         17),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[56].base, 6,
-                            g_static_metadata_bytes + 824),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[41].base, 6,
+                            g_static_metadata_bytes + 644),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         18),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[57].base, 27,
-                            g_static_metadata_bytes + 830),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[42].base, 27,
+                            g_static_metadata_bytes + 650),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         19),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[58].base, 3,
-                            g_static_metadata_bytes + 857),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[43].base, 3,
+                            g_static_metadata_bytes + 677),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         20),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[59].base, 5,
-                            g_static_metadata_bytes + 860),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[44].base, 5,
+                            g_static_metadata_bytes + 680),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         21),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[60].base, 13,
-                            g_static_metadata_bytes + 865),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[45].base, 13,
+                            g_static_metadata_bytes + 685),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         22),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[61].base, 13,
-                            g_static_metadata_bytes + 878),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[46].base, 13,
+                            g_static_metadata_bytes + 698),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         23),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[62].base, 19,
-                            g_static_metadata_bytes + 891),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[47].base, 19,
+                            g_static_metadata_bytes + 711),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         24),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[14].base, 16,
-                            g_static_metadata_bytes + 168),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[8].base, 16,
+                            g_static_metadata_bytes + 81),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         25),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[63].base, 16,
-                            g_static_metadata_bytes + 910),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[48].base, 16,
+                            g_static_metadata_bytes + 730),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         26),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[64].base, 14,
-                            g_static_metadata_bytes + 926),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[49].base, 14,
+                            g_static_metadata_bytes + 746),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         27),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[65].base, 16,
-                            g_static_metadata_bytes + 940),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[50].base, 16,
+                            g_static_metadata_bytes + 760),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         28),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[66].base, 13,
-                            g_static_metadata_bytes + 956),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[51].base, 13,
+                            g_static_metadata_bytes + 776),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         29),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[13].base, 12,
-                            g_static_metadata_bytes + 156),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[7].base, 12,
+                            g_static_metadata_bytes + 69),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         30),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[67].base, 6,
-                            g_static_metadata_bytes + 969),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[52].base, 6,
+                            g_static_metadata_bytes + 789),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         31),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[68].base, 4,
-                            g_static_metadata_bytes + 975),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[53].base, 4,
+                            g_static_metadata_bytes + 795),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         32),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[69].base, 4,
-                            g_static_metadata_bytes + 979),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[54].base, 4,
+                            g_static_metadata_bytes + 799),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         33),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[70].base, 6,
-                            g_static_metadata_bytes + 983),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[55].base, 6,
+                            g_static_metadata_bytes + 803),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         34),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[71].base, 7,
-                            g_static_metadata_bytes + 989),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[56].base, 7,
+                            g_static_metadata_bytes + 809),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         35),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[72].base, 4,
-                            g_static_metadata_bytes + 996),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[57].base, 4,
+                            g_static_metadata_bytes + 816),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         36),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[17].base, 4,
-                            g_static_metadata_bytes + 229),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[58].base, 4,
+                            g_static_metadata_bytes + 820),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         37),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[73].base, 8,
-                            g_static_metadata_bytes + 1000),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[59].base, 8,
+                            g_static_metadata_bytes + 824),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         38),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[74].base, 17,
-                            g_static_metadata_bytes + 1008),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[60].base, 17,
+                            g_static_metadata_bytes + 832),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         39),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[75].base, 13,
-                            g_static_metadata_bytes + 1025),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[61].base, 13,
+                            g_static_metadata_bytes + 849),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         40),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[76].base, 8,
-                            g_static_metadata_bytes + 1038),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[62].base, 8,
+                            g_static_metadata_bytes + 862),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         41),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[77].base, 19,
-                            g_static_metadata_bytes + 1046),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[63].base, 19,
+                            g_static_metadata_bytes + 870),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         42),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[78].base, 13,
-                            g_static_metadata_bytes + 1065),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[64].base, 13,
+                            g_static_metadata_bytes + 889),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         43),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[79].base, 4,
-                            g_static_metadata_bytes + 1078),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[65].base, 4,
+                            g_static_metadata_bytes + 902),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         44),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[80].base, 8,
-                            g_static_metadata_bytes + 1082),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[66].base, 8,
+                            g_static_metadata_bytes + 906),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         45),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[81].base, 12,
-                            g_static_metadata_bytes + 1090),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[67].base, 12,
+                            g_static_metadata_bytes + 914),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         46),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[82].base, 18,
-                            g_static_metadata_bytes + 1102),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[68].base, 18,
+                            g_static_metadata_bytes + 926),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         47),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[83].base, 19,
-                            g_static_metadata_bytes + 1120),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[69].base, 19,
+                            g_static_metadata_bytes + 944),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         48),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[84].base, 5,
-                            g_static_metadata_bytes + 1139),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[70].base, 5,
+                            g_static_metadata_bytes + 963),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         49),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[85].base, 7,
-                            g_static_metadata_bytes + 1144),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[71].base, 7,
+                            g_static_metadata_bytes + 968),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         50),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[86].base, 7,
-                            g_static_metadata_bytes + 1151),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[72].base, 7,
+                            g_static_metadata_bytes + 975),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         51),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[87].base, 11,
-                            g_static_metadata_bytes + 1158),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[73].base, 11,
+                            g_static_metadata_bytes + 982),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         52),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[88].base, 6,
-                            g_static_metadata_bytes + 1169),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[74].base, 6,
+                            g_static_metadata_bytes + 993),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         53),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[89].base, 10,
-                            g_static_metadata_bytes + 1175),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[75].base, 10,
+                            g_static_metadata_bytes + 999),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         54),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[90].base, 25,
-                            g_static_metadata_bytes + 1185),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[76].base, 25,
+                            g_static_metadata_bytes + 1009),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         55),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[91].base, 17,
-                            g_static_metadata_bytes + 1210),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[77].base, 17,
+                            g_static_metadata_bytes + 1034),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         56),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[22].base, 10,
-                            g_static_metadata_bytes + 320),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[78].base, 10,
+                            g_static_metadata_bytes + 1051),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         57),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[92].base, 4,
-                            g_static_metadata_bytes + 1227),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[79].base, 4,
+                            g_static_metadata_bytes + 1061),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         58),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[93].base, 3,
-                            g_static_metadata_bytes + 1231),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[80].base, 3,
+                            g_static_metadata_bytes + 1065),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         59),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[94].base, 16,
-                            g_static_metadata_bytes + 1234),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[81].base, 16,
+                            g_static_metadata_bytes + 1068),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         60),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 11,
-                            g_static_metadata_bytes + 48),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[95].base, 1,
-                            g_static_metadata_bytes + 1250),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[5].base, 13,
+                            g_static_metadata_bytes + 36),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[82].base, 8,
+                            g_static_metadata_bytes + 1084),
         61),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 11,
-                            g_static_metadata_bytes + 48),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[23].base, 1,
-                            g_static_metadata_bytes + 330),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[5].base, 13,
+                            g_static_metadata_bytes + 36),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[20].base, 4,
+                            g_static_metadata_bytes + 515),
         62),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 11,
-                            g_static_metadata_bytes + 48),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[24].base, 1,
-                            g_static_metadata_bytes + 331),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[5].base, 13,
+                            g_static_metadata_bytes + 36),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[19].base, 7,
+                            g_static_metadata_bytes + 508),
         63),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[8].base, 13,
-                            g_static_metadata_bytes + 75),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[96].base, 8,
-                            g_static_metadata_bytes + 1251),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[7].base, 12,
+                            g_static_metadata_bytes + 69),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[83].base, 16,
+                            g_static_metadata_bytes + 1092),
         64),
-    StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[8].base, 13,
-                            g_static_metadata_bytes + 75),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[35].base, 4,
-                            g_static_metadata_bytes + 695),
-        65),
-    StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[8].base, 13,
-                            g_static_metadata_bytes + 75),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[34].base, 7,
-                            g_static_metadata_bytes + 688),
-        66),
-    StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[13].base, 12,
-                            g_static_metadata_bytes + 156),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[97].base, 16,
-                            g_static_metadata_bytes + 1259),
-        67),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[4].base, 7,
                             g_static_metadata_bytes + 29),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[98].base, 4,
-                            g_static_metadata_bytes + 1275),
-        68),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[84].base, 4,
+                            g_static_metadata_bytes + 1108),
+        65),
     StaticMetadata(
         StaticMetadataSlice(&g_static_metadata_slice_refcounts[1].base, 7,
                             g_static_metadata_bytes + 5),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[99].base, 3,
-                            g_static_metadata_bytes + 1279),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[85].base, 3,
+                            g_static_metadata_bytes + 1112),
+        66),
+    StaticMetadata(
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 15,
+                            g_static_metadata_bytes + 97),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
+        67),
+    StaticMetadata(
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[8].base, 16,
+                            g_static_metadata_bytes + 81),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[82].base, 8,
+                            g_static_metadata_bytes + 1084),
+        68),
+    StaticMetadata(
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[8].base, 16,
+                            g_static_metadata_bytes + 81),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[20].base, 4,
+                            g_static_metadata_bytes + 515),
         69),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[15].base, 15,
-                            g_static_metadata_bytes + 184),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[86].base, 11,
+                            g_static_metadata_bytes + 1115),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[12].base, 0,
+                            g_static_metadata_bytes + 154),
         70),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[14].base, 16,
-                            g_static_metadata_bytes + 168),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[96].base, 8,
-                            g_static_metadata_bytes + 1251),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 20,
+                            g_static_metadata_bytes + 49),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[82].base, 8,
+                            g_static_metadata_bytes + 1084),
         71),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[14].base, 16,
-                            g_static_metadata_bytes + 168),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[35].base, 4,
-                            g_static_metadata_bytes + 695),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 20,
+                            g_static_metadata_bytes + 49),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[19].base, 7,
+                            g_static_metadata_bytes + 508),
         72),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[100].base, 11,
-                            g_static_metadata_bytes + 1282),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[27].base, 0,
-                            g_static_metadata_bytes + 334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 20,
+                            g_static_metadata_bytes + 49),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[87].base, 16,
+                            g_static_metadata_bytes + 1126),
         73),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 20,
-                            g_static_metadata_bytes + 88),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[96].base, 8,
-                            g_static_metadata_bytes + 1251),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 20,
+                            g_static_metadata_bytes + 49),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[20].base, 4,
+                            g_static_metadata_bytes + 515),
         74),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 20,
-                            g_static_metadata_bytes + 88),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[34].base, 7,
-                            g_static_metadata_bytes + 688),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 20,
+                            g_static_metadata_bytes + 49),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[88].base, 13,
+                            g_static_metadata_bytes + 1142),
         75),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 20,
-                            g_static_metadata_bytes + 88),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[101].base, 16,
-                            g_static_metadata_bytes + 1293),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 20,
+                            g_static_metadata_bytes + 49),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[89].base, 12,
+                            g_static_metadata_bytes + 1155),
         76),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 20,
-                            g_static_metadata_bytes + 88),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[35].base, 4,
-                            g_static_metadata_bytes + 695),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[6].base, 20,
+                            g_static_metadata_bytes + 49),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[90].base, 21,
+                            g_static_metadata_bytes + 1167),
         77),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 20,
-                            g_static_metadata_bytes + 88),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[102].base, 13,
-                            g_static_metadata_bytes + 1309),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 15,
+                            g_static_metadata_bytes + 97),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[82].base, 8,
+                            g_static_metadata_bytes + 1084),
         78),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 20,
-                            g_static_metadata_bytes + 88),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[103].base, 12,
-                            g_static_metadata_bytes + 1322),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 15,
+                            g_static_metadata_bytes + 97),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[20].base, 4,
+                            g_static_metadata_bytes + 515),
         79),
     StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 20,
-                            g_static_metadata_bytes + 88),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[104].base, 21,
-                            g_static_metadata_bytes + 1334),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[9].base, 15,
+                            g_static_metadata_bytes + 97),
+        StaticMetadataSlice(&g_static_metadata_slice_refcounts[88].base, 13,
+                            g_static_metadata_bytes + 1142),
         80),
-    StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[15].base, 15,
-                            g_static_metadata_bytes + 184),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[96].base, 8,
-                            g_static_metadata_bytes + 1251),
-        81),
-    StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[15].base, 15,
-                            g_static_metadata_bytes + 184),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[35].base, 4,
-                            g_static_metadata_bytes + 695),
-        82),
-    StaticMetadata(
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[15].base, 15,
-                            g_static_metadata_bytes + 184),
-        StaticMetadataSlice(&g_static_metadata_slice_refcounts[102].base, 13,
-                            g_static_metadata_bytes + 1309),
-        83),
 };
 
 /* Warning: the core static metadata currently operates under the soft
@@ -852,120 +834,105 @@ grpc_mdelem g_static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT] = {
     GRPC_MAKE_MDELEM(
         &g_static_mdelem_table[60].data(),
         GRPC_MDELEM_STORAGE_STATIC),
-    /* GRPC_MDELEM_GRPC_STATUS_0: 
-     "grpc-status": "0" */
-    GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[61].data(),
-        GRPC_MDELEM_STORAGE_STATIC),
-    /* GRPC_MDELEM_GRPC_STATUS_1: 
-     "grpc-status": "1" */
-    GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[62].data(),
-        GRPC_MDELEM_STORAGE_STATIC),
-    /* GRPC_MDELEM_GRPC_STATUS_2: 
-     "grpc-status": "2" */
-    GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[63].data(),
-        GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ENCODING_IDENTITY: 
      "grpc-encoding": "identity" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[64].data(),
+        &g_static_mdelem_table[61].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ENCODING_GZIP: 
      "grpc-encoding": "gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[65].data(),
+        &g_static_mdelem_table[62].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ENCODING_DEFLATE: 
      "grpc-encoding": "deflate" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[66].data(),
+        &g_static_mdelem_table[63].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC: 
      "content-type": "application/grpc" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[67].data(),
+        &g_static_mdelem_table[64].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_SCHEME_GRPC: 
      ":scheme": "grpc" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[68].data(),
+        &g_static_mdelem_table[65].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_METHOD_PUT: 
      ":method": "PUT" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[69].data(),
+        &g_static_mdelem_table[66].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_ACCEPT_ENCODING_EMPTY: 
      "accept-encoding": "" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[70].data(),
+        &g_static_mdelem_table[67].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_CONTENT_ENCODING_IDENTITY: 
      "content-encoding": "identity" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[71].data(),
+        &g_static_mdelem_table[68].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_CONTENT_ENCODING_GZIP: 
      "content-encoding": "gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[72].data(),
+        &g_static_mdelem_table[69].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_LB_COST_BIN_EMPTY: 
      "lb-cost-bin": "" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[73].data(),
+        &g_static_mdelem_table[70].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY: 
      "grpc-accept-encoding": "identity" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[74].data(),
+        &g_static_mdelem_table[71].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE: 
      "grpc-accept-encoding": "deflate" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[75].data(),
+        &g_static_mdelem_table[72].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE: 
      "grpc-accept-encoding": "identity,deflate" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[76].data(),
+        &g_static_mdelem_table[73].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ACCEPT_ENCODING_GZIP: 
      "grpc-accept-encoding": "gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[77].data(),
+        &g_static_mdelem_table[74].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP: 
      "grpc-accept-encoding": "identity,gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[78].data(),
+        &g_static_mdelem_table[75].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ACCEPT_ENCODING_DEFLATE_COMMA_GZIP: 
      "grpc-accept-encoding": "deflate,gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[79].data(),
+        &g_static_mdelem_table[76].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP: 
      "grpc-accept-encoding": "identity,deflate,gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[80].data(),
+        &g_static_mdelem_table[77].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY: 
      "accept-encoding": "identity" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[81].data(),
+        &g_static_mdelem_table[78].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_ACCEPT_ENCODING_GZIP: 
      "accept-encoding": "gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[82].data(),
+        &g_static_mdelem_table[79].data(),
         GRPC_MDELEM_STORAGE_STATIC),
     /* GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP: 
      "accept-encoding": "identity,gzip" */
     GRPC_MAKE_MDELEM(
-        &g_static_mdelem_table[83].data(),
+        &g_static_mdelem_table[80].data(),
         GRPC_MDELEM_STORAGE_STATIC)
     // clang-format on
 };
@@ -975,20 +942,19 @@ uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 4, 6, 6, 8, 8, 2, 4, 4};
+    0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 4, 6, 6, 8, 8, 2, 4, 4};
 
 static const int8_t elems_r[] = {
-    15, 10, -8, 0,  2,  -77, -42, 0,   9,  -4,  0,   0,   0,   11,  0,
-    -7, 0,  5,  0,  0,  0,   0,   -4,  0,  0,   0,   0,   0,   0,   0,
-    0,  0,  0,  0,  0,  0,   0,   0,   0,  0,   0,   0,   0,   0,   0,
-    0,  0,  0,  0,  0,  0,   0,   -63, 0,  -47, -68, -48, -71, -72, 0,
-    30, 29, 28, 27, 27, 26,  25,  24,  23, 22,  21,  20,  19,  18,  17,
-    17, 16, 16, 15, 14, 13,  12,  11,  10, 9,   8,   7,   6,   5,   4,
-    3,  2,  1,  1,  2,  1,   0,   0,   0,  0,   0,   -10, 0};
+    15,  10,  -8,  0,   2,   15,  2,   20,  12, 5,   0,   0,   0,   0,   0,
+    0,   0,   0,   0,   0,   0,   0,   0,   0,  0,   0,   0,   0,   0,   0,
+    0,   0,   0,   0,   0,   0,   0,   -39, 0,  -41, -42, -43, -44, -45, -46,
+    -47, -48, -49, -50, -51, -52, -52, 0,   36, 35,  34,  33,  32,  31,  30,
+    29,  28,  27,  26,  25,  24,  23,  22,  21, 20,  19,  18,  17,  16,  15,
+    14,  13,  12,  11,  10,  9,   8,   7,   0,  0,   0,   0,   -2,  0};
 static uint32_t elems_phash(uint32_t i) {
-  i -= 41;
-  uint32_t x = i % 103;
-  uint32_t y = i / 103;
+  i -= 26;
+  uint32_t x = i % 89;
+  uint32_t y = i / 89;
   uint32_t h = x;
   if (y < GPR_ARRAY_SIZE(elems_r)) {
     uint32_t delta = static_cast<uint32_t>(elems_r[y]);
@@ -998,25 +964,25 @@ static uint32_t elems_phash(uint32_t i) {
 }
 
 static const uint16_t elem_keys[] = {
-    255,  256,   257,  258,  259,  260,  261,  979,  980,  1602, 144,  145,
-    463,  464,   1497, 41,   42,   1610, 874,  875,  653,  654,  1505, 1392,
-    725,  1812,  2337, 5487, 5802, 6012, 6117, 6222, 6327, 6432, 6537, 1628,
-    6642, 6747,  6852, 6957, 7062, 7167, 7272, 7377, 7482, 7587, 7692, 5697,
-    7797, 7902,  5907, 8007, 8112, 8217, 8322, 8427, 8532, 8637, 8742, 8847,
-    8952, 9057,  9162, 9267, 9372, 9477, 9582, 518,  9687, 1041, 204,  9792,
-    9897, 10527, 1046, 1047, 1048, 1049, 1671, 0,    936,  0,    0,    1566,
-    1677, 0,     0,    342,  0,    0,    0,    0,    0,    1462};
+    212,  213,  214,  215,  216,  217,  218,  565,  566,  831,  115,  116,
+    392,  393,  740,  26,   27,   839,  474,  475,  649,  3379, 748,  3561,
+    3652, 3743, 3834, 3925, 4016, 4107, 4198, 4289, 4380, 4471, 4562, 857,
+    4653, 4744, 4835, 4926, 5017, 5108, 5199, 5290, 5381, 5472, 5563, 5654,
+    5745, 5836, 5927, 6018, 6109, 6200, 6291, 6382, 6473, 6564, 6655, 6746,
+    6837, 6928, 7019, 7110, 7201, 7292, 7383, 7838, 448,  0,    628,  176,
+    0,    285,  0,    633,  634,  635,  636,  901,  0,    537,  0,    0,
+    810,  907,  0,    0,    0,    0,    0,    720};
 static const uint8_t elem_idxs[] = {
-    7,  8,   9,   10, 11, 12,  13,  75, 77,  70,  1,   2,   5,   6,  25, 3,
-    4,  82,  66,  65, 62, 63,  72,  30, 61,  37,  57,  14,  17,  19, 20, 21,
-    22, 23,  24,  15, 26, 27,  28,  29, 31,  32,  33,  34,  35,  36, 38, 16,
-    39, 40,  18,  41, 42, 43,  44,  45, 46,  47,  48,  49,  50,  51, 52, 53,
-    54, 55,  56,  68, 58, 74,  69,  59, 60,  73,  76,  78,  79,  80, 81, 255,
-    64, 255, 255, 71, 83, 255, 255, 0,  255, 255, 255, 255, 255, 67};
+    7,   8,  9,   10,  11, 12,  13,  72,  74,  67,  1,   2,  5,  6,  25, 3,
+    4,   79, 63,  62,  30, 14,  69,  16,  17,  18,  19,  20, 21, 22, 23, 24,
+    26,  27, 28,  15,  29, 31,  32,  33,  34,  35,  36,  37, 38, 39, 40, 41,
+    42,  43, 44,  45,  46, 47,  48,  49,  50,  51,  52,  53, 54, 55, 56, 57,
+    58,  59, 60,  70,  65, 255, 71,  66,  255, 0,   255, 73, 75, 76, 77, 78,
+    255, 61, 255, 255, 68, 80,  255, 255, 255, 255, 255, 64};
 
 grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b) {
   if (a == -1 || b == -1) return GRPC_MDNULL;
-  uint32_t k = static_cast<uint32_t>(a * 105 + b);
+  uint32_t k = static_cast<uint32_t>(a * 91 + b);
   uint32_t h = elems_phash(k);
   return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k &&
                  elem_idxs[h] != 255
@@ -1026,7 +992,7 @@ grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intptr_t b) {
              : GRPC_MDNULL;
 }
 
-const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  74, 75, 76,
-                                                         77, 78, 79, 80};
+const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  71, 72, 73,
+                                                         74, 75, 76, 77};
 
-const uint8_t grpc_static_accept_stream_encoding_metadata[4] = {0, 81, 82, 83};
+const uint8_t grpc_static_accept_stream_encoding_metadata[4] = {0, 78, 79, 80};

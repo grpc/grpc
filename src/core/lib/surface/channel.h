@@ -110,8 +110,9 @@ struct grpc_channel {
   grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
       registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
+  grpc_core::ManualConstructor<grpc_core::MemoryAllocator> allocator;
 
-  char* target;
+  grpc_core::ManualConstructor<std::string> target;
 };
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 

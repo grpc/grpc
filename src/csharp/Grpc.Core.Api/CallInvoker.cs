@@ -28,14 +28,14 @@ namespace Grpc.Core
         /// <summary>
         /// Invokes a simple remote call in a blocking fashion.
         /// </summary>
-        public abstract TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
+        public abstract TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
             where TRequest : class
             where TResponse : class;
 
         /// <summary>
         /// Invokes a simple remote call asynchronously.
         /// </summary>
-        public abstract AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
+        public abstract AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
             where TRequest : class
             where TResponse : class;
 
@@ -43,7 +43,7 @@ namespace Grpc.Core
         /// Invokes a server streaming call asynchronously.
         /// In server streaming scenario, client sends on request and server responds with a stream of responses.
         /// </summary>
-        public abstract AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
+        public abstract AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
             where TRequest : class
             where TResponse : class;
 
@@ -51,7 +51,7 @@ namespace Grpc.Core
         /// Invokes a client streaming call asynchronously.
         /// In client streaming scenario, client sends a stream of requests and server responds with a single response.
         /// </summary>
-        public abstract AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
+        public abstract AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options)
             where TRequest : class
             where TResponse : class;
 
@@ -60,7 +60,7 @@ namespace Grpc.Core
         /// In duplex streaming scenario, client sends a stream of requests and server responds with a stream of responses.
         /// The response stream is completely independent and both side can be sending messages at the same time.
         /// </summary>
-        public abstract AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
+        public abstract AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options)
             where TRequest : class
             where TResponse : class;
     }
