@@ -542,7 +542,7 @@ class FromEncoderFixture {
           },
           b, &outbuf);
       if (i == iteration) {
-        for (int s = 0; s < outbuf.count; s++) {
+        for (size_t s = 0; s < outbuf.count; s++) {
           out.push_back(grpc_slice_ref_internal(outbuf.slices[s]));
         }
         done = true;

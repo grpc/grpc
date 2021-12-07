@@ -24,6 +24,7 @@
 
 #include <string>
 
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc_security.h>
@@ -220,9 +221,7 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
     if (const grpc_core::Slice* authority =
             calld->recv_initial_metadata_->get_pointer(
                 grpc_core::HttpAuthorityMetadata())) {
-      for (auto c : *authority) {
-        calld->target_host_.push_back(tolower(c));
-      }
+      calld->target_host_ = absl::AsciiStrToLower(authority->as_string_view());
     }
     std::string buffer;
     auto lb_token = calld->recv_initial_metadata_->GetValue(
