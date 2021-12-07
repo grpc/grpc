@@ -103,8 +103,9 @@ absl::string_view EvaluateArgs::GetHost() const {
 absl::string_view EvaluateArgs::GetMethod() const {
   if (metadata_ != nullptr) {
     auto method_md = metadata_->get(HttpMethodMetadata());
-    if (method_md.has_value())
-      return HttpMethodMetadata::DisplayValue(*method_md);
+    if (method_md.has_value()) {
+      return HttpMethodMetadata::Encode(*method_md).as_string_view();
+    }
   }
   return absl::string_view();
 }
