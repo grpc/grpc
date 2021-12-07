@@ -553,7 +553,7 @@ class FromEncoderFixture {
       i++;
     }
     // Remove the HTTP header.
-    GPR_ASSERT(out.size() > 0);
+    GPR_ASSERT(!out.empty());
     GPR_ASSERT(GRPC_SLICE_LENGTH(out[0]) > 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
