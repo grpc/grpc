@@ -91,11 +91,9 @@ cdef tuple _operate(grpc_call *c_call, object operations, object user_tag):
   cdef _BatchOperationTag tag = _BatchOperationTag(user_tag, operations, None)
   tag.prepare()
   cpython.Py_INCREF(tag)
-  # sys.stderr.write("Calling grpc_call_start_batch\n"); sys.stderr.flush()
   with nogil:
     c_call_error = grpc_call_start_batch(
         c_call, tag.c_ops, tag.c_nops, <cpython.PyObject *>tag, NULL)
-  # sys.stderr.write("Finished grpc_call_start_batch\n"); sys.stderr.flush()
   return c_call_error, tag
 
 
@@ -382,18 +380,14 @@ cdef object _watch_connectivity_state(
   with state.condition:
     if state.open:
       cpython.Py_INCREF(tag)
-      sys.stderr.write("{} cython _watch_connectivity_state 1 {}\n".format(datetime.datetime.now(), state.pointer())); sys.stderr.flush()
       grpc_channel_watch_connectivity_state(
           state.c_channel, last_observed_state, _timespec_from_time(deadline),
           state.c_connectivity_completion_queue, <cpython.PyObject *>tag)
-      sys.stderr.write("{} cython _watch_connectivity_state 2 {}\n".format(datetime.datetime.now(), state.pointer())); sys.stderr.flush()
       state.connectivity_due.add(tag)
     else:
       raise ValueError('Cannot invoke RPC: %s' % state.closed_reason)
-  sys.stderr.write("{} cython _watch_connectivity_state 3 {}\n".format(datetime.datetime.now(), state.pointer())); sys.stderr.flush()
   completed_tag, event = _latent_event(
       state.c_connectivity_completion_queue, None)
-  sys.stderr.write("{} cython _watch_connectivity_state 4 {}\n".format(datetime.datetime.now(), state.pointer())); sys.stderr.flush()
   with state.condition:
     state.connectivity_due.remove(completed_tag)
     state.condition.notify_all()

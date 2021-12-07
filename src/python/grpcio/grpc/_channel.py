@@ -21,8 +21,6 @@ import sys
 import threading
 import time
 
-import datetime
-
 import grpc
 from grpc import _common
 from grpc import _compression
@@ -35,13 +33,6 @@ _LOGGER = logging.getLogger(__name__)
 _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
-
-import collections
-
-def marker(msg="marker"):
-    import sys
-    sys.stderr.write("{} {}\n".format(datetime.datetime.now(), msg))
-    sys.stderr.flush()
 
 # NOTE(rbellevi): No guarantees are given about the maintenance of this
 # environment variable.
@@ -1397,10 +1388,8 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
         if callbacks:
             _spawn_delivery(state, callbacks)
     while True:
-        marker("Loop 1 {}".format(channel.pointer()))
         event = channel.watch_connectivity_state(connectivity,
                                                  time.time() + 0.2)
-        marker("Loop 2 {}".format(channel.pointer()))
         cygrpc.block_if_fork_in_progress(state)
         with state.lock:
             if not state.callbacks_and_connectivities and not state.try_to_connect:

@@ -23,8 +23,6 @@
 
 #include <limits>
 
-#include <csignal>
-
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
@@ -35,8 +33,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/iomgr/closure.h"
-
-#include <iostream>
 
 typedef int64_t grpc_millis;
 
@@ -112,11 +108,6 @@ class ExecCtx {
   /** Default Constructor */
 
   ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
-    // gpr_log(GPR_ERROR, "Creating ExecCtx %p with parent %p", this, last_exec_ctx_);
-    if (last_exec_ctx_ == this) {
-      gpr_log(GPR_ERROR, "The bad thing is happening!");
-      // std::raise(SIGINT);
-    }
     Fork::IncExecCtxCount();
     Set(this);
   }
@@ -131,11 +122,8 @@ class ExecCtx {
 
   /** Destructor */
   virtual ~ExecCtx() {
-    // gpr_log(GPR_ERROR, "ExecCtx destructor called for %p", this);
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
-    // gpr_log(GPR_ERROR, "ExecCtx destructor flush finished for %p", this);
-    // gpr_log(GPR_ERROR, "ExecCtx destructor flush setting last_exec_ctx_ to %p", last_exec_ctx_);
     Set(last_exec_ctx_);
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
       Fork::DecExecCtxCount();
@@ -233,11 +221,7 @@ class ExecCtx {
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
 
-  static void Set(ExecCtx* exec_ctx) {
-    // if (exec_ctx == nullptr)
-    //   gpr_log(GPR_ERROR, "Setting exec_ctx to nullptr");
-    exec_ctx_ = exec_ctx;
-  }
+  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error);
