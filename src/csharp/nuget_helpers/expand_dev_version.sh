@@ -18,7 +18,7 @@
 
 set -e
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 DEV_DATETIME_SUFFIX=$(date -u "+%Y%m%d%H%M")
 # expand the -dev suffix to contain current timestamp
