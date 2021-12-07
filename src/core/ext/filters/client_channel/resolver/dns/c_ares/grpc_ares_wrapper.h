@@ -62,7 +62,7 @@ struct grpc_ares_request {
   /** the evernt driver used by this request */
   grpc_ares_ev_driver* ev_driver = nullptr;
   /** number of ongoing queries */
-  size_t pending_queries = 0;
+  size_t pending_queries ABSL_GUARDED_BY(mu) = 0;
   /** the errors explaining query failures, appended to in query callbacks */
   grpc_error_handle error = GRPC_ERROR_NONE;
 };

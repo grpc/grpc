@@ -123,8 +123,8 @@ typedef struct grpc_ares_hostbyname_request {
   const char* qtype;
 } grpc_ares_hostbyname_request;
 
-static void grpc_ares_request_ref_locked(grpc_ares_request* r);
-static void grpc_ares_request_unref_locked(grpc_ares_request* r);
+static void grpc_ares_request_ref_locked(grpc_ares_request* r) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu);
+static void grpc_ares_request_unref_locked(grpc_ares_request* r) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu);
 
 // TODO(apolcyn): as a part of C++-ification, find a way to
 // organize per-query and per-resolution information in such a way
@@ -556,11 +556,11 @@ void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
   }
 }
 
-static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
+static void grpc_ares_request_ref_locked(grpc_ares_request* r) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   r->pending_queries++;
 }
 
-static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
+static void grpc_ares_request_unref_locked(grpc_ares_request* r) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   r->pending_queries--;
   if (r->pending_queries == 0u) {
     grpc_ares_ev_driver_on_queries_complete_locked(r->ev_driver);
@@ -592,7 +592,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
  * qtype must outlive it. */
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
     grpc_ares_request* parent_request, const char* host, uint16_t port,
-    bool is_balancer, const char* qtype) {
+    bool is_balancer, const char* qtype) ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_request->mu) {
   GRPC_CARES_TRACE_LOG(
       "request:%p create_hostbyname_request_locked host:%s port:%d "
       "is_balancer:%d qtype:%s",
@@ -608,14 +608,16 @@ static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
 }
 
 static void destroy_hostbyname_request_locked(
-    grpc_ares_hostbyname_request* hr) {
+    grpc_ares_hostbyname_request* hr) ABSL_EXCLUSIVE_LOCKS_REQUIRED(hr->parent_request->mu) {
   grpc_ares_request_unref_locked(hr->parent_request);
   gpr_free(hr->host);
   delete hr;
 }
 
 static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
-                                      struct hostent* hostent) {
+                                      struct hostent* hostent) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  // This callback is invoked from the c-ares library, so disable thread safety
+  // analysis. Note that we are guaranteed to be holding r->mu, though.
   grpc_ares_hostbyname_request* hr =
       static_cast<grpc_ares_hostbyname_request*>(arg);
   grpc_ares_request* r = hr->parent_request;
@@ -688,7 +690,9 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
 }
 
 static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
-                                     unsigned char* abuf, int alen) {
+                                     unsigned char* abuf, int alen) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  // This callback is invoked from the c-ares library, so disable thread safety
+  // analysis. Note that we are guaranteed to be holding r->mu, though.
   GrpcAresQuery* q = static_cast<GrpcAresQuery*>(arg);
   grpc_ares_request* r = q->parent_request();
   if (status == ARES_SUCCESS) {
@@ -735,7 +739,9 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
 static const char g_service_config_attribute_prefix[] = "grpc_config=";
 
 static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
-                               unsigned char* buf, int len) {
+                               unsigned char* buf, int len) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  // This callback is invoked from the c-ares library, so disable thread safety
+  // analysis. Note that we are guaranteed to be holding r->mu, though.
   GrpcAresQuery* q = static_cast<GrpcAresQuery*>(arg);
   std::unique_ptr<GrpcAresQuery> query_deleter(q);
   grpc_ares_request* r = q->parent_request();
@@ -792,7 +798,7 @@ fail:
 void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     grpc_ares_request* r, const char* dns_server, const char* name,
     const char* default_port, grpc_pollset_set* interested_parties,
-    int query_timeout_ms) {
+    int query_timeout_ms) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
   /* parse name, splitting it into host and port parts */
