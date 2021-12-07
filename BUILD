@@ -609,6 +609,7 @@ grpc_cc_library(
         "include/grpcpp/security/binder_credentials.h",
     ],
     deps = [
+        "config",
         "gpr",
         "gpr_base",
         "gpr_platform",
@@ -805,7 +806,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
-        "src/core/lib/gprpp/arena.cc",
         "src/core/lib/gprpp/examine_stack.cc",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
@@ -829,7 +829,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -887,6 +886,7 @@ grpc_cc_library(
     hdrs = ["src/core/lib/gprpp/chunked_vector.h"],
     external_deps = ["absl/utility"],
     deps = [
+        "arena",
         # TODO(ctiller): weaken this to just arena when that splits into its own target
         "gpr_base",
     ],
@@ -1099,6 +1099,7 @@ grpc_cc_library(
         "src/core/lib/promise/arena_promise.h",
     ],
     deps = [
+        "arena",
         "gpr_base",
         "poll",
     ],
@@ -1496,6 +1497,20 @@ grpc_cc_library(
         "seq",
         "slice_refcount",
         "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "arena",
+    srcs = [
+        "src/core/lib/resource_quota/arena.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/arena.h",
+    ],
+    deps = [
+        "gpr_base",
+        "memory_quota",
     ],
 )
 
@@ -2041,6 +2056,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "arena",
         "avl",
         "bitset",
         "channel_args",
@@ -3391,6 +3407,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "arena",
         "config",
         "error",
         "gpr_base",
