@@ -30,6 +30,7 @@
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_route_config.h"
@@ -195,11 +196,43 @@ class XdsListenerResourceType : public XdsResourceType {
     XdsListenerResource resource;
   };
 
+  class WatcherInterface : public XdsClient::ResourceWatcherInterface {
+   public:
+    virtual void OnListenerChanged(XdsListenerResource listener) = 0;
+
+   private:
+    void OnResourceChanged(
+        const XdsResourceType::ResourceData* resource) override {
+      OnListenerChanged(
+          static_cast<const XdsListenerResourceType::ListenerData*>(resource)
+              ->resource);
+    }
+  };
+
+  static const XdsListenerResourceType* Get() {
+    static const XdsListenerResourceType* g_instance =
+        new XdsListenerResourceType();
+    return g_instance;
+  }
+
   absl::string_view type_url() const override {
     return "envoy.config.listener.v3.Listener";
   }
   absl::string_view v2_type_url() const override {
     return "envoy.api.v2.Listener";
+  }
+
+  static void StartWatch(XdsClient* xds_client, absl::string_view resource_name,
+                         RefCountedPtr<WatcherInterface> watcher) {
+    xds_client->WatchResource(Get(), resource_name, std::move(watcher));
+  }
+
+  static void CancelWatch(XdsClient* xds_client,
+                          absl::string_view resource_name,
+                          WatcherInterface* watcher,
+                          bool delay_unsubscription = false) {
+    xds_client->CancelResourceWatch(Get(), resource_name, watcher,
+                                    delay_unsubscription);
   }
 
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
@@ -227,6 +260,11 @@ class XdsListenerResourceType : public XdsResourceType {
     envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
         symtab);
     XdsHttpFilterRegistry::PopulateSymtab(symtab);
+  }
+
+ private:
+  XdsListenerResourceType() {
+    XdsResourceTypeRegistry::GetOrCreate()->RegisterType(this);
   }
 };
 
