@@ -25,7 +25,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -67,7 +66,7 @@ class CdsLb : public LoadBalancingPolicy {
 
  private:
   // Watcher for getting cluster data from XdsClient.
-  class ClusterWatcher : public XdsClusterResourceType::WatcherInterface {
+  class ClusterWatcher : public XdsClient::ClusterWatcherInterface {
    public:
     ClusterWatcher(RefCountedPtr<CdsLb> parent, std::string name)
         : parent_(std::move(parent)), name_(std::move(name)) {}
@@ -148,7 +147,7 @@ class CdsLb : public LoadBalancingPolicy {
       const std::string& cluster_name, const XdsClusterResource& cluster_data);
 
   void CancelClusterDataWatch(absl::string_view cluster_name,
-                              ClusterWatcher* watcher,
+                              XdsClient::ClusterWatcherInterface* watcher,
                               bool delay_unsubscription = false);
 
   void MaybeDestroyChildPolicyLocked();
@@ -302,8 +301,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     }
     auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), config_->cluster());
     watchers_[config_->cluster()].watcher = watcher.get();
-    XdsClusterResourceType::StartWatch(xds_client_.get(), config_->cluster(),
-                                       std::move(watcher));
+    xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
   }
 }
 
@@ -328,8 +326,7 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
               name.c_str());
     }
     state.watcher = watcher.get();
-    XdsClusterResourceType::StartWatch(xds_client_.get(), name,
-                                       std::move(watcher));
+    xds_client_->WatchClusterData(name, std::move(watcher));
     return false;
   }
   // Don't have the update we need yet.
@@ -613,7 +610,7 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
 }
 
 void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
-                                   ClusterWatcher* watcher,
+                                   XdsClient::ClusterWatcherInterface* watcher,
                                    bool delay_unsubscription) {
   if (xds_certificate_provider_ != nullptr) {
     std::string name(cluster_name);
@@ -623,7 +620,7 @@ void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
                                                                     nullptr);
     xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(name, {});
   }
-  XdsClusterResourceType::CancelWatch(xds_client_.get(), cluster_name, watcher,
+  xds_client_->CancelClusterDataWatch(cluster_name, watcher,
                                       delay_unsubscription);
 }
 //

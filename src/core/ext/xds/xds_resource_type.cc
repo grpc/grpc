@@ -45,26 +45,26 @@ XdsResourceTypeRegistry* XdsResourceTypeRegistry::GetOrCreate() {
 const XdsResourceType* XdsResourceTypeRegistry::GetType(
     absl::string_view resource_type) {
   auto it = resource_types_.find(resource_type);
-  if (it != resource_types_.end()) return it->second;
+  if (it != resource_types_.end()) return it->second.get();
   auto it2 = v2_resource_types_.find(resource_type);
   if (it2 != v2_resource_types_.end()) return it2->second;
   return nullptr;
 }
 
 void XdsResourceTypeRegistry::RegisterType(
-    const XdsResourceType* resource_type) {
+    std::unique_ptr<XdsResourceType> resource_type) {
   GPR_ASSERT(resource_types_.find(resource_type->type_url()) ==
              resource_types_.end());
   GPR_ASSERT(v2_resource_types_.find(resource_type->v2_type_url()) ==
              v2_resource_types_.end());
-  v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type);
-  resource_types_.emplace(resource_type->type_url(), resource_type);
+  v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type.get());
+  resource_types_.emplace(resource_type->type_url(), std::move(resource_type));
 }
 
 void XdsResourceTypeRegistry::ForEach(
     std::function<void(const XdsResourceType*)> func) {
   for (const auto& p : resource_types_) {
-    func(p.second);
+    func(p.second.get());
   }
 }
 
