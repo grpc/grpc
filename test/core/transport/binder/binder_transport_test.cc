@@ -220,11 +220,12 @@ struct MakeSendInitialMetadata {
     for (const auto& md : initial_metadata) {
       const std::string& key = md.first;
       const std::string& value = md.second;
-      grpc_initial_metadata.Append(key,
-                                   grpc_core::Slice::FromCopiedString(value));
+      grpc_initial_metadata.Append(
+          key, grpc_core::Slice::FromCopiedString(value),
+          [](absl::string_view, const grpc_core::Slice&) { abort(); });
     }
     if (!method_ref.empty()) {
-      grpc_initial_metadata.Set(grpc_core::PathMetadata(),
+      grpc_initial_metadata.Set(grpc_core::HttpPathMetadata(),
                                 grpc_core::Slice::FromCopiedString(method_ref));
     }
     op->send_initial_metadata = true;

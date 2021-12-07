@@ -294,12 +294,14 @@ BENCHMARK(BM_StreamCreateDestroy);
 class RepresentativeClientInitialMetadata {
  public:
   static void Prepare(grpc_metadata_batch* b) {
-    b->Set(grpc_core::SchemeMetadata(), grpc_core::SchemeMetadata::kHttp);
-    b->Set(grpc_core::MethodMetadata(), grpc_core::MethodMetadata::kPost);
-    b->Set(grpc_core::PathMetadata(),
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
+    b->Set(grpc_core::HttpPathMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "/foo/bar/bm_chttp2_transport")));
-    b->Set(grpc_core::AuthorityMetadata(),
+    b->Set(grpc_core::HttpAuthorityMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "foo.test.google.fr:1234")));
     b->Set(

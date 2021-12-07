@@ -393,7 +393,9 @@ grpc_call* grpc_channel_create_pollset_set_call(
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
       grpc_core::Slice(method),
-      host != nullptr ? absl::optional<grpc_core::Slice>(*host) : absl::nullopt,
+      host != nullptr
+          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
+          : absl::nullopt,
       deadline);
 }
 

@@ -55,9 +55,9 @@ void client_authority_start_transport_stream_op_batch(
   // If the initial metadata doesn't already contain :authority, add it.
   if (batch->send_initial_metadata &&
       batch->payload->send_initial_metadata.send_initial_metadata->get_pointer(
-          grpc_core::AuthorityMetadata()) == nullptr) {
+          grpc_core::HttpAuthorityMetadata()) == nullptr) {
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::AuthorityMetadata(), chand->default_authority.Ref());
+        grpc_core::HttpAuthorityMetadata(), chand->default_authority.Ref());
   }
   // Pass control down the stack.
   grpc_call_next_op(elem, batch);

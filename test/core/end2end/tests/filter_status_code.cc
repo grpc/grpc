@@ -266,7 +266,7 @@ static void server_start_transport_stream_op_batch(
   if (data->call == g_server_call_stack) {
     if (op->send_initial_metadata) {
       auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
-      auto* status = batch->get_pointer(grpc_core::StatusMetadata());
+      auto* status = batch->get_pointer(grpc_core::HttpStatusMetadata());
       if (status != nullptr) {
         /* Replace the HTTP status with 404 */
         *status = 404;

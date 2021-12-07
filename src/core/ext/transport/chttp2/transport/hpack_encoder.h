@@ -80,14 +80,14 @@ class HPackCompressor {
     Framer& operator=(const Framer&) = delete;
 
     void Encode(grpc_mdelem md);
-    void Encode(PathMetadata, const Slice& value);
-    void Encode(AuthorityMetadata, const Slice& value);
-    void Encode(StatusMetadata, uint32_t status);
+    void Encode(HttpPathMetadata, const Slice& value);
+    void Encode(HttpAuthorityMetadata, const Slice& value);
+    void Encode(HttpStatusMetadata, uint32_t status);
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
-    void Encode(SchemeMetadata, SchemeMetadata::ValueType value);
-    void Encode(MethodMetadata, MethodMetadata::ValueType method);
+    void Encode(HttpSchemeMetadata, HttpSchemeMetadata::ValueType value);
+    void Encode(HttpMethodMetadata, HttpMethodMetadata::ValueType method);
     void Encode(UserAgentMetadata, const Slice& slice);
     void Encode(GrpcStatusMetadata, grpc_status_code status);
     void Encode(GrpcEncodingMetadata, grpc_compression_algorithm value);
