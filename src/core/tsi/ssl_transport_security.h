@@ -35,6 +35,7 @@ extern "C" {
 #define TSI_X509_CERTIFICATE_TYPE "X509"
 
 /* This property is of type TSI_PEER_PROPERTY_STRING.  */
+#define TSI_X509_SUBJECT_PEER_PROPERTY "x509_subject"
 #define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"

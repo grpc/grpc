@@ -48,6 +48,7 @@ class EvaluateArgs {
     std::vector<absl::string_view> uri_sans;
     std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
+    absl::string_view subject;
     Address local_address;
     Address peer_address;
   };
@@ -79,6 +80,7 @@ class EvaluateArgs {
   std::vector<absl::string_view> GetUriSans() const;
   std::vector<absl::string_view> GetDnsSans() const;
   absl::string_view GetCommonName() const;
+  absl::string_view GetSubject() const;
 
  private:
   grpc_metadata_batch* metadata_;

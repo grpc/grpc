@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.43.0-dev'
+  version = '1.44.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -178,6 +178,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
@@ -542,8 +543,14 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/google/api/annotations.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                       'src/core/ext/upb-generated/google/api/http.upb.c',
                       'src/core/ext/upb-generated/google/api/http.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/any.upb.c',
@@ -801,6 +808,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/certificate_provider_store.h',
                       'src/core/ext/xds/file_watcher_certificate_provider_factory.cc',
                       'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
+                      'src/core/ext/xds/upb_utils.h',
                       'src/core/ext/xds/xds_api.cc',
                       'src/core/ext/xds/xds_api.h',
                       'src/core/ext/xds/xds_bootstrap.cc',
@@ -814,10 +822,22 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.cc',
                       'src/core/ext/xds/xds_client_stats.h',
+                      'src/core/ext/xds/xds_cluster.cc',
+                      'src/core/ext/xds/xds_cluster.h',
+                      'src/core/ext/xds/xds_common_types.cc',
+                      'src/core/ext/xds/xds_common_types.h',
+                      'src/core/ext/xds/xds_endpoint.cc',
+                      'src/core/ext/xds/xds_endpoint.h',
                       'src/core/ext/xds/xds_http_fault_filter.cc',
                       'src/core/ext/xds/xds_http_fault_filter.h',
                       'src/core/ext/xds/xds_http_filters.cc',
                       'src/core/ext/xds/xds_http_filters.h',
+                      'src/core/ext/xds/xds_listener.cc',
+                      'src/core/ext/xds/xds_listener.h',
+                      'src/core/ext/xds/xds_resource_type.cc',
+                      'src/core/ext/xds/xds_resource_type.h',
+                      'src/core/ext/xds/xds_route_config.cc',
+                      'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.cc',
                       'src/core/ext/xds/xds_routing.h',
                       'src/core/ext/xds/xds_server_config_fetcher.cc',
@@ -924,8 +944,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tmpfile_windows.cc',
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gpr/wrap_memcpy.cc',
-                      'src/core/lib/gprpp/arena.cc',
-                      'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic_utils.h',
                       'src/core/lib/gprpp/bitset.h',
                       'src/core/lib/gprpp/chunked_vector.h',
@@ -1165,6 +1183,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/seq.h',
                       'src/core/lib/resource_quota/api.cc',
                       'src/core/lib/resource_quota/api.h',
+                      'src/core/lib/resource_quota/arena.cc',
+                      'src/core/lib/resource_quota/arena.h',
                       'src/core/lib/resource_quota/memory_quota.cc',
                       'src/core/lib/resource_quota/memory_quota.h',
                       'src/core/lib/resource_quota/resource_quota.cc',
@@ -1353,8 +1373,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/static_metadata.h',
                       'src/core/lib/transport/status_conversion.cc',
                       'src/core/lib/transport/status_conversion.h',
-                      'src/core/lib/transport/status_metadata.cc',
-                      'src/core/lib/transport/status_metadata.h',
                       'src/core/lib/transport/timeout_encoding.cc',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.cc',
@@ -1659,7 +1677,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h',
                               'src/core/ext/upb-generated/google/api/annotations.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                               'src/core/ext/upb-generated/google/api/http.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/any.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
@@ -1789,6 +1810,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/certificate_provider_registry.h',
                               'src/core/ext/xds/certificate_provider_store.h',
                               'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
+                              'src/core/ext/xds/upb_utils.h',
                               'src/core/ext/xds/xds_api.h',
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
@@ -1796,8 +1818,14 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
+                              'src/core/ext/xds/xds_cluster.h',
+                              'src/core/ext/xds/xds_common_types.h',
+                              'src/core/ext/xds/xds_endpoint.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
+                              'src/core/ext/xds/xds_listener.h',
+                              'src/core/ext/xds/xds_resource_type.h',
+                              'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
@@ -1841,7 +1869,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tls.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
-                              'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic_utils.h',
                               'src/core/lib/gprpp/bitset.h',
                               'src/core/lib/gprpp/chunked_vector.h',
@@ -1964,6 +1991,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/race.h',
                               'src/core/lib/promise/seq.h',
                               'src/core/lib/resource_quota/api.h',
+                              'src/core/lib/resource_quota/arena.h',
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/resource_quota.h',
                               'src/core/lib/resource_quota/thread_quota.h',
@@ -2051,7 +2079,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/pid_controller.h',
                               'src/core/lib/transport/static_metadata.h',
                               'src/core/lib/transport/status_conversion.h',
-                              'src/core/lib/transport/status_metadata.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
                               'src/core/lib/transport/transport_impl.h',
@@ -2333,8 +2360,7 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-END_OF_COMMAND
     set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
-    find src/core -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <uv.h>;#if COCOAPODS==1\\\n  #include <uv/uv.h>\\\n#else\\\n  #include  <uv.h>\\\n#endif;g'
     find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
-    find src/core/ third_party/xxhash/ third_party/uv/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

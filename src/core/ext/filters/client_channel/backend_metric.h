@@ -22,7 +22,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {

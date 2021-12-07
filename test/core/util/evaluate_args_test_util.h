@@ -56,7 +56,10 @@ class EvaluateArgsTestUtil {
   }
 
  private:
-  ScopedArenaPtr arena_ = MakeScopedArena(1024);
+  MemoryAllocator allocator_ =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "EvaluateArgsTestUtil");
+  ScopedArenaPtr arena_ = MakeScopedArena(1024, &allocator_);
   grpc_metadata_batch metadata_{arena_.get()};
   MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
   grpc_auth_context auth_context_{nullptr};

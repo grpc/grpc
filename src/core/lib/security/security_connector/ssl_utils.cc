@@ -277,7 +277,11 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+    if (strcmp(prop->name, TSI_X509_SUBJECT_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) ==
+               0) {
       /* If there is no subject alt name, have the CN as the identity. */
       if (peer_identity_property_name == nullptr) {
         peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
@@ -373,6 +377,9 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_SUBJECT_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_SUBJECT_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_X509_CN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);

@@ -24,7 +24,7 @@ mkdir -p nativelibs
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/csharp_ext_* nativelibs || true
 
 # Add current timestamp to dev nugets
-./expand_dev_version.sh
+./nuget_helpers/expand_dev_version.sh
 
 # Extract current Grpc.Core version from build/dependencies.props
 UNITYPACKAGE_VERSION="$(grep -o '<GrpcCsharpVersion>.*</GrpcCsharpVersion>' build/dependencies.props | sed 's/<GrpcCsharpVersion>//' | sed 's/<\/GrpcCsharpVersion>//')"

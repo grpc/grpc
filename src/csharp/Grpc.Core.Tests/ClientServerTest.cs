@@ -65,6 +65,8 @@ namespace Grpc.Core.Tests
             Assert.AreEqual("ABC", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "ABC"));
 
             Assert.AreEqual("ABC", await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "ABC"));
+
+            Assert.AreEqual("ABC", await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "ABC").ConfigureAwait(false));
         }
 
         [Test]
@@ -197,12 +199,21 @@ namespace Grpc.Core.Tests
                 return result;
             });
 
-            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
-            await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
-            Assert.AreEqual("ABC", await call.ResponseAsync);
+            {
+                var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
+                await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
+                Assert.AreEqual("ABC", await call);
+                Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+                Assert.IsNotNull(call.GetTrailers());
+            }
 
-            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
-            Assert.IsNotNull(call.GetTrailers());
+            {
+                var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
+                await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
+                Assert.AreEqual("ABC", await call.ConfigureAwait(false));
+                Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+                Assert.IsNotNull(call.GetTrailers());
+            }
         }
 
         [Test]
