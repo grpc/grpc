@@ -257,11 +257,6 @@ class XdsRouteConfigResourceType : public XdsResourceType {
   void InitUpbSymtab(upb_symtab* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
   }
-
- private:
-  XdsRouteConfigResourceType() {
-    XdsResourceTypeRegistry::GetOrCreate()->RegisterType(this);
-  }
 };
 
 }  // namespace grpc_core
