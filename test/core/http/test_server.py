@@ -15,13 +15,11 @@
 """Server for httpcli_test"""
 
 import argparse
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
 import os
 import ssl
 import sys
-
-import six
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
-from six.moves.BaseHTTPServer import HTTPServer
 
 _PEM = os.path.abspath(
     os.path.join(os.path.dirname(sys.argv[0]), '../../..',
@@ -56,11 +54,7 @@ class Handler(BaseHTTPRequestHandler):
             self.good()
 
     def do_POST(self):
-        if hasattr(self.headers, 'getheader'):
-            # python2 compatibility
-            content_len = self.headers.getheader('content-length')
-        else:
-            content_len = self.headers.get('content-length')
+        content_len = self.headers.get('content-length')
         content = self.rfile.read(int(content_len)).decode('ascii')
         if self.path == '/post' and content == 'hello':
             self.good()
