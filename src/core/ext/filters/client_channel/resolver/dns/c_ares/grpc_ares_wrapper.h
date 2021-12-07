@@ -49,18 +49,20 @@ struct grpc_ares_request {
    * ev_driver and fd_node objects */
   grpc_core::Mutex mu;
   /** indicates the DNS server to use, if specified */
-  struct ares_addr_port_node dns_server_addr;
+  struct ares_addr_port_node dns_server_addr ABSL_GUARDED_BY(mu);
   /** following members are set in grpc_resolve_address_ares_impl */
   /** closure to call when the request completes */
-  grpc_closure* on_done = nullptr;
+  grpc_closure* on_done ABSL_GUARDED_BY(mu) = nullptr;
   /** the pointer to receive the resolved addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out
+      ABSL_GUARDED_BY(mu);
   /** the pointer to receive the resolved balancer addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
+  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out
+      ABSL_GUARDED_BY(mu);
   /** the pointer to receive the service config in JSON */
-  char** service_config_json_out = nullptr;
+  char** service_config_json_out ABSL_GUARDED_BY(mu) = nullptr;
   /** the evernt driver used by this request */
-  grpc_ares_ev_driver* ev_driver = nullptr;
+  grpc_ares_ev_driver* ev_driver ABSL_GUARDED_BY(mu) = nullptr;
   /** number of ongoing queries */
   size_t pending_queries ABSL_GUARDED_BY(mu) = 0;
   /** the errors explaining query failures, appended to in query callbacks */

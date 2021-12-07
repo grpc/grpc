@@ -1019,12 +1019,12 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms) {
   grpc_ares_request* r = new grpc_ares_request();
+  grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
   r->on_done = on_done;
   r->addresses_out = addrs;
   r->balancer_addresses_out = balancer_addrs;
   r->service_config_json_out = service_config_json;
-  grpc_core::MutexLock lock(&r->mu);
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_ares_impl name=%s, "
       "default_port=%s",
