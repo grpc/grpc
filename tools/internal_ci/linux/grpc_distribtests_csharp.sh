@@ -29,10 +29,10 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 source tools/internal_ci/helper_scripts/prepare_qemu_rc
 
 # Build all C# linux artifacts
-tools/run_tests/task_runner.py -f artifact linux csharp -j 12 -x build_artifacts_csharp/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux csharp ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts_csharp/sponge_log.xml || FAILED="true"
 
 # Build all protoc linux artifacts
-tools/run_tests/task_runner.py -f artifact linux protoc -j 12 -x build_artifacts_protoc/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux protoc ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts_protoc/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts
@@ -54,7 +54,7 @@ cp -r artifacts/* input_artifacts/ || true
 # Run all C# linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
-tools/run_tests/task_runner.py -f distribtest linux csharp -j 12 -x distribtests/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f distribtest linux csharp ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
