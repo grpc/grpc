@@ -239,7 +239,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const grpc_channel_args* args);
-  void UpdateChildPolicyLocked(ServerAddressList addresses,
+  void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
                                const grpc_channel_args* args);
 
   void MaybeUpdatePickerLocked();
@@ -471,8 +471,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
         config_->cluster_name(), config_->eds_service_name());
   } else {
     // Cluster name, EDS service name, and LRS server name should never
-    // change, because the EDS policy above us should be swapped out if
-    // that happens.
+    // change, because the xds_cluster_resolver policy above us should be
+    // swapped out if that happens.
     GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
     GPR_ASSERT(config_->eds_service_name() == old_config->eds_service_name());
     GPR_ASSERT(config_->lrs_load_reporting_server_name() ==
@@ -542,8 +542,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void XdsClusterImplLb::UpdateChildPolicyLocked(ServerAddressList addresses,
-                                               const grpc_channel_args* args) {
+void XdsClusterImplLb::UpdateChildPolicyLocked(
+    absl::StatusOr<ServerAddressList> addresses,
+    const grpc_channel_args* args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);

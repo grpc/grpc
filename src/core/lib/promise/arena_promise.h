@@ -19,8 +19,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 

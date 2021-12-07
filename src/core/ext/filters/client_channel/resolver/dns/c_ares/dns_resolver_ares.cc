@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -50,6 +48,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -320,21 +319,35 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     GRPC_ERROR_UNREF(error);
     return;
   }
+  // TODO(roth): Change logic to be able to report failures for addresses
+  // and service config independently of each other.
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
     Result result;
     if (addresses_ != nullptr) {
       result.addresses = std::move(*addresses_);
+    } else {
+      result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
-      std::string service_config_string = ChooseServiceConfig(
-          service_config_json_, &result.service_config_error);
+      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+      std::string service_config_string =
+          ChooseServiceConfig(service_config_json_, &service_config_error);
       gpr_free(service_config_json_);
-      if (result.service_config_error == GRPC_ERROR_NONE &&
+      RefCountedPtr<ServiceConfig> service_config;
+      if (service_config_error == GRPC_ERROR_NONE &&
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
-        result.service_config = ServiceConfig::Create(
-            channel_args_, service_config_string, &result.service_config_error);
+        service_config = ServiceConfig::Create(
+            channel_args_, service_config_string, &service_config_error);
+      }
+      if (service_config_error != GRPC_ERROR_NONE) {
+        result.service_config = absl::UnavailableError(
+            absl::StrCat("failed to parse service config: ",
+                         grpc_error_std_string(service_config_error)));
+        GRPC_ERROR_UNREF(service_config_error);
+      } else {
+        result.service_config = std::move(service_config);
       }
     }
     absl::InlinedVector<grpc_arg, 1> new_args;
@@ -344,7 +357,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     }
     result.args = grpc_channel_args_copy_and_add(channel_args_, new_args.data(),
                                                  new_args.size());
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
     addresses_.reset();
     balancer_addresses_.reset();
     // Reset backoff state so that we start from the beginning when the
@@ -353,12 +366,14 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
                          grpc_error_std_string(error).c_str());
-    std::string error_message =
-        absl::StrCat("DNS resolution failed for ", name_to_resolve_);
-    result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
-                                                         &error, 1),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    std::string error_message;
+    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    absl::Status status = absl::UnavailableError(absl::StrCat(
+        "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
+    Result result;
+    result.addresses = status;
+    result.service_config = status;
+    result_handler_->ReportResult(std::move(result));
     // Set retry timer.
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
