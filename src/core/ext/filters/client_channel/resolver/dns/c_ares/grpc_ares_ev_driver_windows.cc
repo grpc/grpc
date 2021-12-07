@@ -258,7 +258,7 @@ class GrpcPolledFdWindows {
     return grpc_winsocket_wrapped_socket(winsocket_);
   }
 
-  const char* GetName() { return name_.c_str(); }
+  const char* GetName() const { return name_.c_str(); }
 
   ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
                         ares_socket_t data_len, int flags,
@@ -662,7 +662,7 @@ class GrpcPolledFdWindows {
   grpc_winsocket* winsocket_;
   // tcp_write_state_ is only used on TCP GrpcPolledFds
   WriteState tcp_write_state_;
-  std::string name_;
+  const std::string name_;
   bool gotten_into_driver_list_;
   int address_family_;
   int socket_type_;
@@ -846,10 +846,10 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
     return wrapped_->GetWrappedAresSocketLocked();
   }
 
-  const char* GetName() override { return wrapped_->GetName(); }
+  const char* GetName() const override { return wrapped_->GetName(); }
 
  private:
-  GrpcPolledFdWindows* wrapped_;
+  GrpcPolledFdWindows* const wrapped_;
 };
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {

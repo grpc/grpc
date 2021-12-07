@@ -57,53 +57,63 @@ grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
 grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
 typedef struct fd_node {
+  /* default constructor exists only for linked list manipulation */
+  fd_node() : ev_driver(nullptr) {}
+
+  explicit fd_node(grpc_ares_ev_driver* ev_driver) : ev_driver(ev_driver) {}
+
   /** the owner of this fd node */
-  grpc_ares_ev_driver* ev_driver;
+  grpc_ares_ev_driver* const ev_driver;
   /** a closure wrapping on_readable_locked, which should be
      invoked when the grpc_fd in this node becomes readable. */
-  grpc_closure read_closure;
+  grpc_closure read_closure ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** a closure wrapping on_writable_locked, which should be
      invoked when the grpc_fd in this node becomes writable. */
-  grpc_closure write_closure;
+  grpc_closure write_closure ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** next fd node in the list */
-  struct fd_node* next;
+  struct fd_node* next ABSL_GUARDED_BY(&grpc_ares_request::mu);
 
   /** wrapped fd that's polled by grpc's poller for the current platform */
-  grpc_core::GrpcPolledFd* grpc_polled_fd;
+  grpc_core::GrpcPolledFd* grpc_polled_fd
+      ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** if the readable closure has been registered */
-  bool readable_registered;
+  bool readable_registered ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** if the writable closure has been registered */
-  bool writable_registered;
+  bool writable_registered ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** if the fd has been shutdown yet from grpc iomgr perspective */
-  bool already_shutdown;
+  bool already_shutdown ABSL_GUARDED_BY(&grpc_ares_request::mu);
 } fd_node;
 
 struct grpc_ares_ev_driver {
+  explicit grpc_ares_ev_driver(grpc_ares_request* request) : request(request) {}
+
   /** the ares_channel owned by this event driver */
-  ares_channel channel;
+  ares_channel channel ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** pollset set for driving the IO events of the channel */
-  grpc_pollset_set* pollset_set;
+  grpc_pollset_set* pollset_set ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** refcount of the event driver */
   gpr_refcount refs;
 
   /** a list of grpc_fd that this event driver is currently using. */
-  fd_node* fds;
+  fd_node* fds ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** is this event driver being shut down */
-  bool shutting_down;
+  bool shutting_down ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** request object that's using this ev driver */
-  grpc_ares_request* request;
+  grpc_ares_request* const request;
   /** Owned by the ev_driver. Creates new GrpcPolledFd's */
-  std::unique_ptr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
+  std::unique_ptr<grpc_core::GrpcPolledFdFactory> polled_fd_factory
+      ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** query timeout in milliseconds */
-  int query_timeout_ms;
+  int query_timeout_ms ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** alarm to cancel active queries */
-  grpc_timer query_timeout;
+  grpc_timer query_timeout ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** cancels queries on a timeout */
-  grpc_closure on_timeout_locked;
+  grpc_closure on_timeout_locked ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** alarm to poll ares_process on in case fd events don't happen */
-  grpc_timer ares_backup_poll_alarm;
+  grpc_timer ares_backup_poll_alarm ABSL_GUARDED_BY(&grpc_ares_request::mu);
   /** polls ares_process on a periodic timer */
-  grpc_closure on_ares_backup_poll_alarm_locked;
+  grpc_closure on_ares_backup_poll_alarm_locked
+      ABSL_GUARDED_BY(&grpc_ares_request::mu);
 };
 
 // TODO(apolcyn): make grpc_ares_hostbyname_request a sub-class
@@ -153,7 +163,8 @@ class GrpcAresQuery {
 };
 
 static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
-    grpc_ares_ev_driver* ev_driver) {
+    grpc_ares_ev_driver* ev_driver)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   GRPC_CARES_TRACE_LOG("request:%p Ref ev_driver %p", ev_driver->request,
                        ev_driver);
   gpr_ref(&ev_driver->refs);
@@ -174,17 +185,19 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver)
   }
 }
 
-static void fd_node_destroy_locked(fd_node* fdn) {
+static void fd_node_destroy_locked(fd_node* fdn)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   GRPC_CARES_TRACE_LOG("request:%p delete fd: %s", fdn->ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
   GPR_ASSERT(!fdn->readable_registered);
   GPR_ASSERT(!fdn->writable_registered);
   GPR_ASSERT(fdn->already_shutdown);
   delete fdn->grpc_polled_fd;
-  gpr_free(fdn);
+  delete fdn;
 }
 
-static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
+static void fd_node_shutdown_locked(fd_node* fdn, const char* reason)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   if (!fdn->already_shutdown) {
     fdn->already_shutdown = true;
     fdn->grpc_polled_fd->ShutdownLocked(
@@ -204,7 +217,8 @@ void grpc_ares_ev_driver_on_queries_complete_locked(
   grpc_ares_ev_driver_unref(ev_driver);
 }
 
-void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver) {
+void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   ev_driver->shutting_down = true;
   fd_node* fn = ev_driver->fds;
   while (fn != nullptr) {
@@ -215,7 +229,8 @@ void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver) {
 
 // Search fd in the fd_node list head. This is an O(n) search, the max possible
 // value of n is ARES_GETSOCK_MAXNUM (16). n is typically 1 - 2 in our tests.
-static fd_node* pop_fd_node_locked(fd_node** head, ares_socket_t as) {
+static fd_node* pop_fd_node_locked(fd_node** head, ares_socket_t as)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   fd_node phony_head;
   phony_head.next = *head;
   fd_node* node = &phony_head;
@@ -232,7 +247,8 @@ static fd_node* pop_fd_node_locked(fd_node** head, ares_socket_t as) {
 }
 
 static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
-    grpc_ares_ev_driver* driver) {
+    grpc_ares_ev_driver* driver)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   // An alternative here could be to use ares_timeout to try to be more
   // accurate, but that would require using "struct timeval"'s, which just makes
   // things a bit more complicated. So just poll every second, as suggested
@@ -260,10 +276,8 @@ static void on_timeout(void* arg, grpc_error_handle error) {
   grpc_ares_ev_driver_unref(driver);
 }
 
-static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
-
-static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
-                                             grpc_error_handle error);
+static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu);
 
 /* In case of non-responsive DNS servers, dropped packets, etc., c-ares has
  * intelligent timeout and retry logic, which we can take advantage of by
@@ -367,7 +381,8 @@ static void on_writable(void* arg, grpc_error_handle error) {
 
 // Get the file descriptors used by the ev_driver's ares channel, register
 // driver_closure with these filedescriptors.
-static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
+static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   fd_node* new_list = nullptr;
   if (!ev_driver->shutting_down) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -379,13 +394,12 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
         fd_node* fdn = pop_fd_node_locked(&ev_driver->fds, socks[i]);
         // Create a new fd_node if sock[i] is not in the fd_node list.
         if (fdn == nullptr) {
-          fdn = static_cast<fd_node*>(gpr_malloc(sizeof(fd_node)));
+          fdn = new fd_node(ev_driver);
           fdn->grpc_polled_fd =
               ev_driver->polled_fd_factory->NewGrpcPolledFdLocked(
                   socks[i], ev_driver->pollset_set);
           GRPC_CARES_TRACE_LOG("request:%p new fd: %s", ev_driver->request,
                                fdn->grpc_polled_fd->GetName());
-          fdn->ev_driver = ev_driver;
           fdn->readable_registered = false;
           fdn->writable_registered = false;
           fdn->already_shutdown = false;
@@ -441,7 +455,8 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
   ev_driver->fds = new_list;
 }
 
-void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
+void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   grpc_ares_notify_on_event_locked(ev_driver);
   // Initialize overall DNS resolution timeout alarm
   grpc_millis timeout =
@@ -476,8 +491,9 @@ void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
 
 grpc_error_handle grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
-    int query_timeout_ms, grpc_ares_request* request) {
-  *ev_driver = new grpc_ares_ev_driver();
+    int query_timeout_ms, grpc_ares_request* request)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(request->mu) {
+  *ev_driver = new grpc_ares_ev_driver(request);
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
@@ -487,14 +503,13 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   if (status != ARES_SUCCESS) {
     grpc_error_handle err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
         "Failed to init ares channel. C-ares error: ", ares_strerror(status)));
-    gpr_free(*ev_driver);
+    delete *ev_driver;
     return err;
   }
   gpr_ref_init(&(*ev_driver)->refs, 1);
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = nullptr;
   (*ev_driver)->shutting_down = false;
-  (*ev_driver)->request = request;
   (*ev_driver)->polled_fd_factory =
       grpc_core::NewGrpcPolledFdFactory(&(*ev_driver)->request->mu);
   (*ev_driver)
