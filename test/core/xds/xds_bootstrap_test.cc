@@ -81,6 +81,23 @@ TEST(XdsBootstrapTest, Basic) {
       "          \"server_features\": [\"xds_v3\"]"
       "        }"
       "      ]"
+      "    },"
+      "    \"xds.example2.com\": {"
+      "      \"client_listener_resource_name_template\": "
+      "\"xdstp://xds.example2.com/envoy.config.listener.v3.Listener/grpc/"
+      "server/"
+      "%s\","
+      "      \"xds_servers\": ["
+      "        {"
+      "          \"server_uri\": \"fake:///xds_server2\","
+      "          \"channel_creds\": ["
+      "            {"
+      "              \"type\": \"fake\""
+      "            }"
+      "          ],"
+      "          \"server_features\": [\"xds_v3\"]"
+      "        }"
+      "      ]"
       "    }"
       "  },"
       "  \"node\": {"
@@ -109,6 +126,29 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap.server().channel_creds_type, "fake");
   EXPECT_EQ(bootstrap.server().channel_creds_config.type(),
+            Json::Type::JSON_NULL);
+  EXPECT_EQ(bootstrap.authorities().size(), 2);
+  const XdsBootstrap::Authority* authority1 =
+      bootstrap.LookupAuthority("xds.example.com");
+  ASSERT_NE(authority1, nullptr);
+  EXPECT_EQ(authority1->client_listener_resource_name_template,
+            "xdstp://xds.example.com/envoy.config.listener.v3.Listener/grpc/"
+            "server/%s");
+  EXPECT_EQ(authority1->xds_servers.size(), 1);
+  EXPECT_EQ(authority1->xds_servers[0].server_uri, "fake:///xds_server");
+  EXPECT_EQ(authority1->xds_servers[0].channel_creds_type, "fake");
+  EXPECT_EQ(authority1->xds_servers[0].channel_creds_config.type(),
+            Json::Type::JSON_NULL);
+  const XdsBootstrap::Authority* authority2 =
+      bootstrap.LookupAuthority("xds.example2.com");
+  ASSERT_NE(authority2, nullptr);
+  EXPECT_EQ(authority2->client_listener_resource_name_template,
+            "xdstp://xds.example2.com/envoy.config.listener.v3.Listener/grpc/"
+            "server/%s");
+  EXPECT_EQ(authority2->xds_servers.size(), 1);
+  EXPECT_EQ(authority2->xds_servers[0].server_uri, "fake:///xds_server2");
+  EXPECT_EQ(authority2->xds_servers[0].channel_creds_type, "fake");
+  EXPECT_EQ(authority2->xds_servers[0].channel_creds_config.type(),
             Json::Type::JSON_NULL);
   ASSERT_NE(bootstrap.node(), nullptr);
   EXPECT_EQ(bootstrap.node()->id, "foo");
