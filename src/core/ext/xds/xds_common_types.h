@@ -33,8 +33,8 @@
 namespace grpc_core {
 
 struct Duration {
-  int64_t seconds = 0;
-  int32_t nanos = 0;
+  int64_t seconds;
+  int32_t nanos;
 
   Duration() : seconds(0), nanos(0) {}
 
