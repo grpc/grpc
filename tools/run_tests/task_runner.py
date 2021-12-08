@@ -68,12 +68,6 @@ argp.add_argument('-f',
                   default=[],
                   help='Filter targets to build with AND semantics.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument('-t',
-                  '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True,
-                  help='Deprecated. Has no effect.')
 argp.add_argument('-x',
                   '--xml_report',
                   default='report_taskrunner_sponge_log.xml',
