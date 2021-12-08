@@ -39,6 +39,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -165,7 +166,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     bool disable_reresolution() override { return true; }
 
    private:
-    class EndpointWatcher : public XdsClient::EndpointWatcherInterface {
+    class EndpointWatcher : public XdsEndpointResourceType::WatcherInterface {
      public:
       explicit EndpointWatcher(
           RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism)
@@ -414,8 +415,8 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
   auto watcher = MakeRefCounted<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
-  parent()->xds_client_->WatchEndpointData(GetEdsResourceName(),
-                                           std::move(watcher));
+  XdsEndpointResourceType::StartWatch(parent()->xds_client_.get(),
+                                      GetEdsResourceName(), std::move(watcher));
 }
 
 void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
@@ -425,8 +426,8 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
             ":%p cancelling xds watch for %s",
             parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
-                                                 watcher_);
+  XdsEndpointResourceType::CancelWatch(parent()->xds_client_.get(),
+                                       GetEdsResourceName(), watcher_);
   Unref();
 }
 
