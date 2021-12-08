@@ -107,10 +107,6 @@ grpc_error_handle grpc_ares_init(void);
    it has been called the same number of times as grpc_ares_init(). */
 void grpc_ares_cleanup(void);
 
-/** Schedules the desired callback for request completion
- * and destroys the grpc_ares_request */
-void grpc_ares_complete_request_locked(grpc_ares_request* request);
-
 /* Indicates whether or not AAAA queries should be attempted. */
 /* E.g., return false if ipv6 is known to not be available. */
 bool grpc_ares_query_ipv6();

@@ -171,6 +171,9 @@ static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
   return ev_driver;
 }
 
+static void grpc_ares_complete_request_locked(grpc_ares_request* r)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu);
+
 static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   GRPC_CARES_TRACE_LOG("request:%p Unref ev_driver %p", ev_driver->request,

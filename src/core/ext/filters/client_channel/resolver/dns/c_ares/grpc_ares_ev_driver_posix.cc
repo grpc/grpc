@@ -90,7 +90,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
  private:
   const std::string name_;
-  ares_socket_t as_ ABSL_GUARDED_BY(&grpc_ares_request::mu);
+  const ares_socket_t as_;
   grpc_fd* fd_ ABSL_GUARDED_BY(&grpc_ares_request::mu);
   grpc_pollset_set* driver_pollset_set_ ABSL_GUARDED_BY(&grpc_ares_request::mu);
 };
