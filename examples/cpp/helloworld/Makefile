@@ -38,7 +38,7 @@ PROTOS_PATH = ../../protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server 
+all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server greeter_secure_client greeter_secure_server
 
 greeter_client: helloworld.pb.o helloworld.grpc.pb.o greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
@@ -59,6 +59,12 @@ greeter_callback_client: helloworld.pb.o helloworld.grpc.pb.o greeter_callback_c
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 greeter_callback_server: helloworld.pb.o helloworld.grpc.pb.o greeter_callback_server.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+greeter_secure_client: helloworld.pb.o helloworld.grpc.pb.o greeter_secure_client.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+greeter_secure_server: helloworld.pb.o helloworld.grpc.pb.o greeter_secure_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 .PRECIOUS: %.grpc.pb.cc
