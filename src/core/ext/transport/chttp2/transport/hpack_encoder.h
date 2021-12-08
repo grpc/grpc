@@ -92,6 +92,8 @@ class HPackCompressor {
     void Encode(GrpcStatusMetadata, grpc_status_code status);
     void Encode(GrpcEncodingMetadata, grpc_compression_algorithm value);
     void Encode(GrpcAcceptEncodingMetadata, CompressionAlgorithmSet value);
+    void Encode(GrpcTagsBinMetadata, const Slice& slice);
+    void Encode(GrpcTraceBinMetadata, const Slice& slice);
     void Encode(GrpcMessageMetadata, const Slice& slice) {
       if (slice.empty()) return;
       EmitLitHdrWithNonBinaryStringKeyNotIdx(
@@ -137,7 +139,11 @@ class HPackCompressor {
     void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
     void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
                                                 const grpc_slice& value_slice);
+    void EmitLitHdrWithBinaryStringKeyIncIdx(const grpc_slice& key_slice,
+                                             const grpc_slice& value_slice);
     void EmitLitHdrWithBinaryStringKeyNotIdx(const grpc_slice& key_slice,
+                                             const grpc_slice& value_slice);
+    void EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
                                              const grpc_slice& value_slice);
     void EmitLitHdrWithNonBinaryStringKeyNotIdx(const grpc_slice& key_slice,
                                                 const grpc_slice& value_slice);
@@ -146,6 +152,8 @@ class HPackCompressor {
     void EncodeAlwaysIndexed(uint32_t* index, const grpc_slice& key,
                              const grpc_slice& value,
                              uint32_t transport_length);
+    void EncodeIndexedKeyWithBinaryValue(uint32_t* index, absl::string_view key,
+                                         const grpc_slice& value);
 
     size_t CurrentFrameSize() const;
     void Add(grpc_slice slice);
@@ -300,6 +308,10 @@ class HPackCompressor {
   uint32_t grpc_accept_encoding_index_ = 0;
   // The grpc-accept-encoding string referred to by grpc_accept_encoding_index_
   CompressionAlgorithmSet grpc_accept_encoding_;
+  // Index of something that was sent with grpc-tags-bin
+  uint32_t grpc_tags_bin_index_ = 0;
+  // Index of something that was sent with grpc-trace-bin
+  uint32_t grpc_trace_bin_index_ = 0;
   // The user-agent string referred to by user_agent_index_
   Slice user_agent_;
   SliceIndex path_index_;
