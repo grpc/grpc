@@ -146,7 +146,6 @@ task 'gem:native' do
     File.truncate('grpc_c.64.ruby', 0)
     ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin'].each do |plat|
       run_rake_compiler(plat, <<~EOT)
-        gem update --system --no-document && \
         bundle -v && \
         bundle && \
         bundle exec rake clean && \
