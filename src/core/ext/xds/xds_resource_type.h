@@ -16,7 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
 #include <memory>
 #include <string>
 
@@ -92,29 +91,6 @@ class XdsResourceType {
   // Checks against both type_url() and v2_type_url().
   // If is_v2 is non-null, it will be set to true if matching v2_type_url().
   bool IsType(absl::string_view resource_type, bool* is_v2) const;
-};
-
-// Global registry of xDS resource types.
-class XdsResourceTypeRegistry {
- public:
-  // Gets the global registry, creating it if needed.
-  static XdsResourceTypeRegistry* GetOrCreate();
-
-  // Gets the type for resource_type, or null if the type is unknown.
-  const XdsResourceType* GetType(absl::string_view resource_type);
-
-  // Registers a resource type.
-  // All types must be registered before they can be used in the XdsClient.
-  void RegisterType(const XdsResourceType* resource_type);
-
-  // Calls func for each resource type.
-  void ForEach(std::function<void(const XdsResourceType*)> func);
-
- private:
-  std::map<absl::string_view /*resource_type*/, const XdsResourceType*>
-      resource_types_;
-  std::map<absl::string_view /*v2_resource_type*/, const XdsResourceType*>
-      v2_resource_types_;
 };
 
 }  // namespace grpc_core

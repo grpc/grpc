@@ -46,6 +46,9 @@ extern TraceFlag grpc_xds_client_refcount_trace;
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
   // Resource watcher interface.  Implemented by callers.
+  // Note: Most callers will not use this API directly but rather via a
+  // resource-type-specific wrapper API provided by the relevant
+  // XdsResourceType implementation.
   class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
    public:
     virtual void OnGenericResourceChanged(
@@ -83,12 +86,24 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void Orphan() override;
 
   // Start and cancel watch for a resource.
+  //
   // The XdsClient takes ownership of the watcher, but the caller may
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
   // If the caller is going to start a new watch after cancelling the
   // old one, it should set delay_unsubscription to true.
+  //
+  // The resource type object must be a global singleton, since the first
+  // time the XdsClient sees a particular resource type object, it will
+  // store the pointer to that object as the authoritative implementation for
+  // its type URLs.  The resource type object must outlive the XdsClient object,
+  // and it is illegal to start a subsequent watch for the same type URLs using
+  // a different resource type object.
+  //
+  // Note: Most callers will not use this API directly but rather via a
+  // resource-type-specific wrapper API provided by the relevant
+  // XdsResourceType implementation.
   void WatchResource(const XdsResourceType* type, absl::string_view name,
                      RefCountedPtr<ResourceWatcherInterface> watcher);
   void CancelResourceWatch(const XdsResourceType* type,
@@ -235,6 +250,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void NotifyOnErrorLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  // Gets the type for resource_type, or null if the type is unknown.
+  const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   static absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
@@ -257,6 +279,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   WorkSerializer work_serializer_;
 
   Mutex mu_;
+
+  // Stores resource type objects seen by type URL.
+  std::map<absl::string_view /*resource_type*/, const XdsResourceType*>
+      resource_types_ ABSL_GUARDED_BY(mu_);
+  std::map<absl::string_view /*v2_resource_type*/, const XdsResourceType*>
+      v2_resource_types_ ABSL_GUARDED_BY(mu_);
+  upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
 
   //  Map of existing xDS server channels.
   std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_

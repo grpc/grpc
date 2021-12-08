@@ -213,12 +213,6 @@ class XdsListenerResourceType
         symtab);
     XdsHttpFilterRegistry::PopulateSymtab(symtab);
   }
-
- private:
-  friend class XdsResourceTypeImpl<XdsListenerResourceType, XdsListenerResource>;
-  XdsListenerResourceType() {
-    XdsResourceTypeRegistry::GetOrCreate()->RegisterType(this);
-  }
 };
 
 }  // namespace grpc_core

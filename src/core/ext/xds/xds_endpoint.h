@@ -128,12 +128,6 @@ class XdsEndpointResourceType
   void InitUpbSymtab(upb_symtab* symtab) const override {
     envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
   }
-
- private:
-  friend class XdsResourceTypeImpl<XdsEndpointResourceType, XdsEndpointResource>;
-  XdsEndpointResourceType() {
-    XdsResourceTypeRegistry::GetOrCreate()->RegisterType(this);
-  }
 };
 
 }  // namespace grpc_core
