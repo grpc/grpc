@@ -190,11 +190,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "bf070ffab0ea1a2d0c3d024d8ab8c813c96a5d07a890a9e7e9a979e9ad427b47",
-            strip_prefix = "boringssl-95b3ed1b01f2ef1d72fed290ed79fe1b0e7dafc0",
+            sha256 = "e168777eb0fc14ea5a65749a2f53c095935a6ea65f38899a289808fb0c221dc4",
+            strip_prefix = "boringssl-4fb158925f7753d80fb858cb0239dff893ef9f15",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/95b3ed1b01f2ef1d72fed290ed79fe1b0e7dafc0.tar.gz",
-                "https://github.com/google/boringssl/archive/95b3ed1b01f2ef1d72fed290ed79fe1b0e7dafc0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/4fb158925f7753d80fb858cb0239dff893ef9f15.tar.gz",
+                "https://github.com/google/boringssl/archive/4fb158925f7753d80fb858cb0239dff893ef9f15.tar.gz",
             ],
         )
 
@@ -285,11 +285,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "1764491a199eb9325b177126547f03d244f86b4ff28f16f206c7b3e7e4f777ec",
-            strip_prefix = "abseil-cpp-278e0a071885a22dcd2fd1b5576cc44757299343",
+            sha256 = "dcf71b9cba8dc0ca9940c4b316a0c796be8fab42b070bb6b7cab62b48f0e66c4",
+            strip_prefix = "abseil-cpp-20211102.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/278e0a071885a22dcd2fd1b5576cc44757299343.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/278e0a071885a22dcd2fd1b5576cc44757299343.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
             ],
         )
 

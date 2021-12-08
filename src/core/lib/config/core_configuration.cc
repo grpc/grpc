@@ -31,7 +31,9 @@ CoreConfiguration* CoreConfiguration::Builder::Build() {
 }
 
 CoreConfiguration::CoreConfiguration(Builder* builder)
-    : channel_init_(builder->channel_init_.Build()),
+    : channel_args_preconditioning_(
+          builder->channel_args_preconditioning_.Build()),
+      channel_init_(builder->channel_init_.Build()),
       handshaker_registry_(builder->handshaker_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(std::function<void(Builder*)> builder) {

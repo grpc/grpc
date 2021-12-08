@@ -246,10 +246,11 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
+    if (grpc_slice_eq(
+            request_metadata_recv.metadata[i].key,
+            grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               grpc_slice_from_static_string("1")));
       found_retry_header = true;
       break;
     }

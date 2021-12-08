@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 20.0.0
+PROJECT_NUMBER         = 21.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1006,6 +1006,10 @@ src/core/ext/filters/max_age/max_age_filter.cc \
 src/core/ext/filters/max_age/max_age_filter.h \
 src/core/ext/filters/message_size/message_size_filter.cc \
 src/core/ext/filters/message_size/message_size_filter.h \
+src/core/ext/filters/server_config_selector/server_config_selector.cc \
+src/core/ext/filters/server_config_selector/server_config_selector.h \
+src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
+src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
 src/core/ext/service_config/service_config.cc \
 src/core/ext/service_config/service_config.h \
 src/core/ext/service_config/service_config_call_data.h \
@@ -1231,12 +1235,20 @@ src/core/ext/upb-generated/google/api/annotations.upb.c \
 src/core/ext/upb-generated/google/api/annotations.upb.h \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
 src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c \
+src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h \
 src/core/ext/upb-generated/google/api/http.upb.c \
 src/core/ext/upb-generated/google/api/http.upb.h \
 src/core/ext/upb-generated/google/protobuf/any.upb.c \
 src/core/ext/upb-generated/google/protobuf/any.upb.h \
+src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
+src/core/ext/upb-generated/google/protobuf/descriptor.upb.h \
 src/core/ext/upb-generated/google/protobuf/duration.upb.c \
 src/core/ext/upb-generated/google/protobuf/duration.upb.h \
 src/core/ext/upb-generated/google/protobuf/empty.upb.c \
@@ -1439,6 +1451,8 @@ src/core/ext/upbdefs-generated/google/api/http.upbdefs.c \
 src/core/ext/upbdefs-generated/google/api/http.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h \
+src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
+src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
 src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h \
 src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \
@@ -1486,6 +1500,7 @@ src/core/ext/xds/certificate_provider_store.cc \
 src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
 src/core/ext/xds/file_watcher_certificate_provider_factory.h \
+src/core/ext/xds/upb_utils.h \
 src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
 src/core/ext/xds/xds_bootstrap.cc \
@@ -1499,10 +1514,24 @@ src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
+src/core/ext/xds/xds_cluster.cc \
+src/core/ext/xds/xds_cluster.h \
+src/core/ext/xds/xds_common_types.cc \
+src/core/ext/xds/xds_common_types.h \
+src/core/ext/xds/xds_endpoint.cc \
+src/core/ext/xds/xds_endpoint.h \
 src/core/ext/xds/xds_http_fault_filter.cc \
 src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
+src/core/ext/xds/xds_listener.cc \
+src/core/ext/xds/xds_listener.h \
+src/core/ext/xds/xds_resource_type.cc \
+src/core/ext/xds/xds_resource_type.h \
+src/core/ext/xds/xds_route_config.cc \
+src/core/ext/xds/xds_route_config.h \
+src/core/ext/xds/xds_routing.cc \
+src/core/ext/xds/xds_routing.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
 src/core/lib/README.md \
 src/core/lib/address_utils/parse_address.cc \
@@ -1516,6 +1545,8 @@ src/core/lib/channel/README.md \
 src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
+src/core/lib/channel/channel_args_preconditioning.cc \
+src/core/lib/channel/channel_args_preconditioning.h \
 src/core/lib/channel/channel_stack.cc \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.cc \
@@ -1609,8 +1640,6 @@ src/core/lib/gpr/tmpfile_windows.cc \
 src/core/lib/gpr/useful.h \
 src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
-src/core/lib/gprpp/arena.cc \
-src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic_utils.h \
 src/core/lib/gprpp/bitset.h \
 src/core/lib/gprpp/chunked_vector.h \
@@ -1630,12 +1659,10 @@ src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/manual_constructor.h \
-src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/orphanable.h \
-src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/stat.h \
@@ -1853,6 +1880,8 @@ src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
 src/core/lib/resource_quota/api.cc \
 src/core/lib/resource_quota/api.h \
+src/core/lib/resource_quota/arena.cc \
+src/core/lib/resource_quota/arena.h \
 src/core/lib/resource_quota/memory_quota.cc \
 src/core/lib/resource_quota/memory_quota.h \
 src/core/lib/resource_quota/resource_quota.cc \
@@ -1970,6 +1999,7 @@ src/core/lib/slice/b64.h \
 src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \
+src/core/lib/slice/slice.h \
 src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
 src/core/lib/slice/slice_intern.cc \
@@ -2034,6 +2064,7 @@ src/core/lib/transport/metadata.cc \
 src/core/lib/transport/metadata.h \
 src/core/lib/transport/metadata_batch.cc \
 src/core/lib/transport/metadata_batch.h \
+src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
 src/core/lib/transport/pid_controller.cc \
 src/core/lib/transport/pid_controller.h \
@@ -2041,8 +2072,6 @@ src/core/lib/transport/static_metadata.cc \
 src/core/lib/transport/static_metadata.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
-src/core/lib/transport/status_metadata.cc \
-src/core/lib/transport/status_metadata.h \
 src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \

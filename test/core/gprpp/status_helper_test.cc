@@ -150,16 +150,6 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
       t);
 }
 
-TEST(StatusUtilTest, AllocPtr) {
-  absl::Status statuses[] = {absl::OkStatus(), absl::CancelledError(),
-                             absl::AbortedError("Message")};
-  for (const auto& s : statuses) {
-    uintptr_t p = internal::StatusAllocPtr(s);
-    EXPECT_EQ(s, internal::StatusGetFromPtr(p));
-    internal::StatusFreePtr(p);
-  }
-}
-
 TEST(StatusUtilTest, AllocHeapPtr) {
   absl::Status statuses[] = {absl::OkStatus(), absl::CancelledError(),
                              absl::AbortedError("Message")};
@@ -167,6 +157,15 @@ TEST(StatusUtilTest, AllocHeapPtr) {
     uintptr_t p = internal::StatusAllocHeapPtr(s);
     EXPECT_EQ(s, internal::StatusGetFromHeapPtr(p));
     internal::StatusFreeHeapPtr(p);
+  }
+}
+
+TEST(StatusUtilTest, MoveHeapPtr) {
+  absl::Status statuses[] = {absl::OkStatus(), absl::CancelledError(),
+                             absl::AbortedError("Message")};
+  for (const auto& s : statuses) {
+    uintptr_t p = internal::StatusAllocHeapPtr(s);
+    EXPECT_EQ(s, internal::StatusMoveFromHeapPtr(p));
   }
 }
 

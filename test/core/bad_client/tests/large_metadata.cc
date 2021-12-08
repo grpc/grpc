@@ -69,6 +69,15 @@
   ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST) - 1) + \
    (NUM_HEADERS * PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE) + 1)
 
+static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
+                           void* /*registered_method*/) {
+  while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
+  }
+}
+
 int main(int argc, char** argv) {
   int i;
   grpc_init();
@@ -92,7 +101,7 @@ int main(int argc, char** argv) {
   args[1].client_payload = client_payload;
   args[1].client_payload_length = sizeof(client_payload) - 1;
 
-  grpc_run_bad_client_test(server_verifier_request_call, args, 2, 0);
+  grpc_run_bad_client_test(verifier_fails, args, 2, 0);
 
   grpc_shutdown();
   return 0;

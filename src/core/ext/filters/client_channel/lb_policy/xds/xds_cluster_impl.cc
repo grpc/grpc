@@ -30,6 +30,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -120,7 +121,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
       std::string cluster_name, std::string eds_service_name,
       absl::optional<std::string> lrs_load_reporting_server_name,
       uint32_t max_concurrent_requests,
-      RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config)
+      RefCountedPtr<XdsEndpointResource::DropConfig> drop_config)
       : child_policy_(std::move(child_policy)),
         cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
@@ -140,7 +141,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
     return lrs_load_reporting_server_name_;
   };
   uint32_t max_concurrent_requests() const { return max_concurrent_requests_; }
-  RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config() const {
+  RefCountedPtr<XdsEndpointResource::DropConfig> drop_config() const {
     return drop_config_;
   }
 
@@ -150,7 +151,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   std::string eds_service_name_;
   absl::optional<std::string> lrs_load_reporting_server_name_;
   uint32_t max_concurrent_requests_;
-  RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
+  RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
 };
 
 // xDS Cluster Impl LB policy.
@@ -205,7 +206,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
-    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
+    RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<RefCountedPicker> picker_;
   };
@@ -238,7 +239,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const grpc_channel_args* args);
-  void UpdateChildPolicyLocked(ServerAddressList addresses,
+  void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
                                const grpc_channel_args* args);
 
   void MaybeUpdatePickerLocked();
@@ -470,8 +471,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
         config_->cluster_name(), config_->eds_service_name());
   } else {
     // Cluster name, EDS service name, and LRS server name should never
-    // change, because the EDS policy above us should be swapped out if
-    // that happens.
+    // change, because the xds_cluster_resolver policy above us should be
+    // swapped out if that happens.
     GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
     GPR_ASSERT(config_->eds_service_name() == old_config->eds_service_name());
     GPR_ASSERT(config_->lrs_load_reporting_server_name() ==
@@ -541,8 +542,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void XdsClusterImplLb::UpdateChildPolicyLocked(ServerAddressList addresses,
-                                               const grpc_channel_args* args) {
+void XdsClusterImplLb::UpdateChildPolicyLocked(
+    absl::StatusOr<ServerAddressList> addresses,
+    const grpc_channel_args* args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
@@ -736,7 +738,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // Drop config.
-    auto drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
+    auto drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
     it = json.object_value().find("dropCategories");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -762,7 +764,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
  private:
   static std::vector<grpc_error_handle> ParseDropCategories(
-      const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
+      const Json& json, XdsEndpointResource::DropConfig* drop_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::ARRAY) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -786,7 +788,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
   }
 
   static std::vector<grpc_error_handle> ParseDropCategory(
-      const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
+      const Json& json, XdsEndpointResource::DropConfig* drop_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(

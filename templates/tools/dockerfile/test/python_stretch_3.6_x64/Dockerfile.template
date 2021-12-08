@@ -14,5 +14,9 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  <%include file="../../python_stretch.include"/>
+  <%include file="../../python_stretch_base.include"/>
   <%include file="../../compile_python_36.include"/>
+
+  RUN ln -s $(which python3.6) /usr/bin/python3
+
+  <%include file="../../gcp_api_libraries.include"/>
