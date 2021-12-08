@@ -601,7 +601,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return *this;
     }
     BootstrapBuilder& SetServerListenerResourceNameTemplate(
-        const const std::string& server_listener_resource_name_template = "") {
+        const std::string& server_listener_resource_name_template = "") {
       server_listener_resource_name_template_ =
           server_listener_resource_name_template;
       return *this;
@@ -723,14 +723,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                  int client_load_reporting_interval_seconds = 100,
                  int xds_resource_does_not_exist_timeout_ms = 0,
                  bool use_xds_enabled_server = false,
-                 const char* lb_expected_authority = nullptr,
-                 BootstrapBuilder bootstrap_builder = BootstrapBuilder())
+                 const std::string& lb_expected_authority = "")
       : num_backends_(num_backends),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         xds_resource_does_not_exist_timeout_ms_(
             xds_resource_does_not_exist_timeout_ms),
-        use_xds_enabled_server_(use_xds_enabled_server) {
+        use_xds_enabled_server_(use_xds_enabled_server),
+        lb_expected_authority_(lb_expected_authority) {}
+
+  void SetUp() override {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -803,20 +805,23 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
           xds_resource_does_not_exist_timeout_ms_));
     }
-    if (lb_expected_authority != nullptr) {
+    if (!lb_expected_authority_.empty()) {
+      if (lb_expected_authority_ == "localhost:%s") {
+        lb_expected_authority_ = absl::StrCat("localhost:", balancer_->port());
+      }
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
-          const_cast<char*>(lb_expected_authority)));
+          const_cast<char*>(lb_expected_authority_.c_str())));
     }
     xds_channel_args_.num_args = xds_channel_args_to_add_.size();
     xds_channel_args_.args = xds_channel_args_to_add_.data();
     // Initialize XdsClient state.
-    bootstrap_builder.SetDefaultServer(
+    bootstrap_builder_.SetDefaultServer(
         absl::StrCat("localhost:", balancer_->port()));
     if (GetParam().use_v2()) {
-      bootstrap_builder.SetV2();
+      bootstrap_builder_.SetV2();
     }
-    bootstrap_ = bootstrap_builder.Build();
+    bootstrap_ = bootstrap_builder_.Build();
     gpr_log(GPR_INFO, "donna bootstrap %s", bootstrap_.c_str());
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
@@ -843,7 +848,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ResetStub();
   }
 
-  ~XdsEnd2endTest() override {
+  void TearDown() override {
     ShutdownAllBackends();
     balancer_->Shutdown();
     // Clear global xDS channel args, since they will go out of scope
@@ -1960,6 +1965,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return rpcs;
   }
 
+  void SetBootstrapBuilder(const BootstrapBuilder& bootstrap_builder) {
+    bootstrap_builder_ = bootstrap_builder;
+  }
+
   const size_t num_backends_;
   const int client_load_reporting_interval_seconds_;
   bool ipv6_only_ = false;
@@ -1983,6 +1992,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   RouteConfiguration default_server_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
+  std::string lb_expected_authority_;
+  BootstrapBuilder bootstrap_builder_;
   bool bootstrap_contents_from_env_var_;
   std::string bootstrap_;
   char* bootstrap_file_ = nullptr;
@@ -1990,7 +2001,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
 class BasicTest : public XdsEnd2endTest {
  public:
-  BasicTest() : XdsEnd2endTest(4) { StartAllBackends(); }
+  BasicTest() : XdsEnd2endTest(4) {}
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    StartAllBackends();
+  }
 };
 
 // Tests that the balancer sends the correct response to the client, and the
@@ -2651,17 +2666,24 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsFederationTest : public XdsEnd2endTest {
  public:
-  XdsFederationTest()
-      : authority_balancer_(CreateAndStartBalancer()),
-        XdsEnd2endTest(
-            4, 100, 0, false, nullptr,
-            BootstrapBuilder().AddAuthority(
-                "xds.example.com",
-                absl::StrCat("localhost:", authority_balancer_->port()))) {
+  XdsFederationTest() : XdsEnd2endTest(4, 100, 0, false) {
+    authority_balancer_ = CreateAndStartBalancer();
+    BootstrapBuilder builder;
+    builder.AddAuthority(
+        "xds.example.com",
+        absl::StrCat("localhost:", authority_balancer_->port()));
+    SetBootstrapBuilder(builder);
+  }
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     StartAllBackends();
   }
 
-  ~XdsFederationTest() { authority_balancer_->Shutdown(); }
+  void TearDown() override {
+    authority_balancer_->Shutdown();
+    XdsEnd2endTest::TearDown();
+  }
 
   std::unique_ptr<BalancerServerThread> authority_balancer_;
 };
@@ -2715,9 +2737,8 @@ TEST_P(XdsFederationTest, FederationBasic) {
   WaitForAllBackends(0, 1);
   backends_[0]->backend_service()->ResetCounters();
   // Create second channel to new target uri and send 1 RPC .
-  auto channel2 = CreateChannel(/*failover_timeout=*0/, kNewTarget, kAuthority);
-  channel2->GetState(/*try_to_connect=*/
-                                true);
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewTarget, kAuthority);
+  channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
@@ -2728,16 +2749,19 @@ TEST_P(XdsFederationTest, FederationBasic) {
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
-  // We should b reaching backend 1, not 0, but the test is currently broken due
-  // to the authority server localhost set incorrectly.
-  EXPECT_EQ(1U, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
+  // We should be reaching backend 1, not 0, as balanced by the authority xds
+  // server.
+  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
  public:
-  XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 3) {
+  XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 3) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     StartAllBackends();
   }
 };
@@ -2878,15 +2902,15 @@ class SecureNamingSuccessTest : public XdsEnd2endTest {
                        /*client_load_reporting_interval_seconds=*/100,
                        /*xds_resource_does_not_exist_timeout_ms=*/0,
                        /*use_xds_enabled_server=*/false,
-                       // this needs to be passed in the localhost: after test
-                       // setup change
-                       /*lb_expected_authority=*/"xds_server") {
+                       /*lb_expected_authority=*/"localhost:%s") {}
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     StartAllBackends();
   }
 };
 
 // Tests that secure naming check passes if target name is expected.
-/*TEST_P(SecureNamingSuccessTest, TargetNameIsExpected) {
+TEST_P(SecureNamingSuccessTest, TargetNameIsExpected) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
@@ -2895,7 +2919,7 @@ class SecureNamingSuccessTest : public XdsEnd2endTest {
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   CheckRpcSendOk();
-}*/
+}
 
 class SecureNamingFailureTest : public XdsEnd2endTest {
  public:
@@ -2904,7 +2928,9 @@ class SecureNamingFailureTest : public XdsEnd2endTest {
                        /*client_load_reporting_interval_seconds=*/100,
                        /*xds_resource_does_not_exist_timeout_ms=*/0,
                        /*use_xds_enabled_server=*/false,
-                       /*lb_expected_authority=*/"incorrect_server_name") {
+                       /*lb_expected_authority=*/"incorrect_server_name") {}
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     StartAllBackends();
   }
 };
@@ -7507,7 +7533,8 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
 
 class XdsSecurityTest : public BasicTest {
  protected:
-  XdsSecurityTest() {
+  void SetUp() override {
+    BasicTest::SetUp();
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
@@ -7538,9 +7565,10 @@ class XdsSecurityTest : public BasicTest {
     SetNextResolutionForLbChannelAllBalancers();
   }
 
-  ~XdsSecurityTest() override {
+  void TearDown() override {
     g_fake1_cert_data_map = nullptr;
     g_fake2_cert_data_map = nullptr;
+    XdsEnd2endTest::TearDown();
   }
 
   // Sends CDS updates with the new security configuration and verifies that
@@ -8418,7 +8446,10 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   XdsEnabledServerTest()
-      : XdsEnd2endTest(1, 100, 0, true /* use_xds_enabled_server */) {
+      : XdsEnd2endTest(1, 100, 0, true /* use_xds_enabled_server */) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
@@ -8608,7 +8639,10 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   XdsServerSecurityTest()
-      : XdsEnd2endTest(1, 100, 0, true /* use_xds_enabled_server */) {
+      : XdsEnd2endTest(1, 100, 0, true /* use_xds_enabled_server */) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
@@ -8631,9 +8665,10 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     SetNextResolutionForLbChannelAllBalancers();
   }
 
-  ~XdsServerSecurityTest() override {
+  void TearDown() override {
     g_fake1_cert_data_map = nullptr;
     g_fake2_cert_data_map = nullptr;
+    XdsEnd2endTest::TearDown();
   }
 
   void SetLdsUpdate(absl::string_view root_instance_name,
@@ -10162,7 +10197,9 @@ class TimeoutTest : public XdsEnd2endTest {
       : XdsEnd2endTest(/*num_backends=*/4,
                        /*client_load_reporting_interval_seconds=*/100,
                        /*xds_resource_does_not_exist_timeout_ms=*/500,
-                       /*use_xds_enabled_server=*/false) {
+                       /*use_xds_enabled_server=*/false) {}
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     StartAllBackends();
   }
 };
@@ -10588,7 +10625,10 @@ TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
 
 class FailoverTest : public BasicTest {
  public:
-  FailoverTest() { ResetStub(500); }
+  void SetUp() override {
+    BasicTest::SetUp();
+    ResetStub(500);
+  }
 };
 
 // Localities with the highest priority are used when multiple priority exist.
@@ -11073,7 +11113,11 @@ TEST_P(DropTest, DropAll) {
 
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingTest() : XdsEnd2endTest(4, 3) { StartAllBackends(); }
+  ClientLoadReportingTest() : XdsEnd2endTest(4, 3) {}
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    StartAllBackends();
+  }
 };
 
 // Tests that the load report received at the balancer is correct.
@@ -11281,7 +11325,10 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
 
 class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 20) {
+  ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 20) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
     StartAllBackends();
   }
 };
@@ -11356,7 +11403,12 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
 
 class FaultInjectionTest : public XdsEnd2endTest {
  public:
-  FaultInjectionTest() : XdsEnd2endTest(1) { StartAllBackends(); }
+  FaultInjectionTest() : XdsEnd2endTest(1) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    StartAllBackends();
+  }
 
   // Builds a Listener with Fault Injection filter config. If the http_fault
   // is nullptr, then assign an empty filter config. This filter config is
@@ -11908,7 +11960,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
 
 class BootstrapSourceTest : public XdsEnd2endTest {
  public:
-  BootstrapSourceTest() : XdsEnd2endTest(4) { StartAllBackends(); }
+  BootstrapSourceTest() : XdsEnd2endTest(4) {}
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    StartAllBackends();
+  }
 };
 
 TEST_P(BootstrapSourceTest, Vanilla) {
@@ -11928,7 +11984,6 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
   explicit ClientStatusDiscoveryServiceTest(
       int xds_resource_does_not_exist_timeout_ms = 0)
       : XdsEnd2endTest(1, 100, xds_resource_does_not_exist_timeout_ms) {
-    StartAllBackends();
     admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
@@ -11943,6 +11998,11 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
     if (GetParam().use_csds_streaming()) {
       stream_ = csds_stub_->StreamClientStatus(&stream_context_);
     }
+  }
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    StartAllBackends();
   }
 
   ~ClientStatusDiscoveryServiceTest() override {
