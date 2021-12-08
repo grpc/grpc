@@ -34,7 +34,8 @@ class EvaluateArgsTestUtil {
 
   void AddPairToMetadata(const char* key, const char* value) {
     metadata_.Append(
-        key, Slice(grpc_slice_intern(grpc_slice_from_static_string(value))));
+        key, Slice(grpc_slice_intern(grpc_slice_from_static_string(value))),
+        [](absl::string_view, const Slice&) { abort(); });
   }
 
   void SetLocalEndpoint(absl::string_view local_uri) {
@@ -56,7 +57,10 @@ class EvaluateArgsTestUtil {
   }
 
  private:
-  ScopedArenaPtr arena_ = MakeScopedArena(1024);
+  MemoryAllocator allocator_ =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "EvaluateArgsTestUtil");
+  ScopedArenaPtr arena_ = MakeScopedArena(1024, &allocator_);
   grpc_metadata_batch metadata_{arena_.get()};
   MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
   grpc_auth_context auth_context_{nullptr};

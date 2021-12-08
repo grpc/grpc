@@ -82,7 +82,7 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
 
 absl::string_view EvaluateArgs::GetPath() const {
   if (metadata_ != nullptr) {
-    const auto* path = metadata_->get_pointer(PathMetadata());
+    const auto* path = metadata_->get_pointer(HttpPathMetadata());
     if (path != nullptr) {
       return path->as_string_view();
     }
@@ -102,8 +102,10 @@ absl::string_view EvaluateArgs::GetHost() const {
 
 absl::string_view EvaluateArgs::GetMethod() const {
   if (metadata_ != nullptr) {
-    auto method_md = metadata_->get(MethodMetadata());
-    if (method_md.has_value()) return MethodMetadata::DisplayValue(*method_md);
+    auto method_md = metadata_->get(HttpMethodMetadata());
+    if (method_md.has_value()) {
+      return HttpMethodMetadata::Encode(*method_md).as_string_view();
+    }
   }
   return absl::string_view();
 }

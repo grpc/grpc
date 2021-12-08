@@ -294,6 +294,30 @@ void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
   Add(emit.data());
 }
 
+void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyIncIdx(
+    const grpc_slice& key_slice, const grpc_slice& value_slice) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
+  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
+  StringKey key(key_slice);
+  key.WritePrefix(0x40, AddTiny(key.prefix_length()));
+  Add(grpc_slice_ref_internal(key.key()));
+  BinaryStringValue emit(value_slice, use_true_binary_metadata_);
+  emit.WritePrefix(AddTiny(emit.prefix_length()));
+  Add(emit.data());
+}
+
+void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
+    uint32_t key_index, const grpc_slice& value_slice) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
+  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
+  BinaryStringValue emit(value_slice, use_true_binary_metadata_);
+  VarintWriter<4> key(key_index);
+  uint8_t* data = AddTiny(key.length() + emit.prefix_length());
+  key.Write(0x00, data);
+  emit.WritePrefix(data + key.length());
+  Add(emit.data());
+}
+
 void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyNotIdx(
     const grpc_slice& key_slice, const grpc_slice& value_slice) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
@@ -358,12 +382,13 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   values_.emplace_back(value.Ref(), index);
 }
 
-void HPackCompressor::Framer::Encode(PathMetadata, const Slice& value) {
+void HPackCompressor::Framer::Encode(HttpPathMetadata, const Slice& value) {
   compressor_->path_index_.EmitTo(GRPC_MDSTR_PATH, value, this);
 }
 
-void HPackCompressor::Framer::Encode(AuthorityMetadata, const Slice& value) {
-  compressor_->path_index_.EmitTo(GRPC_MDSTR_AUTHORITY, value, this);
+void HPackCompressor::Framer::Encode(HttpAuthorityMetadata,
+                                     const Slice& value) {
+  compressor_->authority_index_.EmitTo(GRPC_MDSTR_AUTHORITY, value, this);
 }
 
 void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
@@ -383,22 +408,32 @@ void HPackCompressor::Framer::Encode(ContentTypeMetadata,
           hpack_constants::kEntryOverhead);
 }
 
-void HPackCompressor::Framer::Encode(SchemeMetadata,
-                                     SchemeMetadata::ValueType value) {
+void HPackCompressor::Framer::Encode(HttpSchemeMetadata,
+                                     HttpSchemeMetadata::ValueType value) {
   switch (value) {
-    case SchemeMetadata::ValueType::kHttp:
+    case HttpSchemeMetadata::ValueType::kHttp:
       EmitIndexed(6);  // :scheme: http
       break;
-    case SchemeMetadata::ValueType::kHttps:
+    case HttpSchemeMetadata::ValueType::kHttps:
       EmitIndexed(7);  // :scheme: https
       break;
-    case SchemeMetadata::ValueType::kInvalid:
+    case HttpSchemeMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
       break;
   }
 }
 
-void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
+void HPackCompressor::Framer::Encode(GrpcTraceBinMetadata, const Slice& slice) {
+  EncodeIndexedKeyWithBinaryValue(&compressor_->grpc_trace_bin_index_,
+                                  "grpc-trace-bin", slice.c_slice());
+}
+
+void HPackCompressor::Framer::Encode(GrpcTagsBinMetadata, const Slice& slice) {
+  EncodeIndexedKeyWithBinaryValue(&compressor_->grpc_tags_bin_index_,
+                                  "grpc-tags-bin", slice.c_slice());
+}
+
+void HPackCompressor::Framer::Encode(HttpStatusMetadata, uint32_t status) {
   if (status == 200) {
     EmitIndexed(8);  // :status: 200
     return;
@@ -434,21 +469,21 @@ void HPackCompressor::Framer::Encode(StatusMetadata, uint32_t status) {
   }
 }
 
-void HPackCompressor::Framer::Encode(MethodMetadata,
-                                     MethodMetadata::ValueType method) {
+void HPackCompressor::Framer::Encode(HttpMethodMetadata,
+                                     HttpMethodMetadata::ValueType method) {
   switch (method) {
-    case MethodMetadata::ValueType::kGet:
+    case HttpMethodMetadata::ValueType::kGet:
       EmitIndexed(2);  // :method: GET
       break;
-    case MethodMetadata::ValueType::kPost:
+    case HttpMethodMetadata::ValueType::kPost:
       EmitIndexed(3);  // :method: POST
       break;
-    case MethodMetadata::ValueType::kPut:
+    case HttpMethodMetadata::ValueType::kPut:
       EmitLitHdrWithNonBinaryStringKeyNotIdx(
           StaticSlice::FromStaticString(":method").c_slice(),
           StaticSlice::FromStaticString("PUT").c_slice());
       break;
-    case MethodMetadata::ValueType::kInvalid:
+    case HttpMethodMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
       break;
   }
@@ -463,6 +498,20 @@ void HPackCompressor::Framer::EncodeAlwaysIndexed(uint32_t* index,
   } else {
     *index = compressor_->table_.AllocateIndex(transport_length);
     EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value);
+  }
+}
+
+void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
+    uint32_t* index, absl::string_view key, const grpc_slice& value) {
+  if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
+    EmitLitHdrWithBinaryStringKeyNotIdx(
+        compressor_->table_.DynamicIndex(*index), value);
+  } else {
+    *index = compressor_->table_.AllocateIndex(key.length() +
+                                               GRPC_SLICE_LENGTH(value) +
+                                               hpack_constants::kEntryOverhead);
+    EmitLitHdrWithBinaryStringKeyIncIdx(
+        StaticSlice::FromStaticString(key).c_slice(), value);
   }
 }
 

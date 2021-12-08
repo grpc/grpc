@@ -45,11 +45,11 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_split.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/slice/slice_utils.h"
@@ -346,7 +346,8 @@ grpc_error_handle grpc_call_create(grpc_call_create_args* args,
       call_and_stack_size + (args->parent ? sizeof(child_call) : 0);
 
   std::pair<grpc_core::Arena*, void*> arena_with_call =
-      grpc_core::Arena::CreateWithAlloc(initial_size, call_alloc_size);
+      grpc_core::Arena::CreateWithAlloc(initial_size, call_alloc_size,
+                                        &*args->channel->allocator);
   arena = arena_with_call.first;
   call = new (arena_with_call.second) grpc_call(arena, *args);
   *out_call = call;
@@ -357,10 +358,10 @@ grpc_error_handle grpc_call_create(grpc_call_create_args* args,
     call->final_op.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     path = grpc_slice_ref_internal(args->path->c_slice());
-    call->send_initial_metadata.Set(grpc_core::PathMetadata(),
+    call->send_initial_metadata.Set(grpc_core::HttpPathMetadata(),
                                     std::move(*args->path));
     if (args->authority.has_value()) {
-      call->send_initial_metadata.Set(grpc_core::AuthorityMetadata(),
+      call->send_initial_metadata.Set(grpc_core::HttpAuthorityMetadata(),
                                       std::move(*args->authority));
     }
   } else {
@@ -787,8 +788,16 @@ static int prepare_application_metadata(grpc_call* call, int count,
       // HTTP2 hpack encoding has a maximum limit.
       return 0;
     }
-    batch->Append(grpc_core::StringViewFromSlice(md->key),
-                  grpc_core::Slice(grpc_slice_ref_internal(md->value)));
+    batch->Append(
+        grpc_core::StringViewFromSlice(md->key),
+        grpc_core::Slice(grpc_slice_ref_internal(md->value)),
+        [md](absl::string_view error, const grpc_core::Slice& value) {
+          gpr_log(
+              GPR_DEBUG, "Append error: %s",
+              absl::StrCat("key=", grpc_core::StringViewFromSlice(md->key),
+                           " error=", error, " value=", value.as_string_view())
+                  .c_str());
+        });
   }
 
   return 1;

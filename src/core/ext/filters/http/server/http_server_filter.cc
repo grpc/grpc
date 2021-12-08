@@ -119,27 +119,27 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
-  auto method = b->Take(grpc_core::MethodMetadata());
+  auto method = b->Take(grpc_core::HttpMethodMetadata());
   if (method.has_value()) {
     switch (*method) {
-      case grpc_core::MethodMetadata::kPost:
+      case grpc_core::HttpMethodMetadata::kPost:
         *calld->recv_initial_metadata_flags &=
             ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
               GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
         break;
-      case grpc_core::MethodMetadata::kPut:
+      case grpc_core::HttpMethodMetadata::kPut:
         *calld->recv_initial_metadata_flags &=
             ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
         *calld->recv_initial_metadata_flags |=
             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
         break;
-      case grpc_core::MethodMetadata::kGet:
+      case grpc_core::HttpMethodMetadata::kGet:
         *calld->recv_initial_metadata_flags |=
             GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
         *calld->recv_initial_metadata_flags &=
             ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
         break;
-      case grpc_core::MethodMetadata::kInvalid:
+      case grpc_core::HttpMethodMetadata::kInvalid:
         hs_add_error(error_name, &error,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad method header"));
         break;
@@ -164,9 +164,9 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad te header"));
   }
 
-  auto scheme = b->Take(grpc_core::SchemeMetadata());
+  auto scheme = b->Take(grpc_core::HttpSchemeMetadata());
   if (scheme.has_value()) {
-    if (*scheme == grpc_core::SchemeMetadata::kInvalid) {
+    if (*scheme == grpc_core::HttpSchemeMetadata::kInvalid) {
       hs_add_error(error_name, &error,
                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad :scheme header"));
     }
@@ -179,7 +179,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
 
   b->Remove(grpc_core::ContentTypeMetadata());
 
-  grpc_core::Slice* path_slice = b->get_pointer(grpc_core::PathMetadata());
+  grpc_core::Slice* path_slice = b->get_pointer(grpc_core::HttpPathMetadata());
   if (path_slice == nullptr) {
     hs_add_error(error_name, &error,
                  grpc_error_set_str(
@@ -189,7 +189,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
              GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
-    const char kQuerySeparator = '?';
+    static const char kQuerySeparator = '?';
     /* offset of the character '?' */
     auto it =
         std::find(path_slice->begin(), path_slice->end(), kQuerySeparator);
@@ -219,14 +219,14 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     }
   }
 
-  if (b->get_pointer(grpc_core::AuthorityMetadata()) == nullptr) {
+  if (b->get_pointer(grpc_core::HttpAuthorityMetadata()) == nullptr) {
     absl::optional<grpc_core::Slice> host = b->Take(grpc_core::HostMetadata());
     if (host.has_value()) {
-      b->Set(grpc_core::AuthorityMetadata(), std::move(*host));
+      b->Set(grpc_core::HttpAuthorityMetadata(), std::move(*host));
     }
   }
 
-  if (b->get_pointer(grpc_core::AuthorityMetadata()) == nullptr) {
+  if (b->get_pointer(grpc_core::HttpAuthorityMetadata()) == nullptr) {
     hs_add_error(error_name, &error,
                  grpc_error_set_str(
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
@@ -332,7 +332,7 @@ static grpc_error_handle hs_mutate_op(grpc_call_element* elem,
     grpc_error_handle error = GRPC_ERROR_NONE;
     static const char* error_name = "Failed sending initial metadata";
     op->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::StatusMetadata(), 200);
+        grpc_core::HttpStatusMetadata(), 200);
     op->payload->send_initial_metadata.send_initial_metadata->Set(
         grpc_core::ContentTypeMetadata(),
         grpc_core::ContentTypeMetadata::kApplicationGrpc);

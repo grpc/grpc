@@ -2054,20 +2054,8 @@ void XdsClient::Orphan() {
   {
     MutexLock lock(&mu_);
     shutting_down_ = true;
-    // We do not clear cluster_map_ and endpoint_map_ if the xds client was
-    // created by the XdsResolver because the maps contain refs for watchers
-    // which in turn hold refs to the loadbalancing policies. At this point, it
-    // is possible for ADS calls to be in progress. Unreffing the loadbalancing
-    // policies before those calls are done would lead to issues such as
-    // https://github.com/grpc/grpc/issues/20928.
-    for (auto& a : authority_state_map_) {
-      a.second.channel_state.reset();
-      if (!a.second.listener_map.empty()) {
-        a.second.cluster_map.clear();
-        a.second.endpoint_map.clear();
-      }
-    }
-    // We clear these invalid resource  watchers as cancel never came.
+    authority_state_map_.clear();
+    // We clear these invalid resource watchers as cancel never came.
     invalid_listener_watchers_.clear();
     invalid_route_config_watchers_.clear();
     invalid_cluster_watchers_.clear();

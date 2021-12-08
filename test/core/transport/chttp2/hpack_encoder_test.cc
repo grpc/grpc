@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_utils.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -40,6 +41,10 @@
 #include "test/core/util/test_config.h"
 
 #define TEST(x) run_test(x, #x)
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 grpc_core::HPackCompressor* g_compressor;
 int g_failure = 0;
@@ -161,7 +166,7 @@ static void verify(const verify_params params, const char* expected,
   va_list l;
   grpc_linked_mdelem* e =
       static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e) * nheaders));
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
 
   va_start(l, nheaders);
@@ -244,7 +249,7 @@ static void test_basic_headers() {
 
 static void verify_continuation_headers(const char* key, const char* value,
                                         bool is_eof) {
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_slice_buffer output;
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
@@ -327,7 +332,7 @@ static void test_decode_table_overflow() {
 static void verify_table_size_change_match_elem_size(const char* key,
                                                      const char* value,
                                                      bool use_true_binary) {
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_slice_buffer output;
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),

@@ -486,7 +486,7 @@ class StreamWriteContext {
                               &s_->stats.outgoing, &t_->outbuf);
     } else {
       if (send_status_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::StatusMetadata(),
+        s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
                                         *send_status_);
       }
       if (send_content_type_.has_value()) {
@@ -523,7 +523,8 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move the :status and
     // content-type headers to the trailers.
-    send_status_ = s_->send_initial_metadata->get(grpc_core::StatusMetadata());
+    send_status_ =
+        s_->send_initial_metadata->get(grpc_core::HttpStatusMetadata());
     send_content_type_ =
         s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
   }

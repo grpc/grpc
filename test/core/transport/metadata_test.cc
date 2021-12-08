@@ -35,12 +35,17 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
 
 /* a large number */
 #define MANY 10000
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static grpc_slice maybe_intern(grpc_slice in, bool intern) {
   grpc_slice out = intern ? grpc_slice_intern(in) : grpc_slice_ref(in);
@@ -307,7 +312,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
 }
 
 static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch metadata(arena.get());
   std::string concatenated_value;
   absl::optional<absl::string_view> value =
@@ -318,7 +323,7 @@ static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
 static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
   const char* kKey = "some_key";
   const char* kValue = "some_value";
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_linked_mdelem storage;
   grpc_metadata_batch metadata(arena.get());
   storage.md = grpc_mdelem_from_slices(
@@ -336,7 +341,7 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
   const char* kKey = "some_key";
   const char* kValue1 = "value1";
   const char* kValue2 = "value2";
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_linked_mdelem storage1;
   grpc_linked_mdelem storage2;
   grpc_metadata_batch metadata(arena.get());
@@ -356,7 +361,7 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
 }
 
 static void test_grpc_chttp2_incoming_metadata_replace_or_add_works(void) {
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch buffer(arena.get());
   GRPC_LOG_IF_ERROR("incoming_buffer_add",
                     buffer.Append(grpc_mdelem_from_slices(

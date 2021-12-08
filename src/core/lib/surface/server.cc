@@ -1378,8 +1378,8 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
-    calld->path_ = calld->recv_initial_metadata_->Take(PathMetadata());
-    calld->host_ = calld->recv_initial_metadata_->Take(AuthorityMetadata());
+    calld->path_ = calld->recv_initial_metadata_->Take(HttpPathMetadata());
+    calld->host_ = calld->recv_initial_metadata_->Take(HttpAuthorityMetadata());
   } else {
     (void)GRPC_ERROR_REF(error);
   }

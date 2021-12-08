@@ -97,7 +97,7 @@ struct call_data {
 };
 
 struct channel_data {
-  grpc_core::SchemeMetadata::ValueType static_scheme;
+  grpc_core::HttpSchemeMetadata::ValueType static_scheme;
   grpc_core::Slice user_agent;
   size_t max_payload_size_for_get;
 };
@@ -105,7 +105,7 @@ struct channel_data {
 
 static grpc_error_handle client_filter_incoming_metadata(
     grpc_metadata_batch* b) {
-  if (auto* status = b->get_pointer(grpc_core::StatusMetadata())) {
+  if (auto* status = b->get_pointer(grpc_core::HttpStatusMetadata())) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
      * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
@@ -113,7 +113,7 @@ static grpc_error_handle client_filter_incoming_metadata(
     const grpc_status_code* grpc_status =
         b->get_pointer(grpc_core::GrpcStatusMetadata());
     if (grpc_status != nullptr || *status == 200) {
-      b->Remove(grpc_core::StatusMetadata());
+      b->Remove(grpc_core::HttpStatusMetadata());
     } else {
       std::string msg =
           absl::StrCat("Received http2 header with status: ", *status);
@@ -273,7 +273,7 @@ static void update_path_for_get(grpc_call_element* elem,
       batch->payload->send_initial_metadata.send_initial_metadata;
   call_data* calld = static_cast<call_data*>(elem->call_data);
   const grpc_core::Slice& path_slice =
-      *b->get_pointer(grpc_core::PathMetadata());
+      *b->get_pointer(grpc_core::HttpPathMetadata());
   /* sum up individual component's lengths and allocate enough memory to
    * hold combined path+query */
   size_t estimated_len = path_slice.size();
@@ -295,12 +295,11 @@ static void update_path_for_get(grpc_call_element* elem,
                           batch->payload->send_message.send_message->length(),
                           true /* url_safe */, false /* multi_line */);
   gpr_free(payload_bytes);
-  /* remove trailing unused memory and add trailing 0 to terminate string */
   char* t = reinterpret_cast<char*>(path_with_query_slice.begin()) +
             path_slice.size();
   /* safe to use strlen since base64_encode will always add '\0' */
   /* substitute previous path with the new path+query */
-  b->Set(grpc_core::PathMetadata(),
+  b->Set(grpc_core::HttpPathMetadata(),
          grpc_core::Slice(path_with_query_slice.TakeSubSlice(
              0, path_slice.size() + strlen(t))));
 }
@@ -338,8 +337,8 @@ static void http_client_start_transport_stream_op_batch(
     // cacheable, and the operation contains both initial metadata and send
     // message, and the payload is below the size threshold, and all the data
     // for this request is immediately available.
-    grpc_core::MethodMetadata::ValueType method =
-        grpc_core::MethodMetadata::kPost;
+    grpc_core::HttpMethodMetadata::ValueType method =
+        grpc_core::HttpMethodMetadata::kPost;
     if (batch->send_message &&
         (batch->payload->send_initial_metadata.send_initial_metadata_flags &
          GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
@@ -359,7 +358,7 @@ static void http_client_start_transport_stream_op_batch(
       // If all the data has been read, then we can use GET.
       if (calld->send_message_bytes_read ==
           calld->send_message_caching_stream->length()) {
-        method = grpc_core::MethodMetadata::kGet;
+        method = grpc_core::HttpMethodMetadata::kGet;
         update_path_for_get(elem, batch);
         batch->send_message = false;
         calld->send_message_caching_stream->Orphan();
@@ -375,15 +374,15 @@ static void http_client_start_transport_stream_op_batch(
     } else if (batch->payload->send_initial_metadata
                    .send_initial_metadata_flags &
                GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
-      method = grpc_core::MethodMetadata::kPut;
+      method = grpc_core::HttpMethodMetadata::kPut;
     }
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::MethodMetadata(), method);
+        grpc_core::HttpMethodMetadata(), method);
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::SchemeMetadata(), channeld->static_scheme);
+        grpc_core::HttpSchemeMetadata(), channeld->static_scheme);
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
         grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     batch->payload->send_initial_metadata.send_initial_metadata->Set(
@@ -417,19 +416,21 @@ static void http_client_destroy_call_elem(
   calld->~call_data();
 }
 
-static grpc_core::SchemeMetadata::ValueType scheme_from_args(
+static grpc_core::HttpSchemeMetadata::ValueType scheme_from_args(
     const grpc_channel_args* args) {
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; ++i) {
       if (args->args[i].type == GRPC_ARG_STRING &&
           0 == strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME)) {
-        grpc_core::SchemeMetadata::ValueType scheme =
-            grpc_core::SchemeMetadata::Parse(args->args[i].value.string);
-        if (scheme != grpc_core::SchemeMetadata::kInvalid) return scheme;
+        grpc_core::HttpSchemeMetadata::ValueType scheme =
+            grpc_core::HttpSchemeMetadata::Parse(
+                args->args[i].value.string,
+                [](absl::string_view, const grpc_core::Slice&) {});
+        if (scheme != grpc_core::HttpSchemeMetadata::kInvalid) return scheme;
       }
     }
   }
-  return grpc_core::SchemeMetadata::kHttp;
+  return grpc_core::HttpSchemeMetadata::kHttp;
 }
 
 static size_t max_payload_size_from_args(const grpc_channel_args* args) {

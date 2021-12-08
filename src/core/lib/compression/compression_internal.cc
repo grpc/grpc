@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <cstdint>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
@@ -119,12 +121,16 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromUint32(uint32_t value) {
 CompressionAlgorithmSet CompressionAlgorithmSet::FromChannelArgs(
     const grpc_channel_args* args) {
   CompressionAlgorithmSet set;
+  static const uint32_t kEverything =
+      (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
   if (args != nullptr) {
     set = CompressionAlgorithmSet::FromUint32(grpc_channel_args_find_integer(
         args, GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
-        grpc_integer_options{0, 0, INT_MAX}));
+        grpc_integer_options{kEverything, 0, kEverything}));
+    set.Set(GRPC_COMPRESS_NONE);
+  } else {
+    set = CompressionAlgorithmSet::FromUint32(kEverything);
   }
-  set.Set(GRPC_COMPRESS_NONE);
   return set;
 }
 
