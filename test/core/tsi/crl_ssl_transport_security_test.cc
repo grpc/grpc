@@ -75,7 +75,7 @@ class CrlSslTransportSecurityTest
 
     void Run() {
       tsi_test_do_handshake(&base_);
-      tsi_test_fixture_destroy(&base_);
+      tsi_test_fixture_destroy_without_member_var(&base_);
     }
 
    private:
@@ -225,6 +225,8 @@ class CrlSslTransportSecurityTest
 
     static void Destruct(tsi_test_fixture* fixture) {
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
+      gpr_mu_destroy(&fixture->mu);
+      gpr_cv_destroy(&fixture->cv);
       self->~SslTsiTestFixture();
     }
 

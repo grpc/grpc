@@ -184,6 +184,8 @@ void tsi_test_fixture_init(tsi_test_fixture* fixture);
    this function. */
 void tsi_test_fixture_destroy(tsi_test_fixture* fixture);
 
+void tsi_test_fixture_destroy_without_member_var(tsi_test_fixture* fixture);
+
 /* This method creates a tsi_test_frame_protector_fixture instance. */
 tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create();
 
