@@ -50,4 +50,4 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
+#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
