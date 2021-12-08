@@ -1511,6 +1511,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "memory_quota",
+        "context",
     ],
 )
 

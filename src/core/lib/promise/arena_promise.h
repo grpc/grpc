@@ -118,8 +118,8 @@ struct ChooseImplForCallable;
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable, absl::enable_if_t<!std::is_empty<Callable>::value>> {
-  static ImplInterface<T>* Make(Arena* arena, Callable&& callable) {
-    return arena->template New<CallableImpl<T, Callable>>(
+  static ImplInterface<T>* Make(Callable&& callable) {
+    return GetContext<Arena>()->template New<CallableImpl<T, Callable>>(
         std::forward<Callable>(callable));
   }
 };
@@ -127,16 +127,16 @@ struct ChooseImplForCallable<
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
     T, Callable, absl::enable_if_t<std::is_empty<Callable>::value>> {
-  static ImplInterface<T>* Make(Arena*, Callable&& callable) {
+  static ImplInterface<T>* Make(Callable&& callable) {
     return SharedImpl<T, Callable>::Get(std::forward<Callable>(callable));
   }
 };
 
 // Wrap ChooseImplForCallable with a friend approachable syntax.
 template <typename T, typename Callable>
-ImplInterface<T>* MakeImplForCallable(Arena* arena, Callable&& callable) {
+ImplInterface<T>* MakeImplForCallable(Callable&& callable) {
   return ChooseImplForCallable<T, Callable>::Make(
-      arena, std::forward<Callable>(callable));
+     std::forward<Callable>(callable));
 }
 
 }  // namespace arena_promise_detail
@@ -149,10 +149,10 @@ class ArenaPromise {
   ArenaPromise() = default;
 
   // Construct an ArenaPromise that will call the given callable when polled.
-  template <typename Callable>
-  ArenaPromise(Arena* arena, Callable&& callable)
+  template <typename Callable, typename Ignored = absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
+  explicit ArenaPromise(Callable&& callable)
       : impl_(arena_promise_detail::MakeImplForCallable<T>(
-            arena, std::forward<Callable>(callable))) {}
+            std::forward<Callable>(callable))) {}
 
   // ArenaPromise is not copyable.
   ArenaPromise(const ArenaPromise&) = delete;
