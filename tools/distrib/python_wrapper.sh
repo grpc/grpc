@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-for p in python2.7 python2.6 python2 python not_found ; do 
+for p in python3 python not_found ; do
 
   python=$(which $p || echo not_found)
 

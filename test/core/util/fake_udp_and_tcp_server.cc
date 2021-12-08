@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -47,7 +45,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
     AcceptMode accept_mode,
     const std::function<FakeUdpAndTcpServer::ProcessReadResult(int, int, int)>&
         process_read_cb)
-    : accept_mode_(accept_mode), process_read_cb_(process_read_cb) {
+    : accept_mode_(accept_mode), process_read_cb_(std::move(process_read_cb)) {
   port_ = grpc_pick_unused_port_or_die();
   udp_socket_ = socket(AF_INET6, SOCK_DGRAM, 0);
   if (udp_socket_ == BAD_SOCKET_RETURN_VAL) {
@@ -121,7 +119,8 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
     GPR_ASSERT(0);
   }
   gpr_event_init(&stop_ev_);
-  run_server_loop_thd_ = absl::make_unique<std::thread>(RunServerLoop, this);
+  run_server_loop_thd_ = absl::make_unique<std::thread>(
+      std::bind(&FakeUdpAndTcpServer::RunServerLoop, this));
 }
 
 FakeUdpAndTcpServer::~FakeUdpAndTcpServer() {
@@ -217,11 +216,11 @@ void FakeUdpAndTcpServer::ReadFromUdpSocket() {
   recvfrom(udp_socket_, buf, sizeof(buf), 0, nullptr, nullptr);
 }
 
-void FakeUdpAndTcpServer::RunServerLoop(FakeUdpAndTcpServer* self) {
+void FakeUdpAndTcpServer::RunServerLoop() {
   std::set<std::unique_ptr<FakeUdpAndTcpServerPeer>> peers;
-  while (!gpr_event_get(&self->stop_ev_)) {
+  while (!gpr_event_get(&stop_ev_)) {
     // handle TCP connections
-    int p = accept(self->accept_socket_, nullptr, nullptr);
+    int p = accept(accept_socket_, nullptr, nullptr);
     if (p != BAD_SOCKET_RETURN_VAL) {
       gpr_log(GPR_DEBUG, "accepted peer socket: %d", p);
 #ifdef GPR_WINDOWS
@@ -244,13 +243,13 @@ void FakeUdpAndTcpServer::RunServerLoop(FakeUdpAndTcpServer* self) {
     auto it = peers.begin();
     while (it != peers.end()) {
       FakeUdpAndTcpServerPeer* peer = (*it).get();
-      if (self->accept_mode_ == AcceptMode::kEagerlySendSettings) {
+      if (accept_mode_ == AcceptMode::kEagerlySendSettings) {
         peer->MaybeContinueSendingSettings();
       }
       char buf[100];
       int bytes_received_size = recv(peer->fd(), buf, 100, 0);
       FakeUdpAndTcpServer::ProcessReadResult r =
-          self->process_read_cb_(bytes_received_size, errno, peer->fd());
+          process_read_cb_(bytes_received_size, errno, peer->fd());
       if (r == FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket) {
         it = peers.erase(it);
       } else {
@@ -260,7 +259,7 @@ void FakeUdpAndTcpServer::RunServerLoop(FakeUdpAndTcpServer* self) {
       }
     }
     // read from the UDP socket
-    self->ReadFromUdpSocket();
+    ReadFromUdpSocket();
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                  gpr_time_from_millis(10, GPR_TIMESPAN)));
   }

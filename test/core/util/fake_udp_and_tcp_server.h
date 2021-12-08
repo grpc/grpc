@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -34,6 +32,43 @@
 namespace grpc_core {
 namespace testing {
 
+// This class is used to simulate a variety of network conditions in
+// unit tests.
+//
+// Note that resulting server only listens on the IPv6 loopback
+// address, "[::1]". This is expected to be OK as all known gRPC unit test
+// environments support have this address available.
+//
+// As examples, this can be used to (but is not limited to) exercise
+// the following cases:
+//
+// 1) DNS resolver's UDP requests experience packet loss:
+//
+//     grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+//          grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+//             kWaitForClientToSendFirstBytes,
+//     grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+//     auto server_uri = absl::StrFormat("dns:///[::]:%d/localhost:1234",
+//         fake_dns_server.port());
+//
+// 2) Server gets stuck while setting up a security handshake and client's
+//    security handshake times out (requires using secure channels):
+//
+//     grpc_core::testing::FakeUdpAndTcpServer fake_server(
+//          grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+//             kWaitForClientToSendFirstBytes,
+//     grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+//     auto server_uri = absl::StrFormat("[::1]:%d", fake_server.port());
+//
+// 3) Client connections are immediately closed after sending the first bytes
+//    to an insecure server:
+//
+//     grpc_core::testing::FakeUdpAndTcpServer fake_server(
+//          grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+//             kEagerlySendSettings,
+//     grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer);
+//     auto server_uri = absl::StrFormat("[::1]:%d", fake_server.port());
+//
 class FakeUdpAndTcpServer {
  public:
   enum class ProcessReadResult {
@@ -64,6 +99,15 @@ class FakeUdpAndTcpServer {
   static ProcessReadResult CloseSocketUponCloseFromPeer(int bytes_received_size,
                                                         int read_error, int s);
 
+  void ReadFromUdpSocket();
+
+  // Run a loop that periodically, every 10 ms:
+  //   1) Checks if there are any new TCP connections to accept.
+  //   2) Checks if any data has arrived yet on established connections,
+  //      and reads from them if so, processing the sockets as configured.
+  void RunServerLoop();
+
+ private:
   class FakeUdpAndTcpServerPeer {
    public:
     explicit FakeUdpAndTcpServerPeer(int fd);
@@ -79,15 +123,6 @@ class FakeUdpAndTcpServer {
     int total_bytes_sent_ = 0;
   };
 
-  void ReadFromUdpSocket();
-
-  // Run a loop that periodically, every 10 ms:
-  //   1) Checks if there are any new TCP connections to accept.
-  //   2) Checks if any data has arrived yet on established connections,
-  //      and reads from them if so, processing the sockets as configured.
-  static void RunServerLoop(FakeUdpAndTcpServer* self);
-
- private:
   int accept_socket_;
   int udp_socket_;
   int port_;
