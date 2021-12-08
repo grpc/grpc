@@ -811,10 +811,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     xds_channel_args_.num_args = xds_channel_args_to_add_.size();
     xds_channel_args_.args = xds_channel_args_to_add_.data();
     // Initialize XdsClient state.
-    // TODO(roth): Consider changing this to dynamically generate the
-    // bootstrap config in each individual test instead of hard-coding
-    // the contents here.  That would allow us to use an ipv4: or ipv6:
-    // URI for the xDS server instead of using the fake resolver.
     bootstrap_builder.SetDefaultServer(
         absl::StrCat("localhost:", balancer_->port()));
     if (GetParam().use_v2()) {
@@ -825,11 +821,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
-      char* bootstrap_file;
-      FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file);
+      FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file_);
       fputs(bootstrap_.c_str(), out);
       fclose(out);
-      bootstrap_file_ = bootstrap_file;
       gpr_setenv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
     }
     if (GetParam().bootstrap_source() != TestType::kBootstrapFromChannelArg) {
@@ -931,7 +925,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     absl::string_view uri_scheme;
     if (GetParam().use_fake_resolver()) {
       // Authority not allowed when using fake resolver.
-      GPR_ASSERT(xds_authority == "");
+      GPR_ASSERT(*xds_authority == '\0');
       uri_scheme = "fake";
     } else {
       uri_scheme = "xds";
