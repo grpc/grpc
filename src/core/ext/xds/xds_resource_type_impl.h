@@ -39,8 +39,8 @@ class XdsResourceTypeImpl : public XdsResourceType {
     virtual void OnResourceChanged(ResourceTypeStruct listener) = 0;
 
    private:
-    // Get result from XdsClient generic watcher interface, perform down-casting,
-    // and invoke the caller's OnListenerChanged() method.
+    // Get result from XdsClient generic watcher interface, perform
+    // down-casting, and invoke the caller's OnListenerChanged() method.
     void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource) override {
       OnResourceChanged(
@@ -59,7 +59,8 @@ class XdsResourceTypeImpl : public XdsResourceType {
                          RefCountedPtr<WatcherInterface> watcher) {
     xds_client->WatchResource(Get(), resource_name, std::move(watcher));
   }
-  static void CancelWatch(XdsClient* xds_client, absl::string_view resource_name,
+  static void CancelWatch(XdsClient* xds_client,
+                          absl::string_view resource_name,
                           WatcherInterface* watcher,
                           bool delay_unsubscription = false) {
     xds_client->CancelResourceWatch(Get(), resource_name, watcher,
