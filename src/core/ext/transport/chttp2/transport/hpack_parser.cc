@@ -1122,7 +1122,6 @@ class HPackParser::Parser {
     auto key = String::Parse(input_);
     if (!key.has_value()) return {};
     auto value = ParseValueString(absl::EndsWith(key->string_view(), "-bin"));
-    gpr_log(GPR_INFO, "key: %s", std::string(key->string_view()).c_str());
     if (GPR_UNLIKELY(!value.has_value())) {
       return {};
     }
