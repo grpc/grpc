@@ -397,6 +397,18 @@ void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
   Add(emit.data());
 }
 
+void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyIncIdx(
+    const grpc_slice& key_slice, const grpc_slice& value_slice) {
+  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
+  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
+  StringKey key(key_slice);
+  key.WritePrefix(0x40, AddTiny(key.prefix_length()));
+  Add(grpc_slice_ref_internal(key.key()));
+  BinaryStringValue emit(value_slice, use_true_binary_metadata_);
+  emit.WritePrefix(AddTiny(emit.prefix_length()));
+  Add(emit.data());
+}
+
 void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
     uint32_t key_index, const grpc_slice& value_slice) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
@@ -706,7 +718,7 @@ void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
     *index = compressor_->table_.AllocateIndex(key.length() +
                                                GRPC_SLICE_LENGTH(value) +
                                                hpack_constants::kEntryOverhead);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(
+    EmitLitHdrWithBinaryStringKeyIncIdx(
         StaticSlice::FromStaticString(key).c_slice(), value);
   }
 }

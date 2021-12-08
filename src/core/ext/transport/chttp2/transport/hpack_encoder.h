@@ -137,6 +137,8 @@ class HPackCompressor {
     void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
     void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
                                                 const grpc_slice& value_slice);
+    void EmitLitHdrWithBinaryStringKeyIncIdx(const grpc_slice& key_slice,
+                                             const grpc_slice& value_slice);
     void EmitLitHdrWithBinaryStringKeyNotIdx(const grpc_slice& key_slice,
                                              const grpc_slice& value_slice);
     void EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
