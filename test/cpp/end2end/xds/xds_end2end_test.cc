@@ -717,8 +717,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // up having to set the numbers for the test suite to the max number needed
   // by any one test case in that test suite.  This results in starting more
   // servers (and using more ports) than we actually need.  When we have
-  // time, change each test to directly start the number of backends and
-  // balancers that it needs, so that we aren't wasting resources.
+  // time, change each test to directly start the number of backends
+  // that it needs, so that we aren't wasting resources.
   XdsEnd2endTest(size_t num_backends,
                  int client_load_reporting_interval_seconds = 100,
                  int xds_resource_does_not_exist_timeout_ms = 0,
