@@ -779,8 +779,10 @@ DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
     """Wraps given cmdline array to create 'docker run' cmdline from it."""
 
-    # TODO(jtattermusch): use "-it" when TTY is available to allow Ctrl-C to work
-    docker_cmdline = ['docker', 'run', '-i', '--rm=true']
+    docker_cmdline = ['docker', 'run', '--rm=true']
+    if sys.stdout.isatty():
+        # use "-it" when TTY is available to allow Ctrl-C to work
+        docker_cmdline.append('-it')
 
     # turn environ into -e docker args
     if environ:
