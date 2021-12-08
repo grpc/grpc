@@ -593,48 +593,81 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       top_server_ = server;
       return *this;
     }
-    BootstrapBuilder& SetAuthorityServer(
+    BootstrapBuilder& AddAuthority(
         const std::string& authority, const std::string& servers = "",
-        const std::string& listener_resource_name_template = "") {
-      authority_ = authority;
-      authority_servers_ = servers;
-      listener_resource_name_template_ = listener_resource_name_template;
+        const std::string& client_listener_resource_name_template = "") {
+      authorities_[authority] = {servers,
+                                 client_listener_resource_name_template};
       return *this;
     }
-    const std::string& AuthorityServer() const { return authority_; }
+    BootstrapBuilder& SetServerListenerResourceNameTemplate(
+        const const std::string& server_listener_resource_name_template = "") {
+      server_listener_resource_name_template_ =
+          server_listener_resource_name_template;
+      return *this;
+    }
     std::string Build() {
-      constexpr char kBootstrapFileHeaderAndXdsServers[] =
-          "{\n"
-          "  \"xds_servers\": [\n"
-          "    {\n"
-          "      \"server_uri\": \"fake:///xds_server\",\n"
-          "      \"channel_creds\": [\n"
-          "        {\n"
-          "          \"type\": \"fake\"\n"
-          "        }\n"
-          "      ],\n"
-          "      \"server_features\": [\"xds_v3\"]\n"
-          "    }\n"
-          "  ],\n";
-      constexpr char kBootstrapFileAuthorities[] =
-          "  \"authorities\": {\n"
-          "    \"fake_authority\": {\n"
+      std::vector<std::string> fields;
+      fields.push_back(MakeXdsServersText(top_server_));
+      fields.push_back(MakeNodeText());
+      if (!server_listener_resource_name_template_.empty()) {
+        fields.push_back(
+            absl::StrCat("  \"server_listener_resource_name_template\": \"",
+                         server_listener_resource_name_template_, "\""));
+      }
+      fields.push_back(MakeCertificateProviderText());
+      fields.push_back(MakeAuthorityText());
+      return absl::StrCat("{", absl::StrJoin(fields, ",\n"), "}");
+    }
+
+   private:
+    bool v2_ = false;
+    std::string top_server_;
+    struct AuthorityInfo {
+      std::string server;
+      std::string client_listener_resource_name_template;
+    };
+    std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
+    std::string server_listener_resource_name_template_ =
+        "grpc/server?xds.resource.listening_address=%s";
+
+    std::string MakeXdsServersText(absl::string_view server_uri) {
+      constexpr char kXdsServerTemplate[] =
           "      \"xds_servers\": [\n"
           "        {\n"
-          "          \"server_uri\": \"fake:///xds_server\",\n"
+          "          \"server_uri\": \"<SERVER_URI>\",\n"
           "          \"channel_creds\": [\n"
           "            {\n"
           "              \"type\": \"fake\"\n"
           "            }\n"
           "          ],\n"
-          "          \"server_features\": [\"xds_v3\"]\n"
+          "          \"server_features\": [<SERVER_FEATURES>]\n"
           "        }\n"
-          "      ]\n"
+          "      ]";
+      return absl::StrReplaceAll(
+          kXdsServerTemplate,
+          {{"<SERVER_URI>", server_uri},
+           {"<SERVER_FEATURES>", (v2_ ? "" : "\"xds_v3\"")}});
+    }
+
+    std::string MakeNodeText() {
+      constexpr char kXdsNode[] =
+          "  \"node\": {\n"
+          "    \"id\": \"xds_end2end_test\",\n"
+          "    \"cluster\": \"test\",\n"
+          "    \"metadata\": {\n"
+          "      \"foo\": \"bar\"\n"
+          "    },\n"
+          "    \"locality\": {\n"
+          "      \"region\": \"corp\",\n"
+          "      \"zone\": \"svl\",\n"
+          "      \"sub_zone\": \"mp3\"\n"
           "    }\n"
-          "  },\n";
-      constexpr char kBootstrapFileServerNameTemplate[] =
-          "  \"server_listener_resource_name_template\": "
-          "\"grpc/server?xds.resource.listening_address=%s\",\n";
+          "  }";
+      return absl::StrCat(kXdsNode);
+    }
+
+    std::string MakeCertificateProviderText() {
       constexpr char kBootstrapFileCertificateProviders[] =
           "  \"certificate_providers\": {\n"
           "    \"fake_plugin1\": {\n"
@@ -654,84 +687,28 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           "\"src/core/tsi/test_creds/ca.pem\"\n"
           "      }"
           "    }\n"
-          "  },\n";
-      constexpr char kBootstrapFileNodeAndFooter[] =
-          "  \"node\": {\n"
-          "    \"id\": \"xds_end2end_test\",\n"
-          "    \"cluster\": \"test\",\n"
-          "    \"metadata\": {\n"
-          "      \"foo\": \"bar\"\n"
-          "    },\n"
-          "    \"locality\": {\n"
-          "      \"region\": \"corp\",\n"
-          "      \"zone\": \"svl\",\n"
-          "      \"sub_zone\": \"mp3\"\n"
-          "    }\n"
-          "  }\n"
-          "}\n";
-      constexpr char kBootstrapFileV2[] =
-          "{\n"
-          "  \"xds_servers\": [\n"
-          "    {\n"
-          "      \"server_uri\": \"fake:///xds_server\",\n"
-          "      \"channel_creds\": [\n"
-          "        {\n"
-          "          \"type\": \"fake\"\n"
-          "        }\n"
-          "      ]\n"
-          "    }\n"
-          "  ],\n"
-          "  \"node\": {\n"
-          "    \"id\": \"xds_end2end_test\",\n"
-          "    \"cluster\": \"test\",\n"
-          "    \"metadata\": {\n"
-          "      \"foo\": \"bar\"\n"
-          "    },\n"
-          "    \"locality\": {\n"
-          "      \"region\": \"corp\",\n"
-          "      \"zone\": \"svl\",\n"
-          "      \"sub_zone\": \"mp3\"\n"
-          "    }\n"
-          "  }\n"
-          "}\n";
-      std::string authorities;
-      if (!authority_.empty()) {
-        authorities = absl::StrReplaceAll(kBootstrapFileAuthorities,
-                                          {{"fake_authority", authority_}});
-      }
-      if (!authority_servers_.empty()) {
-        std::vector<std::string> servers =
-            absl::StrSplit(authority_servers_, ",");
-        GPR_ASSERT(servers.size() > 0);
-        authorities = absl::StrReplaceAll(kBootstrapFileAuthorities,
-                                          {{"fake:///xds_server", servers[0]}});
-      }
-      std::string header;
-      std::string bootstrap_v2;
-      if (!top_server_.empty()) {
-        header = absl::StrReplaceAll(kBootstrapFileHeaderAndXdsServers,
-                                     {{"fake:///xds_server", top_server_}});
-        bootstrap_v2 = absl::StrReplaceAll(
-            kBootstrapFileV2, {{"fake:///xds_server", top_server_}});
-      }
-      return std::string(
-          (v2_ ? bootstrap_v2
-               : absl::StrCat(
-                     (top_server_.empty() ? kBootstrapFileHeaderAndXdsServers
-                                          : header),
-                     (authority_.empty() ? kBootstrapFileAuthorities
-                                         : authorities),
-                     kBootstrapFileServerNameTemplate,
-                     kBootstrapFileCertificateProviders,
-                     kBootstrapFileNodeAndFooter)));
+          "  }";
+      return absl::StrCat(kBootstrapFileCertificateProviders);
     }
 
-   private:
-    bool v2_ = false;
-    std::string top_server_;
-    std::string authority_;
-    std::string authority_servers_;
-    std::string listener_resource_name_template_;
+    std::string MakeAuthorityText() {
+      std::vector<std::string> entries;
+      for (const auto& p : authorities_) {
+        const std::string& name = p.first;
+        const AuthorityInfo& authority_info = p.second;
+        std::vector<std::string> fields = {
+            MakeXdsServersText(authority_info.server)};
+        if (!authority_info.client_listener_resource_name_template.empty()) {
+          fields.push_back(absl::StrCat(
+              "\"client_listener_resource_name_template\": \"",
+              authority_info.client_listener_resource_name_template, "\""));
+        }
+        entries.push_back(absl::StrCat(absl::StrFormat("\"%s\": {\n  ", name),
+                                       absl::StrJoin(fields, ",\n"), "\n}"));
+      }
+      return absl::StrCat("\"authorities\": {\n", absl::StrJoin(entries, ",\n"),
+                          "\n}");
+    }
   };
 
   // TODO(roth): We currently set the number of backends on a per-test-suite
@@ -747,17 +724,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                  int xds_resource_does_not_exist_timeout_ms = 0,
                  bool use_xds_enabled_server = false,
                  const char* lb_expected_authority = nullptr,
-                 BootstrapBuilder bootstrap_builder = BootstrapBuilder(),
-                 size_t top_balancer_index = 5,
-                 size_t authority_balancer_index = 5)
+                 BootstrapBuilder bootstrap_builder = BootstrapBuilder())
       : num_backends_(num_backends),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         xds_resource_does_not_exist_timeout_ms_(
             xds_resource_does_not_exist_timeout_ms),
-        use_xds_enabled_server_(use_xds_enabled_server),
-        top_balancer_index_(top_balancer_index),
-        authority_balancer_index_(authority_balancer_index) {
+        use_xds_enabled_server_(use_xds_enabled_server) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -848,6 +821,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       bootstrap_builder.SetV2();
     }
     bootstrap_ = bootstrap_builder.Build();
+    gpr_log(GPR_INFO, "donna bootstrap %s", bootstrap_.c_str());
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
@@ -1994,8 +1968,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   const size_t num_backends_;
   const int client_load_reporting_interval_seconds_;
-  const size_t top_balancer_index_;
-  const size_t authority_balancer_index_;
   bool ipv6_only_ = false;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
@@ -2689,7 +2661,7 @@ class XdsFederationTest : public XdsEnd2endTest {
       : authority_balancer_(CreateAndStartBalancer()),
         XdsEnd2endTest(
             4, 100, 0, false, nullptr,
-            BootstrapBuilder().SetAuthorityServer(
+            BootstrapBuilder().AddAuthority(
                 "xds.example.com",
                 absl::StrCat("localhost:", authority_balancer_->port()))) {
     StartAllBackends();
