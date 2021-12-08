@@ -50,8 +50,9 @@ class EvaluateArgsTestUtil {
   }
 
   EvaluateArgs MakeEvaluateArgs() {
-    channel_args_ =
-        new EvaluateArgs::PerChannelArgs(&auth_context_, &endpoint_);
+    channel_args_ = new EvaluateArgs::PerChannelArgs(
+        &auth_context_, grpc_endpoint_get_local_address(&endpoint_),
+        grpc_endpoint_get_peer(&endpoint_));
     return EvaluateArgs(&metadata_, channel_args_);
   }
 

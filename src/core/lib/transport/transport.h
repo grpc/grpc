@@ -281,6 +281,11 @@ struct grpc_transport_stream_op_batch_payload {
     // immediately available.  This may be a signal that we received a
     // Trailers-Only response.
     bool* trailing_metadata_available = nullptr;
+    // Set by the transport to the local address.
+    // The transport retains ownership of the string and remains valid until the
+    // call is destroyed.
+    // TODO(review): Does this need to be atomic?
+    absl::string_view local_address;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the

@@ -61,7 +61,8 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
 }  // namespace
 
 EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
-                                             grpc_endpoint* endpoint) {
+                                             absl::string_view local_addr,
+                                             absl::string_view peer_addr) {
   if (auth_context != nullptr) {
     transport_security_type = GetAuthPropertyValue(
         auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
@@ -74,10 +75,8 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
     subject =
         GetAuthPropertyValue(auth_context, GRPC_X509_SUBJECT_PROPERTY_NAME);
   }
-  if (endpoint != nullptr) {
-    local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
-    peer_address = ParseEndpointUri(grpc_endpoint_get_peer(endpoint));
-  }
+  local_address = ParseEndpointUri(local_addr);
+  peer_address = ParseEndpointUri(peer_addr);
 }
 
 absl::string_view EvaluateArgs::GetPath() const {

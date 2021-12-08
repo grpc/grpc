@@ -91,6 +91,7 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
@@ -127,9 +128,15 @@ using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::listener::v3::Listener;
+using ::envoy::config::rbac::v3::Policy;
+using ::envoy::config::rbac::v3::RBAC_Action;
+using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
+using ::envoy::config::rbac::v3::RBAC_Action_DENY;
+using ::envoy::config::rbac::v3::RBAC_Action_LOG;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
+using ::envoy::extensions::filters::http::rbac::v3::RBAC;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
@@ -357,6 +364,11 @@ class TestType {
     return *this;
   }
 
+  TestType& set_rbac_action(RBAC_Action action) {
+    rbac_action_ = action;
+    return *this;
+  }
+
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_v2() const { return use_v2_; }
@@ -364,6 +376,7 @@ class TestType {
   bool use_csds_streaming() const { return use_csds_streaming_; }
   FilterConfigSetup filter_config_setup() const { return filter_config_setup_; }
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
+  RBAC_Action rbac_action() const { return rbac_action_; }
 
   std::string AsString() const {
     std::string retval = use_v2_ ? "V2" : "V3";
@@ -379,6 +392,11 @@ class TestType {
     } else if (bootstrap_source_ == kBootstrapFromEnvVar) {
       retval += "BootstrapFromEnvVar";
     }
+    if (rbac_action_ == RBAC_Action_ALLOW) {
+      retval += "RbacAllow";
+    } else if (rbac_action_ == RBAC_Action_DENY) {
+      retval += "RbacDeny";
+    }
     return retval;
   }
 
@@ -390,6 +408,7 @@ class TestType {
   bool use_csds_streaming_ = false;
   FilterConfigSetup filter_config_setup_ = kHTTPConnectionManagerOriginal;
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
+  RBAC_Action rbac_action_ = RBAC_Action_LOG;
 };
 
 std::string ReadFile(const char* file_path) {
@@ -7936,6 +7955,37 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
       ::testing::HasSubstr("Listener has both address and ApiListener"));
 }
 
+TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
+  Listener listener = default_server_listener_;
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
+  http_connection_manager.set_xff_num_trusted_hops(1);
+  ServerHcmAccessor().Pack(http_connection_manager, &listener);
+  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
+                                             backends_[0]->port(),
+                                             default_server_route_config_);
+  backends_[0]->Start();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+              ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
+}
+
+TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
+  Listener listener = default_server_listener_;
+  HttpConnectionManager http_connection_manager =
+      ServerHcmAccessor().Unpack(listener);
+  http_connection_manager.add_original_ip_detection_extensions();
+  ServerHcmAccessor().Pack(http_connection_manager, &listener);
+  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
+                                             backends_[0]->port(),
+                                             default_server_route_config_);
+  backends_[0]->Start();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  EXPECT_THAT(
+      balancer_->ads_service()->lds_response_state().error_message,
+      ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
+}
+
 TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   Listener listener = default_server_listener_;
   listener.mutable_default_filter_chain()->clear_filters();
@@ -9659,6 +9709,659 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+class XdsRbacTest : public XdsServerRdsTest {
+ protected:
+  void SetServerRbacPolicy(Listener listener, const RBAC& rbac) {
+    HttpConnectionManager http_connection_manager =
+        ServerHcmAccessor().Unpack(listener);
+    *http_connection_manager.add_http_filters() =
+        http_connection_manager.http_filters(0);
+    auto* filter = http_connection_manager.mutable_http_filters(0);
+    filter->Clear();
+    filter->set_name("rbac");
+    RouteConfiguration route_config = default_server_route_config_;
+    switch (GetParam().filter_config_setup()) {
+      case TestType::FilterConfigSetup::kHTTPConnectionManagerOriginal:
+        filter->mutable_typed_config()->PackFrom(rbac);
+        break;
+      case TestType::FilterConfigSetup::kRouteOverride:
+        filter->mutable_typed_config()->PackFrom(RBAC());
+        google::protobuf::Any filter_config;
+        filter_config.PackFrom(rbac);
+        auto* config_map = route_config.mutable_virtual_hosts(0)
+                               ->mutable_routes(0)
+                               ->mutable_typed_per_filter_config();
+        (*config_map)["rbac"] = std::move(filter_config);
+    }
+    ServerHcmAccessor().Pack(http_connection_manager, &listener);
+    SetServerListenerNameAndRouteConfiguration(
+        balancer_.get(), listener, backends_[0]->port(), route_config);
+  }
+
+  void SetServerRbacPolicy(const RBAC& rbac) {
+    SetServerRbacPolicy(default_server_listener_, rbac);
+  }
+};
+
+TEST_P(XdsRbacTest, AbsentRbacPolicy) {
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    return;
+  }
+  SetServerRbacPolicy(RBAC());
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // An absent RBAC policy leads to all RPCs being accepted.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsRbacTest, EmptyRbacPolicy) {
+  RBAC rbac;
+  rbac.mutable_rules()->set_action(GetParam().rbac_action());
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // An empty RBAC policy leads to all RPCs being rejected.
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW);
+}
+
+TEST_P(XdsRbacTest, LogAction) {
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    return;
+  }
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_LOG);
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // A Log action is identical to no rbac policy being configured.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsRbacTest, AnyPermissionAnyPrincipalAllow) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    return;
+  }
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":scheme");
+  header->set_exact_match("http");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
+      GetParam().filter_config_setup() ==
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  }
+}
+
+TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    return;
+  }
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name("grpc-status");
+  header->set_exact_match("0");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
+      GetParam().filter_config_setup() ==
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  }
+}
+
+TEST_P(XdsRbacTest, MethodPostPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("POST");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // All RPCs use POST method by default
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, MethodGetPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("GET");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Send a cacheable RPC so that GET method is used
+  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
+  ClientContext context;
+  context.set_wait_for_ready(true);
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+  context.set_cacheable(true);
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  Status status = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(GetParam().rbac_action() == RBAC_Action_ALLOW ? status.ok()
+                                                            : !status.ok())
+      << status.error_code() << ", " << status.error_message() << ", "
+      << status.error_details() << ", " << context.debug_error_string();
+}
+
+TEST_P(XdsRbacTest, MethodPutPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("PUT");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Send an idempotent RPC so that PUT method is used
+  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
+  ClientContext context;
+  context.set_wait_for_ready(true);
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+  context.set_idempotent(true);
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  Status status = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(GetParam().rbac_action() == RBAC_Action_ALLOW ? status.ok()
+                                                            : !status.ok())
+      << status.error_code() << ", " << status.error_message() << ", "
+      << status.error_details() << ", " << context.debug_error_string();
+}
+
+TEST_P(XdsRbacTest, UrlPathPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->mutable_url_path()->mutable_path()->set_exact(
+      "/grpc.testing.EchoTestService/Echo");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, DestinationIpPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* range = policy.add_permissions()->mutable_destination_ip();
+  range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 64 : 32);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, DestinationPortPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->set_destination_port(backends_[0]->port());
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, ReqServerNamePermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->mutable_requested_server_name()->set_exact(
+      "server_name");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW);
+}
+
+TEST_P(XdsRbacTest, NotRulePermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->mutable_not_rule()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW);
+}
+
+TEST_P(XdsRbacTest, AndRulePermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* and_rules = policy.add_permissions()->mutable_and_rules();
+  and_rules->add_rules()->set_any(true);
+  and_rules->add_rules()->set_destination_port(backends_[0]->port());
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, OrRulePermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* or_rules = policy.add_permissions()->mutable_or_rules();
+  or_rules->add_rules()->mutable_not_rule()->set_any(true);
+  or_rules->add_rules()->set_destination_port(backends_[0]->port());
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    return;
+  }
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":scheme");
+  header->set_exact_match("http");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
+      GetParam().filter_config_setup() ==
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  }
+}
+
+TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    return;
+  }
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name("grpc-status");
+  header->set_exact_match("0");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
+      GetParam().filter_config_setup() ==
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  }
+}
+
+TEST_P(XdsRbacTest, AnyPermissionMethodPostPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("POST");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // All RPCs use POST method by default
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, AnyPermissionMethodGetPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("GET");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Send a cacheable RPC so that GET method is used
+  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
+  ClientContext context;
+  context.set_wait_for_ready(true);
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+  context.set_cacheable(true);
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  Status status = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(GetParam().rbac_action() == RBAC_Action_ALLOW ? status.ok()
+                                                            : !status.ok())
+      << status.error_code() << ", " << status.error_message() << ", "
+      << status.error_details() << ", " << context.debug_error_string();
+}
+
+TEST_P(XdsRbacTest, AnyPermissionMethodPutPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("PUT");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Send an idempotent RPC so that PUT method is used
+  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
+  ClientContext context;
+  context.set_wait_for_ready(true);
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+  context.set_idempotent(true);
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  Status status = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(GetParam().rbac_action() == RBAC_Action_ALLOW ? status.ok()
+                                                            : !status.ok())
+      << status.error_code() << ", " << status.error_message() << ", "
+      << status.error_details() << ", " << context.debug_error_string();
+}
+
+TEST_P(XdsRbacTest, AnyPermissionUrlPathPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_principals()->mutable_url_path()->mutable_path()->set_exact(
+      "/grpc.testing.EchoTestService/Echo");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, AnyPermissionDirectRemoteIpPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* range = policy.add_principals()->mutable_direct_remote_ip();
+  range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 64 : 32);
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, AnyPermissionAuthenticatedPrincipal) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_principals()
+      ->mutable_authenticated()
+      ->mutable_principal_name()
+      ->set_exact("*.test.google.fr");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(listener, rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateMtlsChannel(); }, server_authenticated_identity_,
+      client_authenticated_identity_,
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, AnyPermissionNotIdPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_principals()->mutable_not_id()->set_any(true);
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW);
+}
+
+TEST_P(XdsRbacTest, AnyPermissionAndIdPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* and_ids = policy.add_principals()->mutable_and_ids();
+  and_ids->add_ids()->set_any(true);
+  and_ids->add_ids()->mutable_url_path()->mutable_path()->set_exact(
+      "/grpc.testing.EchoTestService/Echo");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+}
+
+TEST_P(XdsRbacTest, AnyPermissionOrIdPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* or_ids = policy.add_principals()->mutable_or_ids();
+  or_ids->add_ids()->mutable_not_id()->set_any(true);
+  or_ids->add_ids()->mutable_url_path()->mutable_path()->set_exact(
+      "/grpc.testing.EchoTestService/Echo");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
 }
 
 using EdsTest = BasicTest;
@@ -12171,6 +12874,44 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
                                                .set_use_xds_credentials()
                                                .set_enable_rds_testing()),
                          &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTest,
+    ::testing::Values(
+        TestType().set_use_xds_credentials().set_rbac_action(RBAC_Action_ALLOW),
+        TestType().set_use_xds_credentials().set_rbac_action(RBAC_Action_DENY),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_rbac_action(RBAC_Action_ALLOW),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_rbac_action(RBAC_Action_DENY),
+        TestType()
+            .set_use_xds_credentials()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_rbac_action(RBAC_Action_ALLOW),
+        TestType()
+            .set_use_xds_credentials()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_rbac_action(RBAC_Action_DENY),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_rbac_action(RBAC_Action_ALLOW),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_rbac_action(RBAC_Action_DENY)),
+    &TestTypeName);
 
 // EDS could be tested with or without XdsResolver, but the tests would
 // be the same either way, so we test it only with XdsResolver.

@@ -24,10 +24,12 @@ namespace grpc_core {
 TraceFlag grpc_sdk_authz_trace(false, "sdk_authz");
 
 SdkServerAuthzFilter::SdkServerAuthzFilter(
-    RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
+    RefCountedPtr<grpc_auth_context> auth_context,
+    absl::string_view local_address, absl::string_view peer_address,
     RefCountedPtr<grpc_authorization_policy_provider> provider)
     : auth_context_(std::move(auth_context)),
-      per_channel_evaluate_args_(auth_context_.get(), endpoint),
+      per_channel_evaluate_args_(auth_context_.get(), local_address,
+                                 peer_address),
       provider_(std::move(provider)) {}
 
 grpc_error_handle SdkServerAuthzFilter::Init(grpc_channel_element* elem,
@@ -42,12 +44,12 @@ grpc_error_handle SdkServerAuthzFilter::Init(grpc_channel_element* elem,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to get authorization provider.");
   }
-  // grpc_endpoint isn't needed because the current SDK authorization policy
-  // does not support any rules that requires looking for source or destination
-  // addresses.
+  // Endpoint addresses aren't needed because the current SDK authorization
+  // policy does not support any rules that requires looking for source or
+  // destination addresses.
   new (elem->channel_data) SdkServerAuthzFilter(
-      auth_context != nullptr ? auth_context->Ref() : nullptr,
-      /*endpoint=*/nullptr, provider->Ref());
+      auth_context != nullptr ? auth_context->Ref() : nullptr, "", "",
+      provider->Ref());
   return GRPC_ERROR_NONE;
 }
 

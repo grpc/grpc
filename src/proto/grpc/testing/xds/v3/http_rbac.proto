@@ -1,4 +1,5 @@
-// Copyright 2020 The gRPC Authors
+//
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,31 +12,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 // Local copy of Envoy xDS proto file, used for testing only.
 
 syntax = "proto3";
 
-package envoy.type.v3;
+package envoy.extensions.filters.http.rbac.v3;
 
-// [#protodoc-title: Range]
+import "src/proto/grpc/testing/xds/v3/rbac.proto";
 
-// Specifies the int64 start and end of the range using half-open interval semantics [start,
-// end).
-message Int64Range {
-  // start of the range (inclusive)
-  int64 start = 1;
+// [#protodoc-title: RBAC]
+// Role-Based Access Control :ref:`configuration overview <config_http_filters_rbac>`.
+// [#extension: envoy.filters.http.rbac]
 
-  // end of the range (exclusive)
-  int64 end = 2;
-}
-
-// Specifies the int32 start and end of the range using half-open interval semantics [start,
-// end).
-message Int32Range {
-  // start of the range (inclusive)
-  int32 start = 1;
-
-  // end of the range (exclusive)
-  int32 end = 2;
+// RBAC filter config.
+message RBAC {
+  // Specify the RBAC rules to be applied globally.
+  // If absent, no enforcing RBAC policy will be applied.
+  // If present and empty, DENY.
+  config.rbac.v3.RBAC rules = 1;
 }

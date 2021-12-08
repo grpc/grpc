@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,15 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
+#include "src/core/ext/filters/rbac/rbac_filter.h"
 
-#include "src/core/ext/filters/server_config_selector/server_config_selector.h"
+#include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/service_config/service_config_call_data.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 
 namespace grpc_core {
 
@@ -34,34 +32,16 @@ class ChannelData {
                                 grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
 
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
-    MutexLock lock(&mu_);
-    return config_selector_;
-  }
+  grpc_auth_context* auth_context() { return auth_context_.get(); }
+
+  int index() const { return index_; }
 
  private:
-  class ServerConfigSelectorWatcher
-      : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
-   public:
-    explicit ServerConfigSelectorWatcher(ChannelData* chand) : chand_(chand) {}
-    void OnServerConfigSelectorUpdate(
-        absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&chand_->mu_);
-      chand_->config_selector_ = std::move(update);
-    }
+  ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
 
-   private:
-    ChannelData* chand_;
-  };
-
-  explicit ChannelData(RefCountedPtr<ServerConfigSelectorProvider>
-                           server_config_selector_provider);
-  ~ChannelData();
-
-  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
-  Mutex mu_;
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector_
-      ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<grpc_auth_context> auth_context_;
+  // The index of this filter instance among instances of the same filter.
+  int index_;
 };
 
 class CallData {
@@ -84,8 +64,8 @@ class CallData {
   void MaybeResumeRecvTrailingMetadataReady();
 
   grpc_call_context_element* call_context_;
+  Arena* arena_;
   CallCombiner* call_combiner_;
-  ServiceConfigCallData service_config_call_data_;
   // Overall error for the call
   grpc_error_handle error_ = GRPC_ERROR_NONE;
   // State for keeping track of recv_initial_metadata
@@ -93,25 +73,20 @@ class CallData {
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   grpc_closure recv_initial_metadata_ready_;
   // State for keeping of track of recv_trailing_metadata
-  grpc_closure* original_recv_trailing_metadata_ready_;
+  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
-  grpc_error_handle recv_trailing_metadata_ready_error_;
+  grpc_error_handle recv_trailing_metadata_ready_error_ = GRPC_ERROR_NONE;
   bool seen_recv_trailing_metadata_ready_ = false;
+  // Payload for access to recv_initial_metadata fields
+  grpc_transport_stream_op_batch_payload* payload_ = nullptr;
 };
 
 // ChannelData
 
 grpc_error_handle ChannelData::Init(grpc_channel_element* elem,
                                     grpc_channel_element_args* args) {
-  GPR_ASSERT(elem->filter == &kServerConfigSelectorFilter);
-  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
-      ServerConfigSelectorProvider::GetFromChannelArgs(*args->channel_args);
-  if (server_config_selector_provider == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No ServerConfigSelectorProvider object found");
-  }
-  new (elem->channel_data)
-      ChannelData(std::move(server_config_selector_provider));
+  GPR_ASSERT(elem->filter == &kRbacFilter);
+  new (elem->channel_data) ChannelData(elem, args);
   return GRPC_ERROR_NONE;
 }
 
@@ -120,18 +95,15 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
   chand->~ChannelData();
 }
 
-ChannelData::ChannelData(
-    RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
-    : server_config_selector_provider_(
-          std::move(server_config_selector_provider)) {
-  GPR_ASSERT(server_config_selector_provider_ != nullptr);
-  auto server_config_selector_watcher =
-      absl::make_unique<ServerConfigSelectorWatcher>(this);
-  config_selector_ = server_config_selector_provider_->Watch(
-      std::move(server_config_selector_watcher));
+ChannelData::ChannelData(grpc_channel_element* elem,
+                         grpc_channel_element_args* args)
+    : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
+                                                       elem)) {
+  grpc_auth_context* auth_context =
+      grpc_find_auth_context_in_args(args->channel_args);
+  GPR_ASSERT(auth_context != nullptr);
+  auth_context_ = auth_context->Ref();
 }
-
-ChannelData::~ChannelData() { server_config_selector_provider_->CancelWatch(); }
 
 // CallData
 
@@ -158,6 +130,7 @@ void CallData::StartTransportStreamOpBatch(grpc_call_element* elem,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->recv_initial_metadata_ready_;
+    calld->payload_ = op->payload;
   }
   if (op->recv_trailing_metadata) {
     // We might generate errors on receiving initial metadata which we need to
@@ -172,43 +145,81 @@ void CallData::StartTransportStreamOpBatch(grpc_call_element* elem,
 }
 
 CallData::CallData(grpc_call_element* elem, const grpc_call_element_args& args)
-    : call_context_(args.context), call_combiner_(args.call_combiner) {
+    : call_context_(args.context),
+      arena_(args.arena),
+      call_combiner_(args.call_combiner) {
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
 }
 
-CallData::~CallData() {
-  // Remove the entry from call context, just in case anyone above us
-  // tries to look at it during call stack destruction.
-  call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = nullptr;
-  GRPC_ERROR_UNREF(error_);
+CallData::~CallData() { GRPC_ERROR_UNREF(error_); }
+
+namespace {
+
+grpc_error_handle PrepareMetadataForAuthorization(
+    const grpc_metadata_batch& source, uint32_t flags,
+    grpc_metadata_batch* destination) {
+  // The http-server filter removes the ':method' header from the metadata which
+  // we need to add back here.
+  grpc_metadata_batch_copy(&source, destination);
+  grpc_mdelem method;
+  if (flags & GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
+    method = GRPC_MDELEM_METHOD_GET;
+  } else if (flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
+    method = GRPC_MDELEM_METHOD_PUT;
+  } else {
+    method = GRPC_MDELEM_METHOD_POST;
+  }
+  return destination->Append(method);
 }
+
+}  // namespace
 
 void CallData::RecvInitialMetadataReady(void* user_data,
                                         grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   if (error == GRPC_ERROR_NONE) {
-    auto config_selector = chand->config_selector();
-    if (config_selector.ok()) {
-      auto call_config =
-          config_selector.value()->GetCallConfig(calld->recv_initial_metadata_);
-      if (call_config.error != GRPC_ERROR_NONE) {
-        calld->error_ = call_config.error;
-        error = call_config.error;  // Does not take a ref
-      } else {
-        calld->service_config_call_data_ =
-            ServiceConfigCallData(std::move(call_config.service_config),
-                                  call_config.method_configs, {});
-        calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value =
-            &calld->service_config_call_data_;
+    // Fetch and apply the rbac policy from the service config.
+    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+        calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+    auto* method_params = static_cast<RbacMethodParsedConfig*>(
+        service_config_call_data->GetMethodParsedConfig(
+            RbacServiceConfigParser::ParserIndex()));
+    if (method_params != nullptr) {
+      grpc_metadata_batch prepared_metadata(calld->arena_);
+      calld->error_ = PrepareMetadataForAuthorization(
+          *calld->payload_->recv_initial_metadata.recv_initial_metadata,
+          *calld->payload_->recv_initial_metadata.recv_flags,
+          &prepared_metadata);
+      if (calld->error_ == GRPC_ERROR_NONE) {
+        ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+        auto* authorization_engine =
+            method_params->authorization_engine(chand->index());
+        EvaluateArgs::PerChannelArgs per_channel_evaluate_args(
+            chand->auth_context(),
+            calld->payload_->recv_initial_metadata.local_address,
+            reinterpret_cast<const char*>(gpr_atm_acq_load(
+                calld->payload_->recv_initial_metadata.peer_string)));
+        if (authorization_engine
+                ->Evaluate(EvaluateArgs(&prepared_metadata,
+                                        &per_channel_evaluate_args))
+                .type == AuthorizationEngine::Decision::Type::kDeny) {
+          calld->error_ =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
+        }
       }
     } else {
-      calld->error_ = absl_status_to_grpc_error(config_selector.status());
-      error = calld->error_;
+      calld->error_ =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
+    }
+    if (calld->error_ != GRPC_ERROR_NONE) {
+      calld->error_ =
+          grpc_error_set_int(calld->error_, GRPC_ERROR_INT_GRPC_STATUS,
+                             GRPC_STATUS_PERMISSION_DENIED);
+      error = calld->error_;  // Does not take a ref
     }
   }
   calld->MaybeResumeRecvTrailingMetadataReady();
@@ -248,7 +259,7 @@ void CallData::MaybeResumeRecvTrailingMetadataReady() {
 
 }  // namespace
 
-const grpc_channel_filter kServerConfigSelectorFilter = {
+const grpc_channel_filter kRbacFilter = {
     CallData::StartTransportStreamOpBatch,
     grpc_channel_next_op,
     sizeof(CallData),
@@ -259,7 +270,11 @@ const grpc_channel_filter kServerConfigSelectorFilter = {
     ChannelData::Init,
     ChannelData::Destroy,
     grpc_channel_next_get_info,
-    "server_config_selector_filter",
+    "rbac_filter",
 };
+
+void RbacFilterInit(void) { RbacServiceConfigParser::Register(); }
+
+void RbacFilterShutdown(void) {}
 
 }  // namespace grpc_core

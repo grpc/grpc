@@ -52,6 +52,8 @@ void grpc_message_size_filter_shutdown(void);
 namespace grpc_core {
 void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
+void RbacFilterInit(void);
+void RbacFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
 #ifndef GRPC_NO_RLS
@@ -127,6 +129,7 @@ void grpc_register_built_in_plugins(void) {
                        grpc_message_size_filter_shutdown);
   grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
                        grpc_core::FaultInjectionFilterShutdown);
+  grpc_register_plugin(grpc_core::RbacFilterInit, grpc_core::RbacFilterShutdown);
 #ifndef GRPC_NO_XDS
   grpc_register_plugin(grpc_core::XdsClientGlobalInit,
                        grpc_core::XdsClientGlobalShutdown);

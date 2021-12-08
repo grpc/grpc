@@ -22,6 +22,7 @@
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 
 #include "src/core/ext/xds/xds_http_fault_filter.h"
+#include "src/core/ext/xds/xds_http_rbac_filter.h"
 
 namespace grpc_core {
 
@@ -106,6 +107,8 @@ void XdsHttpFilterRegistry::Init() {
                  {kXdsHttpRouterFilterConfigName});
   RegisterFilter(absl::make_unique<XdsHttpFaultFilter>(),
                  {kXdsHttpFaultFilterConfigName});
+  RegisterFilter(absl::make_unique<XdsHttpRbacFilter>(),
+                 {kXdsHttpRbacFilterConfigName});
 }
 
 void XdsHttpFilterRegistry::Shutdown() {
