@@ -28,6 +28,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -112,7 +113,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
     return nullptr;
   }
   // Add channel arg containing the server URI.
-  grpc_core::UniquePtr<char> canonical_target =
+  UniquePtr<char> canonical_target =
       ResolverRegistry::AddDefaultPrefixIfNeeded(target);
   grpc_arg arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
@@ -120,7 +121,7 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
   grpc_channel* channel = grpc_channel_create(
-      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, error);
+      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, error);
   grpc_channel_args_destroy(new_args);
   return channel;
 }
@@ -154,7 +155,9 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
       "reserved=%p)",
       4, ((void*)creds, target, (void*)args, (void*)reserved));
   GPR_ASSERT(reserved == nullptr);
-  args = grpc_channel_args_remove_grpc_internal(args);
+  args = grpc_core::CoreConfiguration::Get()
+             .channel_args_preconditioning()
+             .PreconditionChannelArgs(args);
   grpc_channel* channel = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {

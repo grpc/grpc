@@ -30,7 +30,8 @@
 static int unique = 1;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f =
       grpc_end2end_local_chttp2_create_fixture_fullstack();
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
@@ -41,13 +42,13 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
   return f;
 }
 
-static void chttp2_init_client_fullstack_uds(grpc_end2end_test_fixture* f,
-                                             grpc_channel_args* client_args) {
+static void chttp2_init_client_fullstack_uds(
+    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
   grpc_end2end_local_chttp2_init_client_fullstack(f, client_args, UDS);
 }
 
-static void chttp2_init_server_fullstack_uds(grpc_end2end_test_fixture* f,
-                                             grpc_channel_args* client_args) {
+static void chttp2_init_server_fullstack_uds(
+    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
   grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, UDS);
 }
 

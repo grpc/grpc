@@ -20,28 +20,39 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_listener_v3_QuicProtocolOptions_submsgs[5] = {
-  &envoy_config_core_v3_QuicProtocolOptions_msginit,
-  &envoy_config_core_v3_RuntimeFeatureFlag_msginit,
-  &envoy_config_core_v3_TypedExtensionConfig_msginit,
-  &google_protobuf_Duration_msginit,
-  &google_protobuf_UInt32Value_msginit,
+static const upb_msglayout_sub envoy_config_listener_v3_QuicProtocolOptions_submsgs[5] = {
+  {.submsg = &envoy_config_core_v3_QuicProtocolOptions_msginit},
+  {.submsg = &envoy_config_core_v3_RuntimeFeatureFlag_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+  {.submsg = &google_protobuf_Duration_msginit},
+  {.submsg = &google_protobuf_UInt32Value_msginit},
 };
 
 static const upb_msglayout_field envoy_config_listener_v3_QuicProtocolOptions__fields[7] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 2, 3, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(12, 24), 3, 3, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(16, 32), 4, 1, 11, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(20, 40), 5, 4, 11, _UPB_MODE_SCALAR},
-  {6, UPB_SIZE(24, 48), 6, 2, 11, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(28, 56), 7, 2, 11, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(8, 16), 2, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(12, 24), 3, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {4, UPB_SIZE(16, 32), 4, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {5, UPB_SIZE(20, 40), 5, 4, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {6, UPB_SIZE(24, 48), 6, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {7, UPB_SIZE(28, 56), 7, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_listener_v3_QuicProtocolOptions_msginit = {
   &envoy_config_listener_v3_QuicProtocolOptions_submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
-  UPB_SIZE(32, 64), 7, false, 7, 255,
+  UPB_SIZE(32, 64), 7, _UPB_MSGEXT_NONE, 7, 255,
+};
+
+static const upb_msglayout *messages_layout[1] = {
+  &envoy_config_listener_v3_QuicProtocolOptions_msginit,
+};
+
+const upb_msglayout_file envoy_config_listener_v3_quic_config_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  1,
+  0,
 };
 
 #include "upb/port_undef.inc"

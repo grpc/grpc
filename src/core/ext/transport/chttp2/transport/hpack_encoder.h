@@ -119,6 +119,27 @@ class HPackCompressor {
     void Encode(grpc_mdelem md);
     void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
+    void Encode(UserAgentMetadata, const Slice& slice);
+    void Encode(GrpcStatusMetadata, grpc_status_code status);
+    void Encode(GrpcMessageMetadata, const Slice& slice) {
+      if (slice.empty()) return;
+      EmitLitHdrWithNonBinaryStringKeyNotIdx(
+          StaticSlice::FromStaticString("grpc-message").c_slice(),
+          slice.c_slice());
+    }
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      const Slice& slice = MetadataValueAsSlice<Which>(value);
+      if (absl::EndsWith(Which::key(), "-bin")) {
+        EmitLitHdrWithBinaryStringKeyNotIdx(
+            StaticSlice::FromStaticString(Which::key()).c_slice(),
+            slice.c_slice());
+      } else {
+        EmitLitHdrWithNonBinaryStringKeyNotIdx(
+            StaticSlice::FromStaticString(Which::key()).c_slice(),
+            slice.c_slice());
+      }
+    }
 
    private:
     struct FramePrefix {
@@ -143,7 +164,15 @@ class HPackCompressor {
     void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
     void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
                                                 const grpc_slice& value_slice);
+    void EmitLitHdrWithBinaryStringKeyNotIdx(const grpc_slice& key_slice,
+                                             const grpc_slice& value_slice);
+    void EmitLitHdrWithNonBinaryStringKeyNotIdx(const grpc_slice& key_slice,
+                                                const grpc_slice& value_slice);
     void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
+
+    void EncodeAlwaysIndexed(uint32_t* index, const grpc_slice& key,
+                             const grpc_slice& value,
+                             uint32_t transport_length);
 
     size_t CurrentFrameSize() const;
     void Add(grpc_slice slice);
@@ -168,6 +197,7 @@ class HPackCompressor {
 
  private:
   static constexpr size_t kNumFilterValues = 64;
+  static constexpr uint32_t kNumCachedGrpcStatusValues = 16;
 
   void AddKeyWithIndex(grpc_slice_refcount* key_ref, uint32_t new_index,
                        uint32_t key_hash);
@@ -238,7 +268,7 @@ class HPackCompressor {
 
   class KeySliceRef {
    public:
-    using Stored = grpc_core::RefCountedPtr<grpc_slice_refcount>;
+    using Stored = RefCountedPtr<grpc_slice_refcount>;
 
     KeySliceRef(grpc_slice_refcount* ref, uint32_t hash)
         : ref_(ref), hash_(hash) {}
@@ -269,7 +299,14 @@ class HPackCompressor {
   // seen and *may* be in the decompressor table
   HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
   HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
+  // Index into table_ for the te:trailers metadata element
   uint32_t te_index_ = 0;
+  // Index into table_ for the user-agent metadata element
+  uint32_t user_agent_index_ = 0;
+  // Cached grpc-status values
+  uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};
+  // The user-agent string referred to by user_agent_index_
+  Slice user_agent_;
 };
 
 }  // namespace grpc_core

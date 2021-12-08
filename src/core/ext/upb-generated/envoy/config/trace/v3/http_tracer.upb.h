@@ -125,6 +125,8 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_mutabl
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_trace_v3_http_tracer_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

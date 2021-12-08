@@ -14,8 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/transport/binder/client/binder_connector.h"
+#ifndef GRPC_NO_BINDER
 
+#include "src/core/ext/transport/binder/client/binder_connector.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -25,11 +26,12 @@
 #include <functional>
 #include <map>
 
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 #include "src/core/ext/transport/binder/client/security_policy_setting.h"
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 
@@ -60,10 +62,12 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 #else
     GPR_ASSERT(0);
 #endif
-    gpr_log(GPR_ERROR, "conn_id_ = %s", conn_id_.c_str());
+    gpr_log(GPR_INFO, "BinderConnector %p conn_id_ = %s", this,
+            conn_id_.c_str());
 
     args_ = args;
     GPR_ASSERT(notify_ == nullptr);
+    GPR_ASSERT(notify != nullptr);
     notify_ = notify;
     result_ = result;
 
@@ -83,7 +87,15 @@ class BinderConnector : public grpc_core::SubchannelConnector {
     result_->channel_args = grpc_channel_args_copy(args_.channel_args);
     result_->transport = transport;
 
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+    GPR_ASSERT(notify_ != nullptr);
+    // ExecCtx is required here for running grpc_closure because this callback
+    // might be invoked from non-gRPC code
+    if (grpc_core::ExecCtx::Get() == nullptr) {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+    } else {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_, GRPC_ERROR_NONE);
+    }
 
     Unref();  // Was referenced in BinderConnector::Connect
   }
@@ -101,21 +113,21 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 
 namespace grpc_core {
 
-grpc_core::RefCountedPtr<grpc_core::Subchannel>
-BinderClientChannelFactory::CreateSubchannel(
+RefCountedPtr<Subchannel> BinderClientChannelFactory::CreateSubchannel(
     const grpc_resolved_address& address, const grpc_channel_args* args) {
-  gpr_log(GPR_ERROR, "BinderClientChannelFactory::CreateSubchannel called");
+  gpr_log(GPR_INFO, "BinderClientChannelFactory creating subchannel %p", this);
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>("binder.authority"));
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
-  grpc_core::RefCountedPtr<grpc_core::Subchannel> s =
-      grpc_core::Subchannel::Create(
-          grpc_core::MakeOrphanable<BinderConnector>(), address, new_args);
+  RefCountedPtr<Subchannel> s =
+      Subchannel::Create(MakeOrphanable<BinderConnector>(), address, new_args);
 
   return s;
 }
 
 }  // namespace grpc_core
+
+#endif  // GRPC_NO_BINDER

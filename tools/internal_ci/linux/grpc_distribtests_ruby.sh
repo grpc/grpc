@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -27,7 +30,7 @@ rvm --default use ruby-2.4.1
 set -ex
 
 # Build all ruby linux artifacts (this step actually builds all the binary wheels and source archives)
-tools/run_tests/task_runner.py -f artifact linux ruby -j 6 -x build_artifacts/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux ruby ${TASK_RUNNER_EXTRA_FILTERS} -j 6 -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # Ruby "build_package" step is basically just a passthough for the "grpc" gems, so it's enough to just
 # copy the native gems directly to the "distribtests" step and skip the "build_package" phase entirely.
@@ -44,7 +47,9 @@ cp -r artifacts/ruby_native_gem_*/* input_artifacts/ || true
 # Run all ruby linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
-tools/run_tests/task_runner.py -f distribtest linux ruby -j 6 -x distribtests/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f distribtest linux ruby ${TASK_RUNNER_EXTRA_FILTERS} -j 6 -x distribtests/sponge_log.xml || FAILED="true"
+
+tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
 if [ "$FAILED" != "" ]
 then

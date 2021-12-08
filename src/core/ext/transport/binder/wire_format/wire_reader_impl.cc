@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <functional>
 #include <limits>
 #include <string>
@@ -39,6 +41,8 @@
 
 namespace grpc_binder {
 namespace {
+
+const int32_t kWireFormatVersion = 1;
 
 absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
   int num_header;
@@ -112,9 +116,8 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
   gpr_log(GPR_INFO, "prepare transaction = %d",
           binder->PrepareTransaction().ok());
   WritableParcel* writable_parcel = binder->GetWritableParcel();
-  int32_t version = 77;
   gpr_log(GPR_INFO, "write int32 = %d",
-          writable_parcel->WriteInt32(version).ok());
+          writable_parcel->WriteInt32(kWireFormatVersion).ok());
   // The lifetime of the transaction receiver is the same as the wire writer's.
   // The transaction receiver is responsible for not calling the on-transact
   // callback when it's dead.
@@ -192,7 +195,15 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
 
       int version;
       RETURN_IF_ERROR(parcel->ReadInt32(&version));
-      gpr_log(GPR_INFO, "version = %d", version);
+      gpr_log(GPR_INFO, "The other end respond with version = %d", version);
+      // We only support this single lowest possible version, so server must
+      // respond that version too.
+      if (version != kWireFormatVersion) {
+        gpr_log(GPR_ERROR,
+                "The other end respond with version = %d, but we requested "
+                "version %d, trying to continue anyway",
+                version, kWireFormatVersion);
+      }
       std::unique_ptr<Binder> binder{};
       RETURN_IF_ERROR(parcel->ReadBinder(&binder));
       if (!binder) {
@@ -379,3 +390,4 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
 }
 
 }  // namespace grpc_binder
+#endif

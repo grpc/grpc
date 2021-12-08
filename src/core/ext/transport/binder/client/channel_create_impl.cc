@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <memory>
 #include <utility>
 
@@ -23,6 +25,7 @@
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 
@@ -51,13 +54,18 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>("binder.authority"));
+  args = grpc_core::CoreConfiguration::Get()
+             .channel_args_preconditioning()
+             .PreconditionChannelArgs(args);
   grpc_channel_args* final_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create(
-      "binder_target_placeholder", final_args, GRPC_CLIENT_DIRECT_CHANNEL,
-      transport, nullptr, 0, &error);
+  grpc_channel* channel =
+      grpc_channel_create("binder_target_placeholder", final_args,
+                          GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
+  // TODO(mingcl): Handle error properly
   GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_channel_args_destroy(args);
   grpc_channel_args_destroy(final_args);
   return channel;
 }
@@ -78,7 +86,7 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
 
   grpc_channel* channel =
       grpc_channel_create("binder_channel_target_placeholder", new_args,
-                          GRPC_CLIENT_CHANNEL, nullptr, nullptr, 0, &error);
+                          GRPC_CLIENT_CHANNEL, nullptr, &error);
 
   // Clean up.
   grpc_channel_args_destroy(new_args);
@@ -99,3 +107,4 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
 
 }  // namespace internal
 }  // namespace grpc
+#endif

@@ -123,31 +123,20 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   struct ResolverOutput {
     grpc_core::Resolver::Result result;
-    grpc_error_handle error = GRPC_ERROR_NONE;
     gpr_event ev;
 
     ResolverOutput() { gpr_event_init(&ev); }
-    ~ResolverOutput() { GRPC_ERROR_UNREF(error); }
   };
 
   void SetOutput(ResolverOutput* output) {
     gpr_atm_rel_store(&output_, reinterpret_cast<gpr_atm>(output));
   }
 
-  void ReturnResult(grpc_core::Resolver::Result result) override {
+  void ReportResult(grpc_core::Resolver::Result result) override {
     ResolverOutput* output =
         reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
     GPR_ASSERT(output != nullptr);
     output->result = std::move(result);
-    output->error = GRPC_ERROR_NONE;
-    gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
-  }
-
-  void ReturnError(grpc_error_handle error) override {
-    ResolverOutput* output =
-        reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
-    GPR_ASSERT(output != nullptr);
-    output->error = error;
     gpr_event_set(&output->ev, reinterpret_cast<void*>(1));
   }
 
@@ -190,15 +179,14 @@ int main(int argc, char** argv) {
     resolver->StartLocked();
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(wait_loop(5, &output1.ev));
-    GPR_ASSERT(output1.result.addresses.empty());
-    GPR_ASSERT(output1.error != GRPC_ERROR_NONE);
+    GPR_ASSERT(!output1.result.addresses.ok());
 
     ResultHandler::ResolverOutput output2;
     result_handler->SetOutput(&output2);
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(wait_loop(30, &output2.ev));
-    GPR_ASSERT(!output2.result.addresses.empty());
-    GPR_ASSERT(output2.error == GRPC_ERROR_NONE);
+    GPR_ASSERT(output2.result.addresses.ok());
+    GPR_ASSERT(!output2.result.addresses->empty());
   }
 
   grpc_shutdown();

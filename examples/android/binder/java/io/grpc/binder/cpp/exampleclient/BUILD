@@ -21,11 +21,10 @@ cc_library(
         "-ldl",
         "-llog",
         "-lm",
-        "-lbinder_ndk",
         "-Wl,--no-undefined",
     ],
     deps = [
-        "//:grpc++_binder",
+        "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
     ],
     alwayslink = True,

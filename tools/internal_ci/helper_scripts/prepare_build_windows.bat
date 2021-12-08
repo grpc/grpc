@@ -15,7 +15,14 @@
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python 2.7
 @rem set path to CMake
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;C:\Program Files\CMake\bin;%PATH%
+set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Python27;C:\Program Files\CMake\bin;%PATH%
+
+dir C:\Python37\
+
+mklink C:\Python37\python3.exe C:\Python37\python.exe
+
+python --version
+python3 --version
 
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
@@ -29,8 +36,6 @@ netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 prim
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
-@rem Needed for big_query_utils
-python -m pip install google-api-python-client || goto :error
 
 @rem C# prerequisites: Install dotnet SDK
 powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
@@ -45,6 +50,9 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=true
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
     powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
 )
+
+@rem Needed for big_query_utils
+python -m pip install google-api-python-client || goto :error
 
 git submodule update --init || goto :error
 

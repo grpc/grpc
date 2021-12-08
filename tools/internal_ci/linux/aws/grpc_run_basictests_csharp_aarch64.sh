@@ -23,8 +23,10 @@ sudo pip install six
 # install gRPC C# pre-requisites
 curl -sSL -o dotnet-install.sh https://dot.net/v1/dotnet-install.sh
 chmod u+x dotnet-install.sh
-./dotnet-install.sh --channel 2.1  # needed for the netcoreapp2.1 targets
-./dotnet-install.sh --channel 5.0
+# Installed .NET versions should be kept in sync with
+# templates/tools/dockerfile/csharp_dotnetcli_deps.include
+./dotnet-install.sh --channel 3.1
+./dotnet-install.sh --channel 6.0
 export PATH="$HOME/.dotnet:$PATH"
 
 # Disable some unwanted dotnet options

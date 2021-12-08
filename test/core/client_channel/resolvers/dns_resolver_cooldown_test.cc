@@ -210,7 +210,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     state_ = state;
   }
 
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {
     GPR_ASSERT(result_cb_ != nullptr);
     GPR_ASSERT(state_ != nullptr);
     ResultCallback cb = result_cb_;
@@ -218,12 +218,6 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     result_cb_ = nullptr;
     state_ = nullptr;
     cb(state);
-  }
-
-  void ReturnError(grpc_error_handle error) override {
-    gpr_log(GPR_ERROR, "resolver returned error: %s",
-            grpc_error_std_string(error).c_str());
-    GPR_ASSERT(false);
   }
 
  private:

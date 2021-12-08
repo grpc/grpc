@@ -216,7 +216,7 @@ class ClientChannel {
 
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
-  void OnResolverErrorLocked(grpc_error_handle error)
+  void OnResolverErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void CreateOrUpdateLbPolicyLocked(
@@ -288,8 +288,8 @@ class ClientChannel {
   ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
       nullptr;
   // Data from service config.
-  grpc_error_handle resolver_transient_failure_error_
-      ABSL_GUARDED_BY(resolution_mu_) = GRPC_ERROR_NONE;
+  absl::Status resolver_transient_failure_error_
+      ABSL_GUARDED_BY(resolution_mu_);
   bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) = false;
   RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
   RefCountedPtr<ConfigSelector> config_selector_
@@ -396,6 +396,7 @@ class ClientChannel::LoadBalancedCall
   class LbQueuedCallCanceller;
   class Metadata;
   class LbCallState;
+  class BackendMetricAccessor;
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -477,10 +478,10 @@ class ClientChannel::LoadBalancedCall
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
-  std::function<void(absl::Status, LoadBalancingPolicy::MetadataInterface*,
-                     LoadBalancingPolicy::CallState*)>
-      lb_recv_trailing_metadata_ready_;
+  const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+      backend_metric_data_ = nullptr;
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      lb_subchannel_call_tracker_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 

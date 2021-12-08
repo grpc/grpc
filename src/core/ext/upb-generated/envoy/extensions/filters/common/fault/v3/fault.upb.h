@@ -289,6 +289,8 @@ UPB_INLINE char *envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderL
 
 
 
+extern const upb_msglayout_file envoy_extensions_filters_common_fault_v3_fault_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

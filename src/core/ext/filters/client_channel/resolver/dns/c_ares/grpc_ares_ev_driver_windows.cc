@@ -99,8 +99,8 @@ class GrpcPolledFdWindows {
     WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY,
   };
 
-  GrpcPolledFdWindows(ares_socket_t as, grpc_core::Mutex* mu,
-                      int address_family, int socket_type)
+  GrpcPolledFdWindows(ares_socket_t as, Mutex* mu, int address_family,
+                      int socket_type)
       : mu_(mu),
         read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
@@ -131,12 +131,12 @@ class GrpcPolledFdWindows {
   }
 
   void ScheduleAndNullReadClosure(grpc_error_handle error) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
+    ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
     read_closure_ = nullptr;
   }
 
   void ScheduleAndNullWriteClosure(grpc_error_handle error) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
+    ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
     write_closure_ = nullptr;
   }
 
@@ -157,7 +157,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnReadableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnReadableLocked "
+        "fd:|%s| ContinueRegisterForOnReadableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
@@ -213,7 +213,7 @@ class GrpcPolledFdWindows {
 
   void ContinueRegisterForOnWriteableLocked() {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| InnerContinueRegisterForOnWriteableLocked "
+        "fd:|%s| ContinueRegisterForOnWriteableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
     GPR_ASSERT(connect_done_);
@@ -258,7 +258,7 @@ class GrpcPolledFdWindows {
     return grpc_winsocket_wrapped_socket(winsocket_);
   }
 
-  const char* GetName() { return name_.c_str(); }
+  const char* GetName() const { return name_.c_str(); }
 
   ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
                         ares_socket_t data_len, int flags,
@@ -420,6 +420,7 @@ class GrpcPolledFdWindows {
   static void OnTcpConnect(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
+    MutexLock lock(grpc_polled_fd->mu_);
     grpc_polled_fd->OnTcpConnectLocked(error);
   }
 
@@ -568,7 +569,7 @@ class GrpcPolledFdWindows {
   static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     (void)GRPC_ERROR_REF(error);
-    grpc_core::MutexLock lock(polled_fd->mu_);
+    MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpReadableLocked(error);
   }
 
@@ -612,7 +613,7 @@ class GrpcPolledFdWindows {
   static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     (void)GRPC_ERROR_REF(error);
-    grpc_core::MutexLock lock(polled_fd->mu_);
+    MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpWriteableLocked(error);
   }
 
@@ -648,7 +649,7 @@ class GrpcPolledFdWindows {
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
  private:
-  grpc_core::Mutex* mu_;
+  Mutex* mu_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -661,7 +662,7 @@ class GrpcPolledFdWindows {
   grpc_winsocket* winsocket_;
   // tcp_write_state_ is only used on TCP GrpcPolledFds
   WriteState tcp_write_state_;
-  std::string name_;
+  const std::string name_;
   bool gotten_into_driver_list_;
   int address_family_;
   int socket_type_;
@@ -690,7 +691,7 @@ struct SockToPolledFdEntry {
  * with a GrpcPolledFdWindows factory and event driver */
 class SockToPolledFdMap {
  public:
-  explicit SockToPolledFdMap(grpc_core::Mutex* mu) : mu_(mu) {}
+  explicit SockToPolledFdMap(Mutex* mu) : mu_(mu) {}
 
   ~SockToPolledFdMap() { GPR_ASSERT(head_ == nullptr); }
 
@@ -803,7 +804,7 @@ class SockToPolledFdMap {
   }
 
  private:
-  grpc_core::Mutex* mu_;
+  Mutex* mu_;
   SockToPolledFdEntry* head_ = nullptr;
 };
 
@@ -845,20 +846,18 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
     return wrapped_->GetWrappedAresSocketLocked();
   }
 
-  const char* GetName() override { return wrapped_->GetName(); }
+  const char* GetName() const override { return wrapped_->GetName(); }
 
  private:
-  GrpcPolledFdWindows* wrapped_;
+  GrpcPolledFdWindows* const wrapped_;
 };
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  explicit GrpcPolledFdFactoryWindows(grpc_core::Mutex* mu)
-      : sock_to_polled_fd_map_(mu) {}
+  explicit GrpcPolledFdFactoryWindows(Mutex* mu) : sock_to_polled_fd_map_(mu) {}
 
-  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
-                                      grpc_pollset_set* driver_pollset_set,
-                                      grpc_core::Mutex* /* mu */) override {
+  GrpcPolledFd* NewGrpcPolledFdLocked(
+      ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
@@ -875,8 +874,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   SockToPolledFdMap sock_to_polled_fd_map_;
 };
 
-std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    grpc_core::Mutex* mu) {
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
   return absl::make_unique<GrpcPolledFdFactoryWindows>(mu);
 }
 

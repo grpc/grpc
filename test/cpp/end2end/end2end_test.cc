@@ -290,8 +290,7 @@ class TestScenario {
   bool callback_server;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{use_interceptors="
              << (scenario.use_interceptors ? "true" : "false")
              << ", use_proxy=" << (scenario.use_proxy ? "true" : "false")
@@ -468,8 +467,8 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   int first_picked_port_;
 };
 
-static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
-                    bool with_binary_metadata) {
+void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
+             bool with_binary_metadata) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello hello hello hello");

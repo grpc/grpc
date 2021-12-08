@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/gpr/tls.h"

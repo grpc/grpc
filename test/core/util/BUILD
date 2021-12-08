@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -46,14 +46,12 @@ grpc_cc_library(
         "port_server_client.cc",
         "reconnect_server.cc",
         "resolve_localhost_ip46.cc",
-        "resource_user_util.cc",
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
         "test_config.cc",
         "test_tcp_server.cc",
         "tracer_util.cc",
-        "trickle_endpoint.cc",
     ],
     hdrs = [
         "cmdline.h",
@@ -70,13 +68,11 @@ grpc_cc_library(
         "port_server_client.h",
         "reconnect_server.h",
         "resolve_localhost_ip46.h",
-        "resource_user_util.h",
         "slice_splitter.h",
         "subprocess.h",
         "test_config.h",
         "test_tcp_server.h",
         "tracer_util.h",
-        "trickle_endpoint.h",
     ],
     external_deps = [
         "absl/debugging:failure_signal_handler",
@@ -85,6 +81,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        ":build",
         ":grpc_suppressions",
         ":stack_tracer",
         "//:gpr",
@@ -225,4 +222,10 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
     ],
+)
+
+grpc_cc_library(
+    name = "build",
+    srcs = ["build.cc"],
+    hdrs = ["build.h"],
 )

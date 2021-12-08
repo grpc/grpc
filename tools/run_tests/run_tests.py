@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -424,8 +424,10 @@ class CLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat'] +
-                    self._cmake_configure_extra_args]
+            return [[
+                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+                '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % args.jobs
+            ] + self._cmake_configure_extra_args]
         elif self._use_cmake:
             return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
                     self._cmake_configure_extra_args]
@@ -460,14 +462,16 @@ class CLanguage(object):
             # so we only allow the non-specific choices.
             _check_compiler(compiler, ['default', 'cmake'])
 
-        if compiler == 'gcc4.9' or compiler == 'default' or compiler == 'cmake':
-            return ('jessie', [])
+        if compiler == 'default' or compiler == 'cmake':
+            return ('debian9', [])
+        elif compiler == 'gcc4.9':
+            return ('gcc_4.9', [])
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
         elif compiler == 'gcc8.3':
-            return ('buster', [])
+            return ('debian10', [])
         elif compiler == 'gcc8.3_openssl102':
-            return ('buster_openssl102', [
+            return ('debian10_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
         elif compiler == 'gcc11':
@@ -590,7 +594,7 @@ class Php7Language(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_debian9_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_stretch_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -901,7 +905,7 @@ class CSharpLanguage(object):
         assembly_extension = '.exe'
 
         if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp2.1'
+            assembly_subdir += '/netcoreapp3.1'
             runtime_cmd = ['dotnet', 'exec']
             assembly_extension = '.dll'
         else:
@@ -1582,7 +1586,7 @@ if args.use_docker:
         dockerfile_dir = next(iter(dockerfile_dirs))
 
     child_argv = [arg for arg in sys.argv if not arg == '--use_docker']
-    run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(
+    run_tests_cmd = 'python3 tools/run_tests/run_tests.py %s' % ' '.join(
         child_argv[1:])
 
     env = os.environ.copy()

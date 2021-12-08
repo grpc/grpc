@@ -8,11 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h"
+#include "envoy/extensions/transport_sockets/tls/v3/cert.upb.h"
 
 extern upb_def_init envoy_extensions_transport_sockets_tls_v3_common_proto_upbdefinit;
 extern upb_def_init envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit;
 extern upb_def_init envoy_extensions_transport_sockets_tls_v3_tls_proto_upbdefinit;
-
 static const char descriptor[348] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 
 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '/', 't', 'l', 's', '/', 'v', '3', '/', 'c', 'e', 'r', 't', '.', 'p', 
 'r', 'o', 't', 'o', '\022', ')', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 
@@ -38,7 +38,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_extensions_transport_sockets_tls_v3_cert_proto_upbdefinit = {
   deps,
-  NULL,
+  &envoy_extensions_transport_sockets_tls_v3_cert_proto_upb_file_layout,
   "envoy/extensions/transport_sockets/tls/v3/cert.proto",
   UPB_STRVIEW_INIT(descriptor, 348)
 };
