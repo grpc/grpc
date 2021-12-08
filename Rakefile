@@ -147,8 +147,6 @@ task 'gem:native' do
     ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin'].each do |plat|
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
-        gem uninstall bundler && \
-        gem install bundler -v 2.2.32 && \
         bundle -v && \
         bundle && \
         bundle exec rake clean && \
