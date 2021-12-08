@@ -25,6 +25,37 @@ ctypedef unsigned short     uint16_t
 ctypedef unsigned int       uint32_t
 ctypedef unsigned long long uint64_t
 
+# C++ Utilities
+
+# NOTE(lidiz) Unfortunately, we can't use "cimport" here because Cython
+# links it with exception handling. It introduces new dependencies.
+cdef extern from "<queue>" namespace "std" nogil:
+    cdef cppclass queue[T]:
+        queue()
+        bint empty()
+        T& front()
+        T& back()
+        void pop()
+        void push(T&)
+        size_t size()
+
+
+cdef extern from "<mutex>" namespace "std" nogil:
+    cdef cppclass mutex:
+        mutex()
+        void lock()
+        void unlock()
+
+    cdef cppclass unique_lock[Mutex]:
+      unique_lock(Mutex&)
+
+cdef extern from "<condition_variable>" namespace "std" nogil:
+  cdef cppclass condition_variable:
+    condition_variable() except +
+    void notify_all()
+    void wait(unique_lock[mutex]&) except +
+
+# gRPC Core Declarations
 
 cdef extern from "grpc/support/alloc.h":
 

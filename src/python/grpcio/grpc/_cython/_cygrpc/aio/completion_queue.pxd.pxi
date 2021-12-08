@@ -13,38 +13,6 @@
 # limitations under the License.
 
 
-# TODO: Move this up to a common file..
-
-# NOTE(lidiz) Unfortunately, we can't use "cimport" here because Cython
-# links it with exception handling. It introduces new dependencies.
-cdef extern from "<queue>" namespace "std" nogil:
-    cdef cppclass queue[T]:
-        queue()
-        bint empty()
-        T& front()
-        T& back()
-        void pop()
-        void push(T&)
-        size_t size()
-
-
-cdef extern from "<mutex>" namespace "std" nogil:
-    cdef cppclass mutex:
-        mutex()
-        void lock()
-        void unlock()
-
-    cdef cppclass unique_lock[Mutex]:
-      unique_lock(Mutex&)
-
-# # TODO: Consider moving this to a different file.
-cdef extern from "<condition_variable>" namespace "std" nogil:
-  cdef cppclass condition_variable:
-    condition_variable() except +
-    void notify_all()
-    void wait(unique_lock[mutex]&) except +
-
-
 ctypedef queue[grpc_event] cpp_event_queue
 
 

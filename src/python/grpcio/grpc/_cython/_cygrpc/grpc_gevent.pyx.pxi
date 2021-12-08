@@ -16,7 +16,6 @@
 from libc cimport string
 from cython.operator cimport dereference
 from python_ref cimport Py_INCREF, Py_DECREF
-from libc.stdio cimport printf
 
 import atexit
 import errno
@@ -28,6 +27,8 @@ gevent_event = None
 g_event = None
 g_pool = None
 g_gevent_threadpool = None
+
+# TODO: Remove the custom iomgr API from grpc.pxi.
 
 
 cdef queue[void*] g_greenlets_to_run
