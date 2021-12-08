@@ -56,6 +56,11 @@ class Next;
 template <typename T>
 class Center {
  public:
+  Center* Ref() {
+    ++refs_;
+    return this;
+  }
+
   void Unref() {
     if (0 == --refs_) {
       this->~Center();
@@ -92,9 +97,8 @@ class PipeSender {
   PipeSender(const PipeSender&) = delete;
   PipeSender& operator=(const PipeSender&) = delete;
 
-  PipeSender(PipeSender&& other) noexcept
-      : center_(other.center_) {
-        other.center_ = nullptr;
+  PipeSender(PipeSender&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
   }
   PipeSender& operator=(PipeSender&& other) noexcept {
     if (center_ != nullptr) center_->Unref();
@@ -114,6 +118,8 @@ class PipeSender {
   pipe_detail::Push<T> Push(T value);
 
  private:
+  friend struct Pipe<T>;
+  explicit PipeSender(pipe_detail::Center<T>* center) : center_(center) {}
   pipe_detail::Center<T>* center_;
 };
 
@@ -124,9 +130,8 @@ class PipeReceiver {
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
 
-  PipeReceiver(PipeReceiver&& other) noexcept
-      : center_(other.center_) {
-        other.center_= nullptr;
+  PipeReceiver(PipeReceiver&& other) noexcept : center_(other.center_) {
+    other.center_ = nullptr;
   }
   PipeReceiver& operator=(PipeReceiver&& other) noexcept {
     if (center_ != nullptr) center_->Unref();
@@ -146,6 +151,8 @@ class PipeReceiver {
   pipe_detail::Next<T> Next();
 
  private:
+  friend struct Pipe<T>;
+  explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
   pipe_detail::Center<T>* center_;
 };
 
@@ -159,7 +166,7 @@ class Push {
   Push& operator=(const Push&) = delete;
   Push(Push&& other) noexcept
       : center_(other.center_), push_(std::move(other.push_)) {
-        other.center_ = nullptr;
+    other.center_ = nullptr;
   }
   Push& operator=(Push&& other) noexcept {
     if (center_ != nullptr) center_->Unref();
@@ -172,11 +179,12 @@ class Push {
     if (center_ != nullptr) center_->Unref();
   }
 
-  Poll<bool> operator()() {
-    return center_->Push(&push_);
-  }
+  Poll<bool> operator()() { return center_->Push(&push_); }
 
  private:
+  friend class PipeSender<T>;
+  explicit Push(pipe_detail::Center<T>* center, T push)
+      : center_(center), push_(std::move(push)) {}
   Center<T>* center_;
   T push_;
 };
@@ -187,9 +195,8 @@ class Next {
  public:
   Next(const Next&) = delete;
   Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept
-      : center_(other.center_), polled_(other.polled_) {
-        other.center_ = nullptr;
+  Next(Next&& other) noexcept : center_(other.center_), polled_(other.polled_) {
+    other.center_ = nullptr;
   }
   Next& operator=(Next&& other) noexcept {
     if (center_ != nullptr) center_->Unref();
@@ -208,20 +215,22 @@ class Next {
   }
 
  private:
- Center<T>* center_;
- bool polled_ = false;
+  friend class PipeReceiver<T>;
+  explicit Next(pipe_detail::Center<T>* center) : center_(center) {}
+  Center<T>* center_;
+  bool polled_ = false;
 };
 
 }  // namespace pipe_detail
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
-  return pipe_detail::Push<T>(this, std::move(value));
+  return pipe_detail::Push<T>(center_->Ref(), std::move(value));
 }
 
 template <typename T>
 pipe_detail::Next<T> PipeReceiver<T>::Next() {
-  return pipe_detail::Next<T>(this);
+  return pipe_detail::Next<T>(center_->Ref());
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from
@@ -230,11 +239,7 @@ pipe_detail::Next<T> PipeReceiver<T>::Next() {
 // No synchronization is performed internally.
 template <typename T>
 struct Pipe {
-  Pipe() {
-    pipe_detail::Center<T>* center = GetContext<Arena>()->New<pipe_detail::Center<T>>();
-    sender = PipeSender<T>(center);
-    receiver = PipeReceiver<T>(center);
-  }
+  Pipe() : Pipe(GetContext<Arena>()->New<pipe_detail::Center<T>>()) {}
   Pipe(const Pipe&) = delete;
   Pipe& operator=(const Pipe&) = delete;
   Pipe(Pipe&&) noexcept = default;
@@ -242,6 +247,10 @@ struct Pipe {
 
   PipeSender<T> sender;
   PipeReceiver<T> receiver;
+
+ private:
+  explicit Pipe(pipe_detail::Center<T>* center)
+      : sender(center), receiver(center) {}
 };
 
 }  // namespace grpc_core

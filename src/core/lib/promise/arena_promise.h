@@ -136,7 +136,7 @@ struct ChooseImplForCallable<
 template <typename T, typename Callable>
 ImplInterface<T>* MakeImplForCallable(Callable&& callable) {
   return ChooseImplForCallable<T, Callable>::Make(
-     std::forward<Callable>(callable));
+      std::forward<Callable>(callable));
 }
 
 }  // namespace arena_promise_detail
@@ -149,7 +149,9 @@ class ArenaPromise {
   ArenaPromise() = default;
 
   // Construct an ArenaPromise that will call the given callable when polled.
-  template <typename Callable, typename Ignored = absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
+  template <typename Callable,
+            typename Ignored =
+                absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
   explicit ArenaPromise(Callable&& callable)
       : impl_(arena_promise_detail::MakeImplForCallable<T>(
             std::forward<Callable>(callable))) {}

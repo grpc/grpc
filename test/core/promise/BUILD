@@ -276,6 +276,7 @@ grpc_cc_test(
         "//:join",
         "//:pipe",
         "//:promise",
+        "//:resource_quota",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
