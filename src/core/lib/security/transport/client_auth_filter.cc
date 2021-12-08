@@ -159,7 +159,7 @@ static void on_credentials_metadata(void* arg, grpc_error_handle input_error) {
     GPR_ASSERT(batch->send_initial_metadata);
     grpc_metadata_batch* mdb =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    for (const auto& md: *calld->md_array) {
+    for (const auto& md : *calld->md_array) {
       mdb->Append(md.first.as_string_view(), md.second.Ref());
     }
     grpc_call_next_op(elem, batch);

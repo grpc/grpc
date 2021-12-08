@@ -91,20 +91,21 @@ struct call_data {
 };
 
 class ArrayEncoder {
-public:
-explicit ArrayEncoder(grpc_metadata_array* result) : result_(result) {}
+ public:
+  explicit ArrayEncoder(grpc_metadata_array* result) : result_(result) {}
 
-void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
-  Append(key.Ref(), value.Ref());
-}
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    Append(key.Ref(), value.Ref());
+  }
 
-template <typename Which>
-void Encode(Which, const typename Which::ValueType&) {}
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType&) {}
 
-private:
-void Append(grpc_core::Slice key, grpc_core::Slice value) {
+ private:
+  void Append(grpc_core::Slice key, grpc_core::Slice value) {
     if (result_->count == result_->capacity) {
-      result_->capacity = std::max(result_->capacity + 8, result_->capacity * 2);
+      result_->capacity =
+          std::max(result_->capacity + 8, result_->capacity * 2);
       result_->metadata = static_cast<grpc_metadata*>(gpr_realloc(
           result_->metadata, result_->capacity * sizeof(grpc_metadata)));
     }
@@ -113,7 +114,7 @@ void Append(grpc_core::Slice key, grpc_core::Slice value) {
     usr_md->value = value.TakeCSlice();
   }
 
-grpc_metadata_array* result_;
+  grpc_metadata_array* result_;
 };
 
 }  // namespace
@@ -143,7 +144,8 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
   }
   if (error == GRPC_ERROR_NONE) {
     for (size_t i = 0; i < num_consumed_md; i++) {
-      batch->payload->recv_initial_metadata.recv_initial_metadata->Remove(consumed_md[i].key);
+      batch->payload->recv_initial_metadata.recv_initial_metadata->Remove(
+          consumed_md[i].key);
     }
   }
   calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);

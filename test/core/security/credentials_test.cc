@@ -1808,8 +1808,9 @@ struct fake_call_creds : public grpc_call_credentials {
     return true;
   }
 
-  void cancel_get_request_metadata(grpc_core::CredentialsMetadataArray* /*md_array*/,
-                                   grpc_error_handle /*error*/) override {}
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* /*md_array*/,
+      grpc_error_handle /*error*/) override {}
 
  private:
   grpc_mdelem phony_md_;

@@ -70,7 +70,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-
 #include "src/core/lib/transport/metadata_batch.h"
 
 //
@@ -2412,8 +2411,7 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
 class ClientChannel::LoadBalancedCall::Metadata
     : public LoadBalancingPolicy::MetadataInterface {
  public:
-  explicit Metadata(grpc_metadata_batch* batch)
-      : batch_(batch) {}
+  explicit Metadata(grpc_metadata_batch* batch) : batch_(batch) {}
 
   void Add(absl::string_view key, absl::string_view value) override {
     batch_->Append(key, Slice::FromCopiedString(value));

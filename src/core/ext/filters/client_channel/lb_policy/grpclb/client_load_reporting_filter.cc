@@ -103,7 +103,7 @@ static void clr_start_transport_stream_op_batch(
     // Grab client stats object from metadata.
     auto client_stats_md =
         batch->payload->send_initial_metadata.send_initial_metadata->Take(
-          grpc_core::GrpcLbClientStatsMetadata());
+            grpc_core::GrpcLbClientStatsMetadata());
     if (client_stats_md.has_value()) {
       grpc_core::GrpcLbClientStats* client_stats = *client_stats_md;
       if (client_stats != nullptr) {

@@ -49,8 +49,9 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_core::CredentialsMetadataArray* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
 
   // Checks if the request has been cancelled.
   // If not, removes it from the pending list, so that it cannot be

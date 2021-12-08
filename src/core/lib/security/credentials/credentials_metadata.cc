@@ -25,8 +25,8 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-static void mdelem_list_ensure_capacity(grpc_core::CredentialsMetadataArray* list,
-                                        size_t additional_space_needed) {
+static void mdelem_list_ensure_capacity(
+    grpc_core::CredentialsMetadataArray* list, size_t additional_space_needed) {
   size_t target_size = list->size + additional_space_needed;
   // Find the next power of two greater than the target size (i.e.,
   // whenever we add more space, we double what we already have).
@@ -38,14 +38,15 @@ static void mdelem_list_ensure_capacity(grpc_core::CredentialsMetadataArray* lis
       gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size));
 }
 
-void grpc_credentials_mdelem_array_add(grpc_core::CredentialsMetadataArray* list,
-                                       grpc_mdelem md) {
+void grpc_credentials_mdelem_array_add(
+    grpc_core::CredentialsMetadataArray* list, grpc_mdelem md) {
   mdelem_list_ensure_capacity(list, 1);
   list->md[list->size++] = GRPC_MDELEM_REF(md);
 }
 
-void grpc_credentials_mdelem_array_append(grpc_core::CredentialsMetadataArray* dst,
-                                          grpc_core::CredentialsMetadataArray* src) {
+void grpc_credentials_mdelem_array_append(
+    grpc_core::CredentialsMetadataArray* dst,
+    grpc_core::CredentialsMetadataArray* src) {
   mdelem_list_ensure_capacity(dst, src->size);
   for (size_t i = 0; i < src->size; ++i) {
     dst->md[dst->size++] = GRPC_MDELEM_REF(src->md[i]);

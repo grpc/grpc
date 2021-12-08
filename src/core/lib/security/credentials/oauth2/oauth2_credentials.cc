@@ -277,8 +277,8 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
 
 bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_polling_entity* pollent, grpc_auth_metadata_context /*context*/,
-    grpc_core::CredentialsMetadataArray* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* /*error*/) {
+    grpc_core::CredentialsMetadataArray* md_array,
+    grpc_closure* on_request_metadata, grpc_error_handle* /*error*/) {
   // Check if we can use the cached token.
   grpc_millis refresh_threshold =
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
@@ -718,7 +718,8 @@ bool grpc_access_token_credentials::get_request_metadata(
 }
 
 void grpc_access_token_credentials::cancel_get_request_metadata(
-    grpc_core::CredentialsMetadataArray* /*md_array*/, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* /*md_array*/,
+    grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

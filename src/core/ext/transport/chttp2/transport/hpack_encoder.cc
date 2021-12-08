@@ -349,7 +349,8 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   auto& table = framer->compressor_->table_;
   using It = std::vector<ValueIndex>::iterator;
   It prev = values_.end();
-  uint32_t transport_length = key.length() + value.length() + hpack_constants::kEntryOverhead;
+  uint32_t transport_length =
+      key.length() + value.length() + hpack_constants::kEntryOverhead;
   // Linear scan through previous values to see if we find the value.
   for (It it = values_.begin(); it != values_.end(); ++it) {
     if (value == it->value) {
@@ -360,7 +361,8 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
       } else {
         // Not current, emit a new literal and update the index.
         it->index = table.AllocateIndex(transport_length);
-        framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key), value.c_slice());
+        framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(
+            Slice::FromStaticString(key), value.c_slice());
       }
       // Bubble this entry up if we can - ensures that the most used values end
       // up towards the start of the array.

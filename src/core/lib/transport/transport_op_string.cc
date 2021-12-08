@@ -57,9 +57,10 @@ class MetadataListEncoder {
         absl::StrCat(Which::key(), "=", Which::DisplayValue(value)));
   }
 
-  void Encode(const grpc_core::Slice& key, const grpc_core:: Slice& value) {
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
     MaybeAddComma();
-    out_->push_back(absl::StrCat(key.as_string_view(), "=", value.as_string_view()));
+    out_->push_back(
+        absl::StrCat(key.as_string_view(), "=", value.as_string_view()));
   }
 
  private:

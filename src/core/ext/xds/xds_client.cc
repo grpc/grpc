@@ -764,11 +764,14 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // Create a call with the specified method name.
   const char* method =
       chand()->server_.ShouldUseV3()
-          ? "/envoy.service.discovery.v3.AggregatedDiscoveryService/StreamAggregatedResources"
-          : "/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources";
+          ? "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
+            "StreamAggregatedResources"
+          : "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
+            "StreamAggregatedResources";
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xds_client()->interested_parties_, StaticSlice::FromStaticString(method).c_slice(), nullptr,
+      xds_client()->interested_parties_,
+      StaticSlice::FromStaticString(method).c_slice(), nullptr,
       GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init data associated with the call.
@@ -1703,7 +1706,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
           : "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats";
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xds_client()->interested_parties_, StaticSlice::FromStaticString(method).c_slice(), nullptr,
+      xds_client()->interested_parties_,
+      StaticSlice::FromStaticString(method).c_slice(), nullptr,
       GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.

@@ -114,7 +114,8 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
 }
 
 void grpc_service_account_jwt_access_credentials::cancel_get_request_metadata(
-    grpc_core::CredentialsMetadataArray* /*md_array*/, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* /*md_array*/,
+    grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

@@ -155,8 +155,8 @@ static void plugin_md_request_metadata_ready(void* request,
 
 bool grpc_plugin_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
-    grpc_core::CredentialsMetadataArray* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* error) {
+    grpc_core::CredentialsMetadataArray* md_array,
+    grpc_closure* on_request_metadata, grpc_error_handle* error) {
   bool retval = true;  // Synchronous return.
   if (plugin_.get_metadata != nullptr) {
     // Create pending_request object.

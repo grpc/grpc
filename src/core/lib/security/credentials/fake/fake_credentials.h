@@ -63,8 +63,8 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
                                 bool is_async)
       : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
                               GRPC_SECURITY_NONE),
-       key_(grpc_core::Slice::FromCopiedString(md_key)),
-                            value_(grpc_core::Slice::FromCopiedString(md_value)),
+        key_(grpc_core::Slice::FromCopiedString(md_key)),
+        value_(grpc_core::Slice::FromCopiedString(md_value)),
         is_async_(is_async) {}
 
   bool get_request_metadata(grpc_polling_entity* pollent,
@@ -73,14 +73,15 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_core::CredentialsMetadataArray* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
 
   std::string debug_string() override { return "MD only Test Credentials"; };
 
  private:
- grpc_core::Slice key_;
- grpc_core::Slice value_;
+  grpc_core::Slice key_;
+  grpc_core::Slice value_;
   bool is_async_;
 };
 

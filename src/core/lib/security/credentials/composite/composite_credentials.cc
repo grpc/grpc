@@ -91,8 +91,8 @@ static void composite_call_metadata_cb(void* arg, grpc_error_handle error) {
 
 bool grpc_composite_call_credentials::get_request_metadata(
     grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
-    grpc_core::CredentialsMetadataArray* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* error) {
+    grpc_core::CredentialsMetadataArray* md_array,
+    grpc_closure* on_request_metadata, grpc_error_handle* error) {
   grpc_composite_call_credentials_metadata_context* ctx;
   ctx = new grpc_composite_call_credentials_metadata_context(
       this, pollent, auth_md_context, md_array, on_request_metadata);

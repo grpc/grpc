@@ -20,7 +20,6 @@
 
 #include <grpc/grpc.h>
 
-
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

@@ -1929,7 +1929,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   // We need to make a copy of the metadata batch for each attempt, since
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
-  call_attempt_->send_trailing_metadata_ = calld->send_trailing_metadata_.Copy();
+  call_attempt_->send_trailing_metadata_ =
+      calld->send_trailing_metadata_.Copy();
   call_attempt_->started_send_trailing_metadata_ = true;
   batch_.send_trailing_metadata = true;
   batch_.payload->send_trailing_metadata.send_trailing_metadata =

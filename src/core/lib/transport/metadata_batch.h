@@ -425,12 +425,14 @@ struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
 // This should not be exposed outside of gRPC core.
 class GrpcLbClientStats;
 struct GrpcLbClientStatsMetadata {
-  static absl::string_view key() { return "grpclb_client_stats";}
+  static absl::string_view key() { return "grpclb_client_stats"; }
   using ValueType = GrpcLbClientStats*;
   using MementoType = ValueType;
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(ValueType x) { abort(); }
-  static const char* DisplayValue(MementoType x) { return "<internal-lb-stats>"; }
+  static const char* DisplayValue(MementoType x) {
+    return "<internal-lb-stats>";
+  }
   static MementoType ParseMemento(Slice value) { return nullptr; }
 };
 
@@ -498,7 +500,8 @@ class ParseHelper {
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
       absl::string_view key) {
-    return ParsedMetadata<Container>(Slice::FromCopiedString(key), std::move(value_));
+    return ParsedMetadata<Container>(Slice::FromCopiedString(key),
+                                     std::move(value_));
   }
 
  private:
@@ -691,7 +694,8 @@ class MetadataMap {
   void Remove(absl::string_view name);
 
   // Retrieve some metadata by name
-  absl::string_view GetStringValue(absl::string_view name, std::string* buffer) const;
+  absl::string_view GetStringValue(absl::string_view name,
+                                   std::string* buffer) const;
 
   // Extract a piece of known metadata.
   // Returns nullopt if the metadata was not present, or the value if it was.
