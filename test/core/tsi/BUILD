@@ -99,11 +99,11 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data:valid.key",
         "//test/core/tsi/test_creds/crl_data:valid.pem",
     ],
-    language = "C++",
-    tags = ["no_windows"],
     external_deps = [
         "gtest",
-    ],    
+    ],
+    language = "C++",
+    tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
