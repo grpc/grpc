@@ -94,7 +94,7 @@ class NativeDNSResolver : public DNSResolver {
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       override {
-    return MakeOrphanable<NativeRequest>(name, default_port, std::move(on_done));
+    return MakeOrphanable<NativeDNSRequest>(name, default_port, std::move(on_done));
   }
 
   absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
