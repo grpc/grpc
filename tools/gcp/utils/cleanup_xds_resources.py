@@ -26,7 +26,12 @@ from typing import List, Any
 
 # Parses commandline arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--dry_run', action='store_true')
+parser.add_argument('--dry_run',
+                    action='store_true',
+                    help='print the deletion command without execution')
+parser.add_argument('--clean_psm_sec',
+                    action='store_true',
+                    help='whether to enable PSM Security resource cleaning')
 args = parser.parse_args()
 
 # Type alias
@@ -39,10 +44,29 @@ GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
 SECONDARY_ZONE = 'us-west1-b'
 PROJECT = 'grpc-testing'
+PSM_SECURITY_PREFIX = 'xds-k8s-security'
+
+# Global variables
+KEEP_CONFIG = None
+
+
+def load_keep_config() -> None:
+    global KEEP_CONFIG
+    json_path = os.path.realpath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     'keep_xds_interop_resources.json'))
+    with open(json_path, 'r') as f:
+        KEEP_CONFIG = json.load(f)
+        logging.debug('Resource keep config loaded: %s',
+                      json.dumps(KEEP_CONFIG, indent=2))
+
+
+def is_marked_as_keep_gce(suffix: str) -> bool:
+    return suffix in KEEP_CONFIG["gce_framework"]["suffix"]
 
 
 @functools.lru_cache()
-def get_expire_timestamp():
+def get_expire_timestamp() -> str:
     return (datetime.datetime.now() - KEEP_PERIOD).isoformat()
 
 
@@ -56,7 +80,7 @@ def exec_gcloud(*cmds: List[str]) -> Json:
         ])
     if args.dry_run and 'delete' in cmds:
         # Skip deletion for dry-runs
-        logging.debug('> Skipped: %s', " ".join(cmds))
+        logging.debug('> Skipped[Dry Run]: %s', " ".join(cmds))
         return None
     # Executing the gcloud command
     logging.debug('Executing: %s', " ".join(cmds))
@@ -64,12 +88,18 @@ def exec_gcloud(*cmds: List[str]) -> Json:
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             text=True)
-    returncode = proc.wait(timeout=GCLOUD_CMD_TIMEOUT_S)
+    # NOTE(lidiz) the gcloud subprocess won't return unless its output is read
+    stdout = proc.stdout.read()
+    stderr = proc.stderr.read()
+    try:
+        returncode = proc.wait(timeout=GCLOUD_CMD_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        logging.error('> Timeout executing cmd [%s]', " ".join(cmds))
+        return None
     if returncode:
         logging.error('> Failed to execute cmd [%s], returned %d, stderr: %s',
-                      " ".join(cmds), returncode, proc.stderr.read())
+                      " ".join(cmds), returncode, stderr)
         return None
-    stdout = proc.stdout.read()
     if stdout:
         return json.loads(stdout)
     return None
@@ -105,66 +135,65 @@ def remove_relative_resources_run_xds_tests(suffix: str):
                 f'test-template{suffix}')
 
 
-def remove_relative_resources_psm_sec(prefix: str):
+def remove_relative_resources_psm_sec(suffix: str):
     """Removing GCP resources created by PSM Sec framework."""
-    logging.info('Removing PSM Security resources with prefix [%s]', prefix)
+    logging.info('Removing PSM Security resources with suffix [%s]', suffix)
     exec_gcloud('compute', 'forwarding-rules', 'delete',
-                f'{prefix}-forwarding-rule', '--global')
+                f'{PSM_SECURITY_PREFIX}-forwarding-rule{suffix}', '--global')
     exec_gcloud('alpha', 'compute', 'target-grpc-proxies', 'delete',
-                f'{prefix}-target-proxy')
-    exec_gcloud('compute', 'url-maps', 'delete', f'{prefix}-url-map')
+                f'{PSM_SECURITY_PREFIX}-target-proxy{suffix}')
+    exec_gcloud('compute', 'url-maps', 'delete',
+                f'{PSM_SECURITY_PREFIX}-url-map{suffix}')
     exec_gcloud('compute', 'backend-services', 'delete',
-                f'{prefix}-backend-service', '--global')
-    exec_gcloud('compute', 'health-checks', 'delete', f'{prefix}-health-check')
+                f'{PSM_SECURITY_PREFIX}-backend-service{suffix}', '--global')
+    exec_gcloud('compute', 'health-checks', 'delete',
+                f'{PSM_SECURITY_PREFIX}-health-check{suffix}')
     exec_gcloud('compute', 'firewall-rules', 'delete',
-                f'{prefix}-allow-health-checks')
+                f'{PSM_SECURITY_PREFIX}-allow-health-checks{suffix}')
     exec_gcloud('alpha', 'network-security', 'server-tls-policies', 'delete',
-                f'{prefix}-server-tls-policy')
+                f'{PSM_SECURITY_PREFIX}-server-tls-policy{suffix}',
+                '--location=global')
     exec_gcloud('alpha', 'network-security', 'client-tls-policies', 'delete',
-                f'{prefix}-client-tls-policy')
+                f'{PSM_SECURITY_PREFIX}-client-tls-policy{suffix}',
+                '--location=global')
 
 
 def check_one_type_of_gcp_resources(list_cmd: List[str],
-                                    suffix_search: str = '',
-                                    prefix_search: str = ''):
-    logging.info('Checking GCP resources with %s or %s', suffix_search,
-                 prefix_search)
+                                    gce_resource_matcher: str = '',
+                                    gke_resource_matcher: str = ''):
+    logging.info('Checking GCP resources with %s or %s', gce_resource_matcher,
+                 gke_resource_matcher)
     for resource in exec_gcloud(*list_cmd):
-        if resource['name'].startswith('interop-psm-url-map'):
-            logging.info('Skipping url-map test resource: %s', resource['name'])
-            continue
-        if suffix_search:
-            result = re.search(suffix_search, resource['name'])
+        if gce_resource_matcher:
+            result = re.search(gce_resource_matcher, resource['name'])
             if result is not None:
+                if is_marked_as_keep_gce(result.group(1)):
+                    logging.info(
+                        'Skip: GCE resource suffix [%s] is marked as keep',
+                        result.group(1))
+                    continue
                 remove_relative_resources_run_xds_tests(result.group(1))
                 continue
 
-        if prefix_search:
-            result = re.search(prefix_search, resource['name'])
+        if gke_resource_matcher and args.clean_psm_sec:
+            result = re.search(gke_resource_matcher, resource['name'])
             if result is not None:
                 remove_relative_resources_psm_sec(result.group(1))
                 continue
 
 
 def check_costly_gcp_resources() -> None:
-    check_one_type_of_gcp_resources(['compute', 'forwarding-rules', 'list'],
-                                    suffix_search=r'test-forwarding-rule(.*)',
-                                    prefix_search=r'(.+?)-forwarding-rule')
-    check_one_type_of_gcp_resources(['compute', 'target-http-proxies', 'list'],
-                                    suffix_search=r'test-target-proxy(.*)')
-    check_one_type_of_gcp_resources(['compute', 'target-grpc-proxies', 'list'],
-                                    suffix_search=r'test-target-proxy(.*)',
-                                    prefix_search=r'(.+?)-target-proxy')
-    check_one_type_of_gcp_resources(['compute', 'url-maps', 'list'],
-                                    suffix_search=r'test-map(.*)',
-                                    prefix_search=r'(.+?)-url-map')
-    check_one_type_of_gcp_resources(['compute', 'backend-services', 'list'],
-                                    suffix_search=r'test-backend-service(.*)',
-                                    prefix_search=r'(.+?)-backend-service')
+    check_one_type_of_gcp_resources(
+        ['compute', 'health-checks', 'list'],
+        gce_resource_matcher=r'test-hc(.*)',
+        gke_resource_matcher=f'{PSM_SECURITY_PREFIX}-health-check(.*)')
+    check_one_type_of_gcp_resources(['compute', 'instance-templates', 'list'],
+                                    gce_resource_matcher=r'test-template(.*)')
 
 
 def main():
-    logging.info('Cleaning up costly resources created before %s',
+    load_keep_config()
+    logging.info('Cleaning up xDS interop resources created before %s',
                  get_expire_timestamp())
     check_costly_gcp_resources()
 
