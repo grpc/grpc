@@ -32,16 +32,19 @@ class ChannelData {
                                 grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
 
-  grpc_auth_context* auth_context() { return auth_context_.get(); }
+  EvaluateArgs::PerChannelArgs& per_channel_evaluate_args() {
+    return per_channel_evaluate_args_;
+  }
 
   int index() const { return index_; }
 
  private:
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
 
-  RefCountedPtr<grpc_auth_context> auth_context_;
   // The index of this filter instance among instances of the same filter.
   int index_;
+  // Per channel args used for authorization.
+  EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
 };
 
 class CallData {
@@ -97,13 +100,11 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
 
 ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args)
-    : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
-                                                       elem)) {
-  grpc_auth_context* auth_context =
-      grpc_find_auth_context_in_args(args->channel_args);
-  GPR_ASSERT(auth_context != nullptr);
-  auth_context_ = auth_context->Ref();
-}
+    : index_(
+          grpc_channel_stack_filter_instance_number(args->channel_stack, elem)),
+      per_channel_evaluate_args_(
+          grpc_find_auth_context_in_args(args->channel_args),
+          grpc_transport_get_endpoint(args->optional_transport)) {}
 
 // CallData
 
@@ -198,14 +199,9 @@ void CallData::RecvInitialMetadataReady(void* user_data,
         ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
         auto* authorization_engine =
             method_params->authorization_engine(chand->index());
-        EvaluateArgs::PerChannelArgs per_channel_evaluate_args(
-            chand->auth_context(),
-            calld->payload_->recv_initial_metadata.local_address,
-            reinterpret_cast<const char*>(gpr_atm_acq_load(
-                calld->payload_->recv_initial_metadata.peer_string)));
         if (authorization_engine
                 ->Evaluate(EvaluateArgs(&prepared_metadata,
-                                        &per_channel_evaluate_args))
+                                        &chand->per_channel_evaluate_args()))
                 .type == AuthorizationEngine::Decision::Type::kDeny) {
           calld->error_ =
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");

@@ -1569,9 +1569,6 @@ static void perform_stream_op_locked(void* stream_op,
       gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
                         (gpr_atm)t->peer_string.c_str());
     }
-    // ep remains valid for the duration of the transport's lifetime
-    op_payload->recv_initial_metadata.local_address =
-        grpc_endpoint_get_local_address(t->ep);
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
   }
 

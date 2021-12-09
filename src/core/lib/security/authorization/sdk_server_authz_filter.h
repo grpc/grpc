@@ -50,8 +50,7 @@ class SdkServerAuthzFilter {
   };
 
   SdkServerAuthzFilter(
-      RefCountedPtr<grpc_auth_context> auth_context,
-      absl::string_view local_address, absl::string_view peer_address,
+      RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
       RefCountedPtr<grpc_authorization_policy_provider> provider);
 
   static grpc_error_handle Init(grpc_channel_element* elem,

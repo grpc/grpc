@@ -41,8 +41,7 @@ class EvaluateArgs {
       int port = 0;
     };
 
-    PerChannelArgs(grpc_auth_context* auth_context,
-                   absl::string_view local_addr, absl::string_view peer_addr);
+    PerChannelArgs(grpc_auth_context* auth_context, grpc_endpoint* endpoint);
 
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
