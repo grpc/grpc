@@ -186,7 +186,7 @@ void AresDnsResolver::ShutdownLocked() {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request_locked(pending_request_);
+    grpc_cancel_ares_request(pending_request_);
   }
 }
 
@@ -444,12 +444,12 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_ = nullptr;
-  pending_request_ = grpc_dns_lookup_ares_locked(
+  pending_request_ = grpc_dns_lookup_ares(
       dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultSecurePort,
       interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
-      query_timeout_ms_, work_serializer_);
+      query_timeout_ms_);
   last_resolution_timestamp_ = ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
                        this, pending_request_);
