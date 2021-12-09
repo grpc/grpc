@@ -29,9 +29,6 @@
 
 namespace grpc {
 
-template <typename T>
-struct Nope;
-
 /// Did it work? If it didn't, why?
 ///
 /// See \a grpc::StatusCode for details on the available code and their meaning.
@@ -136,7 +133,9 @@ class Status {
   // the floor.
   void IgnoreError() const {}
 
-  explicit operator const absl::Status&() const { return status_; }
+  // Implicit conversion to absl::Status.
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  operator const absl::Status&() const { return status_; }
 
  private:
   absl::Status status_;
