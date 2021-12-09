@@ -75,10 +75,10 @@ class InternalRequest {
     GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
     GPR_ASSERT(pollent);
     grpc_polling_entity_add_to_pollset_set(pollent_, context->pollset_set);
-    async_resolve_address_ = grpc_resolve_address(
+    dns_request_ = DNSResolver::instance()->CreateDNSRequest(
         host_.c_str(), handshaker_->default_port, context_->pollset_set,
-        GRPC_CLOSURE_CREATE(OnResolved, this, grpc_schedule_on_exec_ctx),
-        &addresses_);
+        std::bind(&InternalRequest::OnResolved, this));
+    dns_request_->Start();
   }
 
   ~InternalRequest() {
@@ -217,15 +217,15 @@ class InternalRequest {
     grpc_channel_args_destroy(args);
   }
 
-  static void OnResolved(void* arg, grpc_error_handle error) {
-    InternalRequest* req = static_cast<InternalRequest*>(arg);
-    req->async_resolve_address_.reset();
-    if (error != GRPC_ERROR_NONE) {
-      req->Finish(GRPC_ERROR_REF(error));
+  void OnResolved(absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
+    dns_request_.reset();
+    if (!addresses_or.ok()) {
+      Finish(absl_status_to_grpc_error(addresses_or.status());
       return;
     }
-    req->next_address_ = 0;
-    req->NextAddress(GRPC_ERROR_NONE);
+    addresses_ = *addresses_or;
+    next_address_ = 0;
+    NextAddress(GRPC_ERROR_NONE);
   }
 
   grpc_slice request_text_;
@@ -249,7 +249,7 @@ class InternalRequest {
   grpc_closure done_write_;
   grpc_closure connected_;
   grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
-  OrphanablePtr<AsyncResolveAddress> async_resolve_address_;
+  OrphanablePtr<DNSRequest> dns_request_;
 };
 
 }  // namespace

@@ -1959,6 +1959,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
+        "src/core/lib/iomgr/resolve_address_posix.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",

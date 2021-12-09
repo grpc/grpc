@@ -46,7 +46,7 @@ static absl::Status TrySplitHostPort(
     std::string* host,
     std::string* port) {
   /* parse name, splitting it into host and port parts */
-  grpc_core::SplitHostPort(name, host, port);
+  SplitHostPort(name, host, port);
   if (host->empty()) {
     return absl::UnknownError(absl::StrFormat("unparseable host:port: '%s'", name));
   }
@@ -75,8 +75,8 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
 CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
   OrphanablePtr<CustomDNSRequest> unreffer(this);
   if (error == GRPC_ERROR_NONE) {
     on_done_(result);
@@ -106,8 +106,8 @@ absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddre
 
   /* Call getaddrinfo */
   grpc_resolved_addresses* addrs = nullptr;
-  grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
-  grpc_core::ExecCtx::Set(nullptr);
+  ExecCtx* curr = ExecCtx::Get();
+  ExecCtx::Set(nullptr);
   err = resolve_address_vtable_->resolve(host.c_str(),
                                          port.c_str(), &addrs);
   if (err != GRPC_ERROR_NONE) {
@@ -118,7 +118,7 @@ absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddre
       err = resolve_address_vtable_->resolve(this, host.c_str(), port.c_str(), &addrs);
     }
   }
-  grpc_core::ExecCtx::Set(curr);
+  ExecCtx::Set(curr);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(addrs != nullptr);
     return *addrs;

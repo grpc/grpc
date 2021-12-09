@@ -21,6 +21,8 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
+#include "src/core/lib/iomgr/resolve_address_posix.h"
+
 #include <string.h>
 #include <sys/types.h>
 

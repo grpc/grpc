@@ -21,21 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
-typedef struct grpc_custom_resolver grpc_custom_resolver;
-namespace grpc_core {
-
-typedef struct grpc_custom_resolver_vtable {
-  grpc_error_handle (*resolve)(const char* host, const char* port,
-                               grpc_resolved_addresses** res);
-  void (*resolve_async)(grpc_custom_resolver* resolver, const char* host,
-                        const char* port);
-} grpc_custom_resolver_vtable;
-
-/* following APIs are internal */
+typedef struct grpc_custom_resolver_vtable grpc_custom_resolver_vtable;
 
 namespace grpc_core {
 
@@ -45,8 +37,8 @@ class CustomDNSRequest : public DNSRequest {
       absl::string_view name,
       absl::string_view default_port,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done,
-      grpc_custom_resolver_vtable* vtable)
-      : name_(name), default_port_(default_port), on_done_(std::move(on_done)), vtable_(vtable) {}
+      const grpc_custom_resolver_vtable* resolve_address_vtable)
+      : name_(name), default_port_(default_port), on_done_(std::move(on_done)), resolve_address_vtable_(resolve_address_vtable) {}
 
   // Starts the resolution
   void Start() override;
@@ -68,38 +60,45 @@ class CustomDNSRequest : public DNSRequest {
   std::string port_;
   const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
   // user-defined DNS methods
-  grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
+  const grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
 };
 
 class CustomDNSResolver : public DNSResolver {
  public:
-  // Gets the singleton instance, creating it first if it doesn't exist
+  explicit CustomDNSResolver(grpc_custom_resolver_vtable* resolve_address_vtable) : resolve_address_vtable_(resolve_address_vtable) {}
+
   static CustomDNSResolver* GetOrCreate(grpc_custom_resolver_vtable* resolve_address_vtable) {
-    gpr_once_init(&init_instance_, InitInstance);
-    instance_->resolve_address_vtable_ = resolve_address_vtable;
+    if (instance_ == nullptr) {
+      instance_ = new CustomDNSResolver(resolve_address_vtable);
+    }
     return instance_;
   }
 
-  virtual OrphanablePtr<Request> CreateDNSRequest(
+  virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
-    return MakeOrphanable<CustomDNSRequest>(name, default_port, std::move(on_done));
+      grpc_pollset_set* /* interested_parties */,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) override {
+    return MakeOrphanable<CustomDNSRequest>(name, default_port, std::move(on_done), resolve_address_vtable_);
   }
 
   absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
       absl::string_view name, absl::string_view default_port) override;
 
  private:
-  static void InitInstance() { instance_ = new CustomDNSResolver(); }
-
   static CustomDNSResolver* instance_;
-  static gpr_once_init init_instance_ = GPR_ONCE_INIT;
 
   // user-defined DNS methods
-  grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
+  const grpc_custom_resolver_vtable* resolve_address_vtable_;
 };
 
 }  // namespace grpc_core
+
+/* user-configured DNS resolution functions */
+typedef struct grpc_custom_resolver_vtable {
+  grpc_error_handle (*resolve)(const char* host, const char* port,
+                               grpc_resolved_addresses** res);
+  void (*resolve_async)(grpc_core::CustomDNSRequest* request, const char* host,
+                        const char* port);
+} grpc_custom_resolver_vtable;
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_CUSTOM_H */
