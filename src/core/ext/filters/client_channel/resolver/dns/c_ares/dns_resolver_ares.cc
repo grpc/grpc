@@ -545,11 +545,13 @@ class AresDNSRequest : public DNSRequest {
       grpc_ares_request* ares_request_ = nullptr;
 };
 
-// Holds the singleton DNS resolver that was in place before initializing the
-// c-ares resolver
-DNSResolver* g_default_resolver;
-
 class AresDNSResolver : public DNSResolver {
+ public:
+  static AresDnsResolver* GetOrCreate() {
+    gpr_once(&init_instance_, InitInstance);
+    return instance_;
+  }
+
   OrphanablePtr<Request> ResolveAddress(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
@@ -561,19 +563,19 @@ class AresDNSResolver : public DNSResolver {
 
   // Resolve addr in a blocking fashion. On success,
   // result must be freed with grpc_resolved_addresses_destroy.
-  absl::Status BlockingResolveAddress(
-      absl::strinv_view name, absl::string_view default_port,
-      grpc_resolved_addresses** addresses) override {
-    return g_default_resolver->BlockingResolveAddress(name, default_port,
-                                                      addresses);
+  absl::Status BlockingResolveAddress(absl::strinv_view name,
+                                      absl::string_view default_port) override {
+    return default_resolver_->BlockingResolveAddress(name, default_port);
   }
+
+ private:
+  void InitInstance() { instance_ = new AresDnsResolver(); }
+
+  static AresDNSResolver* instance_;
+  static gpr_once_init init_instance_ = GPR_ONCE_INIT;
+
+  DNSResolver* default_resolver_ = DNSResolver::instance();
 };
-
-AresDNSResolver* g_ares_dns_resolver;
-
-void InitAresDNSResolver() { g_ares_dns_resolver = new AresDNSResolver(); }
-
-gpr_once g_init_ares_dns_resolver = GPR_ONCE_INIT;
 
 bool should_use_ares(const char* resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
@@ -601,11 +603,8 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
-    if (g_default_resolver == nullptr) {
-      g_default_resolver = grpc_core::DNSResolver::instance();
-    }
-    gpr_once_init(&g_init_ares_dns_resolver, InitAresDNSResolver);
-    grpc_core::DNSResolver::OverrideInstance(g_ares_dns_resolver);
+    grpc_core::DNSResolver::OverrideInstance(
+        grpc_core::AresDnsResolver::GetOrCreate());
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         absl::make_unique<grpc_core::AresDnsResolverFactory>());
   } else {

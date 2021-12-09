@@ -40,16 +40,34 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-static grpc_error_handle posix_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+namespace grpc_core {
+
+OrphanablePtr<Request> NativeDNSResolver::ResolveAddress(
+    absl::string_view name, absl::string_view default_port,
+    grpc_pollset_set* interested_parties,
+    std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) {
+  NativeRequest* r = new NativeRequest();
+  r->name = name;
+  r->default_port = default_port;
+  r->on_done = std::move(on_done);
+  GRPC_CLOSURE_INIT(&r->request_closure, DoRequestThread, r, nullptr);
+  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
+                           grpc_core::ExecutorType::RESOLVER);
+  // Force caller to wait for the callback's completion. Note
+  // that no I/O polling is required for the resolution to finish.
+  return nullptr;
+}
+
+absl::StatusOr<grpc_resolved_addresses*>
+NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
+                                          absl::string_view default_port) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;
   int s;
   size_t i;
   grpc_error_handle err;
-
+  grpc_resolved_addresses* addresses = nullptr;
   std::string host;
   std::string port;
   /* parse name, splitting it into host and port parts */
@@ -60,7 +78,6 @@ static grpc_error_handle posix_blocking_resolve_address(
         GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto done;
   }
-
   if (port.empty()) {
     if (default_port == nullptr) {
       err = grpc_error_set_str(
@@ -70,17 +87,14 @@ static grpc_error_handle posix_blocking_resolve_address(
     }
     port = default_port;
   }
-
   /* Call getaddrinfo */
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
-
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
-
   if (s != 0) {
     /* Retry if well-known service name is recognized */
     const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
@@ -93,7 +107,6 @@ static grpc_error_handle posix_blocking_resolve_address(
       }
     }
   }
-
   if (s != 0) {
     err = grpc_error_set_str(
         grpc_error_set_str(
@@ -106,77 +119,32 @@ static grpc_error_handle posix_blocking_resolve_address(
         GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto done;
   }
-
   /* Success path: set addrs non-NULL, fill it in */
-  *addresses = static_cast<grpc_resolved_addresses*>(
+  addresses = static_cast<grpc_resolved_addresses*>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
-  (*addresses)->naddrs = 0;
+  addresses->naddrs = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
-    (*addresses)->naddrs++;
+    addresses->naddrs++;
   }
-  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
-      gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs));
+  addresses->addrs = static_cast<grpc_resolved_address*>(
+      gpr_malloc(sizeof(grpc_resolved_address) * addresses->naddrs));
   i = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
-    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-    (*addresses)->addrs[i].len = resp->ai_addrlen;
+    memcpy(&addresses->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
+    addresses->addrs[i].len = resp->ai_addrlen;
     i++;
   }
   err = GRPC_ERROR_NONE;
-
 done:
   if (result) {
     freeaddrinfo(result);
   }
-  return err;
+  if (err == GRPC_ERROR_NONE) {
+    return addresses;
+  }
+  return grpc_error_to_absl_status(err);
 }
-
-struct request {
-  char* name;
-  char* default_port;
-  grpc_closure* on_done;
-  grpc_resolved_addresses** addrs_out;
-  grpc_closure request_closure;
-  void* arg;
-};
-/* Callback to be passed to grpc Executor to asynch-ify
- * grpc_blocking_resolve_address */
-static void do_request_thread(void* rp, grpc_error_handle /*error*/) {
-  request* r = static_cast<request*>(rp);
-  grpc_core::ExecCtx::Run(
-      DEBUG_LOCATION, r->on_done,
-      grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
-  gpr_free(r->name);
-  gpr_free(r->default_port);
-  gpr_free(r);
-}
-
-namespace grpc_core {
-
-class NativeAsyncResolveAddress : public AsyncResolveAddress {
- public:
-  // Force caller to wait for the callback's completion. Note
-  // that no I/O polling is required for the resolution to finish.
-  void Orphan() override { Unref(); }
-};
 
 }  // namespace grpc_core
 
-static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress>
-posix_resolve_address(const char* name, const char* default_port,
-                      grpc_pollset_set* /*interested_parties*/,
-                      grpc_closure* on_done, grpc_resolved_addresses** addrs) {
-  request* r = static_cast<request*>(gpr_malloc(sizeof(request)));
-  GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
-  r->name = gpr_strdup(name);
-  r->default_port = gpr_strdup(default_port);
-  r->on_done = on_done;
-  r->addrs_out = addrs;
-  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
-                           grpc_core::ExecutorType::RESOLVER);
-  return grpc_core::MakeOrphanable<grpc_core::NativeAsyncResolveAddress>();
-}
-
-grpc_address_resolver_vtable grpc_posix_resolver_vtable = {
-    posix_resolve_address, posix_blocking_resolve_address};
 #endif

@@ -36,7 +36,6 @@ extern grpc_tcp_client_vtable grpc_posix_tcp_client_vtable;
 extern grpc_timer_vtable grpc_generic_timer_vtable;
 extern grpc_pollset_vtable grpc_posix_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_posix_pollset_set_vtable;
-extern grpc_address_resolver_vtable grpc_posix_resolver_vtable;
 
 static void iomgr_platform_init(void) {
   grpc_wakeup_fd_global_init();
@@ -79,7 +78,8 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
   grpc_set_pollset_vtable(&grpc_posix_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_posix_pollset_set_vtable);
-  grpc_set_resolver_impl(&grpc_posix_resolver_vtable);
+  grpc_core::DNSResolver::OverrideInstance(
+      grpc_core::NativeDNSResolver::GetOrCreate());
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 

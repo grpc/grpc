@@ -75,14 +75,13 @@ class DNSResolver {
   virtual OrphanablePtr<Request> ResolveAddress(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses>)> on_done)
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       GRPC_MUST_USE_RESULT = 0;
 
   // Resolve addr in a blocking fashion. On success,
   // result must be freed with grpc_resolved_addresses_destroy.
-  virtual absl::Status BlockingResolveAddress(
-      absl::strinv_view name, absl::string_view default_port,
-      grpc_resolved_addresses** addresses) = 0;
+  virtual absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+      absl::strinv_view name, absl::string_view default_port);
 
  private:
   static DNSResolver* instance_;
