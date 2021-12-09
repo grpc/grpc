@@ -18,4 +18,5 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 pyenv local 3.6.1
+python3 -m pip install dataclasses
 python3 tools/gcp/utils/cleanup_xds_resources.py
