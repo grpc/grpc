@@ -30,6 +30,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -56,36 +57,70 @@ class Next;
 template <typename T>
 class Center {
  public:
-  Center* Ref() {
-    ++refs_;
+  Center() {
+    send_refs_ = 1;
+    recv_refs_ = 1;
+    has_value_ = false;
+  }
+
+  Center* RefSend() {
+    send_refs_++;
     return this;
   }
 
-  void Unref() {
-    if (0 == --refs_) {
-      this->~Center();
+  Center* RefRecv() {
+    recv_refs_++;
+    return this;
+  }
+
+  void UnrefSend() {
+    GPR_DEBUG_ASSERT(send_refs_ > 0);
+    send_refs_--;
+    if (0 == send_refs_) {
+      on_full_.Wake();
+      on_empty_.Wake();
+    }
+  }
+
+  void UnrefRecv() {
+    GPR_DEBUG_ASSERT(recv_refs_ > 0);
+    recv_refs_--;
+    if (0 == recv_refs_) {
+      if (has_value_) ResetValue();
+      on_full_.Wake();
+      on_empty_.Wake();
     }
   }
 
   Poll<bool> Push(T* value) {
-    if (refs_ == 0) return false;
-    if (has_value_) return Pending();
+    GPR_DEBUG_ASSERT(send_refs_ != 0);
+    if (recv_refs_ == 0) return false;
+    if (has_value_) return on_empty_.pending();
     has_value_ = true;
     value_ = std::move(*value);
+    on_full_.Wake();
     return true;
   }
 
   Poll<absl::optional<T>> Next() {
-    if (refs_ == 0) return absl::nullopt;
-    if (!has_value_) return Pending();
+    GPR_DEBUG_ASSERT(recv_refs_ != 0);
+    if (!has_value_) {
+      if (send_refs_ == 0) return absl::nullopt;
+      return on_full_.pending();
+    }
     has_value_ = false;
+    on_empty_.Wake();
     return std::move(value_);
   }
 
  private:
+  void ResetValue() { [](T){}(std::move(value_)); has_value_ = false; }
   T value_;
-  bool has_value_ = false;
-  uint8_t refs_ = 2;
+  uint8_t send_refs_ : 2;
+  uint8_t recv_refs_ : 2;
+  bool has_value_ : 1;
+  IntraActivityWaiter on_empty_;
+  IntraActivityWaiter on_full_;
 };
 
 }  // namespace pipe_detail
@@ -101,14 +136,14 @@ class PipeSender {
     other.center_ = nullptr;
   }
   PipeSender& operator=(PipeSender&& other) noexcept {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefSend();
     center_ = other.center_;
     other.center_ = nullptr;
     return *this;
   }
 
   ~PipeSender() {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefSend();
   }
 
   // Send a single message along the pipe.
@@ -134,13 +169,13 @@ class PipeReceiver {
     other.center_ = nullptr;
   }
   PipeReceiver& operator=(PipeReceiver&& other) noexcept {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefRecv();
     center_ = other.center_;
     other.center_ = nullptr;
     return *this;
   }
   ~PipeReceiver() {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefRecv();
   }
 
   // Receive a single message from the pipe.
@@ -169,14 +204,15 @@ class Push {
     other.center_ = nullptr;
   }
   Push& operator=(Push&& other) noexcept {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefSend();
     center_ = other.center_;
     other.center_ = nullptr;
+    push_ = std::move(other.push_);
     return *this;
   }
 
   ~Push() {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefSend();
   }
 
   Poll<bool> operator()() { return center_->Push(&push_); }
@@ -195,22 +231,21 @@ class Next {
  public:
   Next(const Next&) = delete;
   Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept : center_(other.center_), polled_(other.polled_) {
+  Next(Next&& other) noexcept : center_(other.center_) {
     other.center_ = nullptr;
   }
   Next& operator=(Next&& other) noexcept {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefRecv();
     center_ = other.center_;
     other.center_ = nullptr;
     return *this;
   }
 
   ~Next() {
-    if (center_ != nullptr) center_->Unref();
+    if (center_ != nullptr) center_->UnrefRecv();
   }
 
   Poll<absl::optional<T>> operator()() {
-    polled_ = true;
     return center_->Next();
   }
 
@@ -218,19 +253,18 @@ class Next {
   friend class PipeReceiver<T>;
   explicit Next(pipe_detail::Center<T>* center) : center_(center) {}
   Center<T>* center_;
-  bool polled_ = false;
 };
 
 }  // namespace pipe_detail
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
-  return pipe_detail::Push<T>(center_->Ref(), std::move(value));
+  return pipe_detail::Push<T>(center_->RefSend(), std::move(value));
 }
 
 template <typename T>
 pipe_detail::Next<T> PipeReceiver<T>::Next() {
-  return pipe_detail::Next<T>(center_->Ref());
+  return pipe_detail::Next<T>(center_->RefRecv());
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from

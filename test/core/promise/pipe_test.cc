@@ -78,22 +78,22 @@ TEST(PipeTest, CanReceiveAndSend) {
 TEST(PipeTest, CanSeeClosedOnSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  // Push 42 onto the pipe - this will the pipe's one-deep send buffer.
-  EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
   MakeActivity(
       [] {
         Pipe<int> pipe;
         auto sender = std::move(pipe.sender);
-        auto receiver =
-        absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver));
+        // Push 42 onto the pipe - this will the pipe's one-deep send buffer.
+        EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
+        auto receiver = std::make_shared<std::unique_ptr<PipeReceiver<int>>>(
+            absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver)));
         return Seq(
             // Concurrently:
             // - push 43 into the sender, which will stall because the buffer is
             //   full
             // - and close the receiver, which will fail the pending send.
             Join(sender.Push(43),
-                 [&receiver] {
-                   receiver.reset();
+                 [receiver] {
+                   receiver->reset();
                    return absl::OkStatus();
                  }),
             // Verify both that the send failed and that we executed the close.
@@ -108,13 +108,13 @@ TEST(PipeTest, CanSeeClosedOnSend) {
 }
 
 TEST(PipeTest, CanSeeClosedOnReceive) {
-  Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto sender = absl::make_unique<PipeSender<int>>(std::move(pipe.sender));
-  auto receiver = std::move(pipe.receiver);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [&sender, &receiver] {
+      [] {
+        Pipe<int> pipe;
+        auto sender = absl::make_unique<PipeSender<int>>(std::move(pipe.sender));
+        auto receiver = std::move(pipe.receiver);
         return Seq(
             // Concurrently:
             // - wait for a received value (will stall forever since we push
