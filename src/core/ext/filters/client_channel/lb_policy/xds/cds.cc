@@ -25,6 +25,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -66,12 +67,12 @@ class CdsLb : public LoadBalancingPolicy {
 
  private:
   // Watcher for getting cluster data from XdsClient.
-  class ClusterWatcher : public XdsClient::ClusterWatcherInterface {
+  class ClusterWatcher : public XdsClusterResourceType::WatcherInterface {
    public:
     ClusterWatcher(RefCountedPtr<CdsLb> parent, std::string name)
         : parent_(std::move(parent)), name_(std::move(name)) {}
 
-    void OnClusterChanged(XdsApi::CdsUpdate cluster_data) override {
+    void OnClusterChanged(XdsClusterResource cluster_data) override {
       Ref().release();  // Ref held by lambda
       parent_->work_serializer()->Run(
           // TODO(roth): When we move to C++14, capture cluster_data with
@@ -111,7 +112,7 @@ class CdsLb : public LoadBalancingPolicy {
     // Not owned, so do not dereference.
     ClusterWatcher* watcher = nullptr;
     // Most recent update obtained from this watcher.
-    absl::optional<XdsApi::CdsUpdate> update;
+    absl::optional<XdsClusterResource> update;
   };
 
   // Delegating helper to be passed to child policy.
@@ -139,15 +140,15 @@ class CdsLb : public LoadBalancingPolicy {
       const std::string& name, Json::Array* discovery_mechanisms,
       std::set<std::string>* clusters_needed);
   void OnClusterChanged(const std::string& name,
-                        XdsApi::CdsUpdate cluster_data);
+                        XdsClusterResource cluster_data);
   void OnError(const std::string& name, grpc_error_handle error);
   void OnResourceDoesNotExist(const std::string& name);
 
   grpc_error_handle UpdateXdsCertificateProvider(
-      const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data);
+      const std::string& cluster_name, const XdsClusterResource& cluster_data);
 
   void CancelClusterDataWatch(absl::string_view cluster_name,
-                              XdsClient::ClusterWatcherInterface* watcher,
+                              ClusterWatcher* watcher,
                               bool delay_unsubscription = false);
 
   void MaybeDestroyChildPolicyLocked();
@@ -301,7 +302,8 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     }
     auto watcher = MakeRefCounted<ClusterWatcher>(Ref(), config_->cluster());
     watchers_[config_->cluster()].watcher = watcher.get();
-    xds_client_->WatchClusterData(config_->cluster(), std::move(watcher));
+    XdsClusterResourceType::StartWatch(xds_client_.get(), config_->cluster(),
+                                       std::move(watcher));
   }
 }
 
@@ -326,13 +328,15 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
               name.c_str());
     }
     state.watcher = watcher.get();
-    xds_client_->WatchClusterData(name, std::move(watcher));
+    XdsClusterResourceType::StartWatch(xds_client_.get(), name,
+                                       std::move(watcher));
     return false;
   }
   // Don't have the update we need yet.
   if (!state.update.has_value()) return false;
   // For AGGREGATE clusters, recursively expand to child clusters.
-  if (state.update->cluster_type == XdsApi::CdsUpdate::ClusterType::AGGREGATE) {
+  if (state.update->cluster_type ==
+      XdsClusterResource::ClusterType::AGGREGATE) {
     bool missing_cluster = false;
     for (const std::string& child_name :
          state.update->prioritized_cluster_names) {
@@ -348,13 +352,13 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
       {"max_concurrent_requests", state.update->max_concurrent_requests},
   };
   switch (state.update->cluster_type) {
-    case XdsApi::CdsUpdate::ClusterType::EDS:
+    case XdsClusterResource::ClusterType::EDS:
       mechanism["type"] = "EDS";
       if (!state.update->eds_service_name.empty()) {
         mechanism["edsServiceName"] = state.update->eds_service_name;
       }
       break;
-    case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
+    case XdsClusterResource::ClusterType::LOGICAL_DNS:
       mechanism["type"] = "LOGICAL_DNS";
       mechanism["dnsHostname"] = state.update->dns_hostname;
       break;
@@ -371,7 +375,7 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
 }
 
 void CdsLb::OnClusterChanged(const std::string& name,
-                             XdsApi::CdsUpdate cluster_data) {
+                             XdsClusterResource cluster_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(
         GPR_INFO,
@@ -509,7 +513,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
 }
 
 grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
-    const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data) {
+    const std::string& cluster_name, const XdsClusterResource& cluster_data) {
   // Early out if channel is not configured to use xds security.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args_);
@@ -609,7 +613,7 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
 }
 
 void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
-                                   XdsClient::ClusterWatcherInterface* watcher,
+                                   ClusterWatcher* watcher,
                                    bool delay_unsubscription) {
   if (xds_certificate_provider_ != nullptr) {
     std::string name(cluster_name);
@@ -619,7 +623,7 @@ void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
                                                                     nullptr);
     xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(name, {});
   }
-  xds_client_->CancelClusterDataWatch(cluster_name, watcher,
+  XdsClusterResourceType::CancelWatch(xds_client_.get(), cluster_name, watcher,
                                       delay_unsubscription);
 }
 //

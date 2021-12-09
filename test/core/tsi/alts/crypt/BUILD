@@ -27,6 +27,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":alts_crypt_test_util",
+        "//:alts_frame_protector",
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",

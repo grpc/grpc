@@ -30,6 +30,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -38,6 +39,10 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
@@ -69,7 +74,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
@@ -111,7 +116,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   Fixture::Prepare(&b);
 
@@ -303,24 +308,20 @@ class MoreRepresentativeClientInitialMetadata {
                      GRPC_MDSTR_AUTHORITY,
                      grpc_slice_intern(grpc_slice_from_static_string(
                          "foo.test.google.fr:1234"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_GRPC_TRACE_BIN,
-            grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
-                                          "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                                          "\x10\x11\x12\x13\x14\x15\x16\x17\x18"
-                                          "\x19\x1a\x1b\x1c\x1d\x1e\x1f"
-                                          "\x20\x21\x22\x23\x24\x25\x26\x27\x28"
-                                          "\x29\x2a\x2b\x2c\x2d\x2e\x2f"
-                                          "\x30")))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_GRPC_TAGS_BIN,
-            grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
-                                          "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                                          "\x10\x11\x12\x13")))));
+    b->Set(grpc_core::GrpcTraceBinMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
+               "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+               "\x10\x11\x12\x13\x14\x15\x16\x17\x18"
+               "\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+               "\x20\x21\x22\x23\x24\x25\x26\x27\x28"
+               "\x29\x2a\x2b\x2c\x2d\x2e\x2f"
+               "\x30")));
+    b->Set(grpc_core::GrpcTagsBinMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
+               "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+               "\x10\x11\x12\x13")));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "addmd",
         b->Append(
@@ -354,8 +355,7 @@ class RepresentativeServerTrailingMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_GRPC_STATUS_0)));
+    b->Set(grpc_core::GrpcStatusMetadata(), GRPC_STATUS_OK);
   }
 };
 
@@ -473,7 +473,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
-  auto* arena = grpc_core::Arena::Create(kArenaSize);
+  auto* arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
@@ -494,7 +494,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     if (0 == (state.iterations() & 0xfff)) {
       b.Destroy();
       arena->Destroy();
-      arena = grpc_core::Arena::Create(kArenaSize);
+      arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,

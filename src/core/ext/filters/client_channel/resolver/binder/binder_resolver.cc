@@ -46,7 +46,7 @@ class BinderResolver : public Resolver {
     result.addresses = std::move(addresses_);
     result.args = channel_args_;
     channel_args_ = nullptr;
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
   }
 
   void ShutdownLocked() override {}

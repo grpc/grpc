@@ -92,6 +92,30 @@ const char* grpc_get_ssl_cipher_suites(void) {
   return cipher_suites;
 }
 
+grpc_security_level grpc_tsi_security_level_string_to_enum(
+    const char* security_level) {
+  if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
+    return GRPC_INTEGRITY_ONLY;
+  } else if (strcmp(security_level, "TSI_PRIVACY_AND_INTEGRITY") == 0) {
+    return GRPC_PRIVACY_AND_INTEGRITY;
+  }
+  return GRPC_SECURITY_NONE;
+}
+
+const char* grpc_security_level_to_string(grpc_security_level security_level) {
+  if (security_level == GRPC_PRIVACY_AND_INTEGRITY) {
+    return "GRPC_PRIVACY_AND_INTEGRITY";
+  } else if (security_level == GRPC_INTEGRITY_ONLY) {
+    return "GRPC_INTEGRITY_ONLY";
+  }
+  return "GRPC_SECURITY_NONE";
+}
+
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level) {
+  return static_cast<int>(channel_level) >= static_cast<int>(call_cred_level);
+}
+
 tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type) {
@@ -153,16 +177,6 @@ grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   return GRPC_ERROR_NONE;
-}
-
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs) {
-  if (kp == nullptr) return;
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].private_key));
-    gpr_free(const_cast<char*>(kp[i].cert_chain));
-  }
-  gpr_free(kp);
 }
 
 bool grpc_ssl_check_call_host(absl::string_view host,
@@ -263,7 +277,11 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+    if (strcmp(prop->name, TSI_X509_SUBJECT_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) ==
+               0) {
       /* If there is no subject alt name, have the CN as the identity. */
       if (peer_identity_property_name == nullptr) {
         peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
@@ -359,6 +377,9 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_SUBJECT_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_SUBJECT_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_X509_CN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
