@@ -309,6 +309,15 @@ pipe_detail::Next<T> PipeReceiver<T>::Next() {
 // one end to the other.
 // It is only safe to use a Pipe within the context of a single Activity.
 // No synchronization is performed internally.
+// The primary Pipe data structure is allocated from an arena, so the activity
+// must have an arena as part of its context.
+// By performing that allocation we can ensure stable pointer to shared data
+// allowing PipeSender/PipeReceiver/Push/Next to be relatively simple in their
+// implementation.
+// This type has been optimized with the expectation that there are relatively
+// few pipes per activity. If this assumption does not hold then a design
+// allowing inline filtering of pipe contents (instead of connecting pipes with
+// polling code) would likely be more appropriate.
 template <typename T>
 struct Pipe {
   Pipe() : Pipe(GetContext<Arena>()->New<pipe_detail::Center<T>>()) {}
