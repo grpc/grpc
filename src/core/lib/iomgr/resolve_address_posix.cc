@@ -42,22 +42,6 @@
 
 namespace grpc_core {
 
-OrphanablePtr<Request> NativeDNSResolver::ResolveAddress(
-    absl::string_view name, absl::string_view default_port,
-    grpc_pollset_set* interested_parties,
-    std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) {
-  NativeRequest* r = new NativeRequest();
-  r->name = name;
-  r->default_port = default_port;
-  r->on_done = std::move(on_done);
-  GRPC_CLOSURE_INIT(&r->request_closure, DoRequestThread, r, nullptr);
-  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
-                           grpc_core::ExecutorType::RESOLVER);
-  // Force caller to wait for the callback's completion. Note
-  // that no I/O polling is required for the resolution to finish.
-  return nullptr;
-}
-
 absl::StatusOr<grpc_resolved_addresses*>
 NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
                                           absl::string_view default_port) {
