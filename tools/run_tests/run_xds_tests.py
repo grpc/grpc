@@ -129,10 +129,10 @@ def parse_test_cases(arg):
 def parse_port_range(port_arg):
     try:
         port = int(port_arg)
-        return range(port, port + 1)
+        return list(range(port, port + 1))
     except:
         port_min, port_max = port_arg.split(':')
-        return range(int(port_min), int(port_max) + 1)
+        return list(range(int(port_min), int(port_max) + 1))
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
@@ -614,7 +614,7 @@ def compare_expected_instances(stats, expected_instances):
     Returns:
       Returns true if the instances are expected. False if not.
     """
-    for rpc_type, expected_peers in expected_instances.items():
+    for rpc_type, expected_peers in list(expected_instances.items()):
         rpcs_by_peer_for_type = stats.rpcs_by_method[rpc_type]
         rpcs_by_peer = rpcs_by_peer_for_type.rpcs_by_peer if rpcs_by_peer_for_type else None
         logger.debug('rpc: %s, by_peer: %s', rpc_type, rpcs_by_peer)
@@ -1031,7 +1031,7 @@ def test_metadata_filter(gcp, original_backend_service, instance_group,
         with open(bootstrap_path) as f:
             md = json.load(f)['node']['metadata']
             match_labels = []
-            for k, v in md.items():
+            for k, v in list(md.items()):
                 match_labels.append({'name': k, 'value': v})
 
         not_match_labels = [{'name': 'fake', 'value': 'fail'}]
@@ -2027,7 +2027,7 @@ def test_timeout(gcp, original_backend_service, instance_group):
                 after_stats = get_client_accumulated_stats()
 
                 success = True
-                for rpc, status in expected_results.items():
+                for rpc, status in list(expected_results.items()):
                     qty = (after_stats.stats_per_method[rpc].result[status] -
                            before_stats.stats_per_method[rpc].result[status])
                     want = test_runtime_secs * args.qps
@@ -2122,20 +2122,6 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
     # to the appropriate config for the case, defined above.
     test_cases = [
         (
-            'zero_percent_fault_injection',
-            {},
-            {
-                0: 1
-            },  # OK
-        ),
-        (
-            'non_matching_fault_injection',  # Not in route_rules, above.
-            {},
-            {
-                0: 1
-            },  # OK
-        ),
-        (
             'always_delay',
             {
                 'timeout_sec': 2
@@ -2168,7 +2154,21 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                 16: .5,
                 0: .5
             },  # UNAUTHENTICATED / OK: 50% / 50%
-        )
+        ),
+        (
+            'zero_percent_fault_injection',
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
+        (
+            'non_matching_fault_injection',  # Not in route_rules, above.
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
     ]
 
     passed = True
@@ -2190,12 +2190,15 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
             # but this improves confidence that the test is valid if the
             # previous client_config would lead to the same results.
             time.sleep(1)
-            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
-            # second timeout.
-            attempt_count = 20
+            # Each attempt takes 10 seconds
             if first_case:
-                attempt_count = 120
+                # Give the first test case 600s for xDS config propagation.
+                attempt_count = 60
                 first_case = False
+            else:
+                # The accumulated stats might include previous sub-test, running
+                # the test multiple times to deflake
+                attempt_count = 10
             before_stats = get_client_accumulated_stats()
             if not before_stats.stats_per_method:
                 raise ValueError(
@@ -2209,7 +2212,7 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                 after_stats = get_client_accumulated_stats()
 
                 success = True
-                for status, pct in expected_results.items():
+                for status, pct in list(expected_results.items()):
                     rpc = 'UNARY_CALL'
                     qty = (after_stats.stats_per_method[rpc].result[status] -
                            before_stats.stats_per_method[rpc].result[status])
@@ -2416,7 +2419,8 @@ def is_primary_instance_group(gcp, instance_group):
     # the client's actual locality.
     instance_names = get_instance_names(gcp, instance_group)
     stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
-    return all(peer in instance_names for peer in stats.rpcs_by_peer.keys())
+    return all(
+        peer in instance_names for peer in list(stats.rpcs_by_peer.keys()))
 
 
 def get_startup_script(path_to_server_binary, service_port):
@@ -3006,7 +3010,7 @@ def patch_url_map_backend_service(gcp,
         'weightedBackendServices': [{
             'backendService': service.url,
             'weight': w,
-        } for service, w in services_with_weights.items()]
+        } for service, w in list(services_with_weights.items())]
     } if services_with_weights else None
 
     config = {

@@ -55,20 +55,22 @@ class EndpointPolicy:
 
 
 @dataclasses.dataclass(frozen=True)
-class Router:
+class Mesh:
 
     name: str
     url: str
     type: str
+    scope: Optional[str]
     network: Optional[str]
     routes: Optional[List[str]]
 
     @classmethod
-    def from_response(cls, name: str, d: Dict[str, Any]) -> 'Router':
+    def from_response(cls, name: str, d: Dict[str, Any]) -> 'Mesh':
         return cls(
             name=name,
             url=d["name"],
             type=d["type"],
+            scope=d.get("scope"),
             network=d.get("network"),
             routes=list(d["routes"]) if "routes" in d else None,
         )
@@ -136,27 +138,30 @@ class GrpcRoute:
 
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
-        destination: Optional['Destination']
+        destinations: List['Destination']
         drop: Optional[int]
 
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteAction':
+            destinations = [
+                Destination.from_response(dest) for dest in d["destinations"]
+            ] if "destinations" in d else []
             return cls(
-                destination=Destination.from_response(d["destination"])
-                if "destination" in d else None,
+                destinations=destinations,
                 drop=d.get("drop"),
             )
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
-        match: Optional['RouteMatch']
+        matches: List['RouteMatch']
         action: 'RouteAction'
 
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteRule':
+            matches = [RouteMatch.from_response(m) for m in d["matches"]
+                      ] if "matches" in d else []
             return cls(
-                match=RouteMatch.from_response(d["match"])
-                if "match" in d else "",
+                matches=matches,
                 action=RouteAction.from_response(d["action"]),
             )
 
@@ -164,6 +169,7 @@ class GrpcRoute:
     url: str
     hostnames: Tuple[str]
     rules: Tuple['RouteRule']
+    meshes: Optional[Tuple[str]]
 
     @classmethod
     def from_response(cls, name: str, d: Dict[str, Any]) -> 'RouteRule':
@@ -172,6 +178,7 @@ class GrpcRoute:
             url=d["name"],
             hostnames=tuple(d["hostnames"]),
             rules=tuple(d["rules"]),
+            meshes=None if d.get("meshes") is None else tuple(d["meshes"]),
         )
 
 
@@ -240,27 +247,27 @@ class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
     """
 
     GRPC_ROUTES = 'grpcRoutes'
-    ROUTERS = 'routers'
+    MESHES = 'meshes'
 
     @property
     def api_version(self) -> str:
         return 'v1alpha1'
 
-    def create_router(self, name: str, body: dict) -> GcpResource:
-        return self._create_resource(collection=self._api_locations.routers(),
+    def create_mesh(self, name: str, body: dict) -> GcpResource:
+        return self._create_resource(collection=self._api_locations.meshes(),
                                      body=body,
-                                     routerId=name)
+                                     meshId=name)
 
-    def get_router(self, name: str) -> Router:
-        full_name = self.resource_full_name(name, self.ROUTERS)
-        result = self._get_resource(collection=self._api_locations.routers(),
+    def get_mesh(self, name: str) -> Mesh:
+        full_name = self.resource_full_name(name, self.MESHES)
+        result = self._get_resource(collection=self._api_locations.meshes(),
                                     full_name=full_name)
-        return Router.from_response(name, result)
+        return Mesh.from_response(name, result)
 
-    def delete_router(self, name: str) -> bool:
-        return self._delete_resource(collection=self._api_locations.routers(),
+    def delete_mesh(self, name: str) -> bool:
+        return self._delete_resource(collection=self._api_locations.meshes(),
                                      full_name=self.resource_full_name(
-                                         name, self.ROUTERS))
+                                         name, self.MESHES))
 
     def create_grpc_route(self, name: str, body: dict) -> GcpResource:
         return self._create_resource(

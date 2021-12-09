@@ -55,8 +55,7 @@ TEST(AdaptorTest, FactoryFromBindFrontPromise) {
 }
 
 TEST(AdaptorTest, FactoryFromCapturePromise) {
-  EXPECT_EQ(MakeFactory<void>(
-                grpc_core::Capture([](int* i) { return Poll<int>(*i); }, 42))
+  EXPECT_EQ(MakeFactory<void>(Capture([](int* i) { return Poll<int>(*i); }, 42))
                 .Once()(),
             Poll<int>(42));
 }

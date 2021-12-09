@@ -23,6 +23,10 @@
 # each change must be ported from one to the other.
 #
 
+"""
+Contains macros used throughout the repo.
+"""
+
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
@@ -48,20 +52,20 @@ def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
         if dep == "address_sorting":
-            ret += ["//third_party/address_sorting"]
+            ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
-            ret += ["//third_party/xxhash"]
+            ret.append("//third_party/xxhash")
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
                 "//conditions:default": ["//external:cares"],
             })
         elif dep == "cronet_c_for_grpc":
-            ret += ["//third_party/objective_c/Cronet:cronet_c_for_grpc"]
+            ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
         elif dep.startswith("absl/"):
-            ret += ["@com_google_absl//" + dep]
+            ret.append("@com_google_absl//" + dep)
         else:
-            ret += ["//external:" + dep]
+            ret.append("//external:" + dep)
     return ret
 
 def _update_visibility(visibility):
@@ -120,6 +124,27 @@ def grpc_cc_library(
         use_cfstream = False,
         tags = [],
         linkstatic = False):
+    """An internal wrapper around cc_library.
+
+    Args:
+      name: The name of the library.
+      srcs: The source files.
+      public_hdrs: The public headers.
+      hdrs: The headers.
+      external_deps: External depdendencies to be resolved.
+      defines: Build defines to use.
+      deps: cc_library deps.
+      select_deps: deps included conditionally.
+      standalone: Unused.
+      language: The language of the library, e.g. C, C++.
+      testonly: Whether the target is for tests only.
+      visibility: The visibility of the target.
+      alwayslink: Whether to enable alwayslink on the cc_library.
+      data: Data dependencies.
+      use_cfstream: Whether to use cfstream.
+      tags: Tags to apply to the rule.
+      linkstatic: Whether to enable linkstatic on the cc_library.
+    """
     visibility = _update_visibility(visibility)
     copts = []
     if use_cfstream:
@@ -197,6 +222,13 @@ def ios_cc_test(
         name,
         tags = [],
         **kwargs):
+    """An ios C++ test target.
+
+    Args:
+      name: The name of the test.
+      tags: The tags to apply to the test.
+      **kwargs: All other arguments to apply.
+    """
     ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST"
 
     test_lib_ios = name + "_test_lib_ios"
@@ -220,7 +252,30 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
+    """A cc_test target for use in the gRPC repo.
+
+    Args:
+        name: The name of the test.
+        srcs: The source files.
+        deps: The target deps.
+        external_deps: The external deps.
+        args: The args to supply to the test binary.
+        data: Data dependencies.
+        uses_polling: Whether the test uses polling.
+        language: The language of the test, e.g C, C++.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        exec_properties: A dictionary of strings that will be added to the
+            exec_properties of a platform selected for this target.
+        shard_count: The number of shards for this test.
+        flaky: Whether this test is flaky.
+        copts: Add these to the compiler invocation.
+        linkstatic: link the binary in static mode
+    """
     copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
@@ -240,6 +295,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_properties": exec_properties,
         "shard_count": shard_count,
         "flaky": flaky,
+        "linkstatic": linkstatic,
     }
     if uses_polling:
         # the vanilla version of the test should run on platforms that only
@@ -283,6 +339,22 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
+    """Generates a cc_binary for use in the gRPC repo.
+
+    Args:
+      name: The name of the target.
+      srcs: The source files.
+      deps: The dependencies.
+      external_deps: The external dependencies.
+      args: The arguments to supply to the binary.
+      data: The data dependencies.
+      language: The language of the binary, e.g. C, C++.
+      testonly: Whether the binary is for tests only.
+      linkshared: Enables linkshared on the binary.
+      linkopts: linkopts to supply to the cc_binary.
+      tags: Tags to apply to the target.
+      features: features to be supplied to the cc_binary.
+    """
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
@@ -300,6 +372,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         features = features,
     )
 
+# buildifier: disable=unnamed-macro
 def grpc_generate_one_off_targets():
     # In open-source, grpc_objc* libraries depend directly on //:grpc
     native.alias(
@@ -310,12 +383,13 @@ def grpc_generate_one_off_targets():
 def grpc_generate_objc_one_off_targets():
     pass
 
-def grpc_sh_test(name, srcs, args = [], data = []):
+def grpc_sh_test(name, srcs, args = [], data = [], tags = []):
     native.sh_test(
         name = name,
         srcs = srcs,
         args = args,
         data = data,
+        tags = tags,
     )
 
 def grpc_sh_binary(name, srcs, data = []):
@@ -345,6 +419,13 @@ def grpc_py_binary(
     )
 
 def grpc_package(name, visibility = "private", features = []):
+    """Creates a package.
+
+    Args:
+        name: The name of the target
+        visibility: The visibility of the target.
+        features: The features to enable.
+    """
     if visibility == "tests":
         visibility = ["//test:__subpackages__"]
     elif visibility == "public":
@@ -355,6 +436,7 @@ def grpc_package(name, visibility = "private", features = []):
         fail("Unknown visibility " + visibility)
 
     if len(visibility) != 0:
+        # buildifier: disable=native-package
         native.package(
             default_visibility = visibility,
             features = features,
@@ -402,6 +484,7 @@ def grpc_upb_proto_library(name, deps):
 def grpc_upb_proto_reflection_library(name, deps):
     upb_proto_reflection_library(name = name, deps = deps)
 
+# buildifier: disable=unnamed-macro
 def python_config_settings():
     native.config_setting(
         name = "python3",

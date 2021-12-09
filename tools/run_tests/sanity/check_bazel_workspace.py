@@ -165,10 +165,10 @@ if len(workspace_git_hashes - git_submodule_hashes) > 0:
     print(
         "Found discrepancies between git submodules and Bazel WORKSPACE dependencies"
     )
-    print("workspace_git_hashes: %s" % workspace_git_hashes)
-    print("git_submodule_hashes: %s" % git_submodule_hashes)
-    print("workspace_git_hashes - git_submodule_hashes: %s" %
-          (workspace_git_hashes - git_submodule_hashes))
+    print(("workspace_git_hashes: %s" % workspace_git_hashes))
+    print(("git_submodule_hashes: %s" % git_submodule_hashes))
+    print(("workspace_git_hashes - git_submodule_hashes: %s" %
+           (workspace_git_hashes - git_submodule_hashes)))
     sys.exit(1)
 
 # Also check that we can override each dependency

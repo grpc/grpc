@@ -16,7 +16,7 @@ repository, [grpc/test-infra].
 
 These scripts, together with tools defined in [grpc/test-infra], are used in the
 continuous integration setup defined in [grpc_e2e_performance_gke.sh] and
-[grpc_e2e_performance_v2.sh].
+[grpc_e2e_performance_gke_experiment.sh].
 
 #### Generating scenarios
 
@@ -299,11 +299,11 @@ For more information, see the
 in [grpc/test-infra].
 
 For usage examples, see the continuous integration setup defined in
-[grpc_e2e_performance_gke.sh] and [grpc_e2e_performance_v2.sh].
+[grpc_e2e_performance_gke.sh] and [grpc_e2e_performance_gke_experiment.sh].
 
 [grpc/test-infra]: https://github.com/grpc/test-infra
 [grpc_e2e_performance_gke.sh]: ../../internal_ci/linux/grpc_e2e_performance_gke.sh
-[grpc_e2e_performance_v2.sh]: ../../internal_ci/linux/grpc_e2e_performance_v2.sh
+[grpc_e2e_performance_gke_experiment.sh]: ../../internal_ci/linux/grpc_e2e_performance_gke_experiment.sh
 
 ## Approach 2: Running benchmarks locally via legacy tooling (still useful sometimes)
 

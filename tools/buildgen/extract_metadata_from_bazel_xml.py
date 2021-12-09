@@ -291,12 +291,11 @@ def _compute_transitive_metadata(
 
     # Calculate transitive public deps (needed for collapsing sources)
     transitive_public_deps = set(
-        filter(lambda x: x in bazel_label_to_dep_name, transitive_deps))
+        [x for x in transitive_deps if x in bazel_label_to_dep_name])
 
     # Remove intermediate targets that our public dependencies already depend
     # on. This is the step that further shorten the deps list.
-    collapsed_deps = set(filter(lambda x: x not in exclude_deps,
-                                collapsed_deps))
+    collapsed_deps = set([x for x in collapsed_deps if x not in exclude_deps])
 
     # Compute the final source files and headers for this build target whose
     # name is `rule_name` (input argument of this function).
@@ -365,7 +364,7 @@ def _populate_transitive_metadata(bazel_rules: Any,
 def update_test_metadata_with_transitive_metadata(
         all_extra_metadata: BuildDict, bazel_rules: BuildDict) -> None:
     """Patches test build metadata with transitive metadata."""
-    for lib_name, lib_dict in all_extra_metadata.items():
+    for lib_name, lib_dict in list(all_extra_metadata.items()):
         # Skip if it isn't not an test
         if lib_dict.get('build') != 'test' or lib_dict.get('_TYPE') != 'target':
             continue
@@ -381,14 +380,33 @@ def update_test_metadata_with_transitive_metadata(
             lib_dict['language'] = 'c++'
 
 
+def _get_transitive_protos(bazel_rules, t):
+    que = [
+        t,
+    ]
+    visited = set()
+    ret = []
+    while que:
+        name = que.pop(0)
+        rule = bazel_rules.get(name, None)
+        if rule:
+            for dep in rule['deps']:
+                if dep not in visited:
+                    visited.add(dep)
+                    que.append(dep)
+            for src in rule['srcs']:
+                if src.endswith('.proto'):
+                    ret.append(src)
+    return list(set(ret))
+
+
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
     # upb.h and upb.c files.
     GEN_UPB_ROOT = '//:src/core/ext/upb-generated/'
     GEN_UPBDEFS_ROOT = '//:src/core/ext/upbdefs-generated/'
-    EXTERNAL_LINKS = [
-        ('@com_google_protobuf//', ':src/'),
-    ]
+    EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
+                      ('@com_google_googleapis//', '')]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get('generator_function', None)
         if gen_func in ('grpc_upb_proto_library',
@@ -399,12 +417,6 @@ def _expand_upb_proto_library_rules(bazel_rules):
                 raise Exception(
                     'upb rule "{0}" should have 1 proto dependency but has "{1}"'
                     .format(name, deps))
-            proto_dep = deps[0]
-            proto_rule = bazel_rules.get(proto_dep, None)
-            if proto_rule is None:
-                raise Exception(
-                    'upb rule "{0}"\'s dependency "{1}" is not found'.format(
-                        name, proto_rule))
             # deps is not properly fetched from bazel query for upb_proto_library target
             # so add the upb dependency manually
             bazel_rule['deps'] = [
@@ -413,14 +425,21 @@ def _expand_upb_proto_library_rules(bazel_rules):
             ]
             # populate the upb_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
+            protos = _get_transitive_protos(bazel_rules, deps[0])
+            if len(protos) == 0:
+                raise Exception(
+                    'upb rule "{0}" should have at least one proto file.'.
+                    format(name))
             srcs = []
             hdrs = []
-            for proto_src in proto_rule['srcs']:
+            for proto_src in protos:
                 for external_link in EXTERNAL_LINKS:
                     if proto_src.startswith(external_link[0]):
                         proto_src = proto_src[len(external_link[0]) +
                                               len(external_link[1]):]
                         break
+                if proto_src.startswith('@'):
+                    raise Exception('"{0}" is unknown workspace.'.format(name))
                 proto_src = _extract_source_file_path(proto_src)
                 ext = '.upb' if gen_func == 'grpc_upb_proto_library' else '.upbdefs'
                 root = GEN_UPB_ROOT if gen_func == 'grpc_upb_proto_library' else GEN_UPBDEFS_ROOT
@@ -462,7 +481,7 @@ def _generate_build_metadata(build_extra_metadata: BuildDict,
             result[to_name] = lib_dict
 
             # dep names need to be updated as well
-            for lib_dict_to_update in result.values():
+            for lib_dict_to_update in list(result.values()):
                 lib_dict_to_update['deps'] = list([
                     to_name if dep == lib_name else dep
                     for dep in lib_dict_to_update['deps']
@@ -492,15 +511,21 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
 
     # get rid of temporary private fields prefixed with "_" and some other useless fields
     for lib in lib_list:
-        for field_to_remove in [k for k in lib.keys() if k.startswith('_')]:
+        for field_to_remove in [
+                k for k in list(lib.keys()) if k.startswith('_')
+        ]:
             lib.pop(field_to_remove, None)
     for target in target_list:
-        for field_to_remove in [k for k in target.keys() if k.startswith('_')]:
+        for field_to_remove in [
+                k for k in list(target.keys()) if k.startswith('_')
+        ]:
             target.pop(field_to_remove, None)
         target.pop('public_headers',
                    None)  # public headers make no sense for targets
     for test in test_list:
-        for field_to_remove in [k for k in test.keys() if k.startswith('_')]:
+        for field_to_remove in [
+                k for k in list(test.keys()) if k.startswith('_')
+        ]:
             test.pop(field_to_remove, None)
         test.pop('public_headers',
                  None)  # public headers make no sense for tests
@@ -517,7 +542,7 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
 def _extract_cc_tests(bazel_rules: BuildDict) -> List[str]:
     """Gets list of cc_test tests from bazel rules"""
     result = []
-    for bazel_rule in bazel_rules.values():
+    for bazel_rule in list(bazel_rules.values()):
         if bazel_rule['class'] == 'cc_test':
             test_name = bazel_rule['name']
             if test_name.startswith('//'):
@@ -628,7 +653,7 @@ def _generate_build_extra_metadata_for_tests(
         if 'grpc_fuzzer' == bazel_rule['generator_function']:
             # currently we hand-list fuzzers instead of generating them automatically
             # because there's no way to obtain maxlen property from bazel BUILD file.
-            print('skipping fuzzer ' + test)
+            print(('skipping fuzzer ' + test))
             continue
 
         # if any tags that restrict platform compatibility are present,
@@ -672,20 +697,20 @@ def _generate_build_extra_metadata_for_tests(
 
     # detect duplicate test names
     tests_by_simple_name = {}
-    for test_name, test_dict in test_metadata.items():
+    for test_name, test_dict in list(test_metadata.items()):
         simple_test_name = test_dict['_RENAME']
         if not simple_test_name in tests_by_simple_name:
             tests_by_simple_name[simple_test_name] = []
         tests_by_simple_name[simple_test_name].append(test_name)
 
     # choose alternative names for tests with a name collision
-    for collision_list in tests_by_simple_name.values():
+    for collision_list in list(tests_by_simple_name.values()):
         if len(collision_list) > 1:
             for test_name in collision_list:
                 long_name = test_name.replace('/', '_').replace(':', '_')
-                print(
+                print((
                     'short name of "%s" collides with another test, renaming to %s'
-                    % (test_name, long_name))
+                    % (test_name, long_name)))
                 test_metadata[test_name]['_RENAME'] = long_name
 
     return test_metadata
@@ -697,8 +722,8 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
         if tgt['build'] == 'test':
             for src in tgt['src']:
                 if src.startswith('src/') and not src.endswith('.proto'):
-                    print('source file from under "src/" tree used in test ' +
-                          tgt['name'] + ': ' + src)
+                    print(('source file from under "src/" tree used in test ' +
+                           tgt['name'] + ': ' + src))
 
 
 # extra metadata that will be used to construct build.yaml
@@ -1026,7 +1051,7 @@ all_extra_metadata.update(
 #               '_COLLAPSED_PUBLIC_HEADERS': [...],
 #               '_COLLAPSED_HEADERS': [...]
 #             }
-_populate_transitive_metadata(bazel_rules, all_extra_metadata.keys())
+_populate_transitive_metadata(bazel_rules, list(all_extra_metadata.keys()))
 
 # Step 4a: Update the existing test metadata with the updated build metadata.
 # Certain build metadata of certain test targets depend on the transitive

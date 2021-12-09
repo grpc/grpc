@@ -8,14 +8,9 @@
 
 #include "upb/def.h"
 #include "envoy/annotations/resource.upbdefs.h"
+#include "envoy/annotations/resource.upb.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-extern const upb_msglayout envoy_annotations_ResourceAnnotation_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_annotations_ResourceAnnotation_msginit,
-};
-
 static const char descriptor[240] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'r', 'e', 's', 'o', 'u', 
 'r', 'c', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\021', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 
 'o', 'n', 's', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 
@@ -35,7 +30,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init envoy_annotations_resource_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_annotations_resource_proto_upb_file_layout,
   "envoy/annotations/resource.proto",
   UPB_STRVIEW_INIT(descriptor, 240)
 };

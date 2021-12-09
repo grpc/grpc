@@ -182,7 +182,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
 namespace grpc_core {
 
 absl::StatusOr<std::string> RemoveServiceNameFromJwtUri(absl::string_view uri) {
-  auto parsed = grpc_core::URI::Parse(uri);
+  auto parsed = URI::Parse(uri);
   if (!parsed.ok()) {
     return parsed.status();
   }

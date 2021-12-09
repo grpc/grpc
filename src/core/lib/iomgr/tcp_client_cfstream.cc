@@ -64,16 +64,12 @@ struct CFStreamConnect {
   grpc_endpoint** endpoint;
   int refs;
   std::string addr_name;
-  grpc_slice_allocator* slice_allocator;
 };
 
 static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   CFSTREAM_HANDLE_UNREF(connect->stream_handle, "async connect clean up");
   CFRelease(connect->read_stream);
   CFRelease(connect->write_stream);
-  if (connect->slice_allocator != nullptr) {
-    grpc_slice_allocator_destroy(connect->slice_allocator);
-  }
   gpr_mu_destroy(&connect->mu);
   delete connect;
 }
@@ -132,9 +128,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
       if (error == GRPC_ERROR_NONE) {
         *endpoint = grpc_cfstream_endpoint_create(
             connect->read_stream, connect->write_stream,
-            connect->addr_name.c_str(), connect->slice_allocator,
-            connect->stream_handle);
-        connect->slice_allocator = nullptr;
+            connect->addr_name.c_str(), connect->stream_handle);
       }
     } else {
       (void)GRPC_ERROR_REF(error);
@@ -156,7 +150,6 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
 }
 
 static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_slice_allocator* slice_allocator,
                                   grpc_pollset_set* interested_parties,
                                   const grpc_channel_args* channel_args,
                                   const grpc_resolved_address* resolved_addr,
@@ -173,7 +166,6 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
             connect, connect->addr_name.c_str());
   }
-  connect->slice_allocator = slice_allocator;
 
   CFReadStreamRef read_stream;
   CFWriteStreamRef write_stream;

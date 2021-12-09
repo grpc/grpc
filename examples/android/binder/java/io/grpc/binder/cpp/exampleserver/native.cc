@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <android/binder_auto_utils.h>
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
-#include <android/binder_interface_utils.h>
 #include <android/log.h>
 #include <jni.h>
 

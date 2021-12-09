@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -31,11 +32,7 @@ static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
-
-  void ReturnError(grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {}
 };
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,

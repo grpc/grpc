@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
-
-exports_files(["LICENSE"])
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+    "grpc_proto_plugin",
+)
 
 package(
     default_visibility = ["//visibility:public"],
@@ -26,11 +28,9 @@ package(
     ],
 )
 
-load(
-    "//bazel:grpc_build_system.bzl",
-    "grpc_cc_library",
-    "grpc_proto_plugin",
-)
+licenses(["notice"])
+
+exports_files(["LICENSE"])
 
 grpc_cc_library(
     name = "grpc_plugin_support",

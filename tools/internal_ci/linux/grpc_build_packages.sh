@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -33,4 +36,12 @@ mv ${KOKORO_GFILE_DIR}/github/grpc/artifacts input_artifacts || true
 chmod +x input_artifacts/protoc*/* || true
 ls -R input_artifacts || true
 
-tools/run_tests/task_runner.py -f package linux -j 6
+tools/run_tests/task_runner.py -f package linux -j 6 || FAILED="true"
+
+tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
+

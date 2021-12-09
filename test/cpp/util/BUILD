@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
-
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+
+licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/util",
@@ -376,5 +376,21 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "tls_test_utils",
+    srcs = [
+        "tls_test_utils.cc",
+    ],
+    hdrs = [
+        "tls_test_utils.h",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
     ],
 )

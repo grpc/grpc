@@ -65,6 +65,8 @@ UPB_INLINE void envoy_type_v3_SemanticVersion_set_patch(envoy_type_v3_SemanticVe
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = value;
 }
 
+extern const upb_msglayout_file envoy_type_v3_semantic_version_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

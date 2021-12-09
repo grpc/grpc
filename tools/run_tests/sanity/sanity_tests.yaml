@@ -40,4 +40,5 @@
 - script: tools/distrib/check_protobuf_pod_version.sh
 - script: tools/distrib/check_boringssl_prefix_symbol.sh
 - script: tools/run_tests/sanity/build_banned_constructs.sh
+- script: tools/distrib/check_redundant_namespace_qualifiers.py
 
