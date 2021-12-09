@@ -56,7 +56,14 @@ constexpr int kDefaultSecurePortInt = 443;
 // Tracks a single asynchronous DNS resolution attempt. The DNS
 // resolution should be arranged to be cancelled as soon as possible
 // when Orphan is called.
-class DNSRequest : public InternallyRefCounted<DNSRequest> {};
+class DNSRequest : public InternallyRefCounted<DNSRequest> {
+ public:
+  // Begins async DNS resolution
+  virtual void Start() = 0;
+  // Cancels the DNS resolution so that the callback will be invoked
+  // as soon as possible.
+  void Orphan() override;
+};
 
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
@@ -67,14 +74,14 @@ class DNSResolver {
   static DNSResolver* instance() { return instance_; }
 
   // Override the active DNS resolver, which should be used for all DNS
-  // resolution. Note: this should only be used during library initialization,
+  // resolution in gRPC. Note: this should only be used during library initialization,
   // or tests.
   static void OverrideInstance(DNSResolver* resolver) { instance_ = resolver; }
 
   // Asynchronously resolve addr. Use default_port if a port isn't designated
   // in addr, otherwise use the port in addr.
   // TODO(apolcyn): add a timeout here.
-  virtual OrphanablePtr<DNSRequest> ResolveAddress(
+  virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)

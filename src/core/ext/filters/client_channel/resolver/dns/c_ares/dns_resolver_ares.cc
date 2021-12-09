@@ -480,30 +480,33 @@ class AresDNSRequest : public DNSRequest {
                  grpc_pollset_set* interested_parties,
                  std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_resolve_address_done)
       : on_resolve_address_done_(std::move(on_resolve_address_done)) {
-        absl::MutexLock lock(&mu_);
         GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                           grpc_schedule_on_exec_ctx);
-        Ref().release();  // ref held by resolution
-        ares_request_ = grpc_dns_lookup_ares(
-            "" /* dns_server */, name, default_port, interested_parties,
-            &on_dns_lookup_done_, &addresses_, nullptr /* balancer_addresses */,
-            nullptr /* service_config_json */,
-            GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS);
-        GRPC_CARES_TRACE_LOG("AresDNSRequest:%p ctor ares_request_:%p", this,
-                             ares_request_);
       }
 
       ~AresDNSRequest() override {
         GRPC_CARES_TRACE_LOG("AresDNSRequest:%p dtor ares_request_:%p", this,
-                             ares_request_);
+                             ares_request_.get());
+      }
+
+      void Start() override {
+        absl::MutexLock lock(&mu_);
+        Ref().release();  // ref held by resolution
+        ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
+            "" /* dns_server */, name, default_port, interested_parties,
+            &on_dns_lookup_done_, &addresses_, nullptr /* balancer_addresses */,
+            nullptr /* service_config_json */,
+            GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+        GRPC_CARES_TRACE_LOG("AresDNSRequest:%p ctor ares_request_:%p", this,
+                             ares_request_.get());
       }
 
       void Orphan() override {
         {
           absl::MutexLock lock(&mu_);
           GRPC_CARES_TRACE_LOG("AresDNSRequest:%p Orphan ares_request_:%p",
-                               this, ares_request_);
-          grpc_cancel_ares_request(ares_request_);
+                               this, ares_request_.get());
+          grpc_cancel_ares_request(ares_request_.get());
         }
         Unref();
       }
@@ -559,7 +562,7 @@ class AresDNSResolver : public DNSResolver {
     return instance_;
   }
 
-  OrphanablePtr<Request> ResolveAddress(
+  OrphanablePtr<Request> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses>)> on_done)
