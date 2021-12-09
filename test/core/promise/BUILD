@@ -260,6 +260,7 @@ grpc_cc_test(
         "//:map",
         "//:observable",
         "//:pipe",
+        "//:resource_quota",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
