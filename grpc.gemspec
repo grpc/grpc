@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.1'
+  s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
