@@ -15,6 +15,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
@@ -49,9 +50,13 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
             input.incoming_parcels()),
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
+    const grpc_channel_args* channel_args =
+        grpc_core::CoreConfiguration::Get()
+            .channel_args_preconditioning()
+            .PreconditionChannelArgs(nullptr);
     grpc_core::Server::FromC(server)->SetupTransport(server_transport, nullptr,
-                                                     nullptr, nullptr);
-
+                                                     channel_args, nullptr);
+    grpc_channel_args_destroy(channel_args);
     grpc_call* call1 = nullptr;
     grpc_call_details call_details1;
     grpc_metadata_array request_metadata1;

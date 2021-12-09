@@ -21,6 +21,7 @@
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -54,9 +55,13 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         const_cast<char*>("test-authority"));
     grpc_channel_args* args =
         grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    grpc_channel* channel =
-        grpc_channel_create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, nullptr);
+    const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
+                                                .channel_args_preconditioning()
+                                                .PreconditionChannelArgs(args);
+    grpc_channel* channel = grpc_channel_create("test-target", channel_args,
+                                                GRPC_CLIENT_DIRECT_CHANNEL,
+                                                client_transport, nullptr);
+    grpc_channel_args_destroy(channel_args);
     grpc_channel_args_destroy(args);
     grpc_slice host = grpc_slice_from_static_string("localhost");
     grpc_call* call = grpc_channel_create_call(
