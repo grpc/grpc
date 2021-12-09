@@ -1114,8 +1114,6 @@ void grpc_ares_cleanup(void) {}
  */
 
 typedef struct grpc_resolve_address_ares_request {
-  ~grpc_resolve_address_ares_request() { delete ares_request; }
-
   // synchronizers access to this object (but not to the ares_request itself)
   absl::Mutex mu;
   // the pointer to receive the resolved addresses
@@ -1128,7 +1126,7 @@ typedef struct grpc_resolve_address_ares_request {
   // the grpc_dns_lookup_ares operation is done.
   grpc_closure on_dns_lookup_done ABSL_GUARDED_BY(mu);
   // underlying ares_request that the query is performed on
-  grpc_ares_request* ares_request ABSL_GUARDED_BY(mu) = nullptr;
+  std::unique_ptr<grpc_ares_request> ares_request ABSL_GUARDED_BY(mu) = nullptr;
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done(void* arg, grpc_error_handle error) {
@@ -1166,11 +1164,11 @@ static void grpc_resolve_address_ares_impl(const char* name,
   r->on_resolve_address_done = on_done;
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done, r,
                     grpc_schedule_on_exec_ctx);
-  r->ares_request = grpc_dns_lookup_ares(
+  r->ares_request = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
       nullptr /* dns_server */, name, default_port, interested_parties,
       &r->on_dns_lookup_done, &r->addresses, nullptr /* balancer_addresses */,
       nullptr /* service_config_json */,
-      GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS);
+      GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
 }
 
 void (*grpc_resolve_address_ares)(
