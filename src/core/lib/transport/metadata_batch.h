@@ -273,9 +273,13 @@ struct HttpMethodMetadata {
 struct CompressionAlgorithmBasedMetadata {
   using ValueType = grpc_compression_algorithm;
   using MementoType = ValueType;
-  static MementoType ParseMemento(Slice value) {
-    return ParseCompressionAlgorithm(value.as_string_view())
-        .value_or(GRPC_COMPRESS_NONE);
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    auto algorithm = ParseCompressionAlgorithm(value.as_string_view());
+    if (!algorithm.has_value()) {
+      on_error("invalid value", value);
+      return GRPC_COMPRESS_NONE;
+    }
+    return *algorithm;
   }
   static ValueType MementoToValue(MementoType x) { return x; }
   static StaticSlice Encode(ValueType x) {
@@ -306,7 +310,7 @@ struct GrpcAcceptEncodingMetadata {
   static absl::string_view key() { return "grpc-accept-encoding"; }
   using ValueType = CompressionAlgorithmSet;
   using MementoType = ValueType;
-  static MementoType ParseMemento(Slice value) {
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn) {
     return CompressionAlgorithmSet::FromString(value.as_string_view());
   }
   static ValueType MementoToValue(MementoType x) { return x; }
