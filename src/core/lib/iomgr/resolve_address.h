@@ -23,6 +23,8 @@
 
 #include <stddef.h>
 
+#include "absl/status/statusor.h"
+
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -67,7 +69,7 @@ class DNSResolver {
   // Override the active DNS resolver, which should be used for all DNS
   // resolution. Note: this should only be used during library initialization,
   // or tests.
-  static void OverrideInstance(DNSResolver* resolver){instance_ = resolver};
+  static void OverrideInstance(DNSResolver* resolver) { instance_ = resolver; }
 
   // Asynchronously resolve addr. Use default_port if a port isn't designated
   // in addr, otherwise use the port in addr.

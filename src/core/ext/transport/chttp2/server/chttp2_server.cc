@@ -897,8 +897,12 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       error = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed,
                                                         &resolved);
     } else {
-      error = grpc_blocking_resolve_address(parsed_addr.c_str(), "https",
-                                            &resolved);
+      absl::StatusOr<grpc_resolved_addresses*> addresses_or =
+          DNSResolver::instance()->BlockingResolveAddress(parsed_addr, "https");
+      error = absl_status_to_grpc_error(addresses_or.status());
+      if (addresses_or.ok()) {
+        resolved = *addresses_or;
+      }
     }
     if (error != GRPC_ERROR_NONE) return error;
     // Create a listener for each resolved address.

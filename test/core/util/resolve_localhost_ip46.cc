@@ -32,10 +32,10 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  grpc_resolved_addresses* addresses;
-  grpc_error_handle err =
-      grpc_blocking_resolve_address("localhost", "https", &addresses);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
+  grpc_resolved_addresses* addresses = nullptr;
+  absl::StatusOr<grpc_resolved_addresses*> addresses_or = DNSResolver::instance()->BlockingResolveAddress("localhost", "https");
+  GPR_ASSERT(addresses_or.ok());
+  addresses = *addresses_or;
   for (size_t i = 0; i < addresses->naddrs; i++) {
     grpc_sockaddr* addr =
         reinterpret_cast<grpc_sockaddr*>(addresses->addrs[i].addr);
