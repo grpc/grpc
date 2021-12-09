@@ -1114,29 +1114,27 @@ void grpc_ares_cleanup(void) {}
  */
 
 typedef struct grpc_resolve_address_ares_request {
-  /** the pointer to receive the resolved addresses */
-  grpc_resolved_addresses** addrs_out;
-  /** currently resolving addresses */
-  std::unique_ptr<ServerAddressList> addresses;
-  /** closure to call when the resolve_address_ares request completes */
-  grpc_closure* on_resolve_address_done;
-  /** a closure wrapping on_resolve_address_done, which should be invoked when
-     the grpc_dns_lookup_ares operation is done. */
-  grpc_closure on_dns_lookup_done;
-  /* target name */
-  const char* name;
-  /* default port to use if none is specified */
-  const char* default_port;
-  /* pollset_set to be driven by */
-  grpc_pollset_set* interested_parties;
-  /* underlying ares_request that the query is performed on */
-  grpc_ares_request* ares_request = nullptr;
+  ~grpc_resolve_address_ares_request() { delete ares_request; }
+
+  // synchronizers access to this object (but not to the ares_request itself)
+  absl::Mutex mu;
+  // the pointer to receive the resolved addresses
+  grpc_resolved_addresses** addrs_out ABSL_GUARDED_BY(mu);
+  // currently resolving addresses
+  std::unique_ptr<ServerAddressList> addresses ABSL_GUARDED_BY(mu);
+  // closure to call when the resolve_address_ares request completes
+  grpc_closure* on_resolve_address_done ABSL_GUARDED_BY(mu);
+  // a closure wrapping on_resolve_address_done, which should be invoked when
+  // the grpc_dns_lookup_ares operation is done.
+  grpc_closure on_dns_lookup_done ABSL_GUARDED_BY(mu);
+  // underlying ares_request that the query is performed on
+  grpc_ares_request* ares_request ABSL_GUARDED_BY(mu) = nullptr;
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done(void* arg, grpc_error_handle error) {
-  grpc_resolve_address_ares_request* r =
-      static_cast<grpc_resolve_address_ares_request*>(arg);
-  delete r->ares_request;
+  auto r = std::unique_ptr<grpc_resolve_address_ares_request>(
+      static_cast<grpc_resolve_address_ares_request*>(arg));
+  absl::MutexLock lock(&r->mu);
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->addresses == nullptr || r->addresses->empty()) {
     *resolved_addresses = nullptr;
@@ -1154,7 +1152,6 @@ static void on_dns_lookup_done(void* arg, grpc_error_handle error) {
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done,
                           GRPC_ERROR_REF(error));
-  delete r;
 }
 
 static void grpc_resolve_address_ares_impl(const char* name,
@@ -1164,11 +1161,9 @@ static void grpc_resolve_address_ares_impl(const char* name,
                                            grpc_resolved_addresses** addrs) {
   grpc_resolve_address_ares_request* r =
       new grpc_resolve_address_ares_request();
+  absl::MutexLock lock(&r->mu);
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
-  r->name = name;
-  r->default_port = default_port;
-  r->interested_parties = interested_parties;
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done, r,
                     grpc_schedule_on_exec_ctx);
   r->ares_request = grpc_dns_lookup_ares(
