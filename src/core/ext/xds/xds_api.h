@@ -28,15 +28,13 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_client_stats.h"
 
 namespace grpc_core {
 
