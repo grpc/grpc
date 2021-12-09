@@ -55,44 +55,67 @@ class Push;
 template <typename T>
 class Next;
 
+// Center sits between a sender and a receiver to provide a one-deep buffer of
+// Ts
 template <typename T>
 class Center {
  public:
+  // Initialize with one send ref (held by PipeSender) and one recv ref (held by
+  // PipeReceiver)
   Center() {
     send_refs_ = 1;
     recv_refs_ = 1;
     has_value_ = false;
   }
 
+  // Add one ref to the send side of this object, and return this.
   Center* RefSend() {
     send_refs_++;
     return this;
   }
 
+  // Add one ref to the recv side of this object, and return this.
   Center* RefRecv() {
     recv_refs_++;
     return this;
   }
 
+  // Drop a send side ref
+  // If no send refs remain, wake due to send closure
+  // If no refs remain, destroy this object
   void UnrefSend() {
     GPR_DEBUG_ASSERT(send_refs_ > 0);
     send_refs_--;
     if (0 == send_refs_) {
       on_full_.Wake();
       on_empty_.Wake();
+      if (0 == recv_refs_) {
+        this->~Center();
+      }
     }
   }
 
+  // Drop a recv side ref
+  // If no recv refs remain, wake due to recv closure
+  // If no refs remain, destroy this object
   void UnrefRecv() {
     GPR_DEBUG_ASSERT(recv_refs_ > 0);
     recv_refs_--;
     if (0 == recv_refs_) {
-      if (has_value_) ResetValue();
       on_full_.Wake();
       on_empty_.Wake();
+      if (0 == send_refs_) {
+        this->~Center();
+      } else if (has_value_) {
+        ResetValue();
+      }
     }
   }
 
+  // Try to push *value into the pipe.
+  // Return Pending if there is no space.
+  // Return true if the value was pushed.
+  // Return false if the recv end is closed.
   Poll<bool> Push(T* value) {
     GPR_DEBUG_ASSERT(send_refs_ != 0);
     if (recv_refs_ == 0) return false;
@@ -103,6 +126,10 @@ class Center {
     return true;
   }
 
+  // Try to receive a value from the pipe.
+  // Return Pending if there is no value.
+  // Return the value if one was retrieved.
+  // Return nullopt if the send end is closed and no value had been pushed.
   Poll<absl::optional<T>> Next() {
     GPR_DEBUG_ASSERT(recv_refs_ != 0);
     if (!has_value_) {
@@ -116,12 +143,21 @@ class Center {
 
  private:
   void ResetValue() {
+    // Fancy dance to move out of value in the off chance that we reclaim some
+    // memory earlier.
     [](T) {}(std::move(value_));
     has_value_ = false;
   }
   T value_;
+  // Number of sending objects.
+  // 0 => send is closed.
+  // 1 ref each for PipeSender and Push.
   uint8_t send_refs_ : 2;
+  // Number of receiving objects.
+  // 0 => recv is closed.
+  // 1 ref each for PipeReceiver and Next.
   uint8_t recv_refs_ : 2;
+  // True iff there is a value in the pipe.
   bool has_value_ : 1;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
