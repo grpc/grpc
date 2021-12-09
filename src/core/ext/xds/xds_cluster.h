@@ -23,9 +23,13 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "envoy/config/cluster/v3/cluster.upbdefs.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
 
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 
 namespace grpc_core {
 
@@ -78,12 +82,9 @@ struct XdsClusterResource {
   std::string ToString() const;
 };
 
-class XdsClusterResourceType : public XdsResourceType {
+class XdsClusterResourceType
+    : public XdsResourceTypeImpl<XdsClusterResourceType, XdsClusterResource> {
  public:
-  struct ClusterData : public ResourceData {
-    XdsClusterResource resource;
-  };
-
   absl::string_view type_url() const override {
     return "envoy.config.cluster.v3.Cluster";
   }
@@ -94,6 +95,15 @@ class XdsClusterResourceType : public XdsResourceType {
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
+
+  bool AllResourcesRequiredInSotW() const override { return true; }
+
+  void InitUpbSymtab(upb_symtab* symtab) const override {
+    envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
+    envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
+    envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
+        symtab);
+  }
 };
 
 }  // namespace grpc_core

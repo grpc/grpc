@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.43.0-dev'
+  version = '1.44.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -565,6 +565,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_http_filters.h',
                       'src/core/ext/xds/xds_listener.h',
                       'src/core/ext/xds/xds_resource_type.h',
+                      'src/core/ext/xds/xds_resource_type_impl.h',
                       'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.h',
                       'src/core/lib/address_utils/parse_address.h',
@@ -1283,6 +1284,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_http_filters.h',
                               'src/core/ext/xds/xds_listener.h',
                               'src/core/ext/xds/xds_resource_type.h',
+                              'src/core/ext/xds/xds_resource_type_impl.h',
                               'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
                               'src/core/lib/address_utils/parse_address.h',

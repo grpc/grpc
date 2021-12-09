@@ -38,6 +38,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 namespace grpc_core {
@@ -131,6 +132,10 @@ inline ScopedArenaPtr MakeScopedArena(size_t initial_size,
                                       MemoryAllocator* memory_allocator) {
   return ScopedArenaPtr(Arena::Create(initial_size, memory_allocator));
 }
+
+// Arenas form a context for activities
+template <>
+struct ContextType<Arena> {};
 
 }  // namespace grpc_core
 

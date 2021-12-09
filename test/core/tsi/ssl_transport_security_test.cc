@@ -415,6 +415,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
       ssl_fixture->server_handshaker_factory);
   tsi_ssl_client_handshaker_factory_unref(
       ssl_fixture->client_handshaker_factory);
+  gpr_free(ssl_fixture);
 }
 
 static const struct tsi_test_fixture_vtable vtable = {

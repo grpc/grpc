@@ -31,10 +31,13 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_listener.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -79,11 +82,11 @@ class XdsResolver : public Resolver {
   }
 
  private:
-  class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
+  class ListenerWatcher : public XdsListenerResourceType::WatcherInterface {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
-    void OnListenerChanged(XdsListenerResource listener) override {
+    void OnResourceChanged(XdsListenerResource listener) override {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           // TODO(yashykt): When we move to C++14, capture listener with
@@ -117,11 +120,12 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class RouteConfigWatcher : public XdsClient::RouteConfigWatcherInterface {
+  class RouteConfigWatcher
+      : public XdsRouteConfigResourceType::WatcherInterface {
    public:
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
-    void OnRouteConfigChanged(XdsRouteConfigResource route_config) override {
+    void OnResourceChanged(XdsRouteConfigResource route_config) override {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           // TODO(yashykt): When we move to C++14, capture route_config with
@@ -278,8 +282,7 @@ class XdsResolver : public Resolver {
   void OnError(grpc_error_handle error);
   void OnResourceDoesNotExist();
 
-  grpc_error_handle CreateServiceConfig(
-      RefCountedPtr<ServiceConfig>* service_config);
+  absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
 
@@ -291,14 +294,14 @@ class XdsResolver : public Resolver {
 
   RefCountedPtr<XdsClient> xds_client_;
 
-  XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
+  ListenerWatcher* listener_watcher_ = nullptr;
   // This will not contain the RouteConfiguration, even if it comes with the
   // LDS response; instead, the relevant VirtualHost from the
   // RouteConfiguration will be saved in current_virtual_host_.
   XdsListenerResource current_listener_;
 
   std::string route_config_name_;
-  XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
+  RouteConfigWatcher* route_config_watcher_ = nullptr;
   XdsRouteConfigResource::VirtualHost current_virtual_host_;
 
   ClusterState::ClusterStateMap cluster_state_map_;
@@ -682,14 +685,20 @@ void XdsResolver::StartLocked() {
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
             grpc_error_std_string(error).c_str());
-    result_handler_->ReturnError(error);
+    std::string error_message;
+    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    Result result;
+    result.service_config = absl::UnavailableError(
+        absl::StrCat("Failed to create XdsClient: ", error_message));
+    result_handler_->ReportResult(std::move(result));
     return;
   }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
                                    interested_parties_);
   auto watcher = MakeRefCounted<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
-  xds_client_->WatchListenerData(server_name_, std::move(watcher));
+  XdsListenerResourceType::StartWatch(xds_client_.get(), server_name_,
+                                      std::move(watcher));
 }
 
 void XdsResolver::ShutdownLocked() {
@@ -698,12 +707,14 @@ void XdsResolver::ShutdownLocked() {
   }
   if (xds_client_ != nullptr) {
     if (listener_watcher_ != nullptr) {
-      xds_client_->CancelListenerDataWatch(server_name_, listener_watcher_,
+      XdsListenerResourceType::CancelWatch(xds_client_.get(), server_name_,
+                                           listener_watcher_,
                                            /*delay_unsubscription=*/false);
     }
     if (route_config_watcher_ != nullptr) {
-      xds_client_->CancelRouteConfigDataWatch(
-          server_name_, route_config_watcher_, /*delay_unsubscription=*/false);
+      XdsRouteConfigResourceType::CancelWatch(
+          xds_client_.get(), route_config_name_, route_config_watcher_,
+          /*delay_unsubscription=*/false);
     }
     grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
                                      interested_parties_);
@@ -721,8 +732,8 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
   if (listener.http_connection_manager.route_config_name !=
       route_config_name_) {
     if (route_config_watcher_ != nullptr) {
-      xds_client_->CancelRouteConfigDataWatch(
-          route_config_name_, route_config_watcher_,
+      XdsRouteConfigResourceType::CancelWatch(
+          xds_client_.get(), route_config_name_, route_config_watcher_,
           /*delay_unsubscription=*/
           !listener.http_connection_manager.route_config_name.empty());
       route_config_watcher_ = nullptr;
@@ -733,7 +744,8 @@ void XdsResolver::OnListenerUpdate(XdsListenerResource listener) {
       current_virtual_host_.routes.clear();
       auto watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
       route_config_watcher_ = watcher.get();
-      xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
+      XdsRouteConfigResourceType::StartWatch(
+          xds_client_.get(), route_config_name_, std::move(watcher));
     }
   }
   current_listener_ = std::move(listener);
@@ -800,8 +812,9 @@ void XdsResolver::OnError(grpc_error_handle error) {
   Result result;
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result.service_config_error = error;
-  result_handler_->ReturnResult(std::move(result));
+  result.service_config = grpc_error_to_absl_status(error);
+  result_handler_->ReportResult(std::move(result));
+  GRPC_ERROR_UNREF(error);
 }
 
 void XdsResolver::OnResourceDoesNotExist() {
@@ -814,15 +827,15 @@ void XdsResolver::OnResourceDoesNotExist() {
   }
   current_virtual_host_.routes.clear();
   Result result;
-  result.service_config =
-      ServiceConfig::Create(args_, "{}", &result.service_config_error);
-  GPR_ASSERT(result.service_config != nullptr);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  result.service_config = ServiceConfig::Create(args_, "{}", &error);
+  GPR_ASSERT(*result.service_config != nullptr);
   result.args = grpc_channel_args_copy(args_);
-  result_handler_->ReturnResult(std::move(result));
+  result_handler_->ReportResult(std::move(result));
 }
 
-grpc_error_handle XdsResolver::CreateServiceConfig(
-    RefCountedPtr<ServiceConfig>* service_config) {
+absl::StatusOr<RefCountedPtr<ServiceConfig>>
+XdsResolver::CreateServiceConfig() {
   std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
     clusters.push_back(
@@ -849,8 +862,13 @@ grpc_error_handle XdsResolver::CreateServiceConfig(
       "}");
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error_handle error = GRPC_ERROR_NONE;
-  *service_config = ServiceConfig::Create(args_, json.c_str(), &error);
-  return error;
+  absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
+      ServiceConfig::Create(args_, json.c_str(), &error);
+  if (error != GRPC_ERROR_NONE) {
+    result = grpc_error_to_absl_status(error);
+    GRPC_ERROR_UNREF(error);
+  }
+  return result;
 }
 
 void XdsResolver::GenerateResult() {
@@ -865,15 +883,12 @@ void XdsResolver::GenerateResult() {
     return;
   }
   Result result;
-  error = CreateServiceConfig(&result.service_config);
-  if (error != GRPC_ERROR_NONE) {
-    OnError(grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                               GRPC_STATUS_UNAVAILABLE));
-    return;
-  }
+  result.service_config = CreateServiceConfig();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
-            result.service_config->json_string().c_str());
+            result.service_config.ok()
+                ? (*result.service_config)->json_string().c_str()
+                : result.service_config.status().ToString().c_str());
   }
   grpc_arg new_args[] = {
       xds_client_->MakeChannelArg(),
@@ -881,7 +896,7 @@ void XdsResolver::GenerateResult() {
   };
   result.args =
       grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
-  result_handler_->ReturnResult(std::move(result));
+  result_handler_->ReportResult(std::move(result));
 }
 
 void XdsResolver::MaybeRemoveUnusedClusters() {

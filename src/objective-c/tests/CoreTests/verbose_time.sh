@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC Authors
+#!/bin/bash
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+#!/bin/bash
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_e2e_performance_gke_experiment.sh"
-timeout_mins: 720
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "**/github/grpc/runner/**"
-  }
-}
+while IFS= read -r line; do
+  echo "$(date) - $line"
+done
