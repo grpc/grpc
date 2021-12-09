@@ -186,7 +186,7 @@ void AresDnsResolver::ShutdownLocked() {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request(pending_request_);
+    grpc_cancel_ares_request_locked(pending_request_);
   }
 }
 
@@ -373,6 +373,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     Result result;
     result.addresses = status;
     result.service_config = status;
+    result.args = grpc_channel_args_copy(channel_args_);
     result_handler_->ReportResult(std::move(result));
     // Set retry timer.
     // InvalidateNow to avoid getting stuck re-initializing this timer
@@ -443,12 +444,12 @@ void AresDnsResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   service_config_json_ = nullptr;
-  pending_request_ = grpc_dns_lookup_ares(
+  pending_request_ = grpc_dns_lookup_ares_locked(
       dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultSecurePort,
       interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
-      query_timeout_ms_);
+      query_timeout_ms_, work_serializer_);
   last_resolution_timestamp_ = ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
                        this, pending_request_);

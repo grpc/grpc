@@ -59,53 +59,49 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
     grpc_fd_orphan(fd_, nullptr, &phony_release_fd, "c-ares query finished");
   }
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) override {
+  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
     grpc_fd_notify_on_read(fd_, read_closure);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) override {
+  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
     grpc_fd_notify_on_write(fd_, write_closure);
   }
 
-  bool IsFdStillReadableLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) override {
+  bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
     return ioctl(grpc_fd_wrapped_fd(fd_), FIONREAD, &bytes_available) == 0 &&
            bytes_available > 0;
   }
 
-  void ShutdownLocked(grpc_error_handle error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) override {
+  void ShutdownLocked(grpc_error_handle error) override {
     grpc_fd_shutdown(fd_, error);
   }
 
-  ares_socket_t GetWrappedAresSocketLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) override {
-    return as_;
-  }
+  ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
 
-  const char* GetName() const override { return name_.c_str(); }
+  const char* GetName() override { return name_.c_str(); }
 
  private:
-  const std::string name_;
-  const ares_socket_t as_;
-  grpc_fd* fd_ ABSL_GUARDED_BY(&grpc_ares_request::mu);
-  grpc_pollset_set* driver_pollset_set_ ABSL_GUARDED_BY(&grpc_ares_request::mu);
+  std::string name_;
+  ares_socket_t as_;
+  grpc_fd* fd_;
+  grpc_pollset_set* driver_pollset_set_;
 };
 
 class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  public:
   GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
+      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
+      std::shared_ptr<WorkSerializer> /*work_serializer*/) override {
     return new GrpcPolledFdPosix(as, driver_pollset_set);
   }
 
   void ConfigureAresChannelLocked(ares_channel /*channel*/) override {}
 };
 
-std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* /* mu */) {
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
+    std::shared_ptr<WorkSerializer> work_serializer) {
+  (void)work_serializer;
   return absl::make_unique<GrpcPolledFdFactoryPosix>();
 }
 

@@ -45,28 +45,23 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
 struct grpc_ares_request {
-  /** synchronizes access to this request, and also to associated
-   * ev_driver and fd_node objects */
-  grpc_core::Mutex mu;
   /** indicates the DNS server to use, if specified */
-  struct ares_addr_port_node dns_server_addr ABSL_GUARDED_BY(mu);
+  struct ares_addr_port_node dns_server_addr;
   /** following members are set in grpc_resolve_address_ares_impl */
   /** closure to call when the request completes */
-  grpc_closure* on_done ABSL_GUARDED_BY(mu) = nullptr;
+  grpc_closure* on_done = nullptr;
   /** the pointer to receive the resolved addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out
-      ABSL_GUARDED_BY(mu);
+  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out;
   /** the pointer to receive the resolved balancer addresses */
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out
-      ABSL_GUARDED_BY(mu);
+  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out;
   /** the pointer to receive the service config in JSON */
-  char** service_config_json_out ABSL_GUARDED_BY(mu) = nullptr;
+  char** service_config_json_out = nullptr;
   /** the evernt driver used by this request */
-  grpc_ares_ev_driver* ev_driver ABSL_GUARDED_BY(mu) = nullptr;
+  grpc_ares_ev_driver* ev_driver = nullptr;
   /** number of ongoing queries */
-  size_t pending_queries ABSL_GUARDED_BY(mu) = 0;
+  size_t pending_queries = 0;
   /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error_handle error ABSL_GUARDED_BY(mu) = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
 };
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
@@ -88,15 +83,16 @@ extern void (*grpc_resolve_address_ares)(const char* name,
   scheduled with \a exec_ctx, so it must not try to acquire locks that are
   being held by the caller. The returned grpc_ares_request object is owned
   by the caller and it is safe to free after on_done is called back. */
-extern grpc_ares_request* (*grpc_dns_lookup_ares)(
+extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms);
+    char** service_config_json, int query_timeout_ms,
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 /* Cancel the pending grpc_ares_request \a request */
-extern void (*grpc_cancel_ares_request)(grpc_ares_request* request);
+extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
@@ -106,6 +102,10 @@ grpc_error_handle grpc_ares_init(void);
    grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
    it has been called the same number of times as grpc_ares_init(). */
 void grpc_ares_cleanup(void);
+
+/** Schedules the desired callback for request completion
+ * and destroys the grpc_ares_request */
+void grpc_ares_complete_request_locked(grpc_ares_request* request);
 
 /* Indicates whether or not AAAA queries should be attempted. */
 /* E.g., return false if ipv6 is known to not be available. */
