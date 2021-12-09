@@ -1126,7 +1126,7 @@ typedef struct grpc_resolve_address_ares_request {
   // the grpc_dns_lookup_ares operation is done.
   grpc_closure on_dns_lookup_done ABSL_GUARDED_BY(mu);
   // underlying ares_request that the query is performed on
-  std::unique_ptr<grpc_ares_request> ares_request ABSL_GUARDED_BY(mu) = nullptr;
+  std::unique_ptr<grpc_ares_request> ares_request ABSL_GUARDED_BY(mu);
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done(void* arg, grpc_error_handle error) {
