@@ -32,7 +32,7 @@ absl::string_view GetMatcherType(absl::string_view value,
   if (value == "*") {
     *type = StringMatcher::Type::kSafeRegex;
     // Presence match checks for non empty strings.
-    return "^\\S+$";
+    return ".+";
   } else if (absl::StartsWith(value, "*")) {
     *type = StringMatcher::Type::kSuffix;
     return absl::StripPrefix(value, "*");

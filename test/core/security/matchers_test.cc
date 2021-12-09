@@ -101,7 +101,7 @@ TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
 
 TEST(StringMatcherTest, PresenceMatchUsingSafeRegex) {
   auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
-                                              /*matcher=*/"^\\S+$");
+                                              /*matcher=*/".+");
   ASSERT_TRUE(string_matcher.ok());
   EXPECT_TRUE(string_matcher->Match("any-value"));
   EXPECT_FALSE(string_matcher->Match(""));

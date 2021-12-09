@@ -358,7 +358,7 @@ TEST(GenerateRbacPoliciesTest, ParseSourceSuccess) {
                               ::testing::Pointee(::testing::Field(
                                   &Rbac::Principal::principals,
                                   ::testing::ElementsAre(EqualsPrincipalName(
-                                      StringMatcher::Type::kSafeRegex, "^\\S+$",
+                                      StringMatcher::Type::kSafeRegex, ".+",
                                       true)))))))))))));
 }
 
@@ -484,7 +484,7 @@ TEST(GenerateRbacPoliciesTest, ParseRequestPathsSuccess) {
                               ::testing::Pointee(::testing::Field(
                                   &Rbac::Permission::permissions,
                                   ::testing::ElementsAre(EqualsPath(
-                                      StringMatcher::Type::kSafeRegex, "^\\S+$",
+                                      StringMatcher::Type::kSafeRegex, ".+",
                                       true)))))))))))));
 }
 
@@ -679,7 +679,7 @@ TEST(GenerateRbacPoliciesTest, ParseRequestHeadersSuccess) {
                                                       "key-1",
                                                       HeaderMatcher::Type::
                                                           kSafeRegex,
-                                                      "^\\S+$", true))))),
+                                                      ".+", true))))),
                                       ::testing::AllOf(
                                           ::testing::Pointee(::testing::Field(
                                               &Rbac::Permission::type,
