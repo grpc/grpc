@@ -86,8 +86,7 @@ def exec_gcloud(*cmds: List[str]) -> Json:
     logging.debug('Executing: %s', " ".join(cmds))
     proc = subprocess.Popen(cmds,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            text=True)
+                            stderr=subprocess.PIPE)
     # NOTE(lidiz) the gcloud subprocess won't return unless its output is read
     stdout = proc.stdout.read()
     stderr = proc.stderr.read()
