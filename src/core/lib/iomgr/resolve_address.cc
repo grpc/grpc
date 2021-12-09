@@ -24,21 +24,8 @@
 
 namespace grpc_core {
 const char* kDefaultSecurePort = "https";
-}  // namespace grpc_core
 
-grpc_address_resolver_vtable* grpc_resolve_address_impl;
-
-void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable) {
-  grpc_resolve_address_impl = vtable;
-}
-
-grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> grpc_resolve_address(
-    const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_resolved_addresses** addresses) {
-  return grpc_resolve_address_impl->resolve_address(
-      addr, default_port, interested_parties, on_done, addresses);
-}
+DNSResolver* g_dns_resolver;
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
   if (addresses != nullptr) {
@@ -47,9 +34,4 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
   gpr_free(addresses);
 }
 
-grpc_error_handle grpc_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
-  return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
-                                                             addresses);
-}
+}  // namespace grpc_core

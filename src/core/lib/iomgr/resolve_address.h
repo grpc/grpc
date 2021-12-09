@@ -51,37 +51,46 @@ namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
 
-class AsyncResolveAddress : public InternallyRefCounted<AsyncResolveAddress> {};
+// Tracks a single asynchronous DNS resolution attempt. The DNS
+// resolution should be arranged to be cancelled as soon as possible
+// when Orphan is called.
+class DNSRequest : public InternallyRefCounted<DNSRequest> {};
+
+// A singleton class used for async and blocking DNS resolution
+class DNSResolver {
+ public:
+  virtual ~DNSResolver() {}
+
+  // Get the singleton instance
+  static DNSResolver* instance() { return instance_; }
+
+  // Override the active DNS resolver, which should be used for all DNS
+  // resolution. Note: this should only be used during library initialization,
+  // or tests.
+  static void OverrideInstance(DNSResolver* resolver){instance_ = resolver};
+
+  // Asynchronously resolve addr. Use default_port if a port isn't designated
+  // in addr, otherwise use the port in addr.
+  // TODO(apolcyn): add a timeout here.
+  virtual OrphanablePtr<Request> ResolveAddress(
+      absl::string_view name, absl::string_view default_port,
+      grpc_pollset_set* interested_parties,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses>)> on_done)
+      GRPC_MUST_USE_RESULT = 0;
+
+  // Resolve addr in a blocking fashion. On success,
+  // result must be freed with grpc_resolved_addresses_destroy.
+  virtual absl::Status BlockingResolveAddress(
+      absl::strinv_view name, absl::string_view default_port,
+      grpc_resolved_addresses** addresses) = 0;
+
+ private:
+  static DNSResolver* instance_;
+};
 
 }  // namespace grpc_core
 
-typedef struct grpc_address_resolver_vtable {
-  grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> (*resolve_address)(
-      const char* addr, const char* default_port,
-      grpc_pollset_set* interested_parties, grpc_closure* on_done,
-      grpc_resolved_addresses** addresses);
-  grpc_error_handle (*blocking_resolve_address)(
-      const char* name, const char* default_port,
-      grpc_resolved_addresses** addresses);
-} grpc_address_resolver_vtable;
-
-void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable);
-
-/* Asynchronously resolve addr. Use default_port if a port isn't designated
-   in addr, otherwise use the port in addr. */
-/* TODO(apolcyn): add a timeout here */
-grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress> grpc_resolve_address(
-    const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_resolved_addresses** addresses) GRPC_MUST_USE_RESULT;
-
 /* Destroy resolved addresses */
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
-
-/* Resolve addr in a blocking fashion. On success,
-   result must be freed with grpc_resolved_addresses_destroy. */
-grpc_error_handle grpc_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

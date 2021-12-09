@@ -457,7 +457,6 @@ void AresDnsResolver::StartResolvingLocked() {
 //
 // Factory
 //
-
 class AresDnsResolverFactory : public ResolverFactory {
  public:
   bool IsValidUri(const URI& uri) const override {
@@ -475,24 +474,108 @@ class AresDnsResolverFactory : public ResolverFactory {
   const char* scheme() const override { return "dns"; }
 };
 
-}  // namespace
+class AresDNSRequest : public DNSRequest {
+ public:
+  AresDNSRequest(const char* name, const char* default_port,
+                 grpc_pollset_set* interested_parties,
+                 std::function<void(absl::StatusOr<grpc_resolved_addresses>)>
+                     on_resolve_address_done);
+      : on_resolve_address_done_(std::move(on_resolve_address_done)) {
+        GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
+                          grpc_schedule_on_exec_ctx);
+        Ref().release();  // ref held by resolution
+        ares_request_ = grpc_dns_lookup_ares(
+            "" /* dns_server */, name, default_port, interested_parties,
+            &on_dns_lookup_done_, &addresses_, nullptr /* balancer_addresses */,
+            nullptr /* service_config_json */,
+            GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS);
+        GRPC_CARES_TRACE_LOG("AresDNSRequest:%p ctor ares_request_:%p", this,
+                             ares_request_);
+      }
 
-}  // namespace grpc_core
+      ~AresDNSRequest() override {
+        GRPC_CARES_TRACE_LOG("AresDNSRequest:%p dtor ares_request_:%p", this,
+                             ares_request_);
+        delete ares_request_;
+      }
 
-extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
-static grpc_address_resolver_vtable* default_resolver;
+      void Orphan() override {
+        GRPC_CARES_TRACE_LOG("AresDNSRequest:%p Orphan ares_request_:%p", this,
+                             ares_request_);
+        grpc_cancel_ares_request(ares_request_);
+        Unref();
+      }
 
-static grpc_error_handle blocking_resolve_address_ares(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
-  return default_resolver->blocking_resolve_address(name, default_port,
-                                                    addresses);
-}
+     private:
+      static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
+        AresDNSRequest* r = static_cast<AresDNSRequest*>(arg);
+        GRPC_CARES_TRACE_LOG("AresDNSRequest:%p OnDnsLookupDone error:%s", r,
+                             grpc_error_std_string(error).c_str());
+        grpc_resolved_addresses* resolved_addresses;
+        if (r->addresses_ == nullptr || r->addresses_->empty()) {
+          resolved_addresses = nullptr;
+        } else {
+          resolved_addresses = static_cast<grpc_resolved_addresses*>(
+              gpr_zalloc(sizeof(grpc_resolved_addresses)));
+          resolved_addresses->naddrs = r->addresses_->size();
+          resolved_addresses->addrs =
+              static_cast<grpc_resolved_address*>(gpr_zalloc(
+                  sizeof(grpc_resolved_address) * resolved_addresses->naddrs));
+          for (size_t i = 0; i < resolved_addresses->naddrs; ++i) {
+            memcpy(&resolved_addresses->addrs[i], &r->addresses_[i].address(),
+                   sizeof(grpc_resolved_address));
+          }
+        }
+        if (error == GRPC_ERROR_NONE) {
+          r->on_resolve_address_done_(resolved_addresses);
+        } else {
+      r->on_resolve_address_done_(grpc_error_to_absl_status(error);
+        }
+        r->Unref();
+      }
 
-static grpc_address_resolver_vtable ares_resolver = {
-    grpc_resolve_address_ares, blocking_resolve_address_ares};
+      /** currently resolving addresses */
+      std::unique_ptr<ServerAddressList> addresses_;
+      /** closure to call when the resolve_address_ares request completes */
+      grpc_closure* on_resolve_address_done_;
+      /** a closure wrapping on_resolve_address_done, which should be invoked
+         when the grpc_dns_lookup_ares operation is done. */
+      grpc_closure on_dns_lookup_done_;
+      /* underlying ares_request that the query is performed on */
+      grpc_ares_request* ares_request_ = nullptr;
+};
 
-static bool should_use_ares(const char* resolver_env) {
+// Holds the singleton DNS resolver that was in place before initializing the
+// c-ares resolver
+DNSResolver* g_default_resolver;
+
+class AresDNSResolver : public DNSResolver {
+  OrphanablePtr<Request> ResolveAddress(
+      absl::string_view name, absl::string_view default_port,
+      grpc_pollset_set* interested_parties,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses>)> on_done)
+      GRPC_MUST_USE_RESULT override {
+    return MakeOrphanable<AresDnsResolverRequest>(name, default_port,
+                                                  interested_parties, on_done);
+  }
+
+  // Resolve addr in a blocking fashion. On success,
+  // result must be freed with grpc_resolved_addresses_destroy.
+  absl::Status BlockingResolveAddress(
+      absl::strinv_view name, absl::string_view default_port,
+      grpc_resolved_addresses** addresses) override {
+    return g_default_resolver->BlockingResolveAddress(name, default_port,
+                                                      addresses);
+  }
+};
+
+AresDNSResolver* g_ares_dns_resolver;
+
+void InitAresDNSResolver() { g_ares_dns_resolver = new AresDNSResolver(); }
+
+gpr_once g_init_ares_dns_resolver = GPR_ONCE_INIT;
+
+bool should_use_ares(const char* resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
   // custom IO managers (e.g. gevent).
   return !g_custom_iomgr_enabled &&
@@ -500,7 +583,11 @@ static bool should_use_ares(const char* resolver_env) {
           gpr_stricmp(resolver_env, "ares") == 0);
 }
 
-static bool g_use_ares_dns_resolver;
+bool g_use_ares_dns_resolver;
+
+}  // namespace
+
+}  // namespace grpc_core
 
 void grpc_resolver_dns_ares_init() {
   grpc_core::UniquePtr<char> resolver =
@@ -514,10 +601,11 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
-    if (default_resolver == nullptr) {
-      default_resolver = grpc_resolve_address_impl;
+    if (g_default_resolver == nullptr) {
+      g_default_resolver = grpc_core::DNSResolver::instance();
     }
-    grpc_set_resolver_impl(&ares_resolver);
+    gpr_once_init(&g_init_ares_dns_resolver, InitAresDNSResolver);
+    grpc_core::DNSResolver::OverrideInstance(g_ares_dns_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         absl::make_unique<grpc_core::AresDnsResolverFactory>());
   } else {
