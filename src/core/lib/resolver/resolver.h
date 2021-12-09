@@ -132,4 +132,4 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
+#endif  // GRPC_CORE_LIB_RESOLVER_RESOLVER_H
