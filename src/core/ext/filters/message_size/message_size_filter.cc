@@ -201,6 +201,7 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
   if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
       (*calld->recv_message)->length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
+    GPR_ASSERT((*calld->recv_message)->length()!=1024);
     grpc_error_handle new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
