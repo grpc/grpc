@@ -755,6 +755,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_listener.h )
   s.files += %w( src/core/ext/xds/xds_resource_type.cc )
   s.files += %w( src/core/ext/xds/xds_resource_type.h )
+  s.files += %w( src/core/ext/xds/xds_resource_type_impl.h )
   s.files += %w( src/core/ext/xds/xds_route_config.cc )
   s.files += %w( src/core/ext/xds/xds_route_config.h )
   s.files += %w( src/core/ext/xds/xds_routing.cc )

@@ -968,7 +968,7 @@ XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
   DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_route_v3_RouteConfiguration_name(resource));
-  auto route_config_data = absl::make_unique<RouteConfigData>();
+  auto route_config_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error = XdsRouteConfigResource::Parse(
       context, resource, &route_config_data->resource);
   if (error != GRPC_ERROR_NONE) {

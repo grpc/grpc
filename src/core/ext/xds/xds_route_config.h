@@ -32,7 +32,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -190,32 +190,10 @@ struct XdsRouteConfigResource {
       XdsRouteConfigResource* rds_update);
 };
 
-class XdsRouteConfigResourceType : public XdsResourceType {
+class XdsRouteConfigResourceType
+    : public XdsResourceTypeImpl<XdsRouteConfigResourceType,
+                                 XdsRouteConfigResource> {
  public:
-  struct RouteConfigData : public ResourceData {
-    XdsRouteConfigResource resource;
-  };
-
-  class WatcherInterface : public XdsClient::ResourceWatcherInterface {
-   public:
-    virtual void OnRouteConfigChanged(XdsRouteConfigResource route_config) = 0;
-
-   private:
-    void OnResourceChanged(
-        const XdsResourceType::ResourceData* resource) override {
-      OnRouteConfigChanged(
-          static_cast<const XdsRouteConfigResourceType::RouteConfigData*>(
-              resource)
-              ->resource);
-    }
-  };
-
-  static const XdsRouteConfigResourceType* Get() {
-    static const XdsRouteConfigResourceType* g_instance =
-        new XdsRouteConfigResourceType();
-    return g_instance;
-  }
-
   absl::string_view type_url() const override {
     return "envoy.config.route.v3.RouteConfiguration";
   }
@@ -223,36 +201,9 @@ class XdsRouteConfigResourceType : public XdsResourceType {
     return "envoy.api.v2.RouteConfiguration";
   }
 
-  static void StartWatch(XdsClient* xds_client, absl::string_view resource_name,
-                         RefCountedPtr<WatcherInterface> watcher) {
-    xds_client->WatchResource(Get(), resource_name, std::move(watcher));
-  }
-
-  static void CancelWatch(XdsClient* xds_client,
-                          absl::string_view resource_name,
-                          WatcherInterface* watcher,
-                          bool delay_unsubscription = false) {
-    xds_client->CancelResourceWatch(Get(), resource_name, watcher,
-                                    delay_unsubscription);
-  }
-
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool /*is_v2*/) const override;
-
-  bool ResourcesEqual(const ResourceData* r1,
-                      const ResourceData* r2) const override {
-    return static_cast<const RouteConfigData*>(r1)->resource ==
-           static_cast<const RouteConfigData*>(r2)->resource;
-  }
-
-  std::unique_ptr<ResourceData> CopyResource(
-      const ResourceData* resource) const override {
-    auto* resource_copy = new RouteConfigData();
-    resource_copy->resource =
-        static_cast<const RouteConfigData*>(resource)->resource;
-    return std::unique_ptr<ResourceData>(resource_copy);
-  }
 
   void InitUpbSymtab(upb_symtab* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);

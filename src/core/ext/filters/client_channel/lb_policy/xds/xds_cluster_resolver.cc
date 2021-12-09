@@ -174,13 +174,13 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       ~EndpointWatcher() override {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
-      void OnEndpointChanged(XdsEndpointResource update) override {
+      void OnResourceChanged(XdsEndpointResource update) override {
         Ref().release();  // ref held by callback
         discovery_mechanism_->parent()->work_serializer()->Run(
             // TODO(yashykt): When we move to C++14, capture update with
             // std::move
             [this, update]() mutable {
-              OnEndpointChangedHelper(std::move(update));
+              OnResourceChangedHelper(std::move(update));
               Unref();
             },
             DEBUG_LOCATION);
@@ -208,7 +208,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       // Code accessing protected methods of `DiscoveryMechanism` need to be
       // in methods of this class rather than in lambdas to work around an MSVC
       // bug.
-      void OnEndpointChangedHelper(XdsEndpointResource update) {
+      void OnResourceChangedHelper(XdsEndpointResource update) {
         discovery_mechanism_->parent()->OnEndpointChanged(
             discovery_mechanism_->index(), std::move(update));
       }

@@ -86,7 +86,7 @@ class XdsResolver : public Resolver {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
-    void OnListenerChanged(XdsListenerResource listener) override {
+    void OnResourceChanged(XdsListenerResource listener) override {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           // TODO(yashykt): When we move to C++14, capture listener with
@@ -125,7 +125,7 @@ class XdsResolver : public Resolver {
    public:
     explicit RouteConfigWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
-    void OnRouteConfigChanged(XdsRouteConfigResource route_config) override {
+    void OnResourceChanged(XdsRouteConfigResource route_config) override {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           // TODO(yashykt): When we move to C++14, capture route_config with
