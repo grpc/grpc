@@ -30,6 +30,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
@@ -114,7 +115,10 @@ class Center {
   }
 
  private:
-  void ResetValue() { [](T){}(std::move(value_)); has_value_ = false; }
+  void ResetValue() {
+    [](T) {}(std::move(value_));
+    has_value_ = false;
+  }
   T value_;
   uint8_t send_refs_ : 2;
   uint8_t recv_refs_ : 2;
@@ -245,9 +249,7 @@ class Next {
     if (center_ != nullptr) center_->UnrefRecv();
   }
 
-  Poll<absl::optional<T>> operator()() {
-    return center_->Next();
-  }
+  Poll<absl::optional<T>> operator()() { return center_->Next(); }
 
  private:
   friend class PipeReceiver<T>;

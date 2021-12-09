@@ -22,8 +22,8 @@
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
-#include "test/core/promise/test_wakeup_schedulers.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
 using testing::StrictMock;
@@ -113,7 +113,8 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
   MakeActivity(
       [] {
         Pipe<int> pipe;
-        auto sender = absl::make_unique<PipeSender<int>>(std::move(pipe.sender));
+        auto sender = std::make_shared<std::unique_ptr<PipeSender<int>>>(
+            absl::make_unique<PipeSender<int>>(std::move(pipe.sender)));
         auto receiver = std::move(pipe.receiver);
         return Seq(
             // Concurrently:
@@ -122,8 +123,8 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
             // - close the sender, which will signal the receiver to return an
             //   end-of-stream.
             Join(receiver.Next(),
-                 [&sender] {
-                   sender.reset();
+                 [sender] {
+                   sender->reset();
                    return absl::OkStatus();
                  }),
             // Verify we received end-of-stream and closed the sender.
