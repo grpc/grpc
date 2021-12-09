@@ -14,30 +14,4 @@
 # distutils: language=c++
 
 g_gevent_threadpool = None
-
-cdef class TimerWrapper:
-
-  cdef grpc_custom_timer *c_timer
-  cdef object timer
-  cdef object event
-
-cdef class SocketWrapper:
-  cdef object sockopts
-  cdef object socket
-  cdef object closed
-  cdef grpc_custom_socket *c_socket
-  cdef char* c_buffer
-  cdef size_t len
-  cdef grpc_custom_socket *accepting_socket
-
-  cdef grpc_custom_connect_callback connect_cb
-  cdef grpc_custom_write_callback write_cb
-  cdef grpc_custom_read_callback read_cb
-  cdef grpc_custom_accept_callback accept_cb
-  cdef grpc_custom_close_callback close_cb
-
-
-cdef class ResolveWrapper:
-  cdef grpc_custom_resolver *c_resolver
-  cdef const char* c_host
-  cdef const char* c_port
+cdef bint g_gevent_activated = False

@@ -1,5 +1,3 @@
-# Copyright 2015 gRPC authors.
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,14 +10,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO: Conditionally change this from 200 to 2000 when gevent is activated.
-cdef int _INTERRUPT_CHECK_PERIOD_MS = 2000
 
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *:
+  global g_interrupt_check_period_ms
   cdef gpr_timespec c_increment
   cdef gpr_timespec c_timeout
   cdef gpr_timespec c_deadline
-  c_increment = gpr_time_from_millis(_INTERRUPT_CHECK_PERIOD_MS, GPR_TIMESPAN)
+  c_increment = gpr_time_from_millis(g_interrupt_check_period_ms, GPR_TIMESPAN)
   if deadline is None:
     c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
   else:
@@ -61,18 +58,24 @@ cdef _internal_latent_event(_LatentEventArg latent_event_arg):
   return _interpret_event(c_event)
 
 cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
+    global g_gevent_activated
+
     latent_event_arg = _LatentEventArg()
     latent_event_arg.c_completion_queue = c_completion_queue
     latent_event_arg.deadline = deadline
 
-    global g_gevent_threadpool
+    if g_gevent_activated:
+      # For gevent, completion_queue_next is run in a native thread pool.
+      global g_gevent_threadpool
 
-    # TODO: Is this conditional needed?
-    if g_gevent_threadpool is None:
-      g_gevent_threadpool = gevent_hub.get_hub().threadpool
+      # TODO: Is this conditional needed?
+      if g_gevent_threadpool is None:
+        g_gevent_threadpool = gevent_hub.get_hub().threadpool
 
-    result = g_gevent_threadpool.apply(_internal_latent_event, (latent_event_arg,))
-    return result
+      result = g_gevent_threadpool.apply(_internal_latent_event, (latent_event_arg,))
+      return result
+    else:
+      return _internal_latent_event(latent_event_arg)
 
 cdef class CompletionQueue:
 
@@ -103,7 +106,11 @@ cdef class CompletionQueue:
   # We name this 'poll' to avoid problems with CPython's expectations for
   # 'special' methods (like next and __next__).
   def poll(self, deadline=None):
-    return g_gevent_threadpool.apply(CompletionQueue._internal_poll, (self, deadline))
+    global g_gevent_activated
+    if g_gevent_activated:
+      return g_gevent_threadpool.apply(CompletionQueue._internal_poll, (self, deadline))
+    else:
+      return self._internal_poll(deadline)
 
   def shutdown(self):
     with nogil:

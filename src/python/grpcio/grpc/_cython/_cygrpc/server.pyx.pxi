@@ -153,7 +153,6 @@ cdef class Server:
         # We're in the process of shutting down, but have not shutdown; can't do
         # much but repeatedly release the GIL and wait
         while not self.is_shutdown:
-          import gevent; gevent.sleep(0)
           time.sleep(0)
       with nogil:
         grpc_server_destroy(self.c_server)

@@ -15,20 +15,17 @@
 
 from libc cimport string
 from cython.operator cimport dereference
-from python_ref cimport Py_INCREF, Py_DECREF
+
+from cpython cimport Py_INCREF, Py_DECREF
 
 import atexit
 import errno
 import sys
-gevent_g = None
-gevent_socket = None
-gevent_hub = None
-gevent_event = None
-g_event = None
-g_pool = None
-g_gevent_threadpool = None
 
-# TODO: Remove the custom iomgr API from grpc.pxi.
+gevent_hub = None
+g_gevent_pool = None
+g_gevent_threadpool = None
+g_gevent_activated = False
 
 
 cdef queue[void*] g_greenlets_to_run
@@ -89,21 +86,28 @@ def init_grpc_gevent():
   # Lazily import gevent
   global gevent_hub
   global g_gevent_threadpool
-  global g_pool
+  global g_gevent_activated
+  global g_interrupt_check_period_ms
+
+  # TODO Is this used anymore? If not, consistency in naming.
+  global g_gevent_pool
 
   import gevent
-  gevent_hub = gevent.hub
   import gevent.pool
 
+  gevent_hub = gevent.hub
   g_gevent_threadpool = gevent_hub.get_hub().threadpool
+
+  g_gevent_activated = True
+  g_interrupt_check_period_ms = 2000
 
   # TODO: Move this to test runner.
   g_gevent_threadpool.maxsize = 1024
   g_gevent_threadpool.size = 32
 
-  g_pool = gevent.pool.Group()
+  g_gevent_pool = gevent.pool.Group()
 
-  g_pool.spawn(spawn_greenlets)
+  g_gevent_pool.spawn(spawn_greenlets)
 
   def cb_func(cb, args):
     _spawn_greenlet(cb, *args)
