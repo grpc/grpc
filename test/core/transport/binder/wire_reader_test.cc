@@ -114,19 +114,7 @@ TEST_F(WireReaderTest, SetupTransport) {
   EXPECT_CALL(mock_binder_ref, GetWritableParcel);
 
   // Write version.
-  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteInt32(77));
-
-  // The transaction receiver immediately informs the wire writer that the
-  // transport has been successfully set up.
-  EXPECT_CALL(mock_binder_ref, ConstructTxReceiver);
-
-  EXPECT_CALL(mock_binder_ref.GetReader(), ReadInt32);
-  EXPECT_CALL(mock_binder_ref.GetReader(), ReadBinder);
-
-  // Write transaction receiver.
-  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteBinder);
-  // Perform transaction.
-  EXPECT_CALL(mock_binder_ref, Transact);
+  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteInt32(1));
 
   wire_reader_.SetupTransport(std::move(mock_binder));
 }

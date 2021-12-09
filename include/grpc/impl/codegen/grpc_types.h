@@ -445,6 +445,12 @@ typedef struct {
     gRPC authorization check. */
 #define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
   "grpc.authorization_policy_provider"
+/** EXPERIMENTAL. Updates to a server's configuration from a config fetcher (for
+ * example, listener updates from xDS) cause all older connections to be
+ * gracefully shut down (i.e., "drained") with a grace period configured by this
+ * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
+#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
+  "grpc.experimental.server_config_change_drain_grace_time_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

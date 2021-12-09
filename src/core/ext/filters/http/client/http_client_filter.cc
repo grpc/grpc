@@ -115,7 +115,9 @@ static grpc_error_handle client_filter_incoming_metadata(
      * should prefer the gRPC status code, as mentioned in
      * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
      */
-    if (b->legacy_index()->named.grpc_status != nullptr ||
+    const grpc_status_code* grpc_status =
+        b->get_pointer(grpc_core::GrpcStatusMetadata());
+    if (grpc_status != nullptr ||
         grpc_mdelem_static_value_eq(b->legacy_index()->named.status->md,
                                     GRPC_MDELEM_STATUS_200)) {
       b->Remove(GRPC_BATCH_STATUS);

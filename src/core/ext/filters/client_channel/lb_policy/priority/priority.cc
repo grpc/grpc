@@ -224,7 +224,7 @@ class PriorityLb : public LoadBalancingPolicy {
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
   RefCountedPtr<PriorityLbConfig> config_;
-  HierarchicalAddressMap addresses_;
+  absl::StatusOr<HierarchicalAddressMap> addresses_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -557,7 +557,11 @@ void PriorityLb::ChildPriority::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = std::move(config);
-  update_args.addresses = priority_policy_->addresses_[name_];
+  if (priority_policy_->addresses_.ok()) {
+    update_args.addresses = (*priority_policy_->addresses_)[name_];
+  } else {
+    update_args.addresses = priority_policy_->addresses_.status();
+  }
   update_args.args = grpc_channel_args_copy(priority_policy_->args_);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
