@@ -10818,6 +10818,8 @@ add_executable(for_each_test
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc

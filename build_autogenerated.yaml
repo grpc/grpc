@@ -5899,6 +5899,7 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -5932,6 +5933,8 @@ targets:
   - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -5952,6 +5955,8 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
