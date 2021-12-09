@@ -147,6 +147,7 @@ void FakeResolver::MaybeSendResultLocked() {
     Result result;
     result.addresses = absl::UnavailableError("Resolver transient failure");
     result.service_config = result.addresses.status();
+    result.args = grpc_channel_args_copy(channel_args_);
     result_handler_->ReportResult(std::move(result));
     return_failure_ = false;
   } else if (has_next_result_) {
