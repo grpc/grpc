@@ -13,16 +13,16 @@
 # limitations under the License.
 
 import argparse
-import logging
-import json
-import sys
-import re
-import os
-import functools
-import subprocess
-import datetime
 from dataclasses import dataclass
-from typing import List, Any
+import datetime
+import functools
+import json
+import logging
+import os
+import re
+import subprocess
+import sys
+from typing import Any, List
 
 # Parses commandline arguments
 parser = argparse.ArgumentParser()
