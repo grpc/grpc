@@ -54,7 +54,7 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
   GRPC_API_TRACE("grpc_compression_algorithm_name(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   const char* result = grpc_core::CompressionAlgorithmAsString(algorithm);
-  if (name != nullptr) {
+  if (result != nullptr) {
     *name = result;
     return 1;
   }
