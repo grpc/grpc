@@ -17,4 +17,5 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-python3.6 tools/gcp/utils/cleanup_xds_resources.py
+pyenv local 3.6.1
+python3 tools/gcp/utils/cleanup_xds_resources.py
