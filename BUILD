@@ -1509,6 +1509,7 @@ grpc_cc_library(
         "src/core/lib/resource_quota/arena.h",
     ],
     deps = [
+        "context",
         "gpr_base",
         "memory_quota",
     ],
