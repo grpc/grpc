@@ -82,11 +82,13 @@ namespace grpc_core {
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node,
                const CertificateProviderStore::PluginDefinitionMap*
-                   certificate_provider_definition_map)
+                   certificate_provider_definition_map,
+               upb::SymbolTable* symtab)
     : client_(client),
       tracer_(tracer),
       node_(node),
       certificate_provider_definition_map_(certificate_provider_definition_map),
+      symtab_(symtab),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string(),
                                   GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
@@ -96,16 +98,7 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       user_agent_version_(
           absl::StrCat("C-core ", grpc_version_string(),
                        GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
-                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {
-  // Populate upb symtab with xDS proto messages that we want to print
-  // properly in logs.
-  // Note: This won't actually work properly until upb adds support for
-  // Any fields in textproto printing (internal b/178821188).
-  XdsResourceTypeRegistry::GetOrCreate()->ForEach(
-      [this](const XdsResourceType* type) {
-        type->InitUpbSymtab(symtab_.ptr());
-      });
-}
+                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {}
 
 namespace {
 
@@ -284,7 +277,7 @@ grpc_slice XdsApi::CreateAdsRequest(
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
                                       tracer_,
-                                      symtab_.ptr(),
+                                      symtab_->ptr(),
                                       arena.ptr(),
                                       server.ShouldUseV3(),
                                       certificate_provider_definition_map_};
@@ -363,7 +356,7 @@ absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
                                       tracer_,
-                                      symtab_.ptr(),
+                                      symtab_->ptr(),
                                       arena.ptr(),
                                       server.ShouldUseV3(),
                                       certificate_provider_definition_map_};
@@ -438,7 +431,7 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
                                       tracer_,
-                                      symtab_.ptr(),
+                                      symtab_->ptr(),
                                       arena.ptr(),
                                       server.ShouldUseV3(),
                                       certificate_provider_definition_map_};
@@ -512,7 +505,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
   const XdsEncodingContext context = {
-      client_,     tracer_, symtab_.ptr(),
+      client_,     tracer_, symtab_->ptr(),
       arena.ptr(), false,   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
@@ -636,7 +629,7 @@ std::string XdsApi::AssembleClientConfig(
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
   const XdsEncodingContext context = {
-      client_,     tracer_, symtab_.ptr(),
+      client_,     tracer_, symtab_->ptr(),
       arena.ptr(), true,    certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);

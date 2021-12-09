@@ -200,7 +200,8 @@ class XdsClient::ChannelState::AdsCallState
     explicit AdsResponseParser(AdsCallState* ads_call_state)
         : ads_call_state_(ads_call_state) {}
 
-    absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override;
+    absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     void ParseResource(const XdsEncodingContext& context, size_t idx,
                        absl::string_view type_url,
@@ -743,7 +744,7 @@ absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
             fields.version.c_str(), fields.nonce.c_str(), fields.num_resources);
   }
   result_.type =
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(fields.type_url);
+      ads_call_state_->xds_client()->GetResourceTypeLocked(fields.type_url);
   if (result_.type == nullptr) {
     return absl::InvalidArgumentError(
         absl::StrCat("unknown resource type ", fields.type_url));
@@ -1776,7 +1777,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_->certificate_providers())),
       api_(this, &grpc_xds_client_trace, bootstrap_->node(),
-           &bootstrap_->certificate_providers()) {
+           &bootstrap_->certificate_providers(), &symtab_) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1834,6 +1835,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   if (!resource_name.ok()) {
     {
       MutexLock lock(&mu_);
+      MaybeRegisterResourceTypeLocked(type);
       invalid_watchers_[w] = watcher;
     }
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -1849,6 +1851,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   }
   {
     MutexLock lock(&mu_);
+    MaybeRegisterResourceTypeLocked(type);
     // TODO(donnadionne): If we get a request for an authority that is not
     // configured in the bootstrap file, reject it.
     AuthorityState& authority_state =
@@ -1920,6 +1923,27 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
       }
     }
   }
+}
+
+void XdsClient::MaybeRegisterResourceTypeLocked(
+    const XdsResourceType* resource_type) {
+  auto it = resource_types_.find(resource_type->type_url());
+  if (it != resource_types_.end()) {
+    GPR_ASSERT(it->second == resource_type);
+    return;
+  }
+  resource_types_.emplace(resource_type->type_url(), resource_type);
+  v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type);
+  resource_type->InitUpbSymtab(symtab_.ptr());
+}
+
+const XdsResourceType* XdsClient::GetResourceTypeLocked(
+    absl::string_view resource_type) {
+  auto it = resource_types_.find(resource_type);
+  if (it != resource_types_.end()) return it->second;
+  auto it2 = v2_resource_types_.find(resource_type);
+  if (it2 != v2_resource_types_.end()) return it2->second;
+  return nullptr;
 }
 
 absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(

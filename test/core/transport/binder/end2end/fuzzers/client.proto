@@ -1,4 +1,3 @@
-//
 // Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-#include <grpc/support/port_platform.h>
+syntax = "proto3";
 
-#include "src/core/ext/xds/xds_resource_type.h"
-
-namespace grpc_core {
-
-bool XdsResourceType::IsType(absl::string_view resource_type,
-                             bool* is_v2) const {
-  if (resource_type == type_url()) return true;
-  if (resource_type == v2_type_url()) {
-    if (is_v2 != nullptr) *is_v2 = true;
-    return true;
-  }
-  return false;
-}
-
-}  // namespace grpc_core
+package binder_transport_fuzzer;
