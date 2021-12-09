@@ -219,7 +219,10 @@ HPackTable::StaticMementos::StaticMementos() {
     auto sm = kStaticTable[i];
     memento[i] = grpc_metadata_batch::Parse(
         sm.key, Slice::FromStaticString(sm.value),
-        strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead);
+        strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
+        [](absl::string_view, const grpc_core::Slice&) {
+          abort();  // not expecting to see this
+        });
   }
 }
 

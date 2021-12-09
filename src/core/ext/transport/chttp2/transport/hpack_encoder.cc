@@ -362,7 +362,7 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
         // Not current, emit a new literal and update the index.
         it->index = table.AllocateIndex(transport_length);
         framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(
-            Slice::FromStaticString(key), value.c_slice());
+            Slice::FromStaticString(key).c_slice(), value.c_slice());
       }
       // Bubble this entry up if we can - ensures that the most used values end
       // up towards the start of the array.

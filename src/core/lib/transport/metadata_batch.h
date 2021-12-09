@@ -698,8 +698,8 @@ class MetadataMap {
   void Remove(absl::string_view name);
 
   // Retrieve some metadata by name
-  absl::string_view GetStringValue(absl::string_view name,
-                                   std::string* buffer) const;
+  absl::optional<absl::string_view>
+   GetStringValue(absl::string_view name, std::string* buffer) const;
 
   // Extract a piece of known metadata.
   // Returns nullopt if the metadata was not present, or the value if it was.
