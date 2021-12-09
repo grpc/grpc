@@ -72,7 +72,7 @@ class DNSResolver {
   // Asynchronously resolve addr. Use default_port if a port isn't designated
   // in addr, otherwise use the port in addr.
   // TODO(apolcyn): add a timeout here.
-  virtual OrphanablePtr<Request> ResolveAddress(
+  virtual OrphanablePtr<DNSRequest> ResolveAddress(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
@@ -81,7 +81,7 @@ class DNSResolver {
   // Resolve addr in a blocking fashion. On success,
   // result must be freed with grpc_resolved_addresses_destroy.
   virtual absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
-      absl::strinv_view name, absl::string_view default_port);
+      absl::string_view name, absl::string_view default_port);
 
  private:
   static DNSResolver* instance_;
