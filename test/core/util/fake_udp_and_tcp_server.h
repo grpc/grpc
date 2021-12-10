@@ -44,29 +44,29 @@ namespace testing {
 //
 // 1) DNS resolver's UDP requests experience packet loss:
 //
-//     grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
-//          grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+//     testing::FakeUdpAndTcpServer fake_dns_server(
+//          testing::FakeUdpAndTcpServer::AcceptMode::
 //             kWaitForClientToSendFirstBytes,
-//     grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+//     testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
 //     auto server_uri = absl::StrFormat("dns:///[::]:%d/localhost:1234",
 //         fake_dns_server.port());
 //
 // 2) Server gets stuck while setting up a security handshake and client's
 //    security handshake times out (requires using secure channels):
 //
-//     grpc_core::testing::FakeUdpAndTcpServer fake_server(
-//          grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+//     testing::FakeUdpAndTcpServer fake_server(
+//          testing::FakeUdpAndTcpServer::AcceptMode::
 //             kWaitForClientToSendFirstBytes,
-//     grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+//     testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
 //     auto server_uri = absl::StrFormat("[::1]:%d", fake_server.port());
 //
 // 3) Client connections are immediately closed after sending the first bytes
 //    to an insecure server:
 //
-//     grpc_core::testing::FakeUdpAndTcpServer fake_server(
-//          grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+//     testing::FakeUdpAndTcpServer fake_server(
+//          testing::FakeUdpAndTcpServer::AcceptMode::
 //             kEagerlySendSettings,
-//     grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer);
+//     testing::FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer);
 //     auto server_uri = absl::StrFormat("[::1]:%d", fake_server.port());
 //
 class FakeUdpAndTcpServer {
