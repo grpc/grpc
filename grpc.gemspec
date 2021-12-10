@@ -1018,6 +1018,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.cc )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_windows.cc )
+  s.files += %w( src/core/lib/iomgr/resolve_address_windows.h )
   s.files += %w( src/core/lib/iomgr/sockaddr.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_posix.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_windows.h )

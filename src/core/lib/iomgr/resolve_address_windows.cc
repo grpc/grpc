@@ -43,26 +43,79 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolve_address_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
-struct request {
-  char* name;
-  char* default_port;
-  grpc_closure request_closure;
-  grpc_closure* on_done;
-  grpc_resolved_addresses** addresses;
+namespace grpc_core {
+namespace {
+
+class NativeDNSRequest : public DNSRequest {
+ public:
+  NativeDNSRequest(
+      absl::string_view name, absl::string_view default_port,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
+      : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
+    GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
+  }
+
+  // Starts the resolution
+  void Start() override {
+    Ref().release();  // ref held by callback
+    Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
+  }
+
+  // This is a no-op for the native resolver. Note
+  // that no I/O polling is required for the resolution to finish.
+  void Orphan() override { Unref(); }
+
+ private:
+  // Callback to be passed to grpc Executor to asynch-ify
+  // BlockingResolveAddress
+  static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
+    NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
+    auto result =
+        GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
+    // running inline is safe since we've already been scheduled on the executor
+    r->on_done_(result);
+    r->Unref();
+  }
+
+  const std::string name_;
+  const std::string default_port_;
+  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
+  grpc_closure request_closure_;
 };
-static grpc_error_handle windows_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+
+NativeDNSResolver* g_native_dns_resolver;
+}  // namespace
+
+NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
+  if (g_native_dns_resolver == nullptr) {
+    g_native_dns_resolver = new NativeDNSResolver();
+  }
+  return g_native_dns_resolver;
+}
+
+OrphanablePtr<DNSRequest> NativeDNSResolver::CreateDNSRequest(
+    absl::string_view name, absl::string_view default_port,
+    grpc_pollset_set* /* interested_parties */,
+    std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) {
+  return MakeOrphanable<NativeDNSRequest>(name, default_port,
+                                          std::move(on_done));
+}
+
+absl::StatusOr<grpc_resolved_addresses*>
+NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
+                                          absl::string_view default_port) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
   int s;
   size_t i;
   grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_resolved_addresses* addresses = nullptr;
 
-  /* parse name, splitting it into host and port parts */
+  // parse name, splitting it into host and port parts
   std::string host;
   std::string port;
   grpc_core::SplitHostPort(name, &host, &port);
@@ -77,10 +130,10 @@ static grpc_error_handle windows_blocking_resolve_address(
           absl::StrFormat("no port in name '%s'", name));
       goto done;
     }
-    port = default_port;
+    port = std::string(default_port);
   }
 
-  /* Call getaddrinfo */
+  // Call getaddrinfo
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
@@ -94,19 +147,19 @@ static grpc_error_handle windows_blocking_resolve_address(
     goto done;
   }
 
-  /* Success path: set addrs non-NULL, fill it in */
-  (*addresses) =
+  // Success path: set addrs non-NULL, fill it in
+  addresses =
       (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
-  (*addresses)->naddrs = 0;
+  addresses->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    (*addresses)->naddrs++;
+    addresses->naddrs++;
   }
-  (*addresses)->addrs = (grpc_resolved_address*)gpr_malloc(
-      sizeof(grpc_resolved_address) * (*addresses)->naddrs);
+  addresses->addrs = (grpc_resolved_address*)gpr_malloc(
+      sizeof(grpc_resolved_address) * addresses->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-    (*addresses)->addrs[i].len = resp->ai_addrlen;
+    memcpy(&addresses->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
+    addresses->addrs[i].len = resp->ai_addrlen;
     i++;
   }
 
@@ -114,52 +167,12 @@ done:
   if (result) {
     freeaddrinfo(result);
   }
-  return error;
-}
-
-/* Callback to be passed to grpc_executor to asynch-ify
- * grpc_blocking_resolve_address */
-static void do_request_thread(void* rp, grpc_error_handle error) {
-  request* r = (request*)rp;
   if (error == GRPC_ERROR_NONE) {
-    error =
-        grpc_blocking_resolve_address(r->name, r->default_port, r->addresses);
-  } else {
-    GRPC_ERROR_REF(error);
+    return addresses;
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
-  gpr_free(r->name);
-  gpr_free(r->default_port);
-  gpr_free(r);
+  return grpc_error_to_absl_status(error);
 }
-
-namespace grpc_core {
-
-class NativeAsyncResolveAddress : public AsyncResolveAddress {
- public:
-  // Force caller to wait for the callback's completion. Note
-  // that no I/O polling is required for the resolution to finish.
-  void Orphan() override { Unref(); }
-};
 
 }  // namespace grpc_core
 
-static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress>
-windows_resolve_address(const char* name, const char* default_port,
-                        grpc_pollset_set* interested_parties,
-                        grpc_closure* on_done,
-                        grpc_resolved_addresses** addresses) {
-  request* r = (request*)gpr_malloc(sizeof(request));
-  GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
-  r->name = gpr_strdup(name);
-  r->default_port = gpr_strdup(default_port);
-  r->on_done = on_done;
-  r->addresses = addresses;
-  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
-                           grpc_core::ExecutorType::RESOLVER);
-  return grpc_core::MakeOrphanable<grpc_core::NativeAsyncResolveAddress>();
-}
-
-grpc_address_resolver_vtable grpc_windows_resolver_vtable = {
-    windows_resolve_address, windows_blocking_resolve_address};
 #endif
