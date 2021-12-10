@@ -539,7 +539,7 @@ class AresDNSRequest : public DNSRequest {
           // inversion if we were to run it inline from here
           new DNSCallbackExecCtxScheduler(std::move(r->on_resolve_address_done_), resolved_addresses);
         } else {
-          new DNSCallbackExecCtxSchedule(std::move(r->on_resolve_address_done_), grpc_error_to_absl_status(error));
+          new DNSCallbackExecCtxScheduler(std::move(r->on_resolve_address_done_), grpc_error_to_absl_status(error));
         }
       }
 

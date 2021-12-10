@@ -72,19 +72,19 @@ class DNSCallbackExecCtxScheduler {
  public:
   DNSCallbackExecCtxScheduler(std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done, absl::StatusOr<grpc_resolved_addresses*> param)
       : on_done_(std::move(on_done)), param_(std::move(param)) {
-    GPRC_CLOSURE_INIT(&closure_, RunCallback, this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&closure_, RunCallback, this, grpc_schedule_on_exec_ctx);
     ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
   }
 
  private:
   static void RunCallback(void* arg, grpc_error_handle /* error */) {
-    DNSCallbackExecCtxArg* d = static_cast<DNSCallbackExecCtxArg*>(arg);
-    d->on_done_(d->param);
-    delete d;
+    DNSCallbackExecCtxScheduler* self = static_cast<DNSCallbackExecCtxScheduler*>(arg);
+    self->on_done_(std::move(self->param_));
+    delete self;
   }
 
   const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
-  const absl::StatusOr<grpc_resolved_addresses*> param_;
+  absl::StatusOr<grpc_resolved_addresses*> param_;
   grpc_closure closure_;
 };
 
