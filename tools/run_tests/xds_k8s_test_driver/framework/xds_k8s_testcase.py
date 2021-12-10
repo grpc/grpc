@@ -78,6 +78,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     server_runner: KubernetesServerRunner
     server_xds_port: int
     td: TrafficDirectorManager
+    config_scope: str
 
     @classmethod
     def setUpClass(cls):
@@ -87,7 +88,6 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value
-        cls.config_scope: str = xds_flags.ROUTER_SCOPE.value
         cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
@@ -137,6 +137,12 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             )
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
+
+        if xds_flags.CONFIG_SCOPE.value is not None:
+            self.config_scope = xds_flags.CONFIG_SCOPE.value + "-" + framework.helpers.rand.random_resource_suffix(
+            )
+        else:
+            self.config_scope = None
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()

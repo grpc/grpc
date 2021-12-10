@@ -31,7 +31,7 @@ namespace Grpc.Core
         static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
         string name;
         byte[] valueBytes;
-        string lazyValue;
+        string? lazyValue;
 
         private AuthProperty(string name, byte[] valueBytes)
         {

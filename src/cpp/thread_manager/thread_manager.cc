@@ -54,7 +54,7 @@ ThreadManager::ThreadManager(const char*, grpc_resource_quota* resource_quota,
                              int min_pollers, int max_pollers)
     : shutdown_(false),
       thread_quota_(
-          grpc_core::ResourceQuotaFromC(resource_quota)->thread_quota()),
+          grpc_core::ResourceQuota::FromC(resource_quota)->thread_quota()),
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),

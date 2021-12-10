@@ -75,6 +75,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:arena_promise",
+        "//:resource_quota",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -259,6 +260,7 @@ grpc_cc_test(
         "//:map",
         "//:observable",
         "//:pipe",
+        "//:resource_quota",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
@@ -275,6 +277,7 @@ grpc_cc_test(
         "//:join",
         "//:pipe",
         "//:promise",
+        "//:resource_quota",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],

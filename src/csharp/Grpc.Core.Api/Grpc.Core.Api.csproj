@@ -9,6 +9,7 @@
     <PackageTags>gRPC RPC HTTP/2</PackageTags>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup>
