@@ -63,7 +63,8 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
   absl::StatusOr<grpc_resolved_addresses*> addresses_or =
       grpc_core::GetDNSResolver()->BlockingResolveAddress(hostname, "80");
   if (!addresses_or.ok() || *addresses_or == nullptr) {
-    GRPC_LOG_IF_ERROR(hostname, error);
+    GRPC_LOG_IF_ERROR(hostname,
+                      absl_status_to_grpc_error(addresses_or.status()));
     return;
   }
   for (size_t i = 0; i < (*addresses_or)->naddrs; ++i) {
@@ -278,7 +279,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
 int external_dns_works(const char* host) {
   absl::StatusOr<grpc_resolved_addresses*> addresses_or =
-      grpc_core::GetDNSResolver()->BlockingResolveAddress(hostname, "80");
+      grpc_core::GetDNSResolver()->BlockingResolveAddress(host, "80");
   if (addresses_or.ok()) {
     grpc_resolved_addresses_destroy(*addresses_or);
     return 1;
