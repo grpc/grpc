@@ -15,11 +15,15 @@
 
 set -ex
 
+# TODO: move to altfs
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# use the default docker image used for bazel builds
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
-export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+# TODO(jtattermusch): interestingly, the bazel build fails when "--privileged" docker arg is used (it probably has to do with sandboxing)
+export DOCKER_EXTRA_ARGS="--privileged=false"
+tools/docker_runners/run_in_docker.sh "${BAZEL_SCRIPT}"
