@@ -47,9 +47,20 @@ namespace grpc_core {
 
 void NativeDNSRequest::DoRequestThread(void* rp, grpc_error_handle /*error*/) {
   NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
-  auto result = DNSResolver::instance()->BlockingResolveAddress(r->name_, r->default_port_);
+  auto result = GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
   r->on_done_(result);
   r->Unref();
+}
+
+namespace {
+NativeDNSResolver* g_native_dns_resolver;
+} // namespace
+
+NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
+  if (g_native_dns_resolver == nullptr) {
+    g_native_dns_resolver = new NativeDNSResolver();
+  }
+  return g_native_dns_resolver;
 }
 
 absl::StatusOr<grpc_resolved_addresses*>

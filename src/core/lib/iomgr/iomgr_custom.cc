@@ -68,7 +68,7 @@ void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
   grpc_custom_timer_init(timer);
   grpc_custom_pollset_init(poller);
   grpc_custom_pollset_set_init();
-  grpc_core::DNSResolver::OverrideInstance(
+  grpc_core::SetDNSResolver(
       grpc_core::CustomDNSResolver::GetOrCreate(resolver));
   grpc_set_iomgr_platform_vtable(&vtable);
 }

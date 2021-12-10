@@ -63,23 +63,12 @@ class DNSRequest : public InternallyRefCounted<DNSRequest> {
  public:
   // Begins async DNS resolution
   virtual void Start() = 0;
-  // Cancels the DNS resolution so that the callback will be invoked
-  // as soon as possible.
-  void Orphan() override;
 };
 
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
  public:
   virtual ~DNSResolver() {}
-
-  // Get the singleton instance
-  static DNSResolver* instance() { return instance_; }
-
-  // Override the active DNS resolver, which should be used for all DNS
-  // resolution in gRPC. Note: this should only be used during library initialization,
-  // or tests.
-  static void OverrideInstance(DNSResolver* resolver) { instance_ = resolver; }
 
   // Asynchronously resolve addr. Use default_port if a port isn't designated
   // in addr, otherwise use the port in addr.
@@ -93,11 +82,16 @@ class DNSResolver {
   // Resolve addr in a blocking fashion. On success,
   // result must be freed with grpc_resolved_addresses_destroy.
   virtual absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
-      absl::string_view name, absl::string_view default_port);
-
- private:
-  static DNSResolver* instance_;
+      absl::string_view name, absl::string_view default_port) = 0;
 };
+
+// Override the active DNS resolver, which should be used for all DNS
+// resolution in gRPC. Note: this should only be used during library initialization,
+// or tests.
+void SetDNSResolver(DNSResolver* resolver);
+
+// Get the singleton instance
+DNSResolver* GetDNSResolver();
 
 }  // namespace grpc_core
 

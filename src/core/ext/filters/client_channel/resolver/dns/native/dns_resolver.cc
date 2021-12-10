@@ -266,7 +266,7 @@ void NativeClientChannelDNSResolver::StartResolvingLocked() {
   Ref(DEBUG_LOCATION, "dns-resolving").release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
-  dns_request_ = DNSResolver::instance()->CreateDNSRequest(
+  dns_request_ = GetDNSResolver()->CreateDNSRequest(
       name_to_resolve_,
       kDefaultSecurePort,
       interested_parties_,

@@ -67,12 +67,8 @@ class CustomDNSResolver : public DNSResolver {
  public:
   explicit CustomDNSResolver(grpc_custom_resolver_vtable* resolve_address_vtable) : resolve_address_vtable_(resolve_address_vtable) {}
 
-  static CustomDNSResolver* GetOrCreate(grpc_custom_resolver_vtable* resolve_address_vtable) {
-    if (instance_ == nullptr) {
-      instance_ = new CustomDNSResolver(resolve_address_vtable);
-    }
-    return instance_;
-  }
+  // Gets the singleton instance, creating it if it hasn't been already.
+  static CustomDNSResolver* GetOrCreate(grpc_custom_resolver_vtable* resolve_address_vtable);
 
   virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,

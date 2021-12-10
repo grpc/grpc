@@ -558,13 +558,19 @@ class AresDNSRequest : public DNSRequest {
       std::unique_ptr<grpc_ares_request> ares_request_ ABSL_GUARDED_BY(mu_);
 };
 
+class AresDNSResolver;
+
+namespace {
+AresDNSResolver* g_ares_dns_resolver;
+} // namespace
+
 class AresDNSResolver : public DNSResolver {
  public:
   static AresDNSResolver* GetOrCreate() {
-    if (instance_ == nullptr) {
-      instance_ = new AresDNSResolver();
+    if (g_ares_dns_resolver == nullptr) {
+      g_ares_dns_resolver = new AresDNSResolver();
     }
-    return instance_;
+    return g_ares_dns_resolver;
   }
 
   OrphanablePtr<DNSRequest> CreateDNSRequest(
@@ -584,9 +590,7 @@ class AresDNSResolver : public DNSResolver {
   }
 
  private:
-  static AresDNSResolver* instance_;
-
-  DNSResolver* default_resolver_ = DNSResolver::instance();
+  DNSResolver* default_resolver_ = GetDNSResolver();
 };
 
 bool ShouldUseAres(const char* resolver_env) {
@@ -615,7 +619,7 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
-    grpc_core::DNSResolver::OverrideInstance(
+    grpc_core::SetDNSResolver(
         grpc_core::AresDNSResolver::GetOrCreate());
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         absl::make_unique<grpc_core::AresClientChannelDNSResolverFactory>());

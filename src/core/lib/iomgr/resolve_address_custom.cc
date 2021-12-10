@@ -93,6 +93,17 @@ void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
   on_done_(grpc_error_to_absl_status(error));
 }
 
+namespace {
+CustomDNSResolver* g_custom_dns_resolver;
+} // namespace
+
+CustomDNSResolver* CustomDNSResolver::GetOrCreate(grpc_custom_resolver_vtable* resolve_address_vtable) {
+  if (g_custom_dns_resolver == nullptr) {
+    g_custom_dns_resolver = new CustomDNSResolver(resolve_address_vtable);
+  }
+  return g_custom_dns_resolver;
+}
+
 absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddress(
     absl::string_view name, absl::string_view default_port) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
