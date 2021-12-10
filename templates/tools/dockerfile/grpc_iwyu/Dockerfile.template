@@ -20,12 +20,6 @@
   
   ENV CLANG_FORMAT=clang-format-11
 
-  RUN git clone https://github.com/include-what-you-use/include-what-you-use.git /iwyu
-  # latest commit on the clang 11 branch
-  RUN cd /iwyu && git checkout 5db414ac448004fe019871c977905cb7c2cff23f
-
-  RUN mkdir /iwyu_build && cd /iwyu_build && cmake -G "Unix Makefiles" -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 /iwyu && make
-
   ADD iwyu.sh /
   
   # When running locally, we'll be impersonating the current user, so we need

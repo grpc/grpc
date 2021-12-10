@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
@@ -45,7 +46,6 @@ template <typename T>
 struct Pipe;
 template <typename T>
 class PipeSender;
-
 template <typename T>
 class PipeReceiver;
 

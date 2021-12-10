@@ -26,6 +26,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 

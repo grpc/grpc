@@ -1187,6 +1187,7 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                environ['IWYU_SKIP_DOCKER'] = 'true'
                 # sanity tests run tools/bazel wrapper concurrently
                 # and that can result in a download/run race in the wrapper.
                 # under docker we already have the right version of bazel

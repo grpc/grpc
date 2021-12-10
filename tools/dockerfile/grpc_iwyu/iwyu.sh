@@ -17,7 +17,14 @@ set -ex
 
 cd ${IWYU_ROOT}
 
-export PATH=${PATH}:/iwyu_build/bin
+export PATH=${PATH}:${IWYU_ROOT}/iwyu_build/bin
+
+rm -rf iwyu || true
+git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
+# latest commit on the clang 11 branch
+cd ${IWYU_ROOT}/iwyu && git checkout 5db414ac448004fe019871c977905cb7c2cff23f
+mkdir -p ${IWYU_ROOT}/iwyu_build && cd ${IWYU_ROOT}/iwyu_build && cmake -G "Unix Makefiles" -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 /iwyu && make
+cd ${IWYU_ROOT}
 
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
@@ -29,14 +36,14 @@ cat compile_commands.json | jq -r '.[].file' \
   | tee iwyu_files.txt
 
 # run iwyu, filtering out changes to port_platform.h
-xargs -a iwyu_files.txt /iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 \
+xargs -a iwyu_files.txt ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 \
   | grep -v -E "port_platform.h" \
   | tee iwyu.out
 
 cat iwyu.out | grep -Ev "^namespace " > iwyu.out.filtered
 
 # apply the suggested changes
-/iwyu/fix_includes.py --nocomments < iwyu.out.filtered || true
+${IWYU_ROOT}/iwyu/fix_includes.py --nocomments < iwyu.out.filtered || true
 
 # reformat sources, since iwyu gets this wrong
 xargs -a iwyu_files.txt $CLANG_FORMAT -i
