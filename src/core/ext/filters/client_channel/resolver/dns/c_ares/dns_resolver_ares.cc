@@ -527,33 +527,32 @@ class AresDNSRequest : public DNSRequest {
   static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
     OrphanablePtr<AresDNSRequest> r =
         OrphanablePtr<AresDNSRequest>(static_cast<AresDNSRequest*>(arg));
-    absl::MutexLock lock(&r->mu_);
-    GRPC_CARES_TRACE_LOG("AresDNSRequest:%p OnDnsLookupDone error:%s", r.get(),
-                         grpc_error_std_string(error).c_str());
     grpc_resolved_addresses* resolved_addresses;
-    if (r->addresses_ == nullptr || r->addresses_->empty()) {
-      resolved_addresses = nullptr;
-    } else {
-      resolved_addresses = static_cast<grpc_resolved_addresses*>(
-          gpr_zalloc(sizeof(grpc_resolved_addresses)));
-      resolved_addresses->naddrs = r->addresses_->size();
-      resolved_addresses->addrs =
-          static_cast<grpc_resolved_address*>(gpr_zalloc(
-              sizeof(grpc_resolved_address) * resolved_addresses->naddrs));
-      for (size_t i = 0; i < resolved_addresses->naddrs; ++i) {
-        memcpy(&resolved_addresses->addrs[i], &(*r->addresses_)[i].address(),
-               sizeof(grpc_resolved_address));
+    {
+      absl::MutexLock lock(&r->mu_);
+      GRPC_CARES_TRACE_LOG("AresDNSRequest:%p OnDnsLookupDone error:%s",
+                           r.get(), grpc_error_std_string(error).c_str());
+      if (r->addresses_ == nullptr || r->addresses_->empty()) {
+        resolved_addresses = nullptr;
+      } else {
+        resolved_addresses = static_cast<grpc_resolved_addresses*>(
+            gpr_zalloc(sizeof(grpc_resolved_addresses)));
+        resolved_addresses->naddrs = r->addresses_->size();
+        resolved_addresses->addrs =
+            static_cast<grpc_resolved_address*>(gpr_zalloc(
+                sizeof(grpc_resolved_address) * resolved_addresses->naddrs));
+        for (size_t i = 0; i < resolved_addresses->naddrs; ++i) {
+          memcpy(&resolved_addresses->addrs[i], &(*r->addresses_)[i].address(),
+                 sizeof(grpc_resolved_address));
+        }
       }
     }
     if (error == GRPC_ERROR_NONE) {
-      // even though this method has already been scheduled on the ExecCtx,
-      // r->on_resolve_address_done_ may call Orphan, which would cause lock
-      // inversion if we were to run it inline from here
-      new DNSCallbackExecCtxScheduler(std::move(r->on_resolve_address_done_),
-                                      resolved_addresses);
+      // it's safe to run this inline since the current method was scheduled
+      // on the ExecCtx
+      r->on_resolve_address_done_(resolved_addresses);
     } else {
-      new DNSCallbackExecCtxScheduler(std::move(r->on_resolve_address_done_),
-                                      grpc_error_to_absl_status(error));
+      r->on_resolve_address_done_(grpc_error_to_absl_status(error));
     }
   }
 
@@ -561,14 +560,18 @@ class AresDNSRequest : public DNSRequest {
   // object itself). TODO(apolcyn): we can get rid of this after cleaning up
   // grpc_dns_lookup_ares to use two-phased initialization.
   absl::Mutex mu_;
+  // the name to resolve
   const std::string name_;
+  // the default port to use if name doesn't have one
   const std::string default_port_;
-  grpc_pollset_set* interested_parties_;
+  // parties interested in our I/O
+  grpc_pollset_set* const interested_parties_;
+  // user-provided completion callback
+  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)>
+      on_resolve_address_done_;
   // currently resolving addresses
   std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
   // closure to call when the resolve_address_ares request completes
-  std::function<void(absl::StatusOr<grpc_resolved_addresses*>)>
-      on_resolve_address_done_ ABSL_GUARDED_BY(mu_);
   // a closure wrapping on_resolve_address_done, which should be invoked
   // when the grpc_dns_lookup_ares operation is done.
   grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
