@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.43.0-dev'
+  version = '1.44.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -834,7 +834,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_http_filters.h',
                       'src/core/ext/xds/xds_listener.cc',
                       'src/core/ext/xds/xds_listener.h',
+                      'src/core/ext/xds/xds_resource_type.cc',
                       'src/core/ext/xds/xds_resource_type.h',
+                      'src/core/ext/xds/xds_resource_type_impl.h',
                       'src/core/ext/xds/xds_route_config.cc',
                       'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.cc',
@@ -1824,6 +1826,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_http_filters.h',
                               'src/core/ext/xds/xds_listener.h',
                               'src/core/ext/xds/xds_resource_type.h',
+                              'src/core/ext/xds/xds_resource_type_impl.h',
                               'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
                               'src/core/lib/address_utils/parse_address.h',

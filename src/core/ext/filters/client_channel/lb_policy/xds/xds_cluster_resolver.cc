@@ -39,6 +39,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -165,7 +166,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     bool disable_reresolution() override { return true; }
 
    private:
-    class EndpointWatcher : public XdsClient::EndpointWatcherInterface {
+    class EndpointWatcher : public XdsEndpointResourceType::WatcherInterface {
      public:
       explicit EndpointWatcher(
           RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism)
@@ -173,13 +174,13 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       ~EndpointWatcher() override {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
-      void OnEndpointChanged(XdsEndpointResource update) override {
+      void OnResourceChanged(XdsEndpointResource update) override {
         Ref().release();  // ref held by callback
         discovery_mechanism_->parent()->work_serializer()->Run(
             // TODO(yashykt): When we move to C++14, capture update with
             // std::move
             [this, update]() mutable {
-              OnEndpointChangedHelper(std::move(update));
+              OnResourceChangedHelper(std::move(update));
               Unref();
             },
             DEBUG_LOCATION);
@@ -207,7 +208,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       // Code accessing protected methods of `DiscoveryMechanism` need to be
       // in methods of this class rather than in lambdas to work around an MSVC
       // bug.
-      void OnEndpointChangedHelper(XdsEndpointResource update) {
+      void OnResourceChangedHelper(XdsEndpointResource update) {
         discovery_mechanism_->parent()->OnEndpointChanged(
             discovery_mechanism_->index(), std::move(update));
       }
@@ -267,9 +268,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
       ~ResolverResultHandler() override {}
 
-      void ReturnResult(Resolver::Result result) override;
-
-      void ReturnError(grpc_error_handle error) override;
+      void ReportResult(Resolver::Result result) override;
 
      private:
       RefCountedPtr<LogicalDNSDiscoveryMechanism> discovery_mechanism_;
@@ -416,8 +415,8 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
   auto watcher = MakeRefCounted<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
-  parent()->xds_client_->WatchEndpointData(GetEdsResourceName(),
-                                           std::move(watcher));
+  XdsEndpointResourceType::StartWatch(parent()->xds_client_.get(),
+                                      GetEdsResourceName(), std::move(watcher));
 }
 
 void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
@@ -427,8 +426,8 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
             ":%p cancelling xds watch for %s",
             parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
-                                                 watcher_);
+  XdsEndpointResourceType::CancelWatch(parent()->xds_client_.get(),
+                                       GetEdsResourceName(), watcher_);
   Unref();
 }
 
@@ -489,23 +488,26 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
 //
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
-    ReturnResult(Resolver::Result result) {
-  // convert result to eds update
+    ReportResult(Resolver::Result result) {
+  if (!result.addresses.ok()) {
+    discovery_mechanism_->parent()->OnError(
+        discovery_mechanism_->index(),
+        absl_status_to_grpc_error(result.addresses.status()));
+    return;
+  }
+  // Convert resolver result to EDS update.
+  // TODO(roth): Figure out a way to pass resolution_note through to the
+  // child policy.
   XdsEndpointResource update;
   XdsEndpointResource::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
-  locality.endpoints = std::move(result.addresses);
+  locality.endpoints = std::move(*result.addresses);
   XdsEndpointResource::Priority priority;
   priority.localities.emplace(locality.name.get(), std::move(locality));
   update.priorities.emplace_back(std::move(priority));
   discovery_mechanism_->parent()->OnEndpointChanged(
       discovery_mechanism_->index(), std::move(update));
-}
-
-void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
-    ReturnError(grpc_error_handle error) {
-  discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(), error);
 }
 
 //

@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "green"  # @unused
+g_stands_for = "great"  # @unused
 
 core_version = "21.0.0"  # @unused
 
-version = "1.43.0-dev"  # @unused
+version = "1.44.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1372,6 +1372,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "arena",
         "gpr_platform",
         "intra_activity_waiter",
     ],
@@ -1509,6 +1510,7 @@ grpc_cc_library(
         "src/core/lib/resource_quota/arena.h",
     ],
     deps = [
+        "context",
         "gpr_base",
         "memory_quota",
     ],
@@ -2621,6 +2623,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
         "src/core/ext/xds/xds_listener.cc",
+        "src/core/ext/xds/xds_resource_type.cc",
         "src/core/ext/xds/xds_route_config.cc",
         "src/core/ext/xds/xds_routing.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
@@ -2644,6 +2647,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_filters.h",
         "src/core/ext/xds/xds_listener.h",
         "src/core/ext/xds/xds_resource_type.h",
+        "src/core/ext/xds/xds_resource_type_impl.h",
         "src/core/ext/xds/xds_route_config.h",
         "src/core/ext/xds/xds_routing.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
