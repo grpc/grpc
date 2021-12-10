@@ -65,7 +65,7 @@
 }
 
 - (GRPCUnaryProtoCall *)RPCToMethod:(NSString *)method
-                            message:(id)message
+                            message:(GPBMessage *)message
                     responseHandler:(id<GRPCProtoResponseHandler>)handler
                         callOptions:(GRPCCallOptions *)callOptions
                       responseClass:(Class)responseClass {

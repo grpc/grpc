@@ -22,6 +22,7 @@
 #import "ProtoRPC.h"
 
 @protocol GRXWriteable;
+@class GPBMessage;
 @class GRXWriter;
 @class GRPCCallOptions;
 
@@ -37,7 +38,7 @@ __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoServ
     NS_DESIGNATED_INITIALIZER;
 
 - (nullable GRPCUnaryProtoCall *)RPCToMethod:(nonnull NSString *)method
-                                     message:(nonnull id)message
+                                     message:(nonnull GPBMessage *)message
                              responseHandler:(nonnull id<GRPCProtoResponseHandler>)handler
                                  callOptions:(nullable GRPCCallOptions *)callOptions
                                responseClass:(nonnull Class)responseClass;
