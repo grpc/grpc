@@ -60,16 +60,17 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
-  grpc_error_handle error = grpc_blocking_resolve_address(hostname, "80", &res);
-  if (error != GRPC_ERROR_NONE || res == nullptr) {
+  absl::StatusOr<grpc_resolved_addresses*> addresses_or =
+      grpc_core::GetDNSResolver()->BlockingResolveAddress(hostname, "80");
+  if (!addresses_or.ok() || *addresses_or == nullptr) {
     GRPC_LOG_IF_ERROR(hostname, error);
     return;
   }
-  for (size_t i = 0; i < res->naddrs; ++i) {
+  for (size_t i = 0; i < (*addresses_or)->naddrs; ++i) {
     gpr_log(GPR_INFO, "%s: %s", label,
-            grpc_sockaddr_to_uri(&res->addrs[i]).c_str());
+            grpc_sockaddr_to_uri(&(*addresses_or)->addrs[i]).c_str());
   }
-  grpc_resolved_addresses_destroy(res);
+  grpc_resolved_addresses_destroy(*addresses_or);
 }
 
 void test_connect(const char* server_host, const char* client_host, int port,
