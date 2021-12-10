@@ -35,41 +35,50 @@ static gpr_mu g_mu;
 static bool g_fail_resolution = true;
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
-namespace grpc_core {
+namespace {
 
-class NoOpAsyncResolveAddress : public AsyncResolveAddress {
+class TestDNSRequest : public grpc_core::DNSRequest {
  public:
-  // cancellation not implemented
+  TestDNSRequest(std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) : on_done_(std::move(on_done)) {}
+
+  void Start() override {
+    gpr_mu_lock(&g_mu);
+    if (g_fail_resolution) {
+      g_fail_resolution = false;
+      gpr_mu_unlock(&g_mu);
+      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_), absl::UnknownError("Forced Failure"));
+    } else {
+      gpr_mu_unlock(&g_mu);
+      grpc_resolved_addresses* addrs = static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(*addrs)));
+      addrs->naddrs = 1;
+      addrs->addrs = static_cast<grpc_resolved_address*>(
+          gpr_malloc(sizeof(*addrs->addrs)));
+      addrs->addrs[0].len = 123;
+      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_), addrs);
+    }
+  }
+
   void Orphan() override { Unref(); }
+
+ private:
+  std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
 };
 
-}  // namespace grpc_core
-
-static grpc_core::OrphanablePtr<grpc_core::AsyncResolveAddress>
-my_resolve_address(const char* addr, const char* /*default_port*/,
-                   grpc_pollset_set* /*interested_parties*/,
-                   grpc_closure* on_done, grpc_resolved_addresses** addrs) {
-  gpr_mu_lock(&g_mu);
-  GPR_ASSERT(0 == strcmp("test", addr));
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  if (g_fail_resolution) {
-    g_fail_resolution = false;
-    gpr_mu_unlock(&g_mu);
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
-  } else {
-    gpr_mu_unlock(&g_mu);
-    *addrs = static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(**addrs)));
-    (*addrs)->naddrs = 1;
-    (*addrs)->addrs = static_cast<grpc_resolved_address*>(
-        gpr_malloc(sizeof(*(*addrs)->addrs)));
-    (*addrs)->addrs[0].len = 123;
+class TestDNSResolver : public grpc_core::DNSResolver {
+  grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateDNSRequest(
+      absl::string_view name, absl::string_view /* default_port */,
+      grpc_pollset_set* /* interested_parties */,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) override {
+    GPR_ASSERT("test" == name);
+    return grpc_core::MakeOrphanable<TestDNSRequest>(std::move(on_done));
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
-  return grpc_core::MakeOrphanable<grpc_core::NoOpAsyncResolveAddress>();
-}
 
-static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
-                                                     nullptr};
+  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(absl::string_view name, absl::string_view default_port) override {
+    GPR_ASSERT(0);
+  }
+};
+
+} // namespace
 
 static grpc_ares_request* my_dns_lookup_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
@@ -164,7 +173,7 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
-  grpc_set_resolver_impl(&test_resolver);
+  grpc_core::SetDNSResolver(new TestDNSResolver());
   grpc_dns_lookup_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
