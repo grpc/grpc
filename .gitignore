@@ -138,6 +138,9 @@ perf.data.old
 bm_diff_new/
 bm_diff_old/
 bm_*.json
+bloat_diff_new/
+bloat_diff_old/
+bloaty-build/
 
 # cmake build files
 **/cmake/build/
@@ -163,3 +166,6 @@ compile_commands_for_iwyu.json
 iwyu.out
 iwyu.out.filtered
 iwyu_files.txt
+iwyu/
+iwyu_build/
+
