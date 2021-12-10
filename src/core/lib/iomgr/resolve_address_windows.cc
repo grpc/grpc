@@ -107,7 +107,7 @@ OrphanablePtr<DNSRequest> NativeDNSResolver::CreateDNSRequest(
 absl::StatusOr<grpc_resolved_addresses*>
 NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
                                           absl::string_view default_port) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
   int s;
@@ -118,7 +118,7 @@ NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
   // parse name, splitting it into host and port parts
   std::string host;
   std::string port;
-  grpc_core::SplitHostPort(name, &host, &port);
+  SplitHostPort(name, &host, &port);
   if (host.empty()) {
     error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrFormat("unparseable host:port: '%s'", name));
