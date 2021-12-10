@@ -70,73 +70,34 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
   }
 }
 
-class CustomDNSRequest : public DNSRequest {
- public:
-  CustomDNSRequest(
-      absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done,
-      const grpc_custom_resolver_vtable* resolve_address_vtable)
-      : name_(name),
-        default_port_(default_port),
-        on_done_(std::move(on_done)),
-        resolve_address_vtable_(resolve_address_vtable) {}
+}  // namespace
 
-  // Starts the resolution
-  void Start() override {
-    GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-    absl::Status parse_status =
-        TrySplitHostPort(name_, default_port_, &host_, &port_);
-    if (!parse_status.ok()) {
-      new DNSCallbackExecCtxScheduler(std::move(on_done_),
-                                      std::move(parse_status));
+void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
+                                       grpc_error_handle error) {
+  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
+  OrphanablePtr<CustomDNSRequest> unreffer(this);
+  if (error == GRPC_ERROR_NONE) {
+    // since we can't guarantee that we're not being called inline from
+    // Start(), run the callback on the ExecCtx.
+    new DNSCallbackExecCtxScheduler(std::move(on_done_), result);
+    return;
+  } else {
+    auto numeric_port_or = NamedPortToNumeric(port_);
+    if (numeric_port_or.ok()) {
+      port_ = *numeric_port_or;
+      unreffer.release();  // keep holding ref for active resolution
+      resolve_address_vtable_->resolve_async(this, host_.c_str(),
+                                             port_.c_str());
       return;
     }
-    // Call getaddrinfo
-    Ref().release();  // ref held by resolution
-    resolve_address_vtable_->resolve_async(this, host_.c_str(), port_.c_str());
   }
+  new DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                  grpc_error_to_absl_status(error));
+}
 
-  // Implementations of grpc_custom_resolver_vtables must invoke this method
-  // with the results of resolve_async.
-  void ResolveCallback(grpc_resolved_addresses* result,
-                       grpc_error_handle error) {
-    GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-    ApplicationCallbackExecCtx callback_exec_ctx;
-    ExecCtx exec_ctx;
-    OrphanablePtr<CustomDNSRequest> unreffer(this);
-    if (error == GRPC_ERROR_NONE) {
-      // since we can't guarantee that we're not being called inline from
-      // Start(), run the callback on the ExecCtx.
-      new DNSCallbackExecCtxScheduler(std::move(on_done_), result);
-      return;
-    } else {
-      auto numeric_port_or = NamedPortToNumeric(port_);
-      if (numeric_port_or.ok()) {
-        port_ = *numeric_port_or;
-        unreffer.release();  // keep holding ref for active resolution
-        resolve_address_vtable_->resolve_async(this, host_.c_str(),
-                                               port_.c_str());
-        return;
-      }
-    }
-    new DNSCallbackExecCtxScheduler(std::move(on_done_),
-                                    grpc_error_to_absl_status(error));
-  }
-
-  // This is a no-op for the native resolver. Note
-  // that no I/O polling is required for the resolution to finish.
-  void Orphan() override { Unref(); }
-
- private:
-  const std::string name_;
-  const std::string default_port_;
-  std::string host_;
-  std::string port_;
-  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
-  // user-defined DNS methods
-  const grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
-};
-
+namespace {
 CustomDNSResolver* g_custom_dns_resolver;
 }  // namespace
 
@@ -146,15 +107,6 @@ CustomDNSResolver* CustomDNSResolver::GetOrCreate(
     g_custom_dns_resolver = new CustomDNSResolver(resolve_address_vtable);
   }
   return g_custom_dns_resolver;
-}
-
-OrphanablePtr<DNSRequest> CustomDNSResolver::CreateDNSRequest(
-    absl::string_view name, absl::string_view default_port,
-    grpc_pollset_set* /* interested_parties */,
-    std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
-    override {
-  return MakeOrphanable<CustomDNSRequest>(
-      name, default_port, std::move(on_done), resolve_address_vtable_);
 }
 
 absl::StatusOr<grpc_resolved_addresses*>
@@ -191,6 +143,20 @@ CustomDNSResolver::BlockingResolveAddress(absl::string_view name,
     return addrs;
   }
   return grpc_error_to_absl_status(err);
+}
+
+void CustomDNSRequest::Start() {
+  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+  absl::Status parse_status =
+      TrySplitHostPort(name_, default_port_, &host_, &port_);
+  if (!parse_status.ok()) {
+    new DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                    std::move(parse_status));
+    return;
+  }
+  // Call getaddrinfo
+  Ref().release();  // ref held by resolution
+  resolve_address_vtable_->resolve_async(this, host_.c_str(), port_.c_str());
 }
 
 }  // namespace grpc_core
