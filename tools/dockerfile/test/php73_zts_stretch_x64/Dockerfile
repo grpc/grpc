@@ -62,5 +62,8 @@ RUN mv composer.phar /usr/local/bin/composer
 
 RUN mkdir /var/local/jenkins
 
+
+RUN python3 -m pip install virtualenv==16.7.9
+
 # Define the default command.
 CMD ["bash"]

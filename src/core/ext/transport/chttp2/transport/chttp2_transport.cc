@@ -27,6 +27,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -649,10 +650,6 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
     : t(t),
       refcount(refcount),
       reffer(this),
-      stream_reservation(t->memory_owner.MakeReservation(
-          grpc_core::kResourceQuotaCallSize)),  // TODO(ctiller): sizeof(*this),
-                                                // or better, move allocation to
-                                                // memory quota.
       initial_metadata_buffer(arena),
       trailing_metadata_buffer(arena) {
   if (server_data) {
@@ -1260,12 +1257,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
-  if (batch->legacy_index()->named.grpc_status != nullptr) {
-    return !grpc_mdelem_static_value_eq(
-        batch->legacy_index()->named.grpc_status->md,
-        GRPC_MDELEM_GRPC_STATUS_0);
-  }
-  return false;
+  return batch->get(grpc_core::GrpcStatusMetadata()).value_or(GRPC_STATUS_OK) !=
+         GRPC_STATUS_OK;
 }
 
 static void maybe_become_writable_due_to_send_msg(grpc_chttp2_transport* t,
@@ -2111,12 +2104,7 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   //   about the metadata yet
   if (s->published_metadata[1] == GRPC_METADATA_NOT_PUBLISHED ||
       s->recv_trailing_metadata_finished != nullptr) {
-    char status_string[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(status, status_string);
-    GRPC_LOG_IF_ERROR("add_status",
-                      s->trailing_metadata_buffer.ReplaceOrAppend(
-                          GRPC_MDSTR_GRPC_STATUS,
-                          grpc_core::UnmanagedMemorySlice(status_string)));
+    s->trailing_metadata_buffer.Set(grpc_core::GrpcStatusMetadata(), status);
     if (!message.empty()) {
       s->trailing_metadata_buffer.Set(
           grpc_core::GrpcMessageMetadata(),
