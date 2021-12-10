@@ -16,13 +16,15 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
-#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
+#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H
+#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
+
+#include <functional>
 
 #include <string.h>
 #include <sys/types.h>
@@ -47,7 +49,10 @@ namespace grpc_core {
 
 class NativeDNSRequest : public DNSRequest {
  public:
-  NativeDNSRequest(absl::string_view name, absl::string_view default_port, std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
+  NativeDNSRequest(
+      absl::string_view name,
+      absl::string_view default_port,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
   }
@@ -61,19 +66,12 @@ class NativeDNSRequest : public DNSRequest {
 
   // This is a no-op for the native resolver. Note
   // that no I/O polling is required for the resolution to finish.
-  void Orphan() override {
-    Unref();
-  }
+  void Orphan() override { Unref(); }
 
  private:
   // Callback to be passed to grpc Executor to asynch-ify
   // BlockingResolveAddress
-  static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
-    NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
-    auto result = BlockingResolveAddress(r->name_, r->default_port_);
-    r->on_done_(result);
-    r->Unref();
-  }
+  static void DoRequestThread(void* rp, grpc_error_handle /*error*/);
 
   const std::string name_;
   const std::string default_port_;
@@ -85,11 +83,13 @@ class NativeDNSResolver : public DNSResolver {
  public:
   // Gets the singleton instance, creating it first if it doesn't exist
   static NativeDNSResolver* GetOrCreate() {
-    gpr_once_init(&init_instance_, InitInstance);
+    if (instance_ == nullptr) {
+      instance_ = new NativeDNSResolver();
+    }
     return instance_;
   }
 
-  virtual OrphanablePtr<Request> CreateDNSRequest(
+  virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
@@ -101,13 +101,10 @@ class NativeDNSResolver : public DNSResolver {
       absl::string_view name, absl::string_view default_port) override;
 
  private:
-  static void InitInstance() { instance_ = new NativeDNSResolver(); }
-
   static NativeDNSResolver* instance_;
-  static gpr_once_init init_instance_ = GPR_ONCE_INIT;
 };
 
 }  // namespace grpc_core
 
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
-#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
+#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H

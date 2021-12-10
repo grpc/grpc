@@ -35,12 +35,13 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
 namespace {
 
-static absl::Status TrySplitHostPort(
+absl::Status TrySplitHostPort(
     absl::string_view name,
     absl::string_view default_port,
     std::string* host,
@@ -70,9 +71,9 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
   }
 }
 
-}
+} // namespace
 
-CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
+void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   ApplicationCallbackExecCtx callback_exec_ctx;
@@ -89,7 +90,7 @@ CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
       return;
     }
   }
-  on_done_(grpc_error_to_absl_status(error);
+  on_done_(grpc_error_to_absl_status(error));
 }
 
 absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddress(
@@ -98,39 +99,38 @@ absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddre
 
   std::string host;
   std::string port;
-  grpc_error_handle err =
-      TrySlitHostPort(name, default_port, &host, &port);
-  if (err != GRPC_ERROR_NONE) {
-    return err;
+  absl::Status parse_status = TrySplitHostPort(name, default_port, &host, &port);
+  if (!parse_status.ok()) {
+    return parse_status;
   }
 
   /* Call getaddrinfo */
   grpc_resolved_addresses* addrs = nullptr;
   ExecCtx* curr = ExecCtx::Get();
   ExecCtx::Set(nullptr);
-  err = resolve_address_vtable_->resolve(host.c_str(),
+  grpc_error_handle err = resolve_address_vtable_->resolve(host.c_str(),
                                          port.c_str(), &addrs);
   if (err != GRPC_ERROR_NONE) {
-    auto numeric_port_or = NamedPortToNumeric(port_);
+    auto numeric_port_or = NamedPortToNumeric(port);
     if (numeric_port_or.ok()) {
       port = *numeric_port_or;
       GRPC_ERROR_UNREF(err);
-      err = resolve_address_vtable_->resolve(this, host.c_str(), port.c_str(), &addrs);
+      err = resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
     }
   }
   ExecCtx::Set(curr);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(addrs != nullptr);
-    return *addrs;
+    return addrs;
   }
   return grpc_error_to_absl_status(err);
 }
 
-CustomDNSRequest::Start() {
+void CustomDNSRequest::Start() {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   absl::Status parse_status = TrySplitHostPort(name_, default_port_, &host_, &port_);
   if (!parse_status.ok()) {
-    return parse_status;
+    on_done_(parse_status);
   }
   // Call getaddrinfo
   Ref().release(); // ref held by resolution

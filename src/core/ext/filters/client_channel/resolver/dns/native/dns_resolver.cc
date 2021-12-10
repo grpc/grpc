@@ -68,7 +68,7 @@ class NativeClientChannelDNSResolver : public Resolver {
   static void OnNextResolution(void* arg, grpc_error_handle error);
   void OnNextResolutionLocked(grpc_error_handle error);
   void OnResolved(absl::StatusOr<grpc_resolved_addresses*> addresses_or);
-  void OnResolvedLocked(grpc_error_handle error);
+  void OnResolvedLocked(absl::StatusOr<grpc_resolved_addresses*> addresses_or);
 
   /// name to resolve
   std::string name_to_resolve_;
@@ -92,8 +92,6 @@ class NativeClientChannelDNSResolver : public Resolver {
   grpc_millis last_resolution_timestamp_ = -1;
   /// retry backoff state
   BackOff backoff_;
-  /// currently resolving addresses
-  grpc_resolved_addresses* addresses_ = nullptr;
   /// tracks pending resolutions
   OrphanablePtr<DNSRequest> dns_request_;
 };
@@ -163,7 +161,7 @@ void NativeClientChannelDNSResolver::OnNextResolutionLocked(grpc_error_handle er
 }
 
 void NativeClientChannelDNSResolver::OnResolved(absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
-  work_serializer_->Run([this, addresses_or]() { r->OnResolvedLocked(addresses_or); },
+  work_serializer_->Run([this, addresses_or]() { OnResolvedLocked(addresses_or); },
                         DEBUG_LOCATION);
 }
 
@@ -173,14 +171,13 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(absl::StatusOr<grpc_resolv
   dns_request_.reset();
   if (shutdown_) {
     Unref(DEBUG_LOCATION, "dns-resolving");
-    GRPC_ERROR_UNREF(error);
     return;
   }
   if (addresses_or.ok()) {
     ServerAddressList addresses;
     for (size_t i = 0; i < (*addresses_or)->naddrs; ++i) {
-      addresses.emplace_back(&(*addresses_)->addrs[i].addr,
-                             (*addresses_)->addrs[i].len, nullptr /* args */);
+      addresses.emplace_back(&(*addresses_or)->addrs[i].addr,
+                             (*addresses_or)->addrs[i].len, nullptr /* args */);
     }
     grpc_resolved_addresses_destroy(*addresses_or);
     Result result;
@@ -191,7 +188,7 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(absl::StatusOr<grpc_resolv
     // next request gets triggered.
     backoff_.Reset();
   } else {
-    std::string error_message = addresses_or.Status().ToString();
+    std::string error_message = addresses_or.status().ToString();
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             error_message.c_str());
     // Return transient error.
@@ -222,7 +219,6 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(absl::StatusOr<grpc_resolv
     grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
   }
   Unref(DEBUG_LOCATION, "dns-resolving");
-  GRPC_ERROR_UNREF(error);
 }
 
 void NativeClientChannelDNSResolver::MaybeStartResolvingLocked() {
@@ -270,8 +266,11 @@ void NativeClientChannelDNSResolver::StartResolvingLocked() {
   Ref(DEBUG_LOCATION, "dns-resolving").release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
-  addresses_ = nullptr;
-  dns_request_ = DNSResolver::instance()->CreateDNSRequest(name_to_resolve_, kDefaultSecurePort, interested_parties_, std::bind(&NativeClientChannelDNSResolver::OnResolved, this));
+  dns_request_ = DNSResolver::instance()->CreateDNSRequest(
+      name_to_resolve_,
+      kDefaultSecurePort,
+      interested_parties_,
+      std::bind(&NativeClientChannelDNSResolver::OnResolved, this, std::placeholders::_1));
   dns_request_->Start();
   last_resolution_timestamp_ = ExecCtx::Get()->Now();
 }

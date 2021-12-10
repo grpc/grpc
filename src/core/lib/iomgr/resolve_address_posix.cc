@@ -41,8 +41,16 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
+
+void NativeDNSRequest::DoRequestThread(void* rp, grpc_error_handle /*error*/) {
+  NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
+  auto result = DNSResolver::instance()->BlockingResolveAddress(r->name_, r->default_port_);
+  r->on_done_(result);
+  r->Unref();
+}
 
 absl::StatusOr<grpc_resolved_addresses*>
 NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
@@ -71,7 +79,7 @@ NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
           GRPC_ERROR_STR_TARGET_ADDRESS, name);
       goto done;
     }
-    port = default_port;
+    port = std::string(default_port);
   }
   /* Call getaddrinfo */
   memset(&hints, 0, sizeof(hints));

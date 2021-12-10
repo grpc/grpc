@@ -49,6 +49,9 @@ struct grpc_resolved_addresses {
   grpc_resolved_address* addrs;
 };
 
+/* Destroy resolved addresses */
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
+
 namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
@@ -97,8 +100,5 @@ class DNSResolver {
 };
 
 }  // namespace grpc_core
-
-/* Destroy resolved addresses */
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */
