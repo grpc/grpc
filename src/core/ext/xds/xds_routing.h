@@ -27,7 +27,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/xds_api.h"
+#include "src/core/ext/xds/xds_listener.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/metadata_batch.h"
 

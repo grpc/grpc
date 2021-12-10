@@ -64,6 +64,7 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -158,31 +159,6 @@ constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
-constexpr char kDefaultServiceConfig[] =
-    "{\n"
-    "  \"loadBalancingConfig\":[\n"
-    "    { \"does_not_exist\":{} },\n"
-    "    { \"xds_cluster_resolver_experimental\":{\n"
-    "      \"discoveryMechanisms\": [\n"
-    "      { \"clusterName\": \"server.example.com\",\n"
-    "        \"type\": \"EDS\",\n"
-    "        \"lrsLoadReportingServerName\": \"\"\n"
-    "      } ]\n"
-    "    } }\n"
-    "  ]\n"
-    "}";
-constexpr char kDefaultServiceConfigWithoutLoadReporting[] =
-    "{\n"
-    "  \"loadBalancingConfig\":[\n"
-    "    { \"does_not_exist\":{} },\n"
-    "    { \"xds_cluster_resolver_experimental\":{\n"
-    "      \"discoveryMechanisms\": [\n"
-    "      { \"clusterName\": \"server.example.com\",\n"
-    "        \"type\": \"EDS\"\n"
-    "      } ]\n"
-    "    } }\n"
-    "  ]\n"
-    "}";
 
 constexpr char kBootstrapFileV3[] =
     "{\n"
@@ -347,11 +323,6 @@ class TestType {
     kBootstrapFromEnvVar,
   };
 
-  TestType& set_use_fake_resolver() {
-    use_fake_resolver_ = true;
-    return *this;
-  }
-
   TestType& set_enable_load_reporting() {
     enable_load_reporting_ = true;
     return *this;
@@ -387,7 +358,6 @@ class TestType {
     return *this;
   }
 
-  bool use_fake_resolver() const { return use_fake_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_v2() const { return use_v2_; }
@@ -397,8 +367,7 @@ class TestType {
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
 
   std::string AsString() const {
-    std::string retval = (use_fake_resolver_ ? "FakeResolver" : "XdsResolver");
-    retval += (use_v2_ ? "V2" : "V3");
+    std::string retval = use_v2_ ? "V2" : "V3";
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     if (use_xds_credentials_) retval += "XdsCreds";
@@ -415,7 +384,6 @@ class TestType {
   }
 
  private:
-  bool use_fake_resolver_ = false;
   bool enable_load_reporting_ = false;
   bool enable_rds_testing_ = false;
   bool use_v2_ = false;
@@ -748,10 +716,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     balancer_ = CreateBalancer();
     balancer_->Start();
     // Create fake resolver response generators used by client.
-    if (GetParam().use_fake_resolver()) {
-      response_generator_ =
-          grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    }
     logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     lb_channel_response_generator_ =
@@ -812,11 +776,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
   }
 
-  const char* DefaultEdsServiceName() const {
-    return GetParam().use_fake_resolver() ? kServerName
-                                          : kDefaultEdsServiceName;
-  }
-
   void StartAllBackends() {
     for (auto& backend : backends_) backend->Start();
   }
@@ -842,21 +801,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   std::shared_ptr<Channel> CreateChannel(
       int failover_timeout = 0, const char* server_name = kServerName,
-      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr,
       grpc_channel_args* xds_channel_args = nullptr) {
     ChannelArguments args;
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
-    }
-    // If the parent channel is using the fake resolver, we inject the
-    // response generator here.
-    if (GetParam().use_fake_resolver()) {
-      if (response_generator == nullptr) {
-        response_generator = response_generator_.get();
-      }
-      args.SetPointerWithVtable(
-          GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR, response_generator,
-          &grpc_core::FakeResolverResponseGenerator::kChannelArgPointerVtable);
     }
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromChannelArg) {
       // We're getting the bootstrap from a channel arg, so we do the
@@ -873,8 +821,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
         logical_dns_cluster_resolver_response_generator_.get(),
         &grpc_core::FakeResolverResponseGenerator::kChannelArgPointerVtable);
-    std::string uri = absl::StrCat(
-        GetParam().use_fake_resolver() ? "fake" : "xds", ":///", server_name);
+    std::string uri = absl::StrCat("xds:///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
         GetParam().use_xds_credentials()
             ? XdsCredentials(CreateTlsFallbackCredentials())
@@ -1143,28 +1090,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return CreateMetadataValueThatHashesToBackendPort(backends_[index]->port());
   }
 
-  void SetNextResolution(
-      const std::vector<int>& ports,
-      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
-    if (!GetParam().use_fake_resolver()) return;  // Not used with xds resolver.
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    const char* service_config_json =
-        GetParam().enable_load_reporting()
-            ? kDefaultServiceConfig
-            : kDefaultServiceConfigWithoutLoadReporting;
-    result.service_config =
-        grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
-    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
-    ASSERT_NE(result.service_config.get(), nullptr);
-    if (response_generator == nullptr) {
-      response_generator = response_generator_.get();
-    }
-    response_generator->SetResponse(std::move(result));
-  }
-
   void SetNextResolutionForLbChannelAllBalancers(
       grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
     std::vector<int> ports = {balancer_->port()};
@@ -1175,13 +1100,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       response_generator = lb_channel_response_generator_.get();
     }
     response_generator->SetResponse(std::move(result));
-  }
-
-  void SetNextReresolutionResponse(const std::vector<int>& ports) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(ports);
-    response_generator_->SetReresolutionResponse(std::move(result));
   }
 
   std::vector<int> GetBackendPorts(size_t start_index = 0,
@@ -1916,8 +1834,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   std::vector<std::unique_ptr<BackendServerThread>> backends_;
   std::unique_ptr<BalancerServerThread> balancer_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator_;
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       lb_channel_response_generator_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       logical_dns_cluster_resolver_response_generator_;
@@ -1943,14 +1859,12 @@ class BasicTest : public XdsEnd2endTest {
 // Tests that the balancer sends the correct response to the client, and the
 // client sends RPCs to the backends using the default child policy.
 TEST_P(BasicTest, Vanilla) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -1963,14 +1877,11 @@ TEST_P(BasicTest, Vanilla) {
               backends_[i]->backend_service()->request_count());
   }
   // Check LB policy name for the channel.
-  EXPECT_EQ(
-      (GetParam().use_fake_resolver() ? "xds_cluster_resolver_experimental"
-                                      : "xds_cluster_manager_experimental"),
-      channel_->GetLoadBalancingPolicyName());
+  EXPECT_EQ("xds_cluster_manager_experimental",
+            channel_->GetLoadBalancingPolicyName());
 }
 
 TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   auto endpoints = CreateEndpointsForBackends();
@@ -1979,8 +1890,7 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
       {"locality0", std::move(endpoints), kDefaultLocalityWeight,
        kDefaultLocalityPriority},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -1997,7 +1907,6 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
 // Tests that subchannel sharing works when the same backend is listed
 // multiple times.
 TEST_P(BasicTest, SameBackendListedMultipleTimes) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Same backend listed twice.
   auto endpoints = CreateEndpointsForBackends(0, 1);
@@ -2006,8 +1915,7 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
       {"locality0", endpoints},
   });
   const size_t kNumRpcsPerAddress = 10;
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for the backend to come online.
   WaitForBackend(0);
   // Send kNumRpcsPerAddress RPCs per server.
@@ -2022,7 +1930,6 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
 
 // Tests that RPCs will be blocked until a non-empty serverlist is received.
 TEST_P(BasicTest, InitiallyEmptyServerlist) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
@@ -2031,15 +1938,14 @@ TEST_P(BasicTest, InitiallyEmptyServerlist) {
   EdsResourceArgs args({
       empty_locality,
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send non-empty serverlist only after kServerlistDelayMs.
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends()},
   });
-  std::thread delayed_resource_setter(std::bind(
-      &BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-      BuildEdsResource(args, DefaultEdsServiceName()), kServerlistDelayMs));
+  std::thread delayed_resource_setter(
+      std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
+                BuildEdsResource(args), kServerlistDelayMs));
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
   CheckRpcSendOk(
@@ -2061,7 +1967,6 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   // Set Rpc timeout to 5 seconds to ensure there is enough time
   // for communication with the xDS server to take place upon test start up.
   const uint32_t kRpcTimeoutMs = 5000;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumUnreachableServers = 5;
   std::vector<EdsResourceArgs::Endpoint> endpoints;
@@ -2071,8 +1976,7 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   EdsResourceArgs args({
       {"locality0", endpoints},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const Status status = SendRpc(RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
   // seconds, and we should disocver in that time that the target backend is
@@ -2083,13 +1987,11 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
 // Tests that RPCs fail when the backends are down, and will succeed again
 // after the backends are restarted.
 TEST_P(BasicTest, BackendsRestart) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
@@ -2110,13 +2012,11 @@ TEST_P(BasicTest, BackendsRestart) {
 
 TEST_P(BasicTest, IgnoresDuplicateUpdates) {
   const size_t kNumRpcsPerAddress = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for all backends to come online.
   WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server, but send an EDS update in
@@ -2125,8 +2025,7 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
   // position in the address list.
   for (size_t i = 0; i < kNumRpcsPerAddress; ++i) {
     CheckRpcSendOk(2);
-    balancer_->ads_service()->SetEdsResource(
-        BuildEdsResource(args, DefaultEdsServiceName()));
+    balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
     CheckRpcSendOk(2);
   }
   // Each backend should have gotten the right number of requests.
@@ -2139,7 +2038,6 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
 using XdsResolverOnlyTest = BasicTest;
 
 TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -2170,7 +2068,6 @@ TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
 TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   const char* kNewClusterName = "new_cluster_name";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 2)},
@@ -2206,7 +2103,6 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
 
 // Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
 TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -2242,7 +2138,6 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   balancer_->ads_service()->SetRdsResource(default_route_config_);
   const char* kNewClusterName = "new_cluster_name";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 2)},
@@ -2290,7 +2185,6 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
       ->set_prefix("/");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -2302,7 +2196,6 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
 
 TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   constexpr size_t kMaxConcurrentRequests = 10;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -2359,20 +2252,15 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Create second channel.
-  auto response_generator2 =
-      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   auto lb_response_generator2 =
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   grpc_arg xds_arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
       lb_response_generator2.get());
   grpc_channel_args xds_channel_args2 = {1, &xds_arg};
   auto channel2 = CreateChannel(
-      /*failover_timeout=*/0, /*server_name=*/kServerName,
-      response_generator2.get(), &xds_channel_args2);
+      /*failover_timeout=*/0, /*server_name=*/kServerName, &xds_channel_args2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   // Set resolution results for both channels and for the xDS channel.
-  SetNextResolution({});
-  SetNextResolution({}, response_generator2.get());
   SetNextResolutionForLbChannelAllBalancers();
   SetNextResolutionForLbChannelAllBalancers(lb_response_generator2.get());
   // Send exactly max_concurrent_requests long RPCs, alternating between
@@ -2452,10 +2340,8 @@ TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
 TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
   // Set up EDS resource pointing to backend 0.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Start the client and make sure it sees the backend.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   WaitForBackend(0);
   // Stop the balancer, and verify that RPCs continue to flow to backend 0.
@@ -2467,8 +2353,7 @@ TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
   // Check the EDS resource to point to backend 1 and bring the balancer
   // back up.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancer_->Start();
   // Wait for client to see backend 1.
   WaitForBackend(1);
@@ -2482,7 +2367,6 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   listener.set_name(kNewServerName);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -2596,142 +2480,6 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   CheckRpcSendOk();
 }
 
-class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
- public:
-  XdsResolverLoadReportingOnlyTest() : XdsEnd2endTest(4, 3) {
-    StartAllBackends();
-  }
-};
-
-// Tests load reporting when switching over from one cluster to another.
-TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  balancer_->lrs_service()->set_cluster_names(
-      {kDefaultClusterName, kNewClusterName});
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // cluster kDefaultClusterName -> locality0 -> backends 0 and 1
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // cluster kNewClusterName -> locality1 -> backends 2 and 3
-  EdsResourceArgs args2({
-      {"locality1", CreateEndpointsForBackends(2, 4)},
-  });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsServiceName));
-  // CDS resource for kNewClusterName.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Wait for all backends to come online.
-  int num_ok = 0;
-  int num_failure = 0;
-  int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(0, 2);
-  // The load report received at the balancer should be correct.
-  std::vector<ClientStats> load_report =
-      balancer_->lrs_service()->WaitForLoadReport();
-  EXPECT_THAT(
-      load_report,
-      ::testing::ElementsAre(::testing::AllOf(
-          ::testing::Property(&ClientStats::cluster_name, kDefaultClusterName),
-          ::testing::Property(
-              &ClientStats::locality_stats,
-              ::testing::ElementsAre(::testing::Pair(
-                  "locality0",
-                  ::testing::AllOf(
-                      ::testing::Field(&ClientStats::LocalityStats::
-                                           total_successful_requests,
-                                       num_ok),
-                      ::testing::Field(&ClientStats::LocalityStats::
-                                           total_requests_in_progress,
-                                       0UL),
-                      ::testing::Field(
-                          &ClientStats::LocalityStats::total_error_requests,
-                          num_failure),
-                      ::testing::Field(
-                          &ClientStats::LocalityStats::total_issued_requests,
-                          num_failure + num_ok))))),
-          ::testing::Property(&ClientStats::total_dropped_requests,
-                              num_drops))));
-  // Change RDS resource to point to new cluster.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   new_route_config);
-  // Wait for all new backends to be used.
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(2, 4);
-  // The load report received at the balancer should be correct.
-  load_report = balancer_->lrs_service()->WaitForLoadReport();
-  EXPECT_THAT(
-      load_report,
-      ::testing::ElementsAre(
-          ::testing::AllOf(
-              ::testing::Property(&ClientStats::cluster_name,
-                                  kDefaultClusterName),
-              ::testing::Property(
-                  &ClientStats::locality_stats,
-                  ::testing::ElementsAre(::testing::Pair(
-                      "locality0",
-                      ::testing::AllOf(
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               total_successful_requests,
-                                           ::testing::Lt(num_ok)),
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               total_requests_in_progress,
-                                           0UL),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_error_requests,
-                              ::testing::Le(num_failure)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::
-                                  total_issued_requests,
-                              ::testing::Le(num_failure + num_ok)))))),
-              ::testing::Property(&ClientStats::total_dropped_requests,
-                                  num_drops)),
-          ::testing::AllOf(
-              ::testing::Property(&ClientStats::cluster_name, kNewClusterName),
-              ::testing::Property(
-                  &ClientStats::locality_stats,
-                  ::testing::ElementsAre(::testing::Pair(
-                      "locality1",
-                      ::testing::AllOf(
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               total_successful_requests,
-                                           ::testing::Le(num_ok)),
-                          ::testing::Field(&ClientStats::LocalityStats::
-                                               total_requests_in_progress,
-                                           0UL),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::total_error_requests,
-                              ::testing::Le(num_failure)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::
-                                  total_issued_requests,
-                              ::testing::Le(num_failure + num_ok)))))),
-              ::testing::Property(&ClientStats::total_dropped_requests,
-                                  num_drops))));
-  int total_ok = 0;
-  int total_failure = 0;
-  for (const ClientStats& client_stats : load_report) {
-    total_ok += client_stats.total_successful_requests();
-    total_failure += client_stats.total_error_requests();
-  }
-  EXPECT_EQ(total_ok, num_ok);
-  EXPECT_EQ(total_failure, num_failure);
-  // The LRS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
-  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
-}
-
 class SecureNamingSuccessTest : public XdsEnd2endTest {
  public:
   SecureNamingSuccessTest()
@@ -2746,13 +2494,11 @@ class SecureNamingSuccessTest : public XdsEnd2endTest {
 
 // Tests that secure naming check passes if target name is expected.
 TEST_P(SecureNamingSuccessTest, TargetNameIsExpected) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk();
 }
 
@@ -2771,13 +2517,11 @@ class SecureNamingFailureTest : public XdsEnd2endTest {
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingFailureTest, TargetNameIsUnexpected) {
   GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
@@ -3007,8 +2751,7 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(balancer_->ads_service()->lds_response_state().state,
@@ -3058,8 +2801,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(balancer_->ads_service()->lds_response_state().state,
@@ -3140,8 +2882,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForBackend(0);
   EXPECT_EQ(balancer_->ads_service()->lds_response_state().state,
@@ -3169,8 +2910,7 @@ TEST_P(LdsV2Test, IgnoresHttpFilters) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
 }
@@ -3180,7 +2920,6 @@ using LdsRdsTest = BasicTest;
 // Tests that LDS client should send an ACK upon correct LDS response (with
 // inlined RDS result).
 TEST_P(LdsRdsTest, Vanilla) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -3192,7 +2931,6 @@ TEST_P(LdsRdsTest, Vanilla) {
 
 // Tests that we go into TRANSIENT_FAILURE if the Listener is removed.
 TEST_P(LdsRdsTest, ListenerRemoved) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -3219,7 +2957,6 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
   // Do a bit of polling, to allow the ACK to get to the ADS server.
@@ -3236,7 +2973,6 @@ TEST_P(LdsRdsTest, ChooseMatchedDomain) {
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -3254,7 +2990,6 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
       ->mutable_route()
       ->mutable_cluster_header();
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -3268,7 +3003,6 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()->add_query_parameters();
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3287,7 +3021,6 @@ TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
   default_route->mutable_match()->set_prefix("/");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3301,7 +3034,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3317,7 +3049,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3333,7 +3064,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("//");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3349,7 +3079,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3365,7 +3094,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("grpc.testing.EchoTest1Service/Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3381,7 +3109,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3397,7 +3124,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3413,7 +3139,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("//Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3429,7 +3154,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3446,7 +3170,6 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   route1->mutable_match()->mutable_safe_regex()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3469,7 +3192,6 @@ TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
   route->mutable_match()->set_prefix("");
   route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_expected_error_code(
       StatusCode::UNAVAILABLE));
@@ -3484,7 +3206,6 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3512,7 +3233,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3539,7 +3259,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3567,7 +3286,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3594,7 +3312,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3614,7 +3331,6 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3636,7 +3352,6 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   header_matcher1->mutable_range_match()->set_end(1000);
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -3658,7 +3373,6 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEcho2Rpcs = 20;
   const size_t kNumEchoRpcs = 30;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -3733,7 +3447,6 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEchoRpcs = 30;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -3798,7 +3511,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEcho2Rpcs = 20;
   const size_t kNumEchoRpcs = 30;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -3868,7 +3580,6 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEchoRpcs = 30;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -3933,7 +3644,6 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
   const size_t kNumEcho1Rpcs = 10;
   const size_t kNumEcho2Rpcs = 20;
   const size_t kNumEchoRpcs = 30;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4012,7 +3722,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
   const size_t kNumEcho1Rpcs =
       ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4099,7 +3808,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
   const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
   const size_t kNumEchoRpcs =
       ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4179,7 +3887,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
   const size_t kNumEcho1Rpcs5050 =
       ComputeIdealNumRpcs(kWeight50Percent, kErrorTolerance);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4311,7 +4018,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
   const size_t kNumEcho1Rpcs5050 =
       ComputeIdealNumRpcs(kWeight50Percent, kErrorTolerance);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4452,7 +4158,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEchoRpcs = 5;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4491,7 +4196,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4557,7 +4261,6 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kNewCluster3Name = "new_cluster_3";
   const char* kNewEdsService3Name = "new_eds_service_name_3";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
@@ -4686,7 +4389,6 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
@@ -4782,7 +4484,6 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   const int64_t kTimeoutApplicationSecond = 4;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
@@ -4820,7 +4521,6 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
 // the xDS config does not specify a timeout.
 TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   const int64_t kTimeoutApplicationSecond = 4;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
@@ -4840,7 +4540,6 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
 
 TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   const size_t kNumRetries = 3;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4903,7 +4602,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
 
 TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   const size_t kNumRetries = 3;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4931,7 +4629,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
   // Set num retries to 3, but due to longer back off, we expect only 1 retry
   // will take place.
   const size_t kNumRetries = 3;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -4967,7 +4664,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
   // Set num retries to 3, but due to longer back off, we expect only 2 retry
   // will take place, while the 2nd one will obey the max backoff.
   const size_t kNumRetries = 3;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5008,7 +4704,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
 
 TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   const size_t kNumRetries = 3;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5034,7 +4729,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
 TEST_P(LdsRdsTest,
        XdsRetryPolicyUnsupportedStatusCodeWithVirtualHostLevelRetry) {
   const size_t kNumRetries = 3;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5065,7 +4759,6 @@ TEST_P(LdsRdsTest,
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5090,7 +4783,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5123,7 +4815,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   const char* kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEcho1Rpcs = 100;
   const size_t kNumEchoRpcs = 5;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5207,7 +4898,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEchoRpcs = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5254,7 +4944,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const size_t kNumEchoRpcs = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5307,7 +4996,6 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
       static_cast<double>(kRouteMatchNumerator) / 100;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kRouteMatchPercent, kErrorTolerance);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5360,7 +5048,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   const char* kNewEdsService3Name = "new_eds_service_name_3";
   const size_t kNumEcho1Rpcs = 100;
   const size_t kNumEchoRpcs = 5;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5453,7 +5140,6 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
 TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5527,7 +5213,6 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5552,9 +5237,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -5570,7 +5253,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5590,7 +5272,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5614,9 +5295,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -5633,7 +5312,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5653,7 +5331,6 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5679,9 +5356,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -5698,7 +5373,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5719,7 +5393,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5744,9 +5417,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -5764,7 +5435,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5789,7 +5459,6 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5820,9 +5489,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -5844,7 +5511,6 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5871,7 +5537,6 @@ TEST_P(LdsRdsTest,
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5901,9 +5566,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolution({});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
@@ -5926,7 +5589,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5940,7 +5602,6 @@ using CdsTest = BasicTest;
 
 // Tests that CDS client should send an ACK upon correct CDS response.
 TEST_P(CdsTest, Vanilla) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   (void)SendRpc();
   EXPECT_EQ(balancer_->ads_service()->cds_response_state().state,
@@ -5950,7 +5611,6 @@ TEST_P(CdsTest, Vanilla) {
 TEST_P(CdsTest, LogicalDNSClusterType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -5981,7 +5641,6 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6000,7 +5659,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6021,7 +5679,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
 TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6044,7 +5701,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6065,7 +5721,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
 TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6088,7 +5743,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
 TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6107,7 +5761,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
 TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6129,7 +5782,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
 TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6152,7 +5804,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6178,7 +5829,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6202,7 +5852,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -6231,7 +5880,6 @@ TEST_P(CdsTest, AggregateClusterType) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   EdsResourceArgs args1({
@@ -6281,7 +5929,6 @@ TEST_P(CdsTest, AggregateClusterType) {
 TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -6345,7 +5992,6 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
 TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
@@ -6412,7 +6058,6 @@ TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -6433,7 +6078,6 @@ TEST_P(CdsTest, AggregateClusterTypeDisabled) {
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -6448,7 +6092,6 @@ TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -6497,7 +6140,6 @@ TEST_P(CdsTest, MultipleBadResources) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send RPC.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -6531,7 +6173,6 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Check that everything works.
   CheckRpcSendOk();
@@ -6560,7 +6201,6 @@ TEST_P(CdsTest, WrongEdsConfig) {
   auto cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   balancer_->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -6575,7 +6215,6 @@ TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::LEAST_REQUEST);
   balancer_->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -6590,7 +6229,6 @@ TEST_P(CdsTest, WrongLrsServer) {
   auto cluster = default_cluster_;
   cluster.mutable_lrs_server()->mutable_ads();
   balancer_->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -6614,8 +6252,7 @@ TEST_P(CdsTest, RingHashChannelIdHashing) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk(100);
   bool found = false;
@@ -6645,8 +6282,7 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   // Note each type of RPC will contains a header value that will always be
   // hashed to a specific backend as the header value matches the value used
@@ -6697,8 +6333,7 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -6742,8 +6377,7 @@ TEST_P(CdsTest, RingHashNoHashPolicy) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
@@ -6774,8 +6408,7 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -6806,8 +6439,7 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"unmatched_header", absl::StrFormat("%" PRIu32, rand())},
@@ -6853,8 +6485,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
@@ -6890,8 +6521,7 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   EdsResourceArgs args({{"locality0",
                          {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
                           CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
@@ -6930,8 +6560,7 @@ TEST_P(CdsTest,
   EdsResourceArgs args(
       {{"locality0", {CreateEndpoint(0, HealthStatus::UNKNOWN, 1)}, 1},
        {"locality1", {CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}, 2}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
@@ -6951,7 +6580,6 @@ TEST_P(CdsTest,
 // Tests round robin is not implacted by the endpoint weight, and that the
 // localities in a locality map are picked according to their weights.
 TEST_P(CdsTest, RingHashEndpointWeightDoesNotImpactWeightedRoundRobin) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const int kLocalityWeight0 = 2;
   const int kLocalityWeight1 = 8;
@@ -6972,8 +6600,7 @@ TEST_P(CdsTest, RingHashEndpointWeightDoesNotImpactWeightedRoundRobin) {
        {CreateEndpoint(1, HealthStatus::UNKNOWN, 2)},
        kLocalityWeight1},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for both backends to be ready.
   WaitForAllBackends(0, 2);
   // Send kNumRpcs RPCs.
@@ -7010,8 +6637,7 @@ TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"fixed_string", "fixed_value"},
@@ -7047,8 +6673,7 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   CheckRpcSendOk();
@@ -7074,8 +6699,7 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   EdsResourceArgs args({
       {"locality0", std::move(endpoints)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
@@ -7106,8 +6730,7 @@ TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
       {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        1},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -7141,8 +6764,7 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   EdsResourceArgs args({
       {"locality0", std::move(endpoints)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -7178,8 +6800,7 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   EdsResourceArgs args({
       {"locality0", std::move(endpoints)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -7237,8 +6858,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk(100);
   bool found = false;
@@ -7270,8 +6890,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -7297,8 +6916,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMinimumRingSize) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -7324,8 +6942,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMaxmumRingSize) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -7353,8 +6970,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
   const auto response_state = balancer_->ads_service()->cds_response_state();
@@ -7392,8 +7008,7 @@ class XdsSecurityTest : public BasicTest {
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
-    balancer_->ads_service()->SetEdsResource(
-        BuildEdsResource(args, DefaultEdsServiceName()));
+    balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
     SetNextResolutionForLbChannelAllBalancers();
   }
 
@@ -8281,9 +7896,7 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
-    balancer_->ads_service()->SetEdsResource(
-        BuildEdsResource(args, DefaultEdsServiceName()));
-    SetNextResolution({});
+    balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
     SetNextResolutionForLbChannelAllBalancers();
   }
 };
@@ -8484,9 +8097,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
-    balancer_->ads_service()->SetEdsResource(
-        BuildEdsResource(args, DefaultEdsServiceName()));
-    SetNextResolution({});
+    balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
     SetNextResolutionForLbChannelAllBalancers();
   }
 
@@ -10056,7 +9667,6 @@ using EdsTest = BasicTest;
 // Tests that EDS client should send a NACK if the EDS update contains
 // sparse priorities.
 TEST_P(EdsTest, NacksSparsePriorityList) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
@@ -10083,7 +9693,6 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   Cluster cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->clear_service_name();
   balancer_->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
 }
@@ -10101,14 +9710,12 @@ class TimeoutTest : public XdsEnd2endTest {
 
 TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
 TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
@@ -10121,7 +9728,6 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   // Create second channel for a new server name.
@@ -10141,7 +9747,6 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
@@ -10149,7 +9754,6 @@ TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
 TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kRdsTypeUrl,
                                           kDefaultRouteConfigurationName);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
@@ -10173,7 +9777,6 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   rds->mutable_config_source()->mutable_ads();
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   // Create second channel for a new server name.
@@ -10193,14 +9796,12 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
 
 TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
@@ -10210,7 +9811,6 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   // Change route config to point to non-existing cluster.
@@ -10237,7 +9837,6 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
@@ -10245,7 +9844,6 @@ TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
 TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // No need to remove EDS resource, since the test suite does not add it
   // by default.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendFailure();
 }
@@ -10255,7 +9853,6 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends();
   // New cluster that points to a non-existant EDS resource.
@@ -10291,7 +9888,6 @@ using LocalityMapTest = BasicTest;
 // Tests that the localities in a locality map are picked according to their
 // weights.
 TEST_P(LocalityMapTest, WeightedRoundRobin) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const int kLocalityWeight0 = 2;
   const int kLocalityWeight1 = 8;
@@ -10308,8 +9904,7 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
       {"locality0", CreateEndpointsForBackends(0, 1), kLocalityWeight0},
       {"locality1", CreateEndpointsForBackends(1, 2), kLocalityWeight1},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for both backends to be ready.
   WaitForAllBackends(0, 2);
   // Send kNumRpcs RPCs.
@@ -10329,7 +9924,6 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
 
 // Tests that we correctly handle a locality containing no endpoints.
 TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 5000;
   // EDS response contains 2 localities, one with no endpoints.
@@ -10337,8 +9931,7 @@ TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
       {"locality0", CreateEndpointsForBackends()},
       {"locality1", {}},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for both backends to be ready.
   WaitForAllBackends();
   // Send kNumRpcs RPCs.
@@ -10356,10 +9949,8 @@ TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
 
 // EDS update with no localities.
 TEST_P(LocalityMapTest, NoLocalities) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource({}, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource({}));
   Status status = SendRpc();
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -10368,7 +9959,6 @@ TEST_P(LocalityMapTest, NoLocalities) {
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
 TEST_P(LocalityMapTest, StressTest) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumLocalities = 100;
   const uint32_t kRpcTimeoutMs = 5000;
@@ -10380,15 +9970,14 @@ TEST_P(LocalityMapTest, StressTest) {
     EdsResourceArgs::Locality locality(name, CreateEndpointsForBackends(0, 1));
     args.locality_list.emplace_back(std::move(locality));
   }
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // The second ADS response contains 1 locality, which contains backend 1.
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args, DefaultEdsServiceName()), 60 * 1000));
+                BuildEdsResource(args), 60 * 1000));
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
   WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
@@ -10403,7 +9992,6 @@ TEST_P(LocalityMapTest, StressTest) {
 // Tests that the localities in a locality map are picked correctly after
 // update (addition, modification, deletion).
 TEST_P(LocalityMapTest, UpdateMap) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 3000;
   // The locality weight for the first 3 localities.
@@ -10430,8 +10018,7 @@ TEST_P(LocalityMapTest, UpdateMap) {
       {"locality1", CreateEndpointsForBackends(1, 2), 3},
       {"locality2", CreateEndpointsForBackends(2, 3), 4},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for the first 3 backends to be ready.
   WaitForAllBackends(0, 3);
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -10461,8 +10048,7 @@ TEST_P(LocalityMapTest, UpdateMap) {
       {"locality2", CreateEndpointsForBackends(2, 3), 2},
       {"locality3", CreateEndpointsForBackends(3, 4), 6},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Backend 3 hasn't received any request.
   EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
   // Wait until the locality update has been processed, as signaled by backend
@@ -10496,19 +10082,17 @@ TEST_P(LocalityMapTest, UpdateMap) {
 // Tests that we don't fail RPCs when replacing all of the localities in
 // a given priority.
 TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   args = EdsResourceArgs({
       {"locality1", CreateEndpointsForBackends(1, 2)},
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args, DefaultEdsServiceName()), 5000));
+                BuildEdsResource(args), 5000));
   // Wait for the first backend to be ready.
   WaitForBackend(0);
   // Keep sending RPCs until we switch over to backend 1, which tells us
@@ -10525,7 +10109,6 @@ class FailoverTest : public BasicTest {
 
 // Localities with the highest priority are used when multiple priority exist.
 TEST_P(FailoverTest, ChooseHighestPriority) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -10537,8 +10120,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
       {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
        0},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -10547,7 +10129,6 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
 
 // Does not choose priority with no endpoints.
 TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -10558,8 +10139,7 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
        3},
       {"locality3", {}, kDefaultLocalityWeight, 0},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 1; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -10568,14 +10148,12 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
 
 // Does not choose locality with no endpoints.
 TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", {}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 0},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for all backends to be used.
   std::tuple<int, int, int> counts = WaitForAllBackends();
   // Make sure no RPCs failed in the transition.
@@ -10585,7 +10163,6 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
 // If the higher priority localities are not reachable, failover to the
 // highest priority among the rest.
 TEST_P(FailoverTest, Failover) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -10599,8 +10176,7 @@ TEST_P(FailoverTest, Failover) {
   });
   ShutdownBackend(3);
   ShutdownBackend(0);
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(1, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
@@ -10611,7 +10187,6 @@ TEST_P(FailoverTest, Failover) {
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
   EdsResourceArgs args({
@@ -10624,8 +10199,7 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
       {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
        0},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(3);
   ShutdownBackend(3);
   ShutdownBackend(0);
@@ -10645,7 +10219,6 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
 // The first update only contains unavailable priorities. The second update
 // contains available priorities.
 TEST_P(FailoverTest, UpdateInitialUnavailable) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -10653,8 +10226,7 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        1},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -10669,7 +10241,7 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   ShutdownBackend(1);
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args, DefaultEdsServiceName()), 1000));
+                BuildEdsResource(args), 1000));
   gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                        gpr_time_from_millis(500, GPR_TIMESPAN));
   // Send 0.5 second worth of RPCs.
@@ -10689,7 +10261,6 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
 // Tests that after the localities' priorities are updated, we still choose
 // the highest READY priority with the updated localities.
 TEST_P(FailoverTest, UpdatePriority) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
   EdsResourceArgs args({
@@ -10702,8 +10273,7 @@ TEST_P(FailoverTest, UpdatePriority) {
       {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
        0},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        2},
@@ -10716,7 +10286,7 @@ TEST_P(FailoverTest, UpdatePriority) {
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args, DefaultEdsServiceName()), 1000));
+                BuildEdsResource(args), 1000));
   WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -10729,7 +10299,6 @@ TEST_P(FailoverTest, UpdatePriority) {
 
 // Moves all localities in the current priority to a higher priority.
 TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // First update:
   // - Priority 0 is locality 0, containing backend 0, which is down.
@@ -10741,8 +10310,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
       {"locality1", CreateEndpointsForBackends(1, 3), kDefaultLocalityWeight,
        1},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Second update:
   // - Priority 0 contains both localities 0 and 1.
   // - Priority 1 is not present.
@@ -10756,7 +10324,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args, DefaultEdsServiceName()), 1000));
+                BuildEdsResource(args), 1000));
   // When we get the first update, all backends in priority 0 are down,
   // so we will create priority 1.  Backends 1 and 2 should have traffic,
   // but backend 3 should not.
@@ -10774,7 +10342,6 @@ using DropTest = BasicTest;
 
 // Tests that RPCs are dropped according to the drop config.
 TEST_P(DropTest, Vanilla) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
@@ -10791,8 +10358,7 @@ TEST_P(DropTest, Vanilla) {
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -10816,7 +10382,6 @@ TEST_P(DropTest, Vanilla) {
 
 // Tests that drop config is converted correctly from per hundred.
 TEST_P(DropTest, DropPerHundred) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const uint32_t kDropPerHundredForLb = 10;
   const double kDropRateForLb = kDropPerHundredForLb / 100.0;
@@ -10828,8 +10393,7 @@ TEST_P(DropTest, DropPerHundred) {
   });
   args.drop_categories = {{kLbDropType, kDropPerHundredForLb}};
   args.drop_denominator = FractionalPercent::HUNDRED;
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -10853,7 +10417,6 @@ TEST_P(DropTest, DropPerHundred) {
 
 // Tests that drop config is converted correctly from per ten thousand.
 TEST_P(DropTest, DropPerTenThousand) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const uint32_t kDropPerTenThousandForLb = 1000;
   const double kDropRateForLb = kDropPerTenThousandForLb / 10000.0;
@@ -10865,8 +10428,7 @@ TEST_P(DropTest, DropPerTenThousand) {
   });
   args.drop_categories = {{kLbDropType, kDropPerTenThousandForLb}};
   args.drop_denominator = FractionalPercent::TEN_THOUSAND;
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -10890,7 +10452,6 @@ TEST_P(DropTest, DropPerTenThousand) {
 
 // Tests that drop is working correctly after update.
 TEST_P(DropTest, Update) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
@@ -10908,8 +10469,7 @@ TEST_P(DropTest, Update) {
       {"locality0", CreateEndpointsForBackends()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Send kNumRpcsLbOnly RPCs and count the drops.
   size_t num_drops = 0;
@@ -10936,8 +10496,7 @@ TEST_P(DropTest, Update) {
   // response.
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until the drop rate increases to the middle of the two configs,
   // which implies that the update has been in effect.
   const double kDropRateThreshold =
@@ -10982,7 +10541,6 @@ TEST_P(DropTest, Update) {
 
 // Tests that all the RPCs are dropped if any drop category drops 100%.
 TEST_P(DropTest, DropAll) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
   const uint32_t kDropPerMillionForLb = 100000;
@@ -10991,8 +10549,7 @@ TEST_P(DropTest, DropAll) {
   EdsResourceArgs args;
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and all of them are dropped.
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
@@ -11010,10 +10567,6 @@ class ClientLoadReportingTest : public XdsEnd2endTest {
 
 // Tests that the load report received at the balancer is correct.
 TEST_P(ClientLoadReportingTest, Vanilla) {
-  if (GetParam().use_fake_resolver()) {
-    balancer_->lrs_service()->set_cluster_names({kServerName});
-  }
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 10;
   const size_t kNumFailuresPerAddress = 3;
@@ -11022,8 +10575,7 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   int num_ok = 0;
   int num_failure = 0;
@@ -11061,7 +10613,6 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
 // Tests send_all_clusters.
 TEST_P(ClientLoadReportingTest, SendAllClusters) {
   balancer_->lrs_service()->set_send_all_clusters(true);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 10;
   const size_t kNumFailuresPerAddress = 3;
@@ -11070,8 +10621,7 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   int num_ok = 0;
   int num_failure = 0;
@@ -11110,14 +10660,12 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
 // by the LRS server.
 TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
   balancer_->lrs_service()->set_cluster_names({"bogus"});
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   int num_ok = 0;
   int num_failure = 0;
@@ -11142,10 +10690,6 @@ TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
 // Tests that if the balancer restarts, the client load report contains the
 // stats before and after the restart correctly.
 TEST_P(ClientLoadReportingTest, BalancerRestart) {
-  if (GetParam().use_fake_resolver()) {
-    balancer_->lrs_service()->set_cluster_names({kServerName});
-  }
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumBackendsFirstPass = backends_.size() / 2;
   const size_t kNumBackendsSecondPass =
@@ -11153,8 +10697,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, kNumBackendsFirstPass)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends returned by the balancer are ready.
   int num_ok = 0;
   int num_failure = 0;
@@ -11191,8 +10734,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(kNumBackendsFirstPass)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
   std::tie(num_ok, num_failure, num_drops) =
@@ -11211,6 +10753,134 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
 }
 
+// Tests load reporting when switching over from one cluster to another.
+TEST_P(ClientLoadReportingTest, ChangeClusters) {
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  balancer_->lrs_service()->set_cluster_names(
+      {kDefaultClusterName, kNewClusterName});
+  SetNextResolutionForLbChannelAllBalancers();
+  // cluster kDefaultClusterName -> locality0 -> backends 0 and 1
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // cluster kNewClusterName -> locality1 -> backends 2 and 3
+  EdsResourceArgs args2({
+      {"locality1", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsServiceName));
+  // CDS resource for kNewClusterName.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Wait for all backends to come online.
+  int num_ok = 0;
+  int num_failure = 0;
+  int num_drops = 0;
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(0, 2);
+  // The load report received at the balancer should be correct.
+  std::vector<ClientStats> load_report =
+      balancer_->lrs_service()->WaitForLoadReport();
+  EXPECT_THAT(
+      load_report,
+      ::testing::ElementsAre(::testing::AllOf(
+          ::testing::Property(&ClientStats::cluster_name, kDefaultClusterName),
+          ::testing::Property(
+              &ClientStats::locality_stats,
+              ::testing::ElementsAre(::testing::Pair(
+                  "locality0",
+                  ::testing::AllOf(
+                      ::testing::Field(&ClientStats::LocalityStats::
+                                           total_successful_requests,
+                                       num_ok),
+                      ::testing::Field(&ClientStats::LocalityStats::
+                                           total_requests_in_progress,
+                                       0UL),
+                      ::testing::Field(
+                          &ClientStats::LocalityStats::total_error_requests,
+                          num_failure),
+                      ::testing::Field(
+                          &ClientStats::LocalityStats::total_issued_requests,
+                          num_failure + num_ok))))),
+          ::testing::Property(&ClientStats::total_dropped_requests,
+                              num_drops))));
+  // Change RDS resource to point to new cluster.
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Wait for all new backends to be used.
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(2, 4);
+  // The load report received at the balancer should be correct.
+  load_report = balancer_->lrs_service()->WaitForLoadReport();
+  EXPECT_THAT(
+      load_report,
+      ::testing::ElementsAre(
+          ::testing::AllOf(
+              ::testing::Property(&ClientStats::cluster_name,
+                                  kDefaultClusterName),
+              ::testing::Property(
+                  &ClientStats::locality_stats,
+                  ::testing::ElementsAre(::testing::Pair(
+                      "locality0",
+                      ::testing::AllOf(
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_successful_requests,
+                                           ::testing::Lt(num_ok)),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_requests_in_progress,
+                                           0UL),
+                          ::testing::Field(
+                              &ClientStats::LocalityStats::total_error_requests,
+                              ::testing::Le(num_failure)),
+                          ::testing::Field(
+                              &ClientStats::LocalityStats::
+                                  total_issued_requests,
+                              ::testing::Le(num_failure + num_ok)))))),
+              ::testing::Property(&ClientStats::total_dropped_requests,
+                                  num_drops)),
+          ::testing::AllOf(
+              ::testing::Property(&ClientStats::cluster_name, kNewClusterName),
+              ::testing::Property(
+                  &ClientStats::locality_stats,
+                  ::testing::ElementsAre(::testing::Pair(
+                      "locality1",
+                      ::testing::AllOf(
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_successful_requests,
+                                           ::testing::Le(num_ok)),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_requests_in_progress,
+                                           0UL),
+                          ::testing::Field(
+                              &ClientStats::LocalityStats::total_error_requests,
+                              ::testing::Le(num_failure)),
+                          ::testing::Field(
+                              &ClientStats::LocalityStats::
+                                  total_issued_requests,
+                              ::testing::Le(num_failure + num_ok)))))),
+              ::testing::Property(&ClientStats::total_dropped_requests,
+                                  num_drops))));
+  int total_ok = 0;
+  int total_failure = 0;
+  for (const ClientStats& client_stats : load_report) {
+    total_ok += client_stats.total_successful_requests();
+    total_failure += client_stats.total_error_requests();
+  }
+  EXPECT_EQ(total_ok, num_ok);
+  EXPECT_EQ(total_failure, num_failure);
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+}
+
 class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
  public:
   ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 20) {
@@ -11220,10 +10890,6 @@ class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
 
 // Tests that the drop stats are correctly reported by client load reporting.
 TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
-  if (GetParam().use_fake_resolver()) {
-    balancer_->lrs_service()->set_cluster_names({kServerName});
-  }
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
@@ -11240,8 +10906,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   int num_ok = 0;
   int num_failure = 0;
   int num_drops = 0;
@@ -11345,7 +11010,6 @@ class FaultInjectionTest : public XdsEnd2endTest {
 // Test to ensure the most basic fault injection config works.
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   const uint32_t kAbortPercentagePerHundred = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -11367,14 +11031,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
 // Without the listener config, the fault injection won't be enabled.
 TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
   const uint32_t kAbortPercentagePerHundred = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
@@ -11395,14 +11057,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
@@ -11432,14 +11092,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
   const double kAbortRate = kAbortPercentage / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   http_fault.mutable_abort()->mutable_header_abort();
@@ -11474,14 +11132,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
@@ -11524,14 +11180,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
@@ -11572,14 +11226,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
 TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
   const uint32_t kFixedDelaySeconds = 1;
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
@@ -11616,14 +11268,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
@@ -11680,14 +11330,12 @@ TEST_P(FaultInjectionTest,
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
   auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
@@ -11736,14 +11384,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   const uint32_t kRpcTimeoutMs = 4000;     // 4 seconds
   const uint32_t kLongDelaySeconds = 100;  // 100 seconds
   const uint32_t kAlwaysDelayPercentage = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
@@ -11775,14 +11421,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 10000;
   const uint32_t kFixedDelaySeconds = 1;
   const uint32_t kDelayPercentagePerHundred = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
@@ -11810,14 +11454,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 500;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kDelayPercentagePerHundred = 100;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
@@ -11844,13 +11486,11 @@ class BootstrapSourceTest : public XdsEnd2endTest {
 };
 
 TEST_P(BootstrapSourceTest, Vanilla) {
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
 }
 
@@ -12102,11 +11742,9 @@ MATCHER_P2(EqNoRdsHCM, route_configuration_name, cluster_name,
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   const size_t kNumRpcs = 5;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send several RPCs to ensure the xDS setup works
   CheckRpcSendOk(kNumRpcs);
   // Fetches the client config
@@ -12173,11 +11811,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEmpty) {
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
   CheckRpcSendOk();
   // Bad Listener should be rejected.
@@ -12216,11 +11852,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
   CheckRpcSendOk();
   // Bad route config will be rejected.
@@ -12229,7 +11863,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
   route_config.add_virtual_hosts();
   SetRouteConfiguration(balancer_.get(), route_config);
   // The old xDS configs should still be effective.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
   for (int i = 0; i < kFetchConfigRetries; ++i) {
@@ -12267,11 +11900,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
   CheckRpcSendOk();
   // Listener without any route, will be rejected.
@@ -12279,7 +11910,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
   cluster.set_name(kDefaultClusterName);
   balancer_->ads_service()->SetCdsResource(cluster);
   // The old xDS configs should still be effective.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
   for (int i = 0; i < kFetchConfigRetries; ++i) {
@@ -12303,11 +11933,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
   CheckRpcSendOk();
   // Bad endpoint config will be rejected.
@@ -12319,7 +11947,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   endpoint->mutable_address()->mutable_socket_address()->set_port_value(1 << 1);
   balancer_->ads_service()->SetEdsResource(cluster_load_assignment);
   // The old xDS configs should still be effective.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
   for (int i = 0; i < kFetchConfigRetries; ++i) {
@@ -12361,7 +11988,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
   int kTimeoutMillisecond = 1000;
   std::string kClusterName1 = "cluster-1";
   std::string kClusterName2 = "cluster-2";
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create a route config requesting two non-existing clusters
   RouteConfiguration route_config;
@@ -12421,7 +12047,6 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
   if (!GetParam().enable_rds_testing()) return;
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   balancer_->ads_service()->UnsetResource(kRdsTypeUrl,
                                           kDefaultRouteConfigurationName);
@@ -12440,7 +12065,6 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
@@ -12458,7 +12082,6 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
   CheckRpcSendFailure(
@@ -12480,26 +12103,18 @@ std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
 
-// Run with all combinations of xds/fake resolver and enabling load reporting.
+// Run both with and without load reporting.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, BasicTest,
-    ::testing::Values(
-        TestType(), TestType().set_enable_load_reporting(),
-        TestType().set_use_fake_resolver(),
-        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
     &TestTypeName);
 
-// Run with both fake resolver and xds resolver.
 // Don't run with load reporting or v2 or RDS, since they are irrelevant to
 // the tests.
 INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingSuccessTest,
-                         ::testing::Values(TestType(),
-                                           TestType().set_use_fake_resolver()),
-                         &TestTypeName);
+                         ::testing::Values(TestType()), &TestTypeName);
 INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingFailureTest,
-                         ::testing::Values(TestType(),
-                                           TestType().set_use_fake_resolver()),
-                         &TestTypeName);
+                         ::testing::Values(TestType()), &TestTypeName);
 
 // LDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(TestType()),
@@ -12540,33 +12155,20 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
                          &TestTypeName);
 
 // We are only testing the server here.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
-                         ::testing::Values(TestType()
-                                               .set_use_fake_resolver()
-                                               .set_use_xds_credentials()),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsServerSecurityTest,
+    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsEnabledServerStatusNotificationTest,
+    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsServerFilterChainMatchTest,
+    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
 
-// We are only testing the server here.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
-                         ::testing::Values(TestType()
-                                               .set_use_fake_resolver()
-                                               .set_use_xds_credentials()),
-                         &TestTypeName);
-
-// We are only testing the server here.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
-                         ::testing::Values(TestType()
-                                               .set_use_fake_resolver()
-                                               .set_use_xds_credentials()),
-                         &TestTypeName);
-
-// We are only testing the server here.
+// Test xDS-enabled server with and without RDS.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
-                         ::testing::Values(TestType()
-                                               .set_use_fake_resolver()
-                                               .set_use_xds_credentials(),
+                         ::testing::Values(TestType().set_use_xds_credentials(),
                                            TestType()
-                                               .set_use_fake_resolver()
                                                .set_use_xds_credentials()
                                                .set_enable_rds_testing()),
                          &TestTypeName);
@@ -12606,50 +12208,27 @@ INSTANTIATE_TEST_SUITE_P(
             .set_enable_load_reporting()),
     &TestTypeName);
 
-// XdsResolverLoadReprtingOnlyTest depends on XdsResolver and load reporting.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsResolverLoadReportingOnlyTest,
-    ::testing::Values(TestType().set_enable_load_reporting()), &TestTypeName);
-
+// TODO(roth): When we have time, merge these into EdsTest.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, LocalityMapTest,
-    ::testing::Values(
-        TestType(), TestType().set_enable_load_reporting(),
-        TestType().set_use_fake_resolver(),
-        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
     &TestTypeName);
-
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, FailoverTest,
-    ::testing::Values(
-        TestType(), TestType().set_enable_load_reporting(),
-        TestType().set_use_fake_resolver(),
-        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
     &TestTypeName);
-
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, DropTest,
-    ::testing::Values(
-        TestType(), TestType().set_enable_load_reporting(),
-        TestType().set_use_fake_resolver(),
-        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
     &TestTypeName);
 
 // Load reporting tests are not run with load reporting disabled.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientLoadReportingTest,
-    ::testing::Values(
-        TestType().set_enable_load_reporting(),
-        TestType().set_enable_load_reporting().set_use_fake_resolver()),
-    &TestTypeName);
-
-// Load reporting tests are not run with load reporting disabled.
+    ::testing::Values(TestType().set_enable_load_reporting()), &TestTypeName);
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientLoadReportingWithDropTest,
-    ::testing::Values(
-        TestType().set_enable_load_reporting(),
-        TestType().set_enable_load_reporting().set_use_fake_resolver()),
-    &TestTypeName);
+    ::testing::Values(TestType().set_enable_load_reporting()), &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, FaultInjectionTest,

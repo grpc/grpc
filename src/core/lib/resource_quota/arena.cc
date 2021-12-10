@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 #include <string.h>
 
@@ -61,22 +61,24 @@ Arena::~Arena() {
   }
 }
 
-Arena* Arena::Create(size_t initial_size) {
-  return new (ArenaStorage(initial_size)) Arena(initial_size);
+Arena* Arena::Create(size_t initial_size, MemoryAllocator* memory_allocator) {
+  return new (ArenaStorage(initial_size))
+      Arena(initial_size, 0, memory_allocator);
 }
 
-std::pair<Arena*, void*> Arena::CreateWithAlloc(size_t initial_size,
-                                                size_t alloc_size) {
+std::pair<Arena*, void*> Arena::CreateWithAlloc(
+    size_t initial_size, size_t alloc_size, MemoryAllocator* memory_allocator) {
   static constexpr size_t base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
-  auto* new_arena =
-      new (ArenaStorage(initial_size)) Arena(initial_size, alloc_size);
+  auto* new_arena = new (ArenaStorage(initial_size))
+      Arena(initial_size, alloc_size, memory_allocator);
   void* first_alloc = reinterpret_cast<char*>(new_arena) + base_size;
   return std::make_pair(new_arena, first_alloc);
 }
 
 size_t Arena::Destroy() {
   size_t size = total_used_.load(std::memory_order_relaxed);
+  memory_allocator_->Release(total_allocated_.load(std::memory_order_relaxed));
   this->~Arena();
   gpr_free_aligned(this);
   return size;
@@ -91,13 +93,14 @@ void* Arena::AllocZone(size_t size) {
   static constexpr size_t zone_base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
   size_t alloc_size = zone_base_size + size;
+  memory_allocator_->Reserve(alloc_size);
+  total_allocated_.fetch_add(alloc_size, std::memory_order_relaxed);
   Zone* z = new (gpr_malloc_aligned(alloc_size, GPR_MAX_ALIGNMENT)) Zone();
-  {
-    gpr_spinlock_lock(&arena_growth_spinlock_);
-    z->prev = last_zone_;
-    last_zone_ = z;
-    gpr_spinlock_unlock(&arena_growth_spinlock_);
-  }
+  auto* prev = last_zone_.load(std::memory_order_relaxed);
+  do {
+    z->prev = prev;
+  } while (!last_zone_.compare_exchange_weak(prev, z, std::memory_order_relaxed,
+                                             std::memory_order_relaxed));
   return reinterpret_cast<char*>(z) + zone_base_size;
 }
 

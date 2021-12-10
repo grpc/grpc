@@ -43,7 +43,7 @@ void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder* builder,
 void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder* b,
                                            const char* target);
 
-const char* grpc_channel_stack_builder_get_target(
+std::string grpc_channel_stack_builder_get_target(
     grpc_channel_stack_builder* b);
 
 /// Attach \a transport to the builder (does not take ownership)

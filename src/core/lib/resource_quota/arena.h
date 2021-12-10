@@ -22,8 +22,8 @@
 // Tracks the total memory allocated against it, so that future arenas can
 // pre-allocate the right amount of memory
 
-#ifndef GRPC_CORE_LIB_GPRPP_ARENA_H
-#define GRPC_CORE_LIB_GPRPP_ARENA_H
+#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
+#define GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -38,20 +38,22 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 
 namespace grpc_core {
 
 class Arena {
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
-  static Arena* Create(size_t initial_size);
+  static Arena* Create(size_t initial_size, MemoryAllocator* memory_allocator);
 
   // Create an arena, with \a initial_size bytes in the first allocated buffer,
   // and return both a void pointer to the returned arena and a void* with the
   // first allocation.
-  static std::pair<Arena*, void*> CreateWithAlloc(size_t initial_size,
-                                                  size_t alloc_size);
+  static std::pair<Arena*, void*> CreateWithAlloc(
+      size_t initial_size, size_t alloc_size,
+      MemoryAllocator* memory_allocator);
 
   // Destroy an arena, returning the total number of bytes allocated.
   size_t Destroy();
@@ -96,9 +98,11 @@ class Arena {
   //   quick optimization (avoiding an atomic fetch-add) for the common case
   //   where we wish to create an arena and then perform an immediate
   //   allocation.
-  explicit Arena(size_t initial_size, size_t initial_alloc = 0)
+  explicit Arena(size_t initial_size, size_t initial_alloc,
+                 MemoryAllocator* memory_allocator)
       : total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc)),
-        initial_zone_size_(initial_size) {}
+        initial_zone_size_(initial_size),
+        memory_allocator_(memory_allocator) {}
 
   ~Arena();
 
@@ -107,14 +111,16 @@ class Arena {
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
   std::atomic<size_t> total_used_{0};
+  std::atomic<size_t> total_allocated_{0};
   const size_t initial_zone_size_;
-  gpr_spinlock arena_growth_spinlock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   // If the initial arena allocation wasn't enough, we allocate additional zones
   // in a reverse linked list. Each additional zone consists of (1) a pointer to
   // the zone added before this zone (null if this is the first additional zone)
   // and (2) the allocated memory. The arena itself maintains a pointer to the
   // last zone; the zone list is reverse-walked during arena destruction only.
-  Zone* last_zone_ = nullptr;
+  std::atomic<Zone*> last_zone_{nullptr};
+  // The backing memory quota
+  MemoryAllocator* const memory_allocator_;
 };
 
 // Smart pointer for arenas when the final size is not required.
@@ -122,10 +128,15 @@ struct ScopedArenaDeleter {
   void operator()(Arena* arena) { arena->Destroy(); }
 };
 using ScopedArenaPtr = std::unique_ptr<Arena, ScopedArenaDeleter>;
-inline ScopedArenaPtr MakeScopedArena(size_t initial_size) {
-  return ScopedArenaPtr(Arena::Create(initial_size));
+inline ScopedArenaPtr MakeScopedArena(size_t initial_size,
+                                      MemoryAllocator* memory_allocator) {
+  return ScopedArenaPtr(Arena::Create(initial_size, memory_allocator));
 }
+
+// Arenas form a context for activities
+template <>
+struct ContextType<Arena> {};
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_ARENA_H */
+#endif /* GRPC_CORE_LIB_RESOURCE_QUOTA_ARENA_H */

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.43.0-dev'
+  version = '1.44.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -834,7 +834,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_http_filters.h',
                       'src/core/ext/xds/xds_listener.cc',
                       'src/core/ext/xds/xds_listener.h',
+                      'src/core/ext/xds/xds_resource_type.cc',
                       'src/core/ext/xds/xds_resource_type.h',
+                      'src/core/ext/xds/xds_resource_type_impl.h',
                       'src/core/ext/xds/xds_route_config.cc',
                       'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.cc',
@@ -943,8 +945,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tmpfile_windows.cc',
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gpr/wrap_memcpy.cc',
-                      'src/core/lib/gprpp/arena.cc',
-                      'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic_utils.h',
                       'src/core/lib/gprpp/bitset.h',
                       'src/core/lib/gprpp/chunked_vector.h',
@@ -1184,6 +1184,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/seq.h',
                       'src/core/lib/resource_quota/api.cc',
                       'src/core/lib/resource_quota/api.h',
+                      'src/core/lib/resource_quota/arena.cc',
+                      'src/core/lib/resource_quota/arena.h',
                       'src/core/lib/resource_quota/memory_quota.cc',
                       'src/core/lib/resource_quota/memory_quota.h',
                       'src/core/lib/resource_quota/resource_quota.cc',
@@ -1824,6 +1826,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_http_filters.h',
                               'src/core/ext/xds/xds_listener.h',
                               'src/core/ext/xds/xds_resource_type.h',
+                              'src/core/ext/xds/xds_resource_type_impl.h',
                               'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
                               'src/core/lib/address_utils/parse_address.h',
@@ -1868,7 +1871,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tls.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
-                              'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic_utils.h',
                               'src/core/lib/gprpp/bitset.h',
                               'src/core/lib/gprpp/chunked_vector.h',
@@ -1991,6 +1993,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/race.h',
                               'src/core/lib/promise/seq.h',
                               'src/core/lib/resource_quota/api.h',
+                              'src/core/lib/resource_quota/arena.h',
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/resource_quota.h',
                               'src/core/lib/resource_quota/thread_quota.h',

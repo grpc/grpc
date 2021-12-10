@@ -337,6 +337,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\xds\\xds_http_fault_filter.cc " +
     "src\\core\\ext\\xds\\xds_http_filters.cc " +
     "src\\core\\ext\\xds\\xds_listener.cc " +
+    "src\\core\\ext\\xds\\xds_resource_type.cc " +
     "src\\core\\ext\\xds\\xds_route_config.cc " +
     "src\\core\\ext\\xds\\xds_routing.cc " +
     "src\\core\\ext\\xds\\xds_server_config_fetcher.cc " +
@@ -401,7 +402,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gpr\\tmpfile_posix.cc " +
     "src\\core\\lib\\gpr\\tmpfile_windows.cc " +
     "src\\core\\lib\\gpr\\wrap_memcpy.cc " +
-    "src\\core\\lib\\gprpp\\arena.cc " +
     "src\\core\\lib\\gprpp\\examine_stack.cc " +
     "src\\core\\lib\\gprpp\\fork.cc " +
     "src\\core\\lib\\gprpp\\global_config_env.cc " +
@@ -519,6 +519,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\profiling\\stap_timers.cc " +
     "src\\core\\lib\\promise\\activity.cc " +
     "src\\core\\lib\\resource_quota\\api.cc " +
+    "src\\core\\lib\\resource_quota\\arena.cc " +
     "src\\core\\lib\\resource_quota\\memory_quota.cc " +
     "src\\core\\lib\\resource_quota\\resource_quota.cc " +
     "src\\core\\lib\\resource_quota\\thread_quota.cc " +

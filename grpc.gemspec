@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.1'
+  s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
@@ -753,7 +753,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_http_filters.h )
   s.files += %w( src/core/ext/xds/xds_listener.cc )
   s.files += %w( src/core/ext/xds/xds_listener.h )
+  s.files += %w( src/core/ext/xds/xds_resource_type.cc )
   s.files += %w( src/core/ext/xds/xds_resource_type.h )
+  s.files += %w( src/core/ext/xds/xds_resource_type_impl.h )
   s.files += %w( src/core/ext/xds/xds_route_config.cc )
   s.files += %w( src/core/ext/xds/xds_route_config.h )
   s.files += %w( src/core/ext/xds/xds_routing.cc )
@@ -862,8 +864,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/tmpfile_windows.cc )
   s.files += %w( src/core/lib/gpr/useful.h )
   s.files += %w( src/core/lib/gpr/wrap_memcpy.cc )
-  s.files += %w( src/core/lib/gprpp/arena.cc )
-  s.files += %w( src/core/lib/gprpp/arena.h )
   s.files += %w( src/core/lib/gprpp/atomic_utils.h )
   s.files += %w( src/core/lib/gprpp/bitset.h )
   s.files += %w( src/core/lib/gprpp/chunked_vector.h )
@@ -1103,6 +1103,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/seq.h )
   s.files += %w( src/core/lib/resource_quota/api.cc )
   s.files += %w( src/core/lib/resource_quota/api.h )
+  s.files += %w( src/core/lib/resource_quota/arena.cc )
+  s.files += %w( src/core/lib/resource_quota/arena.h )
   s.files += %w( src/core/lib/resource_quota/memory_quota.cc )
   s.files += %w( src/core/lib/resource_quota/memory_quota.h )
   s.files += %w( src/core/lib/resource_quota/resource_quota.cc )

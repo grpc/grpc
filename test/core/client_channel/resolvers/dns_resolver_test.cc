@@ -32,8 +32,7 @@
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
-  void ReturnError(grpc_error_handle /*error*/) override {}
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {}
 };
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,

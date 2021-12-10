@@ -581,7 +581,7 @@ void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(
         GPR_INFO,
-        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
+        "[RH %p] connectivity changed for subchannel %p, subchannel_list %p "
         "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
         p, subchannel(), subchannel_list(), Index(),
         subchannel_list()->num_subchannels(),
@@ -623,7 +623,7 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO,
-              "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
+              "[RH %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
               "Requesting re-resolution",
               p, subchannel());
     }
@@ -685,27 +685,40 @@ void RingHash::ShutdownLocked() {
 void RingHash::ResetBackoffLocked() { subchannel_list_->ResetBackoffLocked(); }
 
 void RingHash::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
-            this, args.addresses.size());
-  }
   config_ = std::move(args.config);
-  // Filter out any address with weight 0.
   ServerAddressList addresses;
-  addresses.reserve(args.addresses.size());
-  for (ServerAddress& address : args.addresses) {
-    const ServerAddressWeightAttribute* weight_attribute =
-        static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-            ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-    if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
-      addresses.push_back(std::move(address));
+  if (args.addresses.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+      gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
+              this, args.addresses->size());
     }
+    // Filter out any address with weight 0.
+    addresses.reserve(args.addresses->size());
+    for (ServerAddress& address : *args.addresses) {
+      const ServerAddressWeightAttribute* weight_attribute =
+          static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
+              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+      if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
+        addresses.emplace_back(std::move(address));
+      }
+    }
+  } else {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+      gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
+              this, args.addresses.status().ToString().c_str());
+    }
+    // If we already have a subchannel list, then ignore the resolver
+    // failure and keep using the existing list.
+    if (subchannel_list_ != nullptr) return;
   }
   subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
       this, &grpc_lb_ring_hash_trace, std::move(addresses), *args.args);
   if (subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately transition to TRANSIENT_FAILURE.
-    absl::Status status = absl::UnavailableError("Empty update");
+    absl::Status status =
+        args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
+                                  "empty address list: ", args.resolution_note))
+                            : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));

@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -179,15 +177,16 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     return;
   }
   if (addresses_ != nullptr) {
-    Result result;
+    ServerAddressList addresses;
     for (size_t i = 0; i < addresses_->naddrs; ++i) {
-      result.addresses.emplace_back(&addresses_->addrs[i].addr,
-                                    addresses_->addrs[i].len,
-                                    nullptr /* args */);
+      addresses.emplace_back(&addresses_->addrs[i].addr,
+                             addresses_->addrs[i].len, nullptr /* args */);
     }
     grpc_resolved_addresses_destroy(addresses_);
+    Result result;
+    result.addresses = std::move(addresses);
     result.args = grpc_channel_args_copy(channel_args_);
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     backoff_.Reset();
@@ -195,12 +194,13 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_std_string(error).c_str());
     // Return transient error.
-    std::string error_message =
-        absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
-    result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
-                                                         &error, 1),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    std::string error_message;
+    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    Result result;
+    result.addresses = absl::UnavailableError(absl::StrCat(
+        "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
+    result.args = grpc_channel_args_copy(channel_args_);
+    result_handler_->ReportResult(std::move(result));
     // Set up for retry.
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
