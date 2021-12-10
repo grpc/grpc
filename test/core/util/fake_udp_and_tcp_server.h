@@ -37,7 +37,7 @@ namespace testing {
 //
 // Note that resulting server only listens on the IPv6 loopback
 // address, "[::1]". This is expected to be OK as all known gRPC unit test
-// environments support have this address available.
+// environments have this address available.
 //
 // As examples, this can be used to (but is not limited to) exercise
 // the following cases:
@@ -85,7 +85,7 @@ class FakeUdpAndTcpServer {
 
   explicit FakeUdpAndTcpServer(
       AcceptMode accept_mode,
-      const std::function<ProcessReadResult(int, int, int)>& process_read_cb);
+      std::function<ProcessReadResult(int, int, int)> process_read_cb);
 
   ~FakeUdpAndTcpServer();
 
