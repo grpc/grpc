@@ -1,18 +1,4 @@
 // Copyright 2021 gRPC authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Copyright 2021 gRPC authors.
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,12 +51,8 @@ class CrlSslTransportSecurityTest
    public:
     static SslTsiTestFixture* Create(bool use_revoked_server_cert,
                                      bool use_revoked_client_cert) {
-      auto* fixture = static_cast<SslTsiTestFixture*>(
-          gpr_malloc(sizeof(SslTsiTestFixture)));
-      memset(&fixture->base_, 0, sizeof(tsi_test_fixture));
-      new (fixture)
-          SslTsiTestFixture(use_revoked_server_cert, use_revoked_client_cert);
-      return fixture;
+      return new SslTsiTestFixture(use_revoked_server_cert,
+                                   use_revoked_client_cert);
     }
 
     void Run() {
@@ -225,8 +207,7 @@ class CrlSslTransportSecurityTest
 
     static void Destruct(tsi_test_fixture* fixture) {
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
-      self->~SslTsiTestFixture();
-      gpr_free(&self->base_);
+      delete self;
     }
 
     static char* LoadFile(absl::string_view file_path) {

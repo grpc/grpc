@@ -1926,9 +1926,7 @@ static int server_handshaker_factory_new_session_callback(
 static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
   if (cert_error != 0) {
-    std::string temp = "Certificate verify failed with code " +
-                       std::to_string(cert_error) + "\n";
-    gpr_log(GPR_INFO, "%s", temp.c_str());
+    gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
   }
   return ok;
 }
