@@ -36,7 +36,7 @@ class EvaluateArgsTestUtil {
     metadata_.Append(
         key, Slice(grpc_slice_intern(grpc_slice_from_static_string(value))),
         [](absl::string_view, const Slice&) {
-          // We should never see an error here.
+          // We should never ever see an error here.
           abort();
         });
   }
