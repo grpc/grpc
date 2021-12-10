@@ -2040,6 +2040,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/pollset.h",
         "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
+        "src/core/lib/iomgr/event_engine/resolver.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
