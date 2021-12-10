@@ -43,17 +43,45 @@
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
-
-void NativeDNSRequest::DoRequestThread(void* rp, grpc_error_handle /*error*/) {
-  NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
-  auto result =
-      GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
-  // running inline is safe since we've already been scheduled on the executor
-  r->on_done_(result);
-  r->Unref();
-}
-
 namespace {
+
+class NativeDNSRequest : public DNSRequest {
+ public:
+  NativeDNSRequest(
+      absl::string_view name, absl::string_view default_port,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
+      : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
+    GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
+  }
+
+  // Starts the resolution
+  void Start() override {
+    Ref().release();  // ref held by callback
+    Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
+  }
+
+  // This is a no-op for the native resolver. Note
+  // that no I/O polling is required for the resolution to finish.
+  void Orphan() override { Unref(); }
+
+ private:
+  // Callback to be passed to grpc Executor to asynch-ify
+  // BlockingResolveAddress
+  static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
+    NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
+    auto result =
+        GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
+    // running inline is safe since we've already been scheduled on the executor
+    r->on_done_(result);
+    r->Unref();
+  }
+
+  const std::string name_;
+  const std::string default_port_;
+  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
+  grpc_closure request_closure_;
+};
+
 NativeDNSResolver* g_native_dns_resolver;
 }  // namespace
 
@@ -62,6 +90,14 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
     g_native_dns_resolver = new NativeDNSResolver();
   }
   return g_native_dns_resolver;
+}
+
+OrphanablePtr<DNSRequest> NativeDNSResolver::CreateDNSRequest(
+    absl::string_view name, absl::string_view default_port,
+    grpc_pollset_set* /* interested_parties */,
+    std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) {
+  return MakeOrphanable<NativeDNSRequest>(name, default_port,
+                                          std::move(on_done));
 }
 
 absl::StatusOr<grpc_resolved_addresses*>

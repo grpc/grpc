@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <string.h>
 #include <sys/types.h>
 
@@ -40,42 +38,12 @@
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 namespace grpc_core {
-
-class NativeDNSRequest : public DNSRequest {
- public:
-  NativeDNSRequest(
-      absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
-      : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
-    GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
-  }
-
-  // Starts the resolution
-  void Start() override {
-    Ref().release();  // ref held by callback
-    Executor::Run(&request_closure_, GRPC_ERROR_NONE,
-                             ExecutorType::RESOLVER);
-  }
-
-  // This is a no-op for the native resolver. Note
-  // that no I/O polling is required for the resolution to finish.
-  void Orphan() override { Unref(); }
-
- private:
-  // Callback to be passed to grpc Executor to asynch-ify
-  // BlockingResolveAddress
-  static void DoRequestThread(void* rp, grpc_error_handle /*error*/);
-
-  const std::string name_;
-  const std::string default_port_;
-  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
-  grpc_closure request_closure_;
-};
 
 class NativeDNSResolver : public DNSResolver {
  public:

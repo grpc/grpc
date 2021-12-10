@@ -31,39 +31,6 @@ typedef struct grpc_custom_resolver_vtable grpc_custom_resolver_vtable;
 
 namespace grpc_core {
 
-class CustomDNSRequest : public DNSRequest {
- public:
-  CustomDNSRequest(
-      absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done,
-      const grpc_custom_resolver_vtable* resolve_address_vtable)
-      : name_(name),
-        default_port_(default_port),
-        on_done_(std::move(on_done)),
-        resolve_address_vtable_(resolve_address_vtable) {}
-
-  // Starts the resolution
-  void Start() override;
-
-  // Implementations of grpc_custom_resolver_vtables must invoke this method
-  // with the results of resolve_async.
-  void ResolveCallback(grpc_resolved_addresses* result,
-                       grpc_error_handle error);
-
-  // This is a no-op for the native resolver. Note
-  // that no I/O polling is required for the resolution to finish.
-  void Orphan() override { Unref(); }
-
- private:
-  const std::string name_;
-  const std::string default_port_;
-  std::string host_;
-  std::string port_;
-  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
-  // user-defined DNS methods
-  const grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
-};
-
 class CustomDNSResolver : public DNSResolver {
  public:
   explicit CustomDNSResolver(
