@@ -98,7 +98,6 @@ class DNSResolver {
 
   // Asynchronously resolve addr. Use default_port if a port isn't designated
   // in addr, otherwise use the port in addr.
-  // TODO(apolcyn): add a timeout here.
   virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
