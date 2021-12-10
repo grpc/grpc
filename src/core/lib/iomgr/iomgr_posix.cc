@@ -79,8 +79,7 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
   grpc_set_pollset_vtable(&grpc_posix_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_posix_pollset_set_vtable);
-  grpc_core::SetDNSResolver(
-      grpc_core::NativeDNSResolver::GetOrCreate());
+  grpc_core::SetDNSResolver(grpc_core::NativeDNSResolver::GetOrCreate());
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 

@@ -93,9 +93,8 @@ class Args {
         gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_, time_left);
         GPR_ASSERT(time_left >= 0);
         grpc_pollset_worker* worker = nullptr;
-        GRPC_LOG_IF_ERROR(
-            "pollset_work",
-            grpc_pollset_work(pollset_, &worker, NSecDeadline(1)));
+        GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(pollset_, &worker,
+                                                            NSecDeadline(1)));
       }
     }
     gpr_event_set(&ev_, reinterpret_cast<void*>(1));
@@ -113,18 +112,19 @@ class Args {
     Finish();
   }
 
-  void MustFailExpectCancelledErrorMessage(absl::StatusOr<grpc_resolved_addresses*> result) {
+  void MustFailExpectCancelledErrorMessage(
+      absl::StatusOr<grpc_resolved_addresses*> result) {
     GPR_ASSERT(!result.ok());
-    GPR_ASSERT(absl::StrContains(result.status().ToString(), "DNS query cancelled"));
+    GPR_ASSERT(
+        absl::StrContains(result.status().ToString(), "DNS query cancelled"));
     Finish();
   }
 
-  void DontCare(absl::StatusOr<grpc_resolved_addresses*> result) {
-    Finish();
-  }
+  void DontCare(absl::StatusOr<grpc_resolved_addresses*> result) { Finish(); }
 
   // This test assumes the environment has an ipv6 loopback
-  void MustSucceedWithIPv6First(absl::StatusOr<grpc_resolved_addresses*> result) {
+  void MustSucceedWithIPv6First(
+      absl::StatusOr<grpc_resolved_addresses*> result) {
     GPR_ASSERT(result.ok());
     GPR_ASSERT(*result != nullptr);
     GPR_ASSERT((*result)->naddrs > 0);
@@ -134,7 +134,8 @@ class Args {
     Finish();
   }
 
-  void MustSucceedWithIPv4First(absl::StatusOr<grpc_resolved_addresses*> result) {
+  void MustSucceedWithIPv4First(
+      absl::StatusOr<grpc_resolved_addresses*> result) {
     GPR_ASSERT(result.ok());
     GPR_ASSERT(*result != nullptr);
     GPR_ASSERT((*result)->naddrs > 0);
@@ -157,12 +158,12 @@ class Args {
 
   gpr_event ev_;
   gpr_mu* mu_;
-  bool done_ = false;              // guarded by mu
-  grpc_pollset* pollset_; // guarded by mu
+  bool done_ = false;      // guarded by mu
+  grpc_pollset* pollset_;  // guarded by mu
   grpc_pollset_set* pollset_set_;
 };
 
-} // namespace
+}  // namespace
 
 static void test_localhost(void) {
   grpc_core::ExecCtx exec_ctx;
@@ -343,7 +344,8 @@ static void test_cancel_with_non_responsive_dns_server(void) {
   Args args;
   auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
       "foo.bar.com:1", "1", args.pollset_set(),
-      std::bind(&Args::MustFailExpectCancelledErrorMessage, &args, std::placeholders::_1));
+      std::bind(&Args::MustFailExpectCancelledErrorMessage, &args,
+                std::placeholders::_1));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
   r.reset();                           // cancel the resolution

@@ -41,15 +41,14 @@ namespace grpc_core {
 
 namespace {
 
-absl::Status TrySplitHostPort(
-    absl::string_view name,
-    absl::string_view default_port,
-    std::string* host,
-    std::string* port) {
+absl::Status TrySplitHostPort(absl::string_view name,
+                              absl::string_view default_port, std::string* host,
+                              std::string* port) {
   /* parse name, splitting it into host and port parts */
   SplitHostPort(name, host, port);
   if (host->empty()) {
-    return absl::UnknownError(absl::StrFormat("unparseable host:port: '%s'", name));
+    return absl::UnknownError(
+        absl::StrFormat("unparseable host:port: '%s'", name));
   }
   if (port->empty()) {
     // TODO(murgatroid99): add tests for this case
@@ -71,10 +70,10 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
   }
 }
 
-} // namespace
+}  // namespace
 
 void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
-                                  grpc_error_handle error) {
+                                       grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
@@ -88,32 +87,37 @@ void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
     auto numeric_port_or = NamedPortToNumeric(port_);
     if (numeric_port_or.ok()) {
       port_ = *numeric_port_or;
-      unreffer.release(); // keep holding ref for active resolution
-      resolve_address_vtable_->resolve_async(this, host_.c_str(), port_.c_str());
+      unreffer.release();  // keep holding ref for active resolution
+      resolve_address_vtable_->resolve_async(this, host_.c_str(),
+                                             port_.c_str());
       return;
     }
   }
-  new DNSCallbackExecCtxScheduler(std::move(on_done_), grpc_error_to_absl_status(error));
+  new DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                  grpc_error_to_absl_status(error));
 }
 
 namespace {
 CustomDNSResolver* g_custom_dns_resolver;
-} // namespace
+}  // namespace
 
-CustomDNSResolver* CustomDNSResolver::GetOrCreate(grpc_custom_resolver_vtable* resolve_address_vtable) {
+CustomDNSResolver* CustomDNSResolver::GetOrCreate(
+    grpc_custom_resolver_vtable* resolve_address_vtable) {
   if (g_custom_dns_resolver == nullptr) {
     g_custom_dns_resolver = new CustomDNSResolver(resolve_address_vtable);
   }
   return g_custom_dns_resolver;
 }
 
-absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddress(
-    absl::string_view name, absl::string_view default_port) {
+absl::StatusOr<grpc_resolved_addresses*>
+CustomDNSResolver::BlockingResolveAddress(absl::string_view name,
+                                          absl::string_view default_port) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 
   std::string host;
   std::string port;
-  absl::Status parse_status = TrySplitHostPort(name, default_port, &host, &port);
+  absl::Status parse_status =
+      TrySplitHostPort(name, default_port, &host, &port);
   if (!parse_status.ok()) {
     return parse_status;
   }
@@ -122,14 +126,15 @@ absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddre
   grpc_resolved_addresses* addrs = nullptr;
   ExecCtx* curr = ExecCtx::Get();
   ExecCtx::Set(nullptr);
-  grpc_error_handle err = resolve_address_vtable_->resolve(host.c_str(),
-                                         port.c_str(), &addrs);
+  grpc_error_handle err =
+      resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
   if (err != GRPC_ERROR_NONE) {
     auto numeric_port_or = NamedPortToNumeric(port);
     if (numeric_port_or.ok()) {
       port = *numeric_port_or;
       GRPC_ERROR_UNREF(err);
-      err = resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
+      err =
+          resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
     }
   }
   ExecCtx::Set(curr);
@@ -142,14 +147,16 @@ absl::StatusOr<grpc_resolved_addresses*> CustomDNSResolver::BlockingResolveAddre
 
 void CustomDNSRequest::Start() {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  absl::Status parse_status = TrySplitHostPort(name_, default_port_, &host_, &port_);
+  absl::Status parse_status =
+      TrySplitHostPort(name_, default_port_, &host_, &port_);
   if (!parse_status.ok()) {
-    new DNSCallbackExecCtxScheduler(std::move(on_done_), std::move(parse_status));
+    new DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                    std::move(parse_status));
     return;
   }
   // Call getaddrinfo
-  Ref().release(); // ref held by resolution
+  Ref().release();  // ref held by resolution
   resolve_address_vtable_->resolve_async(this, host_.c_str(), port_.c_str());
 }
 
-} // namespace grpc_core
+}  // namespace grpc_core

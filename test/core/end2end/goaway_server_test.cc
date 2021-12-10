@@ -61,15 +61,19 @@ grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSRequest : public grpc_core::DNSRequest {
  public:
-  TestDNSRequest(std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) : on_done_(std::move(on_done)) {}
+  TestDNSRequest(
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
+      : on_done_(std::move(on_done)) {}
 
   void Start() override {
     gpr_mu_lock(&g_mu);
     if (g_resolve_port < 0) {
       gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_), absl::UnknownError("Forced Failure"));
+      new grpc_core::DNSCallbackExecCtxScheduler(
+          std::move(on_done_), absl::UnknownError("Forced Failure"));
     } else {
-      grpc_resolved_addresses* addrs = static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(*addrs)));
+      grpc_resolved_addresses* addrs =
+          static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(*addrs)));
       addrs->naddrs = 1;
       addrs->addrs = static_cast<grpc_resolved_address*>(
           gpr_malloc(sizeof(*addrs->addrs)));
@@ -95,7 +99,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) override {
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
+      override {
     if (name != "test") {
       return g_default_dns_resolver->CreateDNSRequest(
           name, default_port, interested_parties, std::move(on_done));
@@ -103,12 +108,13 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     return grpc_core::MakeOrphanable<TestDNSRequest>(std::move(on_done));
   }
 
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(absl::string_view name, absl::string_view default_port) override {
+  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+      absl::string_view name, absl::string_view default_port) override {
     return g_default_dns_resolver->BlockingResolveAddress(name, default_port);
   }
 };
 
-} // namespace
+}  // namespace
 
 static grpc_ares_request* my_dns_lookup_ares(
     const char* dns_server, const char* addr, const char* default_port,

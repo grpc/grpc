@@ -33,7 +33,8 @@ gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
   grpc_resolved_addresses* addresses = nullptr;
-  absl::StatusOr<grpc_resolved_addresses*> addresses_or = GetDNSResolver()->BlockingResolveAddress("localhost", "https");
+  absl::StatusOr<grpc_resolved_addresses*> addresses_or =
+      GetDNSResolver()->BlockingResolveAddress("localhost", "https");
   GPR_ASSERT(addresses_or.ok());
   addresses = *addresses_or;
   for (size_t i = 0; i < addresses->naddrs; i++) {

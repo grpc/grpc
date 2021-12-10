@@ -177,8 +177,7 @@ void grpc_set_default_iomgr_platform() {
     grpc_set_iomgr_platform_vtable(&apple_vtable);
   }
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
-  grpc_core::SetDNSResolver(
-      grpc_core::NativeDNSResolver::GetOrCreate());
+  grpc_core::SetDNSResolver(grpc_core::NativeDNSResolver::GetOrCreate());
 }
 
 bool grpc_iomgr_run_in_background() {

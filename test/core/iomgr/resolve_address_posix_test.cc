@@ -116,7 +116,8 @@ static void poll_pollset_until_request_done(args_struct* args) {
 
 namespace {
 
-void MustSucceed(args_struct* args, absl::StatusOr<grpc_resolved_addresses*> result) {
+void MustSucceed(args_struct* args,
+                 absl::StatusOr<grpc_resolved_addresses*> result) {
   GPR_ASSERT(result.ok());
   GPR_ASSERT(*result != nullptr);
   GPR_ASSERT((*result)->naddrs > 0);
@@ -126,7 +127,7 @@ void MustSucceed(args_struct* args, absl::StatusOr<grpc_resolved_addresses*> res
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-} // namespace
+}  // namespace
 
 static void resolve_address_must_succeed(const char* target) {
   grpc_core::ExecCtx exec_ctx;

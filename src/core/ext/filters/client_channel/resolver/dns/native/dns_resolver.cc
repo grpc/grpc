@@ -96,7 +96,8 @@ class NativeClientChannelDNSResolver : public Resolver {
   OrphanablePtr<DNSRequest> dns_request_;
 };
 
-NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(ResolverArgs args)
+NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
+    ResolverArgs args)
     : name_to_resolve_(absl::StripPrefix(args.uri.path(), "/")),
       channel_args_(grpc_channel_args_copy(args.args)),
       work_serializer_(std::move(args.work_serializer)),
@@ -122,7 +123,9 @@ NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
   grpc_pollset_set_destroy(interested_parties_);
 }
 
-void NativeClientChannelDNSResolver::StartLocked() { MaybeStartResolvingLocked(); }
+void NativeClientChannelDNSResolver::StartLocked() {
+  MaybeStartResolvingLocked();
+}
 
 void NativeClientChannelDNSResolver::RequestReresolutionLocked() {
   if (!resolving_) {
@@ -144,14 +147,17 @@ void NativeClientChannelDNSResolver::ShutdownLocked() {
   }
 }
 
-void NativeClientChannelDNSResolver::OnNextResolution(void* arg, grpc_error_handle error) {
-  NativeClientChannelDNSResolver* r = static_cast<NativeClientChannelDNSResolver*>(arg);
+void NativeClientChannelDNSResolver::OnNextResolution(void* arg,
+                                                      grpc_error_handle error) {
+  NativeClientChannelDNSResolver* r =
+      static_cast<NativeClientChannelDNSResolver*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
 
-void NativeClientChannelDNSResolver::OnNextResolutionLocked(grpc_error_handle error) {
+void NativeClientChannelDNSResolver::OnNextResolutionLocked(
+    grpc_error_handle error) {
   have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !resolving_) {
     StartResolvingLocked();
@@ -160,12 +166,15 @@ void NativeClientChannelDNSResolver::OnNextResolutionLocked(grpc_error_handle er
   GRPC_ERROR_UNREF(error);
 }
 
-void NativeClientChannelDNSResolver::OnResolved(absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
-  work_serializer_->Run([this, addresses_or]() { OnResolvedLocked(addresses_or); },
-                        DEBUG_LOCATION);
+void NativeClientChannelDNSResolver::OnResolved(
+    absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
+  work_serializer_->Run(
+      [this, addresses_or]() { OnResolvedLocked(addresses_or); },
+      DEBUG_LOCATION);
 }
 
-void NativeClientChannelDNSResolver::OnResolvedLocked(absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
+void NativeClientChannelDNSResolver::OnResolvedLocked(
+    absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
   dns_request_.reset();
@@ -214,8 +223,9 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(absl::StatusOr<grpc_resolv
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    GRPC_CLOSURE_INIT(&on_next_resolution_, NativeClientChannelDNSResolver::OnNextResolution,
-                      this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_next_resolution_,
+                      NativeClientChannelDNSResolver::OnNextResolution, this,
+                      grpc_schedule_on_exec_ctx);
     grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
   }
   Unref(DEBUG_LOCATION, "dns-resolving");
@@ -267,10 +277,9 @@ void NativeClientChannelDNSResolver::StartResolvingLocked() {
   GPR_ASSERT(!resolving_);
   resolving_ = true;
   dns_request_ = GetDNSResolver()->CreateDNSRequest(
-      name_to_resolve_,
-      kDefaultSecurePort,
-      interested_parties_,
-      std::bind(&NativeClientChannelDNSResolver::OnResolved, this, std::placeholders::_1));
+      name_to_resolve_, kDefaultSecurePort, interested_parties_,
+      std::bind(&NativeClientChannelDNSResolver::OnResolved, this,
+                std::placeholders::_1));
   dns_request_->Start();
   last_resolution_timestamp_ = ExecCtx::Get()->Now();
 }
@@ -319,7 +328,8 @@ void grpc_resolver_dns_native_init() {
     if (existing_factory == nullptr) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
       grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-          absl::make_unique<grpc_core::NativeClientChannelDNSResolverFactory>());
+          absl::make_unique<
+              grpc_core::NativeClientChannelDNSResolverFactory>());
     }
   }
 }

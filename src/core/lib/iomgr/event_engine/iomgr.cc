@@ -18,12 +18,12 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/resolver.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/init.h"
-#include "src/core/lib/iomgr/event_engine/resolver.h"
 
 extern grpc_tcp_client_vtable grpc_event_engine_tcp_client_vtable;
 extern grpc_tcp_server_vtable grpc_event_engine_tcp_server_vtable;
@@ -75,7 +75,8 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_event_engine_timer_vtable);
   grpc_set_pollset_vtable(&grpc_event_engine_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_event_engine_pollset_set_vtable);
-  grpc_core::SetDNSResolver(grpc_core::experimental::EventEngineDNSResolver::GetOrCreate());
+  grpc_core::SetDNSResolver(
+      grpc_core::experimental::EventEngineDNSResolver::GetOrCreate());
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 

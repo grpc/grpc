@@ -114,10 +114,13 @@ namespace {
 
 class FuzzerDNSRequest : public grpc_core::DNSRequest {
  public:
-  FuzzerDNSRequest(absl::string_view name, std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) : name_(std::string(name)), on_done_(std::move(on_done)) {}
+  FuzzerDNSRequest(
+      absl::string_view name,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
+      : name_(std::string(name)), on_done_(std::move(on_done)) {}
 
   void Start() override {
-    Ref().release (); // ref held by timer callback
+    Ref().release();  // ref held by timer callback
     grpc_timer_init(
         &timer_, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
         GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
@@ -137,7 +140,8 @@ class FuzzerDNSRequest : public grpc_core::DNSRequest {
       addrs->addrs[0].len = 0;
       new grpc_core::DNSResolverExecCtxScheduler(std::move(on_done_), addrs);
     } else {
-      new grpc_core::DNSResolverExecCtxScheduler(std::move(on_done), absl::UnknownError("Resolution failed"));
+      new grpc_core::DNSResolverExecCtxScheduler(
+          std::move(on_done), absl::UnknownError("Resolution failed"));
     }
     self->Unref();
   }
@@ -151,16 +155,20 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) override {
-    return grpc_core::MakeOrphanable<FuzzerDNSRequest>(name, std::move(on_done));
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
+      override {
+    return grpc_core::MakeOrphanable<FuzzerDNSRequest>(name,
+                                                       std::move(on_done));
   }
 
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(absl::string_view /* name */, absl::string_view /* default_port */) override {
+  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+      absl::string_view /* name */,
+      absl::string_view /* default_port */) override {
     GPR_ASSERT(0);
   }
 };
 
-} // namespace
+}  // namespace
 
 grpc_ares_request* my_dns_lookup_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,

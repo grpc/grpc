@@ -21,8 +21,6 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
-#include "src/core/lib/iomgr/resolve_address_posix.h"
-
 #include <string.h>
 #include <sys/types.h>
 
@@ -39,6 +37,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolve_address_posix.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -47,7 +46,8 @@ namespace grpc_core {
 
 void NativeDNSRequest::DoRequestThread(void* rp, grpc_error_handle /*error*/) {
   NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
-  auto result = GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
+  auto result =
+      GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
   // running inline is safe since we've already been scheduled on the executor
   r->on_done_(result);
   r->Unref();
@@ -55,7 +55,7 @@ void NativeDNSRequest::DoRequestThread(void* rp, grpc_error_handle /*error*/) {
 
 namespace {
 NativeDNSResolver* g_native_dns_resolver;
-} // namespace
+}  // namespace
 
 NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
   if (g_native_dns_resolver == nullptr) {

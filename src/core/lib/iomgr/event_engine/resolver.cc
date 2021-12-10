@@ -14,8 +14,6 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include "src/core/lib/iomgr/event_engine/resolver.h"
-
 #include "absl/functional/bind_front.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -26,6 +24,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/promise.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
+#include "src/core/lib/iomgr/event_engine/resolver.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/surface/init.h"
@@ -46,8 +45,9 @@ using ::grpc_event_engine::experimental::Promise;
 class EventEngineDNSRequest : DNSRequest {
  public:
   EventEngineDNSRequest(std::unique_ptr<EventEngine::DNSResolver> dns_resolver,
-             absl::string_view name, absl::string_view default_port,
-             grpc_closure* on_done, grpc_resolved_addresses** addresses)
+                        absl::string_view name, absl::string_view default_port,
+                        grpc_closure* on_done,
+                        grpc_resolved_addresses** addresses)
       : dns_resolver_(std::move(dns_resolver)),
         name_(std::string(name)),
         default_port_(std::string(default_port)),
@@ -55,10 +55,12 @@ class EventEngineDNSRequest : DNSRequest {
 
   void Start() override {
     if (dns_resolver == nullptr) {
-      new DNSCallbackExecCtxScheduler(std::move(on_done_), absl::UnknownError("Failed to get DNS Resolver."));
+      new DNSCallbackExecCtxScheduler(
+          std::move(on_done_),
+          absl::UnknownError("Failed to get DNS Resolver."));
       return;
     }
-    Ref().release(); // ref held by pending resolution
+    Ref().release();  // ref held by pending resolution
     dns_resolver_->LookupHostname(
         absl::bind_front(&EventEngineDNSRequest::OnLookupComplete, this), name_,
         default_port_, absl::InfiniteFuture());
@@ -112,16 +114,20 @@ OrphanablePtr<DNSRequest> EventEngineDNSResolver::CreateDNSRequest(
     std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) {
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
       GetDefaultEventEngine()->GetDNSResolver();
-  return MakeOrphanable<EventEngineDNSRequest>(std::move(dns_resolver), name, default_port, std::move(on_done));
+  return MakeOrphanable<EventEngineDNSRequest>(
+      std::move(dns_resolver), name, default_port, std::move(on_done));
 }
 
-absl::StatusOr<grpc_resolved_addresses*> EventEngineDNSResolver::BlockingResolveAddress(
-    absl::string_view name, absl::string_view default_port) {
+absl::StatusOr<grpc_resolved_addresses*>
+EventEngineDNSResolver::BlockingResolveAddress(absl::string_view name,
+                                               absl::string_view default_port) {
   grpc_closure on_done;
   Promise<absl::StatusOr<grpc_resolved_addresses*>> evt;
-  auto r = CreateDNSRequest(name, default_port, [&evt](void(absl::StatusOr<grpc_resolved_addresses*> result) {
-    evt.Set(std::move(result));
-  }));
+  auto r = CreateDNSRequest(
+      name, default_port,
+      [&evt](void(absl::StatusOr<grpc_resolved_addresses*> result) {
+        evt.Set(std::move(result));
+      }));
   r->Start();
   return evt.Get();
 

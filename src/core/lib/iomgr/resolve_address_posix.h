@@ -24,10 +24,10 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
-#include <functional>
-
 #include <string.h>
 #include <sys/types.h>
+
+#include <functional>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -50,8 +50,7 @@ namespace grpc_core {
 class NativeDNSRequest : public DNSRequest {
  public:
   NativeDNSRequest(
-      absl::string_view name,
-      absl::string_view default_port,
+      absl::string_view name, absl::string_view default_port,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
@@ -59,7 +58,7 @@ class NativeDNSRequest : public DNSRequest {
 
   // Starts the resolution
   void Start() override {
-    Ref().release(); // ref held by callback
+    Ref().release();  // ref held by callback
     grpc_core::Executor::Run(&request_closure_, GRPC_ERROR_NONE,
                              grpc_core::ExecutorType::RESOLVER);
   }
@@ -89,7 +88,8 @@ class NativeDNSResolver : public DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       override {
-    return MakeOrphanable<NativeDNSRequest>(name, default_port, std::move(on_done));
+    return MakeOrphanable<NativeDNSRequest>(name, default_port,
+                                            std::move(on_done));
   }
 
   absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(

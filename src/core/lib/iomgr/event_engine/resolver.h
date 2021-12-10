@@ -24,10 +24,10 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
-#include <functional>
-
 #include <string.h>
 #include <sys/types.h>
+
+#include <functional>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
