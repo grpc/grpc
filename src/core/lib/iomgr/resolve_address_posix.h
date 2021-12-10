@@ -50,14 +50,11 @@ class NativeDNSResolver : public DNSResolver {
   // Gets the singleton instance, creating it first if it doesn't exist
   static NativeDNSResolver* GetOrCreate();
 
-  virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
+  OrphanablePtr<DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
-      override {
-    return MakeOrphanable<NativeDNSRequest>(name, default_port,
-                                            std::move(on_done));
-  }
+      override;
 
   absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
       absl::string_view name, absl::string_view default_port) override;
