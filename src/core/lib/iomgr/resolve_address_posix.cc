@@ -67,7 +67,7 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
 absl::StatusOr<grpc_resolved_addresses*>
 NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
                                           absl::string_view default_port) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;
   int s;
@@ -77,7 +77,7 @@ NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
   std::string host;
   std::string port;
   /* parse name, splitting it into host and port parts */
-  grpc_core::SplitHostPort(name, &host, &port);
+  SplitHostPort(name, &host, &port);
   if (host.empty()) {
     err = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),

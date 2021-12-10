@@ -58,8 +58,8 @@ class NativeDNSRequest : public DNSRequest {
   // Starts the resolution
   void Start() override {
     Ref().release();  // ref held by callback
-    grpc_core::Executor::Run(&request_closure_, GRPC_ERROR_NONE,
-                             grpc_core::ExecutorType::RESOLVER);
+    Executor::Run(&request_closure_, GRPC_ERROR_NONE,
+                             ExecutorType::RESOLVER);
   }
 
   // This is a no-op for the native resolver. Note
