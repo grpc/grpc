@@ -183,7 +183,7 @@ Slice CompressionAlgorithmSet::ToSlice() const {
 
 CompressionAlgorithmSet CompressionAlgorithmSet::FromString(
     absl::string_view str) {
-  CompressionAlgorithmSet set;
+  CompressionAlgorithmSet set{GRPC_COMPRESS_NONE};
   for (auto algorithm : absl::StrSplit(str, ',')) {
     auto parsed =
         ParseCompressionAlgorithm(absl::StripAsciiWhitespace(algorithm));
