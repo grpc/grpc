@@ -277,11 +277,10 @@ void test_connect(const char* server_host, const char* client_host, int port,
 }
 
 int external_dns_works(const char* host) {
-  grpc_resolved_addresses* res = nullptr;
-  grpc_error_handle error = grpc_blocking_resolve_address(host, "80", &res);
-  GRPC_ERROR_UNREF(error);
-  if (res != nullptr) {
-    grpc_resolved_addresses_destroy(res);
+  absl::StatusOr<grpc_resolved_addresses*> addresses_or =
+      grpc_core::GetDNSResolver()->BlockingResolveAddress(hostname, "80");
+  if (addresses_or.ok()) {
+    grpc_resolved_addresses_destroy(*addresses_or);
     return 1;
   }
   return 0;
