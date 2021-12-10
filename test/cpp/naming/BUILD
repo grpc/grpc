@@ -39,24 +39,14 @@ grpc_cc_test(
     srcs = ["cancel_ares_query_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        ":dns_test_util",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/end2end:cq_verifier",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "dns_test_util",
-    srcs = ["dns_test_util.cc"],
-    hdrs = ["dns_test_util.h"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
     ],
 )
 
