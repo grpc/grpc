@@ -120,7 +120,9 @@ class Args {
     Finish();
   }
 
-  void DontCare(absl::StatusOr<grpc_resolved_addresses*> /* result */) { Finish(); }
+  void DontCare(absl::StatusOr<grpc_resolved_addresses*> /* result */) {
+    Finish();
+  }
 
   // This test assumes the environment has an ipv6 loopback
   void MustSucceedWithIPv6First(

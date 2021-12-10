@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H
+#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,4 +45,4 @@ class NativeDNSResolver : public DNSResolver {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H
+#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
