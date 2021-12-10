@@ -797,6 +797,7 @@ libs:
   - src/core/lib/iomgr/event_engine/pollset.h
   - src/core/lib/iomgr/event_engine/promise.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/event_engine/resolver.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/executor/mpmcqueue.h
@@ -823,6 +824,7 @@ libs:
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
+  - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -1903,6 +1905,7 @@ libs:
   - src/core/lib/iomgr/event_engine/pollset.h
   - src/core/lib/iomgr/event_engine/promise.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/event_engine/resolver.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/executor/mpmcqueue.h
@@ -1929,6 +1932,7 @@ libs:
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
+  - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
