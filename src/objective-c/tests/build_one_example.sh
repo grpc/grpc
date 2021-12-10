@@ -25,7 +25,7 @@ set -ex
 # CocoaPods requires the terminal to be using UTF-8 encoding.
 export LANG=en_US.UTF-8
 
-TEST_PATH=$(readlink -f "$(dirname "$0")")
+TEST_PATH=$(cd "$(dirname $0)" > /dev/null ; pwd)
 
 cd $(dirname $0)/../../..
 
