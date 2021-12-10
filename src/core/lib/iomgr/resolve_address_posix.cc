@@ -48,6 +48,7 @@ namespace grpc_core {
 void NativeDNSRequest::DoRequestThread(void* rp, grpc_error_handle /*error*/) {
   NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
   auto result = GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
+  // running inline is safe since we've already been scheduled on the executor
   r->on_done_(result);
   r->Unref();
 }

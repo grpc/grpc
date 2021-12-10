@@ -534,9 +534,12 @@ class AresDNSRequest : public DNSRequest {
           }
         }
         if (error == GRPC_ERROR_NONE) {
-          r->on_resolve_address_done_(resolved_addresses);
+          // even though this method has already been scheduled on the ExecCtx,
+          // r->on_resolve_address_done_ may call Orphan, which would cause lock
+          // inversion if we were to run it inline from here
+          new DNSCallbackExecCtxScheduler(std::move(r->on_resolve_address_done_), resolved_addresses);
         } else {
-          r->on_resolve_address_done_(grpc_error_to_absl_status(error));
+          new DNSCallbackExecCtxSchedule(std::move(r->on_resolve_address_done_), grpc_error_to_absl_status(error));
         }
       }
 
