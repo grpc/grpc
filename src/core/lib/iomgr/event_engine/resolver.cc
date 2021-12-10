@@ -72,7 +72,7 @@ class EventEngineDNSRequest : DNSRequest {
  private:
   void OnLookupComplete(
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     // Convert addresses to iomgr form.
     grpc_resolved_addresses* result = static_cast<grpc_resolved_addresses*>(
         gpr_malloc(sizeof(grpc_resolved_addresses)));
@@ -130,6 +130,7 @@ EventEngineDNSResolver::BlockingResolveAddress(absl::string_view name,
       }));
   r->Start();
   return evt.Get();
+}
 
 }  // namespace experimental
 }  // namespace grpc_core
