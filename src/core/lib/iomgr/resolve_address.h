@@ -56,16 +56,7 @@ namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
 
-// Tracks a single asynchronous DNS resolution attempt. The DNS
-// resolution should be arranged to be cancelled as soon as possible
-// when Orphan is called.
-class DNSRequest : public InternallyRefCounted<DNSRequest> {
- public:
-  // Begins async DNS resolution
-  virtual void Start() = 0;
-};
-
-// A fire and forget class used by DNSRequest implementations to run DNS
+// A fire and forget class used by Request implementations to run DNS
 // resolution callbacks on the ExecCtx, which is frequently necessary to avoid
 // lock inversion related problems.
 class DNSCallbackExecCtxScheduler {
@@ -94,11 +85,20 @@ class DNSCallbackExecCtxScheduler {
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
  public:
+  // Tracks a single asynchronous DNS resolution attempt. The DNS
+  // resolution should be arranged to be cancelled as soon as possible
+  // when Orphan is called.
+  class Request : public InternallyRefCounted<Request> {
+   public:
+    // Begins async DNS resolution
+    virtual void Start() = 0;
+  };
+
   virtual ~DNSResolver() {}
 
   // Asynchronously resolve addr. Use default_port if a port isn't designated
   // in addr, otherwise use the port in addr.
-  virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
+  virtual OrphanablePtr<Request> CreateRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)

@@ -482,111 +482,110 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   const char* scheme() const override { return "dns"; }
 };
 
-class AresDNSRequest : public DNSRequest {
- public:
-  AresDNSRequest(absl::string_view name, absl::string_view default_port,
-                 grpc_pollset_set* interested_parties,
-                 std::function<void(absl::StatusOr<grpc_resolved_addresses*>)>
-                     on_resolve_address_done)
-      : name_(std::string(name)),
-        default_port_(std::string(default_port)),
-        interested_parties_(interested_parties),
-        on_resolve_address_done_(std::move(on_resolve_address_done)) {
-    GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
-                      grpc_schedule_on_exec_ctx);
-  }
-
-  ~AresDNSRequest() override {
-    GRPC_CARES_TRACE_LOG("AresDNSRequest:%p dtor ares_request_:%p", this,
-                         ares_request_.get());
-  }
-
-  void Start() override {
-    absl::MutexLock lock(&mu_);
-    Ref().release();  // ref held by resolution
-    ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
-        "" /* dns_server */, name_.c_str(), default_port_.c_str(),
-        interested_parties_, &on_dns_lookup_done_, &addresses_,
-        nullptr /* balancer_addresses */, nullptr /* service_config_json */,
-        GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
-    GRPC_CARES_TRACE_LOG("AresDNSRequest:%p ctor ares_request_:%p", this,
-                         ares_request_.get());
-  }
-
-  void Orphan() override {
-    {
-      absl::MutexLock lock(&mu_);
-      GRPC_CARES_TRACE_LOG("AresDNSRequest:%p Orphan ares_request_:%p", this,
-                           ares_request_.get());
-      grpc_cancel_ares_request(ares_request_.get());
-    }
-    Unref();
-  }
-
- private:
-  static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
-    OrphanablePtr<AresDNSRequest> r =
-        OrphanablePtr<AresDNSRequest>(static_cast<AresDNSRequest*>(arg));
-    grpc_resolved_addresses* resolved_addresses;
-    {
-      absl::MutexLock lock(&r->mu_);
-      GRPC_CARES_TRACE_LOG("AresDNSRequest:%p OnDnsLookupDone error:%s",
-                           r.get(), grpc_error_std_string(error).c_str());
-      if (r->addresses_ == nullptr || r->addresses_->empty()) {
-        resolved_addresses = nullptr;
-      } else {
-        resolved_addresses = static_cast<grpc_resolved_addresses*>(
-            gpr_zalloc(sizeof(grpc_resolved_addresses)));
-        resolved_addresses->naddrs = r->addresses_->size();
-        resolved_addresses->addrs =
-            static_cast<grpc_resolved_address*>(gpr_zalloc(
-                sizeof(grpc_resolved_address) * resolved_addresses->naddrs));
-        for (size_t i = 0; i < resolved_addresses->naddrs; ++i) {
-          memcpy(&resolved_addresses->addrs[i], &(*r->addresses_)[i].address(),
-                 sizeof(grpc_resolved_address));
-        }
-      }
-    }
-    if (error == GRPC_ERROR_NONE) {
-      // it's safe to run this inline since the current method was scheduled
-      // on the ExecCtx
-      r->on_resolve_address_done_(resolved_addresses);
-    } else {
-      r->on_resolve_address_done_(grpc_error_to_absl_status(error));
-    }
-  }
-
-  // mutex to synchronize access to this object (but not to the ares_request
-  // object itself). TODO(apolcyn): we can get rid of this after cleaning up
-  // grpc_dns_lookup_ares to use two-phased initialization.
-  absl::Mutex mu_;
-  // the name to resolve
-  const std::string name_;
-  // the default port to use if name doesn't have one
-  const std::string default_port_;
-  // parties interested in our I/O
-  grpc_pollset_set* const interested_parties_;
-  // user-provided completion callback
-  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)>
-      on_resolve_address_done_;
-  // currently resolving addresses
-  std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
-  // closure to call when the resolve_address_ares request completes
-  // a closure wrapping on_resolve_address_done, which should be invoked
-  // when the grpc_dns_lookup_ares operation is done.
-  grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
-  // underlying ares_request that the query is performed on
-  std::unique_ptr<grpc_ares_request> ares_request_ ABSL_GUARDED_BY(mu_);
-};
-
 class AresDNSResolver;
 
-namespace {
 AresDNSResolver* g_ares_dns_resolver;
-}  // namespace
 
 class AresDNSResolver : public DNSResolver {
  public:
+  class AresRequest : public DNSResolver::Request {
+   public:
+    AresRequest(absl::string_view name, absl::string_view default_port,
+                grpc_pollset_set* interested_parties,
+                std::function<void(absl::StatusOr<grpc_resolved_addresses*>)>
+                    on_resolve_address_done)
+        : name_(std::string(name)),
+          default_port_(std::string(default_port)),
+          interested_parties_(interested_parties),
+          on_resolve_address_done_(std::move(on_resolve_address_done)) {
+      GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
+                        grpc_schedule_on_exec_ctx);
+    }
+
+    ~AresRequest() override {
+      GRPC_CARES_TRACE_LOG("AresRequest:%p dtor ares_request_:%p", this,
+                           ares_request_.get());
+    }
+
+    void Start() override {
+      absl::MutexLock lock(&mu_);
+      Ref().release();  // ref held by resolution
+      ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
+          "" /* dns_server */, name_.c_str(), default_port_.c_str(),
+          interested_parties_, &on_dns_lookup_done_, &addresses_,
+          nullptr /* balancer_addresses */, nullptr /* service_config_json */,
+          GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+      GRPC_CARES_TRACE_LOG("AresRequest:%p ctor ares_request_:%p", this,
+                           ares_request_.get());
+    }
+
+    void Orphan() override {
+      {
+        absl::MutexLock lock(&mu_);
+        GRPC_CARES_TRACE_LOG("AresRequest:%p Orphan ares_request_:%p", this,
+                             ares_request_.get());
+        grpc_cancel_ares_request(ares_request_.get());
+      }
+      Unref();
+    }
+
+   private:
+    static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
+      OrphanablePtr<AresRequest> r =
+          OrphanablePtr<AresRequest>(static_cast<AresRequest*>(arg));
+      grpc_resolved_addresses* resolved_addresses;
+      {
+        absl::MutexLock lock(&r->mu_);
+        GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r.get(),
+                             grpc_error_std_string(error).c_str());
+        if (r->addresses_ == nullptr || r->addresses_->empty()) {
+          resolved_addresses = nullptr;
+        } else {
+          resolved_addresses = static_cast<grpc_resolved_addresses*>(
+              gpr_zalloc(sizeof(grpc_resolved_addresses)));
+          resolved_addresses->naddrs = r->addresses_->size();
+          resolved_addresses->addrs =
+              static_cast<grpc_resolved_address*>(gpr_zalloc(
+                  sizeof(grpc_resolved_address) * resolved_addresses->naddrs));
+          for (size_t i = 0; i < resolved_addresses->naddrs; ++i) {
+            memcpy(&resolved_addresses->addrs[i],
+                   &(*r->addresses_)[i].address(),
+                   sizeof(grpc_resolved_address));
+          }
+        }
+      }
+      if (error == GRPC_ERROR_NONE) {
+        // it's safe to run this inline since the current method was scheduled
+        // on the ExecCtx
+        r->on_resolve_address_done_(resolved_addresses);
+      } else {
+        r->on_resolve_address_done_(grpc_error_to_absl_status(error));
+      }
+    }
+
+    // mutex to synchronize access to this object (but not to the ares_request
+    // object itself). TODO(apolcyn): we can get rid of this after cleaning up
+    // grpc_dns_lookup_ares to use two-phased initialization.
+    absl::Mutex mu_;
+    // the name to resolve
+    const std::string name_;
+    // the default port to use if name doesn't have one
+    const std::string default_port_;
+    // parties interested in our I/O
+    grpc_pollset_set* const interested_parties_;
+    // user-provided completion callback
+    const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)>
+        on_resolve_address_done_;
+    // currently resolving addresses
+    std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
+    // closure to call when the resolve_address_ares request completes
+    // a closure wrapping on_resolve_address_done, which should be invoked
+    // when the grpc_dns_lookup_ares operation is done.
+    grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
+    // underlying ares_request that the query is performed on
+    std::unique_ptr<grpc_ares_request> ares_request_ ABSL_GUARDED_BY(mu_);
+  };
+
   static AresDNSResolver* GetOrCreate() {
     if (g_ares_dns_resolver == nullptr) {
       g_ares_dns_resolver = new AresDNSResolver();
@@ -594,13 +593,13 @@ class AresDNSResolver : public DNSResolver {
     return g_ares_dns_resolver;
   }
 
-  OrphanablePtr<DNSRequest> CreateDNSRequest(
+  OrphanablePtr<DNSResolver::Request> CreateRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       override {
-    return MakeOrphanable<AresDNSRequest>(
-        name, default_port, interested_parties, std::move(on_done));
+    return MakeOrphanable<AresRequest>(name, default_port, interested_parties,
+                                       std::move(on_done));
   }
 
   // Resolve addr in a blocking fashion. On success,
