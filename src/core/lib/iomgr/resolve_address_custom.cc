@@ -87,7 +87,8 @@ void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
     auto numeric_port_or = NamedPortToNumeric(port_);
     if (numeric_port_or.ok()) {
       port_ = *numeric_port_or;
-      unreffer.release();  // keep holding ref for active resolution
+      auto* self =
+          unreffer.release();  // keep holding ref for active resolution
       resolve_address_vtable_->resolve_async(this, host_.c_str(),
                                              port_.c_str());
       return;

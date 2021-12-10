@@ -130,7 +130,7 @@ class FuzzerDNSRequest : public grpc_core::DNSRequest {
   void Orphan() override { Unref(); }
 
  private:
-  static void FinishResolve(void* arg, grpc_error_handle* error) {
+  static void FinishResolve(void* arg, grpc_error_handle error) {
     FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
     if (error == GRPC_ERROR_NONE && self->name_ == "server") {
       grpc_resolved_addresses* addrs =

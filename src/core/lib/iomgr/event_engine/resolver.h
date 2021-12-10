@@ -21,9 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-#ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
-
 #include <string.h>
 #include <sys/types.h>
 
@@ -34,6 +31,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {

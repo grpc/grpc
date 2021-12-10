@@ -59,7 +59,7 @@ class CustomDNSRequest : public DNSRequest {
   const std::string default_port_;
   std::string host_;
   std::string port_;
-  const std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
+  std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done_;
   // user-defined DNS methods
   const grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
 };

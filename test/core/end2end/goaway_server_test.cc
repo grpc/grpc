@@ -61,7 +61,7 @@ grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSRequest : public grpc_core::DNSRequest {
  public:
-  TestDNSRequest(
+  explicit TestDNSRequest(
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       : on_done_(std::move(on_done)) {}
 
