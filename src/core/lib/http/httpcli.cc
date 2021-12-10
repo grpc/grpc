@@ -44,6 +44,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 namespace {
@@ -220,7 +221,7 @@ class InternalRequest {
   void OnResolved(absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
     dns_request_.reset();
     if (!addresses_or.ok()) {
-      Finish(absl_status_to_grpc_error(addresses_or.status());
+      Finish(absl_status_to_grpc_error(addresses_or.status()));
       return;
     }
     addresses_ = *addresses_or;

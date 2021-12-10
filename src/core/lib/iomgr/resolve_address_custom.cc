@@ -55,7 +55,7 @@ static absl::Status TrySplitHostPort(
     if (default_port == nullptr) {
       return absl::UnknownError(absl::StrFormat("no port in name '%s'", name));
     }
-    *port = default_port;
+    *port = std::string(default_port);
   }
   return absl::OkStatus();
 }
@@ -66,7 +66,7 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
   } else if (named_port == "https") {
     return "443";
   } else {
-    return absl::UnknownError(absl::StrCat("unknown named port: ", named_port);
+    return absl::UnknownError(absl::StrCat("unknown named port: ", named_port));
   }
 }
 
