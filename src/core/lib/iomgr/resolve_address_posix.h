@@ -91,7 +91,7 @@ class NativeDNSResolver : public DNSResolver {
 
   virtual OrphanablePtr<DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
+      grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       override {
     return MakeOrphanable<NativeDNSRequest>(name, default_port, std::move(on_done));
