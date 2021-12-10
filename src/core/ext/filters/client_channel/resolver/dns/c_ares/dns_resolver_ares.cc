@@ -380,6 +380,7 @@ void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
     Result result;
     result.addresses = status;
     result.service_config = status;
+    result.args = grpc_channel_args_copy(channel_args_);
     result_handler_->ReportResult(std::move(result));
     // Set retry timer.
     // InvalidateNow to avoid getting stuck re-initializing this timer

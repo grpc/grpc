@@ -73,10 +73,14 @@ struct grpc_ares_request {
   addition to the normal address records. For normal address records, it uses
   \a default_port if a port isn't designated in \a name, otherwise it uses the
   port in \a name. grpc_ares_init() must be called at least once before this
-  function. \a on_done may be called directly in this function without being
-  scheduled with \a exec_ctx, so it must not try to acquire locks that are
-  being held by the caller. The returned grpc_ares_request object is owned
-  by the caller and it is safe to free after on_done is called back. */
+  function. The returned grpc_ares_request object is owned by the caller and it
+  is safe to free after on_done is called back.
+
+  Note on synchronization: \a as on_done might be called from another thread
+  ~immediately, access to the grpc_ares_request* return value must be
+  synchronized by the caller. TODO(apolcyn): we should remove this requirement
+  by changing this API to use two phase initialization - one API to create
+  the grpc_ares_request* and another to start the async work. */
 extern grpc_ares_request* (*grpc_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,

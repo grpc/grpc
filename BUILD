@@ -1372,6 +1372,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "arena",
         "gpr_platform",
         "intra_activity_waiter",
     ],
@@ -1509,6 +1510,7 @@ grpc_cc_library(
         "src/core/lib/resource_quota/arena.h",
     ],
     deps = [
+        "context",
         "gpr_base",
         "memory_quota",
     ],
@@ -2647,6 +2649,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_filters.h",
         "src/core/ext/xds/xds_listener.h",
         "src/core/ext/xds/xds_resource_type.h",
+        "src/core/ext/xds/xds_resource_type_impl.h",
         "src/core/ext/xds/xds_route_config.h",
         "src/core/ext/xds/xds_routing.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
