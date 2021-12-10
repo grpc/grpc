@@ -48,7 +48,6 @@ static gpr_timespec test_deadline(void) {
 typedef struct args_struct {
   grpc_core::Thread thd;
   gpr_event ev;
-  grpc_resolved_addresses* addrs;
   gpr_mu* mu;
   bool done;              // guarded by mu
   grpc_pollset* pollset;  // guarded by mu
@@ -63,7 +62,6 @@ void args_init(args_struct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->addrs = nullptr;
   args->done = false;
 }
 
@@ -72,7 +70,6 @@ void args_finish(args_struct* args) {
   args->thd.Join();
   // Don't need to explicitly destruct args->thd since
   // args is actually going to be destructed, not just freed
-  grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure do_nothing_cb;
@@ -123,6 +120,7 @@ void MustSucceed(args_struct* args, absl::StatusOr<grpc_resolved_addresses*> res
   GPR_ASSERT(result.ok());
   GPR_ASSERT(*result != nullptr);
   GPR_ASSERT((*result)->naddrs > 0);
+  grpc_resolved_addresses_destroy(*result);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));

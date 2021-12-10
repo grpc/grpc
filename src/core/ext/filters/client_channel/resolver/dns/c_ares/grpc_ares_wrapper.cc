@@ -822,7 +822,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
         GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto error_cleanup;
   } else if (port.empty()) {
-    if (default_port == nullptr) {
+    if (default_port == nullptr || strlen(default_port) == 0) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
           GRPC_ERROR_STR_TARGET_ADDRESS, name);

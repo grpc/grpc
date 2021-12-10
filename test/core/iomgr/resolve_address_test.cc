@@ -45,227 +45,201 @@ static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);
 }
 
-typedef struct args_struct {
-  gpr_event ev;
-  grpc_resolved_addresses* addrs;
-  gpr_mu* mu;
-  bool done;              // guarded by mu
-  grpc_pollset* pollset;  // guarded by mu
-  grpc_pollset_set* pollset_set;
-} args_struct;
+namespace {
 
-static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
-
-void args_init(args_struct* args) {
-  gpr_event_init(&args->ev);
-  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(args->pollset, &args->mu);
-  args->pollset_set = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->addrs = nullptr;
-  args->done = false;
-}
-
-void args_finish(args_struct* args) {
-  GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
-  grpc_resolved_addresses_destroy(args->addrs);
-  grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
-  grpc_pollset_set_destroy(args->pollset_set);
-  grpc_closure do_nothing_cb;
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
-  gpr_mu_lock(args->mu);
-  grpc_pollset_shutdown(args->pollset, &do_nothing_cb);
-  gpr_mu_unlock(args->mu);
-  // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
-  grpc_core::ExecCtx::Get()->Flush();
-  grpc_pollset_destroy(args->pollset);
-  gpr_free(args->pollset);
-}
-
-static grpc_millis n_sec_deadline(int seconds) {
+grpc_millis NSecDeadline(int seconds) {
   return grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void poll_pollset_until_request_done(args_struct* args) {
-  // Try to give enough time for c-ares to run through its retries
-  // a few times if needed.
-  grpc_millis deadline = n_sec_deadline(90);
-  while (true) {
-    grpc_core::ExecCtx exec_ctx;
-    {
-      grpc_core::MutexLockForGprMu lock(args->mu);
-      if (args->done) {
-        break;
-      }
-      grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
-      GPR_ASSERT(time_left >= 0);
-      grpc_pollset_worker* worker = nullptr;
-      GRPC_LOG_IF_ERROR(
-          "pollset_work",
-          grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
-    }
+class Args {
+ public:
+  Args() {
+    gpr_event_init(&ev_);
+    pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(pollset_, &mu_);
+    pollset_set_ = grpc_pollset_set_create();
+    grpc_pollset_set_add_pollset(pollset_set_, pollset_);
   }
-  gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
-}
 
-static void must_succeed(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
-  GPR_ASSERT(args->addrs != nullptr);
-  GPR_ASSERT(args->addrs->naddrs > 0);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
+  ~Args() {
+    GPR_ASSERT(gpr_event_wait(&ev_, test_deadline()));
+    grpc_pollset_set_del_pollset(pollset_set_, pollset_);
+    grpc_pollset_set_destroy(pollset_set_);
+    grpc_closure do_nothing_cb;
+    GRPC_CLOSURE_INIT(&do_nothing_cb, DoNothing, nullptr,
+                      grpc_schedule_on_exec_ctx);
+    gpr_mu_lock(mu_);
+    grpc_pollset_shutdown(pollset_, &do_nothing_cb);
+    gpr_mu_unlock(mu_);
+    // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
+    grpc_core::ExecCtx::Get()->Flush();
+    grpc_pollset_destroy(pollset_);
+    gpr_free(pollset_);
+  }
 
-static void must_fail(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
+  void PollPollsetUntilRequestDone() {
+    // Try to give enough time for c-ares to run through its retries
+    // a few times if needed.
+    grpc_millis deadline = NSecDeadline(90);
+    while (true) {
+      grpc_core::ExecCtx exec_ctx;
+      {
+        grpc_core::MutexLockForGprMu lock(mu_);
+        if (done_) {
+          break;
+        }
+        grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+        gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_, time_left);
+        GPR_ASSERT(time_left >= 0);
+        grpc_pollset_worker* worker = nullptr;
+        GRPC_LOG_IF_ERROR(
+            "pollset_work",
+            grpc_pollset_work(pollset_, &worker, NSecDeadline(1)));
+      }
+    }
+    gpr_event_set(&ev_, reinterpret_cast<void*>(1));
+  }
 
-static void must_fail_expect_cancelled_error_message(void* argsp,
-                                                     grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  std::string error_msg = grpc_error_std_string(err);
-  GPR_ASSERT(absl::StrContains(error_msg, "DNS query cancelled"));
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
+  void MustSucceed(absl::StatusOr<grpc_resolved_addresses*> result) {
+    GPR_ASSERT(result.ok());
+    GPR_ASSERT(*result != nullptr);
+    GPR_ASSERT((*result)->naddrs > 0);
+    Finish();
+  }
 
-static void dont_care(void* argsp, grpc_error_handle /* err */) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
+  void MustFail(absl::StatusOr<grpc_resolved_addresses*> result) {
+    GPR_ASSERT(!result.ok());
+    Finish();
+  }
 
-// This test assumes the environment has an ipv6 loopback
-static void must_succeed_with_ipv6_first(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
-  GPR_ASSERT(args->addrs != nullptr);
-  GPR_ASSERT(args->addrs->naddrs > 0);
-  const struct sockaddr* first_address =
-      reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
-  GPR_ASSERT(first_address->sa_family == AF_INET6);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
+  void MustFailExpectCancelledErrorMessage(absl::StatusOr<grpc_resolved_addresses*> result) {
+    GPR_ASSERT(!result.ok());
+    GPR_ASSERT(absl::StrContains(result.status().ToString(), "DNS query cancelled"));
+    Finish();
+  }
 
-static void must_succeed_with_ipv4_first(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
-  GPR_ASSERT(args->addrs != nullptr);
-  GPR_ASSERT(args->addrs->naddrs > 0);
-  const struct sockaddr* first_address =
-      reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
-  GPR_ASSERT(first_address->sa_family == AF_INET);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
+  void DontCare(absl::StatusOr<grpc_resolved_addresses*> result) {
+    Finish();
+  }
+
+  // This test assumes the environment has an ipv6 loopback
+  void MustSucceedWithIPv6First(absl::StatusOr<grpc_resolved_addresses*> result) {
+    GPR_ASSERT(result.ok());
+    GPR_ASSERT(*result != nullptr);
+    GPR_ASSERT((*result)->naddrs > 0);
+    const struct sockaddr* first_address =
+        reinterpret_cast<const struct sockaddr*>((*result)->addrs[0].addr);
+    GPR_ASSERT(first_address->sa_family == AF_INET6);
+    Finish();
+  }
+
+  void MustSucceedWithIPv4First(absl::StatusOr<grpc_resolved_addresses*> result) {
+    GPR_ASSERT(result.ok());
+    GPR_ASSERT(*result != nullptr);
+    GPR_ASSERT((*result)->naddrs > 0);
+    const struct sockaddr* first_address =
+        reinterpret_cast<const struct sockaddr*>((*result)->addrs[0].addr);
+    GPR_ASSERT(first_address->sa_family == AF_INET);
+    Finish();
+  }
+
+  grpc_pollset_set* pollset_set() { return pollset_set_; }
+
+ private:
+  static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+
+  void Finish() {
+    grpc_core::MutexLockForGprMu lock(mu_);
+    done_ = true;
+    GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(pollset_, nullptr));
+  }
+
+  gpr_event ev_;
+  gpr_mu* mu_;
+  bool done_ = false;              // guarded by mu
+  grpc_pollset* pollset_; // guarded by mu
+  grpc_pollset_set* pollset_set_;
+};
+
+} // namespace
 
 static void test_localhost(void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "localhost:1", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "localhost:1", nullptr, args.pollset_set(),
+      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static void test_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "localhost", "1", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "localhost", "1", args.pollset_set(),
+      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static void test_localhost_result_has_ipv6_first(void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "localhost:1", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed_with_ipv6_first, &args,
-                          grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "localhost:1", nullptr, args.pollset_set(),
+      std::bind(&Args::MustSucceedWithIPv6First, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static void test_localhost_result_has_ipv4_first_when_ipv6_isnt_available(
     void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "localhost:1", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed_with_ipv4_first, &args,
-                          grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "localhost:1", nullptr, args.pollset_set(),
+      std::bind(&Args::MustSucceedWithIPv4First, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static void test_non_numeric_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "localhost", "https", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "localhost", "http", args.pollset_set(),
+      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static void test_missing_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "localhost", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "localhost", nullptr, args.pollset_set(),
+      std::bind(&Args::MustFail, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static void test_ipv6_with_port(void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "[2001:db8::1]:1", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "[2001:db8::1]:1", nullptr, args.pollset_set(),
+      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static void test_ipv6_without_port(void) {
@@ -277,15 +251,13 @@ static void test_ipv6_without_port(void) {
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
-    args_struct args;
-    args_init(&args);
-    auto r = grpc_resolve_address(
-        kCases[i], "80", args.pollset_set,
-        GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-        &args.addrs);
+    Args args;
+    auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+        kCases[i], "80", args.pollset_set(),
+        std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+    r->Start();
     grpc_core::ExecCtx::Get()->Flush();
-    poll_pollset_until_request_done(&args);
-    args_finish(&args);
+    args.PollPollsetUntilRequestDone();
   }
 }
 
@@ -297,15 +269,13 @@ static void test_invalid_ip_addresses(void) {
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
-    args_struct args;
-    args_init(&args);
-    auto r = grpc_resolve_address(
-        kCases[i], nullptr, args.pollset_set,
-        GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
-        &args.addrs);
+    Args args;
+    auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+        kCases[i], nullptr, args.pollset_set(),
+        std::bind(&Args::MustFail, &args, std::placeholders::_1));
+    r->Start();
     grpc_core::ExecCtx::Get()->Flush();
-    poll_pollset_until_request_done(&args);
-    args_finish(&args);
+    args.PollPollsetUntilRequestDone();
   }
 }
 
@@ -316,15 +286,13 @@ static void test_unparseable_hostports(void) {
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
-    args_struct args;
-    args_init(&args);
-    auto r = grpc_resolve_address(
-        kCases[i], "1", args.pollset_set,
-        GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
-        &args.addrs);
+    Args args;
+    auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+        kCases[i], "1", args.pollset_set(),
+        std::bind(&Args::MustFail, &args, std::placeholders::_1));
+    r->Start();
     grpc_core::ExecCtx::Get()->Flush();
-    poll_pollset_until_request_done(&args);
-    args_finish(&args);
+    args.PollPollsetUntilRequestDone();
   }
 }
 
@@ -332,16 +300,14 @@ static void test_unparseable_hostports(void) {
 // test doesn't care what the result is, just that we don't crash etc.
 static void test_immediate_cancel(void) {
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "localhost:1", "1", args.pollset_set,
-      GRPC_CLOSURE_CREATE(dont_care, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "localhost:1", "1", args.pollset_set(),
+      std::bind(&Args::DontCare, &args, std::placeholders::_1));
+  r->Start();
   r.reset();  // cancel the resolution
   grpc_core::ExecCtx::Get()->Flush();
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
 }
 
 static int g_fake_non_responsive_dns_server_port;
@@ -374,18 +340,15 @@ static void test_cancel_with_non_responsive_dns_server(void) {
   grpc_ares_test_only_inject_config = inject_non_responsive_dns_server;
   // Run the test
   grpc_core::ExecCtx exec_ctx;
-  args_struct args;
-  args_init(&args);
-  auto r = grpc_resolve_address(
-      "foo.bar.com:1", "1", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_fail_expect_cancelled_error_message, &args,
-                          grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  Args args;
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+      "foo.bar.com:1", "1", args.pollset_set(),
+      std::bind(&Args::MustFailExpectCancelledErrorMessage, &args, std::placeholders::_1));
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
   r.reset();                           // cancel the resolution
   grpc_core::ExecCtx::Get()->Flush();  // let cancellation work finish
-  poll_pollset_until_request_done(&args);
-  args_finish(&args);
+  args.PollPollsetUntilRequestDone();
   // reset altered global state
   grpc_ares_test_only_inject_config = prev_test_only_inject_config;
 }

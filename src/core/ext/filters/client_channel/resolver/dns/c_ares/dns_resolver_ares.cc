@@ -479,7 +479,7 @@ class AresDNSRequest : public DNSRequest {
   AresDNSRequest(absl::string_view name, absl::string_view default_port,
                  grpc_pollset_set* interested_parties,
                  std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_resolve_address_done)
-      : name_(std::string(name)), default_port_(default_port), interested_parties_(interested_parties), on_resolve_address_done_(std::move(on_resolve_address_done)) {
+      : name_(std::string(name)), default_port_(std::string(default_port)), interested_parties_(interested_parties), on_resolve_address_done_(std::move(on_resolve_address_done)) {
         GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                           grpc_schedule_on_exec_ctx);
       }
