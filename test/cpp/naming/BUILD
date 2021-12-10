@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_py_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_py_binary")
 load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
 
 package(

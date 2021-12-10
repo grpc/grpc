@@ -43,7 +43,7 @@ namespace testing {
 
 FakeUdpAndTcpServer::FakeUdpAndTcpServer(
     AcceptMode accept_mode,
-    const std::function<FakeUdpAndTcpServer::ProcessReadResult(int, int, int)>&
+    std::function<FakeUdpAndTcpServer::ProcessReadResult(int, int, int)>
         process_read_cb)
     : accept_mode_(accept_mode), process_read_cb_(std::move(process_read_cb)) {
   port_ = grpc_pick_unused_port_or_die();
