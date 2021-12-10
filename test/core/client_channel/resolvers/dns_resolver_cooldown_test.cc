@@ -17,6 +17,7 @@
  */
 
 #include <cstring>
+#include <functional>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -29,10 +30,11 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 constexpr int kMinResolutionPeriodMs = 1000;
 
-static DNSResolver* default_dns_resolver;
+static grpc_core::DNSResolver* default_dns_resolver;
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
@@ -43,7 +45,7 @@ static grpc_ares_request* (*g_default_dns_lookup_ares)(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms);
 
-// Counter incremented by test_resolve_address_impl indicating the number of
+// Counter incremented by TestDNSResolver::CreateDNSRequest indicating the number of
 // times a system-level resolution has happened.
 static int g_resolution_count;
 
@@ -63,10 +65,11 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
-  static grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateDNSRequest(
+  grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<grpc_resolved_addresses*> on_done)) override {
-    auto result = default_dns_resolver->CreateDNSRequest(name, default_port, std::move(on_done));
+      grpc_pollset_set* interested_parties,
+      std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) override {
+    auto result = default_dns_resolver->CreateDNSRequest(name, default_port, interested_parties, std::move(on_done));
     ++g_resolution_count;
     static grpc_millis last_resolution_time = 0;
     if (last_resolution_time == 0) {
@@ -89,7 +92,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   }
 
   absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(absl::string_view name, absl::string_view default_port) {
-    return default_dns_resolver->blocking_resolve_address(name, default_port);
+    return default_dns_resolver->BlockingResolveAddress(name, default_port);
   }
 
  private:
@@ -97,7 +100,6 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 };
 
 } // namespace
-    test_resolve_address_impl, test_blocking_resolve_address_impl};
 
 static grpc_ares_request* test_dns_lookup_ares(
     const char* dns_server, const char* name, const char* default_port,
