@@ -117,25 +117,30 @@ static void poll_pollset_until_request_done(args_struct* args) {
   args->thd.Start();
 }
 
-static void must_succeed(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
-  GPR_ASSERT(args->addrs != nullptr);
-  GPR_ASSERT(args->addrs->naddrs > 0);
+namespace {
+
+void MustSucceed(args_struct* args, absl::StatusOr<grpc_resolved_addresses*> result) {
+  GPR_ASSERT(result.ok());
+  GPR_ASSERT(*result != nullptr);
+  GPR_ASSERT((*result)->naddrs > 0);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
+
+} // namespace
 
 static void resolve_address_must_succeed(const char* target) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
-  auto r = grpc_resolve_address(
+  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
       target, "1" /* port number */, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+      [&args](absl::StatusOr<grpc_resolved_addresses*> result) {
+        MustSucceed(&args, std::move(result));
+      });
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
   args_finish(&args);
 }

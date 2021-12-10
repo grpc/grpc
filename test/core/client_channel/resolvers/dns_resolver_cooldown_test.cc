@@ -34,8 +34,6 @@
 
 constexpr int kMinResolutionPeriodMs = 1000;
 
-static grpc_core::DNSResolver* default_dns_resolver;
-
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 static grpc_ares_request* (*g_default_dns_lookup_ares)(
@@ -59,17 +57,17 @@ static struct iomgr_args {
 
 namespace {
 
+grpc_core::DNSResolver* g_default_dns_resolver;
+
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  explicit TestDNSResolver(grpc_core::DNSResolver* default_dns_resolver) : default_dns_resolver_(default_dns_resolver) {}
-
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateDNSRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) override {
-    auto result = default_dns_resolver->CreateDNSRequest(name, default_port, interested_parties, std::move(on_done));
+    auto result = g_default_dns_resolver->CreateDNSRequest(name, default_port, interested_parties, std::move(on_done));
     ++g_resolution_count;
     static grpc_millis last_resolution_time = 0;
     if (last_resolution_time == 0) {
@@ -91,12 +89,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     return result;
   }
 
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(absl::string_view name, absl::string_view default_port) {
-    return default_dns_resolver->BlockingResolveAddress(name, default_port);
+  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(absl::string_view name, absl::string_view default_port) override {
+    return g_default_dns_resolver->BlockingResolveAddress(name, default_port);
   }
-
- private:
-  DNSResolver* default_dns_resolver_;
 };
 
 } // namespace
@@ -340,8 +335,8 @@ int main(int argc, char** argv) {
 
   g_default_dns_lookup_ares = grpc_dns_lookup_ares;
   grpc_dns_lookup_ares = test_dns_lookup_ares;
-  default_dns_resolver = grpc_core::GetDNSResolver();
-  grpc_core::SetDNSResolver(new TestDNSResolver(default_dns_resolver));
+  g_default_dns_resolver = grpc_core::GetDNSResolver();
+  grpc_core::SetDNSResolver(new TestDNSResolver());
 
   test_cooldown();
 
