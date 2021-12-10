@@ -45,10 +45,7 @@ class CustomDNSResolver : public DNSResolver {
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
-      override {
-    return MakeOrphanable<CustomDNSRequest>(
-        name, default_port, std::move(on_done), resolve_address_vtable_);
-  }
+      override;
 
   absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
       absl::string_view name, absl::string_view default_port) override;
