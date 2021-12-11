@@ -75,24 +75,15 @@ class RoundRobin : public LoadBalancingPolicy {
         RefCountedPtr<SubchannelInterface> subchannel)
         : SubchannelData(subchannel_list, address, std::move(subchannel)) {}
 
-    grpc_connectivity_state connectivity_state() const {
-      return last_connectivity_state_;
-    }
-
     bool seen_failure_since_ready() const { return seen_failure_since_ready_; }
-
-    // Performs connectivity state updates that need to be done both when we
-    // first start watching and when a watcher notification is received.
-    void UpdateConnectivityStateLocked(
-        grpc_connectivity_state connectivity_state);
 
    private:
     // Performs connectivity state updates that need to be done only
     // after we have started watching.
     void ProcessConnectivityChangeLocked(
-        grpc_connectivity_state connectivity_state) override;
+        absl::optional<grpc_connectivity_state> old_state,
+        grpc_connectivity_state new_state) override;
 
-    grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_IDLE;
     bool seen_failure_since_ready_ = false;
   };
 
@@ -122,8 +113,9 @@ class RoundRobin : public LoadBalancingPolicy {
 
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
-    void UpdateStateCountersLocked(grpc_connectivity_state old_state,
-                                   grpc_connectivity_state new_state);
+    void UpdateStateCountersLocked(
+        absl::optional<grpc_connectivity_state> old_state,
+        grpc_connectivity_state new_state);
 
     // If this subchannel list is the RR policy's current subchannel
     // list, updates the RR policy's connectivity state based on the
@@ -241,16 +233,6 @@ void RoundRobin::ResetBackoffLocked() {
 
 void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   if (num_subchannels() == 0) return;
-  // Check current state of each subchannel synchronously, since any
-  // subchannel already used by some other channel may have a non-IDLE
-  // state.
-  for (size_t i = 0; i < num_subchannels(); ++i) {
-    grpc_connectivity_state state =
-        subchannel(i)->CheckConnectivityStateLocked();
-    if (state != GRPC_CHANNEL_IDLE) {
-      subchannel(i)->UpdateConnectivityStateLocked(state);
-    }
-  }
   // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
@@ -258,24 +240,25 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
       subchannel(i)->subchannel()->AttemptToConnect();
     }
   }
-  // Now set the LB policy's state based on the subchannels' states.
-  UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 }
 
 void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
-    grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
-  GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
-  GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
-  if (old_state == GRPC_CHANNEL_READY) {
-    GPR_ASSERT(num_ready_ > 0);
-    --num_ready_;
-  } else if (old_state == GRPC_CHANNEL_CONNECTING) {
-    GPR_ASSERT(num_connecting_ > 0);
-    --num_connecting_;
-  } else if (old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    GPR_ASSERT(num_transient_failure_ > 0);
-    --num_transient_failure_;
+    absl::optional<grpc_connectivity_state> old_state,
+    grpc_connectivity_state new_state) {
+  if (old_state.has_value()) {
+    GPR_ASSERT(*old_state != GRPC_CHANNEL_SHUTDOWN);
+    if (*old_state == GRPC_CHANNEL_READY) {
+      GPR_ASSERT(num_ready_ > 0);
+      --num_ready_;
+    } else if (*old_state == GRPC_CHANNEL_CONNECTING) {
+      GPR_ASSERT(num_connecting_ > 0);
+      --num_connecting_;
+    } else if (*old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      GPR_ASSERT(num_transient_failure_ > 0);
+      --num_transient_failure_;
+    }
   }
+  GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING) {
@@ -358,18 +341,28 @@ void RoundRobin::RoundRobinSubchannelList::
   MaybeUpdateRoundRobinConnectivityStateLocked();
 }
 
-void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
-    grpc_connectivity_state connectivity_state) {
+void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
+    absl::optional<grpc_connectivity_state> old_state,
+    grpc_connectivity_state new_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
-        "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
-        p, subchannel(), subchannel_list(), Index(),
-        subchannel_list()->num_subchannels(),
-        ConnectivityStateName(last_connectivity_state_),
-        ConnectivityStateName(connectivity_state));
+  GPR_ASSERT(subchannel() != nullptr);
+  // If the new state is TRANSIENT_FAILURE, re-resolve.
+  // Only do this if we've already started watching, not if this is the
+  // first status reported for the subchannel.  Otherwise, if the subchannel
+  // was already in state TRANSIENT_FAILURE when the subchannel list was
+  // created, we'd wind up in a constant loop of re-resolution.
+  // Also attempt to reconnect.
+  if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    if (old_state.has_value()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
+        gpr_log(GPR_INFO,
+                "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
+                "Requesting re-resolution",
+                p, subchannel());
+      }
+      p->channel_control_helper()->RequestReresolution();
+    }
+    subchannel()->AttemptToConnect();
   }
   // Decide what state to report for aggregation purposes.
   // If we haven't seen a failure since the last time we were in state
@@ -377,44 +370,17 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
   // a failure, we report TRANSIENT_FAILURE and do not report any subsequent
   // state changes until we go back into state READY.
   if (!seen_failure_since_ready_) {
-    if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       seen_failure_since_ready_ = true;
     }
-    subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
-                                                 connectivity_state);
+    subchannel_list()->UpdateStateCountersLocked(old_state, new_state);
   } else {
-    if (connectivity_state == GRPC_CHANNEL_READY) {
+    if (new_state == GRPC_CHANNEL_READY) {
       seen_failure_since_ready_ = false;
       subchannel_list()->UpdateStateCountersLocked(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, connectivity_state);
+          GRPC_CHANNEL_TRANSIENT_FAILURE, new_state);
     }
   }
-  // Record last seen connectivity state.
-  last_connectivity_state_ = connectivity_state;
-}
-
-void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
-    grpc_connectivity_state connectivity_state) {
-  RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
-  GPR_ASSERT(subchannel() != nullptr);
-  // If the new state is TRANSIENT_FAILURE, re-resolve.
-  // Only do this if we've started watching, not at startup time.
-  // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE
-  // when the subchannel list was created, we'd wind up in a constant
-  // loop of re-resolution.
-  // Also attempt to reconnect.
-  if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO,
-              "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
-              "Requesting re-resolution",
-              p, subchannel());
-    }
-    p->channel_control_helper()->RequestReresolution();
-    subchannel()->AttemptToConnect();
-  }
-  // Update state counters.
-  UpdateConnectivityStateLocked(connectivity_state);
   // Update overall state and renew notification.
   subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 }

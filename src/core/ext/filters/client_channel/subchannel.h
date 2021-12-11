@@ -203,24 +203,13 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   channelz::SubchannelNode* channelz_node();
 
-  // Returns the current connectivity state of the subchannel.
-  // If health_check_service_name is non-null, the returned connectivity
-  // state will be based on the state reported by the backend for that
-  // service name.
-  grpc_connectivity_state CheckConnectivityState(
-      const absl::optional<std::string>& health_check_service_name)
-      ABSL_LOCKS_EXCLUDED(mu_);
-
   // Starts watching the subchannel's connectivity state.
-  // The first callback to the watcher will be delivered when the
-  // subchannel's connectivity state becomes a value other than
-  // initial_state, which may happen immediately.
+  // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
   // changes.
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       const absl::optional<std::string>& health_check_service_name,
       RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
       ABSL_LOCKS_EXCLUDED(mu_);
@@ -286,7 +275,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
    public:
     void AddWatcherLocked(
         WeakRefCountedPtr<Subchannel> subchannel,
-        grpc_connectivity_state initial_state,
         const std::string& health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const std::string& health_check_service_name,

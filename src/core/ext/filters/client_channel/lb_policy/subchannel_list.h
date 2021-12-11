@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
@@ -24,6 +22,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
 
@@ -51,7 +50,8 @@ class MySubchannelData
     : public SubchannelData<MySubchannelList, MySubchannelData> {
  public:
   void ProcessConnectivityChangeLocked(
-      grpc_connectivity_state connectivity_state) override {
+      absl::optional<grpc_connectivity_state> old_state,
+      grpc_connectivity_state new_state) override {
     // ...code to handle connectivity changes...
   }
 };
@@ -89,13 +89,8 @@ class SubchannelData {
   // Returns a pointer to the subchannel.
   SubchannelInterface* subchannel() const { return subchannel_.get(); }
 
-  // Synchronously checks the subchannel's connectivity state.
-  // Must not be called while there is a connectivity notification
-  // pending (i.e., between calling StartConnectivityWatchLocked() and
-  // calling CancelConnectivityWatchLocked()).
-  grpc_connectivity_state CheckConnectivityStateLocked() {
-    GPR_ASSERT(pending_watcher_ == nullptr);
-    connectivity_state_ = subchannel_->CheckConnectivityState();
+  // Returns the cached connectivity state, if any.
+  absl::optional<grpc_connectivity_state> connectivity_state() {
     return connectivity_state_;
   }
 
@@ -127,7 +122,8 @@ class SubchannelData {
   // invoked whenever the subchannel's connectivity state changes.
   // To stop watching, use CancelConnectivityWatchLocked().
   virtual void ProcessConnectivityChangeLocked(
-      grpc_connectivity_state connectivity_state) = 0;
+      absl::optional<grpc_connectivity_state> old_state,
+      grpc_connectivity_state new_state) = 0;
 
  private:
   // Watcher for subchannel connectivity state.
@@ -166,7 +162,7 @@ class SubchannelData {
   SubchannelInterface::ConnectivityStateWatcherInterface* pending_watcher_ =
       nullptr;
   // Data updated by the watcher.
-  grpc_connectivity_state connectivity_state_;
+  absl::optional<grpc_connectivity_state> connectivity_state_;
 };
 
 // A list of subchannels.
@@ -245,20 +241,25 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
   if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
     gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): connectivity changed: state=%s, "
+            " (subchannel %p): connectivity changed: old_state=%s, new_state=%s, "
             "shutting_down=%d, pending_watcher=%p",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_.get(), subchannel_data_->Index(),
             subchannel_list_->num_subchannels(),
             subchannel_data_->subchannel_.get(),
+            (subchannel_data_->connectivity_state_.has_value()
+                 ? ConnectivityStateName(*subchannel_data_->connectivity_state_)
+                 : "N/A"),
             ConnectivityStateName(new_state), subchannel_list_->shutting_down(),
             subchannel_data_->pending_watcher_);
   }
   if (!subchannel_list_->shutting_down() &&
       subchannel_data_->pending_watcher_ != nullptr) {
+    absl::optional<grpc_connectivity_state> old_state =
+        subchannel_data_->connectivity_state_;
     subchannel_data_->connectivity_state_ = new_state;
     // Call the subclass's ProcessConnectivityChangeLocked() method.
-    subchannel_data_->ProcessConnectivityChangeLocked(new_state);
+    subchannel_data_->ProcessConnectivityChangeLocked(old_state, new_state);
   }
 }
 
@@ -272,10 +273,7 @@ SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
     const ServerAddress& /*address*/,
     RefCountedPtr<SubchannelInterface> subchannel)
     : subchannel_list_(subchannel_list),
-      subchannel_(std::move(subchannel)),
-      // We assume that the current state is IDLE.  If not, we'll get a
-      // callback telling us that.
-      connectivity_state_(GRPC_CHANNEL_IDLE) {}
+      subchannel_(std::move(subchannel)) {}
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::~SubchannelData() {
@@ -312,16 +310,15 @@ void SubchannelData<SubchannelListType,
   if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
     gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): starting watch (from %s)",
+            " (subchannel %p): starting watch",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_.get(), ConnectivityStateName(connectivity_state_));
+            subchannel_.get());
   }
   GPR_ASSERT(pending_watcher_ == nullptr);
   pending_watcher_ =
       new Watcher(this, subchannel_list()->Ref(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
-      connectivity_state_,
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
           pending_watcher_));
 }
@@ -428,4 +425,4 @@ void SubchannelList<SubchannelListType,
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H

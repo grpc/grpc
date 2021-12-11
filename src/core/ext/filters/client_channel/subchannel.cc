@@ -429,11 +429,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   grpc_connectivity_state state() const { return state_; }
 
   void AddWatcherLocked(
-      grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
-    if (state_ != initial_state) {
-      new AsyncWatcherNotifierLocked(watcher, state_, status_);
-    }
+    new AsyncWatcherNotifierLocked(watcher, state_, status_);
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
 
@@ -506,7 +503,6 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
     WeakRefCountedPtr<Subchannel> subchannel,
-    grpc_connectivity_state initial_state,
     const std::string& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   // If the health check service name is not already present in the map,
@@ -522,7 +518,7 @@ void Subchannel::HealthWatcherMap::AddWatcherLocked(
     health_watcher = it->second.get();
   }
   // Add the watcher to the entry.
-  health_watcher->AddWatcherLocked(initial_state, std::move(watcher));
+  health_watcher->AddWatcherLocked(std::move(watcher));
 }
 
 void Subchannel::HealthWatcherMap::RemoveWatcherLocked(
@@ -736,18 +732,7 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
   return channelz_node_.get();
 }
 
-grpc_connectivity_state Subchannel::CheckConnectivityState(
-    const absl::optional<std::string>& health_check_service_name) {
-  MutexLock lock(&mu_);
-  if (health_check_service_name.has_value()) {
-    return health_watcher_map_.CheckConnectivityStateLocked(
-        this, *health_check_service_name);
-  }
-  return state_;
-}
-
 void Subchannel::WatchConnectivityState(
-    grpc_connectivity_state initial_state,
     const absl::optional<std::string>& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   MutexLock lock(&mu_);
@@ -756,14 +741,12 @@ void Subchannel::WatchConnectivityState(
     grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
   }
   if (!health_check_service_name.has_value()) {
-    if (state_ != initial_state) {
-      new AsyncWatcherNotifierLocked(watcher, state_, status_);
-    }
+    new AsyncWatcherNotifierLocked(watcher, state_, status_);
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
     health_watcher_map_.AddWatcherLocked(
-        WeakRef(DEBUG_LOCATION, "health_watcher"), initial_state,
-        *health_check_service_name, std::move(watcher));
+        WeakRef(DEBUG_LOCATION, "health_watcher"), *health_check_service_name,
+        std::move(watcher));
   }
 }
 

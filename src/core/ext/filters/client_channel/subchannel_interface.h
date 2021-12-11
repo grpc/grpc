@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
@@ -52,13 +50,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   ~SubchannelInterface() override = default;
 
-  // Returns the current connectivity state of the subchannel.
-  virtual grpc_connectivity_state CheckConnectivityState() = 0;
-
   // Starts watching the subchannel's connectivity state.
-  // The first callback to the watcher will be delivered when the
-  // subchannel's connectivity state becomes a value other than
-  // initial_state, which may happen immediately.
+  // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
   // changes.
   // The watcher will be destroyed either when the subchannel is
@@ -67,7 +60,6 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // valid to call this method a second time without first cancelling
   // the previous watcher using CancelConnectivityStateWatch().
   virtual void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Cancels a connectivity state watch.
@@ -102,14 +94,9 @@ class DelegatingSubchannel : public SubchannelInterface {
     return wrapped_subchannel_;
   }
 
-  grpc_connectivity_state CheckConnectivityState() override {
-    return wrapped_subchannel_->CheckConnectivityState();
-  }
   void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
-    return wrapped_subchannel_->WatchConnectivityState(initial_state,
-                                                       std::move(watcher));
+    return wrapped_subchannel_->WatchConnectivityState(std::move(watcher));
   }
   void CancelConnectivityStateWatch(
       ConnectivityStateWatcherInterface* watcher) override {
@@ -127,4 +114,4 @@ class DelegatingSubchannel : public SubchannelInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
