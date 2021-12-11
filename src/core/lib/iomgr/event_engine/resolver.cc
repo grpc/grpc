@@ -74,18 +74,14 @@ class EventEngineDNSRequest : DNSRequest {
       absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
     ExecCtx exec_ctx;
     // Convert addresses to iomgr form.
-    std::vector<grpc_resolved_address> result = static_cast<std::vector<grpc_resolved_address>>(
-        gpr_malloc(sizeof(grpc_resolved_addresses)));
-    result->naddrs = addresses->size();
-    result->addrs = static_cast<grpc_resolved_address*>(
-        gpr_malloc(sizeof(grpc_resolved_address) * addresses->size()));
+    std::vector<grpc_resolved_address> result;
+    results.reserve(addresses->size());
     for (size_t i = 0; i < addresses->size(); ++i) {
-      result->addrs[i] = CreateGRPCResolvedAddress(addresses[i]);
+      results.push_back(CreateGRPCResolvedAddress(addresses[i]));
     }
     if (addresses.ok()) {
-      on_done_(result);
+      on_done_(std::move(result));
     } else {
-      grpc_resolved_addresses_destroy(result);
       on_done_(addresses.status());
     }
     Unref();

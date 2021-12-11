@@ -84,9 +84,6 @@ class InternalRequest {
 
   ~InternalRequest() {
     grpc_http_parser_destroy(&parser_);
-    if (addresses_ != nullptr) {
-      grpc_resolved_addresses_destroy(addresses_);
-    }
     if (ep_ != nullptr) {
       grpc_endpoint_destroy(ep_);
     }
@@ -109,7 +106,7 @@ class InternalRequest {
       overall_error_ =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
     }
-    grpc_resolved_address* addr = &addresses_->addrs[next_address_ - 1];
+    grpc_resolved_address* addr = &addresses_[next_address_ - 1];
     std::string addr_text = grpc_sockaddr_to_uri(addr);
     overall_error_ = grpc_error_add_child(
         overall_error_,
@@ -198,12 +195,12 @@ class InternalRequest {
     if (error != GRPC_ERROR_NONE) {
       AppendError(error);
     }
-    if (next_address_ == addresses_->naddrs) {
+    if (next_address_ == addresses_.size()) {
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Failed HTTP requests to all targets", &overall_error_, 1));
       return;
     }
-    addr = &addresses_->addrs[next_address_++];
+    addr = &addresses_[next_address_++];
     GRPC_CLOSURE_INIT(&connected_, OnConnected, this,
                       grpc_schedule_on_exec_ctx);
     grpc_arg rq_arg = grpc_channel_arg_pointer_create(
@@ -224,14 +221,14 @@ class InternalRequest {
       Finish(absl_status_to_grpc_error(addresses_or.status()));
       return;
     }
-    addresses_ = *addresses_or;
+    addresses_ = std::move(*addresses_or);
     next_address_ = 0;
     NextAddress(GRPC_ERROR_NONE);
   }
 
   grpc_slice request_text_;
   grpc_http_parser parser_;
-  std::vector<grpc_resolved_address> addresses_ = nullptr;
+  std::vector<grpc_resolved_address> addresses_;
   size_t next_address_ = 0;
   grpc_endpoint* ep_ = nullptr;
   ResourceQuotaRefPtr resource_quota_;

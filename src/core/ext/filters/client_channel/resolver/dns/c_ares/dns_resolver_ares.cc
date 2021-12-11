@@ -539,9 +539,8 @@ class AresDNSResolver : public DNSResolver {
                              grpc_error_std_string(error).c_str());
         if (r->addresses_ != nullptr) {
           resolved_addresses.resize(r->addresses.size());
-          for (size_t i = 0; i < resolved_addresses.size(); ++i) {
-            memcpy(&resolved_addresses[i],
-                   &(*r->addresses_)[i].address(),
+          for (auto& addr : resolved_addresses) {
+            memcpy(&addr, &(*r->addresses_)[i].address(),
                    sizeof(grpc_resolved_address));
           }
         }
@@ -595,8 +594,7 @@ class AresDNSResolver : public DNSResolver {
                                        std::move(on_done));
   }
 
-  // Resolve addr in a blocking fashion. On success,
-  // result must be freed with grpc_resolved_addresses_destroy.
+  // Resolve addr in a blocking fashion.
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     return default_resolver_->ResolveNameBlocking(name, default_port);

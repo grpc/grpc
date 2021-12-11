@@ -907,14 +907,14 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     }
     if (error != GRPC_ERROR_NONE) return error;
     // Create a listener for each resolved address.
-    for (size_t i = 0; i < resolved->size(); i++) {
+    for (auto& addr : resolved) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
-      if (*port_num != -1 && grpc_sockaddr_get_port(&(esolved[i]) == 0) {
-        grpc_sockaddr_set_port(&resolved[i], *port_num);
+      if (*port_num != -1 && grpc_sockaddr_get_port(&addr == 0) {
+        grpc_sockaddr_set_port(&addr, *port_num);
       }
       int port_temp = -1;
-      error = Chttp2ServerListener::Create(server, &resolved[i],
+      error = Chttp2ServerListener::Create(server, &addr,
                                            grpc_channel_args_copy(args),
                                            args_modifier, &port_temp);
       if (error != GRPC_ERROR_NONE) {
@@ -950,9 +950,6 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     GRPC_ERROR_UNREF(error);
   }
   grpc_channel_args_destroy(args);
-  if (resolved != nullptr) {
-    grpc_resolved_addresses_destroy(resolved);
-  }
   if (error != GRPC_ERROR_NONE) *port_num = 0;
   return error;
 }

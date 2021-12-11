@@ -97,8 +97,7 @@ class DNSResolver {
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
       GRPC_MUST_USE_RESULT = 0;
 
-  // Resolve addr in a blocking fashion. On success,
-  // result must be freed with grpc_resolved_addresses_destroy.
+  // Resolve addr in a blocking fashion.
   virtual absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) = 0;
 };
