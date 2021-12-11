@@ -49,7 +49,7 @@
 namespace grpc_core {
 namespace {
 
-class NativeDNSRequest : public DNSRequest {
+class NativeDNSRequest : public DNSResolver::Request {
  public:
   NativeDNSRequest(
       absl::string_view name, absl::string_view default_port,
