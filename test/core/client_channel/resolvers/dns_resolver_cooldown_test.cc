@@ -63,7 +63,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
  public:
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
-  grpc_core::OrphanablePtr<grpc_core::DNSRequest> ResolveName(
+  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)

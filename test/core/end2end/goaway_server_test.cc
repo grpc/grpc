@@ -59,7 +59,7 @@ namespace {
 
 grpc_core::DNSResolver* g_default_dns_resolver;
 
-class TestDNSRequest : public grpc_core::DNSRequest {
+class TestDNSRequest : public grpc_core::DNSResolver::Request {
  public:
   explicit TestDNSRequest(
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
@@ -96,7 +96,7 @@ class TestDNSRequest : public grpc_core::DNSRequest {
 };
 
 class TestDNSResolver : public grpc_core::DNSResolver {
-  grpc_core::OrphanablePtr<grpc_core::DNSRequest> ResolveName(
+  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
