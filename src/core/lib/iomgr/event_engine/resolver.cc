@@ -108,7 +108,7 @@ DNSResolver* EventEngineDNSResolver::GetOrCreate() {
   return g_dns_resolver;
 }
 
-OrphanablePtr<DNSRequest> EventEngineDNSResolver::CreateRequest(
+OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::CreateRequest(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) {

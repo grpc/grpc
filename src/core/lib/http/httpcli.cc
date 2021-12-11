@@ -250,7 +250,7 @@ class InternalRequest {
   grpc_closure done_write_;
   grpc_closure connected_;
   grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
-  OrphanablePtr<DNSRequest> dns_request_;
+  OrphanablePtr<DNSResolver::Request> dns_request_;
 };
 
 }  // namespace

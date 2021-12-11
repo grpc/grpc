@@ -93,7 +93,7 @@ class NativeClientChannelDNSResolver : public Resolver {
   /// retry backoff state
   BackOff backoff_;
   /// tracks pending resolutions
-  OrphanablePtr<DNSRequest> dns_request_;
+  OrphanablePtr<DNSResolver::Request> dns_request_;
 };
 
 NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
