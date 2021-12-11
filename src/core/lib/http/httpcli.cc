@@ -76,7 +76,7 @@ class InternalRequest {
     GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
     GPR_ASSERT(pollent);
     grpc_polling_entity_add_to_pollset_set(pollent_, context->pollset_set);
-    dns_request_ = GetDNSResolver()->CreateDNSRequest(
+    dns_request_ = GetDNSResolver()->CreateRequest(
         host_.c_str(), handshaker_->default_port, context_->pollset_set,
         std::bind(&InternalRequest::OnResolved, this, std::placeholders::_1));
     dns_request_->Start();

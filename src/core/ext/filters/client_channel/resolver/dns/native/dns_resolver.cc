@@ -277,7 +277,7 @@ void NativeClientChannelDNSResolver::StartResolvingLocked() {
   Ref(DEBUG_LOCATION, "dns-resolving").release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
-  dns_request_ = GetDNSResolver()->CreateDNSRequest(
+  dns_request_ = GetDNSResolver()->CreateRequest(
       name_to_resolve_, kDefaultSecurePort, interested_parties_,
       std::bind(&NativeClientChannelDNSResolver::OnResolved, this,
                 std::placeholders::_1));
