@@ -74,7 +74,7 @@ class CustomDNSResolver : public DNSResolver {
   static CustomDNSResolver* GetOrCreate(
       grpc_custom_resolver_vtable* resolve_address_vtable);
 
-  OrphanablePtr<DNSRequest> ResolveName(
+  OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
