@@ -43,7 +43,7 @@ static grpc_ares_request* (*g_default_dns_lookup_ares)(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms);
 
-// Counter incremented by TestDNSResolver::CreateDNSRequest indicating the
+// Counter incremented by TestDNSResolver::CreateRequest indicating the
 // number of times a system-level resolution has happened.
 static int g_resolution_count;
 
@@ -63,12 +63,12 @@ class TestDNSResolver : public grpc_core::DNSResolver {
  public:
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
-  grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateDNSRequest(
+  grpc_core::OrphanablePtr<grpc_core::DNSRequest> CreateRequest(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       override {
-    auto result = g_default_dns_resolver->CreateDNSRequest(
+    auto result = g_default_dns_resolver->CreateRequest(
         name, default_port, interested_parties, std::move(on_done));
     ++g_resolution_count;
     static grpc_millis last_resolution_time = 0;

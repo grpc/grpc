@@ -170,7 +170,7 @@ class Args {
 static void test_localhost(void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "localhost:1", nullptr, args.pollset_set(),
       std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
   r->Start();
@@ -181,7 +181,7 @@ static void test_localhost(void) {
 static void test_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "localhost", "1", args.pollset_set(),
       std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
   r->Start();
@@ -192,7 +192,7 @@ static void test_default_port(void) {
 static void test_localhost_result_has_ipv6_first(void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "localhost:1", nullptr, args.pollset_set(),
       std::bind(&Args::MustSucceedWithIPv6First, &args, std::placeholders::_1));
   r->Start();
@@ -204,7 +204,7 @@ static void test_localhost_result_has_ipv4_first_when_ipv6_isnt_available(
     void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "localhost:1", nullptr, args.pollset_set(),
       std::bind(&Args::MustSucceedWithIPv4First, &args, std::placeholders::_1));
   r->Start();
@@ -215,7 +215,7 @@ static void test_localhost_result_has_ipv4_first_when_ipv6_isnt_available(
 static void test_non_numeric_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "localhost", "http", args.pollset_set(),
       std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
   r->Start();
@@ -226,7 +226,7 @@ static void test_non_numeric_default_port(void) {
 static void test_missing_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "localhost", nullptr, args.pollset_set(),
       std::bind(&Args::MustFail, &args, std::placeholders::_1));
   r->Start();
@@ -237,7 +237,7 @@ static void test_missing_default_port(void) {
 static void test_ipv6_with_port(void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "[2001:db8::1]:1", nullptr, args.pollset_set(),
       std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
   r->Start();
@@ -255,7 +255,7 @@ static void test_ipv6_without_port(void) {
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
     Args args;
-    auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+    auto r = grpc_core::GetDNSResolver()->CreateRequest(
         kCases[i], "80", args.pollset_set(),
         std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
     r->Start();
@@ -273,7 +273,7 @@ static void test_invalid_ip_addresses(void) {
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
     Args args;
-    auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+    auto r = grpc_core::GetDNSResolver()->CreateRequest(
         kCases[i], nullptr, args.pollset_set(),
         std::bind(&Args::MustFail, &args, std::placeholders::_1));
     r->Start();
@@ -290,7 +290,7 @@ static void test_unparseable_hostports(void) {
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
     Args args;
-    auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+    auto r = grpc_core::GetDNSResolver()->CreateRequest(
         kCases[i], "1", args.pollset_set(),
         std::bind(&Args::MustFail, &args, std::placeholders::_1));
     r->Start();
@@ -304,7 +304,7 @@ static void test_unparseable_hostports(void) {
 static void test_immediate_cancel(void) {
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "localhost:1", "1", args.pollset_set(),
       std::bind(&Args::DontCare, &args, std::placeholders::_1));
   r->Start();
@@ -344,7 +344,7 @@ static void test_cancel_with_non_responsive_dns_server(void) {
   // Run the test
   grpc_core::ExecCtx exec_ctx;
   Args args;
-  auto r = grpc_core::GetDNSResolver()->CreateDNSRequest(
+  auto r = grpc_core::GetDNSResolver()->CreateRequest(
       "foo.bar.com:1", "1", args.pollset_set(),
       std::bind(&Args::MustFailExpectCancelledErrorMessage, &args,
                 std::placeholders::_1));
