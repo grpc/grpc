@@ -70,11 +70,11 @@ class NativeDNSRequest : public DNSRequest {
 
  private:
   // Callback to be passed to grpc Executor to asynch-ify
-  // BlockingResolveAddress
+  // ResolveNameBlocking
   static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
     NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
     auto result =
-        GetDNSResolver()->BlockingResolveAddress(r->name_, r->default_port_);
+        GetDNSResolver()->ResolveNameBlocking(r->name_, r->default_port_);
     // running inline is safe since we've already been scheduled on the executor
     r->on_done_(result);
     r->Unref();
@@ -105,7 +105,7 @@ OrphanablePtr<DNSResolver::Request> NativeDNSResolver::ResolveName(
 }
 
 absl::StatusOr<grpc_resolved_addresses*>
-NativeDNSResolver::BlockingResolveAddress(absl::string_view name,
+NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
                                           absl::string_view default_port) {
   ExecCtx exec_ctx;
   struct addrinfo hints;

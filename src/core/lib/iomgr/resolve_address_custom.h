@@ -83,7 +83,7 @@ class CustomDNSResolver : public DNSResolver {
         name, default_port, std::move(on_done), resolve_address_vtable_);
   }
 
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+  absl::StatusOr<grpc_resolved_addresses*> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
 
  private:

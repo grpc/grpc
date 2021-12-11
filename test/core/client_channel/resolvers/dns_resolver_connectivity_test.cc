@@ -78,7 +78,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     return grpc_core::MakeOrphanable<TestDNSRequest>(std::move(on_done));
   }
 
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+  absl::StatusOr<grpc_resolved_addresses*> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     GPR_ASSERT(0);
   }

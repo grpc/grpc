@@ -163,7 +163,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
                                                        std::move(on_done));
   }
 
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+  absl::StatusOr<grpc_resolved_addresses*> ResolveNameBlocking(
       absl::string_view /* name */,
       absl::string_view /* default_port */) override {
     GPR_ASSERT(0);

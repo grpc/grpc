@@ -111,7 +111,7 @@ CustomDNSResolver* CustomDNSResolver::GetOrCreate(
 }
 
 absl::StatusOr<grpc_resolved_addresses*>
-CustomDNSResolver::BlockingResolveAddress(absl::string_view name,
+CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
                                           absl::string_view default_port) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 

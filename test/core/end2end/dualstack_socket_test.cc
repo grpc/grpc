@@ -62,7 +62,7 @@ static void drain_cq(grpc_completion_queue* cq) {
 static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
   absl::StatusOr<grpc_resolved_addresses*> addresses_or =
-      grpc_core::GetDNSResolver()->BlockingResolveAddress(hostname, "80");
+      grpc_core::GetDNSResolver()->ResolveNameBlocking(hostname, "80");
   if (!addresses_or.ok() || *addresses_or == nullptr) {
     GRPC_LOG_IF_ERROR(hostname,
                       absl_status_to_grpc_error(addresses_or.status()));
@@ -280,7 +280,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
 int external_dns_works(const char* host) {
   absl::StatusOr<grpc_resolved_addresses*> addresses_or =
-      grpc_core::GetDNSResolver()->BlockingResolveAddress(host, "80");
+      grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80");
   if (addresses_or.ok()) {
     grpc_resolved_addresses_destroy(*addresses_or);
     return 1;

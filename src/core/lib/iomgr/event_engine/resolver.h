@@ -48,7 +48,7 @@ class EventEngineDNSResolver : public DNSResolver {
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)
       override;
 
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+  absl::StatusOr<grpc_resolved_addresses*> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
 };
 

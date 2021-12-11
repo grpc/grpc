@@ -110,7 +110,7 @@ class Client {
   void Connect() {
     ExecCtx exec_ctx;
     absl::StatusOr<grpc_resolved_addresses*> addresses_or =
-        GetDNSResolver()->BlockingResolveAddress(server_address_, "80");
+        GetDNSResolver()->ResolveNameBlocking(server_address_, "80");
     ASSERT_EQ(absl::OkStatus(), addresses_or.status())
         << addresses_or.status().ToString();
     ASSERT_GE((*addresses_or)->naddrs, 1UL);

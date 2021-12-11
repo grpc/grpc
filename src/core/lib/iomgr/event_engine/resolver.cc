@@ -119,7 +119,7 @@ OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::ResolveName(
 }
 
 absl::StatusOr<grpc_resolved_addresses*>
-EventEngineDNSResolver::BlockingResolveAddress(absl::string_view name,
+EventEngineDNSResolver::ResolveNameBlocking(absl::string_view name,
                                                absl::string_view default_port) {
   grpc_closure on_done;
   Promise<absl::StatusOr<grpc_resolved_addresses*>> evt;

@@ -604,9 +604,9 @@ class AresDNSResolver : public DNSResolver {
 
   // Resolve addr in a blocking fashion. On success,
   // result must be freed with grpc_resolved_addresses_destroy.
-  absl::StatusOr<grpc_resolved_addresses*> BlockingResolveAddress(
+  absl::StatusOr<grpc_resolved_addresses*> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
-    return default_resolver_->BlockingResolveAddress(name, default_port);
+    return default_resolver_->ResolveNameBlocking(name, default_port);
   }
 
  private:
