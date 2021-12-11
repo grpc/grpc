@@ -492,7 +492,7 @@ class AresDNSResolver : public DNSResolver {
    public:
     AresRequest(absl::string_view name, absl::string_view default_port,
                 grpc_pollset_set* interested_parties,
-                std::function<void(absl::StatusOr<std::vector<grpc_resolved_addresses>>)>
+                std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
                     on_resolve_address_done)
         : name_(std::string(name)),
           default_port_(std::string(default_port)),
@@ -532,22 +532,15 @@ class AresDNSResolver : public DNSResolver {
    private:
     static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
       AresRequest* r = static_cast<AresRequest*>(arg);
-      std::vector<grpc_resolved_addresses> resolved_addresses;
+      std::vector<grpc_resolved_address> resolved_addresses;
       {
         absl::MutexLock lock(&r->mu_);
         GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r,
                              grpc_error_std_string(error).c_str());
-        if (r->addresses_ == nullptr || r->addresses_->empty()) {
-          resolved_addresses = nullptr;
-        } else {
-          resolved_addresses = static_cast<std::vector<grpc_resolved_addresses>>(
-              gpr_zalloc(sizeof(grpc_resolved_addresses)));
-          resolved_addresses->naddrs = r->addresses_->size();
-          resolved_addresses->addrs =
-              static_cast<grpc_resolved_address*>(gpr_zalloc(
-                  sizeof(grpc_resolved_address) * resolved_addresses->naddrs));
-          for (size_t i = 0; i < resolved_addresses->naddrs; ++i) {
-            memcpy(&resolved_addresses->addrs[i],
+        if (r->addresses_ != nullptr) {
+          resolved_addresses.resize(r->addresses.size());
+          for (size_t i = 0; i < resolved_addresses.size(); ++i) {
+            memcpy(&resolved_addresses[i],
                    &(*r->addresses_)[i].address(),
                    sizeof(grpc_resolved_address));
           }
@@ -556,7 +549,7 @@ class AresDNSResolver : public DNSResolver {
       if (error == GRPC_ERROR_NONE) {
         // it's safe to run this inline since the current method was scheduled
         // on the ExecCtx
-        r->on_resolve_address_done_(resolved_addresses);
+        r->on_resolve_address_done_(std::move(resolved_addresses));
       } else {
         r->on_resolve_address_done_(grpc_error_to_absl_status(error));
       }
@@ -574,7 +567,7 @@ class AresDNSResolver : public DNSResolver {
     // parties interested in our I/O
     grpc_pollset_set* const interested_parties_;
     // user-provided completion callback
-    const std::function<void(absl::StatusOr<std::vector<grpc_resolved_addresses>>)>
+    const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolve_address_done_;
     // currently resolving addresses
     std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
@@ -596,7 +589,7 @@ class AresDNSResolver : public DNSResolver {
   OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_addresses>>)> on_done)
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
       override {
     return MakeOrphanable<AresRequest>(name, default_port, interested_parties,
                                        std::move(on_done));
@@ -604,7 +597,7 @@ class AresDNSResolver : public DNSResolver {
 
   // Resolve addr in a blocking fashion. On success,
   // result must be freed with grpc_resolved_addresses_destroy.
-  absl::StatusOr<std::vector<grpc_resolved_addresses>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     return default_resolver_->ResolveNameBlocking(name, default_port);
   }

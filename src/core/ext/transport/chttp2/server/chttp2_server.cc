@@ -883,7 +883,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  std::vector<grpc_resolved_addresses> resolved = nullptr;
+  std::vector<grpc_resolved_address> resolved;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
   absl::string_view parsed_addr_unprefixed{parsed_addr};
@@ -898,23 +898,23 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       error = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed,
                                                         &resolved);
     } else {
-      absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or =
+      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
           GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
       error = absl_status_to_grpc_error(addresses_or.status());
       if (addresses_or.ok()) {
-        resolved = *addresses_or;
+        resolved = std::move(*addresses_or);
       }
     }
     if (error != GRPC_ERROR_NONE) return error;
     // Create a listener for each resolved address.
-    for (size_t i = 0; i < resolved->naddrs; i++) {
+    for (size_t i = 0; i < resolved->size(); i++) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
-      if (*port_num != -1 && grpc_sockaddr_get_port(&resolved->addrs[i]) == 0) {
-        grpc_sockaddr_set_port(&resolved->addrs[i], *port_num);
+      if (*port_num != -1 && grpc_sockaddr_get_port(&(esolved[i]) == 0) {
+        grpc_sockaddr_set_port(&resolved[i], *port_num);
       }
       int port_temp = -1;
-      error = Chttp2ServerListener::Create(server, &resolved->addrs[i],
+      error = Chttp2ServerListener::Create(server, &resolved[i],
                                            grpc_channel_args_copy(args),
                                            args_modifier, &port_temp);
       if (error != GRPC_ERROR_NONE) {
@@ -927,7 +927,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         }
       }
     }
-    if (error_list.size() == resolved->naddrs) {
+    if (error_list.size() == resolved.size()) {
       std::string msg =
           absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
                           resolved->naddrs);

@@ -32,8 +32,8 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  std::vector<grpc_resolved_addresses> addresses = nullptr;
-  absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or =
+  std::vector<grpc_resolved_address> addresses = nullptr;
+  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
       GetDNSResolver()->ResolveNameBlocking("localhost", "https");
   GPR_ASSERT(addresses_or.ok());
   addresses = *addresses_or;

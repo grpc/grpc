@@ -35,7 +35,7 @@ DNSResolver* GetDNSResolver() { return g_dns_resolver; }
 
 }  // namespace grpc_core
 
-void grpc_resolved_addresses_destroy(std::vector<grpc_resolved_addresses> addresses) {
+void grpc_resolved_addresses_destroy(std::vector<grpc_resolved_address> addresses) {
   if (addresses != nullptr) {
     gpr_free(addresses->addrs);
   }

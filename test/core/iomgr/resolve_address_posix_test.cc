@@ -117,7 +117,7 @@ static void poll_pollset_until_request_done(args_struct* args) {
 namespace {
 
 void MustSucceed(args_struct* args,
-                 absl::StatusOr<std::vector<grpc_resolved_addresses>> result) {
+                 absl::StatusOr<std::vector<grpc_resolved_address>> result) {
   GPR_ASSERT(result.ok());
   GPR_ASSERT(*result != nullptr);
   GPR_ASSERT((*result)->naddrs > 0);
@@ -136,7 +136,7 @@ static void resolve_address_must_succeed(const char* target) {
   poll_pollset_until_request_done(&args);
   auto r = grpc_core::GetDNSResolver()->ResolveName(
       target, "1" /* port number */, args.pollset_set,
-      [&args](absl::StatusOr<std::vector<grpc_resolved_addresses>> result) {
+      [&args](absl::StatusOr<std::vector<grpc_resolved_address>> result) {
         MustSucceed(&args, std::move(result));
       });
   r->Start();

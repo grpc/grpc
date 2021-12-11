@@ -37,7 +37,7 @@ class CustomDNSRequest : public DNSResolver::Request {
  public:
   CustomDNSRequest(
       absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_addresses>>)> on_done,
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done,
       const grpc_custom_resolver_vtable* resolve_address_vtable)
       : name_(name),
         default_port_(default_port),
@@ -53,7 +53,7 @@ class CustomDNSRequest : public DNSResolver::Request {
 
   // Implementations of grpc_custom_resolver_vtables must invoke this method
   // with the results of resolve_async.
-  void ResolveCallback(std::vector<grpc_resolved_addresses> result,
+  void ResolveCallback(std::vector<grpc_resolved_address> result,
                        grpc_error_handle error);
 
  private:
@@ -61,7 +61,7 @@ class CustomDNSRequest : public DNSResolver::Request {
   const std::string default_port_;
   std::string host_;
   std::string port_;
-  std::function<void(absl::StatusOr<std::vector<grpc_resolved_addresses>>)> on_done_;
+  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done_;
   // user-defined DNS methods
   const grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
 };
@@ -77,13 +77,13 @@ class CustomDNSRequest : public DNSResolver::Request {
   OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* /* interested_parties */,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_addresses>>)> on_done)
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
       override {
     return MakeOrphanable<CustomDNSRequest>(
         name, default_port, std::move(on_done), resolve_address_vtable_);
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_addresses>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
 
  private:
@@ -98,7 +98,7 @@ class CustomDNSRequest : public DNSResolver::Request {
 /* user-configured DNS resolution functions */
 typedef struct grpc_custom_resolver_vtable {
   grpc_error_handle (*resolve)(const char* host, const char* port,
-                               std::vector<grpc_resolved_addresses>* res);
+                               std::vector<grpc_resolved_address>* res);
   void (*resolve_async)(grpc_core::CustomDNSResolver::CustomDNSRequest* request, const char* host,
                         const char* port);
 } grpc_custom_resolver_vtable;
