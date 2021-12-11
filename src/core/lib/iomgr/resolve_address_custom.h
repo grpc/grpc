@@ -31,6 +31,8 @@ typedef struct grpc_custom_resolver_vtable grpc_custom_resolver_vtable;
 
 namespace grpc_core {
 
+class CustomDNSResolver : public DNSResolver {
+ public:
 class CustomDNSRequest : public DNSResolver::Request {
  public:
   CustomDNSRequest(
@@ -64,8 +66,6 @@ class CustomDNSRequest : public DNSResolver::Request {
   const grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
 };
 
-class CustomDNSResolver : public DNSResolver {
- public:
   explicit CustomDNSResolver(
       grpc_custom_resolver_vtable* resolve_address_vtable)
       : resolve_address_vtable_(resolve_address_vtable) {}
@@ -99,7 +99,7 @@ class CustomDNSResolver : public DNSResolver {
 typedef struct grpc_custom_resolver_vtable {
   grpc_error_handle (*resolve)(const char* host, const char* port,
                                grpc_resolved_addresses** res);
-  void (*resolve_async)(grpc_core::CustomDNSRequest* request, const char* host,
+  void (*resolve_async)(grpc_core::CustomDNSResolver::CustomDNSRequest* request, const char* host,
                         const char* port);
 } grpc_custom_resolver_vtable;
 

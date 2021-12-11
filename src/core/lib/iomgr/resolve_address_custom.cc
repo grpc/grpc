@@ -72,8 +72,9 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
 
 }  // namespace
 
-void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
-                                       grpc_error_handle error) {
+void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
+    grpc_resolved_addresses* result,
+    grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
@@ -146,7 +147,7 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   return grpc_error_to_absl_status(err);
 }
 
-void CustomDNSRequest::Start() {
+void CustomDNSResolver::CustomDNSRequest::Start() {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   absl::Status parse_status =
       TrySplitHostPort(name_, default_port_, &host_, &port_);
