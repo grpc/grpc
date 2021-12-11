@@ -218,7 +218,7 @@ class InternalRequest {
     grpc_channel_args_destroy(args);
   }
 
-  void OnResolved(absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
+  void OnResolved(absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or) {
     dns_request_.reset();
     if (!addresses_or.ok()) {
       Finish(absl_status_to_grpc_error(addresses_or.status()));
@@ -231,7 +231,7 @@ class InternalRequest {
 
   grpc_slice request_text_;
   grpc_http_parser parser_;
-  grpc_resolved_addresses* addresses_ = nullptr;
+  std::vector<grpc_resolved_addresses> addresses_ = nullptr;
   size_t next_address_ = 0;
   grpc_endpoint* ep_ = nullptr;
   ResourceQuotaRefPtr resource_quota_;

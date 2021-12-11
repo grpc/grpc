@@ -100,33 +100,33 @@ class Args {
     gpr_event_set(&ev_, reinterpret_cast<void*>(1));
   }
 
-  void MustSucceed(absl::StatusOr<grpc_resolved_addresses*> result) {
+  void MustSucceed(absl::StatusOr<std::vector<grpc_resolved_addresses>> result) {
     GPR_ASSERT(result.ok());
     GPR_ASSERT(*result != nullptr);
     GPR_ASSERT((*result)->naddrs > 0);
     Finish();
   }
 
-  void MustFail(absl::StatusOr<grpc_resolved_addresses*> result) {
+  void MustFail(absl::StatusOr<std::vector<grpc_resolved_addresses>> result) {
     GPR_ASSERT(!result.ok());
     Finish();
   }
 
   void MustFailExpectCancelledErrorMessage(
-      absl::StatusOr<grpc_resolved_addresses*> result) {
+      absl::StatusOr<std::vector<grpc_resolved_addresses>> result) {
     GPR_ASSERT(!result.ok());
     GPR_ASSERT(
         absl::StrContains(result.status().ToString(), "DNS query cancelled"));
     Finish();
   }
 
-  void DontCare(absl::StatusOr<grpc_resolved_addresses*> /* result */) {
+  void DontCare(absl::StatusOr<std::vector<grpc_resolved_addresses>> /* result */) {
     Finish();
   }
 
   // This test assumes the environment has an ipv6 loopback
   void MustSucceedWithIPv6First(
-      absl::StatusOr<grpc_resolved_addresses*> result) {
+      absl::StatusOr<std::vector<grpc_resolved_addresses>> result) {
     GPR_ASSERT(result.ok());
     GPR_ASSERT(*result != nullptr);
     GPR_ASSERT((*result)->naddrs > 0);
@@ -137,7 +137,7 @@ class Args {
   }
 
   void MustSucceedWithIPv4First(
-      absl::StatusOr<grpc_resolved_addresses*> result) {
+      absl::StatusOr<std::vector<grpc_resolved_addresses>> result) {
     GPR_ASSERT(result.ok());
     GPR_ASSERT(*result != nullptr);
     GPR_ASSERT((*result)->naddrs > 0);

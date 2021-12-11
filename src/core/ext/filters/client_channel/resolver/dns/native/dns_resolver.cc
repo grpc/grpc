@@ -67,8 +67,8 @@ class NativeClientChannelDNSResolver : public Resolver {
 
   static void OnNextResolution(void* arg, grpc_error_handle error);
   void OnNextResolutionLocked(grpc_error_handle error);
-  void OnResolved(absl::StatusOr<grpc_resolved_addresses*> addresses_or);
-  void OnResolvedLocked(absl::StatusOr<grpc_resolved_addresses*> addresses_or);
+  void OnResolved(absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or);
+  void OnResolvedLocked(absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or);
 
   /// name to resolve
   std::string name_to_resolve_;
@@ -167,14 +167,14 @@ void NativeClientChannelDNSResolver::OnNextResolutionLocked(
 }
 
 void NativeClientChannelDNSResolver::OnResolved(
-    absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
+    absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or) {
   work_serializer_->Run(
       [this, addresses_or]() { OnResolvedLocked(addresses_or); },
       DEBUG_LOCATION);
 }
 
 void NativeClientChannelDNSResolver::OnResolvedLocked(
-    absl::StatusOr<grpc_resolved_addresses*> addresses_or) {
+    absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
   dns_request_.reset();

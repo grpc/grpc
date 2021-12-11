@@ -883,7 +883,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  grpc_resolved_addresses* resolved = nullptr;
+  std::vector<grpc_resolved_addresses> resolved = nullptr;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
   absl::string_view parsed_addr_unprefixed{parsed_addr};
@@ -898,7 +898,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       error = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed,
                                                         &resolved);
     } else {
-      absl::StatusOr<grpc_resolved_addresses*> addresses_or =
+      absl::StatusOr<std::vector<grpc_resolved_addresses>> addresses_or =
           GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
       error = absl_status_to_grpc_error(addresses_or.status());
       if (addresses_or.ok()) {
