@@ -531,8 +531,7 @@ class AresDNSResolver : public DNSResolver {
 
    private:
     static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
-      OrphanablePtr<AresRequest> r =
-          OrphanablePtr<AresRequest>(static_cast<AresRequest*>(arg));
+      AresRequest* r = static_cast<AresRequest*>(arg);
       grpc_resolved_addresses* resolved_addresses;
       {
         absl::MutexLock lock(&r->mu_);
@@ -561,6 +560,7 @@ class AresDNSResolver : public DNSResolver {
       } else {
         r->on_resolve_address_done_(grpc_error_to_absl_status(error));
       }
+      r->Unref();
     }
 
     // mutex to synchronize access to this object (but not to the ares_request

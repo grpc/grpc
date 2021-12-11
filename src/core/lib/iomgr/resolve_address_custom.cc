@@ -77,25 +77,25 @@ void CustomDNSRequest::ResolveCallback(grpc_resolved_addresses* result,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
-  OrphanablePtr<CustomDNSRequest> unreffer(this);
+  if (error != GRPC_ERROR_NONE) {
+    auto numeric_port_or = NamedPortToNumeric(port_);
+    if (numeric_port_or.ok()) {
+      port_ = *numeric_port_or;
+      resolve_address_vtable_->resolve_async(this, host_.c_str(),
+                                             port_.c_str());
+      // keep holding ref for active resolution
+      return;
+    }
+  }
   if (error == GRPC_ERROR_NONE) {
     // since we can't guarantee that we're not being called inline from
     // Start(), run the callback on the ExecCtx.
     new DNSCallbackExecCtxScheduler(std::move(on_done_), result);
-    return;
   } else {
-    auto numeric_port_or = NamedPortToNumeric(port_);
-    if (numeric_port_or.ok()) {
-      port_ = *numeric_port_or;
-      auto* self =
-          unreffer.release();  // keep holding ref for active resolution
-      resolve_address_vtable_->resolve_async(this, host_.c_str(),
-                                             port_.c_str());
-      return;
-    }
+    new DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                    grpc_error_to_absl_status(error));
   }
-  new DNSCallbackExecCtxScheduler(std::move(on_done_),
-                                  grpc_error_to_absl_status(error));
+  Unref();
 }
 
 namespace {
