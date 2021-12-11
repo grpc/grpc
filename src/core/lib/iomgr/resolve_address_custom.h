@@ -31,7 +31,7 @@ typedef struct grpc_custom_resolver_vtable grpc_custom_resolver_vtable;
 
 namespace grpc_core {
 
-class CustomDNSRequest : public DNSRequest {
+class CustomDNSRequest : public DNSResolver::Request {
  public:
   CustomDNSRequest(
       absl::string_view name, absl::string_view default_port,
