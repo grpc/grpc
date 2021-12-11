@@ -535,7 +535,7 @@ class AresDNSResolver : public DNSResolver {
       grpc_resolved_addresses* resolved_addresses;
       {
         absl::MutexLock lock(&r->mu_);
-        GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r.get(),
+        GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r,
                              grpc_error_std_string(error).c_str());
         if (r->addresses_ == nullptr || r->addresses_->empty()) {
           resolved_addresses = nullptr;
