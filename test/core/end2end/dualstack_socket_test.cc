@@ -63,16 +63,15 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
   std::vector<grpc_resolved_address> res = nullptr;
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
       grpc_core::GetDNSResolver()->ResolveNameBlocking(hostname, "80");
-  if (!addresses_or.ok() || *addresses_or == nullptr) {
+  if (!addresses_or.ok()) {
     GRPC_LOG_IF_ERROR(hostname,
                       absl_status_to_grpc_error(addresses_or.status()));
     return;
   }
-  for (size_t i = 0; i < (*addresses_or)->naddrs; ++i) {
+  for (const auto& addr : *addresses_or) {
     gpr_log(GPR_INFO, "%s: %s", label,
-            grpc_sockaddr_to_uri(&(*addresses_or)->addrs[i]).c_str());
+            grpc_sockaddr_to_uri(&addr).c_str());
   }
-  grpc_resolved_addresses_destroy(*addresses_or);
 }
 
 void test_connect(const char* server_host, const char* client_host, int port,

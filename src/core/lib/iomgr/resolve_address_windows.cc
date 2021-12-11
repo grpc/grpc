@@ -113,7 +113,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
   int s;
   size_t i;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  std::vector<grpc_resolved_address> addresses = nullptr;
+  std::vector<grpc_resolved_address> addresses;
 
   // parse name, splitting it into host and port parts
   std::string host;
@@ -148,19 +148,11 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
   }
 
   // Success path: set addrs non-NULL, fill it in
-  addresses =
-      (std::vector<grpc_resolved_address>)gpr_malloc(sizeof(grpc_resolved_addresses));
-  addresses->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    addresses->naddrs++;
-  }
-  addresses->addrs = (grpc_resolved_address*)gpr_malloc(
-      sizeof(grpc_resolved_address) * addresses->naddrs);
-  i = 0;
-  for (resp = result; resp != NULL; resp = resp->ai_next) {
-    memcpy(&addresses->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-    addresses->addrs[i].len = resp->ai_addrlen;
-    i++;
+    grpc_resolved_address addr;
+    memcpy(&addrs.addr, resp->ai_addr, resp->ai_addrlen);
+    addr.len = resp->ai_addrlen;
+    addresses.push_back(addr);
   }
 
 done:

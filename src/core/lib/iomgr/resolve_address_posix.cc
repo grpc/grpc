@@ -161,20 +161,13 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
         GRPC_ERROR_STR_TARGET_ADDRESS, name);
     goto done;
   }
-  /* Success path: set addrs non-NULL, fill it in */
-  addresses = static_cast<std::vector<grpc_resolved_address>>(
-      gpr_malloc(sizeof(grpc_resolved_addresses)));
-  addresses->naddrs = 0;
+  // Success path: fill in addrs
+  std::vector<grpc_resolved_address> addresses;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
-    addresses->naddrs++;
-  }
-  addresses->addrs = static_cast<grpc_resolved_address*>(
-      gpr_malloc(sizeof(grpc_resolved_address) * addresses->naddrs));
-  i = 0;
-  for (resp = result; resp != nullptr; resp = resp->ai_next) {
-    memcpy(&addresses->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-    addresses->addrs[i].len = resp->ai_addrlen;
-    i++;
+    grpc_resolved_address addr;
+    memcpy(&addr.addr, resp->ai_addr, resp->ai_addrlen);
+    addr.len = resp->ai_addrlen;
+    addresses.push_back(addr);
   }
   err = GRPC_ERROR_NONE;
 done:
