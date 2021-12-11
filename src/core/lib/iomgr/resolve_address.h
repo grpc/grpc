@@ -98,7 +98,7 @@ class DNSResolver {
 
   // Asynchronously resolve addr. Use default_port if a port isn't designated
   // in addr, otherwise use the port in addr.
-  virtual OrphanablePtr<Request> CreateRequest(
+  virtual OrphanablePtr<Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done)

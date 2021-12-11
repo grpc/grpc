@@ -134,7 +134,7 @@ static void resolve_address_must_succeed(const char* target) {
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
-  auto r = grpc_core::GetDNSResolver()->CreateRequest(
+  auto r = grpc_core::GetDNSResolver()->ResolveName(
       target, "1" /* port number */, args.pollset_set,
       [&args](absl::StatusOr<grpc_resolved_addresses*> result) {
         MustSucceed(&args, std::move(result));

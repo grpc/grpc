@@ -108,7 +108,7 @@ DNSResolver* EventEngineDNSResolver::GetOrCreate() {
   return g_dns_resolver;
 }
 
-OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::CreateRequest(
+OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<grpc_resolved_addresses*>)> on_done) {
@@ -123,7 +123,7 @@ EventEngineDNSResolver::BlockingResolveAddress(absl::string_view name,
                                                absl::string_view default_port) {
   grpc_closure on_done;
   Promise<absl::StatusOr<grpc_resolved_addresses*>> evt;
-  auto r = CreateRequest(
+  auto r = ResolveName(
       name, default_port,
       [&evt](void(absl::StatusOr<grpc_resolved_addresses*> result) {
         evt.Set(std::move(result));
