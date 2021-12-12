@@ -40,7 +40,8 @@ namespace {
 class TestDNSRequest : public grpc_core::DNSResolver::Request {
  public:
   explicit TestDNSRequest(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done)
       : on_done_(std::move(on_done)) {}
 
   void Start() override {
@@ -53,7 +54,8 @@ class TestDNSRequest : public grpc_core::DNSResolver::Request {
     } else {
       gpr_mu_unlock(&g_mu);
       std::vector<grpc_resolved_address> addrs =
-          static_cast<std::vector<grpc_resolved_address>>(gpr_malloc(sizeof(*addrs)));
+          static_cast<std::vector<grpc_resolved_address>>(
+              gpr_malloc(sizeof(*addrs)));
       addrs->naddrs = 1;
       addrs->addrs = static_cast<grpc_resolved_address*>(
           gpr_malloc(sizeof(*addrs->addrs)));
@@ -65,15 +67,16 @@ class TestDNSRequest : public grpc_core::DNSResolver::Request {
   void Orphan() override { Unref(); }
 
  private:
-  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done_;
+  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+      on_done_;
 };
 
 class TestDNSResolver : public grpc_core::DNSResolver {
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
-      override {
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) override {
     GPR_ASSERT("test" == name);
     return grpc_core::MakeOrphanable<TestDNSRequest>(std::move(on_done));
   }

@@ -73,8 +73,7 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
 }  // namespace
 
 void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
-    std::vector<grpc_resolved_address> result,
-    grpc_error_handle error) {
+    std::vector<grpc_resolved_address> result, grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
@@ -113,7 +112,7 @@ CustomDNSResolver* CustomDNSResolver::GetOrCreate(
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
 CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
-                                          absl::string_view default_port) {
+                                       absl::string_view default_port) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 
   std::string host;

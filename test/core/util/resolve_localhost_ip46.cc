@@ -32,21 +32,16 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  std::vector<grpc_resolved_address> addresses = nullptr;
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
       GetDNSResolver()->ResolveNameBlocking("localhost", "https");
   GPR_ASSERT(addresses_or.ok());
-  addresses = *addresses_or;
-  for (size_t i = 0; i < addresses->naddrs; i++) {
-    grpc_sockaddr* addr =
-        reinterpret_cast<grpc_sockaddr*>(addresses->addrs[i].addr);
+  for (const auto& addr : *addresses_or) {
     if (addr->sa_family == GRPC_AF_INET) {
       localhost_to_ipv4 = true;
     } else if (addr->sa_family == GRPC_AF_INET6) {
       localhost_to_ipv6 = true;
     }
   }
-  grpc_resolved_addresses_destroy(addresses);
 }
 }  // namespace
 

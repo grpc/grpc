@@ -119,9 +119,7 @@ namespace {
 void MustSucceed(args_struct* args,
                  absl::StatusOr<std::vector<grpc_resolved_address>> result) {
   GPR_ASSERT(result.ok());
-  GPR_ASSERT(*result != nullptr);
-  GPR_ASSERT((*result)->naddrs > 0);
-  grpc_resolved_addresses_destroy(*result);
+  GPR_ASSERT(result->size() > 0);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));

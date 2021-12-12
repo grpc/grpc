@@ -116,7 +116,8 @@ class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
  public:
   FuzzerDNSRequest(
       absl::string_view name,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done)
       : name_(std::string(name)), on_done_(std::move(on_done)) {}
 
   void Start() override {
@@ -134,7 +135,8 @@ class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
     FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
     if (error == GRPC_ERROR_NONE && self->name_ == "server") {
       std::vector<grpc_resolved_address> addrs =
-          static_cast<std::vector<grpc_resolved_address>>(gpr_malloc(sizeof(*addrs)));
+          static_cast<std::vector<grpc_resolved_address>>(
+              gpr_malloc(sizeof(*addrs)));
       addrs->naddrs = 1;
       addrs->addrs = static_cast<grpc_resolved_address*>(
           gpr_malloc(sizeof(*addrs->addrs)));
@@ -148,7 +150,8 @@ class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
     self->Unref();
   }
 
-  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done_;
+  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+      on_done_;
   grpc_timer timer_;
   const std::string name_;
 };
@@ -157,8 +160,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
-      override {
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) override {
     return grpc_core::MakeOrphanable<FuzzerDNSRequest>(name,
                                                        std::move(on_done));
   }

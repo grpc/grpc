@@ -113,7 +113,7 @@ class Client {
         GetDNSResolver()->ResolveNameBlocking(server_address_, "80");
     ASSERT_EQ(absl::OkStatus(), addresses_or.status())
         << addresses_or.status().ToString();
-    ASSERT_GE((*addresses_or)->naddrs, 1UL);
+    ASSERT_GE(addresses_or->size(), 1UL);
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
@@ -123,7 +123,7 @@ class Client {
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr);
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
-                            (*addresses_or)->addrs,
+                            addresses_or->data(),
                             ExecCtx::Get()->Now() + 1000);
     grpc_channel_args_destroy(args);
     ASSERT_TRUE(PollUntilDone(
@@ -132,7 +132,6 @@ class Client {
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
     grpc_pollset_set_destroy(pollset_set);
     grpc_endpoint_add_to_pollset(endpoint_, pollset_);
-    grpc_resolved_addresses_destroy(*addresses_or);
   }
 
   // Reads until an error is returned.

@@ -69,8 +69,7 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
     return;
   }
   for (const auto& addr : *addresses_or) {
-    gpr_log(GPR_INFO, "%s: %s", label,
-            grpc_sockaddr_to_uri(&addr).c_str());
+    gpr_log(GPR_INFO, "%s: %s", label, grpc_sockaddr_to_uri(&addr).c_str());
   }
 }
 
@@ -278,10 +277,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 }
 
 int external_dns_works(const char* host) {
-  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-      grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80");
-  if (addresses_or.ok()) {
-    grpc_resolved_addresses_destroy(*addresses_or);
+  if (grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80").ok()) {
     return 1;
   }
   return 0;

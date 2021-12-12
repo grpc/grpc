@@ -490,10 +490,11 @@ class AresDNSResolver : public DNSResolver {
  public:
   class AresRequest : public DNSResolver::Request {
    public:
-    AresRequest(absl::string_view name, absl::string_view default_port,
-                grpc_pollset_set* interested_parties,
-                std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-                    on_resolve_address_done)
+    AresRequest(
+        absl::string_view name, absl::string_view default_port,
+        grpc_pollset_set* interested_parties,
+        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+            on_resolve_address_done)
         : name_(std::string(name)),
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
@@ -566,7 +567,8 @@ class AresDNSResolver : public DNSResolver {
     // parties interested in our I/O
     grpc_pollset_set* const interested_parties_;
     // user-provided completion callback
-    const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+    const std::function<void(
+        absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolve_address_done_;
     // currently resolving addresses
     std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
@@ -588,8 +590,8 @@ class AresDNSResolver : public DNSResolver {
   OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
-      override {
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) override {
     return MakeOrphanable<AresRequest>(name, default_port, interested_parties,
                                        std::move(on_done));
   }

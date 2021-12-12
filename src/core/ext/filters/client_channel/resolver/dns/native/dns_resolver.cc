@@ -67,8 +67,10 @@ class NativeClientChannelDNSResolver : public Resolver {
 
   static void OnNextResolution(void* arg, grpc_error_handle error);
   void OnNextResolutionLocked(grpc_error_handle error);
-  void OnResolved(absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
-  void OnResolvedLocked(absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
+  void OnResolved(
+      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
+  void OnResolvedLocked(
+      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
   /// name to resolve
   std::string name_to_resolve_;
@@ -185,8 +187,8 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(
   if (addresses_or.ok()) {
     ServerAddressList addresses;
     for (size_t i = 0; i < addresses_or->size(); ++i) {
-      addresses.emplace_back(&(*addresses_or)[i].addr,
-                             (*addresses_or)[i].len, nullptr /* args */);
+      addresses.emplace_back(&(*addresses_or)[i].addr, (*addresses_or)[i].len,
+                             nullptr /* args */);
     }
     Result result;
     result.addresses = std::move(addresses);

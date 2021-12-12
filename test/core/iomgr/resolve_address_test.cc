@@ -120,7 +120,8 @@ class Args {
     Finish();
   }
 
-  void DontCare(absl::StatusOr<std::vector<grpc_resolved_address>> /* result */) {
+  void DontCare(
+      absl::StatusOr<std::vector<grpc_resolved_address>> /* result */) {
     Finish();
   }
 

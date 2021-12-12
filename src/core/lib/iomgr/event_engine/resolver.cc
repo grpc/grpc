@@ -90,7 +90,8 @@ class EventEngineDNSRequest : DNSRequest {
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
   const std::string name_;
   const std::string default_port_;
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done_;
+  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+      on_done_;
 };
 
 EventEngineDNSResolver* g_dns_resolver;
@@ -107,7 +108,8 @@ DNSResolver* EventEngineDNSResolver::GetOrCreate() {
 OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
-    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done) {
+    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_done) {
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
       GetDefaultEventEngine()->GetDNSResolver();
   return MakeOrphanable<EventEngineDNSRequest>(
@@ -116,7 +118,7 @@ OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::ResolveName(
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
 EventEngineDNSResolver::ResolveNameBlocking(absl::string_view name,
-                                               absl::string_view default_port) {
+                                            absl::string_view default_port) {
   grpc_closure on_done;
   Promise<absl::StatusOr<std::vector<grpc_resolved_address>>> evt;
   auto r = ResolveName(

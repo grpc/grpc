@@ -53,7 +53,8 @@ class NativeDNSRequest : public DNSResolver::Request {
  public:
   NativeDNSRequest(
       absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
   }
@@ -82,7 +83,8 @@ class NativeDNSRequest : public DNSResolver::Request {
 
   const std::string name_;
   const std::string default_port_;
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done_;
+  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+      on_done_;
   grpc_closure request_closure_;
 };
 
@@ -99,14 +101,15 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
 OrphanablePtr<DNSResolver::Request> NativeDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
-    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done) {
+    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_done) {
   return MakeOrphanable<NativeDNSRequest>(name, default_port,
                                           std::move(on_done));
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
 NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
-                                          absl::string_view default_port) {
+                                       absl::string_view default_port) {
   ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;

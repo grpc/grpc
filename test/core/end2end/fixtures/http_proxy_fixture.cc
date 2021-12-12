@@ -521,14 +521,14 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   }
   // Resolve address.
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-      grpc_core::GetDNSResolver()->ResolveNameBlocking(
-          conn->http_request.path, "80");
+      grpc_core::GetDNSResolver()->ResolveNameBlocking(conn->http_request.path,
+                                                       "80");
   if (!addresses_or.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup",
                             GRPC_ERROR_REF(error));
     return;
   }
-  GPR_ASSERT((*addresses_or)->naddrs >= 1);
+  GPR_ASSERT(addresses_or->size() >= 1);
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
   const grpc_millis deadline =
@@ -539,10 +539,9 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, args, &(*addresses_or)->addrs[0],
+                          conn->pollset_set, args, &(*addresses_or)[0],
                           deadline);
   grpc_channel_args_destroy(args);
-  grpc_resolved_addresses_destroy(*addresses_or);
 }
 
 static void on_read_request_done(void* arg, grpc_error_handle error) {

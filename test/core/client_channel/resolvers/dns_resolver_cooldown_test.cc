@@ -66,8 +66,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
-      override {
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) override {
     auto result = g_default_dns_resolver->ResolveName(
         name, default_port, interested_parties, std::move(on_done));
     ++g_resolution_count;

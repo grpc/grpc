@@ -128,10 +128,7 @@ void test_bind_server_to_addr(const char* host, bool secure) {
 }
 
 static int external_dns_works(const char* host) {
-  auto addresses_or =
-      grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80");
-  if (addresses_or.ok()) {
-    grpc_resolved_addresses_destroy(*addresses_or);
+  if (grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80").ok()) {
     return 1;
   }
   return 0;

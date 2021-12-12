@@ -41,8 +41,8 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_unix_domain_address(
-    absl::string_view name) {
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_domain_address(absl::string_view name) {
   grpc_resolved_address addr;
   grpc_error_handle error = grpc_core::UnixSockaddrPopulate(name, &addr);
   if (error == GRPC_ERROR_NONE) {
@@ -51,10 +51,11 @@ absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_unix_domain_addr
   return grpc_error_to_absl_status(error);
 }
 
-absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_unix_abstract_domain_address(
-    const absl::string_view name) {
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_abstract_domain_address(const absl::string_view name) {
   grpc_resolved_address addr;
-  grpc_error_handle error = grpc_core::UnixAbstractSockaddrPopulate(name, &addr);
+  grpc_error_handle error =
+      grpc_core::UnixAbstractSockaddrPopulate(name, &addr);
   if (error == GRPC_ERROR_NONE) {
     return std::vector<grpc_resolved_address>({addr});
   }

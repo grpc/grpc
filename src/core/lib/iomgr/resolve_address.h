@@ -55,7 +55,8 @@ constexpr int kDefaultSecurePortInt = 443;
 class DNSCallbackExecCtxScheduler {
  public:
   DNSCallbackExecCtxScheduler(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done,
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done,
       absl::StatusOr<std::vector<grpc_resolved_address>> param)
       : on_done_(std::move(on_done)), param_(std::move(param)) {
     GRPC_CLOSURE_INIT(&closure_, RunCallback, this, grpc_schedule_on_exec_ctx);
@@ -70,7 +71,8 @@ class DNSCallbackExecCtxScheduler {
     delete self;
   }
 
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done_;
+  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+      on_done_;
   absl::StatusOr<std::vector<grpc_resolved_address>> param_;
   grpc_closure closure_;
 };
@@ -94,12 +96,13 @@ class DNSResolver {
   virtual OrphanablePtr<Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)> on_done)
-      GRPC_MUST_USE_RESULT = 0;
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) GRPC_MUST_USE_RESULT = 0;
 
   // Resolve addr in a blocking fashion.
-  virtual absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
-      absl::string_view name, absl::string_view default_port) = 0;
+  virtual absl::StatusOr<std::vector<grpc_resolved_address>>
+  ResolveNameBlocking(absl::string_view name,
+                      absl::string_view default_port) = 0;
 };
 
 // Override the active DNS resolver, which should be used for all DNS
