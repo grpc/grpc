@@ -539,9 +539,9 @@ class AresDNSResolver : public DNSResolver {
         GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r,
                              grpc_error_std_string(error).c_str());
         if (r->addresses_ != nullptr) {
-          resolved_addresses.resize(r->addresses.size());
-          for (auto& addr : resolved_addresses) {
-            memcpy(&addr, &(*r->addresses_)[i].address(),
+          resolved_addresses.resize(r->addresses_->size());
+          for (int i = 0; i < resolved_addresses.size(); i++) {
+            memcpy(&resolved_addresses[i], &(*r->addresses_)[i].address(),
                    sizeof(grpc_resolved_address));
           }
         }

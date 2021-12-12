@@ -124,11 +124,9 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   }
 
   /* Call getaddrinfo */
-  std::vector<grpc_resolved_address> addrs = nullptr;
   ExecCtx* curr = ExecCtx::Get();
   ExecCtx::Set(nullptr);
-  grpc_error_handle err =
-      resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
+  absl::StatusOr<<std::vector<grpc_resolved_address>> addrs = resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
   if (err != GRPC_ERROR_NONE) {
     auto numeric_port_or = NamedPortToNumeric(port);
     if (numeric_port_or.ok()) {
