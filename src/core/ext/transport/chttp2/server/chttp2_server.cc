@@ -891,15 +891,16 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
-      resolved_or =
-          grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
+      resolved_or = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
     } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
                                    kUnixAbstractUriPrefix)) {
-      resolved_or = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
+      resolved_or =
+          grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
     } else {
       resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
     }
-    if (!resolved_or.ok()) return absl_status_to_grpc_error(resolved_or.status());
+    if (!resolved_or.ok())
+      return absl_status_to_grpc_error(resolved_or.status());
     // Create a listener for each resolved address.
     for (auto& addr : *resolved_or) {
       // If address has a wildcard port (0), use the same port as a previous
@@ -928,10 +929,10 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
-      std::string msg =
-          absl::StrFormat("Only %" PRIuPTR
-                          " addresses added out of total %" PRIuPTR " resolved",
-                          resolved_or->size() - error_list.size(), resolved_or->size());
+      std::string msg = absl::StrFormat(
+          "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
+          " resolved",
+          resolved_or->size() - error_list.size(), resolved_or->size());
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
       gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());

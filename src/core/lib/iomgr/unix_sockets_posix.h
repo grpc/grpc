@@ -32,8 +32,8 @@
 
 void grpc_create_socketpair_if_unix(int sv[2]);
 
-absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_unix_domain_address(
-    absl::string_view name);
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_domain_address(absl::string_view name);
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
 grpc_resolve_unix_abstract_domain_address(absl::string_view name);
