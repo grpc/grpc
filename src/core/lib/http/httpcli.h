@@ -76,7 +76,7 @@ typedef struct grpc_http_response grpc_httpcli_response;
    request (or gpr_inf_future)
    'on_response' is a callback to report results to */
 void HttpCliGet(grpc_polling_entity* pollent,
-                      grpc_core::ResourceQuotaRefPtr resource_quota,
+                      ResourceQuotaRefPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response);
 
@@ -96,7 +96,7 @@ void HttpCliGet(grpc_polling_entity* pollent,
    'on_response' is a callback to report results to
    Does not support ?var1=val1&var2=val2 in the path. */
 void HttpCliPost(grpc_polling_entity* pollent,
-                       grpc_core::ResourceQuotaRefPtr resource_quota,
+                       ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
                        grpc_millis deadline, grpc_closure* on_done,
