@@ -168,7 +168,7 @@ static void test_post(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
-  grpc_httpcli_post(
+  grpc_core::HttpCliPost(
       &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
       &test_arg.response);
