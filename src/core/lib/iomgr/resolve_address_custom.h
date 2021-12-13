@@ -65,7 +65,7 @@ class CustomDNSResolver : public DNSResolver {
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done_;
     // user-defined DNS methods
-    const grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
+    const grpc_custom_resolver_vtable* resolve_address_vtable_;
   };
 
   explicit CustomDNSResolver(

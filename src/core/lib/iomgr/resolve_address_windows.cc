@@ -78,7 +78,7 @@ class NativeDNSRequest : public DNSResolver::Request {
     auto result =
         GetDNSResolver()->ResolveNameBlocking(r->name_, r->default_port_);
     // running inline is safe since we've already been scheduled on the executor
-    r->on_done_(result);
+    r->on_done_(std::move(result));
     r->Unref();
   }
 
@@ -154,7 +154,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
   // Success path: set addrs non-NULL, fill it in
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     grpc_resolved_address addr;
-    memcpy(&addr, resp->ai_addr, resp->ai_addrlen);
+    memcpy(&addr.addr, resp->ai_addr, resp->ai_addrlen);
     addr.len = resp->ai_addrlen;
     addresses.push_back(addr);
   }

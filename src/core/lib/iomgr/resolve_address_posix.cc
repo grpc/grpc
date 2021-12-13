@@ -73,7 +73,7 @@ class NativeDNSRequest : public DNSResolver::Request {
     auto result =
         GetDNSResolver()->ResolveNameBlocking(r->name_, r->default_port_);
     // running inline is safe since we've already been scheduled on the executor
-    r->on_done_(result);
+    r->on_done_(std::move(result));
     r->Unref();
   }
 
