@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 namespace {
@@ -153,7 +154,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
   // Success path: set addrs non-NULL, fill it in
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     grpc_resolved_address addr;
-    memcpy(&addrs.addr, resp->ai_addr, resp->ai_addrlen);
+    memcpy(&addr, resp->ai_addr, resp->ai_addrlen);
     addr.len = resp->ai_addrlen;
     addresses.push_back(addr);
   }
