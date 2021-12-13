@@ -94,6 +94,10 @@ build:ubsan --linkopt=-lc++
 build:ubsan --linkopt=-lc++abi
 build:ubsan --linkopt=-lm
 build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
+# if you want to run ubsan locally, uncomment following three lines
+# build:ubsan --linkopt=-lgcc_s
+# build:ubsan --linkopt=-lubsan
+# build:ubsan --linkopt=--rtlib=compiler-rt
 
 build:basicprof --strip=never
 build:basicprof --copt=-DNDEBUG
