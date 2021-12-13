@@ -26,6 +26,7 @@
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/event_engine/resolver.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolve_address_impl.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"

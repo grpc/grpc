@@ -995,6 +995,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.cc" role="src" />

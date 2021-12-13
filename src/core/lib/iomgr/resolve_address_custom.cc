@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolve_address_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 
 struct grpc_custom_resolver {

@@ -1015,6 +1015,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/resolve_address.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_custom.cc )
   s.files += %w( src/core/lib/iomgr/resolve_address_custom.h )
+  s.files += %w( src/core/lib/iomgr/resolve_address_impl.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.cc )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_windows.cc )

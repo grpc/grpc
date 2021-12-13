@@ -1960,6 +1960,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/port.h",
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
+        "src/core/lib/iomgr/resolve_address_impl.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
         "src/core/lib/iomgr/resolve_address_posix.h",
         "src/core/lib/iomgr/resolve_address_windows.h",
