@@ -91,7 +91,7 @@ class EventEngineDNSRequest : DNSRequest {
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
   const std::string name_;
   const std::string default_port_;
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
       on_done_;
 };
 

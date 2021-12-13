@@ -67,6 +67,7 @@ class DNSResolver {
   // when Orphan is called.
   class Request : public InternallyRefCounted<Request> {
    public:
+    virtual ~Request() {}
     // Begins async DNS resolution
     virtual void Start() = 0;
   };
