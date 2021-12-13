@@ -75,8 +75,6 @@
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_BATCHES 6
 
-#define MAX_SEND_EXTRA_METADATA_COUNT 3
-
 // Used to create arena for the first call.
 #define ESTIMATED_MDELEM_COUNT 16
 
@@ -219,10 +217,6 @@ struct grpc_call {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
 
-  /* for the client, extra metadata is initial metadata; for the
-     server, it's trailing metadata */
-  grpc_linked_mdelem send_extra_metadata[MAX_SEND_EXTRA_METADATA_COUNT];
-  int send_extra_metadata_count;
   grpc_millis send_deadline;
 
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sending_stream;
@@ -342,7 +336,7 @@ size_t grpc_call_get_initial_size_estimate() {
          sizeof(grpc_linked_mdelem) * ESTIMATED_MDELEM_COUNT;
 }
 
-grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
+grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
 
@@ -373,24 +367,17 @@ grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
     call->final_op.client.status = nullptr;
     call->final_op.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
-    GPR_ASSERT(args->add_initial_metadata_count <
-               MAX_SEND_EXTRA_METADATA_COUNT);
-    for (size_t i = 0; i < args->add_initial_metadata_count; i++) {
-      call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      if (grpc_slice_eq_static_interned(
-              GRPC_MDKEY(args->add_initial_metadata[i]), GRPC_MDSTR_PATH)) {
-        path = grpc_slice_ref_internal(
-            GRPC_MDVALUE(args->add_initial_metadata[i]));
-      }
+    path = grpc_slice_ref_internal(args->path->c_slice());
+    call->send_initial_metadata.Set(grpc_core::HttpPathMetadata(),
+                                    std::move(*args->path));
+    if (args->authority.has_value()) {
+      call->send_initial_metadata.Set(grpc_core::HttpAuthorityMetadata(),
+                                      std::move(*args->authority));
     }
-    call->send_extra_metadata_count =
-        static_cast<int>(args->add_initial_metadata_count);
   } else {
     GRPC_STATS_INC_SERVER_CALLS_CREATED();
     call->final_op.server.cancelled = nullptr;
     call->final_op.server.core_server = args->server;
-    GPR_ASSERT(args->add_initial_metadata_count == 0);
-    call->send_extra_metadata_count = 0;
   }
 
   grpc_millis send_deadline = args->send_deadline;
@@ -550,9 +537,6 @@ static void destroy_call(void* call, grpc_error_handle /*error*/) {
   parent_call* pc = get_parent_call(c);
   if (pc != nullptr) {
     pc->~parent_call();
-  }
-  for (int i = 0; i < c->send_extra_metadata_count; i++) {
-    GRPC_MDELEM_UNREF(c->send_extra_metadata[i].md);
   }
   if (c->cq) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
@@ -915,8 +899,16 @@ static int prepare_application_metadata(grpc_call* call, int count,
       // HTTP2 hpack encoding has a maximum limit.
       return 0;
     }
-    batch->Append(grpc_core::StringViewFromSlice(md->key),
-                  grpc_core::Slice(grpc_slice_ref_internal(md->value)));
+    batch->Append(
+        grpc_core::StringViewFromSlice(md->key),
+        grpc_core::Slice(grpc_slice_ref_internal(md->value)),
+        [md](absl::string_view error, const grpc_core::Slice& value) {
+          gpr_log(
+              GPR_DEBUG, "Append error: %s",
+              absl::StrCat("key=", grpc_core::StringViewFromSlice(md->key),
+                           " error=", error, " value=", value.as_string_view())
+                  .c_str());
+        });
   }
 
   return 1;
@@ -1663,16 +1655,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         stream_op->send_initial_metadata = true;
         call->sent_initial_metadata = true;
-        if (call->is_client) {
-          // TODO(ctiller): this will turn into explicit Set() calls once we
-          // migrate :path, :authority.
-          for (int i = 0; i < call->send_extra_metadata_count; i++) {
-            GRPC_LOG_IF_ERROR("prepare_client_metadata",
-                              call->send_initial_metadata.LinkTail(
-                                  &call->send_extra_metadata[i]));
-          }
-          call->send_extra_metadata_count = 0;
-        }
         if (!prepare_application_metadata(
                 call, static_cast<int>(op->data.send_initial_metadata.count),
                 op->data.send_initial_metadata.metadata, 0, &compression_md,
