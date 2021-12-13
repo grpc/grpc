@@ -59,6 +59,7 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
     resolver->request->ResolveCallback(std::move(addresses));
     grpc_resolved_addresses_destroy(result);
   }
+  GRPC_ERROR_UNREF(error);
   delete resolver;
 }
 
@@ -166,7 +167,9 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
     grpc_resolved_addresses_destroy(addrs);
     return result;
   }
-  return grpc_error_to_absl_status(err);
+  auto error_result = grpc_error_to_absl_status(err);
+  GRPC_ERROR_UNREF(err);
+  return error_result;
 }
 
 void CustomDNSResolver::CustomDNSRequest::Start() {
