@@ -147,7 +147,7 @@ def build_image_jobspec(runtime, env, gcr_tag, stack_base):
   """
     basename = 'grpc_interop_%s' % runtime
     tag = '%s/%s:%s' % (args.gcr_path, basename, gcr_tag)
-    build_env = {'INTEROP_IMAGE': tag, 'BASE_NAME': basename, 'TTY_FLAG': '-t'}
+    build_env = {'INTEROP_IMAGE': tag, 'BASE_NAME': basename}
     build_env.update(env)
     image_builder_path = _IMAGE_BUILDER
     if client_matrix.should_build_docker_interop_image_from_release_tag(lang):
