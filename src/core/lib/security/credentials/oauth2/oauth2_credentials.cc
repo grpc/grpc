@@ -391,7 +391,7 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    grpc_httpcli_get(pollent, grpc_core::ResourceQuota::Default(), &request,
+    HttpCliGet(pollent, grpc_core::ResourceQuota::Default(), &request,
                      deadline,
                      GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
                                        metadata_req, grpc_schedule_on_exec_ctx),

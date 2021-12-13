@@ -251,7 +251,7 @@ class InternalRequest {
 }  // namespace
 }  // namespace grpc_core
 
-static grpc_httpcli_get_override g_get_override = nullptr;
+static HttpCliGet_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
 
 static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
@@ -276,7 +276,7 @@ static void internal_request_begin(
       on_done, pollent, name);
 }
 
-void grpc_httpcli_get(grpc_polling_entity* pollent,
+void HttpCliGet(grpc_polling_entity* pollent,
                       grpc_core::ResourceQuotaRefPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response) {
@@ -308,7 +308,7 @@ void grpc_httpcli_post(grpc_polling_entity* pollent,
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
 }
 
-void grpc_httpcli_set_override(grpc_httpcli_get_override get,
+void grpc_httpcli_set_override(HttpCliGet_override get,
                                grpc_httpcli_post_override post) {
   g_get_override = get;
   g_post_override = post;

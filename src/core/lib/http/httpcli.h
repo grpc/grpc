@@ -35,6 +35,8 @@
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 
+namespace grpc_core {
+
 /* TODO(ctiller): allow caching and capturing multiple requests for the
                   same content and combining them */
 struct grpc_httpcli_handshaker {
@@ -73,7 +75,7 @@ typedef struct grpc_http_response grpc_httpcli_response;
    can be destroyed once the call returns 'deadline' contains a deadline for the
    request (or gpr_inf_future)
    'on_response' is a callback to report results to */
-void grpc_httpcli_get(grpc_polling_entity* pollent,
+void HttpCliGet(grpc_polling_entity* pollent,
                       grpc_core::ResourceQuotaRefPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response);
@@ -93,7 +95,7 @@ void grpc_httpcli_get(grpc_polling_entity* pollent,
      lifetime of the request
    'on_response' is a callback to report results to
    Does not support ?var1=val1&var2=val2 in the path. */
-void grpc_httpcli_post(grpc_polling_entity* pollent,
+void HttpCliPost(grpc_polling_entity* pollent,
                        grpc_core::ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
@@ -101,18 +103,20 @@ void grpc_httpcli_post(grpc_polling_entity* pollent,
                        grpc_httpcli_response* response);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
+typedef int (*HttpCliGet_override)(const grpc_httpcli_request* request,
                                          grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
-typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
+typedef int (*HttpCliPost_override)(const grpc_httpcli_request* request,
                                           const char* body_bytes,
                                           size_t body_size,
                                           grpc_millis deadline,
                                           grpc_closure* on_complete,
                                           grpc_httpcli_response* response);
 
-void grpc_httpcli_set_override(grpc_httpcli_get_override get,
-                               grpc_httpcli_post_override post);
+void grpc_httpcli_set_override(HttpCliGet_override get,
+                               HttpCliPost_override post);
+
+} // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_H */

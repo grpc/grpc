@@ -698,7 +698,7 @@ static void on_openid_config_retrieved(void* user_data,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_httpcli_get(
+  HttpCliGet(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
@@ -821,7 +821,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_httpcli_get(
+  HttpCliGet(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
