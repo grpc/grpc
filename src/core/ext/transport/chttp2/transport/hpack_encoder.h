@@ -128,25 +128,25 @@ class HPackCompressor {
 
     void AdvertiseTableSizeChange();
     void EmitIndexed(uint32_t index);
-    void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
-                                                const grpc_slice& value_slice);
-    void EmitLitHdrWithBinaryStringKeyIncIdx(const grpc_slice& key_slice,
-                                             const grpc_slice& value_slice);
-    void EmitLitHdrWithBinaryStringKeyNotIdx(const grpc_slice& key_slice,
-                                             const grpc_slice& value_slice);
+    void EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
+                                                Slice value_slice);
+    void EmitLitHdrWithBinaryStringKeyIncIdx(Slice key_slice,
+                                             Slice value_slice);
+    void EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice,
+                                             Slice value_slice);
     void EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
-                                             const grpc_slice& value_slice);
-    void EmitLitHdrWithNonBinaryStringKeyNotIdx(const grpc_slice& key_slice,
-                                                const grpc_slice& value_slice);
+                                             Slice value_slice);
+    void EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                Slice value_slice);
 
     void EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
-                             const grpc_slice& value,
+                             Slice value,
                              uint32_t transport_length);
     void EncodeIndexedKeyWithBinaryValue(uint32_t* index, absl::string_view key,
-                                         const grpc_slice& value);
+                                         Slice value);
 
     size_t CurrentFrameSize() const;
-    void Add(grpc_slice slice);
+    void Add(Slice slice);
     uint8_t* AddTiny(size_t len);
 
     // maximum size of a frame

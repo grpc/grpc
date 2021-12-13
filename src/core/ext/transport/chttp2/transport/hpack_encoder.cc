@@ -362,7 +362,7 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
         // Not current, emit a new literal and update the index.
         it->index = table.AllocateIndex(transport_length);
         framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(
-            Slice::FromStaticString(key).c_slice(), value.c_slice());
+            Slice::FromStaticString(key), value.Ref());
       }
       // Bubble this entry up if we can - ensures that the most used values end
       // up towards the start of the array.
@@ -380,23 +380,23 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   }
   // No hit, emit a new literal and add it to the index.
   uint32_t index = table.AllocateIndex(transport_length);
-  framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value.c_slice());
+  framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key), value.c_slice());
   values_.emplace_back(value.Ref(), index);
 }
 
 void HPackCompressor::Framer::Encode(HttpPathMetadata, const Slice& value) {
-  compressor_->path_index_.EmitTo(GRPC_MDSTR_PATH, value, this);
+  compressor_->path_index_.EmitTo(HttpPathMetadata::key(), value, this);
 }
 
 void HPackCompressor::Framer::Encode(HttpAuthorityMetadata,
                                      const Slice& value) {
-  compressor_->authority_index_.EmitTo(GRPC_MDSTR_AUTHORITY, value, this);
+  compressor_->authority_index_.EmitTo(HttpAuthorityMetadata::key(), value, this);
 }
 
 void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
   GPR_ASSERT(value == TeMetadata::ValueType::kTrailers);
   EncodeAlwaysIndexed(
-      &compressor_->te_index_, GRPC_MDSTR_TE, GRPC_MDSTR_TRAILERS,
+      &compressor_->te_index_, "te", Slice::FromStaticString("trailers"),
       2 /* te */ + 8 /* trailers */ + hpack_constants::kEntryOverhead);
 }
 
@@ -404,8 +404,8 @@ void HPackCompressor::Framer::Encode(ContentTypeMetadata,
                                      ContentTypeMetadata::ValueType value) {
   GPR_ASSERT(value == ContentTypeMetadata::ValueType::kApplicationGrpc);
   EncodeAlwaysIndexed(
-      &compressor_->content_type_index_, GRPC_MDSTR_CONTENT_TYPE,
-      StaticSlice::FromStaticString("application/grpc").c_slice(),
+      &compressor_->content_type_index_, "content-type",
+      Slice::FromStaticString("application/grpc"),
       12 /* content-type */ + 16 /* application/grpc */ +
           hpack_constants::kEntryOverhead);
 }
@@ -427,12 +427,12 @@ void HPackCompressor::Framer::Encode(HttpSchemeMetadata,
 
 void HPackCompressor::Framer::Encode(GrpcTraceBinMetadata, const Slice& slice) {
   EncodeIndexedKeyWithBinaryValue(&compressor_->grpc_trace_bin_index_,
-                                  "grpc-trace-bin", slice.c_slice());
+                                  "grpc-trace-bin", slice.Ref());
 }
 
 void HPackCompressor::Framer::Encode(GrpcTagsBinMetadata, const Slice& slice) {
   EncodeIndexedKeyWithBinaryValue(&compressor_->grpc_tags_bin_index_,
-                                  "grpc-tags-bin", slice.c_slice());
+                                  "grpc-tags-bin", slice.Ref());
 }
 
 void HPackCompressor::Framer::Encode(HttpStatusMetadata, uint32_t status) {
@@ -482,8 +482,8 @@ void HPackCompressor::Framer::Encode(HttpMethodMetadata,
       break;
     case HttpMethodMetadata::ValueType::kPut:
       EmitLitHdrWithNonBinaryStringKeyNotIdx(
-          StaticSlice::FromStaticString(":method").c_slice(),
-          StaticSlice::FromStaticString("PUT").c_slice());
+          Slice::FromStaticString(":method"),
+          Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
@@ -492,28 +492,27 @@ void HPackCompressor::Framer::Encode(HttpMethodMetadata,
 }
 
 void HPackCompressor::Framer::EncodeAlwaysIndexed(uint32_t* index,
-                                                  const grpc_slice& key,
-                                                  const grpc_slice& value,
+                                                  absl::string_view key,
+                                                  Slice value,
                                                   uint32_t transport_length) {
   if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
     EmitIndexed(compressor_->table_.DynamicIndex(*index));
   } else {
     *index = compressor_->table_.AllocateIndex(transport_length);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value);
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key), std::move(value));
   }
 }
 
 void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
-    uint32_t* index, absl::string_view key, const grpc_slice& value) {
+    uint32_t* index, absl::string_view key, Slice value) {
   if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
     EmitLitHdrWithBinaryStringKeyNotIdx(
-        compressor_->table_.DynamicIndex(*index), value);
+        compressor_->table_.DynamicIndex(*index), std::move(value));
   } else {
     *index = compressor_->table_.AllocateIndex(key.length() +
-                                               GRPC_SLICE_LENGTH(value) +
+                                               value.length() +
                                                hpack_constants::kEntryOverhead);
-    EmitLitHdrWithBinaryStringKeyIncIdx(
-        StaticSlice::FromStaticString(key).c_slice(), value);
+    EmitLitHdrWithBinaryStringKeyIncIdx(Slice::FromStaticString(key), std::move(value));
   }
 }
 

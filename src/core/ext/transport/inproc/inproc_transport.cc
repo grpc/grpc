@@ -296,19 +296,8 @@ class CopySink {
  public:
   explicit CopySink(grpc_metadata_batch* dst) : dst_(dst) {}
 
-  void Encode(grpc_mdelem md) {
-    // Differently to grpc_metadata_batch_copy, we always copy slices here so
-    // that we don't need to deal with the plethora of edge cases in that world.
-    // TODO(ctiller): revisit this when deleting mdelem.
-    md = grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(md)),
-                                 grpc_slice_copy(GRPC_MDVALUE(md)));
-    // Error unused in non-debug builds.
-    grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
-    // The only way that Append() can fail is if
-    // there's a duplicate entry for a callout.  However, that can't be
-    // the case here, because we would not have been allowed to create
-    // a source batch that had that kind of conflict.
-    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    dst_->Append(key.as_string_view(), value.AsOwned(), [](absl::string_view error, const grpc_core::Slice& value) {});
   }
 
   template <class T, class V>
