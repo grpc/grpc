@@ -54,8 +54,7 @@ class CustomDNSResolver : public DNSResolver {
 
     // Implementations of grpc_custom_resolver_vtables must invoke this method
     // with the results of resolve_async.
-    void ResolveCallback(std::vector<grpc_resolved_address> result,
-                         grpc_error_handle error);
+    void ResolveCallback(absl::StatusOr<std::vector<grpc_resolved_address>> result);
 
    private:
     const std::string name_;
@@ -100,9 +99,13 @@ class CustomDNSResolver : public DNSResolver {
 /* user-configured DNS resolution functions */
 typedef struct grpc_custom_resolver_vtable {
   grpc_error_handle (*resolve)(const char* host, const char* port,
-                               std::vector<grpc_resolved_address>* res);
+                               grpc_resolved_addresses** res);
   void (*resolve_async)(grpc_core::CustomDNSResolver::CustomDNSRequest* request,
                         const char* host, const char* port);
 } grpc_custom_resolver_vtable;
+
+void grpc_custom_resolve_callback(grpc_core::CustomDNSResolver::CustomDNSRequest* request,
+                                  grpc_resolved_addresses* result,
+                                  grpc_error_handle error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_CUSTOM_H */

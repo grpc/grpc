@@ -25,6 +25,13 @@
 namespace grpc_core {
 const char* kDefaultSecurePort = "https";
 
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
+  if (addresses != nullptr) {
+    gpr_free(addresses->addrs);
+  }
+  gpr_free(addresses);
+}
+
 namespace {
 DNSResolver* g_dns_resolver;
 }

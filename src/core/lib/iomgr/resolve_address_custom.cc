@@ -72,12 +72,8 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
 
 }  // namespace
 
-void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
-    std::vector<grpc_resolved_address> result, grpc_error_handle error) {
-  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  ApplicationCallbackExecCtx callback_exec_ctx;
-  ExecCtx exec_ctx;
-  if (error != GRPC_ERROR_NONE) {
+void CustomDNSResolver::CustomDNSRequest::ResolveCallback(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+  if (!result.ok()) {
     auto numeric_port_or = NamedPortToNumeric(port_);
     if (numeric_port_or.ok()) {
       port_ = *numeric_port_or;
@@ -87,14 +83,9 @@ void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
       return;
     }
   }
-  if (error == GRPC_ERROR_NONE) {
-    // since we can't guarantee that we're not being called inline from
-    // Start(), run the callback on the ExecCtx.
-    new DNSCallbackExecCtxScheduler(std::move(on_done_), result);
-  } else {
-    new DNSCallbackExecCtxScheduler(std::move(on_done_),
-                                    grpc_error_to_absl_status(error));
-  }
+  // since we can't guarantee that we're not being called inline from
+  // Start(), run the callback on the ExecCtx.
+  new DNSCallbackExecCtxScheduler(std::move(on_done_), std::move(result));
   Unref();
 }
 
@@ -126,7 +117,8 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   /* Call getaddrinfo */
   ExecCtx* curr = ExecCtx::Get();
   ExecCtx::Set(nullptr);
-  absl::StatusOr<<std::vector<grpc_resolved_address>> addrs = resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
+  grpc_resolved_addresses* addrs;
+  grpc_error_handle err = resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
   if (err != GRPC_ERROR_NONE) {
     auto numeric_port_or = NamedPortToNumeric(port);
     if (numeric_port_or.ok()) {
@@ -139,7 +131,12 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   ExecCtx::Set(curr);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(addrs != nullptr);
-    return addrs;
+    std::vector<grpc_resolved_address> result;
+    for (int i = 0; i < addrs->naddrs; i++) {
+      result.push_back(addrs->addrs[i]);
+    }
+    grpc_resolved_addresses_destroy(addrs);
+    return result;
   }
   return grpc_error_to_absl_status(err);
 }
@@ -156,6 +153,24 @@ void CustomDNSResolver::CustomDNSRequest::Start() {
   // Call getaddrinfo
   Ref().release();  // ref held by resolution
   resolve_address_vtable_->resolve_async(this, host_.c_str(), port_.c_str());
+}
+
+void grpc_custom_resolve_callback(grpc_core::CustomDNSResolver::CustomDNSRequest* request,
+                                  grpc_resolved_addresses* result,
+                                  grpc_error_handle error) {
+  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
+  if (error != GRPC_ERROR_NONE) {
+    request->ResolveCallback(grpc_error_to_absl_status(error));
+  } else {
+    std::vector<grpc_resolved_address> addresses;
+    for (int i = 0; i < result->naddrs; i++) {
+      addresses.push_back(result->addrs[i]);
+    }
+    request->ResolveCallback(std::move(addresses));
+    grpc_resolved_addresses_destroy(result);
+  }
 }
 
 }  // namespace grpc_core

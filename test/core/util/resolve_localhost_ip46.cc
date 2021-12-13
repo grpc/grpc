@@ -36,9 +36,11 @@ void InitResolveLocalhost() {
       GetDNSResolver()->ResolveNameBlocking("localhost", "https");
   GPR_ASSERT(addresses_or.ok());
   for (const auto& addr : *addresses_or) {
-    if (addr->sa_family == GRPC_AF_INET) {
+    grpc_sockaddr* sock_addr =
+        reinterpret_cast<grpc_sockaddr*>(&addr);
+    if (sock_addr->sa_family == GRPC_AF_INET) {
       localhost_to_ipv4 = true;
-    } else if (addr->sa_family == GRPC_AF_INET6) {
+    } else if (sock_addr->sa_family == GRPC_AF_INET6) {
       localhost_to_ipv6 = true;
     }
   }
