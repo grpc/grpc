@@ -218,10 +218,9 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
-  int64_t uni = absl::ToUniversal(time);
   status->SetPayload(GetStatusTimePropertyUrl(key),
                      absl::Cord(absl::string_view(
-                         reinterpret_cast<const char*>(&uni), sizeof(uni))));
+                         reinterpret_cast<const char*>(&time), sizeof(time))));
 }
 
 absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
@@ -230,14 +229,12 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
       status.GetPayload(GetStatusTimePropertyUrl(key));
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
-    int64_t uni;
     if (sv.has_value()) {
-      memcpy(&uni, sv->data(), sizeof(uni));
+      return *reinterpret_cast<const absl::Time*>(sv->data());
     } else {
       std::string s = std::string(*p);
-      memcpy(&uni, s.c_str(), sizeof(uni));
+      return *reinterpret_cast<const absl::Time*>(s.c_str());
     }
-    return absl::FromUniversal(uni);
   }
   return {};
 }
@@ -304,9 +301,8 @@ std::string StatusToString(const absl::Status& status) {
                                    absl::CHexEscape(payload_view), "\""));
       } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
         type_url.remove_prefix(kTypeTimeTag.size());
-        int64_t uni;
-        memcpy(&uni, payload_view.data(), sizeof(uni));
-        absl::Time t = absl::FromUniversal(uni);
+        absl::Time t =
+            *reinterpret_cast<const absl::Time*>(payload_view.data());
         kvs.push_back(absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
       } else {
         kvs.push_back(absl::StrCat(type_url, ":\"",

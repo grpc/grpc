@@ -69,7 +69,7 @@ TEST(StatusUtilTest, GetStrNotExistent) {
 
 TEST(StatusUtilTest, SetAndGetTime) {
   absl::Status s = absl::CancelledError();
-  absl::Time t = absl::FromUniversal(absl::ToUniversal(absl::Now()));
+  absl::Time t = absl::Now();
   StatusSetTime(&s, StatusTimeProperty::kCreated, t);
   EXPECT_EQ(t, StatusGetTime(s, StatusTimeProperty::kCreated));
 }
