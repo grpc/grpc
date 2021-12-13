@@ -46,7 +46,64 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 
+static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
+                                const char* /*host*/, grpc_millis /*deadline*/,
+                                void (*on_done)(void* arg,
+                                                grpc_endpoint* endpoint)) {
+  on_done(arg, endpoint);
+}
+
+const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
+                                                        plaintext_handshake};
+
 namespace grpc_core {
+
+OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(grpc_polling_entity* pollent,
+                      grpc_core::ResourceQuotaRefPtr resource_quota,
+                      const grpc_httpcli_request* request, grpc_millis deadline,
+                      grpc_closure* on_done, grpc_httpcli_response* response) {
+  if (g_get_override && g_get_override(request, deadline, on_done, response)) {
+    return nullptr;
+  }
+  std::string name =
+      absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
+  return MakeOrphanable<grpc_core::HttpCliRequest>(
+      request_text, response, std::move(resource_quota), request->host,
+      request->ssl_host_override, deadline,
+      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
+      on_done, pollent, name);
+}
+
+namespace {
+
+HttpCliRequest::GetOverride g_get_override;
+HttpCliRequest::PostOverride g_post_override;
+
+} // namespace
+
+OrphanablePtr<HttpCliRequest> grpc_core::HttpCliRequest::Post(grpc_polling_entity* pollent,
+                       grpc_core::ResourceQuotaRefPtr resource_quota,
+                       const grpc_httpcli_request* request,
+                       const char* body_bytes, size_t body_size,
+                       grpc_millis deadline, grpc_closure* on_done,
+                       grpc_httpcli_response* response) {
+  if (g_post_override && g_post_override(request, body_bytes, body_size,
+                                         deadline, on_done, response)) {
+    return nullptr;
+  }
+  std::string name =
+      absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
+  return MakeOrphanable<HttpCliRequest>(
+      pollent, std::move(resource_quota), request, deadline, on_done, response,
+      name.c_str(),
+      grpc_httpcli_format_post_request(request, body_bytes, body_size));
+}
+
+void HttpCliRequest::SetOverride(HttpCliRequest::GetOverride get,
+                                 grpc_core::HttpCliRequest::PostOverride post) {
+  g_get_override = get;
+  g_post_override = post;
+}
 
 HttpCliRequest::HttpCliRequest(const grpc_slice& request_text,
                   grpc_httpcli_response* response,
@@ -227,59 +284,6 @@ HttpCliRequest::HttpCliRequest(const grpc_slice& request_text,
   grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
   OrphanablePtr<DNSResolver::Request> dns_request_;
 };
-
-static HttpCliRequest::Get_override g_get_override = nullptr;
-static grpc_core::HttpCliRequest::Post_override g_post_override = nullptr;
-
-static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
-                                const char* /*host*/, grpc_millis /*deadline*/,
-                                void (*on_done)(void* arg,
-                                                grpc_endpoint* endpoint)) {
-  on_done(arg, endpoint);
-}
-
-const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
-                                                        plaintext_handshake};
-
-OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(grpc_polling_entity* pollent,
-                      grpc_core::ResourceQuotaRefPtr resource_quota,
-                      const grpc_httpcli_request* request, grpc_millis deadline,
-                      grpc_closure* on_done, grpc_httpcli_response* response) {
-  if (g_get_override && g_get_override(request, deadline, on_done, response)) {
-    return nullptr;
-  }
-  std::string name =
-      absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
-  return MakeOrphanable<grpc_core::HttpCliRequest>(
-      request_text, response, std::move(resource_quota), request->host,
-      request->ssl_host_override, deadline,
-      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
-      on_done, pollent, name);
-}
-
-OrphanablePtr<HttpCliRequest> grpc_core::HttpCliRequest::Post(grpc_polling_entity* pollent,
-                       grpc_core::ResourceQuotaRefPtr resource_quota,
-                       const grpc_httpcli_request* request,
-                       const char* body_bytes, size_t body_size,
-                       grpc_millis deadline, grpc_closure* on_done,
-                       grpc_httpcli_response* response) {
-  if (g_post_override && g_post_override(request, body_bytes, body_size,
-                                         deadline, on_done, response)) {
-    return nullptr;
-  }
-  std::string name =
-      absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
-  return MakeOrphanable<HttpCliRequest>(
-      pollent, std::move(resource_quota), request, deadline, on_done, response,
-      name.c_str(),
-      grpc_httpcli_format_post_request(request, body_bytes, body_size));
-}
-
-void grpc_httpcli_set_override(HttpCliRequest::Get_override get,
-                               grpc_core::HttpCliRequest::Post_override post) {
-  g_get_override = get;
-  g_post_override = post;
-}
 
 }  // namespace grpc_core
 

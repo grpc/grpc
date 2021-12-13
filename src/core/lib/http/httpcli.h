@@ -65,6 +65,18 @@ typedef struct grpc_httpcli_request {
 /* Expose the parser response type as a httpcli response too */
 typedef struct grpc_http_response grpc_httpcli_response;
 
+/* override functions return 1 if they handled the request, 0 otherwise */
+typedef int (*HttpCliRequest::GetOverride)(const grpc_httpcli_request* request,
+                                         grpc_millis deadline,
+                                         grpc_closure* on_complete,
+                                         grpc_httpcli_response* response);
+typedef int (*HttpCliRequest::PostOverride)(const grpc_httpcli_request* request,
+                                          const char* body_bytes,
+                                          size_t body_size,
+                                          grpc_millis deadline,
+                                          grpc_closure* on_complete,
+                                          grpc_httpcli_response* response);
+
 // Tracks an in-progress GET or POST request. Calling \a Start()
 // begins async work and calling \a Orphan() arranges for aysnc work
 // to be completed as sooon as possible (possibly aborting the request
@@ -107,6 +119,10 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
                          const char* body_bytes, size_t body_size,
                          grpc_millis deadline, grpc_closure* on_done,
                          grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
+
+  void SetOverride(HttpCliRequest::GetOverride get,
+                   HttpCliRequest::PostOverride post);
+
 
   HttpCliRequest(const grpc_slice& request_text,
                  grpc_httpcli_response* response,
@@ -180,21 +196,6 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   OrphanablePtr<DNSResolver::Request> dns_request_;
 };
 
-
-/* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*HttpCliRequest::Get_override)(const grpc_httpcli_request* request,
-                                         grpc_millis deadline,
-                                         grpc_closure* on_complete,
-                                         grpc_httpcli_response* response);
-typedef int (*HttpCliRequest::Post_override)(const grpc_httpcli_request* request,
-                                          const char* body_bytes,
-                                          size_t body_size,
-                                          grpc_millis deadline,
-                                          grpc_closure* on_complete,
-                                          grpc_httpcli_response* response);
-
-void grpc_httpcli_set_override(HttpCliRequest::Get_override get,
-                               HttpCliRequest::Post_override post);
 
 } // namespace grpc_core
 
