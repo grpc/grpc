@@ -691,6 +691,7 @@ void XdsResolver::StartLocked() {
     result.service_config = absl::UnavailableError(
         absl::StrCat("Failed to create XdsClient: ", error_message));
     result_handler_->ReportResult(std::move(result));
+    GRPC_ERROR_UNREF(error);
     return;
   }
   grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),

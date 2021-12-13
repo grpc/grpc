@@ -1,0 +1,22 @@
+actions {
+  create_channel {
+    target: "xds:SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSTSSSS\323\213MSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS}SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS\323\227^SSSSS¬SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS3209695SSSSSSSSSSSSS————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS18446744073709551330222222222222222222222222222222"
+    channel_args {
+    }
+    channel_args {
+      resource_quota {
+      }
+    }
+    channel_actions {
+      add_n_bytes_writable: 1952669952
+      add_n_bytes_readable: 34657102164287744
+    }
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+}
+actions {
+}
