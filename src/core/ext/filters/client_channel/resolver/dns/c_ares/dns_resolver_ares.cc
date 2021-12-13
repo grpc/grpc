@@ -499,6 +499,8 @@ class AresDNSResolver : public DNSResolver {
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
           on_resolve_address_done_(std::move(on_resolve_address_done)) {
+      GRPC_CARES_TRACE_LOG("AresRequest:%p ctor", this,
+                           ares_request_.get());
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
     }
@@ -516,7 +518,7 @@ class AresDNSResolver : public DNSResolver {
           interested_parties_, &on_dns_lookup_done_, &addresses_,
           nullptr /* balancer_addresses */, nullptr /* service_config_json */,
           GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
-      GRPC_CARES_TRACE_LOG("AresRequest:%p ctor ares_request_:%p", this,
+      GRPC_CARES_TRACE_LOG("AresRequest:%p Start ares_request_:%p", this,
                            ares_request_.get());
     }
 
@@ -539,15 +541,14 @@ class AresDNSResolver : public DNSResolver {
         GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r,
                              grpc_error_std_string(error).c_str());
         if (r->addresses_ != nullptr) {
-          resolved_addresses.resize(r->addresses_->size());
-          for (size_t i = 0; i < resolved_addresses.size(); i++) {
-            memcpy(&resolved_addresses[i], &(*r->addresses_)[i].address(),
-                   sizeof(grpc_resolved_address));
+          resolved_addresses.reserve(r->addresses_->size());
+          for (const auto& server_address : *r->addresses_) {
+            resolved_addresses.push_back(server_address.address());
           }
         }
       }
       if (error == GRPC_ERROR_NONE) {
-        // it's safe to run this inline since the current method was scheduled
+        // it's safe to run this inline since we've already been scheduled
         // on the ExecCtx
         r->on_resolve_address_done_(std::move(resolved_addresses));
       } else {
@@ -557,8 +558,7 @@ class AresDNSResolver : public DNSResolver {
     }
 
     // mutex to synchronize access to this object (but not to the ares_request
-    // object itself). TODO(apolcyn): we can get rid of this after cleaning up
-    // grpc_dns_lookup_ares to use two-phased initialization.
+    // object itself).
     absl::Mutex mu_;
     // the name to resolve
     const std::string name_;
@@ -596,7 +596,6 @@ class AresDNSResolver : public DNSResolver {
                                        std::move(on_done));
   }
 
-  // Resolve addr in a blocking fashion.
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     return default_resolver_->ResolveNameBlocking(name, default_port);
