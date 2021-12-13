@@ -60,42 +60,43 @@ namespace {
 
 grpc_core::DNSResolver* g_default_dns_resolver;
 
-class TestDNSRequest : public grpc_core::DNSResolver::Request {
- public:
-  explicit TestDNSRequest(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done)
-      : on_done_(std::move(on_done)) {}
-
-  void Start() override {
-    gpr_mu_lock(&g_mu);
-    if (g_resolve_port < 0) {
-      gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(
-          std::move(on_done_), absl::UnknownError("Forced Failure"));
-    } else {
-      std::vector<grpc_resolved_address> addrs;
-      grpc_resolved_address addr;
-      grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
-      sa->sin_family = GRPC_AF_INET;
-      sa->sin_addr.s_addr = 0x100007f;
-      sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-      addr.len = static_cast<socklen_t>(sizeof(*sa));
-      addrs.push_back(addr);
-      gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_),
-                                                 std::move(addrs));
-    }
-  }
-
-  void Orphan() override { Unref(); }
-
- private:
-  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-      on_done_;
-};
-
 class TestDNSResolver : public grpc_core::DNSResolver {
+ public:
+  class TestDNSRequest : public grpc_core::DNSResolver::Request {
+   public:
+    explicit TestDNSRequest(
+        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+            on_done)
+        : on_done_(std::move(on_done)) {}
+
+    void Start() override {
+      gpr_mu_lock(&g_mu);
+      if (g_resolve_port < 0) {
+        gpr_mu_unlock(&g_mu);
+        new grpc_core::DNSCallbackExecCtxScheduler(
+            std::move(on_done_), absl::UnknownError("Forced Failure"));
+      } else {
+        std::vector<grpc_resolved_address> addrs;
+        grpc_resolved_address addr;
+        grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
+        sa->sin_family = GRPC_AF_INET;
+        sa->sin_addr.s_addr = 0x100007f;
+        sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+        addr.len = static_cast<socklen_t>(sizeof(*sa));
+        addrs.push_back(addr);
+        gpr_mu_unlock(&g_mu);
+        new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                                   std::move(addrs));
+      }
+    }
+
+    void Orphan() override { Unref(); }
+
+   private:
+    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_done_;
+  };
+
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,

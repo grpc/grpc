@@ -38,38 +38,39 @@ static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 namespace {
 
-class TestDNSRequest : public grpc_core::DNSResolver::Request {
- public:
-  explicit TestDNSRequest(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done)
-      : on_done_(std::move(on_done)) {}
-
-  void Start() override {
-    gpr_mu_lock(&g_mu);
-    if (g_fail_resolution) {
-      g_fail_resolution = false;
-      gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(
-          std::move(on_done_), absl::UnknownError("Forced Failure"));
-    } else {
-      gpr_mu_unlock(&g_mu);
-      std::vector<grpc_resolved_address> addrs;
-      grpc_resolved_address phony_resolved_address;
-      memset(&phony_resolved_address, 0, sizeof(phony_resolved_address));
-      addrs.push_back(phony_resolved_address);
-      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_), addrs);
-    }
-  }
-
-  void Orphan() override { Unref(); }
-
- private:
-  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-      on_done_;
-};
-
 class TestDNSResolver : public grpc_core::DNSResolver {
+ public:
+  class TestDNSRequest : public grpc_core::DNSResolver::Request {
+   public:
+    explicit TestDNSRequest(
+        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+            on_done)
+        : on_done_(std::move(on_done)) {}
+
+    void Start() override {
+      gpr_mu_lock(&g_mu);
+      if (g_fail_resolution) {
+        g_fail_resolution = false;
+        gpr_mu_unlock(&g_mu);
+        new grpc_core::DNSCallbackExecCtxScheduler(
+            std::move(on_done_), absl::UnknownError("Forced Failure"));
+      } else {
+        gpr_mu_unlock(&g_mu);
+        std::vector<grpc_resolved_address> addrs;
+        grpc_resolved_address phony_resolved_address;
+        memset(&phony_resolved_address, 0, sizeof(phony_resolved_address));
+        addrs.push_back(phony_resolved_address);
+        new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_), addrs);
+      }
+    }
+
+    void Orphan() override { Unref(); }
+
+   private:
+    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_done_;
+  };
+
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
