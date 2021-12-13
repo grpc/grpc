@@ -540,7 +540,7 @@ class AresDNSResolver : public DNSResolver {
                              grpc_error_std_string(error).c_str());
         if (r->addresses_ != nullptr) {
           resolved_addresses.resize(r->addresses_->size());
-          for (int i = 0; i < resolved_addresses.size(); i++) {
+          for (size_t i = 0; i < resolved_addresses.size(); i++) {
             memcpy(&resolved_addresses[i], &(*r->addresses_)[i].address(),
                    sizeof(grpc_resolved_address));
           }

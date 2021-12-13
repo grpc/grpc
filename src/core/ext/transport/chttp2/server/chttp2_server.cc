@@ -883,7 +883,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  std::vector<grpc_resolved_address> resolved;
+  absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
   absl::string_view parsed_addr_unprefixed{parsed_addr};
@@ -891,23 +891,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
-      error =
-          grpc_resolve_unix_domain_address(parsed_addr_unprefixed, &resolved);
+      resolved_or =
+          grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
     } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
                                    kUnixAbstractUriPrefix)) {
-      error = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed,
-                                                        &resolved);
+      resolved_or = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
     } else {
-      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-          GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
-      error = absl_status_to_grpc_error(addresses_or.status());
-      if (addresses_or.ok()) {
-        resolved = std::move(*addresses_or);
-      }
+      resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
     }
-    if (error != GRPC_ERROR_NONE) return error;
+    if (!resolved_or.ok()) return absl_status_to_grpc_error(resolved_or.status());
     // Create a listener for each resolved address.
-    for (auto& addr : resolved) {
+    for (auto& addr : *resolved_or) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
       if (*port_num != -1 && grpc_sockaddr_get_port(&addr) == 0) {
@@ -927,17 +921,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         }
       }
     }
-    if (error_list.size() == resolved.size()) {
+    if (error_list.size() == resolved_or->size()) {
       std::string msg =
           absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
-                          resolved.size());
+                          resolved_or->size());
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
       std::string msg =
           absl::StrFormat("Only %" PRIuPTR
                           " addresses added out of total %" PRIuPTR " resolved",
-                          resolved.size() - error_list.size(), resolved.size());
+                          resolved_or->size() - error_list.size(), resolved_or->size());
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
       gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());

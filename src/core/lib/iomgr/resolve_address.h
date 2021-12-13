@@ -59,34 +59,6 @@ namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
 
-// A fire and forget class used by Request implementations to run DNS
-// resolution callbacks on the ExecCtx, which is frequently necessary to avoid
-// lock inversion related problems.
-class DNSCallbackExecCtxScheduler {
- public:
-  DNSCallbackExecCtxScheduler(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done,
-      absl::StatusOr<std::vector<grpc_resolved_address>> param)
-      : on_done_(std::move(on_done)), param_(std::move(param)) {
-    GRPC_CLOSURE_INIT(&closure_, RunCallback, this, grpc_schedule_on_exec_ctx);
-    ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-  }
-
- private:
-  static void RunCallback(void* arg, grpc_error_handle /* error */) {
-    DNSCallbackExecCtxScheduler* self =
-        static_cast<DNSCallbackExecCtxScheduler*>(arg);
-    self->on_done_(std::move(self->param_));
-    delete self;
-  }
-
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-      on_done_;
-  absl::StatusOr<std::vector<grpc_resolved_address>> param_;
-  grpc_closure closure_;
-};
-
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
  public:

@@ -141,7 +141,7 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(addrs != nullptr);
     std::vector<grpc_resolved_address> result;
-    for (int i = 0; i < addrs->naddrs; i++) {
+    for (size_t i = 0; i < addrs->naddrs; i++) {
       result.push_back(addrs->addrs[i]);
     }
     grpc_resolved_addresses_destroy(addrs);
@@ -176,7 +176,7 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
     resolver->request->ResolveCallback(grpc_error_to_absl_status(error));
   } else {
     std::vector<grpc_resolved_address> addresses;
-    for (int i = 0; i < result->naddrs; i++) {
+    for (size_t i = 0; i < result->naddrs; i++) {
       addresses.push_back(result->addrs[i]);
     }
     resolver->request->ResolveCallback(std::move(addresses));
