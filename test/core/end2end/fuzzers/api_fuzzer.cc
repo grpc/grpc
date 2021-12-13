@@ -112,6 +112,10 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
 
 namespace {
 
+class FuzzerDNSResolver;
+
+FuzzerDNSResolver* g_dns_resolver;
+
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
  public:
   class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
@@ -153,6 +157,14 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
         on_done_;
     grpc_timer timer_;
   };
+
+  // Gets the singleton instance, possibly creating it first
+  static FuzzerDNSResolver* GetOrCreate() {
+    if (g_dns_resolver == nullptr) {
+      g_dns_resolver = new FuzzerDNSResolver();
+    }
+    return g_dns_resolver;
+  }
 
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view /* default_port */,
@@ -762,7 +774,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
-  grpc_core::SetDNSResolver(new FuzzerDNSResolver());
+  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate());
   grpc_dns_lookup_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
