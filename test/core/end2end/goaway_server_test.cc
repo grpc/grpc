@@ -76,15 +76,15 @@ class TestDNSRequest : public grpc_core::DNSResolver::Request {
     } else {
       std::vector<grpc_resolved_address> addrs;
       grpc_resolved_address addr;
-      grpc_sockaddr_in* sa =
-          reinterpret_cast<grpc_sockaddr_in*>(&addr);
+      grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
       sa->sin_family = GRPC_AF_INET;
       sa->sin_addr.s_addr = 0x100007f;
       sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
       addr.len = static_cast<socklen_t>(sizeof(*sa));
       addrs.push_back(addr);
       gpr_mu_unlock(&g_mu);
-      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_), std::move(addrs));
+      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                                 std::move(addrs));
     }
   }
 
