@@ -170,8 +170,8 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
   if (error != GRPC_ERROR_NONE) {
     resolver->request->ResolveCallback(grpc_error_to_absl_status(error));
   } else {
