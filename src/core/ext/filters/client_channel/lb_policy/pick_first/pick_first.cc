@@ -89,6 +89,9 @@ class PickFirst : public LoadBalancingPolicy {
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
+      // Note that we do not start trying to connect to any subchannel here,
+      // since we will wait until we see the initial connectivity state for all
+      // subchannels before doing that.
     }
 
     ~PickFirstSubchannelList() override {
@@ -190,15 +193,18 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   if (latest_update_args_.addresses.ok()) {
     addresses = *latest_update_args_.addresses;
   }
-  auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
+  // Replace latest_pending_subchannel_list_.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) &&
+      latest_pending_subchannel_list_ != nullptr) {
+    gpr_log(GPR_INFO,
+            "[PF %p] Shutting down previous pending subchannel list %p", this,
+            latest_pending_subchannel_list_.get());
+  }
+  latest_pending_subchannel_list_ = MakeOrphanable<PickFirstSubchannelList>(
       this, &grpc_lb_pick_first_trace, std::move(addresses),
       *latest_update_args_.args);
-  // Empty update or no valid subchannels.
-  if (subchannel_list->num_subchannels() == 0) {
-    // Unsubscribe from all current subchannels.
-    subchannel_list_ = std::move(subchannel_list);  // Empty list.
-    selected_ = nullptr;
-    // Put the channel in TRANSIENT_FAILURE.
+  // Empty update or no valid subchannels.  Put the channel in TRANSIENT_FAILURE.
+  if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     absl::Status status =
         latest_update_args_.addresses.ok()
             ? absl::UnavailableError(absl::StrCat(
@@ -207,35 +213,18 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
-    return;
   }
-  // Start watching connectivity state of all subchannels.
-// FIXME: do this in SubchannelList ctor?
-  for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
-    subchannel_list->subchannel(i)->StartConnectivityWatchLocked();
-  }
-  // Store the subchannel list in either subchannel_list_ or
-  // latest_pending_subchannel_list_.
-  // Note that we do not start trying to connect to any subchannel here,
-  // since we will wait until we see the initial connectivity state for all
-  // subchannels before doing that.
-  if (selected_ == nullptr) {
-    // We don't yet have a selected subchannel, so replace the current
-    // subchannel list immediately.
-    subchannel_list_ = std::move(subchannel_list);
-  } else {
-    // We do have a selected subchannel (which means it's READY), so keep
-    // using it until one of the subchannels in the new list reports READY.
-    if (latest_pending_subchannel_list_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-        gpr_log(GPR_INFO,
-                "Pick First %p Shutting down latest pending subchannel list "
-                "%p, about to be replaced by newer latest %p",
-                this, latest_pending_subchannel_list_.get(),
-                subchannel_list.get());
-      }
+  // If the new update is empty or we don't yet have a selected subchannel in
+  // the current list, replace the current subchannel list immediately.
+  if (latest_pending_subchannel_list_->num_subchannels() == 0 ||
+      selected_ == nullptr) {
+    selected_ = nullptr;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) &&
+        subchannel_list_ != nullptr) {
+      gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p", this,
+              subchannel_list_.get());
     }
-    latest_pending_subchannel_list_ = std::move(subchannel_list);
+    subchannel_list_ = std::move(latest_pending_subchannel_list_);
   }
 }
 

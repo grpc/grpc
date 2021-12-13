@@ -101,15 +101,16 @@ class RoundRobin : public LoadBalancingPolicy {
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
+      // Start connecting to all subchannels.
+      for (size_t i = 0; i < num_subchannels(); i++) {
+        subchannel(i)->subchannel()->AttemptToConnect();
+      }
     }
 
     ~RoundRobinSubchannelList() override {
       RoundRobin* p = static_cast<RoundRobin*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
-
-    // Starts watching the subchannels in this list.
-    void StartWatchingLocked();
 
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
@@ -228,17 +229,6 @@ void RoundRobin::ResetBackoffLocked() {
   subchannel_list_->ResetBackoffLocked();
   if (latest_pending_subchannel_list_ != nullptr) {
     latest_pending_subchannel_list_->ResetBackoffLocked();
-  }
-}
-
-void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
-  if (num_subchannels() == 0) return;
-  // Start connectivity watch for each subchannel.
-  for (size_t i = 0; i < num_subchannels(); i++) {
-    if (subchannel(i)->subchannel() != nullptr) {
-      subchannel(i)->StartConnectivityWatchLocked();
-      subchannel(i)->subchannel()->AttemptToConnect();
-    }
   }
 }
 
@@ -421,16 +411,16 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace) &&
+        subchannel_list_ != nullptr) {
+      gpr_log(GPR_INFO, "[RR %p] Shutting down previous subchannel list %p", this,
+              subchannel_list_.get());
+    }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {
     // If there is no current list, immediately promote the new list to
-    // the current list and start watching it.
+    // the current list.
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
-    subchannel_list_->StartWatchingLocked();
-  } else {
-    // Start watching the pending list.  It will get swapped into the
-    // current list when it reports READY.
-    latest_pending_subchannel_list_->StartWatchingLocked();
   }
 }
 

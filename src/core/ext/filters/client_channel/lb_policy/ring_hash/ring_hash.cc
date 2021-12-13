@@ -151,7 +151,7 @@ class RingHash : public LoadBalancingPolicy {
     // after we have started watching.
     void ProcessConnectivityChangeLocked(
         absl::optional<grpc_connectivity_state> old_state,
-        grpc_connectivity_state new_state);
+        grpc_connectivity_state new_state) override;
 
     ServerAddress address_;
     std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
@@ -177,9 +177,6 @@ class RingHash : public LoadBalancingPolicy {
       RingHash* p = static_cast<RingHash*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
-
-    // Starts watching the subchannels in this list.
-    void StartWatchingLocked();
 
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
@@ -503,22 +500,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
 // RingHash::RingHashSubchannelList
 //
 
-void RingHash::RingHashSubchannelList::StartWatchingLocked() {
-  if (num_subchannels() == 0) return;
-  // Start connectivity watch for each subchannel.
-  for (size_t i = 0; i < num_subchannels(); i++) {
-    if (subchannel(i)->subchannel() != nullptr) {
-      subchannel(i)->StartConnectivityWatchLocked();
-    }
-  }
-  RingHash* p = static_cast<RingHash*>(policy());
-  // Sending up the initial picker while all subchannels are in IDLE state.
-  p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, absl::Status(),
-      absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
-                                p->ring_));
-}
-
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     absl::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state) {
@@ -734,8 +715,10 @@ void RingHash::UpdateLocked(UpdateArgs args) {
   } else {
     // Build the ring.
     ring_ = subchannel_list_->MakeRing();
-    // Start watching the new list.
-    subchannel_list_->StartWatchingLocked();
+    // Send up the initial picker while all subchannels are in IDLE state.
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY, absl::Status(),
+        absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker"), ring_));
   }
 }
 
