@@ -305,11 +305,6 @@ static grpc_error_handle skip_parser(void* /*parser*/,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle skip_header(grpc_mdelem md) {
-  GRPC_MDELEM_UNREF(md);
-  return GRPC_ERROR_NONE;
-}
-
 static HPackParser::Boundary hpack_boundary_type(grpc_chttp2_transport* t,
                                                  bool is_eoh) {
   if (is_eoh) {

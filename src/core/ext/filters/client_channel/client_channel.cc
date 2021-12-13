@@ -2406,7 +2406,9 @@ class ClientChannel::LoadBalancedCall::Metadata
   explicit Metadata(grpc_metadata_batch* batch) : batch_(batch) {}
 
   void Add(absl::string_view key, absl::string_view value) override {
-    batch_->Append(key, Slice::FromCopiedString(value));
+    batch_->Append(key, Slice::FromCopiedString(value), [key](absl::string_view error, const Slice& value) {
+      gpr_log(GPR_ERROR, "%s", absl::StrCat(error, " key:", key, " value:", value.as_string_view()).c_str());
+    });
   }
 
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
