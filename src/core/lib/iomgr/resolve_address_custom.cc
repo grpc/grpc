@@ -43,6 +43,25 @@ struct grpc_custom_resolver {
   grpc_core::CustomDNSResolver::CustomDNSRequest* request;
 };
 
+void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
+                                  grpc_resolved_addresses* result,
+                                  grpc_error_handle error) {
+  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
+  if (error != GRPC_ERROR_NONE) {
+    resolver->request->ResolveCallback(grpc_error_to_absl_status(error));
+  } else {
+    std::vector<grpc_resolved_address> addresses;
+    for (size_t i = 0; i < result->naddrs; i++) {
+      addresses.push_back(result->addrs[i]);
+    }
+    resolver->request->ResolveCallback(std::move(addresses));
+    grpc_resolved_addresses_destroy(result);
+  }
+  delete resolver;
+}
+
 namespace grpc_core {
 
 namespace {
@@ -164,25 +183,6 @@ void CustomDNSResolver::CustomDNSRequest::Start() {
   grpc_custom_resolver* r = new grpc_custom_resolver();
   r->request = this;
   resolve_address_vtable_->resolve_async(r, host_.c_str(), port_.c_str());
-}
-
-void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
-                                  grpc_resolved_addresses* result,
-                                  grpc_error_handle error) {
-  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  ApplicationCallbackExecCtx callback_exec_ctx;
-  ExecCtx exec_ctx;
-  if (error != GRPC_ERROR_NONE) {
-    resolver->request->ResolveCallback(grpc_error_to_absl_status(error));
-  } else {
-    std::vector<grpc_resolved_address> addresses;
-    for (size_t i = 0; i < result->naddrs; i++) {
-      addresses.push_back(result->addrs[i]);
-    }
-    resolver->request->ResolveCallback(std::move(addresses));
-    grpc_resolved_addresses_destroy(result);
-  }
-  delete resolver;
 }
 
 }  // namespace grpc_core
