@@ -399,10 +399,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
-                                            const grpc_channel_args& args);
-  static ServerAddressList AddNullLbTokenToAddresses(
-      const ServerAddressList& addresses);
+  void UpdateBalancerChannelLocked(const grpc_channel_args& args);
 
   void CancelBalancerChannelConnectivityWatchLocked();
 
@@ -471,7 +468,10 @@ class GrpcLb : public LoadBalancingPolicy {
   // Whether we're in fallback mode.
   bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  ServerAddressList fallback_backend_addresses_;
+  absl::StatusOr<ServerAddressList> fallback_backend_addresses_;
+  // The last resolution note from our parent.
+  // To be passed to child policy when fallback_backend_addresses_ is empty.
+  std::string resolution_note_;
   // State for fallback-at-startup checks.
   // Timeout after startup after which we will go into fallback mode if
   // we have not received a serverlist from the balancer.
@@ -1439,8 +1439,20 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
-  ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
-  // Update the existing child policy.
+  // Update fallback address list.
+  fallback_backend_addresses_ = std::move(args.addresses);
+  if (fallback_backend_addresses_.ok()) {
+    // Add null LB token attributes.
+    for (ServerAddress& address : *fallback_backend_addresses_) {
+      address = address.WithAttribute(
+          kGrpcLbAddressAttributeKey,
+          absl::make_unique<TokenAndClientStatsAttribute>("", nullptr));
+    }
+  }
+  resolution_note_ = std::move(args.resolution_note);
+  // Update balancer channel.
+  UpdateBalancerChannelLocked(*args.args);
+  // Update the existing child policy, if any.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks
   // and the balancer call.
@@ -1469,21 +1481,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 // helpers for UpdateLocked()
 //
 
-ServerAddressList GrpcLb::AddNullLbTokenToAddresses(
-    const ServerAddressList& addresses) {
-  ServerAddressList addresses_out;
-  for (const ServerAddress& address : addresses) {
-    addresses_out.emplace_back(address.WithAttribute(
-        kGrpcLbAddressAttributeKey,
-        absl::make_unique<TokenAndClientStatsAttribute>("", nullptr)));
-  }
-  return addresses_out;
-}
-
-void GrpcLb::ProcessAddressesAndChannelArgsLocked(
-    const ServerAddressList& addresses, const grpc_channel_args& args) {
-  // Update fallback address list.
-  fallback_backend_addresses_ = AddNullLbTokenToAddresses(addresses);
+void GrpcLb::UpdateBalancerChannelLocked(const grpc_channel_args& args) {
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
@@ -1685,9 +1683,14 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // If CreateOrUpdateChildPolicyLocked() is invoked when we haven't
     // received any serverlist from the balancer, we use the fallback backends
     // returned by the resolver. Note that the fallback backend list may be
-    // empty, in which case the new round_robin policy will keep the requested
-    // picks pending.
+    // empty, in which case the new child policy will fail the picks.
     update_args.addresses = fallback_backend_addresses_;
+    if (fallback_backend_addresses_.ok() &&
+        fallback_backend_addresses_->empty()) {
+      update_args.resolution_note = absl::StrCat(
+          "grpclb in fallback mode without any balancer addresses: ",
+          resolution_note_);
+    }
   } else {
     update_args.addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());

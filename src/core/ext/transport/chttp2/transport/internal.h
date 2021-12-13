@@ -639,13 +639,8 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb* finish_after_write = nullptr;
   size_t sending_bytes = 0;
 
-  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
-   */
-  bool unprocessed_incoming_frames_decompressed = false;
   /** Whether the bytes needs to be traced using Fathom */
   bool traced = false;
-  /** gRPC header bytes that are already decompressed */
-  size_t decompressed_header_bytes = 0;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
 };

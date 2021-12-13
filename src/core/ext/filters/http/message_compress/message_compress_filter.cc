@@ -176,17 +176,17 @@ void CallData::ProcessSendInitialMetadata(
     grpc_call_element* elem, grpc_metadata_batch* initial_metadata) {
   ChannelData* channeld = static_cast<ChannelData*>(elem->channel_data);
   // Find the compression algorithm.
-  grpc_compression_algorithm compression_algorithm =
+  compression_algorithm_ =
       initial_metadata->Take(grpc_core::GrpcInternalEncodingRequest())
           .value_or(channeld->default_compression_algorithm());
-  switch (compression_algorithm) {
+  switch (compression_algorithm_) {
     case GRPC_COMPRESS_NONE:
       break;
     case GRPC_COMPRESS_DEFLATE:
     case GRPC_COMPRESS_GZIP:
       InitializeState(elem);
       initial_metadata->Set(grpc_core::GrpcEncodingMetadata(),
-                            compression_algorithm);
+                            compression_algorithm_);
       break;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       abort();

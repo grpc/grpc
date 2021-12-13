@@ -33,6 +33,9 @@ namespace grpc_core {
 
 class XdsClient;
 
+// TODO(roth): Rethink this.  All fields except symtab and arena should come
+// from XdsClient, injected into XdsResourceType::Decode() somehow without
+// passing through XdsApi code, maybe via the AdsResponseParser.
 struct XdsEncodingContext {
   XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
   TraceFlag* tracer;

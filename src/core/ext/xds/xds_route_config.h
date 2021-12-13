@@ -26,11 +26,13 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "envoy/config/route/v3/route.upb.h"
+#include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
 
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -188,12 +190,10 @@ struct XdsRouteConfigResource {
       XdsRouteConfigResource* rds_update);
 };
 
-class XdsRouteConfigResourceType : public XdsResourceType {
+class XdsRouteConfigResourceType
+    : public XdsResourceTypeImpl<XdsRouteConfigResourceType,
+                                 XdsRouteConfigResource> {
  public:
-  struct RouteConfigData : public ResourceData {
-    XdsRouteConfigResource resource;
-  };
-
   absl::string_view type_url() const override {
     return "envoy.config.route.v3.RouteConfiguration";
   }
@@ -204,6 +204,10 @@ class XdsRouteConfigResourceType : public XdsResourceType {
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool /*is_v2*/) const override;
+
+  void InitUpbSymtab(upb_symtab* symtab) const override {
+    envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
+  }
 };
 
 }  // namespace grpc_core

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.43.0-dev
+PROJECT_NUMBER         = 1.44.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1732,7 +1732,9 @@ src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
 src/core/ext/xds/xds_listener.cc \
 src/core/ext/xds/xds_listener.h \
+src/core/ext/xds/xds_resource_type.cc \
 src/core/ext/xds/xds_resource_type.h \
+src/core/ext/xds/xds_resource_type_impl.h \
 src/core/ext/xds/xds_route_config.cc \
 src/core/ext/xds/xds_route_config.h \
 src/core/ext/xds/xds_routing.cc \

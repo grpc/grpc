@@ -47,6 +47,7 @@ const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm) {
     case GRPC_COMPRESS_GZIP:
       return "gzip";
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
+    default:
       return nullptr;
   }
 }
@@ -75,7 +76,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     abort();
   }
 
-  if (level == GRPC_COMPRESS_LEVEL_NONE || set_.count() == 0) {
+  if (level == GRPC_COMPRESS_LEVEL_NONE) {
     return GRPC_COMPRESS_NONE;
   }
 
@@ -88,10 +89,14 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
   absl::InlinedVector<grpc_compression_algorithm,
                       GRPC_COMPRESS_ALGORITHMS_COUNT>
       algos;
-  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (set_.is_set(i)) {
-      algos.push_back(static_cast<grpc_compression_algorithm>(i));
+  for (auto algo : {GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE}) {
+    if (set_.is_set(algo)) {
+      algos.push_back(algo);
     }
+  }
+
+  if (algos.empty()) {
+    return GRPC_COMPRESS_NONE;
   }
 
   switch (level) {
@@ -177,7 +182,7 @@ Slice CompressionAlgorithmSet::ToSlice() const {
 
 CompressionAlgorithmSet CompressionAlgorithmSet::FromString(
     absl::string_view str) {
-  CompressionAlgorithmSet set;
+  CompressionAlgorithmSet set{GRPC_COMPRESS_NONE};
   for (auto algorithm : absl::StrSplit(str, ',')) {
     auto parsed =
         ParseCompressionAlgorithm(absl::StripAsciiWhitespace(algorithm));

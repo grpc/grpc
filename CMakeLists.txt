@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.43.0-dev")
+set(PACKAGE_VERSION       "1.44.0-dev")
 set(gRPC_CORE_VERSION     "21.0.0")
 set(gRPC_CORE_SOVERSION   "21")
-set(gRPC_CPP_VERSION      "1.43.0-dev")
-set(gRPC_CPP_SOVERSION    "1.43")
-set(gRPC_CSHARP_VERSION   "2.43.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.43")
+set(gRPC_CPP_VERSION      "1.44.0-dev")
+set(gRPC_CPP_SOVERSION    "1.44")
+set(gRPC_CSHARP_VERSION   "2.44.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.44")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -290,7 +290,17 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.43.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.44.0-dev\"")
+endif()
+
+if(UNIX)
+  # -pthread does more than -lpthread
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m Threads::Threads)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} rt)
+  endif()
 endif()
 
 include(cmake/abseil-cpp.cmake)
@@ -303,14 +313,6 @@ include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
 include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
-
-if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
-  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
-elseif(_gRPC_PLATFORM_ANDROID)
-  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m)
-elseif(UNIX)
-  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
-endif()
 
 if(WIN32)
   set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
@@ -1849,6 +1851,7 @@ add_library(grpc
   src/core/ext/xds/xds_http_fault_filter.cc
   src/core/ext/xds/xds_http_filters.cc
   src/core/ext/xds/xds_listener.cc
+  src/core/ext/xds/xds_resource_type.cc
   src/core/ext/xds/xds_route_config.cc
   src/core/ext/xds/xds_routing.cc
   src/core/ext/xds/xds_server_config_fetcher.cc

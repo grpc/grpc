@@ -1845,7 +1845,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
         if (s->unprocessed_incoming_frames_buffer.length == 0) {
           grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
                                  &s->frame_storage);
-          s->unprocessed_incoming_frames_decompressed = false;
         }
         error = grpc_deframe_unprocessed_incoming_frames(
             &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, nullptr,
@@ -1866,6 +1865,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
     s->unprocessed_incoming_frames_buffer_cached_length =
         s->unprocessed_incoming_frames_buffer.length;
     if (error == GRPC_ERROR_NONE && *s->recv_message != nullptr) {
+      GPR_ASSERT(s->recv_message->get()->length() != 1024);
       null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = nullptr;
@@ -1902,7 +1902,6 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
           std::min(s->frame_storage.length, size_t(GRPC_HEADER_SIZE_IN_BYTES)),
           &s->unprocessed_incoming_frames_buffer);
       if (s->unprocessed_incoming_frames_buffer.length > 0) {
-        s->unprocessed_incoming_frames_decompressed = true;
         pending_data = true;
       }
     }
@@ -2889,7 +2888,6 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
   if (s->frame_storage.length > 0) {
     grpc_slice_buffer_swap(&s->frame_storage,
                            &s->unprocessed_incoming_frames_buffer);
-    s->unprocessed_incoming_frames_decompressed = false;
     ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete, GRPC_ERROR_NONE);
   } else if (s->byte_stream_error != GRPC_ERROR_NONE) {
     ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,

@@ -41,7 +41,7 @@ time bash tools/distrib/build_ruby_environment_macos.sh
 gem install rubygems-update
 update_rubygems
 
-tools/run_tests/task_runner.py -f artifact macos || FAILED="true"
+tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} || FAILED="true"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 

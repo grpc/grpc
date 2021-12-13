@@ -668,7 +668,7 @@ class RlsLb : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  ServerAddressList addresses_;
+  absl::StatusOr<ServerAddressList> addresses_;
   const grpc_channel_args* channel_args_ = nullptr;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -1862,19 +1862,28 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
-  // Swap out config, addresses, and channel args.
+  // Swap out config.
   RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
   config_ = std::move(args.config);
-  ServerAddressList old_addresses = std::move(addresses_);
-  addresses_ = std::move(args.addresses);
-  grpc_channel_args_destroy(channel_args_);
-  channel_args_ = grpc_channel_args_copy(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) &&
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
     gpr_log(GPR_INFO, "[rlslb %p] updated child policy config: %s", this,
             config_->child_policy_config().Dump().c_str());
   }
+  // Swap out addresses.
+  // If the new address list is an error and we have an existing address list,
+  // stick with the existing addresses.
+  absl::StatusOr<ServerAddressList> old_addresses;
+  if (args.addresses.ok()) {
+    old_addresses = std::move(addresses_);
+    addresses_ = std::move(args.addresses);
+  } else {
+    old_addresses = addresses_;
+  }
+  // Swap out channel args.
+  grpc_channel_args_destroy(channel_args_);
+  channel_args_ = grpc_channel_args_copy(args.args);
   // Determine whether we need to update all child policies.
   bool update_child_policies =
       old_config == nullptr ||
