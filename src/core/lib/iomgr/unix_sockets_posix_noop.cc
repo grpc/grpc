@@ -33,19 +33,14 @@ void grpc_create_socketpair_if_unix(int /* sv */[2]) {
   GPR_ASSERT(0);
 }
 
-grpc_error_handle grpc_resolve_unix_domain_address(
-    absl::string_view /* name */,
-    std::vector<grpc_resolved_address>* addresses) {
-  *addresses = NULL;
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Unix domain sockets are not supported on Windows");
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_domain_address(absl::string_view /* name */) {
+  return absl::UnknownError("Unix domain sockets are not supported on Windows");
 }
 
-grpc_error_handle grpc_resolve_unix_abstract_domain_address(
-    absl::string_view, std::vector<grpc_resolved_address>* addresses) {
-  *addresses = NULL;
-  return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Unix domain sockets are not supported on Windows");
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_abstract_domain_address(absl::string_view /* name */) {
+  return absl::UnknownError("Unix domain sockets are not supported on Windows");
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* /* addr */) {

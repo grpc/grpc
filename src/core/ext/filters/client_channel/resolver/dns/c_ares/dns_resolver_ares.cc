@@ -499,8 +499,7 @@ class AresDNSResolver : public DNSResolver {
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
           on_resolve_address_done_(std::move(on_resolve_address_done)) {
-      GRPC_CARES_TRACE_LOG("AresRequest:%p ctor", this,
-                           ares_request_.get());
+      GRPC_CARES_TRACE_LOG("AresRequest:%p ctor", this, ares_request_.get());
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
     }

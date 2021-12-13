@@ -147,11 +147,11 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       self->Unref();
     }
 
+    const std::string name_;
     const std::function<void(
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done_;
     grpc_timer timer_;
-    const std::string name_;
   };
 
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
