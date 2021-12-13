@@ -934,10 +934,10 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
-      std::string msg = absl::StrFormat(
-          "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
-          " resolved",
-          resolved.size() - error_list.size(), resolved.size());
+      std::string msg =
+          absl::StrFormat("Only %" PRIuPTR
+                          " addresses added out of total %" PRIuPTR " resolved",
+                          resolved.size() - error_list.size(), resolved.size());
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
       gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());

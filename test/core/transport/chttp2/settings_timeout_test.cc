@@ -123,8 +123,7 @@ class Client {
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr);
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
-                            addresses_or->data(),
-                            ExecCtx::Get()->Now() + 1000);
+                            addresses_or->data(), ExecCtx::Get()->Now() + 1000);
     grpc_channel_args_destroy(args);
     ASSERT_TRUE(PollUntilDone(
         &state,

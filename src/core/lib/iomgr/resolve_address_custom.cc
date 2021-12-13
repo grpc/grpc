@@ -77,15 +77,15 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
 
 }  // namespace
 
-void CustomDNSResolver::CustomDNSRequest::ResolveCallback(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
+    absl::StatusOr<std::vector<grpc_resolved_address>> result) {
   if (!result.ok()) {
     auto numeric_port_or = NamedPortToNumeric(port_);
     if (numeric_port_or.ok()) {
       port_ = *numeric_port_or;
       grpc_custom_resolver* r = new grpc_custom_resolver();
       r->request = this;
-      resolve_address_vtable_->resolve_async(r, host_.c_str(),
-                                             port_.c_str());
+      resolve_address_vtable_->resolve_async(r, host_.c_str(), port_.c_str());
       // keep holding ref for active resolution
       return;
     }
@@ -125,7 +125,8 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   ExecCtx* curr = ExecCtx::Get();
   ExecCtx::Set(nullptr);
   grpc_resolved_addresses* addrs;
-  grpc_error_handle err = resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
+  grpc_error_handle err =
+      resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
   if (err != GRPC_ERROR_NONE) {
     auto numeric_port_or = NamedPortToNumeric(port);
     if (numeric_port_or.ok()) {

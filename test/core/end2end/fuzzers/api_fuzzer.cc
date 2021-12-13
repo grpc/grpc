@@ -141,16 +141,14 @@ class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
       addrs->addrs = static_cast<grpc_resolved_address*>(
           gpr_malloc(sizeof(*addrs->addrs)));
       addrs->addrs[0].len = 0;
-      new grpc_core::DNSCallbackExecCtxScheduler(std::move(self->on_done_),
-                                                 addrs);
+      self->on_done_(addrs);
     } else {
-      new grpc_core::DNSCallbackExecCtxScheduler(
-          std::move(self->on_done_), absl::UnknownError("Resolution failed"));
+      self->on_done_(absl::UnknownError("Resolution failed"));
     }
     self->Unref();
   }
 
-  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
       on_done_;
   grpc_timer timer_;
   const std::string name_;
