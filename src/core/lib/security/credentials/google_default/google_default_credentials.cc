@@ -185,7 +185,7 @@ static int is_metadata_server_reachable() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST);
   request.http.path = const_cast<char*>("/");
-  HttpCliGet(
+  HttpCliRequest::Get(
       &detector.pollent, grpc_core::ResourceQuota::Default(), &request,
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,

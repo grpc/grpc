@@ -133,7 +133,7 @@ static void test_get(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
-  HttpCliGet(
+  HttpCliRequest::Get(
       &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
       &test_arg.response);
@@ -168,7 +168,7 @@ static void test_post(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
-  grpc_core::HttpCliPost(
+  grpc_core::HttpCliRequest::Post(
       &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
       &test_arg.response);
@@ -226,7 +226,7 @@ static void test_cancel_get_during_dns_resolution() {
       req.handshaker = &grpc_httpcli_plaintext;
 
       grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_cancel_get_during_dns_resolution");
-      HttpCliGet(
+      HttpCliRequest::Get(
           &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg, grpc_schedule_on_exec_ctx),
           &test_arg.response);
@@ -275,7 +275,7 @@ static void test_cancel_get_while_reading_response() {
       req.handshaker = &grpc_httpcli_plaintext;
 
       grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_cancel_get_while_reading_response");
-      HttpCliGet(
+      HttpCliRequest::Get(
           &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg, grpc_schedule_on_exec_ctx),
           &test_arg.response);

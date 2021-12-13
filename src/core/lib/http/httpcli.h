@@ -65,6 +65,14 @@ typedef struct grpc_httpcli_request {
 /* Expose the parser response type as a httpcli response too */
 typedef struct grpc_http_response grpc_httpcli_response;
 
+// Tracks an in-progress GET or POST request. Calling \a Start()
+// begins async work and calling \a Orphan() arranges for aysnc work
+// to be completed as sooon as possible (possibly aborting the request
+// if it's in flight).
+class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
+ public:
+};
+
 /* Asynchronously perform a HTTP GET.
    'pollent' indicates a grpc_polling_entity that is interested in the result
      of the get - work on this entity may be used to progress the get
@@ -75,7 +83,7 @@ typedef struct grpc_http_response grpc_httpcli_response;
    can be destroyed once the call returns 'deadline' contains a deadline for the
    request (or gpr_inf_future)
    'on_response' is a callback to report results to */
-void HttpCliGet(grpc_polling_entity* pollent,
+void HttpCliRequest::Get(grpc_polling_entity* pollent,
                       ResourceQuotaRefPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response);
@@ -95,7 +103,7 @@ void HttpCliGet(grpc_polling_entity* pollent,
      lifetime of the request
    'on_response' is a callback to report results to
    Does not support ?var1=val1&var2=val2 in the path. */
-void HttpCliPost(grpc_polling_entity* pollent,
+void HttpCliRequest::Post(grpc_polling_entity* pollent,
                        ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
@@ -103,19 +111,19 @@ void HttpCliPost(grpc_polling_entity* pollent,
                        grpc_httpcli_response* response);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*HttpCliGet_override)(const grpc_httpcli_request* request,
+typedef int (*HttpCliRequest::Get_override)(const grpc_httpcli_request* request,
                                          grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
-typedef int (*HttpCliPost_override)(const grpc_httpcli_request* request,
+typedef int (*HttpCliRequest::Post_override)(const grpc_httpcli_request* request,
                                           const char* body_bytes,
                                           size_t body_size,
                                           grpc_millis deadline,
                                           grpc_closure* on_complete,
                                           grpc_httpcli_response* response);
 
-void grpc_httpcli_set_override(HttpCliGet_override get,
-                               HttpCliPost_override post);
+void grpc_httpcli_set_override(HttpCliRequest::Get_override get,
+                               HttpCliRequest::Post_override post);
 
 } // namespace grpc_core
 

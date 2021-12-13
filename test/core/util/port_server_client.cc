@@ -83,7 +83,7 @@ void grpc_free_port_using_server(int port) {
     gpr_asprintf(&path, "/drop/%d", port);
     req.http.path = path;
 
-    HttpCliGet(&pr.pops, grpc_core::ResourceQuota::Default(), &req,
+    HttpCliRequest::Get(&pr.pops, grpc_core::ResourceQuota::Default(), &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),
@@ -161,7 +161,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     req.http.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
-    HttpCliGet(&pr->pops, grpc_core::ResourceQuota::Default(), &req,
+    HttpCliRequest::Get(&pr->pops, grpc_core::ResourceQuota::Default(), &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                                          grpc_schedule_on_exec_ctx),
@@ -205,7 +205,7 @@ int grpc_pick_port_using_server(void) {
     req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     req.http.path = const_cast<char*>("/get");
 
-    HttpCliGet(&pr.pops, grpc_core::ResourceQuota::Default(), &req,
+    HttpCliRequest::Get(&pr.pops, grpc_core::ResourceQuota::Default(), &req,
                      grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
                      GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                                          grpc_schedule_on_exec_ctx),

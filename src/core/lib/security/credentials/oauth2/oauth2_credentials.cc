@@ -391,7 +391,7 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    HttpCliGet(pollent, grpc_core::ResourceQuota::Default(), &request,
+    HttpCliRequest::Get(pollent, grpc_core::ResourceQuota::Default(), &request,
                      deadline,
                      GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
                                        metadata_req, grpc_schedule_on_exec_ctx),
@@ -449,7 +449,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_core::HttpCliPost(pollent, grpc_core::ResourceQuota::Default(), &request,
+  grpc_core::HttpCliRequest::Post(pollent, grpc_core::ResourceQuota::Default(), &request,
                     body.c_str(), body.size(), deadline,
                     GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb,
                                       metadata_req, grpc_schedule_on_exec_ctx),
@@ -577,7 +577,7 @@ class StsTokenFetcherCredentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    HttpCliPost(
+    HttpCliRequest::Post(
         pollent, ResourceQuota::Default(), &request, body, body_length,
         deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
