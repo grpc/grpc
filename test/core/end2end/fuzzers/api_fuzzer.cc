@@ -112,46 +112,48 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
 
 namespace {
 
-class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
- public:
-  FuzzerDNSRequest(
-      absl::string_view name,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done)
-      : name_(std::string(name)), on_done_(std::move(on_done)) {}
-
-  void Start() override {
-    Ref().release();  // ref held by timer callback
-    grpc_timer_init(
-        &timer_, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
-        GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
-  }
-
-  // cancellation not implemented
-  void Orphan() override { Unref(); }
-
- private:
-  static void FinishResolve(void* arg, grpc_error_handle error) {
-    FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
-    if (error == GRPC_ERROR_NONE && self->name_ == "server") {
-      std::vector<grpc_resolved_address> addrs;
-      grpc_resolved_address addr;
-      addr.len = 0;
-      addrs.push_back(addr);
-      self->on_done_(std::move(addrs));
-    } else {
-      self->on_done_(absl::UnknownError("Resolution failed"));
-    }
-    self->Unref();
-  }
-
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-      on_done_;
-  grpc_timer timer_;
-  const std::string name_;
-};
-
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
+ public:
+  class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
+   public:
+    FuzzerDNSRequest(
+        absl::string_view name,
+        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+            on_done)
+        : name_(std::string(name)), on_done_(std::move(on_done)) {}
+
+    void Start() override {
+      Ref().release();  // ref held by timer callback
+      grpc_timer_init(
+          &timer_, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+          GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
+    }
+
+    // cancellation not implemented
+    void Orphan() override { Unref(); }
+
+   private:
+    static void FinishResolve(void* arg, grpc_error_handle error) {
+      FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
+      if (error == GRPC_ERROR_NONE && self->name_ == "server") {
+        std::vector<grpc_resolved_address> addrs;
+        grpc_resolved_address addr;
+        addr.len = 0;
+        addrs.push_back(addr);
+        self->on_done_(std::move(addrs));
+      } else {
+        self->on_done_(absl::UnknownError("Resolution failed"));
+      }
+      self->Unref();
+    }
+
+    const std::function<void(
+        absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_done_;
+    grpc_timer timer_;
+    const std::string name_;
+  };
+
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
