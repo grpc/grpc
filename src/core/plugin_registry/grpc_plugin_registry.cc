@@ -52,8 +52,6 @@ void grpc_message_size_filter_shutdown(void);
 namespace grpc_core {
 void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
-void RbacFilterInit(void);
-void RbacFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
 #ifndef GRPC_NO_RLS
@@ -66,6 +64,8 @@ void ServiceConfigParserShutdown(void);
 
 #ifndef GRPC_NO_XDS
 namespace grpc_core {
+void RbacFilterInit(void);
+void RbacFilterShutdown(void);
 void XdsClientGlobalInit();
 void XdsClientGlobalShutdown();
 }  // namespace grpc_core
@@ -129,8 +129,9 @@ void grpc_register_built_in_plugins(void) {
                        grpc_message_size_filter_shutdown);
   grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
                        grpc_core::FaultInjectionFilterShutdown);
-  grpc_register_plugin(grpc_core::RbacFilterInit, grpc_core::RbacFilterShutdown);
 #ifndef GRPC_NO_XDS
+  // rbac_filter is being guarded with GRPC_NO_XDS to avoid a dependency on the re2 library by default
+  grpc_register_plugin(grpc_core::RbacFilterInit, grpc_core::RbacFilterShutdown);
   grpc_register_plugin(grpc_core::XdsClientGlobalInit,
                        grpc_core::XdsClientGlobalShutdown);
   grpc_register_plugin(grpc_certificate_provider_registry_init,

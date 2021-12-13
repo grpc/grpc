@@ -109,6 +109,8 @@ void XdsHttpFilterRegistry::Init() {
                  {kXdsHttpFaultFilterConfigName});
   RegisterFilter(absl::make_unique<XdsHttpRbacFilter>(),
                  {kXdsHttpRbacFilterConfigName});
+  RegisterFilter(absl::make_unique<XdsHttpRbacFilter>(),
+                 {kXdsHttpRbacFilterConfigOverrideName});
 }
 
 void XdsHttpFilterRegistry::Shutdown() {

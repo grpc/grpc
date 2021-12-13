@@ -24,105 +24,27 @@
 
 namespace grpc_core {
 
-namespace {
-
-class ChannelData {
- public:
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* args);
-  static void Destroy(grpc_channel_element* elem);
-
-  EvaluateArgs::PerChannelArgs& per_channel_evaluate_args() {
-    return per_channel_evaluate_args_;
-  }
-
-  int index() const { return index_; }
-
- private:
-  ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
-
-  // The index of this filter instance among instances of the same filter.
-  int index_;
-  // Per channel args used for authorization.
-  EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
-};
-
-class CallData {
- public:
-  static grpc_error_handle Init(grpc_call_element* elem,
-                                const grpc_call_element_args* args);
-  static void Destroy(grpc_call_element* elem,
-                      const grpc_call_final_info* /* final_info */,
-                      grpc_closure* /* then_schedule_closure */);
-  static void StartTransportStreamOpBatch(grpc_call_element* elem,
-                                          grpc_transport_stream_op_batch* op);
-
- private:
-  CallData(grpc_call_element* elem, const grpc_call_element_args& args);
-  ~CallData();
-  static void RecvInitialMetadataReady(void* user_data,
-                                       grpc_error_handle error);
-  static void RecvTrailingMetadataReady(void* user_data,
-                                        grpc_error_handle error);
-  void MaybeResumeRecvTrailingMetadataReady();
-
-  grpc_call_context_element* call_context_;
-  Arena* arena_;
-  CallCombiner* call_combiner_;
-  // Overall error for the call
-  grpc_error_handle error_ = GRPC_ERROR_NONE;
-  // State for keeping track of recv_initial_metadata
-  grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-  grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
-  grpc_closure recv_initial_metadata_ready_;
-  // State for keeping of track of recv_trailing_metadata
-  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
-  grpc_closure recv_trailing_metadata_ready_;
-  grpc_error_handle recv_trailing_metadata_ready_error_ = GRPC_ERROR_NONE;
-  bool seen_recv_trailing_metadata_ready_ = false;
-  // Payload for access to recv_initial_metadata fields
-  grpc_transport_stream_op_batch_payload* payload_ = nullptr;
-};
-
-// ChannelData
-
-grpc_error_handle ChannelData::Init(grpc_channel_element* elem,
-                                    grpc_channel_element_args* args) {
-  GPR_ASSERT(elem->filter == &kRbacFilter);
-  new (elem->channel_data) ChannelData(elem, args);
-  return GRPC_ERROR_NONE;
-}
-
-void ChannelData::Destroy(grpc_channel_element* elem) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->~ChannelData();
-}
-
-ChannelData::ChannelData(grpc_channel_element* elem,
-                         grpc_channel_element_args* args)
-    : index_(
-          grpc_channel_stack_filter_instance_number(args->channel_stack, elem)),
-      per_channel_evaluate_args_(
-          grpc_find_auth_context_in_args(args->channel_args),
-          grpc_transport_get_endpoint(args->optional_transport)) {}
+//
+// RbacFilter::CallData
+//
 
 // CallData
 
-grpc_error_handle CallData::Init(grpc_call_element* elem,
-                                 const grpc_call_element_args* args) {
+grpc_error_handle RbacFilter::CallData::Init(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
-void CallData::Destroy(grpc_call_element* elem,
-                       const grpc_call_final_info* /*final_info*/,
-                       grpc_closure* /*then_schedule_closure*/) {
+void RbacFilter::CallData::Destroy(grpc_call_element* elem,
+                                   const grpc_call_final_info* /*final_info*/,
+                                   grpc_closure* /*then_schedule_closure*/) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   calld->~CallData();
 }
 
-void CallData::StartTransportStreamOpBatch(grpc_call_element* elem,
-                                           grpc_transport_stream_op_batch* op) {
+void RbacFilter::CallData::StartTransportStreamOpBatch(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (op->recv_initial_metadata) {
     calld->recv_initial_metadata_ =
@@ -133,29 +55,16 @@ void CallData::StartTransportStreamOpBatch(grpc_call_element* elem,
         &calld->recv_initial_metadata_ready_;
     calld->payload_ = op->payload;
   }
-  if (op->recv_trailing_metadata) {
-    // We might generate errors on receiving initial metadata which we need to
-    // bubble up through recv_trailing_metadata_ready
-    calld->original_recv_trailing_metadata_ready_ =
-        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &calld->recv_trailing_metadata_ready_;
-  }
   // Chain to the next filter.
   grpc_call_next_op(elem, op);
 }
 
-CallData::CallData(grpc_call_element* elem, const grpc_call_element_args& args)
-    : call_context_(args.context),
-      arena_(args.arena),
-      call_combiner_(args.call_combiner) {
+RbacFilter::CallData::CallData(grpc_call_element* elem,
+                               const grpc_call_element_args& args)
+    : call_context_(args.context), arena_(args.arena) {
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
-                    elem, grpc_schedule_on_exec_ctx);
 }
-
-CallData::~CallData() { GRPC_ERROR_UNREF(error_); }
 
 namespace {
 
@@ -178,8 +87,8 @@ grpc_error_handle PrepareMetadataForAuthorization(
 
 }  // namespace
 
-void CallData::RecvInitialMetadataReady(void* user_data,
-                                        grpc_error_handle error) {
+void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
+                                                    grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
@@ -189,85 +98,81 @@ void CallData::RecvInitialMetadataReady(void* user_data,
     auto* method_params = static_cast<RbacMethodParsedConfig*>(
         service_config_call_data->GetMethodParsedConfig(
             RbacServiceConfigParser::ParserIndex()));
-    if (method_params != nullptr) {
+    if (method_params == nullptr) {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
+    } else {
       grpc_metadata_batch prepared_metadata(calld->arena_);
-      calld->error_ = PrepareMetadataForAuthorization(
+      error = PrepareMetadataForAuthorization(
           *calld->payload_->recv_initial_metadata.recv_initial_metadata,
           *calld->payload_->recv_initial_metadata.recv_flags,
           &prepared_metadata);
-      if (calld->error_ == GRPC_ERROR_NONE) {
-        ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+      if (error == GRPC_ERROR_NONE) {
+        RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
         auto* authorization_engine =
-            method_params->authorization_engine(chand->index());
+            method_params->authorization_engine(chand->index_);
         if (authorization_engine
                 ->Evaluate(EvaluateArgs(&prepared_metadata,
-                                        &chand->per_channel_evaluate_args()))
+                                        &chand->per_channel_evaluate_args_))
                 .type == AuthorizationEngine::Decision::Type::kDeny) {
-          calld->error_ =
+          error =
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
         }
       }
-    } else {
-      calld->error_ =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
     }
-    if (calld->error_ != GRPC_ERROR_NONE) {
-      calld->error_ =
-          grpc_error_set_int(calld->error_, GRPC_ERROR_INT_GRPC_STATUS,
-                             GRPC_STATUS_PERMISSION_DENIED);
-      error = calld->error_;  // Does not take a ref
-    }
+  } else {
+    GRPC_ERROR_REF(error);
   }
-  calld->MaybeResumeRecvTrailingMetadataReady();
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
   calld->original_recv_initial_metadata_ready_ = nullptr;
-  Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
-}
-
-void CallData::RecvTrailingMetadataReady(void* user_data,
-                                         grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (calld->original_recv_initial_metadata_ready_ != nullptr) {
-    calld->seen_recv_trailing_metadata_ready_ = true;
-    calld->recv_trailing_metadata_ready_error_ = GRPC_ERROR_REF(error);
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "Deferring RecvTrailingMetadataReady until after "
-                            "RecvInitialMetadataReady");
-    return;
-  }
-  error = grpc_error_add_child(GRPC_ERROR_REF(error), calld->error_);
-  calld->error_ = GRPC_ERROR_NONE;
-  grpc_closure* closure = calld->original_recv_trailing_metadata_ready_;
-  calld->original_recv_trailing_metadata_ready_ = nullptr;
   Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
-void CallData::MaybeResumeRecvTrailingMetadataReady() {
-  if (seen_recv_trailing_metadata_ready_) {
-    seen_recv_trailing_metadata_ready_ = false;
-    grpc_error_handle error = recv_trailing_metadata_ready_error_;
-    recv_trailing_metadata_ready_error_ = GRPC_ERROR_NONE;
-    GRPC_CALL_COMBINER_START(call_combiner_, &recv_trailing_metadata_ready_,
-                             error, "Continuing RecvTrailingMetadataReady");
-  }
-}
+//
+// RbacFilter
+//
 
-}  // namespace
-
-const grpc_channel_filter kRbacFilter = {
-    CallData::StartTransportStreamOpBatch,
+const grpc_channel_filter RbacFilter::kFilterVtable = {
+    RbacFilter::CallData::StartTransportStreamOpBatch,
     grpc_channel_next_op,
-    sizeof(CallData),
-    CallData::Init,
+    sizeof(RbacFilter::CallData),
+    RbacFilter::CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    CallData::Destroy,
-    sizeof(ChannelData),
-    ChannelData::Init,
-    ChannelData::Destroy,
+    RbacFilter::CallData::Destroy,
+    sizeof(RbacFilter),
+    RbacFilter::Init,
+    RbacFilter::Destroy,
     grpc_channel_next_get_info,
     "rbac_filter",
 };
+
+RbacFilter::RbacFilter(size_t index,
+                       EvaluateArgs::PerChannelArgs per_channel_evaluate_args)
+    : index_(index),
+      per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
+
+grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
+                                   grpc_channel_element_args* args) {
+  GPR_ASSERT(elem->filter == &kFilterVtable);
+  auto* auth_context = grpc_find_auth_context_in_args(args->channel_args);
+  if (auth_context == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No auth context found");
+  }
+  if (args->optional_transport == nullptr) {
+    // This should never happen since the transport is always set on the server
+    // side.
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No transport configured");
+  }
+  new (elem->channel_data) RbacFilter(
+      grpc_channel_stack_filter_instance_number(args->channel_stack, elem),
+      EvaluateArgs::PerChannelArgs(
+          auth_context, grpc_transport_get_endpoint(args->optional_transport)));
+  return GRPC_ERROR_NONE;
+}
+
+void RbacFilter::Destroy(grpc_channel_element* elem) {
+  auto* chand = static_cast<RbacFilter*>(elem->channel_data);
+  chand->~RbacFilter();
+}
 
 void RbacFilterInit(void) { RbacServiceConfigParser::Register(); }
 

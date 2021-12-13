@@ -446,7 +446,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
-        "grpc_rbac_filter",
         "grpc_secure",
         "grpc_trace",
         "grpc_transport_chttp2_client_secure",

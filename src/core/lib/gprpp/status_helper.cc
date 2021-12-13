@@ -159,7 +159,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           const DebugLocation& location,
-                          std::initializer_list<absl::Status> children) {
+                          std::vector<absl::Status> children) {
   absl::Status s(code, msg);
   if (location.file() != nullptr) {
     StatusSetStr(&s, StatusStrProperty::kFile, location.file());

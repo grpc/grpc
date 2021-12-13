@@ -962,16 +962,13 @@ absl::StatusOr<grpc_channel_args*> XdsServerConfigFetcher::ListenerWatcher::
     std::vector<const grpc_channel_filter*> filters;
     // Iterate the list of HTTP filters in reverse since in Core, received data
     // flows *up* the stack.
-    for (auto reverse_iterator =
-             filter_chain->http_connection_manager.http_filters.rbegin();
-         reverse_iterator !=
-         filter_chain->http_connection_manager.http_filters.rend();
-         ++reverse_iterator) {
+    for (const auto& http_filter :
+         filter_chain->http_connection_manager.http_filters) {
       // Find filter.  This is guaranteed to succeed, because it's checked
       // at config validation time in the XdsApi code.
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(
-              reverse_iterator->config.config_proto_type_name);
+              http_filter.config.config_proto_type_name);
       GPR_ASSERT(filter_impl != nullptr);
       // Some filters like the router filter are no-op filters and do not have
       // an implementation.

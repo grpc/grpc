@@ -24,6 +24,7 @@
 namespace grpc_core {
 
 extern const char* kXdsHttpRbacFilterConfigName;
+extern const char* kXdsHttpRbacFilterConfigOverrideName;
 
 class XdsHttpRbacFilter : public XdsHttpFilterImpl {
  public:

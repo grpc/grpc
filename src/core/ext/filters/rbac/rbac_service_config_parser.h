@@ -38,18 +38,15 @@ class RbacMethodParsedConfig : public ServiceConfigParser::ParsedConfig {
     }
   }
 
-  // Returns the authorization engine for a rbac policy at a certain index from
-  // the back. For a connection on the server, multiple RBAC policies might be
-  // active. The RBAC filter uses this method to get the RBAC policy configured
-  // for a instance at a particular instance. The implementation reverses the
-  // index since the ordering of HTTP filters is reverse on the server side. For
-  // RBAC, the order between the policies does not seem to be important but we
-  // are maintaining it anyway.
+  // Returns the authorization engine for a rbac policy at a certain index. For
+  // a connection on the server, multiple RBAC policies might be active. The
+  // RBAC filter uses this method to get the RBAC policy configured for a
+  // instance at a particular instance.
   const GrpcAuthorizationEngine* authorization_engine(int index) {
     if (static_cast<size_t>(index) >= authorization_engines_.size()) {
       return nullptr;
     }
-    return &authorization_engines_[authorization_engines_.size() - index - 1];
+    return &authorization_engines_[index];
   }
 
  private:

@@ -335,9 +335,9 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "http_rbac_proto",
+    name = "http_filter_rbac_proto",
     srcs = [
-        "http_rbac.proto",
+        "http_filter_rbac.proto",
     ],
     well_known_protos = True,
     deps = [

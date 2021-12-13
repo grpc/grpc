@@ -576,7 +576,6 @@ RbacServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
   if (*error != GRPC_ERROR_NONE || rbac_policies.empty()) {
-    gpr_log(GPR_ERROR, "here");
     return nullptr;
   }
   return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));

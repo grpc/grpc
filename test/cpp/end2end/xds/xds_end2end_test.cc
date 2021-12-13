@@ -91,7 +91,7 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
@@ -137,6 +137,7 @@ using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
+using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
@@ -9729,7 +9730,9 @@ class XdsRbacTest : public XdsServerRdsTest {
       case TestType::FilterConfigSetup::kRouteOverride:
         filter->mutable_typed_config()->PackFrom(RBAC());
         google::protobuf::Any filter_config;
-        filter_config.PackFrom(rbac);
+        RBACPerRoute rbac_per_route;
+        *rbac_per_route.mutable_rbac() = rbac;
+        filter_config.PackFrom(rbac_per_route);
         auto* config_map = route_config.mutable_virtual_hosts(0)
                                ->mutable_routes(0)
                                ->mutable_typed_per_filter_config();
@@ -9788,7 +9791,7 @@ TEST_P(XdsRbacTest, LogAction) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsRbacTest, AnyPermissionAnyPrincipalAllow) {
+TEST_P(XdsRbacTest, AnyPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -9885,6 +9888,20 @@ TEST_P(XdsRbacTest, MethodPostPermissionAnyPrincipal) {
   SendRpc(
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY);
+  // Test an RPC with a different method type
+  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
+  ClientContext context;
+  context.set_wait_for_ready(true);
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
+  context.set_cacheable(true);
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  Status status = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(GetParam().rbac_action() == RBAC_Action_DENY ? status.ok()
+                                                           : !status.ok())
+      << status.error_code() << ", " << status.error_message() << ", "
+      << status.error_details() << ", " << context.debug_error_string();
 }
 
 TEST_P(XdsRbacTest, MethodGetPermissionAnyPrincipal) {
@@ -9916,6 +9933,10 @@ TEST_P(XdsRbacTest, MethodGetPermissionAnyPrincipal) {
                                                             : !status.ok())
       << status.error_code() << ", " << status.error_message() << ", "
       << status.error_details() << ", " << context.debug_error_string();
+  // Test an RPC with a different method type
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW);
 }
 
 TEST_P(XdsRbacTest, MethodPutPermissionAnyPrincipal) {
@@ -9947,6 +9968,10 @@ TEST_P(XdsRbacTest, MethodPutPermissionAnyPrincipal) {
                                                             : !status.ok())
       << status.error_code() << ", " << status.error_message() << ", "
       << status.error_details() << ", " << context.debug_error_string();
+  // Test an RPC with a different method type
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW);
 }
 
 TEST_P(XdsRbacTest, UrlPathPermissionAnyPrincipal) {

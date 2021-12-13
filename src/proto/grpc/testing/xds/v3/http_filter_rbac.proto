@@ -33,3 +33,9 @@ message RBAC {
   // If present and empty, DENY.
   config.rbac.v3.RBAC rules = 1;
 }
+
+message RBACPerRoute {
+  // Override the global configuration of the filter with this new config.
+  // If absent, the global RBAC policy will be disabled for this route.
+  RBAC rbac = 2;
+}

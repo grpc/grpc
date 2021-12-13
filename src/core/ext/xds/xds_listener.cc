@@ -305,7 +305,22 @@ grpc_error_handle HttpConnectionManagerParse(
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
             http_connection_manager_proto, &num_filters);
     std::set<absl::string_view> names_seen;
-    for (size_t i = 0; i < num_filters; ++i) {
+    // On the server side, iterate the filters in reverse order since received
+    // bytes flow *up* the stack in Core.
+    class HttpFiltersIterator {
+     public:
+      HttpFiltersIterator(bool is_client, size_t num_filters)
+          : is_client_(is_client), num_filters_(num_filters) {}
+      int64_t start_index() { return is_client_ ? 0 : num_filters_ - 1; }
+      bool continue_predicate(int64_t i) { return i >= 0 && i < num_filters_; }
+      void update_index(int64_t* i) { is_client_ ? ++*i : --*i; }
+
+     private:
+      bool is_client_;
+      int64_t num_filters_;
+    } iterator(is_client, num_filters);
+    for (auto i = iterator.start_index(); iterator.continue_predicate(i);
+         iterator.update_index(&i)) {
       const auto* http_filter = http_filters[i];
       absl::string_view name = UpbStringToAbsl(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
@@ -354,7 +369,7 @@ grpc_error_handle HttpConnectionManagerParse(
       if (!filter_config.ok()) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
             "filter config for type ", filter_type,
-            " failed to parse: ", filter_config.status().ToString()));
+            " failed to parse: ", StatusToString(filter_config.status())));
       }
       http_connection_manager->http_filters.emplace_back(
           XdsListenerResource::HttpConnectionManager::HttpFilter{
@@ -372,7 +387,10 @@ grpc_error_handle HttpConnectionManagerParse(
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(
               http_filter.config.config_proto_type_name);
-      if (&http_filter != &http_connection_manager->http_filters.back()) {
+      if ((is_client &&
+           &http_filter != &http_connection_manager->http_filters.back()) ||
+          (!is_client &&
+           &http_filter != &http_connection_manager->http_filters.front())) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
           return GRPC_ERROR_CREATE_FROM_CPP_STRING(
