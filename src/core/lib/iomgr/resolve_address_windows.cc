@@ -166,7 +166,9 @@ done:
   if (error == GRPC_ERROR_NONE) {
     return addresses;
   }
-  return grpc_error_to_absl_status(error);
+  auto error_result = grpc_error_to_absl_status(error);
+  GRPC_ERROR_UNREF(error);
+  return error_result;
 }
 
 }  // namespace grpc_core
