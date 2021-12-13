@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <cstdio>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -36,6 +37,10 @@
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/transport/error_utils.h"
+
+struct grpc_custom_resolver {
+  grpc_core::CustomDNSResolver::CustomDNSRequest* request;
+};
 
 namespace grpc_core {
 
@@ -77,7 +82,9 @@ void CustomDNSResolver::CustomDNSRequest::ResolveCallback(absl::StatusOr<std::ve
     auto numeric_port_or = NamedPortToNumeric(port_);
     if (numeric_port_or.ok()) {
       port_ = *numeric_port_or;
-      resolve_address_vtable_->resolve_async(this, host_.c_str(),
+      grpc_custom_resolver* r = new grpc_custom_resolver();
+      r->request = this;
+      resolve_address_vtable_->resolve_async(r, host_.c_str(),
                                              port_.c_str());
       // keep holding ref for active resolution
       return;
@@ -152,25 +159,28 @@ void CustomDNSResolver::CustomDNSRequest::Start() {
   }
   // Call getaddrinfo
   Ref().release();  // ref held by resolution
-  resolve_address_vtable_->resolve_async(this, host_.c_str(), port_.c_str());
+  grpc_custom_resolver* r = new grpc_custom_resolver();
+  r->request = this;
+  resolve_address_vtable_->resolve_async(r, host_.c_str(), port_.c_str());
 }
 
-void grpc_custom_resolve_callback(grpc_core::CustomDNSResolver::CustomDNSRequest* request,
+void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   if (error != GRPC_ERROR_NONE) {
-    request->ResolveCallback(grpc_error_to_absl_status(error));
+    resolver->request->ResolveCallback(grpc_error_to_absl_status(error));
   } else {
     std::vector<grpc_resolved_address> addresses;
     for (int i = 0; i < result->naddrs; i++) {
       addresses.push_back(result->addrs[i]);
     }
-    request->ResolveCallback(std::move(addresses));
+    resolver->request->ResolveCallback(std::move(addresses));
     grpc_resolved_addresses_destroy(result);
   }
+  delete resolver;
 }
 
 }  // namespace grpc_core

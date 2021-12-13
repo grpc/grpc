@@ -96,15 +96,17 @@ class CustomDNSResolver : public DNSResolver {
 
 }  // namespace grpc_core
 
-/* user-configured DNS resolution functions */
+// user-configured custom DNS resolution APIs
+typedef struct grpc_custom_resolver grpc_custom_resolver;
+
 typedef struct grpc_custom_resolver_vtable {
   grpc_error_handle (*resolve)(const char* host, const char* port,
                                grpc_resolved_addresses** res);
-  void (*resolve_async)(grpc_core::CustomDNSResolver::CustomDNSRequest* request,
+  void (*resolve_async)(grpc_custom_resolver* resolver,
                         const char* host, const char* port);
 } grpc_custom_resolver_vtable;
 
-void grpc_custom_resolve_callback(grpc_core::CustomDNSResolver::CustomDNSRequest* request,
+void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error);
 
