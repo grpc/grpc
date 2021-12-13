@@ -899,8 +899,9 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     } else {
       resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
     }
-    if (!resolved_or.ok())
+    if (!resolved_or.ok()) {
       return absl_status_to_grpc_error(resolved_or.status());
+    }
     // Create a listener for each resolved address.
     for (auto& addr : *resolved_or) {
       // If address has a wildcard port (0), use the same port as a previous

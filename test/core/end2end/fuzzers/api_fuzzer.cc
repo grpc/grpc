@@ -134,14 +134,11 @@ class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
   static void FinishResolve(void* arg, grpc_error_handle error) {
     FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
     if (error == GRPC_ERROR_NONE && self->name_ == "server") {
-      std::vector<grpc_resolved_address> addrs =
-          static_cast<std::vector<grpc_resolved_address>>(
-              gpr_malloc(sizeof(*addrs)));
-      addrs->naddrs = 1;
-      addrs->addrs = static_cast<grpc_resolved_address*>(
-          gpr_malloc(sizeof(*addrs->addrs)));
-      addrs->addrs[0].len = 0;
-      self->on_done_(addrs);
+      std::vector<grpc_resolved_address> addrs;
+      grpc_resolved_address addr;
+      addr.len = 0;
+      addrs.push_back(addr);
+      self->on_done_(std::move(addrs));
     } else {
       self->on_done_(absl::UnknownError("Resolution failed"));
     }

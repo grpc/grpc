@@ -54,13 +54,10 @@ class TestDNSRequest : public grpc_core::DNSResolver::Request {
           std::move(on_done_), absl::UnknownError("Forced Failure"));
     } else {
       gpr_mu_unlock(&g_mu);
-      std::vector<grpc_resolved_address> addrs =
-          static_cast<std::vector<grpc_resolved_address>>(
-              gpr_malloc(sizeof(*addrs)));
-      addrs->naddrs = 1;
-      addrs->addrs = static_cast<grpc_resolved_address*>(
-          gpr_malloc(sizeof(*addrs->addrs)));
-      addrs->addrs[0].len = 123;
+      std::vector<grpc_resolved_address> addrs;
+      grpc_resolved_address phony_resolved_address;
+      memset(&phony_resolved_address, 0, sizeof(phony_resolved_address));
+      addrs.push_back(phony_resolved_address);
       new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_), addrs);
     }
   }

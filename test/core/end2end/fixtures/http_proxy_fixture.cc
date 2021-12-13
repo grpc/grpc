@@ -528,7 +528,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
                             GRPC_ERROR_REF(error));
     return;
   }
-  GPR_ASSERT(addresses_or->size() >= 1);
+  GPR_ASSERT(!addresses_or->.empty());
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
   const grpc_millis deadline =

@@ -60,7 +60,6 @@ static void drain_cq(grpc_completion_queue* cq) {
 }
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
-  std::vector<grpc_resolved_address> res = nullptr;
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
       grpc_core::GetDNSResolver()->ResolveNameBlocking(hostname, "80");
   if (!addresses_or.ok()) {
