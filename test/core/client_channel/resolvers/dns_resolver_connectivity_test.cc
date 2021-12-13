@@ -81,7 +81,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
-      absl::string_view /* name */, absl::string_view /* default_port */) override {
+      absl::string_view /* name */,
+      absl::string_view /* default_port */) override {
     GPR_ASSERT(0);
   }
 };
