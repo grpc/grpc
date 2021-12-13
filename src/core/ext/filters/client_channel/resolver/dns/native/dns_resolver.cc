@@ -147,6 +147,7 @@ void NativeClientChannelDNSResolver::ShutdownLocked() {
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
+  dns_request_.reset();
 }
 
 void NativeClientChannelDNSResolver::OnNextResolution(void* arg,
