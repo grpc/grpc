@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:public"])
 

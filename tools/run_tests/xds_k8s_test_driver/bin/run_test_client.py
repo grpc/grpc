@@ -69,6 +69,7 @@ def main(argv):
         gcp_service_account=gcp_service_account,
         xds_server_uri=xds_flags.XDS_SERVER_URI.value,
         network=xds_flags.NETWORK.value,
+        config_scope=xds_flags.CONFIG_SCOPE.value,
         stats_port=xds_flags.CLIENT_PORT.value,
         reuse_namespace=_REUSE_NAMESPACE.value)
 

@@ -59,8 +59,7 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
              << "," << scenario.credentials_type << "}";

@@ -63,12 +63,13 @@ struct grpc_end2end_test_config {
    * expect to find in call_details.host */
   const char* overridden_call_host;
 
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args* client_args,
-                                              grpc_channel_args* server_args);
+  grpc_end2end_test_fixture (*create_fixture)(
+      const grpc_channel_args* client_args,
+      const grpc_channel_args* server_args);
   void (*init_client)(grpc_end2end_test_fixture* f,
-                      grpc_channel_args* client_args);
+                      const grpc_channel_args* client_args);
   void (*init_server)(grpc_end2end_test_fixture* f,
-                      grpc_channel_args* server_args);
+                      const grpc_channel_args* server_args);
   void (*tear_down_data)(grpc_end2end_test_fixture* f);
 };
 

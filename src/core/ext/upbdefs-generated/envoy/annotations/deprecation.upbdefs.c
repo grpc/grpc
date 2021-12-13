@@ -8,9 +8,9 @@
 
 #include "upb/def.h"
 #include "envoy/annotations/deprecation.upbdefs.h"
+#include "envoy/annotations/deprecation.upb.h"
 
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-
 static const char descriptor[490] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'd', 'e', 'p', 'r', 'e', 
 'c', 'a', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\021', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'n', 'n', 'o', 't', 
 'a', 't', 'i', 'o', 'n', 's', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 
@@ -40,7 +40,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init envoy_annotations_deprecation_proto_upbdefinit = {
   deps,
-  NULL,
+  &envoy_annotations_deprecation_proto_upb_file_layout,
   "envoy/annotations/deprecation.proto",
   UPB_STRVIEW_INIT(descriptor, 490)
 };

@@ -168,6 +168,8 @@ UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_set_
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 1);
 }
 
+extern const upb_msglayout_file envoy_config_route_v3_scoped_route_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

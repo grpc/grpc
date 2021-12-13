@@ -13,12 +13,11 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/security")
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "alts_credentials_fuzzer",
@@ -361,6 +360,19 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tls_certificate_verifier_test",
+    srcs = ["grpc_tls_certificate_verifier_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [

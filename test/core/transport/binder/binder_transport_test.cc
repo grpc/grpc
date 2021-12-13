@@ -29,11 +29,16 @@
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
+#include <grpcpp/security/binder_security_policy.h>
 
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 namespace grpc_binder {
 namespace {
@@ -45,7 +50,8 @@ using ::testing::Return;
 class BinderTransportTest : public ::testing::Test {
  public:
   BinderTransportTest()
-      : arena_(grpc_core::Arena::Create(/* initial_size = */ 1)),
+      : arena_(grpc_core::Arena::Create(/* initial_size = */ 1,
+                                        g_memory_allocator)),
         transport_(grpc_create_binder_transport_client(
             absl::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
@@ -146,18 +152,36 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
   return absl::StrContains(grpc_error_std_string(arg), msg);
 }
 
+namespace {
+class MetadataEncoder {
+ public:
+  void Encode(grpc_mdelem elem) {
+    metadata_.emplace_back(
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDKEY(elem))),
+        std::string(grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem))));
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    metadata_.emplace_back(
+        std::string(Which::key()),
+        std::string(grpc_core::Slice(Which::Encode(value)).as_string_view()));
+  }
+
+  const Metadata& metadata() const { return metadata_; }
+
+ private:
+  Metadata metadata_;
+};
+}  // namespace
+
 // Verify that the lower-level metadata has the same content as the gRPC
 // metadata.
 void VerifyMetadataEqual(const Metadata& md,
                          const grpc_metadata_batch& grpc_md) {
-  size_t i = 0;
-  grpc_md.ForEach([&](grpc_mdelem mdelm) {
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDKEY(mdelm)), md[i].first);
-    EXPECT_EQ(grpc_core::StringViewFromSlice(GRPC_MDVALUE(mdelm)),
-              md[i].second);
-    i++;
-  });
-  EXPECT_EQ(md.size(), i);
+  MetadataEncoder encoder;
+  grpc_md.Encode(&encoder);
+  EXPECT_EQ(encoder.metadata(), md);
 }
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.
@@ -193,7 +217,8 @@ struct MakeSendInitialMetadata {
 
   std::vector<grpc_linked_mdelem> storage;
   grpc_linked_mdelem method_ref_storage;
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
 };
 
@@ -225,7 +250,8 @@ struct MakeSendTrailingMetadata {
         &grpc_trailing_metadata;
   }
 
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
 };
 
@@ -248,7 +274,8 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
   absl::Notification notification;
 };
@@ -291,7 +318,8 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
-  grpc_core::ScopedArenaPtr arena = grpc_core::MakeScopedArena(1024);
+  grpc_core::ScopedArenaPtr arena =
+      grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
   absl::Notification notification;
 };

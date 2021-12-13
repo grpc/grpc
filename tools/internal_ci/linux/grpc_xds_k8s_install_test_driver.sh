@@ -226,9 +226,9 @@ test_driver_pip_install() {
     source "${venv_dir}/bin/activate"
   fi
 
-  pip install -r requirements.txt
+  python3 -m pip install -r requirements.txt
   echo "Installed Python packages:"
-  pip list
+  python3 -m pip list
 }
 
 #######################################
@@ -254,7 +254,7 @@ test_driver_compile_protos() {
   )
   echo "Generate python code from grpc.testing protos: ${protos[*]}"
   cd "${TEST_DRIVER_REPO_DIR}"
-  python -m grpc_tools.protoc \
+  python3 -m grpc_tools.protoc \
     --proto_path=. \
     --python_out="${TEST_DRIVER_FULL_DIR}" \
     --grpc_python_out="${TEST_DRIVER_FULL_DIR}" \
@@ -345,12 +345,12 @@ kokoro_setup_python_virtual_environment() {
   pyenv virtualenv --no-pip "${py_latest_patch}" k8s_xds_test_runner
   pyenv local k8s_xds_test_runner
   pyenv activate k8s_xds_test_runner
-  python -m ensurepip
+  python3 -m ensurepip
   # pip is fixed to 21.0.1 due to issue https://github.com/pypa/pip/pull/9835
   # internal details: b/186411224
   # TODO(sergiitk): revert https://github.com/grpc/grpc/pull/26087 when 21.1.1 released
-  python -m pip install -U pip==21.0.1
-  pip --version
+  python3 -m pip install -U pip==21.0.1
+  python3 -m pip --version
 }
 
 #######################################

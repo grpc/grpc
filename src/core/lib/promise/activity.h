@@ -17,10 +17,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
+#include <atomic>
 #include <functional>
+#include <memory>
+#include <type_traits>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
@@ -270,6 +285,17 @@ class ContextHolder<Context*> {
   Context* value_;
 };
 
+template <typename Context, typename Deleter>
+class ContextHolder<std::unique_ptr<Context, Deleter>> {
+ public:
+  explicit ContextHolder(std::unique_ptr<Context, Deleter> value)
+      : value_(std::move(value)) {}
+  Context* GetContext() { return value_.get(); }
+
+ private:
+  std::unique_ptr<Context, Deleter> value_;
+};
+
 template <typename... Contexts>
 class EnterContexts : public promise_detail::Context<Contexts>... {
  public:
@@ -402,8 +428,9 @@ class PromiseActivity final
   // to keep the scoping rules a little easier in Step().
   absl::optional<absl::Status> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ScopedActivity scoped_activity(this);
-    EnterContexts<Contexts...> contexts(
-        static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
+    EnterContexts<typename std::remove_reference<decltype(
+        *static_cast<ContextHolder<Contexts>*>(this)->GetContext())>::type...>
+    contexts(static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
     return StepLoop();
   }
 
@@ -412,8 +439,9 @@ class PromiseActivity final
   absl::optional<absl::Status> Start(Factory promise_factory)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ScopedActivity scoped_activity(this);
-    EnterContexts<Contexts...> contexts(
-        static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
+    EnterContexts<typename std::remove_reference<decltype(
+        *static_cast<ContextHolder<Contexts>*>(this)->GetContext())>::type...>
+    contexts(static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
     Construct(&promise_holder_.promise, promise_factory.Once());
     return StepLoop();
   }

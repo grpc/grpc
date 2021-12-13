@@ -42,7 +42,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, INT_MAX, [](grpc_channel_stack_builder* builder) {
         return grpc_channel_stack_builder_prepend_filter(
-            builder, &grpc_core::Server::kServerTopFilter, nullptr, nullptr);
+            builder, &Server::kServerTopFilter, nullptr, nullptr);
       });
 }
 

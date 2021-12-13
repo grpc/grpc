@@ -54,9 +54,9 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_channel_element grpc_channel_element;

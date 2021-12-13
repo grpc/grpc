@@ -29,6 +29,21 @@ typedef struct udpa_annotations_FileMigrateAnnotation udpa_annotations_FileMigra
 extern const upb_msglayout udpa_annotations_MigrateAnnotation_msginit;
 extern const upb_msglayout udpa_annotations_FieldMigrateAnnotation_msginit;
 extern const upb_msglayout udpa_annotations_FileMigrateAnnotation_msginit;
+extern const upb_msglayout_ext udpa_annotations_message_migrate_ext;
+extern const upb_msglayout_ext udpa_annotations_field_migrate_ext;
+extern const upb_msglayout_ext udpa_annotations_enum_migrate_ext;
+extern const upb_msglayout_ext udpa_annotations_enum_value_migrate_ext;
+extern const upb_msglayout_ext udpa_annotations_file_migrate_ext;
+struct google_protobuf_EnumOptions;
+struct google_protobuf_EnumValueOptions;
+struct google_protobuf_FieldOptions;
+struct google_protobuf_FileOptions;
+struct google_protobuf_MessageOptions;
+extern const upb_msglayout google_protobuf_EnumOptions_msginit;
+extern const upb_msglayout google_protobuf_EnumValueOptions_msginit;
+extern const upb_msglayout google_protobuf_FieldOptions_msginit;
+extern const upb_msglayout google_protobuf_FileOptions_msginit;
+extern const upb_msglayout google_protobuf_MessageOptions_msginit;
 
 
 /* udpa.annotations.MigrateAnnotation */
@@ -130,6 +145,18 @@ UPB_INLINE upb_strview udpa_annotations_FileMigrateAnnotation_move_to_package(co
 UPB_INLINE void udpa_annotations_FileMigrateAnnotation_set_move_to_package(udpa_annotations_FileMigrateAnnotation *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
+
+UPB_INLINE bool udpa_annotations_has_message_migrate(const struct google_protobuf_MessageOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_message_migrate_ext) != NULL; }
+UPB_INLINE const udpa_annotations_MigrateAnnotation* udpa_annotations_message_migrate(const struct google_protobuf_MessageOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_message_migrate_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_MigrateAnnotation*); }
+UPB_INLINE bool udpa_annotations_has_field_migrate(const struct google_protobuf_FieldOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_field_migrate_ext) != NULL; }
+UPB_INLINE const udpa_annotations_FieldMigrateAnnotation* udpa_annotations_field_migrate(const struct google_protobuf_FieldOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_field_migrate_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_FieldMigrateAnnotation*); }
+UPB_INLINE bool udpa_annotations_has_enum_migrate(const struct google_protobuf_EnumOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_enum_migrate_ext) != NULL; }
+UPB_INLINE const udpa_annotations_MigrateAnnotation* udpa_annotations_enum_migrate(const struct google_protobuf_EnumOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_enum_migrate_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_MigrateAnnotation*); }
+UPB_INLINE bool udpa_annotations_has_enum_value_migrate(const struct google_protobuf_EnumValueOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_enum_value_migrate_ext) != NULL; }
+UPB_INLINE const udpa_annotations_MigrateAnnotation* udpa_annotations_enum_value_migrate(const struct google_protobuf_EnumValueOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_enum_value_migrate_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_MigrateAnnotation*); }
+UPB_INLINE bool udpa_annotations_has_file_migrate(const struct google_protobuf_FileOptions *msg) { return _upb_msg_getext(msg, &udpa_annotations_file_migrate_ext) != NULL; }
+UPB_INLINE const udpa_annotations_FileMigrateAnnotation* udpa_annotations_file_migrate(const struct google_protobuf_FileOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &udpa_annotations_file_migrate_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const udpa_annotations_FileMigrateAnnotation*); }
+extern const upb_msglayout_file udpa_annotations_migrate_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

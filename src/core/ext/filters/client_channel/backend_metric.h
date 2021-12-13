@@ -22,14 +22,15 @@
 #include <grpc/slice.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
 // Parses the serialized load report and allocates a BackendMetricData
 // object on the arena.
-const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
-    const grpc_slice& serialized_load_report, Arena* arena);
+const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+ParseBackendMetricData(const Slice& serialized_load_report, Arena* arena);
 
 }  // namespace grpc_core
 

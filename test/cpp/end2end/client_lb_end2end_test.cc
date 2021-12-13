@@ -83,7 +83,6 @@ namespace {
 gpr_atm g_connection_delay_ms;
 
 void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
-                                   grpc_slice_allocator* slice_allocator,
                                    grpc_pollset_set* interested_parties,
                                    const grpc_channel_args* channel_args,
                                    const grpc_resolved_address* addr,
@@ -92,8 +91,8 @@ void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
   if (delay_ms > 0) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
   }
-  default_client_impl->connect(closure, ep, slice_allocator, interested_parties,
-                               channel_args, addr, deadline + delay_ms);
+  default_client_impl->connect(closure, ep, interested_parties, channel_args,
+                               addr, deadline + delay_ms);
 }
 
 grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
@@ -200,6 +199,7 @@ class FakeResolverResponseGeneratorWrapper {
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
           nullptr) {
     grpc_core::Resolver::Result result;
+    result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -212,13 +212,14 @@ class FakeResolverResponseGeneratorWrapper {
       if (attribute != nullptr) {
         attributes[attribute_key] = attribute->Copy();
       }
-      result.addresses.emplace_back(address.addr, address.len,
-                                    nullptr /* args */, std::move(attributes));
+      result.addresses->emplace_back(address.addr, address.len,
+                                     nullptr /* args */, std::move(attributes));
     }
     if (service_config_json != nullptr) {
+      grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfig::Create(
-          nullptr, service_config_json, &result.service_config_error);
-      GPR_ASSERT(result.service_config != nullptr);
+          nullptr, service_config_json, &error);
+      GPR_ASSERT(*result.service_config != nullptr);
     }
     return result;
   }

@@ -99,10 +99,9 @@ XdsChannelStackModifier::GetFromChannelArgs(const grpc_channel_args& args) {
 void RegisterXdsChannelStackModifier(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, INT_MAX, [](grpc_channel_stack_builder* builder) {
-        grpc_core::RefCountedPtr<XdsChannelStackModifier>
-            channel_stack_modifier =
-                XdsChannelStackModifier::GetFromChannelArgs(
-                    *grpc_channel_stack_builder_get_channel_arguments(builder));
+        RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier =
+            XdsChannelStackModifier::GetFromChannelArgs(
+                *grpc_channel_stack_builder_get_channel_arguments(builder));
         if (channel_stack_modifier != nullptr) {
           return channel_stack_modifier->ModifyChannelStack(builder);
         }

@@ -224,8 +224,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       // Intercept trailing metadata.
       auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
       if (complete_pick != nullptr) {
-        new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
-            TrailingMetadataHandler(complete_pick, cb_);
+        complete_pick->subchannel_call_tracker =
+            absl::make_unique<SubchannelCallTracker>(cb_);
       }
       return result;
     }
@@ -272,29 +272,22 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     InterceptRecvTrailingMetadataCallback cb_;
   };
 
-  class TrailingMetadataHandler {
+  class SubchannelCallTracker : public SubchannelCallTrackerInterface {
    public:
-    TrailingMetadataHandler(PickResult::Complete* result,
-                            InterceptRecvTrailingMetadataCallback cb)
-        : cb_(std::move(cb)) {
-      result->recv_trailing_metadata_ready = [this](absl::Status /*status*/,
-                                                    MetadataInterface* metadata,
-                                                    CallState* call_state) {
-        RecordRecvTrailingMetadata(metadata, call_state);
-      };
+    explicit SubchannelCallTracker(InterceptRecvTrailingMetadataCallback cb)
+        : cb_(std::move(cb)) {}
+
+    void Start() override {}
+
+    void Finish(FinishArgs args) override {
+      TrailingMetadataArgsSeen args_seen;
+      args_seen.backend_metric_data =
+          args.backend_metric_accessor->GetBackendMetricData();
+      args_seen.metadata = args.trailing_metadata->TestOnlyCopyToVector();
+      cb_(args_seen);
     }
 
    private:
-    void RecordRecvTrailingMetadata(MetadataInterface* recv_trailing_metadata,
-                                    CallState* call_state) {
-      TrailingMetadataArgsSeen args_seen;
-      args_seen.backend_metric_data = call_state->GetBackendMetricData();
-      GPR_ASSERT(recv_trailing_metadata != nullptr);
-      args_seen.metadata = recv_trailing_metadata->TestOnlyCopyToVector();
-      cb_(args_seen);
-      this->~TrailingMetadataHandler();
-    }
-
     InterceptRecvTrailingMetadataCallback cb_;
   };
 };
@@ -454,11 +447,11 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
             config->address().c_str());
     auto uri = URI::Parse(config->address());
     args.config.reset();
-    args.addresses.clear();
+    args.addresses = ServerAddressList();
     if (uri.ok()) {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*uri, &address));
-      args.addresses.emplace_back(address, /*args=*/nullptr);
+      args.addresses->emplace_back(address, /*args=*/nullptr);
     } else {
       gpr_log(GPR_ERROR,
               "%s: could not parse URI (%s), using empty address list",

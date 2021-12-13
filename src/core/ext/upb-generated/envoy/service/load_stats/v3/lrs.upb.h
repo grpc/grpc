@@ -154,6 +154,8 @@ UPB_INLINE void envoy_service_load_stats_v3_LoadStatsResponse_set_send_all_clust
   *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
 }
 
+extern const upb_msglayout_file envoy_service_load_stats_v3_lrs_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

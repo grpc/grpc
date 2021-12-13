@@ -27,6 +27,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/tls_test_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -40,6 +41,7 @@ constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
+using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
 
@@ -120,6 +122,40 @@ TEST(
   options.set_identity_cert_name(kIdentityCertName);
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithSyncExternalVerifier) {
+  auto verifier =
+      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_certificate_verifier(verifier);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
+  auto verifier =
+      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(true);
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_certificate_verifier(verifier);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
 }

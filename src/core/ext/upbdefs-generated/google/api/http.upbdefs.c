@@ -8,16 +8,7 @@
 
 #include "upb/def.h"
 #include "google/api/http.upbdefs.h"
-
-extern const upb_msglayout google_api_Http_msginit;
-extern const upb_msglayout google_api_HttpRule_msginit;
-extern const upb_msglayout google_api_CustomHttpPattern_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &google_api_Http_msginit,
-  &google_api_HttpRule_msginit,
-  &google_api_CustomHttpPattern_msginit,
-};
+#include "google/api/http.upb.h"
 
 static const char descriptor[684] = {'\n', '\025', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i', '/', 'h', 't', 't', 'p', '.', 'p', 'r', 'o', 't', 'o', '\022', '\n', 
 'g', 'o', 'o', 'g', 'l', 'e', '.', 'a', 'p', 'i', '\"', 'y', '\n', '\004', 'H', 't', 't', 'p', '\022', '*', '\n', '\005', 'r', 'u', 'l', 
@@ -55,7 +46,7 @@ static upb_def_init *deps[1] = {
 
 upb_def_init google_api_http_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_api_http_proto_upb_file_layout,
   "google/api/http.proto",
   UPB_STRVIEW_INIT(descriptor, 684)
 };

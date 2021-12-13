@@ -12,6 +12,13 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  exit /b %errorlevel%
+)
+
 @rem TODO(jtattermusch): make this generate less output
 @rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
 choco install bazel -y --version 4.2.1 --limit-output
@@ -30,7 +37,7 @@ set BAZEL_EXITCODE=%errorlevel%
 if not "%UPLOAD_TEST_RESULTS%"=="" (
   @rem Sleep to let ResultStore finish writing results before querying
   timeout /t 60 /nobreak
-  python ./tools/run_tests/python_utils/upload_rbe_results.py
+  python3 ./tools/run_tests/python_utils/upload_rbe_results.py
 )
 
 exit /b %BAZEL_EXITCODE%

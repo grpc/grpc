@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # Copyright 2015 gRPC authors.
 #
@@ -49,7 +49,8 @@ for message_length in range(0, 3):
                     ] + payload[0:frame_length]
             text = esc_c(frame)
             if text not in done:
-                print 'GRPC_RUN_BAD_CLIENT_TEST(verifier_%s, PFX_STR %s, %s);' % (
-                    'succeeds' if is_end else 'fails', text,
-                    '0' if is_end else 'GRPC_BAD_CLIENT_DISCONNECT')
+                print(
+                    ('GRPC_RUN_BAD_CLIENT_TEST(verifier_%s, PFX_STR %s, %s);' %
+                     ('succeeds' if is_end else 'fails', text,
+                      '0' if is_end else 'GRPC_BAD_CLIENT_DISCONNECT')))
                 done.add(text)

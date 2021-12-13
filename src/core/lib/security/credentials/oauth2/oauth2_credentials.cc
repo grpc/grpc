@@ -388,12 +388,11 @@ class grpc_compute_engine_token_fetcher_credentials
         const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
     request.http.hdr_count = 1;
     request.http.hdrs = &header;
-    /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+    /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("oauth2_credentials");
-    grpc_httpcli_get(pollent, resource_quota, &request, deadline,
+    grpc_httpcli_get(pollent, grpc_core::ResourceQuota::Default(), &request,
+                     deadline,
                      GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
                                        metadata_req, grpc_schedule_on_exec_ctx),
                      &metadata_req->response);
@@ -447,13 +446,11 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   request.handshaker = &grpc_httpcli_ssl;
-  /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+  /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("oauth2_credentials_refresh");
-  grpc_httpcli_post(pollent, resource_quota, &request, body.c_str(),
-                    body.size(), deadline,
+  grpc_httpcli_post(pollent, grpc_core::ResourceQuota::Default(), &request,
+                    body.c_str(), body.size(), deadline,
                     GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb,
                                       metadata_req, grpc_schedule_on_exec_ctx),
                     &metadata_req->response);
@@ -577,13 +574,12 @@ class StsTokenFetcherCredentials
     request.handshaker = (sts_url_.scheme() == "https")
                              ? &grpc_httpcli_ssl
                              : &grpc_httpcli_plaintext;
-    /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
+    /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("oauth2_credentials_refresh");
     grpc_httpcli_post(
-        pollent, resource_quota, &request, body, body_length, deadline,
+        pollent, ResourceQuota::Default(), &request, body, body_length,
+        deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
@@ -634,14 +630,14 @@ class StsTokenFetcherCredentials
 
   URI sts_url_;
   grpc_closure http_post_cb_closure_;
-  grpc_core::UniquePtr<char> resource_;
-  grpc_core::UniquePtr<char> audience_;
-  grpc_core::UniquePtr<char> scope_;
-  grpc_core::UniquePtr<char> requested_token_type_;
-  grpc_core::UniquePtr<char> subject_token_path_;
-  grpc_core::UniquePtr<char> subject_token_type_;
-  grpc_core::UniquePtr<char> actor_token_path_;
-  grpc_core::UniquePtr<char> actor_token_type_;
+  UniquePtr<char> resource_;
+  UniquePtr<char> audience_;
+  UniquePtr<char> scope_;
+  UniquePtr<char> requested_token_type_;
+  UniquePtr<char> subject_token_path_;
+  UniquePtr<char> subject_token_type_;
+  UniquePtr<char> actor_token_path_;
+  UniquePtr<char> actor_token_type_;
 };
 
 }  // namespace

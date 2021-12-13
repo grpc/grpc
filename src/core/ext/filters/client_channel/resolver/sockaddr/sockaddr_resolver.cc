@@ -73,7 +73,7 @@ void SockaddrResolver::StartLocked() {
   // TODO(roth): Use std::move() once channel args is converted to C++.
   result.args = channel_args_;
   channel_args_ = nullptr;
-  result_handler_->ReturnResult(std::move(result));
+  result_handler_->ReportResult(std::move(result));
 }
 
 //

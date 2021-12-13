@@ -78,6 +78,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     server_runner: KubernetesServerRunner
     server_xds_port: int
     td: TrafficDirectorManager
+    config_scope: str
 
     @classmethod
     def setUpClass(cls):
@@ -136,6 +137,12 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             )
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
+
+        if xds_flags.CONFIG_SCOPE.value is not None:
+            self.config_scope = xds_flags.CONFIG_SCOPE.value + "-" + framework.helpers.rand.random_resource_suffix(
+            )
+        else:
+            self.config_scope = None
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
@@ -418,6 +425,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            config_scope=self.config_scope,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port,
@@ -457,6 +465,7 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
             network=self.network,
+            config_scope=self.config_scope,
             compute_api_version=self.compute_api_version)
 
 
@@ -518,6 +527,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
+            config_scope=self.config_scope,
             deployment_template='client-secure.deployment.yaml',
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace,
