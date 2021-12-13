@@ -388,8 +388,10 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     }
     subchannels_.emplace_back();
     subchannels_.back().Init(this, std::move(address), std::move(subchannel));
-    // Start watching subchannel connectivity state.
-    subchannels_.back()->StartConnectivityWatchLocked();
+  }
+  // Start watching subchannel connectivity state.
+  for (auto& sd : subchannels_) {
+    sd->StartConnectivityWatchLocked();
   }
 }
 
