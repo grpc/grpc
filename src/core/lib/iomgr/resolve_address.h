@@ -74,26 +74,35 @@ class DNSResolver {
 
   virtual ~DNSResolver() {}
 
-  // Asynchronously resolve addr. Use default_port if a port isn't designated
-  // in addr, otherwise use the port in addr.
+  // Asynchronously resolve name. Use \a default_port if a port isn't designated
+  // in \a name, otherwise use the port in \a name. On completion, \a on_done is
+  // invoked with the result.
+  //
+  // Note for implementations: calls may acquire locks in \a on_done which
+  // were previously held while calling Request::Start(). Therefore,
+  // implementations must not invoke \a on_done inline from the call to
+  // Request::Start(). The DNSCallbackExecCtxScheduler utility may help address
+  // this.
   virtual OrphanablePtr<Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) GRPC_MUST_USE_RESULT = 0;
 
-  // Resolve addr in a blocking fashion.
+  // Resolve name in a blocking fashion. Use \a default_port if a port isn't
+  // designated in \a name, otherwise use the port in \a name.
   virtual absl::StatusOr<std::vector<grpc_resolved_address>>
   ResolveNameBlocking(absl::string_view name,
                       absl::string_view default_port) = 0;
 };
 
-// Override the active DNS resolver, which should be used for all DNS
-// resolution in gRPC. Note: this should only be used during library
-// initialization, or tests.
+// Override the active DNS resolver which should be used for all DNS
+// resolution in gRPC. Note this should only be used during library
+// initialization or within tests.
 void SetDNSResolver(DNSResolver* resolver);
 
-// Get the singleton instance
+// Get the singleton DNS resolver instance which should be used for all
+// DNS resolution in gRPC.
 DNSResolver* GetDNSResolver();
 
 }  // namespace grpc_core

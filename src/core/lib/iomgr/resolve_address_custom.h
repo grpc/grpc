@@ -98,6 +98,11 @@ class CustomDNSResolver : public DNSResolver {
 }  // namespace grpc_core
 
 // user-configured custom DNS resolution APIs
+
+// TODO(apolcyn): as a part of converting this API to C++, this
+// type could be deleted, and callers of \a grpc_custom_resolve_callback
+// could instead just invoke
+// CustomDNSResolver::CustomDNSRequest::ResolveCallback directly.
 typedef struct grpc_custom_resolver grpc_custom_resolver;
 
 typedef struct grpc_custom_resolver_vtable {

@@ -26,9 +26,9 @@
 
 namespace grpc_core {
 
-// A fire and forget class used by Request implementations to run DNS
-// resolution callbacks on the ExecCtx, which is frequently necessary to avoid
-// lock inversion related problems.
+// A fire and forget class used by DNSResolver::Request implementations to
+// schedule DNS  resolution callbacks on the ExecCtx, which is frequently
+// necessary to avoid lock inversion related problems.
 class DNSCallbackExecCtxScheduler {
  public:
   DNSCallbackExecCtxScheduler(

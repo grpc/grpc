@@ -579,6 +579,7 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<grpc_ares_request> ares_request_ ABSL_GUARDED_BY(mu_);
   };
 
+  // gets the singleton instance, possibly creating it first
   static AresDNSResolver* GetOrCreate() {
     if (g_ares_dns_resolver == nullptr) {
       g_ares_dns_resolver = new AresDNSResolver();
@@ -601,6 +602,7 @@ class AresDNSResolver : public DNSResolver {
   }
 
  private:
+  // the previous default DNS resolver, used to delegate blocking DNS calls to
   DNSResolver* default_resolver_ = GetDNSResolver();
 };
 

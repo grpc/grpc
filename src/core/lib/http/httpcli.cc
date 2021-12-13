@@ -106,7 +106,7 @@ class InternalRequest {
       overall_error_ =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
     }
-    grpc_resolved_address* addr = &addresses_[next_address_ - 1];
+    const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
     std::string addr_text = grpc_sockaddr_to_uri(addr);
     overall_error_ = grpc_error_add_child(
         overall_error_,
@@ -191,7 +191,6 @@ class InternalRequest {
   }
 
   void NextAddress(grpc_error_handle error) {
-    grpc_resolved_address* addr;
     if (error != GRPC_ERROR_NONE) {
       AppendError(error);
     }
@@ -200,7 +199,7 @@ class InternalRequest {
           "Failed HTTP requests to all targets", &overall_error_, 1));
       return;
     }
-    addr = &addresses_[next_address_++];
+    const grpc_resolved_address* addr = &addresses_[next_address_++];
     GRPC_CLOSURE_INIT(&connected_, OnConnected, this,
                       grpc_schedule_on_exec_ctx);
     grpc_arg rq_arg = grpc_channel_arg_pointer_create(

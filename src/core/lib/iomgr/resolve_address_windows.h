@@ -28,6 +28,7 @@
 
 namespace grpc_core {
 
+// A DNS resolver which uses the native platform's getaddrinfo API.
 class NativeDNSResolver : public DNSResolver {
  public:
   // Gets the singleton instance, creating it first if it doesn't exist
