@@ -28,7 +28,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "test/core/util/fake_tcp_server.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"

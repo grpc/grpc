@@ -44618,6 +44618,7 @@ test/core/util/fake_udp_and_tcp_server.o: test/core/util/fake_udp_and_tcp_server
 # target to build an object file
 test/core/util/fake_udp_and_tcp_server.cc.o:
 	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
+	$(MAKE) -f CMakeFiles/httpcli_test.dir/build.make CMakeFiles/httpcli_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
 	$(MAKE) -f CMakeFiles/cancel_ares_query_test.dir/build.make CMakeFiles/cancel_ares_query_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
 	$(MAKE) -f CMakeFiles/alts_concurrent_connectivity_test.dir/build.make CMakeFiles/alts_concurrent_connectivity_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
@@ -44630,6 +44631,7 @@ test/core/util/fake_udp_and_tcp_server.i: test/core/util/fake_udp_and_tcp_server
 # target to preprocess a source file
 test/core/util/fake_udp_and_tcp_server.cc.i:
 	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
+	$(MAKE) -f CMakeFiles/httpcli_test.dir/build.make CMakeFiles/httpcli_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
 	$(MAKE) -f CMakeFiles/cancel_ares_query_test.dir/build.make CMakeFiles/cancel_ares_query_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
 	$(MAKE) -f CMakeFiles/alts_concurrent_connectivity_test.dir/build.make CMakeFiles/alts_concurrent_connectivity_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
@@ -44642,6 +44644,7 @@ test/core/util/fake_udp_and_tcp_server.s: test/core/util/fake_udp_and_tcp_server
 # target to generate assembly for a file
 test/core/util/fake_udp_and_tcp_server.cc.s:
 	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
+	$(MAKE) -f CMakeFiles/httpcli_test.dir/build.make CMakeFiles/httpcli_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
 	$(MAKE) -f CMakeFiles/cancel_ares_query_test.dir/build.make CMakeFiles/cancel_ares_query_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
 	$(MAKE) -f CMakeFiles/alts_concurrent_connectivity_test.dir/build.make CMakeFiles/alts_concurrent_connectivity_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s

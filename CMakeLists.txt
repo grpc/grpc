@@ -5808,6 +5808,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/data/server1_key.cc
     test/core/end2end/data/test_root_cert.cc
     test/core/http/httpcli_test.cc
+    test/core/util/fake_udp_and_tcp_server.cc
   )
 
   target_include_directories(httpcli_test
