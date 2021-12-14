@@ -155,7 +155,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {
-    InternalRequest* req = static_cast<InternalRequest*>(user_data);
+    HttpCliRequest* req = static_cast<HttpCliRequest*>(user_data);
     req->OnReadInternal(error);
   }
 
