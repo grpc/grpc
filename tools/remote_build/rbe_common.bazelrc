@@ -94,3 +94,4 @@ build:ubsan --copt=-fsanitize-recover=memory
 build:ubsan --linkopt=-fsanitize=memory
 build:ubsan --cxxopt=--stdlib=libc++
 build:ubsan --action_env=MSAN_OPTIONS=halt_on_error=0
+build:ubsan --test_tag_filters=-no_linux,-noubsan
