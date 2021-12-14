@@ -133,7 +133,7 @@ static void test_get(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
-  OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request = HttpCliRequest::Get(
       &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
       &test_arg.response);
@@ -169,10 +169,11 @@ static void test_post(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
-  grpc_core::HttpCliRequest::Post(
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request = grpc_core::HttpCliRequest::Post(
       &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
       &test_arg.response);
+  httpcli_request->Start();
   gpr_mu_lock(test_arg.polling_arg->mu);
   while (!test_arg.done) {
     grpc_pollset_worker* worker = nullptr;
@@ -227,7 +228,7 @@ static void test_cancel_get_during_dns_resolution() {
       req.handshaker = &grpc_httpcli_plaintext;
 
       grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_cancel_get_during_dns_resolution");
-      OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
+      grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request = HttpCliRequest::Get(
           &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg, grpc_schedule_on_exec_ctx),
           &test_arg.response);
@@ -277,7 +278,7 @@ static void test_cancel_get_while_reading_response() {
       req.handshaker = &grpc_httpcli_plaintext;
 
       grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_cancel_get_while_reading_response");
-      OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
+      grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request = HttpCliRequest::Get(
           &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg, grpc_schedule_on_exec_ctx),
           &test_arg.response);

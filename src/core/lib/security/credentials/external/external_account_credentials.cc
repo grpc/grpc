@@ -326,9 +326,11 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
-  HttpCliRequest::Post(ctx_->pollent, ResourceQuota::Default(), &request,
+  GPR_ASSERT(httpcli_request_ == nullptr);
+  httpcli_request_ = HttpCliRequest::Post(ctx_->pollent, ResourceQuota::Default(), &request,
                     body.c_str(), body.size(), ctx_->deadline, &ctx_->closure,
                     &ctx_->response);
+  httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
 }
 
@@ -341,6 +343,7 @@ void ExternalAccountCredentials::OnExchangeToken(void* arg,
 
 void ExternalAccountCredentials::OnExchangeTokenInternal(
     grpc_error_handle error) {
+  httpcli_request_.reset();
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -411,9 +414,11 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   // TODO(ctiller): Use the callers resource quota.
-  HttpCliRequest::Post(ctx_->pollent, ResourceQuota::Default(), &request,
+  GPR_ASSERT(httpcli_request_ == nullptr);
+  httpcli_request_ = HttpCliRequest::Post(ctx_->pollent, ResourceQuota::Default(), &request,
                     body.c_str(), body.size(), ctx_->deadline, &ctx_->closure,
                     &ctx_->response);
+  httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
 }
 
@@ -426,6 +431,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccount(
 
 void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
     grpc_error_handle error) {
+  httpcli_request_.reset();
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
     return;

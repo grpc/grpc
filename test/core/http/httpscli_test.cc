@@ -80,7 +80,7 @@ static void test_get(int port) {
 
   grpc_http_response response;
   response = {};
-  OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request = grpc_core::HttpCliRequest::Get(
       &g_pops, grpc_core::ResourceQuota::Default(), &req, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
@@ -119,11 +119,12 @@ static void test_post(int port) {
 
   grpc_http_response response;
   response = {};
-  grpc_core::HttpCliRequest::Post(
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request = grpc_core::HttpCliRequest::Post(
       &g_pops, grpc_core::ResourceQuota::Default(), &req, "hello", 5,
       n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
+  httpcli_request->Start();
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
