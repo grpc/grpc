@@ -288,6 +288,11 @@ class HPackCompressor {
     std::vector<ValueIndex> values_;
   };
 
+  struct PreviousTimeout {
+    Timeout timeout;
+    uint32_t index;
+  };
+
   // entry tables for keys & elems: these tables track values that have been
   // seen and *may* be in the decompressor table
   HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
@@ -308,6 +313,7 @@ class HPackCompressor {
   Slice user_agent_;
   SliceIndex path_index_;
   SliceIndex authority_index_;
+  std::vector<PreviousTimeout> previous_timeouts_;
 };
 
 }  // namespace grpc_core
