@@ -232,6 +232,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
 
 void grpc_oauth2_token_fetcher_credentials::on_http_response(
     grpc_credentials_metadata_request* r, grpc_error_handle error) {
+  httpcli_request_.reset();
   grpc_mdelem access_token_md = GRPC_MDNULL;
   grpc_millis token_lifetime = 0;
   grpc_credentials_status status =
@@ -316,9 +317,11 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   gpr_mu_unlock(&mu_);
   if (start_fetch) {
     Ref().release();
-    fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()),
+    GPR_ASSERT(httpcli_request_ == nullptr);
+    httpcli_request_ = fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()),
                  &pollent_, on_oauth2_token_fetcher_http_response,
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
+    httpcli_request_->Start();
   }
   return false;
 }
@@ -375,7 +378,7 @@ class grpc_compute_engine_token_fetcher_credentials
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
  protected:
-  void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
+  OrphanablePtr<HttpCliRequest> fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
                     grpc_millis deadline) override {
@@ -391,7 +394,7 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    HttpCliRequest::Get(pollent, grpc_core::ResourceQuota::Default(), &request,
+    return HttpCliRequest::Get(pollent, grpc_core::ResourceQuota::Default(), &request,
                      deadline,
                      GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
                                        metadata_req, grpc_schedule_on_exec_ctx),
@@ -405,6 +408,7 @@ class grpc_compute_engine_token_fetcher_credentials
   }
 
  private:
+  OrphanablePtr<HttpCliRequest> httpcli_request_;
   grpc_closure http_get_cb_closure_;
 };
 
@@ -429,7 +433,7 @@ grpc_google_refresh_token_credentials::
   grpc_auth_refresh_token_destruct(&refresh_token_);
 }
 
-void grpc_google_refresh_token_credentials::fetch_oauth2(
+OrphanablePtr<HttpCliRequest> grpc_google_refresh_token_credentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
     grpc_millis deadline) {
@@ -550,7 +554,7 @@ class StsTokenFetcherCredentials
   }
 
  private:
-  void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
+  OrphanablePtr<HttpCliRequest> fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
                     grpc_millis deadline) override {

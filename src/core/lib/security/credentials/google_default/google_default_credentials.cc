@@ -185,12 +185,13 @@ static int is_metadata_server_reachable() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST);
   request.http.path = const_cast<char*>("/");
-  HttpCliRequest::Get(
+  OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
       &detector.pollent, grpc_core::ResourceQuota::Default(), &request,
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response);
+  httpcli_request->Start();
   grpc_core::ExecCtx::Get()->Flush();
   /* Block until we get the response. This is not ideal but this should only be
     called once for the lifetime of the process by the default credentials. */
@@ -206,6 +207,7 @@ static int is_metadata_server_reachable() {
     }
   }
   gpr_mu_unlock(g_polling_mu);
+  httpcli_request.reset();
   GRPC_CLOSURE_INIT(&destroy_closure, destroy_pollset,
                     grpc_polling_entity_pollset(&detector.pollent),
                     grpc_schedule_on_exec_ctx);

@@ -133,10 +133,11 @@ static void test_get(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
-  HttpCliRequest::Get(
+  OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
       &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
       &test_arg.response);
+  httpcli_request->Start();
   gpr_mu_lock(test_arg.polling_arg->mu);
   while (!test_arg.done) {
     grpc_pollset_worker* worker = nullptr;
@@ -226,15 +227,16 @@ static void test_cancel_get_during_dns_resolution() {
       req.handshaker = &grpc_httpcli_plaintext;
 
       grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_cancel_get_during_dns_resolution");
-      HttpCliRequest::Get(
+      OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
           &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg, grpc_schedule_on_exec_ctx),
           &test_arg.response);
-      std::thread cancel_thread([&test_arg]() {
+      httpcli_request->Start();
+      std::thread cancel_thread([&httpcli_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
         gpr_log(GPR_DEBUG, "now cancel http request using grpc_httpcli_cancel");
-        grpc_httpcli_cancel(&test_arg.context, GRPC_ERROR_CANCELLED);
+        httpcli_request.reset();
       });
       gpr_mu_lock(test_arg.polling_arg->mu);
       while (!test_arg.done) {
@@ -275,16 +277,17 @@ static void test_cancel_get_while_reading_response() {
       req.handshaker = &grpc_httpcli_plaintext;
 
       grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_cancel_get_while_reading_response");
-      HttpCliRequest::Get(
+      OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Get(
           &test_arg.context, &test_arg.polling_arg->pops, resource_quota, &req, n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg, grpc_schedule_on_exec_ctx),
           &test_arg.response);
+      httpcli_request->Start();
       exec_ctx.Flush();
-      std::thread cancel_thread([&test_arg]() {
+      std::thread cancel_thread([&httpcli_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
         gpr_log(GPR_DEBUG, "now cancel http request using grpc_httpcli_cancel");
-        grpc_httpcli_cancel(&test_arg.context, GRPC_ERROR_CANCELLED);
+        httpcli_request.reset();
       });
       gpr_mu_lock(test_arg.polling_arg->mu);
       while (!test_arg.done) {
