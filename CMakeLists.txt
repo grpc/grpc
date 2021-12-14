@@ -544,7 +544,7 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/http_connection_manager.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/http_rbac.proto
+  src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/listener.proto
@@ -17068,10 +17068,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_rbac.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_rbac.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_rbac.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_rbac.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h

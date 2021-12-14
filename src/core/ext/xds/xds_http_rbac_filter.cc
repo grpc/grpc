@@ -483,11 +483,11 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_symtab* symtab) const {
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfig(upb_strview serialized_rbac,
+XdsHttpRbacFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
                                         upb_arena* arena) const {
   absl::StatusOr<Json> rbac_json;
   auto* rbac = envoy_extensions_filters_http_rbac_v3_RBAC_parse(
-      serialized_rbac.data, serialized_rbac.size, arena);
+      serialized_filter_config.data, serialized_filter_config.size, arena);
   if (rbac == nullptr) {
     return absl::InvalidArgumentError(
         "could not parse HTTP RBAC filter config");
