@@ -97,12 +97,12 @@ grpc_cc_test(
         "gtest",
     ],
     data = [
-        "//src/core/tsi/test_creds/crl_supported:ab06acdd.r0",
-        "//src/core/tsi/test_creds/crl_supported:ca.pem",
-        "//src/core/tsi/test_creds/crl_supported:revoked.key",
-        "//src/core/tsi/test_creds/crl_supported:revoked.pem",
-        "//src/core/tsi/test_creds/crl_supported:valid.key",
-        "//src/core/tsi/test_creds/crl_supported:valid.pem",
+        "//test/core/tsi/test_creds/crl_data:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:revoked.key",
+        "//test/core/tsi/test_creds/crl_data:revoked.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data/valid.pem",
     ],
     tags = ["no_test_ios"],
     deps = [
