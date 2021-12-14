@@ -118,7 +118,8 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
       pem_key_cert_pairs.size(),
       options.force_client_auth
           ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-          : options.client_certificate_request, nullptr);
+          : options.client_certificate_request,
+      nullptr);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }
