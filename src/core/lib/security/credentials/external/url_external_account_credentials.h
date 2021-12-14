@@ -34,7 +34,7 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
                                 grpc_error_handle* error);
 
  private:
-  OrphanablePtr<HttpCliRequest> RetrieveSubjectToken(
+  void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 

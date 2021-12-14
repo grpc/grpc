@@ -89,7 +89,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   std::string debug_string() override;
 
  protected:
-  virtual grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> fetch_oauth2(grpc_credentials_metadata_request* req,
+  virtual void fetch_oauth2(grpc_credentials_metadata_request* req,
                             grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                             grpc_millis deadline) = 0;
 
@@ -100,7 +100,6 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   bool token_fetch_pending_ = false;
   grpc_oauth2_pending_get_request_metadata* pending_requests_ = nullptr;
   grpc_polling_entity pollent_;
-  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request_;
 };
 
 // Google refresh token credentials.
@@ -118,13 +117,14 @@ class grpc_google_refresh_token_credentials final
   std::string debug_string() override;
 
  protected:
-  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> fetch_oauth2(grpc_credentials_metadata_request* req,
+  void fetch_oauth2(grpc_credentials_metadata_request* req,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                     grpc_millis deadline) override;
 
  private:
   grpc_auth_refresh_token refresh_token_;
   grpc_closure http_post_cb_closure_;
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request_;
 };
 
 // Access token credentials.
