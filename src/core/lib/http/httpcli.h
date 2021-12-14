@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 /* User agent this library reports */

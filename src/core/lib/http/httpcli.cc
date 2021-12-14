@@ -58,6 +58,13 @@ const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
 
 namespace grpc_core {
 
+namespace {
+
+grpc_httpcli_get_override g_get_override;
+grpc_httpcli_post_override g_post_override;
+
+}  // namespace
+
 OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(
     grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
     const grpc_httpcli_request* request, grpc_millis deadline,
@@ -67,13 +74,12 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
-
   return MakeOrphanable<HttpCliRequest>(
       grpc_httpcli_format_get_request(request), response,
       std::move(resource_quota), request->host, request->ssl_host_override,
       deadline,
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
-      on_done, pollent, name);
+      on_done, pollent, name.c_str());
 }
 
 OrphanablePtr<HttpCliRequest> HttpCliRequest::Post(
@@ -87,20 +93,13 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Post(
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
-  new InternalRequest(
+  return MakeOrphanable<HttpCliRequest>(
       grpc_httpcli_format_post_request(request, body_bytes, body_size),
       response, std::move(resource_quota), request->host,
       request->ssl_host_override, deadline,
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
-      on_done, context, pollent, name);
+      on_done, pollent, name.c_str());
 }
-
-namespace {
-
-grpc_httpcli_get_override g_get_override;
-grpc_httpcli_post_override g_post_override;
-
-}  // namespace
 
 void HttpCliRequest::SetOverride(grpc_httpcli_get_override get,
                                  grpc_httpcli_post_override post) {
@@ -130,13 +129,13 @@ HttpCliRequest::HttpCliRequest(
   GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
-  grpc_polling_entity_add_to_pollset_set(pollent_, pollset_set_);
+  grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
   dns_request_ = GetDNSResolver()->ResolveName(
       host_.c_str(), handshaker_->default_port, pollset_set_,
       std::bind(&HttpCliRequest::OnResolved, this, std::placeholders::_1));
 }
 
-~HttpCliRequest() {
+HttpCliRequest::~HttpCliRequest() {
   grpc_http_parser_destroy(&parser_);
   if (ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
@@ -149,7 +148,7 @@ HttpCliRequest::HttpCliRequest(
   grpc_pollset_set_destroy(pollset_set_);
 }
 
-HttpCliRequest::Start() { dns_request_->Start(); }
+void HttpCliRequest::Start() { dns_request_->Start(); }
 
 void HttpCliRequest::AppendError(grpc_error_handle error) {
   if (overall_error_ == GRPC_ERROR_NONE) {
@@ -187,7 +186,7 @@ void HttpCliRequest::OnReadInternal(grpc_error_handle error) {
   }
 }
 
-static void HttpCliRequest::DoneWrite(void* arg, grpc_error_handle error) {
+void HttpCliRequest::DoneWrite(void* arg, grpc_error_handle error) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
   if (error == GRPC_ERROR_NONE) {
     req->OnWritten();
@@ -202,7 +201,7 @@ void HttpCliRequest::StartWrite() {
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
 }
 
-static void HttpCliRequest::OnHandshakeDone(void* arg, grpc_endpoint* ep) {
+void HttpCliRequest::OnHandshakeDone(void* arg, grpc_endpoint* ep) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
 
   if (!ep) {
@@ -215,7 +214,7 @@ static void HttpCliRequest::OnHandshakeDone(void* arg, grpc_endpoint* ep) {
   req->StartWrite();
 }
 
-static void OnConnected(void* arg, grpc_error_handle error) {
+void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
 
   if (!req->ep_) {
@@ -229,7 +228,7 @@ static void OnConnected(void* arg, grpc_error_handle error) {
                               req->deadline_, OnHandshakeDone);
 }
 
-void NextAddress(grpc_error_handle error) {
+void HttpCliRequest::NextAddress(grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
   }
@@ -252,7 +251,7 @@ void NextAddress(grpc_error_handle error) {
   grpc_channel_args_destroy(args);
 }
 
-void OnResolved(
+void HttpCliRequest::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
   dns_request_.reset();
   if (!addresses_or.ok()) {
@@ -263,28 +262,5 @@ void OnResolved(
   next_address_ = 0;
   NextAddress(GRPC_ERROR_NONE);
 }
-
-grpc_slice request_text_;
-grpc_http_parser parser_;
-std::vector<grpc_resolved_address> addresses_;
-size_t next_address_ = 0;
-grpc_endpoint* ep_ = nullptr;
-ResourceQuotaRefPtr resource_quota_;
-std::string host_;
-std::string ssl_host_override_;
-grpc_millis deadline_;
-int have_read_byte_ = 0;
-const grpc_httpcli_handshaker* handshaker_;
-grpc_closure* on_done_;
-grpc_pollset_set* pollset_set_;
-grpc_iomgr_object iomgr_obj_;
-grpc_slice_buffer incoming_;
-grpc_slice_buffer outgoing_;
-grpc_closure on_read_;
-grpc_closure done_write_;
-grpc_closure connected_;
-grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
-OrphanablePtr<DNSResolver::Request> dns_request_;
-};
 
 }  // namespace grpc_core
