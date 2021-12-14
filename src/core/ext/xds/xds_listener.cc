@@ -279,10 +279,8 @@ grpc_error_handle HttpConnectionManagerParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "'xff_num_trusted_hops' must be zero");
   }
-  size_t original_ip_detection_extensions;
-  envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_original_ip_detection_extensions(
-      http_connection_manager_proto, &original_ip_detection_extensions);
-  if (original_ip_detection_extensions > 0) {
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_original_ip_detection_extensions(
+          http_connection_manager_proto)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "'original_ip_detection_extensions' must be empty");
   }

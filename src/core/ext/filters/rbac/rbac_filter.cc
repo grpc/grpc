@@ -119,6 +119,10 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
         }
       }
     }
+    if (error != GRPC_ERROR_NONE) {
+      error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                                 GRPC_STATUS_PERMISSION_DENIED);
+    }
   } else {
     GRPC_ERROR_REF(error);
   }
