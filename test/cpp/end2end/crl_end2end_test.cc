@@ -41,7 +41,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-constexpr char kCredentialsDir[] = "src/core/tsi/test_creds/crl_supported/";
+constexpr char kCredentialsDir[] = "test/core/tsi/test_creds/crl_data/";
 
 void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
                  bool revoked_server_certs) {
