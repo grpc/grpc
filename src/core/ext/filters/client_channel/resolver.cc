@@ -38,35 +38,28 @@ Resolver::Resolver()
 // Resolver::Result
 //
 
-Resolver::Result::~Result() {
-  GRPC_ERROR_UNREF(service_config_error);
-  grpc_channel_args_destroy(args);
-}
+Resolver::Result::~Result() { grpc_channel_args_destroy(args); }
 
-Resolver::Result::Result(const Result& other) {
-  addresses = other.addresses;
-  service_config = other.service_config;
-  service_config_error = GRPC_ERROR_REF(other.service_config_error);
-  args = grpc_channel_args_copy(other.args);
-}
+Resolver::Result::Result(const Result& other)
+    : addresses(other.addresses),
+      service_config(other.service_config),
+      resolution_note(other.resolution_note),
+      args(grpc_channel_args_copy(other.args)) {}
 
-Resolver::Result::Result(Result&& other) noexcept {
-  addresses = std::move(other.addresses);
-  service_config = std::move(other.service_config);
-  service_config_error = other.service_config_error;
-  other.service_config_error = GRPC_ERROR_NONE;
-  args = other.args;
+Resolver::Result::Result(Result&& other) noexcept
+    : addresses(std::move(other.addresses)),
+      service_config(std::move(other.service_config)),
+      resolution_note(std::move(other.resolution_note)),
+      // TODO(roth): Use std::move() once channel args is converted to C++.
+      args(other.args) {
   other.args = nullptr;
 }
 
 Resolver::Result& Resolver::Result::operator=(const Result& other) {
-  if (&other == this) {
-    return *this;
-  }
+  if (&other == this) return *this;
   addresses = other.addresses;
   service_config = other.service_config;
-  GRPC_ERROR_UNREF(service_config_error);
-  service_config_error = GRPC_ERROR_REF(other.service_config_error);
+  resolution_note = other.resolution_note;
   grpc_channel_args_destroy(args);
   args = grpc_channel_args_copy(other.args);
   return *this;
@@ -75,9 +68,8 @@ Resolver::Result& Resolver::Result::operator=(const Result& other) {
 Resolver::Result& Resolver::Result::operator=(Result&& other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
-  GRPC_ERROR_UNREF(service_config_error);
-  service_config_error = other.service_config_error;
-  other.service_config_error = GRPC_ERROR_NONE;
+  resolution_note = std::move(other.resolution_note);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
   grpc_channel_args_destroy(args);
   args = other.args;
   other.args = nullptr;

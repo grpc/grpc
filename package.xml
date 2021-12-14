@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.43.0dev</release>
-  <api>1.43.0dev</api>
+  <release>1.44.0dev</release>
+  <api>1.44.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.43.0 update
+- gRPC Core 1.44.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -442,8 +442,14 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.c" role="src" />
@@ -701,6 +707,7 @@
     <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
@@ -714,10 +721,23 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type_impl.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
@@ -824,8 +844,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/arena.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/chunked_vector.h" role="src" />
@@ -1065,6 +1083,8 @@
     <file baseinstalldir="/" name="src/core/lib/promise/seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.cc" role="src" />
@@ -1253,8 +1273,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
@@ -1355,6 +1373,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/dynamic_annotations.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/errno_saver.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/fast_type_id.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/hide_ptr.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/identity.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/inline_variable.h" role="src" />
@@ -1462,6 +1481,51 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/exponential_biased.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/sample_recorder.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/bernoulli_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/beta_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/distributions.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/exponential_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/gaussian_distribution.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/gaussian_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/distribution_caller.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/fast_uniform_bits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/fastmath.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/generate_real.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/iostream_state_saver.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/nonsecure_base.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/pcg_engine.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/platform.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/pool_urbg.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/pool_urbg.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_detect.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_detect.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_engine.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_hwaes.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_slow.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_slow.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/salted_seed_seq.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/seed_material.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/seed_material.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/traits.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/uniform_helper.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/wide_multiply.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/log_uniform_int_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/poisson_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/random.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_gen_exception.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_gen_exception.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_sequences.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/seed_sequences.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/uniform_int_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/uniform_real_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/zipf_distribution.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/internal/status_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/internal/statusor_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/status/status.cc" role="src" />

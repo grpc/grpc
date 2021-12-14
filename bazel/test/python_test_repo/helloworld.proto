@@ -23,6 +23,7 @@ package helloworld;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
+import "subdir/hello_dep.proto";
 
 // The greeting service definition.
 service Greeter {
@@ -36,8 +37,10 @@ message HelloRequest {
   google.protobuf.Timestamp request_initiation = 2;
 }
 
-// The response message containing the greetings
+// The response message containing the greetings, plus some additional
+// data of a type defined in a separate .proto file.
 message HelloReply {
   string message = 1;
   google.protobuf.Duration request_duration = 2;
+  HelloDep dep = 3;
 }

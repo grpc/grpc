@@ -21,6 +21,7 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
@@ -171,6 +172,12 @@ struct CopyConstructors {
     return FromCopiedBuffer(reinterpret_cast<const char*>(buffer.data()),
                             buffer.size());
   }
+
+  static Out FromInt64(int64_t i) {
+    char buffer[GPR_LTOA_MIN_BUFSIZE];
+    gpr_ltoa(i, buffer);
+    return FromCopiedString(buffer);
+  }
 };
 
 }  // namespace slice_detail
@@ -319,6 +326,11 @@ class Slice : public slice_detail::BaseSlice,
   // valid state.
   Slice TakeSubSlice(size_t pos, size_t n) {
     return Slice(grpc_slice_sub_no_ref(TakeCSlice(), pos, pos + n));
+  }
+
+  // Return a sub slice of this one. Adds a reference to the underlying slice.
+  Slice RefSubSlice(size_t pos, size_t n) const {
+    return Slice(grpc_slice_sub(c_slice(), pos, pos + n));
   }
 
   Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }

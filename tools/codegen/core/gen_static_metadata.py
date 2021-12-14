@@ -36,18 +36,9 @@ import perfection
 CONFIG = [
     # metadata strings
     'grpc-internal-encoding-request',
-    ':path',
     'grpc-encoding',
     'grpc-accept-encoding',
-    ':authority',
-    'grpc-status',
-    'grpc-previous-rpc-attempts',
-    'grpc-retry-pushback-ms',
     'grpc-timeout',
-    '1',
-    '2',
-    '3',
-    '4',
     '',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
@@ -127,13 +118,9 @@ CONFIG = [
     ('via', ''),
     ('www-authenticate', ''),
     # end hpack static elements
-    ('grpc-status', '0'),
-    ('grpc-status', '1'),
-    ('grpc-status', '2'),
     ('grpc-encoding', 'identity'),
     ('grpc-encoding', 'gzip'),
     ('grpc-encoding', 'deflate'),
-    ('content-type', 'application/grpc'),
     (':scheme', 'grpc'),
     (':method', 'PUT'),
     ('accept-encoding', ''),
@@ -145,20 +132,11 @@ CONFIG = [
 # All entries here are ignored when counting non-default initial metadata that
 # prevents the chttp2 server from sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    ':path',
-    ':method',
-    ':status',
-    ':authority',
-    ':scheme',
-    'grpc-status',
     'grpc-encoding',
     'grpc-accept-encoding',
-    'content-type',
     'content-encoding',
     'accept-encoding',
     'grpc-internal-encoding-request',
-    'grpc-previous-rpc-attempts',
-    'grpc-retry-pushback-ms',
 ]
 
 COMPRESSION_ALGORITHMS = [

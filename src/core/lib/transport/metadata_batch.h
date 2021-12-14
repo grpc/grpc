@@ -23,12 +23,15 @@
 
 #include <stdbool.h>
 
+#include <limits>
+
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/chunked_vector.h"
@@ -84,12 +87,13 @@ struct GrpcTimeoutMetadata {
   using ValueType = grpc_millis;
   using MementoType = grpc_millis;
   static absl::string_view key() { return "grpc-timeout"; }
-  static MementoType ParseMemento(Slice value) {
-    grpc_millis timeout;
-    if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value.c_slice(), &timeout))) {
-      timeout = GRPC_MILLIS_INF_FUTURE;
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    auto timeout = ParseTimeout(value);
+    if (!timeout.has_value()) {
+      on_error("invalid value", value);
+      return GRPC_MILLIS_INF_FUTURE;
     }
-    return timeout;
+    return *timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
     if (timeout == GRPC_MILLIS_INF_FUTURE) {
@@ -98,9 +102,7 @@ struct GrpcTimeoutMetadata {
     return ExecCtx::Get()->Now() + timeout;
   }
   static Slice Encode(ValueType x) {
-    char timeout[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
-    grpc_http2_encode_timeout(x, timeout);
-    return Slice::FromCopiedString(timeout);
+    return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
   }
   static MementoType DisplayValue(MementoType x) { return x; }
 };
@@ -116,10 +118,12 @@ struct TeMetadata {
   };
   using MementoType = ValueType;
   static absl::string_view key() { return "te"; }
-  static MementoType ParseMemento(Slice value) {
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
     auto out = kInvalid;
     if (value == "trailers") {
       out = kTrailers;
+    } else {
+      on_error("invalid value", value);
     }
     return out;
   }
@@ -138,10 +142,167 @@ struct TeMetadata {
   }
 };
 
+// content-type metadata trait.
+struct ContentTypeMetadata {
+  // gRPC says that content-type can be application/grpc[;something]
+  // Core has only ever verified the prefix.
+  // IF we want to start verifying more, we can expand this type.
+  enum ValueType {
+    kApplicationGrpc,
+    kEmpty,
+    kInvalid,
+  };
+  using MementoType = ValueType;
+  static absl::string_view key() { return "content-type"; }
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    auto out = kInvalid;
+    auto value_string = value.as_string_view();
+    if (value_string == "application/grpc") {
+      out = kApplicationGrpc;
+    } else if (absl::StartsWith(value_string, "application/grpc;")) {
+      out = kApplicationGrpc;
+    } else if (absl::StartsWith(value_string, "application/grpc+")) {
+      out = kApplicationGrpc;
+    } else if (value_string.empty()) {
+      out = kEmpty;
+    } else {
+      on_error("invalid value", value);
+    }
+    return out;
+  }
+  static ValueType MementoToValue(MementoType content_type) {
+    return content_type;
+  }
+  static StaticSlice Encode(ValueType x) {
+    switch (x) {
+      case kEmpty:
+        return StaticSlice::FromStaticString("");
+      case kApplicationGrpc:
+        return StaticSlice::FromStaticString("application/grpc");
+      case kInvalid:
+        abort();
+    }
+    GPR_UNREACHABLE_CODE(
+        return StaticSlice::FromStaticString("unrepresentable value"));
+  }
+  static const char* DisplayValue(MementoType content_type) {
+    switch (content_type) {
+      case ValueType::kApplicationGrpc:
+        return "application/grpc";
+      case ValueType::kEmpty:
+        return "";
+      default:
+        return "<discarded-invalid-value>";
+    }
+  }
+};
+
+// scheme metadata trait.
+struct HttpSchemeMetadata {
+  enum ValueType {
+    kHttp,
+    kHttps,
+    kInvalid,
+  };
+  using MementoType = ValueType;
+  static absl::string_view key() { return ":scheme"; }
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    return Parse(value.as_string_view(), on_error);
+  }
+  static ValueType Parse(absl::string_view value,
+                         MetadataParseErrorFn on_error) {
+    if (value == "http") {
+      return kHttp;
+    } else if (value == "https") {
+      return kHttps;
+    }
+    on_error("invalid value", Slice::FromCopiedBuffer(value));
+    return kInvalid;
+  }
+  static ValueType MementoToValue(MementoType content_type) {
+    return content_type;
+  }
+  static StaticSlice Encode(ValueType x) {
+    switch (x) {
+      case kHttp:
+        return StaticSlice::FromStaticString("http");
+      case kHttps:
+        return StaticSlice::FromStaticString("https");
+      default:
+        abort();
+    }
+  }
+  static const char* DisplayValue(MementoType content_type) {
+    switch (content_type) {
+      case kHttp:
+        return "http";
+      case kHttps:
+        return "https";
+      default:
+        return "<discarded-invalid-value>";
+    }
+  }
+};
+
+// method metadata trait.
+struct HttpMethodMetadata {
+  enum ValueType {
+    kPost,
+    kPut,
+    kGet,
+    kInvalid,
+  };
+  using MementoType = ValueType;
+  static absl::string_view key() { return ":method"; }
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    auto out = kInvalid;
+    auto value_string = value.as_string_view();
+    if (value_string == "POST") {
+      out = kPost;
+    } else if (value_string == "PUT") {
+      out = kPut;
+    } else if (value_string == "GET") {
+      out = kGet;
+    } else {
+      on_error("invalid value", value);
+    }
+    return out;
+  }
+  static ValueType MementoToValue(MementoType content_type) {
+    return content_type;
+  }
+  static StaticSlice Encode(ValueType x) {
+    switch (x) {
+      case kPost:
+        return StaticSlice::FromStaticString("POST");
+      case kPut:
+        return StaticSlice::FromStaticString("PUT");
+      case kGet:
+        return StaticSlice::FromStaticString("GET");
+      default:
+        abort();
+    }
+  }
+  static const char* DisplayValue(MementoType content_type) {
+    switch (content_type) {
+      case kPost:
+        return "POST";
+      case kPut:
+        return "PUT";
+      case kGet:
+        return "GET";
+      default:
+        return "<discarded-invalid-value>";
+    }
+  }
+};
+
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
-  static MementoType ParseMemento(Slice value) { return value.TakeOwned(); }
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn) {
+    return value.TakeOwned();
+  }
   static ValueType MementoToValue(MementoType value) { return value; }
   static Slice Encode(const ValueType& x) { return x.Ref(); }
   static absl::string_view DisplayValue(const MementoType& value) {
@@ -184,6 +345,65 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
+// :authority metadata trait.
+struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return ":authority"; }
+};
+
+// :path metadata trait.
+struct HttpPathMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return ":path"; }
+};
+
+// We separate SimpleIntBasedMetadata into two pieces: one that does not depend
+// on the invalid value, and one that does. This allows the compiler to easily
+// see the functions that are shared, and helps reduce code bloat here.
+template <typename Int>
+struct SimpleIntBasedMetadataBase {
+  using ValueType = Int;
+  using MementoType = Int;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(ValueType x) { return Slice::FromInt64(x); }
+  static Int DisplayValue(MementoType x) { return x; }
+};
+
+template <typename Int, Int kInvalidValue>
+struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
+  static constexpr Int invalid_value() { return kInvalidValue; }
+  static Int ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    Int out;
+    if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
+      on_error("not an integer", value);
+      out = kInvalidValue;
+    }
+    return out;
+  }
+};
+
+// grpc-status metadata trait.
+struct GrpcStatusMetadata
+    : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
+  static absl::string_view key() { return "grpc-status"; }
+};
+
+// grpc-previous-rpc-attempts metadata trait.
+struct GrpcPreviousRpcAttemptsMetadata
+    : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
+};
+
+// grpc-retry-pushback-ms metadata trait.
+struct GrpcRetryPushbackMsMetadata
+    : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
+  static absl::string_view key() { return "grpc-retry-pushback-ms"; }
+};
+
+// :status metadata trait.
+// TODO(ctiller): consider moving to uint16_t
+struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static absl::string_view key() { return ":status"; }
+};
+
 namespace metadata_detail {
 
 // Helper type - maps a string name to a trait.
@@ -193,7 +413,7 @@ struct NameLookup;
 template <typename Trait, typename... Traits>
 struct NameLookup<Trait, Traits...> {
   // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
-  // Traits. If not found, call op->NotFount().
+  // Traits. If not found, call op->NotFound().
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->Found(Trait())) {
@@ -219,9 +439,11 @@ struct NameLookup<> {
 template <typename ParseMementoFn, typename MementoToValueFn>
 struct ParseValue {
   template <ParseMementoFn parse_memento, MementoToValueFn memento_to_value>
-  static GPR_ATTRIBUTE_NOINLINE auto Parse(Slice* value)
-      -> decltype(memento_to_value(parse_memento(std::move(*value)))) {
-    return memento_to_value(parse_memento(std::move(*value)));
+  static GPR_ATTRIBUTE_NOINLINE auto Parse(Slice* value,
+                                           MetadataParseErrorFn on_error)
+      -> decltype(memento_to_value(parse_memento(std::move(*value),
+                                                 on_error))) {
+    return memento_to_value(parse_memento(std::move(*value), on_error));
   }
 };
 
@@ -231,13 +453,17 @@ struct ParseValue {
 template <typename Container>
 class ParseHelper {
  public:
-  ParseHelper(Slice value, size_t transport_size)
-      : value_(std::move(value)), transport_size_(transport_size) {}
+  ParseHelper(Slice value, MetadataParseErrorFn on_error, size_t transport_size)
+      : value_(std::move(value)),
+        on_error_(on_error),
+        transport_size_(transport_size) {}
 
   template <typename Trait>
-  ParsedMetadata<Container> Found(Trait trait) {
+  GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> Found(Trait trait) {
     return ParsedMetadata<Container>(
-        trait, Trait::ParseMemento(std::move(value_)), transport_size_);
+        trait,
+        ParseValueToMemento<typename Trait::MementoType, Trait::ParseMemento>(),
+        transport_size_);
   }
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
@@ -249,7 +475,13 @@ class ParseHelper {
   }
 
  private:
+  template <typename T, T (*parse_memento)(Slice, MetadataParseErrorFn)>
+  GPR_ATTRIBUTE_NOINLINE T ParseValueToMemento() {
+    return parse_memento(std::move(value_), on_error_);
+  }
+
   Slice value_;
+  MetadataParseErrorFn on_error_;
   const size_t transport_size_;
 };
 
@@ -259,8 +491,8 @@ class ParseHelper {
 template <typename Container>
 class AppendHelper {
  public:
-  AppendHelper(Container* container, Slice value)
-      : container_(container), value_(std::move(value)) {}
+  AppendHelper(Container* container, Slice value, MetadataParseErrorFn on_error)
+      : container_(container), value_(std::move(value)), on_error_(on_error) {}
 
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
@@ -268,23 +500,41 @@ class AppendHelper {
         trait, ParseValue<decltype(Trait::ParseMemento),
                           decltype(Trait::MementoToValue)>::
                    template Parse<Trait::ParseMemento, Trait::MementoToValue>(
-                       &value_));
+                       &value_, on_error_));
   }
 
-  void NotFound(absl::string_view key) {
-    GPR_ASSERT(GRPC_ERROR_NONE ==
-               container_->Append(grpc_mdelem_from_slices(
-                   grpc_slice_intern(
-                       grpc_slice_from_static_buffer(key.data(), key.length())),
-                   value_.TakeCSlice())));
+  GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
+    grpc_mdelem elem =
+        grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
+                                    key.data(), key.length())),
+                                value_.TakeCSlice());
+    if (!GRPC_LOG_IF_ERROR("AppendMetadata", container_->Append(elem))) {
+      GRPC_MDELEM_UNREF(elem);
+    }
   }
 
  private:
   Container* const container_;
   Slice value_;
+  MetadataParseErrorFn on_error_;
 };
 
 }  // namespace metadata_detail
+
+// Helper function for encoders
+// Given a metadata trait, convert the value to a slice.
+template <typename Which>
+absl::enable_if_t<std::is_same<typename Which::ValueType, Slice>::value,
+                  const Slice&>
+MetadataValueAsSlice(const Slice& slice) {
+  return slice;
+}
+
+template <typename Which>
+absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
+MetadataValueAsSlice(typename Which::ValueType value) {
+  return Which::Encode(value);
+}
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 // Right now the API presented is the minimal one that will allow us to
@@ -311,7 +561,9 @@ class AppendHelper {
 //   static absl::string_view key() { return "grpc-xyz"; }
 //   // Parse a memento from a slice
 //   // Takes ownership of value
-//   static MementoType ParseMemento(Slice value) { ... }
+//   // Calls fn in the case of an error that should be reported to the user
+//   static MementoType ParseMemento(Slice value, MementoParseErrorFn fn) { ...
+//   }
 //   // Convert a memento to a value
 //   static ValueType MementoToValue(MementoType memento) { ... }
 //   // Convert a value to its canonical text wire format (the format that
@@ -367,10 +619,10 @@ class MetadataMap {
   // transitions.
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
+    table_.ForEach(EncodeWrapper<Encoder>{encoder});
     for (auto* l = list_.head; l; l = l->next) {
       encoder->Encode(l->md);
     }
-    table_.ForEach(EncodeWrapper<Encoder>{encoder});
   }
 
   // Get the pointer to the value of some known metadata.
@@ -434,9 +686,10 @@ class MetadataMap {
   // TODO(ctiller): key should probably be an absl::string_view.
   // Once we don't care about interning anymore, make that change!
   static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value,
-                                           uint32_t transport_size) {
+                                           uint32_t transport_size,
+                                           MetadataParseErrorFn on_error) {
     metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(),
-                                                     transport_size);
+                                                     on_error, transport_size);
     return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
@@ -447,8 +700,10 @@ class MetadataMap {
   }
 
   // Append a key/value pair - takes ownership of value
-  void Append(absl::string_view key, Slice value) {
-    metadata_detail::AppendHelper<MetadataMap> helper(this, value.TakeOwned());
+  void Append(absl::string_view key, Slice value,
+              MetadataParseErrorFn on_error) {
+    metadata_detail::AppendHelper<MetadataMap> helper(this, value.TakeOwned(),
+                                                      on_error);
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
@@ -582,6 +837,22 @@ class MetadataMap {
     void operator()(const Value<Which>& which) {
       encoder->Encode(Which(), which.value);
     }
+  };
+
+  // Encoder to compute TransportSize
+  class TransportSizeEncoder {
+   public:
+    void Encode(grpc_mdelem elem) { size_ += GRPC_MDELEM_LENGTH(elem); }
+
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      size_ += Which::key().length() + Which::Encode(value).length() + 32;
+    }
+
+    size_t size() const { return size_; }
+
+   private:
+    uint32_t size_ = 0;
   };
 
   void AssertValidCallouts();
@@ -941,12 +1212,9 @@ void MetadataMap<Traits...>::Clear() {
 
 template <typename... Traits>
 size_t MetadataMap<Traits...>::TransportSize() const {
-  size_t size = 0;
-  for (grpc_linked_mdelem* elem = list_.head; elem != nullptr;
-       elem = elem->next) {
-    size += GRPC_MDELEM_LENGTH(elem->md);
-  }
-  return size;
+  TransportSizeEncoder enc;
+  Encode(&enc);
+  return enc.size();
 }
 
 template <typename... Traits>
@@ -968,9 +1236,17 @@ bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
 }  // namespace grpc_core
 
 using grpc_metadata_batch = grpc_core::MetadataMap<
-    grpc_core::GrpcTimeoutMetadata, grpc_core::TeMetadata,
-    grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata,
-    grpc_core::HostMetadata, grpc_core::XEndpointLoadMetricsBinMetadata,
+    // Colon prefixed headers first
+    grpc_core::HttpPathMetadata, grpc_core::HttpAuthorityMetadata,
+    grpc_core::HttpMethodMetadata, grpc_core::HttpStatusMetadata,
+    grpc_core::HttpSchemeMetadata,
+    // Non-colon prefixed headers begin here
+    grpc_core::ContentTypeMetadata, grpc_core::TeMetadata,
+    grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
+    grpc_core::GrpcPreviousRpcAttemptsMetadata,
+    grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata,
+    grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
+    grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata>;
 

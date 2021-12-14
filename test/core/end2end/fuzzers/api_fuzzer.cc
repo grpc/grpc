@@ -137,13 +137,12 @@ void my_resolve_address(const char* addr, const char* /*default_port*/,
 static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
                                                        nullptr};
 
-grpc_ares_request* my_dns_lookup_ares_locked(
+grpc_ares_request* my_dns_lookup_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/, int /*query_timeout*/,
-    std::shared_ptr<grpc_core::WorkSerializer> /*combiner*/) {
+    char** /*service_config_json*/, int /*query_timeout*/) {
   addr_req* r = new addr_req();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -155,7 +154,7 @@ grpc_ares_request* my_dns_lookup_ares_locked(
   return nullptr;
 }
 
-static void my_cancel_ares_request_locked(grpc_ares_request* request) {
+static void my_cancel_ares_request(grpc_ares_request* request) {
   GPR_ASSERT(request == nullptr);
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -189,7 +188,8 @@ static void do_connect(void* arg, grpc_error_handle error) {
         core_server->channel_args(), server, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport",
-        core_server->SetupTransport(transport, nullptr, nullptr, nullptr)));
+        core_server->SetupTransport(transport, nullptr,
+                                    core_server->channel_args(), nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
@@ -729,8 +729,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
     grpc_core::Executor::SetThreadingAll(false);
   }
   grpc_set_resolver_impl(&fuzzer_resolver);
-  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
-  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
+  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_cancel_ares_request = my_cancel_ares_request;
 
   GPR_ASSERT(g_channel == nullptr);
   GPR_ASSERT(g_server == nullptr);

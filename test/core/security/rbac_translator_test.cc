@@ -21,25 +21,32 @@ namespace grpc_core {
 
 namespace {
 
-MATCHER_P2(EqualsPrincipalName, expected_matcher_type, expected_matcher_value,
-           "") {
+MATCHER_P3(EqualsPrincipalName, expected_matcher_type, expected_matcher_value,
+           is_regex, "") {
   return arg->type == Rbac::Principal::RuleType::kPrincipalName &&
-         arg->string_matcher.value().type() == expected_matcher_type &&
-         arg->string_matcher.value().string_matcher() == expected_matcher_value;
+                 arg->string_matcher.value().type() == expected_matcher_type && is_regex
+             ? arg->string_matcher.value().regex_matcher()->pattern() ==
+                   expected_matcher_value
+             : arg->string_matcher.value().string_matcher() == expected_matcher_value;
 }
 
-MATCHER_P2(EqualsPath, expected_matcher_type, expected_matcher_value, "") {
+MATCHER_P3(EqualsPath, expected_matcher_type, expected_matcher_value, is_regex,
+           "") {
   return arg->type == Rbac::Permission::RuleType::kPath &&
-         arg->string_matcher.type() == expected_matcher_type &&
-         arg->string_matcher.string_matcher() == expected_matcher_value;
+                 arg->string_matcher.type() == expected_matcher_type && is_regex
+             ? arg->string_matcher.regex_matcher()->pattern() ==
+                   expected_matcher_value
+             : arg->string_matcher.string_matcher() == expected_matcher_value;
 }
 
-MATCHER_P3(EqualsHeader, expected_name, expected_matcher_type,
-           expected_matcher_value, "") {
+MATCHER_P4(EqualsHeader, expected_name, expected_matcher_type,
+           expected_matcher_value, is_regex, "") {
   return arg->type == Rbac::Permission::RuleType::kHeader &&
-         arg->header_matcher.name() == expected_name &&
-         arg->header_matcher.type() == expected_matcher_type &&
-         arg->header_matcher.string_matcher() == expected_matcher_value;
+                 arg->header_matcher.name() == expected_name &&
+                 arg->header_matcher.type() == expected_matcher_type && is_regex
+             ? arg->header_matcher.regex_matcher()->pattern() ==
+                   expected_matcher_value
+             : arg->header_matcher.string_matcher() == expected_matcher_value;
 }
 
 }  // namespace
@@ -292,40 +299,41 @@ TEST(GenerateRbacPoliciesTest, ParseSourceSuccess) {
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::kAllow);
-  EXPECT_THAT(
-      rbac_policies.value().allow_policy.policies,
-      ::testing::ElementsAre(::testing::Pair(
-          "authz_allow_policy",
-          ::testing::AllOf(
-              ::testing::Field(
-                  &Rbac::Policy::permissions,
-                  ::testing::Field(&Rbac::Permission::type,
-                                   Rbac::Permission::RuleType::kAny)),
-              ::testing::Field(
-                  &Rbac::Policy::principals,
+  EXPECT_THAT(rbac_policies.value().allow_policy.policies,
+              ::testing::ElementsAre(::testing::Pair(
+                  "authz_allow_policy",
                   ::testing::AllOf(
-                      ::testing::Field(&Rbac::Principal::type,
-                                       Rbac::Principal::RuleType::kAnd),
                       ::testing::Field(
-                          &Rbac::Principal::principals,
-                          ::testing::ElementsAre(::testing::AllOf(
-                              ::testing::Pointee(::testing::Field(
-                                  &Rbac::Principal::type,
-                                  Rbac::Principal::RuleType::kOr)),
-                              ::testing::Pointee(::testing::Field(
+                          &Rbac::Policy::permissions,
+                          ::testing::Field(&Rbac::Permission::type,
+                                           Rbac::Permission::RuleType::kAny)),
+                      ::testing::Field(
+                          &Rbac::Policy::principals,
+                          ::testing::AllOf(
+                              ::testing::Field(&Rbac::Principal::type,
+                                               Rbac::Principal::RuleType::kAnd),
+                              ::testing::Field(
                                   &Rbac::Principal::principals,
-                                  ::testing::ElementsAre(
-                                      EqualsPrincipalName(
-                                          StringMatcher::Type::kExact,
-                                          "spiffe://foo.abc"),
-                                      EqualsPrincipalName(
-                                          StringMatcher::Type::kPrefix,
-                                          "spiffe://bar"),
-                                      EqualsPrincipalName(
-                                          StringMatcher::Type::kSuffix, "baz"),
-                                      EqualsPrincipalName(
-                                          StringMatcher::Type::kExact,
-                                          "spiffe://abc.*.com")))))))))))));
+                                  ::testing::ElementsAre(::testing::AllOf(
+                                      ::testing::Pointee(::testing::Field(
+                                          &Rbac::Principal::type,
+                                          Rbac::Principal::RuleType::kOr)),
+                                      ::testing::Pointee(::testing::Field(
+                                          &Rbac::Principal::principals,
+                                          ::testing::ElementsAre(
+                                              EqualsPrincipalName(
+                                                  StringMatcher::Type::kExact,
+                                                  "spiffe://foo.abc", false),
+                                              EqualsPrincipalName(
+                                                  StringMatcher::Type::kPrefix,
+                                                  "spiffe://bar", false),
+                                              EqualsPrincipalName(
+                                                  StringMatcher::Type::kSuffix,
+                                                  "baz", false),
+                                              EqualsPrincipalName(
+                                                  StringMatcher::Type::kExact,
+                                                  "spiffe://abc.*.com",
+                                                  false)))))))))))));
   EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::kDeny);
   EXPECT_THAT(
       rbac_policies.value().deny_policy.policies,
@@ -350,8 +358,8 @@ TEST(GenerateRbacPoliciesTest, ParseSourceSuccess) {
                               ::testing::Pointee(::testing::Field(
                                   &Rbac::Principal::principals,
                                   ::testing::ElementsAre(EqualsPrincipalName(
-                                      StringMatcher::Type::kPrefix,
-                                      "")))))))))))));
+                                      StringMatcher::Type::kSafeRegex, ".+",
+                                      true)))))))))))));
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectRequestType) {
@@ -447,11 +455,11 @@ TEST(GenerateRbacPoliciesTest, ParseRequestPathsSuccess) {
                                   &Rbac::Permission::permissions,
                                   ::testing::ElementsAre(
                                       EqualsPath(StringMatcher::Type::kExact,
-                                                 "path-foo"),
+                                                 "path-foo", false),
                                       EqualsPath(StringMatcher::Type::kPrefix,
-                                                 "path-bar"),
+                                                 "path-bar", false),
                                       EqualsPath(StringMatcher::Type::kSuffix,
-                                                 "baz")))))))))))));
+                                                 "baz", false)))))))))))));
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::kAllow);
   EXPECT_THAT(
       rbac_policies.value().allow_policy.policies,
@@ -475,9 +483,9 @@ TEST(GenerateRbacPoliciesTest, ParseRequestPathsSuccess) {
                                   Rbac::Permission::RuleType::kOr)),
                               ::testing::Pointee(::testing::Field(
                                   &Rbac::Permission::permissions,
-                                  ::testing::ElementsAre(
-                                      EqualsPath(StringMatcher::Type::kPrefix,
-                                                 "")))))))))))));
+                                  ::testing::ElementsAre(EqualsPath(
+                                      StringMatcher::Type::kSafeRegex, ".+",
+                                      true)))))))))))));
 }
 
 TEST(GenerateRbacPoliciesTest, IncorrectHeaderType) {
@@ -670,8 +678,8 @@ TEST(GenerateRbacPoliciesTest, ParseRequestHeadersSuccess) {
                                                   EqualsHeader(
                                                       "key-1",
                                                       HeaderMatcher::Type::
-                                                          kPrefix,
-                                                      ""))))),
+                                                          kSafeRegex,
+                                                      ".+", true))))),
                                       ::testing::AllOf(
                                           ::testing::Pointee(::testing::Field(
                                               &Rbac::Permission::type,
@@ -682,17 +690,18 @@ TEST(GenerateRbacPoliciesTest, ParseRequestHeadersSuccess) {
                                                   EqualsHeader("key-2",
                                                                HeaderMatcher::
                                                                    Type::kExact,
-                                                               "foo"),
+                                                               "foo", false),
                                                   EqualsHeader(
                                                       "key-2",
                                                       HeaderMatcher::Type::
                                                           kPrefix,
-                                                      "bar"),
+                                                      "bar", false),
                                                   EqualsHeader(
                                                       "key-2",
                                                       HeaderMatcher::Type::
                                                           kSuffix,
-                                                      "baz")))))))))))))))));
+                                                      "baz",
+                                                      false)))))))))))))))));
 }
 
 TEST(GenerateRbacPoliciesTest, ParseRulesArraySuccess) {
@@ -743,8 +752,8 @@ TEST(GenerateRbacPoliciesTest, ParseRulesArraySuccess) {
                                   ::testing::Pointee(::testing::Field(
                                       &Rbac::Permission::permissions,
                                       ::testing::ElementsAre(EqualsPath(
-                                          StringMatcher::Type::kExact,
-                                          "foo"))))))))),
+                                          StringMatcher::Type::kExact, "foo",
+                                          false))))))))),
                   ::testing::Field(
                       &Rbac::Policy::principals,
                       ::testing::AllOf(
@@ -761,7 +770,8 @@ TEST(GenerateRbacPoliciesTest, ParseRulesArraySuccess) {
                                       ::testing::ElementsAre(
                                           EqualsPrincipalName(
                                               StringMatcher::Type::kExact,
-                                              "spiffe://foo.abc"))))))))))),
+                                              "spiffe://foo.abc",
+                                              false))))))))))),
           ::testing::Pair(
               "authz_allow_policy_2",
               ::testing::AllOf(

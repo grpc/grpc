@@ -304,7 +304,7 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
       "      \"name\": \"allow_echo\","
       "      \"request\": {"
       "        \"paths\": ["
-      "          \"*/Echo\""
+      "          \"*\""
       "        ],"
       "        \"headers\": ["
       "          {"

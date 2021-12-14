@@ -25,6 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
@@ -38,10 +39,13 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
+  auto memory_allocator = grpc_core::ResourceQuota::Default()
+                              ->memory_quota()
+                              ->CreateMemoryAllocator("test-allocator");
   {
     std::unique_ptr<grpc_core::HPackParser> parser(new grpc_core::HPackParser);
     for (int i = 0; i < msg.frames_size(); i++) {
-      auto arena = grpc_core::MakeScopedArena(1024);
+      auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
       grpc_core::ExecCtx exec_ctx;
       grpc_metadata_batch b(arena.get());
 

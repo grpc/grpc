@@ -106,8 +106,7 @@ class ServerLoadReportingCallData : public CallData {
   // different from the actual backend in the case of, for example,
   // load-balanced targets. We store a copy of the metadata slice in order to
   // lowercase it. */
-  char* target_host_;
-  size_t target_host_len_;
+  std::string target_host_;
 
   // The client IP address (including a length prefix) and the load reporting
   // token.

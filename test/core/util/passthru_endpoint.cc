@@ -81,7 +81,9 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->pending_read_op.cb,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
-    grpc_slice_buffer_reset_and_unref(&m->read_buffer);
+    // Move any pending data into pending_read_op.slices so that it may be
+    // free'ed by the executing callback.
+    grpc_slice_buffer_move_into(&m->read_buffer, m->pending_read_op.slices);
     m->pending_read_op.is_armed = false;
     return;
   }

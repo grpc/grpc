@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.43.0-dev'
+  version = '1.44.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -202,6 +202,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
@@ -416,7 +417,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h',
                       'src/core/ext/upb-generated/google/api/annotations.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                      'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                       'src/core/ext/upb-generated/google/api/http.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/any.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
@@ -546,6 +550,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/certificate_provider_registry.h',
                       'src/core/ext/xds/certificate_provider_store.h',
                       'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
+                      'src/core/ext/xds/upb_utils.h',
                       'src/core/ext/xds/xds_api.h',
                       'src/core/ext/xds/xds_bootstrap.h',
                       'src/core/ext/xds/xds_certificate_provider.h',
@@ -553,8 +558,15 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.h',
+                      'src/core/ext/xds/xds_cluster.h',
+                      'src/core/ext/xds/xds_common_types.h',
+                      'src/core/ext/xds/xds_endpoint.h',
                       'src/core/ext/xds/xds_http_fault_filter.h',
                       'src/core/ext/xds/xds_http_filters.h',
+                      'src/core/ext/xds/xds_listener.h',
+                      'src/core/ext/xds/xds_resource_type.h',
+                      'src/core/ext/xds/xds_resource_type_impl.h',
+                      'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.h',
                       'src/core/lib/address_utils/parse_address.h',
                       'src/core/lib/address_utils/sockaddr_utils.h',
@@ -598,7 +610,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tls.h',
                       'src/core/lib/gpr/tmpfile.h',
                       'src/core/lib/gpr/useful.h',
-                      'src/core/lib/gprpp/arena.h',
                       'src/core/lib/gprpp/atomic_utils.h',
                       'src/core/lib/gprpp/bitset.h',
                       'src/core/lib/gprpp/chunked_vector.h',
@@ -721,6 +732,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/race.h',
                       'src/core/lib/promise/seq.h',
                       'src/core/lib/resource_quota/api.h',
+                      'src/core/lib/resource_quota/arena.h',
                       'src/core/lib/resource_quota/memory_quota.h',
                       'src/core/lib/resource_quota/resource_quota.h',
                       'src/core/lib/resource_quota/thread_quota.h',
@@ -808,7 +820,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/pid_controller.h',
                       'src/core/lib/transport/static_metadata.h',
                       'src/core/lib/transport/status_conversion.h',
-                      'src/core/lib/transport/status_metadata.h',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.h',
                       'src/core/lib/transport/transport_impl.h',
@@ -1130,7 +1141,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h',
                               'src/core/ext/upb-generated/google/api/annotations.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.h',
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
+                              'src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.h',
                               'src/core/ext/upb-generated/google/api/http.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/any.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
@@ -1260,6 +1274,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/certificate_provider_registry.h',
                               'src/core/ext/xds/certificate_provider_store.h',
                               'src/core/ext/xds/file_watcher_certificate_provider_factory.h',
+                              'src/core/ext/xds/upb_utils.h',
                               'src/core/ext/xds/xds_api.h',
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
@@ -1267,8 +1282,15 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
+                              'src/core/ext/xds/xds_cluster.h',
+                              'src/core/ext/xds/xds_common_types.h',
+                              'src/core/ext/xds/xds_endpoint.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
+                              'src/core/ext/xds/xds_listener.h',
+                              'src/core/ext/xds/xds_resource_type.h',
+                              'src/core/ext/xds/xds_resource_type_impl.h',
+                              'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
@@ -1312,7 +1334,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tls.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
-                              'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic_utils.h',
                               'src/core/lib/gprpp/bitset.h',
                               'src/core/lib/gprpp/chunked_vector.h',
@@ -1435,6 +1456,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/race.h',
                               'src/core/lib/promise/seq.h',
                               'src/core/lib/resource_quota/api.h',
+                              'src/core/lib/resource_quota/arena.h',
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/resource_quota.h',
                               'src/core/lib/resource_quota/thread_quota.h',
@@ -1522,7 +1544,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/pid_controller.h',
                               'src/core/lib/transport/static_metadata.h',
                               'src/core/lib/transport/status_conversion.h',
-                              'src/core/lib/transport/status_metadata.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
                               'src/core/lib/transport/transport_impl.h',

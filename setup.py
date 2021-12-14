@@ -312,8 +312,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'ws2_32',
+        'bcrypt',
         'dbghelp',
+        'ws2_32',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
