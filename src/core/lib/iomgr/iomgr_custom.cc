@@ -20,6 +20,8 @@
 
 #include "src/core/lib/iomgr/iomgr_custom.h"
 
+#include "absl/functional/bind_front.h"
+
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"

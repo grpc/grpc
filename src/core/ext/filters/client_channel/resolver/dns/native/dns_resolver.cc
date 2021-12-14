@@ -21,6 +21,7 @@
 #include <climits>
 #include <cstring>
 
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -172,7 +173,7 @@ void NativeClientChannelDNSResolver::OnNextResolutionLocked(
 void NativeClientChannelDNSResolver::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
   work_serializer_->Run(
-      [this, addresses_or]() { OnResolvedLocked(std::move(addresses_or)); },
+      [this, addresses_or]() { OnResolvedLocked(addresses_or); },
       DEBUG_LOCATION);
 }
 

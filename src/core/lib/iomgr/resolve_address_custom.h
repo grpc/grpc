@@ -112,7 +112,7 @@ class CustomDNSResolver : public DNSResolver {
 
   // Configures user-defined DNS resolution methods
   void set_vtable(const grpc_custom_resolver_vtable* vtable) {
-    resolve_address_vtable_ = vtable;
+    resolve_address_vtable_ = const_cast<grpc_custom_resolver_vtable*>(vtable);
   }
 
  private:
