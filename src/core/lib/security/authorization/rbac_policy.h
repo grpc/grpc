@@ -174,8 +174,7 @@ struct Rbac {
     Principal(Principal::RuleType type, CidrRange ip);
     // For kHeader RuleType.
     Principal(Principal::RuleType type, HeaderMatcher header_matcher);
-    // For kMetadata RuleType. All the other fields in MetadataMatcher are
-    // ignored except invert.
+    // For kMetadata RuleType.
     Principal(Principal::RuleType type, bool invert);
   };
 
