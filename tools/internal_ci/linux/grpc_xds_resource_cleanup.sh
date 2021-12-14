@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2019 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/bin/bash
+set -ex
 
-while IFS= read -r line; do
-  echo "$(date) - $line"
-done
+cd "$(dirname "$0")/../../.."
+
+pyenv local 3.6.1
+python3 -m pip install dataclasses
+python3 tools/gcp/utils/cleanup_xds_resources.py

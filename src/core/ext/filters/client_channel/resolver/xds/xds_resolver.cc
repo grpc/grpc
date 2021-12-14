@@ -715,6 +715,7 @@ void XdsResolver::StartLocked() {
     result.service_config = absl::UnavailableError(
         absl::StrCat("Failed to create XdsClient: ", error_message));
     result_handler_->ReportResult(std::move(result));
+    GRPC_ERROR_UNREF(error);
     return;
   }
   std::string resource_name_fragment(absl::StripPrefix(uri_.path(), "/"));

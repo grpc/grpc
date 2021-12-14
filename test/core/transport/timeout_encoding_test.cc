@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include <gtest/gtest.h>
+
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
@@ -33,17 +35,16 @@
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
+namespace grpc_core {
+namespace {
 
-static void assert_encodes_as(grpc_millis ts, const char* s) {
-  char buffer[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
-  grpc_http2_encode_timeout(ts, buffer);
-  gpr_log(GPR_INFO, "check '%s' == '%s'", buffer, s);
-  GPR_ASSERT(0 == strcmp(buffer, s));
+void assert_encodes_as(grpc_millis ts, const char* s) {
+  EXPECT_EQ(absl::string_view(s),
+            Timeout::FromDuration(ts).Encode().as_string_view())
+      << " ts=" << ts;
 }
 
-void test_encoding(void) {
-  LOG_TEST("test_encoding");
+TEST(TimeoutTest, Encoding) {
   assert_encodes_as(-1, "1n");
   assert_encodes_as(-10, "1n");
   assert_encodes_as(1, "1m");
@@ -67,20 +68,11 @@ void test_encoding(void) {
   assert_encodes_as(10 * 60 * 60 * GPR_MS_PER_SEC, "10H");
   assert_encodes_as(60 * 60 * GPR_MS_PER_SEC - 100, "1H");
   assert_encodes_as(100 * 60 * 60 * GPR_MS_PER_SEC, "100H");
-  assert_encodes_as(100000000000, "99999999S");
+  assert_encodes_as(100000000000, "27000H");
 }
 
-static void assert_decodes_as(const char* buffer, grpc_millis expected) {
-  grpc_millis got;
-  uint32_t hash = gpr_murmur_hash3(buffer, strlen(buffer), 0);
-  gpr_log(GPR_INFO, "check decoding '%s' (hash=0x%x)", buffer, hash);
-  GPR_ASSERT(1 == grpc_http2_decode_timeout(
-                      grpc_slice_from_static_string(buffer), &got));
-  if (got != expected) {
-    gpr_log(GPR_ERROR, "got:'%" PRId64 "' != expected:'%" PRId64 "'", got,
-            expected);
-    abort();
-  }
+void assert_decodes_as(const char* buffer, grpc_millis expected) {
+  EXPECT_EQ(expected, ParseTimeout(Slice::FromCopiedString(buffer)));
 }
 
 void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
@@ -102,27 +94,26 @@ void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
   }
 }
 
-static grpc_millis millis_from_nanos(int64_t x) {
+grpc_millis millis_from_nanos(int64_t x) {
   return static_cast<grpc_millis>(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
 }
-static grpc_millis millis_from_micros(int64_t x) {
+grpc_millis millis_from_micros(int64_t x) {
   return static_cast<grpc_millis>(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
 }
-static grpc_millis millis_from_millis(int64_t x) {
+grpc_millis millis_from_millis(int64_t x) {
   return static_cast<grpc_millis>(x);
 }
-static grpc_millis millis_from_seconds(int64_t x) {
+grpc_millis millis_from_seconds(int64_t x) {
   return static_cast<grpc_millis>(x * GPR_MS_PER_SEC);
 }
-static grpc_millis millis_from_minutes(int64_t x) {
+grpc_millis millis_from_minutes(int64_t x) {
   return static_cast<grpc_millis>(x * 60 * GPR_MS_PER_SEC);
 }
-static grpc_millis millis_from_hours(int64_t x) {
+grpc_millis millis_from_hours(int64_t x) {
   return static_cast<grpc_millis>(x * 3600 * GPR_MS_PER_SEC);
 }
 
-void test_decoding(void) {
-  LOG_TEST("test_decoding");
+TEST(TimeoutTest, DecodingSucceeds) {
   decode_suite('n', millis_from_nanos);
   decode_suite('u', millis_from_micros);
   decode_suite('m', millis_from_millis);
@@ -136,14 +127,12 @@ void test_decoding(void) {
   assert_decodes_as("9999999999S", GRPC_MILLIS_INF_FUTURE);
 }
 
-static void assert_decoding_fails(const char* s) {
-  grpc_millis x;
-  GPR_ASSERT(0 ==
-             grpc_http2_decode_timeout(grpc_slice_from_static_string(s), &x));
+void assert_decoding_fails(const char* s) {
+  EXPECT_EQ(absl::nullopt, ParseTimeout(Slice::FromCopiedString(s)))
+      << " s=" << s;
 }
 
-void test_decoding_fails(void) {
-  LOG_TEST("test_decoding_fails");
+TEST(TimeoutTest, DecodingFails) {
   assert_decoding_fails("");
   assert_decoding_fails(" ");
   assert_decoding_fails("x");
@@ -155,10 +144,10 @@ void test_decoding_fails(void) {
   assert_decoding_fails("-1u");
 }
 
+}  // namespace
+}  // namespace grpc_core
+
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  test_encoding();
-  test_decoding();
-  test_decoding_fails();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

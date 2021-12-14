@@ -279,11 +279,27 @@ int external_dns_works(const char* host) {
   grpc_resolved_addresses* res = nullptr;
   grpc_error_handle error = grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
-  if (res != nullptr) {
-    grpc_resolved_addresses_destroy(res);
-    return 1;
+  if (res == nullptr) {
+    return 0;
   }
-  return 0;
+  int result = 1;
+  for (size_t i = 0; i < res->naddrs; ++i) {
+    // Kokoro on Macservice uses Google DNS64 servers by default
+    // (https://en.wikipedia.org/wiki/Google_Public_DNS) and that breaks
+    // "dualstack_socket_test" due to loopback4.unittest.grpc.io resolving to
+    // [64:ff9b::7f00:1]. (Working as expected for DNS64, but it prevents the
+    // dualstack_socket_test from functioning correctly). See b/201064791.
+    if (grpc_sockaddr_to_uri(&res->addrs[i]) == "ipv6:[64:ff9b::7f00:1]:80") {
+      gpr_log(
+          GPR_INFO,
+          "Detected DNS64 server response. Tests that depend on "
+          "*.unittest.grpc.io. will be skipped as they won't work with DNS64.");
+      result = 0;
+      break;
+    }
+  }
+  grpc_resolved_addresses_destroy(res);
+  return result;
 }
 
 int main(int argc, char** argv) {
@@ -332,7 +348,8 @@ int main(int argc, char** argv) {
       test_connect("127.0.0.1", "ipv6:[::1]", 0, 0);
     }
 
-    if (!external_dns_works("loopback46.unittest.grpc.io")) {
+    if (!external_dns_works("loopback4.unittest.grpc.io") ||
+        !external_dns_works("loopback46.unittest.grpc.io")) {
       gpr_log(GPR_INFO, "Skipping tests that depend on *.unittest.grpc.io.");
     } else {
       test_connect("loopback46.unittest.grpc.io", "loopback4.unittest.grpc.io",

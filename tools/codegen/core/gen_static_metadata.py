@@ -36,10 +36,8 @@ import perfection
 CONFIG = [
     # metadata strings
     'grpc-internal-encoding-request',
-    ':path',
     'grpc-encoding',
     'grpc-accept-encoding',
-    ':authority',
     'grpc-timeout',
     '',
     # well known method names
@@ -123,7 +121,6 @@ CONFIG = [
     ('grpc-encoding', 'identity'),
     ('grpc-encoding', 'gzip'),
     ('grpc-encoding', 'deflate'),
-    ('content-type', 'application/grpc'),
     (':scheme', 'grpc'),
     (':method', 'PUT'),
     ('accept-encoding', ''),
@@ -135,14 +132,8 @@ CONFIG = [
 # All entries here are ignored when counting non-default initial metadata that
 # prevents the chttp2 server from sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    ':path',
-    ':method',
-    ':status',
-    ':authority',
-    ':scheme',
     'grpc-encoding',
     'grpc-accept-encoding',
-    'content-type',
     'content-encoding',
     'accept-encoding',
     'grpc-internal-encoding-request',
