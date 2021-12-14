@@ -40,7 +40,7 @@ constexpr int64_t kMinutesPerHour = 60;
 constexpr int64_t kSecondsPerHour = kSecondsPerMinute * kMinutesPerHour;
 constexpr int64_t kMaxHours = 27000;
 
-bool IsAllWhitespace(const uint8_t* p, const uint8_t* end) {
+bool IsAllSpace(const uint8_t* p, const uint8_t* end) {
   while (p != end && *p == ' ') p++;
   return p == end;
 }
@@ -277,7 +277,7 @@ absl::optional<grpc_millis> ParseTimeout(const Slice& text) {
       return absl::nullopt;
   }
   p++;
-  if (!IsAllWhitespace(p, end)) return absl::nullopt;
+  if (!IsAllSpace(p, end)) return absl::nullopt;
   return timeout;
 }
 
