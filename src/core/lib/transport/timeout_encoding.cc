@@ -95,16 +95,17 @@ Slice Timeout::Encode() const {
   char* p = buf;
   uint16_t n = value_;
   int digits;
-  if (n >= 10000)
+  if (n >= 10000) {
     digits = 5;
-  else if (n >= 1000)
+  } else if (n >= 1000) {
     digits = 4;
-  else if (n >= 100)
+  } else if (n >= 100) {
     digits = 3;
-  else if (n >= 10)
+  } else if (n >= 10) {
     digits = 2;
-  else
+  } else {
     digits = 1;
+  }
   switch (digits) {
     case 5:
       *p++ = '0' + n / 10000;
