@@ -1,0 +1,31 @@
+Note: Google Test filter = *AnyPermissionOrIdPrincipal*
+[==========] Running 8 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 8 tests from XdsTest/XdsRbacTestWithActionPermutations
+[ RUN      ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3XdsCredsRbacAllow
+E1214 07:58:03.668329347  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+E1214 07:58:03.672403446  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+E1214 07:58:03.676757277  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+E1214 07:58:03.681116652  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+E1214 07:58:03.686159711  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+E1214 07:58:03.690546532  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+[       OK ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3XdsCredsRbacAllow (133 ms)
+[ RUN      ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3XdsCredsRbacDeny
+E1214 07:58:03.786039603  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:03.789521972  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:03.792956973  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:03.796259819  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:03.799643893  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:03.803012026  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:03.806656556  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:03.810284460  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+[       OK ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3XdsCredsRbacDeny (118 ms)
+[ RUN      ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3RdsXdsCredsRbacAllow
+E1214 07:58:03.950608808  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+E1214 07:58:03.961886064  348342 xds_end2end_test.cc:8313]   RPC succeeded. Failure expected. Trying again.
+[       OK ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3RdsXdsCredsRbacAllow (154 ms)
+[ RUN      ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3RdsXdsCredsRbacDeny
+E1214 07:58:04.101134914  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+E1214 07:58:04.109682837  348342 xds_end2end_test.cc:8325]   RPC failed. code=7 message=Unauthorized RPC rejected Trying again.
+[       OK ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3RdsXdsCredsRbacDeny (1145 ms)
+[ RUN      ] XdsTest/XdsRbacTestWithActionPermutations.AnyPermissionOrIdPrincipal/V3XdsCredsFilterPerRouteOverrideRbacAllow

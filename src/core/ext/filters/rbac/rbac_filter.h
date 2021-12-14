@@ -67,7 +67,7 @@ class RbacFilter {
   static void Destroy(grpc_channel_element* elem);
 
   // The index of this filter instance among instances of the same filter.
-  int index_;
+  size_t index_;
   // Per channel args used for authorization.
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
 };

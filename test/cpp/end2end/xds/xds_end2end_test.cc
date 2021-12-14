@@ -2908,6 +2908,41 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
+// Test that we NACK non-zero xff_num_trusted_hops
+TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  http_connection_manager.set_xff_num_trusted_hops(1);
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+              ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
+}
+
+// Test that we NACK non-empty original_ip_detection_extensions
+TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  http_connection_manager.add_original_ip_detection_extensions();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  SetNextResolutionForLbChannelAllBalancers();
+  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  EXPECT_THAT(
+      balancer_->ads_service()->lds_response_state().error_message,
+      ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
+}
+
 using LdsV2Test = LdsTest;
 
 // Tests that we ignore the HTTP filter list in v2.
@@ -7975,7 +8010,6 @@ TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
-  http_connection_manager.mutable_original_ip_detection_extensions();
   http_connection_manager.add_original_ip_detection_extensions();
   ServerHcmAccessor().Pack(http_connection_manager, &listener);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -9722,11 +9756,15 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
+// Tests RBAC configurations on the server with RDS testing and route config
+// override permutations.
 class XdsRbacTest : public XdsServerRdsTest {
  protected:
   void SetServerRbacPolicies(Listener listener,
                              const std::vector<RBAC>& rbac_policies) {
-    HttpConnectionManager http_connection_manager;
+    HttpConnectionManager http_connection_manager =
+        ServerHcmAccessor().Unpack(listener);
+    http_connection_manager.clear_http_filters();
     RouteConfiguration route_config = default_server_route_config_;
     int count = 0;
     for (auto& rbac : rbac_policies) {
@@ -9758,8 +9796,8 @@ class XdsRbacTest : public XdsServerRdsTest {
         balancer_.get(), listener, backends_[0]->port(), route_config);
   }
 
-  void SetServerRbacPolicy(Listener, const RBAC& rbac) {
-    SetServerRbacPolicies(default_server_listener_, {rbac});
+  void SetServerRbacPolicy(Listener listener, const RBAC& rbac) {
+    SetServerRbacPolicies(std::move(listener), {rbac});
   }
 
   void SetServerRbacPolicy(const RBAC& rbac) {
@@ -9768,9 +9806,6 @@ class XdsRbacTest : public XdsServerRdsTest {
 };
 
 TEST_P(XdsRbacTest, AbsentRbacPolicy) {
-  if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    return;
-  }
   SetServerRbacPolicy(RBAC());
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
@@ -9780,25 +9815,134 @@ TEST_P(XdsRbacTest, AbsentRbacPolicy) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsRbacTest, EmptyRbacPolicy) {
+TEST_P(XdsRbacTest, LogAction) {
   RBAC rbac;
-  rbac.mutable_rules()->set_action(GetParam().rbac_action());
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_LOG);
   SetServerRbacPolicy(rbac);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
-  // An empty RBAC policy leads to all RPCs being rejected.
-  SendRpc(
-      [this]() { return CreateInsecureChannel(); }, {}, {},
-      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
-      grpc::PERMISSION_DENIED);
+  // A Log action is identical to no rbac policy being configured.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsRbacTest, EmptyRBACPerRouteOverride) {
-  if (GetParam().rbac_action() == RBAC_Action_DENY ||
+TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":scheme");
+  header->set_exact_match("http");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
-          TestType::FilterConfigSetup::kHTTPConnectionManagerOriginal) {
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  }
+}
+
+TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name("grpc-status");
+  header->set_exact_match("0");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
+      GetParam().filter_config_setup() ==
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  }
+}
+
+TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":scheme");
+  header->set_exact_match("http");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
+      GetParam().filter_config_setup() ==
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("':scheme' not allowed in header"));
+  }
+}
+
+TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name("grpc-status");
+  header->set_exact_match("0");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  if (GetParam().enable_rds_testing() &&
+      GetParam().filter_config_setup() ==
+          TestType::FilterConfigSetup::kRouteOverride) {
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  } else {
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+        << "timed out waiting for NACK";
+    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
+  }
+}
+
+// Tests RBAC policies where a route override is always present. Action
+// permutations are not added.
+using XdsRbacTestWithRouteOverrideAlwaysPresent = XdsRbacTest;
+
+TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent, EmptyRBACPerRouteOverride) {
+  if (GetParam().filter_config_setup() ==
+      TestType::FilterConfigSetup::kHTTPConnectionManagerOriginal) {
     return;
   }
   HttpConnectionManager http_connection_manager;
@@ -9833,23 +9977,70 @@ TEST_P(XdsRbacTest, EmptyRBACPerRouteOverride) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsRbacTest, LogAction) {
-  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+// Test a non-empty top level RBAC with a non-empty RBACPerRouteOverride
+TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
+       NonEmptyTopLevelRBACNonEmptyPerRouteOverride) {
+  if (GetParam().filter_config_setup() ==
+      TestType::FilterConfigSetup::kHTTPConnectionManagerOriginal) {
     return;
   }
+  HttpConnectionManager http_connection_manager;
+  Listener listener = default_server_listener_;
+  RouteConfiguration route_config = default_server_route_config_;
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("rbac");
+  // Create a top-level RBAC policy with an Allow action but empty matching
+  // rules which should result in RPCs being rejected if applied.
   RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_LOG);
+  rbac.mutable_rules()->set_action(RBAC_Action_ALLOW);
+  filter->mutable_typed_config()->PackFrom(rbac);
+  google::protobuf::Any filter_config;
+  // Override with a non-empty RBACPerRoute policy which should allow the RPCs.
+  RBACPerRoute rbac_per_route;
+  auto* rules = rbac_per_route.mutable_rbac()->mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  filter_config.PackFrom(RBACPerRoute());
+  auto* config_map = route_config.mutable_virtual_hosts(0)
+                         ->mutable_routes(0)
+                         ->mutable_typed_per_filter_config();
+  (*config_map)["rbac"] = std::move(filter_config);
+  filter = http_connection_manager.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->PackFrom(
+      envoy::extensions::filters::http::router::v3::Router());
+  ServerHcmAccessor().Pack(http_connection_manager, &listener);
+  SetServerListenerNameAndRouteConfiguration(
+      balancer_.get(), listener, backends_[0]->port(), route_config);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+// Adds Action Permutations to XdsRbacTest
+using XdsRbacTestWithActionPermutations = XdsRbacTest;
+
+TEST_P(XdsRbacTestWithActionPermutations, EmptyRbacPolicy) {
+  RBAC rbac;
+  rbac.mutable_rules()->set_action(GetParam().rbac_action());
   SetServerRbacPolicy(rbac);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
-  // A Log action is identical to no rbac policy being configured.
-  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+  // An empty RBAC policy leads to all RPCs being rejected.
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, AnyPermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -9867,7 +10058,7 @@ TEST_P(XdsRbacTest, AnyPermissionAnyPrincipal) {
           grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, MultipleRbacPolicies) {
+TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPolicies) {
   RBAC always_allow;
   auto* rules = always_allow.mutable_rules();
   rules->set_action(RBAC_Action_ALLOW);
@@ -9890,67 +10081,7 @@ TEST_P(XdsRbacTest, MultipleRbacPolicies) {
           grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
-  if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    return;
-  }
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_permissions()->mutable_header();
-  header->set_name(":scheme");
-  header->set_exact_match("http");
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  }
-}
-
-TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
-  if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    return;
-  }
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_permissions()->mutable_header();
-  header->set_name("grpc-status");
-  header->set_exact_match("0");
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  }
-}
-
-TEST_P(XdsRbacTest, MethodPostPermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -9986,7 +10117,7 @@ TEST_P(XdsRbacTest, MethodPostPermissionAnyPrincipal) {
       << status.error_details() << ", " << context.debug_error_string();
 }
 
-TEST_P(XdsRbacTest, MethodGetPermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10023,7 +10154,7 @@ TEST_P(XdsRbacTest, MethodGetPermissionAnyPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, MethodPutPermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10060,7 +10191,7 @@ TEST_P(XdsRbacTest, MethodPutPermissionAnyPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, UrlPathPermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10092,7 +10223,7 @@ TEST_P(XdsRbacTest, UrlPathPermissionAnyPrincipal) {
       << status.error_details() << ", " << context.debug_error_string();
 }
 
-TEST_P(XdsRbacTest, DestinationIpPermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, DestinationIpPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10123,7 +10254,8 @@ TEST_P(XdsRbacTest, DestinationIpPermissionAnyPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, DestinationPortPermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations,
+       DestinationPortPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10150,7 +10282,7 @@ TEST_P(XdsRbacTest, DestinationPortPermissionAnyPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, ReqServerNamePermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10182,7 +10314,7 @@ TEST_P(XdsRbacTest, ReqServerNamePermissionAnyPrincipal) {
   //     grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, NotRulePermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, NotRulePermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10212,7 +10344,7 @@ TEST_P(XdsRbacTest, NotRulePermissionAnyPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, AndRulePermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AndRulePermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10241,7 +10373,7 @@ TEST_P(XdsRbacTest, AndRulePermissionAnyPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, OrRulePermissionAnyPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, OrRulePermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10270,67 +10402,7 @@ TEST_P(XdsRbacTest, OrRulePermissionAnyPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
-  if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    return;
-  }
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_principals()->mutable_header();
-  header->set_name(":scheme");
-  header->set_exact_match("http");
-  policy.add_permissions()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  }
-}
-
-TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
-  if (GetParam().rbac_action() == RBAC_Action_DENY) {
-    return;
-  }
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_principals()->mutable_header();
-  header->set_name("grpc-status");
-  header->set_exact_match("0");
-  policy.add_permissions()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
-        << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  }
-}
-
-TEST_P(XdsRbacTest, AnyPermissionMethodPostPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10366,7 +10438,7 @@ TEST_P(XdsRbacTest, AnyPermissionMethodPostPrincipal) {
       << status.error_details() << ", " << context.debug_error_string();
 }
 
-TEST_P(XdsRbacTest, AnyPermissionMethodGetPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10402,7 +10474,7 @@ TEST_P(XdsRbacTest, AnyPermissionMethodGetPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, AnyPermissionMethodPutPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10438,7 +10510,7 @@ TEST_P(XdsRbacTest, AnyPermissionMethodPutPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, AnyPermissionUrlPathPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10470,7 +10542,8 @@ TEST_P(XdsRbacTest, AnyPermissionUrlPathPrincipal) {
       << status.error_details() << ", " << context.debug_error_string();
 }
 
-TEST_P(XdsRbacTest, AnyPermissionDirectRemoteIpPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations,
+       AnyPermissionDirectRemoteIpPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10501,46 +10574,46 @@ TEST_P(XdsRbacTest, AnyPermissionDirectRemoteIpPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-// TEST_P(XdsRbacTest, AnyPermissionAuthenticatedPrincipal) {
-//   FakeCertificateProvider::CertDataMap fake1_cert_map = {
-//       {"", {root_cert_, identity_pair_}}};
-//   g_fake1_cert_data_map = &fake1_cert_map;
-//   Listener listener = default_server_listener_;
-//   auto* filter_chain = listener.mutable_default_filter_chain();
-//   auto* transport_socket = filter_chain->mutable_transport_socket();
-//   transport_socket->set_name("envoy.transport_sockets.tls");
-//   DownstreamTlsContext downstream_tls_context;
-//   downstream_tls_context.mutable_common_tls_context()
-//       ->mutable_tls_certificate_provider_instance()
-//       ->set_instance_name("fake_plugin1");
-//   downstream_tls_context.mutable_common_tls_context()
-//       ->mutable_validation_context()
-//       ->mutable_ca_certificate_provider_instance()
-//       ->set_instance_name("fake_plugin1");
-//   downstream_tls_context.mutable_require_client_certificate()->set_value(true);
-//   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-//   RBAC rbac;
-//   auto* rules = rbac.mutable_rules();
-//   rules->set_action(GetParam().rbac_action());
-//   Policy policy;
-//   policy.add_principals()
-//       ->mutable_authenticated()
-//       ->mutable_principal_name()
-//       ->set_exact("*.test.google.fr");
-//   policy.add_permissions()->set_any(true);
-//   (*rules->mutable_policies())["policy"] = policy;
-//   SetServerRbacPolicy(listener, rbac);
-//   backends_[0]->Start();
-//   backends_[0]->notifier()->WaitOnServingStatusChange(
-//       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
-//       backends_[0]->port()), grpc::StatusCode::OK);
-//   SendRpc([this]() { return CreateMtlsChannel(); },
-//           server_authenticated_identity_, client_authenticated_identity_,
-//           /*test_expects_failure=*/GetParam().rbac_action() ==
-//           RBAC_Action_DENY, grpc::PERMISSION_DENIED);
-// }
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map = {
+      {"", {root_cert_, identity_pair_}}};
+  g_fake1_cert_data_map = &fake1_cert_map;
+  Listener listener = default_server_listener_;
+  auto* filter_chain = listener.mutable_default_filter_chain();
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_validation_context()
+      ->mutable_ca_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_principals()
+      ->mutable_authenticated()
+      ->mutable_principal_name()
+      ->set_exact("*.test.google.fr");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(listener, rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateMtlsChannel(); },
+          server_authenticated_identity_, client_authenticated_identity_,
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::PERMISSION_DENIED);
+}
 
-TEST_P(XdsRbacTest, AnyPermissionNotIdPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionNotIdPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10571,7 +10644,7 @@ TEST_P(XdsRbacTest, AnyPermissionNotIdPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, AnyPermissionAndIdPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAndIdPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -10602,7 +10675,7 @@ TEST_P(XdsRbacTest, AnyPermissionAndIdPrincipal) {
       grpc::PERMISSION_DENIED);
 }
 
-TEST_P(XdsRbacTest, AnyPermissionOrIdPrincipal) {
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
@@ -13147,6 +13220,34 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTest,
+    ::testing::Values(
+        TestType().set_use_xds_credentials(),
+        TestType().set_use_xds_credentials().set_enable_rds_testing(),
+        TestType().set_use_xds_credentials().set_filter_config_setup(
+            TestType::FilterConfigSetup::kRouteOverride),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)),
+    &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
+    ::testing::Values(
+        TestType().set_use_xds_credentials().set_filter_config_setup(
+            TestType::FilterConfigSetup::kRouteOverride),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)),
+    &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithActionPermutations,
     ::testing::Values(
         TestType().set_use_xds_credentials().set_rbac_action(RBAC_Action_ALLOW),
         TestType().set_use_xds_credentials().set_rbac_action(RBAC_Action_DENY),

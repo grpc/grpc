@@ -198,9 +198,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   // This ref is only kept around till the FilterChainMatchManager becomes
   // ready.
   RefCountedPtr<ListenerWatcher> listener_watcher_;
-  const XdsListenerResource::FilterChainMap filter_chain_map_;
-  const absl::optional<XdsListenerResource::FilterChainData>
-      default_filter_chain_;
+  XdsListenerResource::FilterChainMap filter_chain_map_;
+  absl::optional<XdsListenerResource::FilterChainData> default_filter_chain_;
   Mutex mu_;
   size_t rds_resources_yet_to_fetch_ ABSL_GUARDED_BY(mu_) = 0;
   std::map<std::string /* resource_name */, RdsUpdateState> rds_map_
@@ -587,8 +586,11 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     StartRdsWatch(RefCountedPtr<ListenerWatcher> listener_watcher) {
-  // Get the set of RDS resources to watch on
+  // Get the set of RDS resources to watch on. Also get the set of
+  // FilterChainData so that we can reverse the list of HTTP filters since
+  // received data moves *up* the stack in Core.
   std::set<std::string> resource_names;
+  std::set<XdsListenerResource::FilterChainData*> filter_chain_data_set;
   for (const auto& destination_ip : filter_chain_map_.destination_ip_vector) {
     for (const auto& source_type : destination_ip.source_types_array) {
       for (const auto& source_ip : source_type) {
@@ -599,15 +601,26 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                 source_port_pair.second.data->http_connection_manager
                     .route_config_name);
           }
+          filter_chain_data_set.insert(source_port_pair.second.data.get());
         }
       }
     }
   }
-  if (default_filter_chain_.has_value() &&
-      !default_filter_chain_->http_connection_manager.route_config_name
-           .empty()) {
-    resource_names.insert(
-        default_filter_chain_->http_connection_manager.route_config_name);
+  if (default_filter_chain_.has_value()) {
+    if (!default_filter_chain_->http_connection_manager.route_config_name
+             .empty()) {
+      resource_names.insert(
+          default_filter_chain_->http_connection_manager.route_config_name);
+    }
+    std::reverse(
+        default_filter_chain_->http_connection_manager.http_filters.begin(),
+        default_filter_chain_->http_connection_manager.http_filters.end());
+  }
+  // Reverse the lists of HTTP filters in all the filter chains
+  for (auto* filter_chain_data : filter_chain_data_set) {
+    std::reverse(
+        filter_chain_data->http_connection_manager.http_filters.begin(),
+        filter_chain_data->http_connection_manager.http_filters.end());
   }
   // Start watching on referenced RDS resources
   {
