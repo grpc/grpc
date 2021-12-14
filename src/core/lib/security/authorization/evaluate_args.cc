@@ -124,9 +124,6 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
     // Maps legacy host header to :authority.
     return metadata_->GetValue(":authority", concatenated_value);
   }
-  if (absl::EqualsIgnoreCase(key, ":method")) {
-    return "POST";
-  }
   return metadata_->GetValue(key, concatenated_value);
 }
 
