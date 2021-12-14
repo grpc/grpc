@@ -48,13 +48,13 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
   std::string certificate_file;
   std::string key_file;
   if (revoked_client_certs) {
-    certificate_file = absl::StrCat(kCredentialsDir, "/revoked.pem");
-    key_file = absl::StrCat(kCredentialsDir, "/revoked.key");
+    certificate_file = absl::StrCat(kCredentialsDir, "revoked.pem");
+    key_file = absl::StrCat(kCredentialsDir, "revoked.key");
   } else {
-    certificate_file = absl::StrCat(kCredentialsDir, "/valid.pem");
-    key_file = absl::StrCat(kCredentialsDir, "/valid.key");
+    certificate_file = absl::StrCat(kCredentialsDir, "valid.pem");
+    key_file = absl::StrCat(kCredentialsDir, "valid.key");
   }
-  const std::string ca_bundle_file = absl::StrCat(kCredentialsDir, "/ca.pem");
+  const std::string ca_bundle_file = absl::StrCat(kCredentialsDir, "ca.pem");
 
   auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
       key_file, certificate_file, ca_bundle_file,
@@ -89,10 +89,10 @@ class TestServerWrapper {
                         std::to_string(grpc_pick_unused_port_or_die())) {}
 
   void Start(std::string certificate_file = absl::StrCat(kCredentialsDir,
-                                                         "/valid.pem"),
-             std::string key_file = absl::StrCat(kCredentialsDir, "/valid.key"),
+                                                         "valid.pem"),
+             std::string key_file = absl::StrCat(kCredentialsDir, "valid.key"),
              std::string ca_bundle_file = absl::StrCat(kCredentialsDir,
-                                                       "/ca.pem")) {
+                                                       "ca.pem")) {
     auto certificate_provider =
         std::make_shared<FileWatcherCertificateProvider>(
             key_file, certificate_file, ca_bundle_file,
