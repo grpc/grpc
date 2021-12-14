@@ -326,12 +326,9 @@ void HealthCheckClient::CallState::StartCall() {
   batch_.on_complete = GRPC_CLOSURE_INIT(&on_complete_, OnComplete, this,
                                          grpc_schedule_on_exec_ctx);
   // Add send_initial_metadata op.
-  error = grpc_metadata_batch_add_head(
-      &send_initial_metadata_, &path_metadata_storage_,
-      grpc_mdelem_from_slices(
-          GRPC_MDSTR_PATH,
-          GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH),
-      GRPC_BATCH_PATH);
+  send_initial_metadata_.Set(
+      HttpPathMetadata(),
+      Slice(GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;

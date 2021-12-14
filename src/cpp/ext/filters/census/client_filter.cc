@@ -199,7 +199,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
     : call_context_(args->context),
       path_(grpc_slice_ref_internal(args->path)),
-      method_(GetMethod(&path_)),
+      method_(GetMethod(path_)),
       arena_(args->arena) {}
 
 OpenCensusCallTracer::~OpenCensusCallTracer() {
@@ -211,7 +211,6 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
        {RpcClientRetryDelayPerCall(), ToDoubleMilliseconds(retry_delay_)}},
       tags);
-  grpc_slice_unref_internal(path_);
 }
 
 void OpenCensusCallTracer::GenerateContext() {
