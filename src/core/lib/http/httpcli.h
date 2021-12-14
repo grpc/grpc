@@ -134,6 +134,8 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
   ~HttpCliRequest();
 
+  void Start();
+
   void Orphan() override {
     // TODO(apolcyn): implement cancellation
     Unref();

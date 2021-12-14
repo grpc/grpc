@@ -130,9 +130,8 @@ HttpCliRequest::HttpCliRequest(const grpc_slice& request_text,
     GPR_ASSERT(pollent);
     grpc_polling_entity_add_to_pollset_set(pollent_, pollset_set_);
     dns_request_ = GetDNSResolver()->ResolveName(
-        host_.c_str(), handshaker_->default_port, context_->pollset_set,
+        host_.c_str(), handshaker_->default_port, pollset_set_,
         std::bind(&HttpCliRequest::OnResolved, this, std::placeholders::_1));
-    dns_request_->Start();
   }
 
   ~HttpCliRequest() {
@@ -146,6 +145,10 @@ HttpCliRequest::HttpCliRequest(const grpc_slice& request_text,
     grpc_slice_buffer_destroy_internal(&outgoing_);
     GRPC_ERROR_UNREF(overall_error_);
     grpc_pollset_set_destroy(pollset_set_);
+  }
+
+  HttpCliRequest::Start() {
+    dns_request_->Start();
   }
 
   void HttpCliRequest::AppendError(grpc_error_handle error) {
