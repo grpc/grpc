@@ -102,7 +102,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data:revoked.key",
         "//test/core/tsi/test_creds/crl_data:revoked.pem",
         "//test/core/tsi/test_creds/crl_data:valid.key",
-        "//test/core/tsi/test_creds/crl_data/valid.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
     ],
     tags = ["no_test_ios"],
     deps = [
