@@ -16,10 +16,6 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
@@ -29,6 +25,11 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #ifdef __FreeBSD__
 #include <sys/wait.h>

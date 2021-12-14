@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef UPB_REFLECTION_H_
 #define UPB_REFLECTION_H_
@@ -7,6 +33,10 @@
 #include "upb/upb.h"
 
 #include "upb/port_def.inc"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef union {
   bool bool_val;
@@ -27,6 +57,8 @@ typedef union {
   upb_msg* msg;
   upb_array* array;
 } upb_mutmsgval;
+
+upb_msgval upb_fielddef_default(const upb_fielddef *f);
 
 /** upb_msg *******************************************************************/
 
@@ -49,9 +81,13 @@ const upb_fielddef *upb_msg_whichoneof(const upb_msg *msg,
                                        const upb_oneofdef *o);
 
 /* Sets the given field to the given value.  For a msg/array/map/string, the
- * value must be in the same arena.  */
-void upb_msg_set(upb_msg *msg, const upb_fielddef *f, upb_msgval val,
+ * caller must ensure that the target data outlives |msg| (by living either in
+ * the same arena or a different arena that outlives it).
+ *
+ * Returns false if allocation fails. */
+bool upb_msg_set(upb_msg *msg, const upb_fielddef *f, upb_msgval val,
                  upb_arena *a);
+
 
 /* Clears any field presence and sets the value back to its default. */
 void upb_msg_clearfield(upb_msg *msg, const upb_fielddef *f);
@@ -78,16 +114,8 @@ bool upb_msg_next(const upb_msg *msg, const upb_msgdef *m,
                   const upb_symtab *ext_pool, const upb_fielddef **f,
                   upb_msgval *val, size_t *iter);
 
-/* Adds unknown data (serialized protobuf data) to the given message.  The data
- * is copied into the message instance. */
-void upb_msg_addunknown(upb_msg *msg, const char *data, size_t len,
-                        upb_arena *arena);
-
 /* Clears all unknown field data from this message and all submessages. */
 bool upb_msg_discardunknown(upb_msg *msg, const upb_msgdef *m, int maxdepth);
-
-/* Returns a reference to the message's unknown data. */
-const char *upb_msg_getunknown(const upb_msg *msg, size_t *len);
 
 /** upb_array *****************************************************************/
 
@@ -162,6 +190,10 @@ upb_msgval upb_mapiter_value(const upb_map *map, size_t iter);
 /* Sets the value for this entry.  The iterator must not be done, and the
  * iterator must not have been initialized const. */
 void upb_mapiter_setvalue(upb_map *map, size_t iter, upb_msgval value);
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #include "upb/port_undef.inc"
 

@@ -16,6 +16,17 @@
  *
  */
 
+#include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
+#include <gtest/gtest.h>
+
 #include <grpc/impl/codegen/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -25,16 +36,6 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/message_allocator.h>
-#include <gtest/gtest.h>
-
-#include <algorithm>
-#include <atomic>
-#include <condition_variable>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <sstream>
-#include <thread>
 
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -49,10 +50,6 @@ namespace {
 
 enum class Protocol { INPROC, TCP };
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-using experimental::GenericCallbackServerContext;
-#endif
-
 class TestScenario {
  public:
   TestScenario(Protocol protocol, const std::string& creds_type)
@@ -62,8 +59,7 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
              << "," << scenario.credentials_type << "}";
@@ -96,7 +92,7 @@ class ContextAllocatorEnd2endTestBase
       server_address_ << "localhost:" << picked_port_;
       builder.AddListeningPort(server_address_.str(), server_creds);
     }
-    builder.experimental().SetContextAllocator(std::move(context_allocator));
+    builder.SetContextAllocator(std::move(context_allocator));
     builder.RegisterService(&callback_service_);
 
     server_ = builder.BuildAndStart();
@@ -149,7 +145,7 @@ class ContextAllocatorEnd2endTestBase
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental_async()->Echo(
+      stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
             GPR_ASSERT(s.ok());

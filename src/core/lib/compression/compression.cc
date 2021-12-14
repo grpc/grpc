@@ -116,12 +116,12 @@ void grpc_compression_options_init(grpc_compression_options* opts) {
 
 void grpc_compression_options_enable_algorithm(
     grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
-  GPR_BITSET(&opts->enabled_algorithms_bitset, algorithm);
+  grpc_core::SetBit(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 void grpc_compression_options_disable_algorithm(
     grpc_compression_options* opts, grpc_compression_algorithm algorithm) {
-  GPR_BITCLEAR(&opts->enabled_algorithms_bitset, algorithm);
+  grpc_core::ClearBit(&opts->enabled_algorithms_bitset, algorithm);
 }
 
 int grpc_compression_options_is_algorithm_enabled(

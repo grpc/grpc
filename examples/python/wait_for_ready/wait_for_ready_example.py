@@ -13,9 +13,9 @@
 # limitations under the License.
 """The Python example of utilizing wait-for-ready flag."""
 
-import logging
 from concurrent import futures
 from contextlib import contextmanager
+import logging
 import socket
 import threading
 

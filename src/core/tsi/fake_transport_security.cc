@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
@@ -416,8 +417,8 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
   /* Protects each frame. */
   while (unprotected_slices->length > 0) {
     size_t frame_length =
-        GPR_MIN(impl->max_frame_size,
-                unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
+        std::min(impl->max_frame_size,
+                 unprotected_slices->length + TSI_FAKE_FRAME_HEADER_SIZE);
     grpc_slice slice = GRPC_SLICE_MALLOC(TSI_FAKE_FRAME_HEADER_SIZE);
     store32_little_endian(static_cast<uint32_t>(frame_length),
                           GRPC_SLICE_START_PTR(slice));
@@ -498,6 +499,7 @@ struct fake_handshaker_result {
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
 };
+
 static tsi_result fake_handshaker_result_extract_peer(
     const tsi_handshaker_result* /*self*/, tsi_peer* peer) {
   /* Construct a tsi_peer with 1 property: certificate type, security_level. */
@@ -512,6 +514,13 @@ static tsi_result fake_handshaker_result_extract_peer(
       tsi_security_level_to_string(TSI_SECURITY_NONE), &peer->properties[1]);
   if (result != TSI_OK) tsi_peer_destruct(peer);
   return result;
+}
+
+static tsi_result fake_handshaker_result_get_frame_protector_type(
+    const tsi_handshaker_result* /*self*/,
+    tsi_frame_protector_type* frame_protector_type) {
+  *frame_protector_type = TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY;
+  return TSI_OK;
 }
 
 static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
@@ -549,6 +558,7 @@ static void fake_handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     fake_handshaker_result_extract_peer,
+    fake_handshaker_result_get_frame_protector_type,
     fake_handshaker_result_create_zero_copy_grpc_protector,
     fake_handshaker_result_create_frame_protector,
     fake_handshaker_result_get_unused_bytes,
@@ -562,8 +572,7 @@ static tsi_result fake_handshaker_result_create(
       handshaker_result == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  fake_handshaker_result* result =
-      static_cast<fake_handshaker_result*>(gpr_zalloc(sizeof(*result)));
+  fake_handshaker_result* result = grpc_core::Zalloc<fake_handshaker_result>();
   result->base.vtable = &handshaker_result_vtable;
   if (unused_bytes_size > 0) {
     result->unused_bytes =
@@ -755,8 +764,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 };
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {
-  tsi_fake_handshaker* impl =
-      static_cast<tsi_fake_handshaker*>(gpr_zalloc(sizeof(*impl)));
+  tsi_fake_handshaker* impl = grpc_core::Zalloc<tsi_fake_handshaker>();
   impl->base.vtable = &handshaker_vtable;
   impl->is_client = is_client;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
@@ -777,7 +785,7 @@ tsi_handshaker* tsi_create_fake_handshaker(int is_client) {
 tsi_frame_protector* tsi_create_fake_frame_protector(
     size_t* max_protected_frame_size) {
   tsi_fake_frame_protector* impl =
-      static_cast<tsi_fake_frame_protector*>(gpr_zalloc(sizeof(*impl)));
+      grpc_core::Zalloc<tsi_fake_frame_protector>();
   impl->max_frame_size = (max_protected_frame_size == nullptr)
                              ? TSI_FAKE_DEFAULT_FRAME_SIZE
                              : *max_protected_frame_size;

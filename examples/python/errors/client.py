@@ -14,11 +14,12 @@
 """This example handles rich error status in client-side."""
 
 from __future__ import print_function
+
 import logging
 
+from google.rpc import error_details_pb2
 import grpc
 from grpc_status import rpc_status
-from google.rpc import error_details_pb2
 
 from examples.protos import helloworld_pb2
 from examples.protos import helloworld_pb2_grpc

@@ -76,6 +76,17 @@ message LbEndpoint {
 
   // Optional health status when known and supplied by EDS server.
   HealthStatus health_status = 2;
+
+  // The optional load balancing weight of the upstream host; at least 1.
+  // Envoy uses the load balancing weight in some of the built in load
+  // balancers. The load balancing weight for an endpoint is divided by the sum
+  // of the weights of all endpoints in the endpoint's locality to produce a
+  // percentage of traffic for the endpoint. This percentage is then further
+  // weighted by the endpoint's locality's load balancing weight from
+  // LocalityLbEndpoints. If unspecified, each host is presumed to have equal
+  // weight in a locality. The sum of the weights of all endpoints in the
+  // endpoint's locality must not exceed uint32_t maximal value (4294967295).
+  google.protobuf.UInt32Value load_balancing_weight = 4;
 }
 
 // A group of endpoints belonging to a Locality.

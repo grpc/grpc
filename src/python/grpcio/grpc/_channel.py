@@ -22,11 +22,11 @@ import threading
 import time
 
 import grpc
-import grpc.experimental
-from grpc import _compression
 from grpc import _common
+from grpc import _compression
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
+import grpc.experimental
 
 _LOGGER = logging.getLogger(__name__)
 

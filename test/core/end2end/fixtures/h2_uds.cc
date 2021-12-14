@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,6 +36,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -62,7 +61,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_base(
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   const std::string localaddr = absl::StrFormat(
       "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d", getpid(),
@@ -72,7 +72,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 
 static grpc_end2end_test_fixture
 chttp2_create_fixture_fullstack_abstract_namespace(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   const std::string localaddr = absl::StrFormat(
       "unix-abstract:grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d",
@@ -81,7 +82,7 @@ chttp2_create_fixture_fullstack_abstract_namespace(
 }
 
 void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* client_args) {
+                                  const grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   f->client = grpc_insecure_channel_create(ffd->localaddr.c_str(), client_args,
@@ -89,7 +90,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
 }
 
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* server_args) {
+                                  const grpc_channel_args* server_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   if (f->server) {

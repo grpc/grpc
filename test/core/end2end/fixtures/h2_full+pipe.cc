@@ -21,8 +21,6 @@
 // This test requires posix wakeup fds
 #ifdef GRPC_POSIX_WAKEUP_FD
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -37,6 +35,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -45,7 +44,8 @@ struct fullstack_fixture_data {
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_fixture_data* ffd = new fullstack_fixture_data();
@@ -61,7 +61,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 }
 
 void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* client_args) {
+                                  const grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   f->client = grpc_insecure_channel_create(ffd->localaddr.c_str(), client_args,
@@ -70,7 +70,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
 }
 
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* server_args) {
+                                  const grpc_channel_args* server_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   if (f->server) {

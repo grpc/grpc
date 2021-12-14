@@ -14,41 +14,46 @@
 
 FROM debian:jessie
 
+#=================
+# Basic C core dependencies
 
-# Install Git and basic packages.
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
 RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
   build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  dnsutils \
+  autoconf \
+  libtool \
+  pkg-config \
+  && apt-get clean
+
+# GCC
+RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
+  g++ \
+  g++-multilib  \
+  && apt-get clean
+
+# libc6
+RUN apt-get update && apt-get install -y \
   libc6 \
   libc6-dbg \
   libc6-dev \
-  libgtest-dev \
-  libtool \
+  && apt-get clean
+
+# Tools
+RUN apt-get update && apt-get install -y \
+  bzip2 \
+  curl \
+  dnsutils \
+  git \
+  lcov \
   make \
-  perl \
   strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
+  time \
   unzip \
   wget \
-  zip && apt-get clean
-
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
+  zip \
+  && apt-get clean
 
 #==================
 # Node dependencies

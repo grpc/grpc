@@ -56,6 +56,16 @@ UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_LbSubsetConfig_LbSu
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.LbSubsetConfig.LbSubsetSelector");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_SlowStartConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.SlowStartConfig");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_RoundRobinLbConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.RoundRobinLbConfig");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_cluster_v3_cluster_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.cluster.v3.Cluster.LeastRequestLbConfig");

@@ -22,14 +22,14 @@
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
-#include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
+
+#include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #ifdef GRPC_LINUX_TCP_H
 #include <linux/tcp.h>
 #else
@@ -388,17 +388,17 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 }
 
 /* set a socket using a grpc_socket_mutator */
-grpc_error_handle grpc_set_socket_with_mutator(int fd,
+grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
   GPR_ASSERT(mutator);
-  if (!grpc_socket_mutator_mutate_fd(mutator, fd)) {
+  if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_socket_mutator failed.");
   }
   return GRPC_ERROR_NONE;
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, const grpc_channel_args* args) {
+    int fd, grpc_fd_usage usage, const grpc_channel_args* args) {
   const grpc_arg* socket_mutator_arg =
       grpc_channel_args_find(args, GRPC_ARG_SOCKET_MUTATOR);
   if (socket_mutator_arg == nullptr) {
@@ -407,7 +407,7 @@ grpc_error_handle grpc_apply_socket_mutator_in_args(
   GPR_DEBUG_ASSERT(socket_mutator_arg->type == GRPC_ARG_POINTER);
   grpc_socket_mutator* mutator =
       static_cast<grpc_socket_mutator*>(socket_mutator_arg->value.pointer.p);
-  return grpc_set_socket_with_mutator(fd, mutator);
+  return grpc_set_socket_with_mutator(fd, usage, mutator);
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
@@ -443,8 +443,7 @@ static grpc_error_handle error_for_fd(int fd,
   if (fd >= 0) return GRPC_ERROR_NONE;
   std::string addr_str = grpc_sockaddr_to_string(addr, false);
   grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(addr_str.c_str()));
+      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
   return err;
 }
 

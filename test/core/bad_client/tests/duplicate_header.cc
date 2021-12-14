@@ -16,13 +16,12 @@
  *
  */
 
-#include "test/core/bad_client/bad_client.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 
 #include "src/core/lib/surface/server.h"
+#include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 
 #define PFX_STR                      \

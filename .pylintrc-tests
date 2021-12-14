@@ -124,5 +124,7 @@ disable=
 	no-else-return,
 	# NOTE(lidiz): Python 3 make object inheritance default, but not PY2
 	useless-object-inheritance,
+	# NOTE(lidiz): the import order will be enforced by isort instead
+	wrong-import-order,
   # NOTE(sergiitk): yapf compatibility, ref #25071
   bad-continuation,

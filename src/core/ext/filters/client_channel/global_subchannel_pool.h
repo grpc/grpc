@@ -32,7 +32,6 @@ namespace grpc_core {
 // should be only one instance of this class. Init() should be called once at
 // the filter initialization time; Shutdown() should be called once at the
 // filter shutdown time.
-// TODO(juanlishen): Enable subchannel retention.
 class GlobalSubchannelPool final : public SubchannelPoolInterface {
  public:
   // The ctor and dtor are not intended to use directly.

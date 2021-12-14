@@ -32,6 +32,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/gpr/string.h"
 
 static void fill_common_header(const grpc_httpcli_request* request,

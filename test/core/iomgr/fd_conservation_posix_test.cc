@@ -18,6 +18,7 @@
 
 #include <sys/resource.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
@@ -39,17 +40,12 @@ int main(int argc, char** argv) {
        of descriptors */
     rlim.rlim_cur = rlim.rlim_max = 10;
     GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("fd_conservation_posix_test");
-
     for (i = 0; i < 100; i++) {
       p = grpc_iomgr_create_endpoint_pair("test", nullptr);
       grpc_endpoint_destroy(p.client);
       grpc_endpoint_destroy(p.server);
       grpc_core::ExecCtx::Get()->Flush();
     }
-
-    grpc_resource_quota_unref(resource_quota);
   }
 
   grpc_shutdown();

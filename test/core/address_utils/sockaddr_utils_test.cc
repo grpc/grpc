@@ -14,13 +14,9 @@
 // limitations under the License.
 //
 
-// With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-// using that endpoint. Because of various transitive includes in uv.h,
-// including windows.h on Windows, uv.h must be included before other system
-// headers. Therefore, sockaddr.h must always be included first
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
 
 #include <errno.h>
 #include <string.h>
@@ -29,7 +25,9 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -184,16 +182,18 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
             "[2001:db8::1%25101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1%25101]:12345");
 
-  input6 = MakeAddr6(kMapped, sizeof(kMapped));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false),
+  grpc_resolved_address input6x = MakeAddr6(kMapped, sizeof(kMapped));
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6x, false),
             "[::ffff:192.0.2.1]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true), "192.0.2.1:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv4:192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6x, true), "192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6x), "ipv4:192.0.2.1:12345");
 
-  input6 = MakeAddr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false), "[::fffe:c000:263]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true), "[::fffe:c000:263]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[::fffe:c000:263]:12345");
+  grpc_resolved_address input6y =
+      MakeAddr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6y, false),
+            "[::fffe:c000:263]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6y, true), "[::fffe:c000:263]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6y), "ipv6:[::fffe:c000:263]:12345");
 
   grpc_resolved_address phony;
   memset(&phony, 0, sizeof(phony));

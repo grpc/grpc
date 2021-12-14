@@ -18,9 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_utils.h"
-
 #include <inttypes.h>
 #include <string.h>
 
@@ -31,7 +28,9 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr_internal.h" /* for iomgr_abort_on_leaks() */
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define LOG2_SHARD_COUNT 5
@@ -137,12 +136,11 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
-    const grpc_core::StaticMetadataSlice* static_slice_table =
-        grpc_static_slice_table();
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        grpc_slice_eq_static_interned(slice, static_slice_table[ent.idx])) {
+        grpc_slice_eq_static_interned(
+            slice, grpc_core::g_static_metadata_slice_table[ent.idx])) {
       *returned_slice_is_different = true;
-      return static_slice_table[ent.idx];
+      return grpc_core::g_static_metadata_slice_table[ent.idx];
     }
   }
 
@@ -168,11 +166,9 @@ static const grpc_core::StaticMetadataSlice* MatchStaticSlice(
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
-    const grpc_core::StaticMetadataSlice* static_slice_table =
-        grpc_static_slice_table();
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        static_slice_table[ent.idx] == args) {
-      return &static_slice_table[ent.idx];
+        grpc_core::g_static_metadata_slice_table[ent.idx] == args) {
+      return &grpc_core::g_static_metadata_slice_table[ent.idx];
     }
   }
   return nullptr;
@@ -239,7 +235,7 @@ static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
   /* search for an existing string */
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash && grpc_core::InternedSlice(s) == args) {
-      if (s->refcnt.RefIfNonZero()) {
+      if (grpc_core::IncrementIfNonzero(&s->refcnt)) {
         return s;
       }
     }
@@ -324,11 +320,9 @@ void grpc_slice_intern_init(void) {
     static_metadata_hash[i].idx = GRPC_STATIC_MDSTR_COUNT;
   }
   max_static_metadata_hash_probe = 0;
-  const grpc_core::StaticMetadataSlice* static_slice_table =
-      grpc_static_slice_table();
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_static_metadata_hash_values[i] =
-        grpc_slice_default_hash_internal(static_slice_table[i]);
+    grpc_static_metadata_hash_values[i] = grpc_slice_default_hash_internal(
+        grpc_core::g_static_metadata_slice_table[i]);
     for (size_t j = 0; j < GPR_ARRAY_SIZE(static_metadata_hash); j++) {
       size_t slot = (grpc_static_metadata_hash_values[i] + j) %
                     GPR_ARRAY_SIZE(static_metadata_hash);
@@ -344,7 +338,7 @@ void grpc_slice_intern_init(void) {
   }
   // Handle KV hash for all static mdelems.
   for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; ++i) {
-    grpc_static_mdelem_table()[i].HashInit();
+    grpc_core::g_static_mdelem_table[i].HashInit();
   }
 }
 

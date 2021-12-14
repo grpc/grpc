@@ -20,7 +20,7 @@ import sys
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
 
-def check_port_platform_inclusion(directory_root):
+def check_port_platform_inclusion(directory_root, legal_list):
     bad_files = []
     for root, dirs, files in os.walk(directory_root):
         for filename in files:
@@ -45,10 +45,7 @@ def check_port_platform_inclusion(directory_root):
                 all_lines_in_file = f.readlines()
                 for index, l in enumerate(all_lines_in_file):
                     if '#include' in l:
-                        if l not in [
-                                '#include <grpc/support/port_platform.h>\n',
-                                '#include <grpc/impl/codegen/port_platform.h>\n'
-                        ]:
+                        if l not in legal_list:
                             bad_files.append(path)
                         elif all_lines_in_file[index + 1] != '\n':
                             # Require a blank line after including port_platform.h in
@@ -60,11 +57,30 @@ def check_port_platform_inclusion(directory_root):
 
 
 all_bad_files = []
-all_bad_files += check_port_platform_inclusion(os.path.join('src', 'core'))
-all_bad_files += check_port_platform_inclusion(os.path.join('include', 'grpc'))
+all_bad_files += check_port_platform_inclusion(os.path.join('src', 'core'), [
+    '#include <grpc/support/port_platform.h>\n',
+])
+all_bad_files += check_port_platform_inclusion(os.path.join(
+    'include', 'grpc'), [
+        '#include <grpc/support/port_platform.h>\n',
+        '#include <grpc/impl/codegen/port_platform.h>\n',
+    ])
 
-if len(all_bad_files) > 0:
-    for f in all_bad_files:
-        print((('port_platform.h is not the first included header or there '
-                'is not a blank line following its inclusion in %s') % f))
-    sys.exit(1)
+if sys.argv[1:] == ['--fix']:
+    for path in all_bad_files:
+        text = ''
+        found = False
+        with open(path) as f:
+            for l in f.readlines():
+                if not found and '#include' in l:
+                    text += '#include <grpc/support/port_platform.h>\n\n'
+                    found = True
+                text += l
+        with open(path, 'w') as f:
+            f.write(text)
+else:
+    if len(all_bad_files) > 0:
+        for f in all_bad_files:
+            print((('port_platform.h is not the first included header or there '
+                    'is not a blank line following its inclusion in %s') % f))
+        sys.exit(1)

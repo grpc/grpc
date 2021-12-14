@@ -22,6 +22,7 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -32,15 +33,24 @@ class EvaluateArgs {
   // Caller is responsible for ensuring auth_context outlives PerChannelArgs
   // struct.
   struct PerChannelArgs {
+    struct Address {
+      // The address in sockaddr form.
+      grpc_resolved_address address;
+      // The same address with only the host part.
+      std::string address_str;
+      int port = 0;
+    };
+
     PerChannelArgs(grpc_auth_context* auth_context, grpc_endpoint* endpoint);
 
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
+    std::vector<absl::string_view> uri_sans;
+    std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
-    std::string local_address;
-    int local_port = 0;
-    std::string peer_address;
-    int peer_port = 0;
+    absl::string_view subject;
+    Address local_address;
+    Address peer_address;
   };
 
   EvaluateArgs(grpc_metadata_batch* metadata, PerChannelArgs* channel_args)
@@ -49,7 +59,6 @@ class EvaluateArgs {
   absl::string_view GetPath() const;
   absl::string_view GetHost() const;
   absl::string_view GetMethod() const;
-  std::multimap<absl::string_view, absl::string_view> GetHeaders() const;
   // Returns metadata value(s) for the specified key.
   // If the key is not present in the batch, returns absl::nullopt.
   // If the key is present exactly once in the batch, returns a string_view of
@@ -60,13 +69,18 @@ class EvaluateArgs {
   absl::optional<absl::string_view> GetHeaderValue(
       absl::string_view key, std::string* concatenated_value) const;
 
-  absl::string_view GetLocalAddress() const;
+  grpc_resolved_address GetLocalAddress() const;
+  absl::string_view GetLocalAddressString() const;
   int GetLocalPort() const;
-  absl::string_view GetPeerAddress() const;
+  grpc_resolved_address GetPeerAddress() const;
+  absl::string_view GetPeerAddressString() const;
   int GetPeerPort() const;
   absl::string_view GetTransportSecurityType() const;
   absl::string_view GetSpiffeId() const;
+  std::vector<absl::string_view> GetUriSans() const;
+  std::vector<absl::string_view> GetDnsSans() const;
   absl::string_view GetCommonName() const;
+  absl::string_view GetSubject() const;
 
  private:
   grpc_metadata_batch* metadata_;

@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_STATUS_CODE_ENUM_H
 #define GRPCPP_SUPPORT_STATUS_CODE_ENUM_H
 
-#include <grpcpp/impl/codegen/status_code_enum.h>
+#include <grpcpp/impl/codegen/status_code_enum.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_STATUS_CODE_ENUM_H

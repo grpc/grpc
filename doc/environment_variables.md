@@ -75,8 +75,11 @@ some configuration as environment variables that can be set.
     in DEBUG)
   - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals
+  - ring_hash_lb - traces the ring hash load balancing policy
+  - rls_lb - traces the RLS load balancing policy
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
+  - sdk_authz - traces sdk authorization
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - subchannel - traces the connectivity state of subchannel
@@ -95,7 +98,6 @@ some configuration as environment variables that can be set.
 
   The following tracers will only run in binaries built in DEBUG mode. This is
   accomplished by invoking `CONFIG=dbg make <target>`
-  - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
   - combiner - traces combiner lock state
   - call_combiner - traces call combiner state

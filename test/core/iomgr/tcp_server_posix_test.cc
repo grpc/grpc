@@ -21,8 +21,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
-#include "src/core/lib/iomgr/tcp_server.h"
-
 #include <errno.h>
 #include <ifaddrs.h>
 #include <netinet/in.h>
@@ -41,9 +39,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -163,14 +164,22 @@ static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
 static void test_no_op(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
+  grpc_channel_args_destroy(args);
   grpc_tcp_server_unref(s);
 }
 
 static void test_no_op_with_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
+  grpc_channel_args_destroy(args);
   LOG_TEST("test_no_op_with_start");
   std::vector<grpc_pollset*> empty_pollset;
   grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
@@ -183,7 +192,11 @@ static void test_no_op_with_port(void) {
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
+  grpc_channel_args_destroy(args);
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -203,7 +216,11 @@ static void test_no_op_with_port_and_start(void) {
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
-  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, args, &s));
+  grpc_channel_args_destroy(args);
   LOG_TEST("test_no_op_with_port_and_start");
   int port = -1;
 
@@ -299,8 +316,13 @@ static void test_connect(size_t num_connects,
   int svr1_port;
   grpc_tcp_server* s;
   const unsigned num_ports = 2;
+  const grpc_channel_args* new_channel_args =
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(channel_args);
   GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(nullptr, channel_args, &s));
+             grpc_tcp_server_create(nullptr, new_channel_args, &s));
+  grpc_channel_args_destroy(new_channel_args);
   unsigned port_num;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);
@@ -437,8 +459,7 @@ int main(int argc, char** argv) {
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
   // Zalloc dst_addrs to avoid oversized frames.
-  test_addrs* dst_addrs =
-      static_cast<test_addrs*>(gpr_zalloc(sizeof(*dst_addrs)));
+  test_addrs* dst_addrs = grpc_core::Zalloc<test_addrs>();
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   // wait a few seconds to make sure IPv6 link-local addresses can be bound

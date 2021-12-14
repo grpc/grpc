@@ -16,10 +16,11 @@
  *
  */
 
-#include <grpc/grpc.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/security/credentials/credentials.h"

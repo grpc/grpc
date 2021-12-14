@@ -21,6 +21,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -378,14 +379,14 @@ static void test_callback(void) {
   LOG_TEST("test_callback");
 
   bool got_shutdown = false;
-  class ShutdownCallback : public grpc_experimental_completion_queue_functor {
+  class ShutdownCallback : public grpc_completion_queue_functor {
    public:
     explicit ShutdownCallback(bool* done) : done_(done) {
       functor_run = &ShutdownCallback::Run;
       inlineable = false;
     }
     ~ShutdownCallback() {}
-    static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+    static void Run(grpc_completion_queue_functor* cb, int ok) {
       gpr_mu_lock(&shutdown_mu);
       *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
       // Signal when the shutdown callback is completed.
@@ -413,7 +414,7 @@ static void test_callback(void) {
       cc = grpc_completion_queue_create(
           grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
-      class TagCallback : public grpc_experimental_completion_queue_functor {
+      class TagCallback : public grpc_completion_queue_functor {
        public:
         TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {
           functor_run = &TagCallback::Run;
@@ -421,8 +422,7 @@ static void test_callback(void) {
           inlineable = false;
         }
         ~TagCallback() {}
-        static void Run(grpc_experimental_completion_queue_functor* cb,
-                        int ok) {
+        static void Run(grpc_completion_queue_functor* cb, int ok) {
           GPR_ASSERT(static_cast<bool>(ok));
           auto* callback = static_cast<TagCallback*>(cb);
           gpr_mu_lock(&mu);

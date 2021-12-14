@@ -31,8 +31,8 @@ namespace grpc_core {
 
 namespace {
 
-uint64_t GetAndResetCounter(Atomic<uint64_t>* from) {
-  return from->Exchange(0, MemoryOrder::RELAXED);
+uint64_t GetAndResetCounter(std::atomic<uint64_t>* from) {
+  return from->exchange(0, std::memory_order_relaxed);
 }
 
 }  // namespace
@@ -82,7 +82,7 @@ XdsClusterDropStats::Snapshot XdsClusterDropStats::GetSnapshotAndReset() {
 }
 
 void XdsClusterDropStats::AddUncategorizedDrops() {
-  uncategorized_drops_.FetchAdd(1);
+  uncategorized_drops_.fetch_add(1);
 }
 
 void XdsClusterDropStats::AddCallDropped(const std::string& category) {
@@ -132,28 +132,29 @@ XdsClusterLocalityStats::~XdsClusterLocalityStats() {
 
 XdsClusterLocalityStats::Snapshot
 XdsClusterLocalityStats::GetSnapshotAndReset() {
-  Snapshot snapshot = {GetAndResetCounter(&total_successful_requests_),
-                       // Don't reset total_requests_in_progress because it's
-                       // not related to a single reporting interval.
-                       total_requests_in_progress_.Load(MemoryOrder::RELAXED),
-                       GetAndResetCounter(&total_error_requests_),
-                       GetAndResetCounter(&total_issued_requests_),
-                       {}};
+  Snapshot snapshot = {
+      GetAndResetCounter(&total_successful_requests_),
+      // Don't reset total_requests_in_progress because it's
+      // not related to a single reporting interval.
+      total_requests_in_progress_.load(std::memory_order_relaxed),
+      GetAndResetCounter(&total_error_requests_),
+      GetAndResetCounter(&total_issued_requests_),
+      {}};
   MutexLock lock(&backend_metrics_mu_);
   snapshot.backend_metrics = std::move(backend_metrics_);
   return snapshot;
 }
 
 void XdsClusterLocalityStats::AddCallStarted() {
-  total_issued_requests_.FetchAdd(1, MemoryOrder::RELAXED);
-  total_requests_in_progress_.FetchAdd(1, MemoryOrder::RELAXED);
+  total_issued_requests_.fetch_add(1, std::memory_order_relaxed);
+  total_requests_in_progress_.fetch_add(1, std::memory_order_relaxed);
 }
 
 void XdsClusterLocalityStats::AddCallFinished(bool fail) {
-  Atomic<uint64_t>& to_increment =
+  std::atomic<uint64_t>& to_increment =
       fail ? total_error_requests_ : total_successful_requests_;
-  to_increment.FetchAdd(1, MemoryOrder::RELAXED);
-  total_requests_in_progress_.FetchAdd(-1, MemoryOrder::ACQ_REL);
+  to_increment.fetch_add(1, std::memory_order_relaxed);
+  total_requests_in_progress_.fetch_add(-1, std::memory_order_acq_rel);
 }
 
 }  // namespace grpc_core

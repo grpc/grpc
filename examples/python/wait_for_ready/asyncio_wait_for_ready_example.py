@@ -14,8 +14,8 @@
 """The Python example of utilizing wait-for-ready flag."""
 
 import asyncio
-import logging
 from contextlib import contextmanager
+import logging
 import socket
 from typing import Iterable
 

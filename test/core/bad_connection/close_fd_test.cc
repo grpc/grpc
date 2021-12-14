@@ -26,8 +26,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "test/core/util/test_config.h"
-
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -38,11 +36,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -73,8 +73,11 @@ static test_ctx g_ctx;
 static void server_setup_transport(grpc_transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->server, grpc_cq_pollset(g_ctx.cq));
-  g_ctx.server->core_server->SetupTransport(
-      transport, nullptr, g_ctx.server->core_server->channel_args(), nullptr);
+  grpc_core::Server* core_server = grpc_core::Server::FromC(g_ctx.server);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "SetupTransport",
+      core_server->SetupTransport(transport, nullptr,
+                                  core_server->channel_args(), nullptr)));
 }
 
 static void client_setup_transport(grpc_transport* transport) {
@@ -88,8 +91,9 @@ static void client_setup_transport(grpc_transport* transport) {
       grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   /* TODO (pjaikumar): use GRPC_CLIENT_CHANNEL instead of
    * GRPC_CLIENT_DIRECT_CHANNEL */
-  g_ctx.client = grpc_channel_create("socketpair-target", args,
-                                     GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  g_ctx.client =
+      grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                          transport, nullptr);
   grpc_channel_args_destroy(args);
 }
 

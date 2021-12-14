@@ -1003,24 +1003,73 @@ Status: TODO
 This test verifies that a client sending faster than a server can drain sees
 pushback (i.e., attempts to send succeed only after appropriate delays).
 
+#### rpc_soak
+
+The client performs many large_unary RPCs in sequence over the same channel.
+The client records the latency and status of each RPC in some data structure.
+If the test ever consumes `soak_overall_timeout_seconds` seconds and still hasn't
+completed `soak_iterations` RPCs, then the test should discontinue sending RPCs
+as soon as possible. After performing all RPCs, the test should examine
+previously recorded RPC latency and status results in a second pass and fail if
+either:
+
+a) not all `soak_iterations` RPCs were completed
+
+b) the sum of RPCs that either completed with a non-OK status or exceeded
+   `max_acceptable_per_rpc_latency_ms` exceeds `soak_max_failures`
+
+Implementations should use a timer with sub-millisecond precision to measure
+latency. Also, implementations should avoid setting RPC deadlines and should
+instead wait for each RPC to complete. Doing so provides more data for
+debugging in case of failure. For example, if RPC deadlines are set to
+`soak_per_iteration_max_acceptable_latency_ms` and one of the RPCs hits that
+deadline, it's not clear if the RPC was late by a millisecond or a minute.
+
+This test must be configurable via a few different command line flags:
+
+* `soak_iterations`: Controls the number of RPCs to perform. This should
+  default to 10.
+
+* `soak_max_failures`: An inclusive upper limit on the number of RPC failures
+  that should be tolerated (i.e. after which the test process should
+  still exit 0). A failure is considered to be either a non-OK status or an RPC
+  whose latency exceeds `soak_per_iteration_max_acceptable_latency_ms`. This
+  should default to 0.
+
+* `soak_per_iteration_max_acceptable_latency_ms`: An upper limit on the latency
+  of a single RPC in order for that RPC to be considered successful. This
+  should default to 1000.
+
+* `soak_overall_timeout_seconds`: The overall number of seconds after which
+  the test should stop and fail if `soak_iterations` have not yet been
+  completed. This should default to
+  `soak_per_iteration_max_acceptable_latency_ms` * `soak_iterations`.
+
+The following is optional but encouraged to improve debuggability:
+
+* Implementations should log the number of milliseconds that each RPC takes.
+  Additionally, implementations should use a histogram of RPC latencies
+  to log interesting latency percentiles at the end of the test (e.g. median,
+  90th, and max latency percentiles).
+
+#### channel_soak
+
+Similar to rpc_soak, but this time each RPC is performed on a new channel. The
+channel is created just before each RPC and is destroyed just after.
+
+This test is configured with the same command line flags that the rpc_soak test
+is configured with, with only one semantic difference: when measuring an RPCs
+latency to see if it exceeds `soak_per_iteration_max_acceptable_latency_ms` or
+not, the creation of the channel should be included in that
+latency measurement, but the teardown of that channel should **not** be
+included in that latency measurement (channel teardown semantics differ widely
+between languages). This latency measurement should also be the value that is
+logged and recorded in the latency histogram.
+
 ### Experimental Tests
 
 These tests are not yet standardized, and are not yet implemented in all
 languages. Therefore they are not part of our interop matrix.
-
-#### rpc_soak
-
-The client performs many large_unary RPCs in sequence over the same channel.
-The number of RPCs is configured by the experimental flag, `soak_iterations`.
-
-#### channel_soak
-
-The client performs many large_unary RPCs in sequence. Before each RPC, it
-tears down and rebuilds the channel. The number of RPCs is configured by
-the experimental flag, `soak_iterations`.
-
-This tests puts stress on several gRPC components; the resolver, the load
-balancer, and the RPC hotpath.
 
 #### long_lived_channel
 

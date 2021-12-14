@@ -28,6 +28,7 @@ def _fixture_options(
         tracing = False,
         _platforms = ["windows", "linux", "mac", "posix"],
         is_inproc = False,
+        is_1byte = False,
         is_http2 = True,
         supports_proxy_auth = False,
         supports_write_buffering = True,
@@ -42,6 +43,7 @@ def _fixture_options(
         secure = secure,
         tracing = tracing,
         is_inproc = is_inproc,
+        is_1byte = is_1byte,
         is_http2 = is_http2,
         supports_proxy_auth = supports_proxy_auth,
         supports_write_buffering = supports_write_buffering,
@@ -68,7 +70,6 @@ END2END_FIXTURES = {
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
     "h2_full+trace": _fixture_options(tracing = True),
-    "h2_full+workarounds": _fixture_options(),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
     "h2_insecure": _fixture_options(secure = True),
     "h2_oauth2": _fixture_options(),
@@ -77,6 +78,7 @@ END2END_FIXTURES = {
         fullstack = False,
         dns_resolver = False,
         client_channel = False,
+        is_1byte = True,
     ),
     "h2_sockpair": _fixture_options(
         fullstack = False,
@@ -92,7 +94,17 @@ END2END_FIXTURES = {
     "h2_ssl": _fixture_options(secure = True),
     "h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_tls": _fixture_options(secure = True),
+    "h2_local_abstract_uds_percent_encoded": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "posix"],
+    ),
     "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_local_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
@@ -135,7 +147,6 @@ END2END_NOSEC_FIXTURES = {
     "h2_full": _fixture_options(secure = False),
     "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
     "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
-    "h2_full+workarounds": _fixture_options(secure = False),
     "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
     "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
@@ -143,6 +154,7 @@ END2END_NOSEC_FIXTURES = {
         dns_resolver = False,
         client_channel = False,
         secure = False,
+        is_1byte = True,
     ),
     "h2_sockpair": _fixture_options(
         fullstack = False,
@@ -176,6 +188,7 @@ def _test_options(
         secure = False,
         traceable = False,
         exclude_inproc = False,
+        exclude_1byte = False,
         needs_http2 = False,
         needs_proxy_auth = False,
         needs_write_buffering = False,
@@ -190,6 +203,7 @@ def _test_options(
         secure = secure,
         traceable = traceable,
         exclude_inproc = exclude_inproc,
+        exclude_1byte = exclude_1byte,
         needs_http2 = needs_http2,
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
@@ -207,6 +221,7 @@ END2END_TESTS = {
         proxyable = False,
         # TODO(b/151212019): Test case known to be flaky under epoll1.
         exclude_pollers = ["epoll1"],
+        exclude_1byte = True,
     ),
     "call_creds": _test_options(secure = True),
     "call_host_override": _test_options(
@@ -247,9 +262,9 @@ END2END_TESTS = {
     ),
     "high_initial_seqno": _test_options(),
     "idempotent_request": _test_options(),
-    "invoke_large_request": _test_options(),
+    "invoke_large_request": _test_options(exclude_1byte = True),
     "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
-    "large_metadata": _test_options(),
+    "large_metadata": _test_options(exclude_1byte = True),
     "max_concurrent_streams": _test_options(
         proxyable = False,
         exclude_inproc = True,
@@ -261,7 +276,7 @@ END2END_TESTS = {
     "no_error_on_hotpath": _test_options(proxyable = False),
     "no_logging": _test_options(traceable = False),
     "no_op": _test_options(),
-    "payload": _test_options(),
+    "payload": _test_options(exclude_1byte = True),
     # TODO(juanlishen): This is disabled for now because it depends on some generated functions in
     # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
     # OpenCensus can only be built via Bazel so far.
@@ -272,85 +287,71 @@ END2END_TESTS = {
     "registered_call": _test_options(),
     "request_with_flags": _test_options(proxyable = False),
     "request_with_payload": _test_options(),
-    # TODO(roth): Remove proxyable=False for all retry tests once we
-    # have a way for the proxy to propagate the fact that trailing
-    # metadata is available when initial metadata is returned.
-    # See https://github.com/grpc/grpc/issues/14467 for context.
-    "retry": _test_options(needs_client_channel = True, proxyable = False),
-    "retry_cancellation": _test_options(
+    "retry": _test_options(needs_client_channel = True),
+    "retry_cancellation": _test_options(needs_client_channel = True),
+    "retry_cancel_during_delay": _test_options(needs_client_channel = True),
+    "retry_cancel_with_multiple_send_batches": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel3",
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_cancel_during_delay": _test_options(
+    "retry_disabled": _test_options(needs_client_channel = True),
+    "retry_exceeds_buffer_size_in_delay": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_disabled": _test_options(needs_client_channel = True, proxyable = False),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_init",
     ),
     "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
-    "retry_lb_drop": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
-    "retry_non_retriable_status": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_lb_drop": _test_options(needs_client_channel = True),
+    "retry_lb_fail": _test_options(needs_client_channel = True),
+    "retry_non_retriable_status": _test_options(needs_client_channel = True),
     "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_non_retriable_status2",
     ),
-    "retry_recv_initial_metadata": _test_options(
+    "retry_per_attempt_recv_timeout": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_recv_message": _test_options(
+    "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
         needs_client_channel = True,
-        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_per_attempt_recv_timeout2",
     ),
-    "retry_server_pushback_delay": _test_options(
+    "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
+    "retry_recv_message": _test_options(needs_client_channel = True),
+    "retry_recv_trailing_metadata_error": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_server_pushback_disabled": _test_options(
+    "retry_send_initial_metadata_refs": _test_options(
         needs_client_channel = True,
-        proxyable = False,
     ),
-    "retry_streaming": _test_options(needs_client_channel = True, proxyable = False),
-    "retry_streaming_after_commit": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_send_op_fails": _test_options(needs_client_channel = True),
+    "retry_server_pushback_delay": _test_options(needs_client_channel = True),
+    "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
+    "retry_streaming": _test_options(needs_client_channel = True),
+    "retry_streaming_after_commit": _test_options(needs_client_channel = True),
     "retry_streaming_succeeds_before_replay_finished": _test_options(
         needs_client_channel = True,
-        proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_streaming2",
     ),
-    "retry_throttled": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
-    "retry_too_many_attempts": _test_options(
-        needs_client_channel = True,
-        proxyable = False,
-    ),
+    "retry_throttled": _test_options(needs_client_channel = True),
+    "retry_too_many_attempts": _test_options(needs_client_channel = True),
+    "sdk_authz": _test_options(secure = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
@@ -363,14 +364,14 @@ END2END_TESTS = {
     "stream_compression_compressed_payload": _test_options(
         proxyable = False,
         exclude_inproc = True,
+        exclude_1byte = True,
     ),
-    "stream_compression_payload": _test_options(exclude_inproc = True),
+    "stream_compression_payload": _test_options(exclude_inproc = True, exclude_1byte = True),
     "stream_compression_ping_pong_streaming": _test_options(exclude_inproc = True),
     "trailing_metadata": _test_options(),
     "authority_not_supported": _test_options(),
     "filter_latency": _test_options(),
     "filter_status_code": _test_options(),
-    "workaround_cronet_compression": _test_options(),
     "write_buffering": _test_options(needs_write_buffering = True),
     "write_buffering_at_end": _test_options(needs_write_buffering = True),
 }
@@ -394,6 +395,9 @@ def _compatible(fopt, topt):
     if topt.exclude_inproc:
         if fopt.is_inproc:
             return False
+    if topt.exclude_1byte:
+        if fopt.is_1byte:
+            return False
     if topt.needs_http2:
         if not fopt.is_http2:
             return False
@@ -411,14 +415,16 @@ def _compatible(fopt, topt):
 def _platform_support_tags(fopt):
     result = []
     if not "windows" in fopt._platforms:
-        result += ["no_windows"]
+        result.append("no_windows")
     if not "mac" in fopt._platforms:
-        result += ["no_mac"]
+        result.append("no_mac")
     if not "linux" in fopt._platforms:
-        result += ["no_linux"]
+        result.append("no_linux")
     return result
 
+# buildifier: disable=unnamed-macro
 def grpc_end2end_tests():
+    """Instantiates the gRPC end2end tests."""
     grpc_cc_library(
         name = "end2end_tests",
         srcs = ["end2end_tests.cc", "end2end_test_utils.cc"] + [
@@ -438,6 +444,7 @@ def grpc_end2end_tests():
             ":proxy",
             ":local_util",
             "//test/core/util:test_lb_policies",
+            "//:grpc_authorization_provider",
         ],
     )
 
@@ -495,7 +502,9 @@ def grpc_end2end_tests():
                     flaky = t in fopt.flaky_tests,
                 )
 
+# buildifier: disable=unnamed-macro
 def grpc_end2end_nosec_tests():
+    """Instantiates the gRPC end2end no security tests"""
     grpc_cc_library(
         name = "end2end_nosec_tests",
         srcs = ["end2end_nosec_tests.cc", "end2end_test_utils.cc"] + [

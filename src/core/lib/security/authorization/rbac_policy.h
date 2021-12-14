@@ -49,6 +49,7 @@ struct Rbac {
     enum class RuleType {
       kAnd,
       kOr,
+      kNot,
       kAny,
       kHeader,
       kPath,
@@ -58,22 +59,21 @@ struct Rbac {
     };
 
     Permission() = default;
-    // For AND/OR RuleType.
+    // For kAnd/kOr RuleType.
     Permission(Permission::RuleType type,
-               std::vector<std::unique_ptr<Permission>> permissions,
-               bool not_rule = false);
-    // For ANY RuleType.
-    explicit Permission(Permission::RuleType type, bool not_rule = false);
-    // For HEADER RuleType.
-    Permission(Permission::RuleType type, HeaderMatcher header_matcher,
-               bool not_rule = false);
-    // For PATH/REQ_SERVER_NAME RuleType.
-    Permission(Permission::RuleType type, StringMatcher string_matcher,
-               bool not_rule = false);
-    // For DEST_IP RuleType.
-    Permission(Permission::RuleType type, CidrRange ip, bool not_rule = false);
-    // For DEST_PORT RuleType.
-    Permission(Permission::RuleType type, int port, bool not_rule = false);
+               std::vector<std::unique_ptr<Permission>> permissions);
+    // For kNot RuleType.
+    Permission(Permission::RuleType type, Permission permission);
+    // For kAny RuleType.
+    explicit Permission(Permission::RuleType type);
+    // For kHeader RuleType.
+    Permission(Permission::RuleType type, HeaderMatcher header_matcher);
+    // For kPath/kReqServerName RuleType.
+    Permission(Permission::RuleType type, StringMatcher string_matcher);
+    // For kDestIp RuleType.
+    Permission(Permission::RuleType type, CidrRange ip);
+    // For kDestPort RuleType.
+    Permission(Permission::RuleType type, int port);
 
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
@@ -85,15 +85,16 @@ struct Rbac {
     StringMatcher string_matcher;
     CidrRange ip;
     int port;
-    // For type AND/OR.
+    // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
+    // element.
     std::vector<std::unique_ptr<Permission>> permissions;
-    bool not_rule = false;
   };
 
   struct Principal {
     enum class RuleType {
       kAnd,
       kOr,
+      kNot,
       kAny,
       kPrincipalName,
       kSourceIp,
@@ -104,20 +105,19 @@ struct Rbac {
     };
 
     Principal() = default;
-    // For AND/OR RuleType.
+    // For kAnd/kOr RuleType.
     Principal(Principal::RuleType type,
-              std::vector<std::unique_ptr<Principal>> principals,
-              bool not_rule = false);
-    // For ANY RuleType.
-    explicit Principal(Principal::RuleType type, bool not_rule = false);
-    // For PRINCIPAL_NAME/PATH RuleType.
-    Principal(Principal::RuleType type, StringMatcher string_matcher,
-              bool not_rule = false);
-    // For SOURCE_IP/DIRECT_REMOTE_IP/REMOTE_IP RuleType.
-    Principal(Principal::RuleType type, CidrRange ip, bool not_rule = false);
-    // For HEADER RuleType.
-    Principal(Principal::RuleType type, HeaderMatcher header_matcher,
-              bool not_rule = false);
+              std::vector<std::unique_ptr<Principal>> principals);
+    // For kNot RuleType.
+    Principal(Principal::RuleType type, Principal principal);
+    // For kAny RuleType.
+    explicit Principal(Principal::RuleType type);
+    // For kPrincipalName/kPath RuleType.
+    Principal(Principal::RuleType type, StringMatcher string_matcher);
+    // For kSourceIp/kDirectRemoteIp/kRemoteIp RuleType.
+    Principal(Principal::RuleType type, CidrRange ip);
+    // For kHeader RuleType.
+    Principal(Principal::RuleType type, HeaderMatcher header_matcher);
 
     Principal(Principal&& other) noexcept;
     Principal& operator=(Principal&& other) noexcept;
@@ -128,9 +128,9 @@ struct Rbac {
     HeaderMatcher header_matcher;
     StringMatcher string_matcher;
     CidrRange ip;
-    // For type AND/OR.
+    // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
+    // element.
     std::vector<std::unique_ptr<Principal>> principals;
-    bool not_rule = false;
   };
 
   struct Policy {

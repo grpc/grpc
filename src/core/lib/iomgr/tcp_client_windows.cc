@@ -18,13 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <inttypes.h>
 
-#ifdef GRPC_WINSOCK_SOCKET
+#include "src/core/lib/iomgr/port.h"
 
-#include "src/core/lib/iomgr/sockaddr_windows.h"
+#ifdef GRPC_WINSOCK_SOCKET
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -35,6 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
@@ -83,7 +82,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
   GPR_ASSERT(*ep == NULL);
   grpc_closure* on_done = ac->on_done;
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
@@ -106,8 +105,8 @@ static void on_connect(void* acp, grpc_error_handle error) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name.c_str());
-        socket = NULL;
+        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name);
+        socket = nullptr;
       }
     } else {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("socket is null");
@@ -206,8 +205,10 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
+  gpr_mu_lock(&ac->mu);
   grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
   grpc_socket_notify_on_write(socket, &ac->on_connect);
+  gpr_mu_unlock(&ac->mu);
   return;
 
 failure:
@@ -216,8 +217,7 @@ failure:
   grpc_error_handle final_error =
       grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to connect", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_cpp_string(std::move(target_uri)));
+                         GRPC_ERROR_STR_TARGET_ADDRESS, target_uri);
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

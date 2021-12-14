@@ -24,7 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/codegen/grpc_library.h>  // IWYU pragma: export
 
 namespace grpc {
 

@@ -39,8 +39,6 @@ TEST(ServerChttp2, UnparseableTarget) {
   grpc_server_destroy(server);
 }
 
-// GRPC_ARG_ALLOW_REUSEPORT isn't supported for custom servers
-#ifndef GRPC_UV
 TEST(ServerChttp2, AddSamePortTwice) {
   grpc_arg a = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_ALLOW_REUSEPORT), 0);
@@ -64,7 +62,6 @@ TEST(ServerChttp2, AddSamePortTwice) {
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
 }
-#endif
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

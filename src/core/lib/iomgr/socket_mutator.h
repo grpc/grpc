@@ -21,20 +21,43 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdbool.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
 
-#include <stdbool.h>
+/** How is an fd to be used? */
+typedef enum {
+  /** Used for client connection */
+  GRPC_FD_CLIENT_CONNECTION_USAGE,
+  /** Used for server listening */
+  GRPC_FD_SERVER_LISTENER_USAGE,
+  /** Used for server connection */
+  GRPC_FD_SERVER_CONNECTION_USAGE,
+} grpc_fd_usage;
+
+/** Information about an fd to mutate */
+typedef struct {
+  /** File descriptor to mutate */
+  int fd;
+  /** How the fd will be used */
+  grpc_fd_usage usage;
+} grpc_mutate_socket_info;
 
 /** The virtual table of grpc_socket_mutator */
 struct grpc_socket_mutator_vtable {
-  /** Mutates the socket options of \a fd */
+  /** Mutates the socket options of \a fd -- deprecated, prefer mutate_fd_2 */
   bool (*mutate_fd)(int fd, grpc_socket_mutator* mutator);
   /** Compare socket mutator \a a and \a b */
   int (*compare)(grpc_socket_mutator* a, grpc_socket_mutator* b);
   /** Destroys the socket mutator instance */
   void (*destroy)(grpc_socket_mutator* mutator);
+  /** Mutates the socket options of the fd in \a info - if set takes preference
+   * to mutate_fd */
+  bool (*mutate_fd_2)(const grpc_mutate_socket_info* info,
+                      grpc_socket_mutator* mutator);
 };
+
 /** The Socket Mutator interface allows changes on socket options */
 struct grpc_socket_mutator {
   const grpc_socket_mutator_vtable* vtable;
@@ -49,7 +72,8 @@ void grpc_socket_mutator_init(grpc_socket_mutator* mutator,
 grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator* mutator);
 
 /** Perform the file descriptor mutation operation of \a mutator on \a fd */
-bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd);
+bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
+                                   grpc_fd_usage usage);
 
 /** Compare if \a a and \a b are the same mutator or have same settings */
 int grpc_socket_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b);

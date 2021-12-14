@@ -17,15 +17,13 @@ import abc
 import collections
 import enum
 
-import six
-
 # cardinality, style, abandonment, future, and stream are
 # referenced from specification in this module.
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
 from grpc.framework.common import style  # pylint: disable=unused-import
-from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
 from grpc.framework.foundation import future  # pylint: disable=unused-import
 from grpc.framework.foundation import stream  # pylint: disable=unused-import
+import six
 
 # pylint: disable=too-many-arguments
 

@@ -17,15 +17,15 @@ import logging
 import os
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 import unittest
-import sys
 
 import grpc
 
-from tests.unit import test_common
 from tests.unit import _signal_client
+from tests.unit import test_common
 
 _CLIENT_PATH = None
 if sys.executable is not None:

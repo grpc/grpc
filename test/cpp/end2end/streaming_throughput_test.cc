@@ -17,8 +17,11 @@
  */
 
 #include <time.h>
+
 #include <mutex>
 #include <thread>
+
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
@@ -37,8 +40,6 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;

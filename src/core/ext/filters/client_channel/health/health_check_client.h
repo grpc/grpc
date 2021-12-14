@@ -21,14 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -59,7 +60,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   class CallState : public Orphanable {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
-              grpc_pollset_set* interested_parties_);
+              grpc_pollset_set* interested_parties);
     ~CallState() override;
 
     void Orphan() override;
@@ -93,7 +94,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_polling_entity pollent_;
 
     Arena* arena_;
-    grpc_core::CallCombiner call_combiner_;
+    CallCombiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
     // The streaming call to the backend. Always non-null.
@@ -126,15 +127,15 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     OrphanablePtr<ByteStream> recv_message_;
     grpc_closure recv_message_ready_;
     grpc_slice_buffer recv_message_buffer_;
-    Atomic<bool> seen_response_{false};
+    std::atomic<bool> seen_response_{false};
+
+    // True if the cancel_stream batch has been started.
+    std::atomic<bool> cancelled_{false};
 
     // recv_trailing_metadata
     grpc_metadata_batch recv_trailing_metadata_;
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
-
-    // True if the cancel_stream batch has been started.
-    Atomic<bool> cancelled_{false};
 
     // Closure for call stack destruction.
     grpc_closure after_call_stack_destruction_;
@@ -154,6 +155,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
+  MemoryAllocator call_allocator_;
 
   Mutex mu_;
   RefCountedPtr<ConnectivityStateWatcherInterface> watcher_

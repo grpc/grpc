@@ -14,9 +14,9 @@
 
 FROM ubuntu:16.04
 
-RUN apt-get update -y && apt-get install -y python python-pip
+RUN apt-get update -y && apt-get install -y python3 python3-pip
 
 RUN apt-get install -y build-essential
-RUN apt-get install -y python-dev
+RUN apt-get install -y python3-dev
 
-RUN pip install virtualenv
+RUN python3 -m pip install virtualenv==16.7.9

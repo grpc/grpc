@@ -37,10 +37,9 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "src/cpp/client/create_channel_internal.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
-
-#include "src/cpp/client/create_channel_internal.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -52,6 +51,7 @@ class FixtureConfiguration {
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+    c->SetResourceQuota(ResourceQuota());
   }
 
   virtual void ApplyCommonServerBuilderConfig(ServerBuilder* b) const {
@@ -169,24 +169,23 @@ class EndpointPairFixture : public BaseFixture {
     b.RegisterService(service);
     fixture_configuration.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
-
     grpc_core::ExecCtx exec_ctx;
-
     /* add server endpoint to server_
      * */
     {
-      const grpc_channel_args* server_args =
-          server_->c_server()->core_server->channel_args();
+      grpc_core::Server* core_server =
+          grpc_core::Server::FromC(server_->c_server());
+      const grpc_channel_args* server_args = core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
-
-      for (grpc_pollset* pollset :
-           server_->c_server()->core_server->pollsets()) {
+      for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      server_->c_server()->core_server->SetupTransport(
-          server_transport_, nullptr, server_args, nullptr);
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "SetupTransport",
+          core_server->SetupTransport(server_transport_, nullptr, server_args,
+                                      nullptr)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
                                           nullptr);
     }
@@ -201,8 +200,9 @@ class EndpointPairFixture : public BaseFixture {
       client_transport_ =
           grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
-      grpc_channel* channel = grpc_channel_create(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
+      grpc_channel* channel =
+          grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
+                              client_transport_, nullptr);
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
                                           nullptr);
 
@@ -284,8 +284,7 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server,
-                                  LibraryInitializer::get().rq(), stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, stats);
     return p;
   }
 };

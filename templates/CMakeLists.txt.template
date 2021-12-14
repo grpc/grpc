@@ -164,6 +164,7 @@
   set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
   set(gRPC_INSTALL_CMAKEDIR "lib/cmake/<%text>${PACKAGE_NAME}</%text>" CACHE STRING "Installation directory for cmake config files")
   set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
+  set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for MSVC /MP option")
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -282,6 +283,12 @@
   if(MSVC)
     include(cmake/msvc_static_runtime.cmake)
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+    # Set /MP option
+    if (gRPC_BUILD_MSVC_MP_COUNT GREATER 0)
+      set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS} /MP${gRPC_BUILD_MSVC_MP_COUNT}</%text>")
+    elseif (gRPC_BUILD_MSVC_MP_COUNT LESS 0)
+      set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /MP")
+    endif()
     # needed to compile protobuf
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4065 /wd4506")
     # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
@@ -318,6 +325,22 @@
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
   endif()
 
+  if (gRPC_XDS_USER_AGENT_IS_CSHARP)
+    # The value of the defines needs to contain quotes.
+    # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
+    add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
+  endif()
+
+  if(UNIX)
+    # -pthread does more than -lpthread
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m Threads::Threads)
+    if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+      set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+    endif()
+  endif()
+
   include(cmake/abseil-cpp.cmake)
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
@@ -329,16 +352,8 @@
   include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
 
-  if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
-    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
-  elseif(_gRPC_PLATFORM_ANDROID)
-    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m)
-  elseif(UNIX)
-    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
-  endif()
-
   if(WIN32)
-    set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
+    set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
   endif()
 
   # Create directory for generated .proto files
@@ -389,7 +404,7 @@
              --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
              <%text>${_protobuf_include_path}</%text>
              <%text>${REL_FIL}</%text>
-        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
+        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
         WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)

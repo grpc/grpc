@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_H
 
+// IWYU pragma: private, include <grpcpp/support/server_callback.h>
+
 #include <atomic>
 #include <functional>
 #include <type_traits>
@@ -158,8 +160,7 @@ class ServerCallbackCall {
 };
 
 template <class Request, class Response>
-class DefaultMessageHolder
-    : public ::grpc::experimental::MessageHolder<Request, Response> {
+class DefaultMessageHolder : public MessageHolder<Request, Response> {
  public:
   DefaultMessageHolder() {
     this->set_request(&request_obj_);
@@ -784,19 +785,12 @@ using UnimplementedBidiReactor =
 
 }  // namespace internal
 
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
+// TODO(vjpai): Remove namespace experimental when last known users are migrated
+// off.
 namespace experimental {
-
-template <class Request>
-using ServerReadReactor = ::grpc::ServerReadReactor<Request>;
-
-template <class Response>
-using ServerWriteReactor = ::grpc::ServerWriteReactor<Response>;
 
 template <class Request, class Response>
 using ServerBidiReactor = ::grpc::ServerBidiReactor<Request, Response>;
-
-using ServerUnaryReactor = ::grpc::ServerUnaryReactor;
 
 }  // namespace experimental
 

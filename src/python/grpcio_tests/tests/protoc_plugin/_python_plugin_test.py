@@ -24,17 +24,16 @@ import tempfile
 import threading
 import unittest
 
-from six import moves
-
 import grpc
 import grpc.experimental
-from tests.unit import test_common
-from tests.unit.framework.common import test_constants
+from six import moves
 
 import tests.protoc_plugin.protos.payload.test_payload_pb2 as payload_pb2
 import tests.protoc_plugin.protos.requests.r.test_requests_pb2 as request_pb2
 import tests.protoc_plugin.protos.responses.test_responses_pb2 as response_pb2
 import tests.protoc_plugin.protos.service.test_service_pb2_grpc as service_pb2_grpc
+from tests.unit import test_common
+from tests.unit.framework.common import test_constants
 
 # Identifiers of entities we expect to find in the generated module.
 STUB_IDENTIFIER = 'TestServiceStub'

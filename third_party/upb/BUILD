@@ -1,3 +1,28 @@
+# Copyright (c) 2009-2021, Google LLC
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Google LLC nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 load(
     "//bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
@@ -11,15 +36,7 @@ load(
     "upb_proto_reflection_library",
 )
 
-# copybara:strip_for_google3_begin
-load(
-    "@rules_proto//proto:defs.bzl",
-    "proto_library",
-)
-
-# copybara:strip_end
-
-licenses(["notice"])  # BSD (Google-authored w/ possible external contributions)
+licenses(["notice"])
 
 exports_files([
     "LICENSE",
@@ -64,18 +81,19 @@ cc_library(
     name = "upb",
     srcs = [
         "upb/decode.c",
-        "upb/decode.int.h",
+        "upb/decode_internal.h",
         "upb/encode.c",
         "upb/msg.c",
-        "upb/msg.h",
+        "upb/msg_internal.h",
         "upb/table.c",
-        "upb/table.int.h",
+        "upb/table_internal.h",
         "upb/upb.c",
-        "upb/upb.int.h",
+        "upb/upb_internal.h",
     ],
     hdrs = [
         "upb/decode.h",
         "upb/encode.h",
+        "upb/msg.h",
         "upb/upb.h",
         "upb/upb.hpp",
     ],
@@ -84,18 +102,18 @@ cc_library(
     deps = [
         ":fastdecode",
         ":port",
-        "//third_party/wyhash",
     ],
 )
 
 cc_library(
     name = "fastdecode",
     srcs = [
-        "upb/decode.int.h",
+        "upb/decode_internal.h",
         "upb/decode_fast.c",
         "upb/decode_fast.h",
         "upb/msg.h",
-        "upb/upb.int.h",
+        "upb/msg_internal.h",
+        "upb/upb_internal.h",
     ],
     copts = UPB_DEFAULT_COPTS,
     deps = [
@@ -115,6 +133,7 @@ cc_library(
     hdrs = [
         "upb/decode_fast.h",
         "upb/msg.h",
+        "upb/msg_internal.h",
         "upb/port_def.inc",
         "upb/port_undef.inc",
     ],
@@ -149,6 +168,7 @@ cc_library(
         "upb/def.h",
         "upb/def.hpp",
         "upb/reflection.h",
+        "upb/reflection.hpp",
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
@@ -195,12 +215,33 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "msg_test",
+    srcs = ["upb/msg_test.cc"],
+    deps = [
+        "@com_google_googletest//:gtest_main",
+        ":msg_test_upb_proto_reflection",
+        ":json",
+    ],
+)
+
+proto_library(
+    name = "msg_test_proto",
+    srcs = ["upb/msg_test.proto"],
+    deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "msg_test_upb_proto_reflection",
+    deps = [":msg_test_proto"],
+)
+
 # Internal C/C++ libraries #####################################################
 
 cc_library(
     name = "table",
     hdrs = [
-        "upb/table.int.h",
+        "upb/table_internal.h",
         "upb/upb.h",
     ],
     visibility = ["//tests:__pkg__"],
@@ -209,91 +250,9 @@ cc_library(
     ],
 )
 
-# Legacy C/C++ Libraries (not recommended for new code) ########################
-
-cc_library(
-    name = "handlers",
-    srcs = [
-        "upb/handlers.c",
-        "upb/handlers-inl.h",
-        "upb/sink.c",
-    ],
-    hdrs = [
-        "upb/handlers.h",
-        "upb/sink.h",
-    ],
-    copts = UPB_DEFAULT_COPTS,
-    visibility = ["//tests:__pkg__"],
-    deps = [
-        ":port",
-        ":reflection",
-        ":table",
-        ":upb",
-    ],
-)
-
-cc_library(
-    name = "upb_pb",
-    srcs = [
-        "upb/pb/compile_decoder.c",
-        "upb/pb/decoder.c",
-        "upb/pb/decoder.int.h",
-        "upb/pb/encoder.c",
-        "upb/pb/textprinter.c",
-        "upb/pb/varint.c",
-        "upb/pb/varint.int.h",
-    ],
-    hdrs = [
-        "upb/pb/decoder.h",
-        "upb/pb/encoder.h",
-        "upb/pb/textprinter.h",
-    ],
-    copts = UPB_DEFAULT_COPTS,
-    visibility = ["//tests:__pkg__"],
-    deps = [
-        ":descriptor_upb_proto",
-        ":handlers",
-        ":port",
-        ":reflection",
-        ":table",
-        ":upb",
-    ],
-)
-
-# copybara:strip_for_google3_begin
-cc_library(
-    name = "upb_json",
-    srcs = [
-        "upb/json/parser.c",
-        "upb/json/printer.c",
-    ],
-    hdrs = [
-        "upb/json/parser.h",
-        "upb/json/printer.h",
-    ],
-    copts = UPB_DEFAULT_COPTS,
-    visibility = ["//tests:__pkg__"],
-    deps = [
-        ":upb",
-        ":upb_pb",
-    ],
-)
-
-genrule(
-    name = "generate_json_ragel",
-    srcs = ["//:upb/json/parser.rl"],
-    outs = ["upb/json/parser.c"],
-    cmd = "$(location @ragel//:ragelc) -C -o upb/json/parser.c $< && mv upb/json/parser.c $@",
-    tools = ["@ragel//:ragelc"],
-    visibility = ["//cmake:__pkg__"],
-)
-
 # Amalgamation #################################################################
 
-py_binary(
-    name = "amalgamate",
-    srcs = ["tools/amalgamate.py"],
-)
+# copybara:strip_for_google3_begin
 
 upb_amalgamation(
     name = "gen_amalgamation",
@@ -301,16 +260,12 @@ upb_amalgamation(
         "upb.c",
         "upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
         ":descriptor_upb_proto",
         ":reflection",
-        ":handlers",
         ":port",
-        ":upb_pb",
-        ":upb_json",
     ],
 )
 
@@ -319,7 +274,6 @@ cc_library(
     srcs = ["upb.c"],
     hdrs = ["upb.h"],
     copts = UPB_DEFAULT_COPTS,
-    deps = ["//third_party/wyhash"],
 )
 
 upb_amalgamation(
@@ -328,7 +282,6 @@ upb_amalgamation(
         "php-upb.c",
         "php-upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
@@ -346,7 +299,6 @@ cc_library(
     srcs = ["php-upb.c"],
     hdrs = ["php-upb.h"],
     copts = UPB_DEFAULT_COPTS,
-    deps = ["//third_party/wyhash"],
 )
 
 upb_amalgamation(
@@ -355,7 +307,6 @@ upb_amalgamation(
         "ruby-upb.c",
         "ruby-upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
@@ -372,7 +323,6 @@ cc_library(
     srcs = ["ruby-upb.c"],
     hdrs = ["ruby-upb.h"],
     copts = UPB_DEFAULT_COPTS,
-    deps = ["//third_party/wyhash"],
 )
 
 exports_files(
@@ -395,9 +345,6 @@ exports_files(
 filegroup(
     name = "cmake_files",
     srcs = glob([
-        "upb/json/parser.c",
-        "CMakeLists.txt",
-        "generated_for_cmake/**/*",
         "google/**/*",
         "upbc/**/*",
         "upb/**/*",

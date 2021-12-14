@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -156,7 +158,6 @@ class ChannelInterface {
     return internal::Call();
   }
 
-  // EXPERIMENTAL
   // A method to get the callbackable completion queue associated with this
   // channel. If the return value is nullptr, this channel doesn't support
   // callback operations.

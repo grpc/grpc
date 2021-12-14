@@ -17,6 +17,7 @@
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
 #include <gmock/gmock.h>
+
 #include <grpc/grpc_security.h>
 
 #include "test/core/util/test_config.h"
@@ -245,13 +246,10 @@ TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
   grpc_core::AwsRequestSigner signer("access_key_id", "secret_access_key",
                                      "token", "POST", "invalid_url",
                                      "us-east-1", "", {}, &error);
-  grpc_slice expected_error_description =
-      grpc_slice_from_static_string("Invalid Aws request url.");
-  grpc_slice actual_error_description;
+  std::string actual_error_description;
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
                                 &actual_error_description));
-  EXPECT_TRUE(grpc_slice_cmp(expected_error_description,
-                             actual_error_description) == 0);
+  EXPECT_EQ(actual_error_description, "Invalid Aws request url.");
   GRPC_ERROR_UNREF(error);
 }
 
@@ -261,13 +259,11 @@ TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
       "access_key_id", "secret_access_key", "token", "POST", "invalid_url",
       "us-east-1", "", {{"date", kBotoTestDate}, {"x-amz-date", kAmzTestDate}},
       &error);
-  grpc_slice expected_error_description = grpc_slice_from_static_string(
-      "Only one of {date, x-amz-date} can be specified, not both.");
-  grpc_slice actual_error_description;
+  std::string actual_error_description;
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
                                 &actual_error_description));
-  EXPECT_TRUE(grpc_slice_cmp(expected_error_description,
-                             actual_error_description) == 0);
+  EXPECT_EQ(actual_error_description,
+            "Only one of {date, x-amz-date} can be specified, not both.");
   GRPC_ERROR_UNREF(error);
 }
 

@@ -17,6 +17,10 @@ from absl import flags
 KUBE_CONTEXT = flags.DEFINE_string("kube_context",
                                    default=None,
                                    help="Kubectl context to use")
+SECONDARY_KUBE_CONTEXT = flags.DEFINE_string(
+    "secondary_kube_context",
+    default=None,
+    help="Secondary kubectl context to use for cluster in another region")
 GCP_SERVICE_ACCOUNT = flags.DEFINE_string(
     "gcp_service_account",
     default=None,
@@ -37,9 +41,12 @@ DEBUG_USE_PORT_FORWARDING = flags.DEFINE_bool(
     "debug_use_port_forwarding",
     default=False,
     help="Development only: use kubectl port-forward to connect to test app")
+ENABLE_WORKLOAD_IDENTITY = flags.DEFINE_bool(
+    "enable_workload_identity",
+    default=True,
+    help="Enable the WorkloadIdentity feature")
 
 flags.mark_flags_as_required([
-    "gcp_service_account",
     "kube_context",
     "td_bootstrap_image",
     "server_image",

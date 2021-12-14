@@ -16,13 +16,13 @@ import json
 import logging
 import subprocess
 import time
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
-# TODO(sergiitk): replace with tenacity
-import retrying
-import kubernetes.config
 from kubernetes import client
 from kubernetes import utils
+import kubernetes.config
+# TODO(sergiitk): replace with tenacity
+import retrying
 
 logger = logging.getLogger(__name__)
 # Type aliases

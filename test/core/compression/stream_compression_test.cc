@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/lib/compression/stream_compression.h"
+
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -23,7 +25,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/compression/stream_compression.h"
 #include "test/core/util/test_config.h"
 
 static void generate_random_payload(char* payload, size_t size) {

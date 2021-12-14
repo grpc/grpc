@@ -19,12 +19,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc_security.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
@@ -125,7 +126,7 @@ struct grpc_tls_certificate_distributor
   // are being watched.
   void SetWatchStatusCallback(
       std::function<void(std::string, bool, bool)> callback) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&callback_mu_);
     watch_status_callback_ = std::move(callback);
   };
 
@@ -201,13 +202,16 @@ struct grpc_tls_certificate_distributor
   // functions.
   grpc_core::Mutex callback_mu_;
   // Stores information about each watcher.
-  std::map<TlsCertificatesWatcherInterface*, WatcherInfo> watchers_;
+  std::map<TlsCertificatesWatcherInterface*, WatcherInfo> watchers_
+      ABSL_GUARDED_BY(mu_);
   // The callback to notify the caller, e.g. the Producer, that the watch status
   // is changed.
-  std::function<void(std::string, bool, bool)> watch_status_callback_;
+  std::function<void(std::string, bool, bool)> watch_status_callback_
+      ABSL_GUARDED_BY(callback_mu_);
   // Stores the names of each certificate, and their corresponding credential
   // contents as well as some additional watcher information.
-  std::map<std::string, CertificateInfo> certificate_info_map_;
+  std::map<std::string, CertificateInfo> certificate_info_map_
+      ABSL_GUARDED_BY(mu_);
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H

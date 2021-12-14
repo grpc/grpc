@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import os
-import subprocess
 import argparse
 import multiprocessing
+import os
+import subprocess
+import sys
 
 sys.path.append(
     os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests',
@@ -34,7 +34,8 @@ argp.add_argument('-j',
                   type=int,
                   default=multiprocessing.cpu_count(),
                   help='Number of CPUs to use')
-argp.set_defaults(fix=False)
+argp.add_argument('--only-changed', dest='only_changed', action='store_true')
+argp.set_defaults(fix=False, only_changed=False)
 args = argp.parse_args()
 
 # Explicitly passing the .clang-tidy config by reading it.
@@ -49,7 +50,20 @@ cmdline = [
 ]
 
 if args.fix:
-    cmdline.append('--fix')
+    cmdline.append('--fix-errors')
+
+if args.only_changed:
+    orig_files = set(args.files)
+    actual_files = []
+    output = subprocess.check_output(
+        ['git', 'diff', 'origin/master', 'HEAD', '--name-only'])
+    for line in output.decode('ascii').splitlines(False):
+        if line in orig_files:
+            print(("check: %s" % line))
+            actual_files.append(line)
+        else:
+            print(("skip: %s - not in the build" % line))
+    args.files = actual_files
 
 jobs = []
 for filename in args.files:

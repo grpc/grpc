@@ -26,13 +26,13 @@ X will be v1.17.2. In both cases Y will be origin/v1.17.x.
 
 """
 
-from collections import defaultdict
 import base64
+from collections import defaultdict
 import json
 
 content_header = """Draft Release Notes For {version}
 --
-Final release notes will be generated from the PR titles that have *"release notes:yes"* label. If you have any additional notes please add them below. These will be appended to auto generated release notes. Previous releases notes are [here](https://github.com/grpc/grpc/releases).
+Final release notes will be generated from the PR titles that have *"release notes:yes"* label. If you have any additional notes please add them below. These will be appended to auto generated release notes. Previous release notes are [here](https://github.com/grpc/grpc/releases).
 
 **Also, look at the PRs listed below against your name.** Please apply the missing labels and make necessary corrections (like fixing the title) to the PR in Github. Final release notes will be generated just before the release on {date}.
 
@@ -90,18 +90,24 @@ def get_commit_log(prevRelLabel, relBranch):
         "git", "log", "--pretty=oneline", "--committer=GitHub",
         "%s..%s" % (prevRelLabel, relBranch)
     ]
-    print("Running ", " ".join(glg_command))
-    return subprocess.check_output(glg_command)
+    print(("Running ", " ".join(glg_command)))
+    return subprocess.check_output(glg_command).decode('utf-8', 'ignore')
 
 
 def get_pr_data(pr_num):
     """Get the PR data from github. Return 'error' on exception"""
 
     try:
-        from urllib2 import Request, urlopen, HTTPError
+        from urllib.error import HTTPError
+        from urllib.request import Request
+        from urllib.request import urlopen
     except ImportError:
-        import urllib
-        from urllib.request import Request, urlopen, HTTPError
+        import urllib.error
+        import urllib.parse
+        import urllib.request
+        from urllib.request import HTTPError
+        from urllib.request import Request
+        from urllib.request import urlopen
     url = API_URL + pr_num
     req = Request(url)
     req.add_header('Authorization', 'token %s' % TOKEN)
@@ -112,7 +118,7 @@ def get_pr_data(pr_num):
     except HTTPError as e:
         response = json.loads(e.fp.read().decode('utf-8'))
         if 'message' in response:
-            print(response['message'])
+            print((response['message']))
         response = "error"
     return response
 
@@ -121,13 +127,13 @@ def get_pr_titles(gitLogs):
     import re
     error_count = 0
     # PRs with merge commits
-    match_merge_pr = b"Merge pull request #(\d+)"
+    match_merge_pr = "Merge pull request #(\d+)"
     prlist_merge_pr = re.findall(match_merge_pr, gitLogs, re.MULTILINE)
     print("\nPRs matching 'Merge pull request #<num>':")
     print(prlist_merge_pr)
     print("\n")
     # PRs using Github's squash & merge feature
-    match_sq = b"\(#(\d+)\)$"
+    match_sq = "\(#(\d+)\)$"
     prlist_sq = re.findall(match_sq, gitLogs, re.MULTILINE)
     print("\nPRs matching '[PR Description](#<num>)$'")
     print(prlist_sq)
@@ -136,10 +142,11 @@ def get_pr_titles(gitLogs):
     langs_pr = defaultdict(list)
     for pr_num in prlist:
         pr_num = str(pr_num)
-        print("---------- getting data for PR " + pr_num)
+        print(("---------- getting data for PR " + pr_num))
         pr = get_pr_data(pr_num)
         if pr == "error":
-            print("\n***ERROR*** Error in getting data for PR " + pr_num + "\n")
+            print(
+                ("\n***ERROR*** Error in getting data for PR " + pr_num + "\n"))
             error_count += 1
             continue
         rl_no_found = False
@@ -158,28 +165,26 @@ def get_pr_titles(gitLogs):
         if not body.endswith("."):
             body = body + "."
         if not pr["merged_by"]:
-            print("\n***ERROR***: No merge_by found for PR " + pr_num + "\n")
+            print(("\n***ERROR***: No merge_by found for PR " + pr_num + "\n"))
             error_count += 1
             continue
 
         prline = "-  " + body + " ([#" + pr_num + "](" + HTML_URL + pr_num + "))"
         detail = "- " + pr["merged_by"]["login"] + "@ " + prline
-        prline = prline.encode('ascii', 'ignore')
-        detail = detail.encode('ascii', 'ignore')
         print(detail)
         #if no RL label
         if not rl_no_found and not rl_yes_found:
-            print("Release notes label missing for " + pr_num)
+            print(("Release notes label missing for " + pr_num))
             langs_pr["nolabel"].append(detail)
         elif rl_yes_found and not lang_found:
-            print("Lang label missing for " + pr_num)
+            print(("Lang label missing for " + pr_num))
             langs_pr["nolang"].append(detail)
         elif rl_no_found:
-            print("'Release notes:no' found for " + pr_num)
+            print(("'Release notes:no' found for " + pr_num))
             langs_pr["notinrel"].append(detail)
         elif rl_yes_found:
-            print("'Release notes:yes' found for " + pr_num + " with lang " +
-                  lang)
+            print(("'Release notes:yes' found for " + pr_num + " with lang " +
+                   lang))
             langs_pr["inrel"].append(detail)
             langs_pr[lang].append(prline)
 
@@ -356,7 +361,7 @@ def main():
     write_draft(langs_pr, file, version, date)
     file.truncate()
     file.close()
-    print("\nDraft notes written to " + filename)
+    print(("\nDraft notes written to " + filename))
 
     filename = os.path.abspath(rel_file)
     if os.path.exists(filename):
@@ -368,7 +373,7 @@ def main():
     write_rel_notes(langs_pr, file, version, name)
     file.truncate()
     file.close()
-    print("\nRelease notes written to " + filename)
+    print(("\nRelease notes written to " + filename))
     if error_count > 0:
         print("\n\n*** Errors were encountered. See log. *********\n")
 

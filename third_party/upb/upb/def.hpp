@@ -1,3 +1,27 @@
+// Copyright (c) 2009-2021, Google LLC
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
+//     * Neither the name of Google LLC nor the
+//       names of its contributors may be used to endorse or promote products
+//       derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef UPB_DEF_HPP_
 #define UPB_DEF_HPP_
@@ -8,9 +32,12 @@
 #include <vector>
 
 #include "upb/def.h"
+#include "upb/reflection.h"
 #include "upb/upb.hpp"
 
 namespace upb {
+
+typedef upb_msgval MessageValue;
 
 class EnumDefPtr;
 class MessageDefPtr;
@@ -105,6 +132,8 @@ class FieldDefPtr {
   bool default_bool() const { return upb_fielddef_defaultbool(ptr_); }
   float default_float() const { return upb_fielddef_defaultfloat(ptr_); }
   double default_double() const { return upb_fielddef_defaultdouble(ptr_); }
+
+  MessageValue default_value() const { return upb_fielddef_default(ptr_); }
 
   // The resulting string is always NULL-terminated.  If non-NULL, the length
   // will be stored in *len.
@@ -283,6 +312,19 @@ class MessageDefPtr {
   const upb_msgdef* ptr_;
 };
 
+class EnumValDefPtr {
+ public:
+  EnumValDefPtr() : ptr_(nullptr) {}
+  explicit EnumValDefPtr(const upb_enumvaldef* ptr) : ptr_(ptr) {}
+
+  int32_t number() const { return upb_enumvaldef_number(ptr_); }
+  const char *full_name() const { return upb_enumvaldef_fullname(ptr_); }
+  const char *name() const { return upb_enumvaldef_name(ptr_); }
+
+ private:
+  const upb_enumvaldef* ptr_;
+};
+
 class EnumDefPtr {
  public:
   EnumDefPtr() : ptr_(nullptr) {}
@@ -306,15 +348,15 @@ class EnumDefPtr {
   int value_count() const { return upb_enumdef_numvals(ptr_); }
 
   // Lookups from name to integer, returning true if found.
-  bool FindValueByName(const char* name, int32_t* num) const {
-    return upb_enumdef_ntoiz(ptr_, name, num);
+  EnumValDefPtr FindValueByName(const char* name) const {
+    return EnumValDefPtr(upb_enumdef_lookupnamez(ptr_, name));
   }
 
   // Finds the name corresponding to the given number, or NULL if none was
   // found.  If more than one name corresponds to this number, returns the
   // first one that was added.
-  const char* FindValueByNumber(int32_t num) const {
-    return upb_enumdef_iton(ptr_, num);
+  EnumValDefPtr FindValueByNumber(int32_t num) const {
+    return EnumValDefPtr(upb_enumdef_lookupnum(ptr_, num));
   }
 
   // Iteration over name/value pairs.  The order is undefined.

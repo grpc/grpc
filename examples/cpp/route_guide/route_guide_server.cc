@@ -23,12 +23,13 @@
 #include <memory>
 #include <string>
 
+#include "helper.h"
+
 #include <grpc/grpc.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include "helper.h"
 #ifdef BAZEL_BUILD
 #include "examples/protos/route_guide.grpc.pb.h"
 #else

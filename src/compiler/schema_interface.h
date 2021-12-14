@@ -19,11 +19,11 @@
 #ifndef GRPC_INTERNAL_COMPILER_SCHEMA_INTERFACE_H
 #define GRPC_INTERNAL_COMPILER_SCHEMA_INTERFACE_H
 
-#include "src/compiler/config.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "src/compiler/config.h"
 
 #ifdef GRPC_CUSTOM_STRING
 #warning GRPC_CUSTOM_STRING is no longer supported. Please use std::string.

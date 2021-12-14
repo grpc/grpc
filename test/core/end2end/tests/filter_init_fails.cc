@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -27,9 +25,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -456,76 +457,6 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* /*arg*/) {
-  if (g_enable_server_channel_filter) {
-    // Want to add the filter as close to the end as possible, to make
-    // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the connected channel filter
-    // must be the last one.  So we add it right before the last one.
-    grpc_channel_stack_builder_iterator* it =
-        grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, &test_filter, nullptr, nullptr);
-    grpc_channel_stack_builder_iterator_destroy(it);
-    return retval;
-  } else {
-    return true;
-  }
-}
-
-static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* /*arg*/) {
-  if (g_enable_client_channel_filter) {
-    // Want to add the filter as close to the end as possible, to make
-    // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the connected channel filter
-    // must be the last one.  So we add it right before the last one.
-    grpc_channel_stack_builder_iterator* it =
-        grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, &test_filter, nullptr, nullptr);
-    grpc_channel_stack_builder_iterator_destroy(it);
-    return retval;
-  } else {
-    return true;
-  }
-}
-
-static bool maybe_add_client_subchannel_filter(
-    grpc_channel_stack_builder* builder, void* /*arg*/) {
-  if (g_enable_client_subchannel_filter) {
-    // Want to add the filter as close to the end as possible, to make
-    // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the client channel filter
-    // must be the last one.  So we add it right before the last one.
-    grpc_channel_stack_builder_iterator* it =
-        grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, &test_filter, nullptr, nullptr);
-    grpc_channel_stack_builder_iterator_destroy(it);
-    return retval;
-  } else {
-    return true;
-  }
-}
-
-static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_server_channel_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_client_channel_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   maybe_add_client_subchannel_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_client_channel_filter, nullptr);
-}
-
-static void destroy_plugin(void) {}
-
 static void filter_init_fails_internal(grpc_end2end_test_config config) {
   gpr_log(GPR_INFO, "Testing SERVER_CHANNEL filter.");
   g_enable_server_channel_filter = true;
@@ -552,13 +483,37 @@ static void filter_init_fails_internal(grpc_end2end_test_config config) {
 }
 
 void filter_init_fails(grpc_end2end_test_config config) {
-  filter_init_fails_internal(config);
-  gpr_log(GPR_INFO, "Testing with channel filter init error");
-  g_channel_filter_init_failure = true;
-  filter_init_fails_internal(config);
-  g_channel_filter_init_failure = false;
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
+        auto register_stage = [builder](grpc_channel_stack_type type,
+                                        bool* enable) {
+          builder->channel_init()->RegisterStage(
+              type, INT_MAX, [enable](grpc_channel_stack_builder* builder) {
+                if (!*enable) return true;
+                // Want to add the filter as close to the end as possible,
+                // to make sure that all of the filters work well together.
+                // However, we can't add it at the very end, because either the
+                // client_channel filter or connected_channel filter must be the
+                // last one.  So we add it right before the last one.
+                grpc_channel_stack_builder_iterator* it =
+                    grpc_channel_stack_builder_create_iterator_at_last(builder);
+                GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
+                const bool retval =
+                    grpc_channel_stack_builder_add_filter_before(
+                        it, &test_filter, nullptr, nullptr);
+                grpc_channel_stack_builder_iterator_destroy(it);
+                return retval;
+              });
+        };
+        register_stage(GRPC_SERVER_CHANNEL, &g_enable_server_channel_filter);
+        register_stage(GRPC_CLIENT_CHANNEL, &g_enable_client_channel_filter);
+        register_stage(GRPC_CLIENT_SUBCHANNEL,
+                       &g_enable_client_subchannel_filter);
+        register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
+                       &g_enable_client_channel_filter);
+      },
+      [config] { filter_init_fails_internal(config); });
 }
 
-void filter_init_fails_pre_init(void) {
-  grpc_register_plugin(init_plugin, destroy_plugin);
-}
+void filter_init_fails_pre_init(void) {}

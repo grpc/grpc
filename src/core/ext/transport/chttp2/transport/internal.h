@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/compression/stream_compression.h"
@@ -42,7 +41,9 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
@@ -258,7 +259,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   grpc_chttp2_transport* transport_;  // Immutable.
   grpc_chttp2_stream* stream_;        // Immutable.
 
-  grpc_core::RefCount refs_;
+  RefCount refs_;
 
   /* Accessed only by transport thread when stream->pending_byte_stream == false
    * Accessed only by application thread when stream->pending_byte_stream ==
@@ -287,8 +288,7 @@ typedef enum {
 
 struct grpc_chttp2_transport {
   grpc_chttp2_transport(const grpc_channel_args* channel_args,
-                        grpc_endpoint* ep, bool is_client,
-                        grpc_resource_user* resource_user);
+                        grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
@@ -296,7 +296,9 @@ struct grpc_chttp2_transport {
   grpc_endpoint* ep;
   std::string peer_string;
 
-  grpc_resource_user* resource_user;
+  grpc_core::MemoryOwner memory_owner;
+  const grpc_core::MemoryAllocator::Reservation self_reservation;
+  grpc_core::ReclamationSweep active_reclamation;
 
   grpc_core::Combiner* combiner;
 
@@ -345,7 +347,7 @@ struct grpc_chttp2_transport {
   /** data to write now */
   grpc_slice_buffer outbuf;
   /** hpack encoding */
-  grpc_chttp2_hpack_compressor hpack_compressor;
+  grpc_core::HPackCompressor hpack_compressor;
   /** is this a client? */
   bool is_client;
 
@@ -394,7 +396,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /** parser for headers */
-  grpc_chttp2_hpack_parser hpack_parser;
+  grpc_core::HPackParser hpack_parser;
   /** simple one shot parsers */
   union {
     grpc_chttp2_window_update_parser window_update;
@@ -555,7 +557,8 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+  bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;
   grpc_closure* recv_trailing_metadata_finished = nullptr;
@@ -588,7 +591,8 @@ struct grpc_chttp2_stream {
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
 
-  grpc_chttp2_incoming_metadata_buffer metadata_buffer[2];
+  grpc_metadata_batch initial_metadata_buffer;
+  grpc_metadata_batch trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 
@@ -765,7 +769,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
-                                     const grpc_slice& goaway_text);
+                                     absl::string_view goaway_text);
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 

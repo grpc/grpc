@@ -16,9 +16,9 @@
 
 import argparse
 import socket
+import sys
 import threading
 import time
-import sys
 
 
 def main():

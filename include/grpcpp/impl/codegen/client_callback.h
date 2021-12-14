@@ -17,6 +17,9 @@
 
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
+
+// IWYU pragma: private, include <grpcpp/support/client_callback.h>
+
 #include <atomic>
 #include <functional>
 
@@ -130,6 +133,15 @@ class ClientReactor {
   /// heavyweight and the cost of the virtual call is not much in comparison.
   /// This function may be removed or devirtualized in the future.
   virtual void InternalScheduleOnDone(::grpc::Status s);
+
+  /// InternalTrailersOnly is not part of the API and is not meant to be
+  /// overridden. It is virtual to allow successful builds for certain bazel
+  /// build users that only want to depend on gRPC codegen headers and not the
+  /// full library (although this is not a generally-supported option). Although
+  /// the virtual call is slower than a direct call, this function is
+  /// heavyweight and the cost of the virtual call is not much in comparison.
+  /// This function may be removed or devirtualized in the future.
+  virtual bool InternalTrailersOnly(const grpc_call* call) const;
 };
 
 }  // namespace internal
@@ -594,7 +606,8 @@ class ClientCallbackReaderWriterImpl
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -737,7 +750,8 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -995,7 +1009,8 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -1121,7 +1136,8 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
           MaybeFinish();
         },
         &start_ops_, /*can_inline=*/false);
@@ -1213,32 +1229,5 @@ class ClientCallbackUnaryFactory {
 };
 
 }  // namespace internal
-
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
-namespace experimental {
-
-template <class Response>
-using ClientCallbackReader = ::grpc::ClientCallbackReader<Response>;
-
-template <class Request>
-using ClientCallbackWriter = ::grpc::ClientCallbackWriter<Request>;
-
-template <class Request, class Response>
-using ClientCallbackReaderWriter =
-    ::grpc::ClientCallbackReaderWriter<Request, Response>;
-
-template <class Response>
-using ClientReadReactor = ::grpc::ClientReadReactor<Response>;
-
-template <class Request>
-using ClientWriteReactor = ::grpc::ClientWriteReactor<Request>;
-
-template <class Request, class Response>
-using ClientBidiReactor = ::grpc::ClientBidiReactor<Request, Response>;
-
-typedef ::grpc::ClientUnaryReactor ClientUnaryReactor;
-
-}  // namespace experimental
-
 }  // namespace grpc
 #endif  // GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H

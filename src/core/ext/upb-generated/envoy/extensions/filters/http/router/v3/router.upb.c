@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/config/accesslog/v3/accesslog.upb.h"
 #include "google/protobuf/wrappers.upb.h"
@@ -17,24 +17,36 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_extensions_filters_http_router_v3_Router_submsgs[2] = {
-  &envoy_config_accesslog_v3_AccessLog_msginit,
-  &google_protobuf_BoolValue_msginit,
+static const upb_msglayout_sub envoy_extensions_filters_http_router_v3_Router_submsgs[2] = {
+  {.submsg = &envoy_config_accesslog_v3_AccessLog_msginit},
+  {.submsg = &google_protobuf_BoolValue_msginit},
 };
 
-static const upb_msglayout_field envoy_extensions_filters_http_router_v3_Router__fields[6] = {
-  {1, UPB_SIZE(4, 8), 1, 1, 11, 1},
-  {2, UPB_SIZE(1, 1), 0, 0, 8, 1},
-  {3, UPB_SIZE(8, 16), 0, 0, 11, 3},
-  {4, UPB_SIZE(2, 2), 0, 0, 8, 1},
-  {5, UPB_SIZE(12, 24), 0, 0, 9, 3},
-  {6, UPB_SIZE(3, 3), 0, 0, 8, 1},
+static const upb_msglayout_field envoy_extensions_filters_http_router_v3_Router__fields[7] = {
+  {1, UPB_SIZE(8, 8), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(12, 16), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {4, UPB_SIZE(2, 2), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {5, UPB_SIZE(16, 24), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {6, UPB_SIZE(3, 3), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {7, UPB_SIZE(4, 4), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_extensions_filters_http_router_v3_Router_msginit = {
   &envoy_extensions_filters_http_router_v3_Router_submsgs[0],
   &envoy_extensions_filters_http_router_v3_Router__fields[0],
-  UPB_SIZE(16, 32), 6, false, 255,
+  UPB_SIZE(24, 32), 7, _UPB_MSGEXT_NONE, 7, 255,
+};
+
+static const upb_msglayout *messages_layout[1] = {
+  &envoy_extensions_filters_http_router_v3_Router_msginit,
+};
+
+const upb_msglayout_file envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  1,
+  0,
 };
 
 #include "upb/port_undef.inc"

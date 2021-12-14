@@ -19,11 +19,11 @@
 #ifndef GRPCPP_SERVER_H
 #define GRPCPP_SERVER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <list>
 #include <memory>
 #include <vector>
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
@@ -237,7 +237,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// service. The service must exist for the lifetime of the Server instance.
   void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   /// Register a callback-based generic service. This call does not take
   /// ownership of theservice. The service must exist for the lifetime of the
   /// Server instance.
@@ -247,41 +246,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
       std::unique_ptr<ContextAllocator> context_allocator) {
     context_allocator_ = std::move(context_allocator);
   }
-
-#else
-  /// NOTE: class experimental_registration_type is not part of the public API
-  /// of this class
-  /// TODO(vjpai): Move these contents to the public API of Server when
-  ///              they are no longer experimental
-  class experimental_registration_type final
-      : public experimental_registration_interface {
-   public:
-    explicit experimental_registration_type(Server* server) : server_(server) {}
-    void RegisterCallbackGenericService(
-        experimental::CallbackGenericService* service) override {
-      server_->RegisterCallbackGenericService(service);
-    }
-
-    void RegisterContextAllocator(
-        std::unique_ptr<ContextAllocator> context_allocator) override {
-      server_->context_allocator_ = std::move(context_allocator);
-    }
-
-   private:
-    Server* server_;
-  };
-
-  /// TODO(vjpai): Mark this override when experimental type above is deleted
-  void RegisterCallbackGenericService(
-      experimental::CallbackGenericService* service);
-
-  /// NOTE: The function experimental_registration() is not stable public API.
-  /// It is a view to the experimental components of this class. It may be
-  /// changed or removed at any time.
-  experimental_registration_interface* experimental_registration() override {
-    return &experimental_registration_;
-  }
-#endif
 
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
@@ -327,12 +291,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  // For registering experimental callback generic service; remove when that
-  // method longer experimental
-  experimental_registration_type experimental_registration_{this};
-#endif
-
   // Server status
   internal::Mutex mu_;
   bool started_;
@@ -364,11 +322,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   // When appropriate, use a default callback generic service to handle
   // unimplemented methods
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   std::unique_ptr<CallbackGenericService> unimplemented_service_;
-#else
-  std::unique_ptr<experimental::CallbackGenericService> unimplemented_service_;
-#endif
 
   // A special handler for resource exhausted in sync case
   std::unique_ptr<internal::MethodHandler> resource_exhausted_handler_;

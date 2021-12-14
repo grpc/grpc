@@ -27,9 +27,10 @@ import subprocess
 import sys
 import tempfile
 import time
-import uuid
-import six
 import traceback
+import uuid
+
+import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -170,7 +171,7 @@ def docker_run_cmdline(cmdline, image, docker_args, cwd, environ=None):
     # turn environ into -e docker args
     docker_cmdline = 'docker run -i --rm=true'.split()
     if environ:
-        for k, v in environ.items():
+        for k, v in list(environ.items()):
             docker_cmdline += ['-e', '%s=%s' % (k, v)]
     return docker_cmdline + ['-w', cwd] + docker_args + [image] + cmdline
 
@@ -402,7 +403,7 @@ docker_images = {}
 
 build_jobs = []
 if len(args.language) and args.language[0] == 'all':
-    languages = _LANGUAGES.keys()
+    languages = list(_LANGUAGES.keys())
 else:
     languages = args.language
 for lang_name in languages:
@@ -500,7 +501,7 @@ def run_one_scenario(scenario_config):
         grpclb_ips = []
         shortname_prefix = scenario_config['name']
         # Start backends
-        for i in xrange(len(scenario_config['backend_configs'])):
+        for i in range(len(scenario_config['backend_configs'])):
             backend_config = scenario_config['backend_configs'][i]
             backend_shortname = shortname(shortname_prefix, 'backend_server', i)
             backend_spec = backend_server_jobspec(
@@ -510,7 +511,7 @@ def run_one_scenario(scenario_config):
             backend_addrs.append(
                 '%s:%d' % (backend_job.ip_address(), _BACKEND_SERVER_PORT))
         # Start fallbacks
-        for i in xrange(len(scenario_config['fallback_configs'])):
+        for i in range(len(scenario_config['fallback_configs'])):
             fallback_config = scenario_config['fallback_configs'][i]
             fallback_shortname = shortname(shortname_prefix, 'fallback_server',
                                            i)
@@ -520,7 +521,7 @@ def run_one_scenario(scenario_config):
             server_jobs[fallback_shortname] = fallback_job
             fallback_ips.append(fallback_job.ip_address())
         # Start balancers
-        for i in xrange(len(scenario_config['balancer_configs'])):
+        for i in range(len(scenario_config['balancer_configs'])):
             balancer_config = scenario_config['balancer_configs'][i]
             grpclb_shortname = shortname(shortname_prefix, 'grpclb_server', i)
             grpclb_spec = grpclb_jobspec(balancer_config['transport_sec'],
@@ -581,7 +582,7 @@ def run_one_scenario(scenario_config):
         return num_failures
     finally:
         # Check if servers are still running.
-        for server, job in server_jobs.items():
+        for server, job in list(server_jobs.items()):
             if not job.is_running():
                 print('Server "%s" has exited prematurely.' % server)
         suppress_failure = suppress_server_logs and not args.verbose

@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <map>
 #include <memory>
 
@@ -29,7 +30,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -131,7 +131,7 @@ class ConnectivityStateTracker {
 
  private:
   const char* name_;
-  Atomic<grpc_connectivity_state> state_;
+  std::atomic<grpc_connectivity_state> state_{grpc_connectivity_state()};
   absl::Status status_;
   // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
   // be a set instead of a map.

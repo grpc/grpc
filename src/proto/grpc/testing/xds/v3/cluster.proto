@@ -20,6 +20,7 @@ package envoy.config.cluster.v3;
 
 import "src/proto/grpc/testing/xds/v3/base.proto";
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
+import "src/proto/grpc/testing/xds/v3/endpoint.proto";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
@@ -153,11 +154,62 @@ message Cluster {
   // Configuration to use for EDS updates for the Cluster.
   EdsClusterConfig eds_cluster_config = 3;
 
+  // Specific configuration for the :ref:`RingHash<arch_overview_load_balancing_types_ring_hash>`
+  // load balancing policy.
+  message RingHashLbConfig {
+    // The hash function used to hash hosts onto the ketama ring.
+    enum HashFunction {
+      // Use `xxHash <https://github.com/Cyan4973/xxHash>`_, this is the default hash function.
+      XX_HASH = 0;
+      MURMUR_HASH_2 = 1;
+    }
+
+    reserved 2;
+
+    // Minimum hash ring size. The larger the ring is (that is, the more hashes there are for each
+    // provided host) the better the request distribution will reflect the desired weights. Defaults
+    // to 1024 entries, and limited to 8M entries. See also
+    // :ref:`maximum_ring_size<envoy_api_field_config.cluster.v3.Cluster.RingHashLbConfig.maximum_ring_size>`.
+    google.protobuf.UInt64Value minimum_ring_size = 1;
+
+    // The hash function used to hash hosts onto the ketama ring. The value defaults to
+    // :ref:`XX_HASH<envoy_api_enum_value_config.cluster.v3.Cluster.RingHashLbConfig.HashFunction.XX_HASH>`.
+    HashFunction hash_function = 3;
+
+    // Maximum hash ring size. Defaults to 8M entries, and limited to 8M entries, but can be lowered
+    // to further constrain resource use. See also
+    // :ref:`minimum_ring_size<envoy_api_field_config.cluster.v3.Cluster.RingHashLbConfig.minimum_ring_size>`.
+    google.protobuf.UInt64Value maximum_ring_size = 4;
+  }
+
   // The :ref:`load balancer type <arch_overview_load_balancing_types>` to use
   // when picking a host in the cluster.
   LbPolicy lb_policy = 6;
 
+  // Setting this is required for specifying members of
+  // :ref:`STATIC<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STATIC>`,
+  // :ref:`STRICT_DNS<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`
+  // or :ref:`LOGICAL_DNS<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>` clusters.
+  // This field supersedes the *hosts* field in the v2 API.
+  //
+  // .. attention::
+  //
+  //   Setting this allows non-EDS cluster types to contain embedded EDS equivalent
+  //   :ref:`endpoint assignments<envoy_api_msg_config.endpoint.v3.ClusterLoadAssignment>`.
+  //
+  endpoint.v3.ClusterLoadAssignment load_assignment = 33;
+
   CircuitBreakers circuit_breakers = 10;
+
+  // Optional configuration for the load balancing algorithm selected by
+  // LbPolicy. Currently only
+  // :ref:`RING_HASH<envoy_api_enum_value_config.cluster.v3.Cluster.LbPolicy.RING_HASH>`,
+  // Specifying ring_hash_lb_config without setting the corresponding
+  // LbPolicy will generate an error at runtime.
+  oneof lb_config {
+    // Optional configuration for the Ring Hash load balancing policy.
+    RingHashLbConfig ring_hash_lb_config = 23;
+  }
 
   // Optional custom transport socket implementation to use for upstream connections.
   // To setup TLS, set a transport socket with name `tls` and

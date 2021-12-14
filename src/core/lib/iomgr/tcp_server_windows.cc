@@ -22,8 +22,6 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <inttypes.h>
 #include <io.h>
 
@@ -43,6 +41,7 @@
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
@@ -166,7 +165,6 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 static void tcp_server_destroy(grpc_tcp_server* s) {
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
-
   /* First, shutdown all fd's. This will queue abortion calls for all
      of the pending accepts due to the normal operation mechanism. */
   if (s->active_ports == 0) {
@@ -228,11 +226,10 @@ static grpc_error_handle prepare_socket(SOCKET sock,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   grpc_error_set_int(
-      grpc_error_set_str(
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Failed to prepare server socket", &error, 1),
-          GRPC_ERROR_STR_TARGET_ADDRESS,
-          grpc_slice_from_cpp_string(grpc_sockaddr_to_uri(addr))),
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Failed to prepare server socket", &error, 1),
+                         GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_sockaddr_to_uri(addr)),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   GRPC_ERROR_UNREF(error);
   if (sock != INVALID_SOCKET) closesocket(sock);
@@ -324,7 +321,6 @@ static void on_accept(void* arg, grpc_error_handle error) {
     gpr_mu_unlock(&sp->server->mu);
     return;
   }
-
   /* The IOCP notified us of a completed operation. Let's grab the results,
      and act accordingly. */
   transfered_bytes = 0;
@@ -359,7 +355,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           sp->server->channel_args, peer_name_string.c_str());
+                           sp->server->channel_args, peer_name_string);
     } else {
       closesocket(sock);
     }

@@ -22,6 +22,7 @@
 #include <stdbool.h>
 
 #include <grpc/grpc.h>
+
 #include "test/core/util/test_config.h"
 
 /* A cq_verifier can verify that expected events arrive in a timely fashion

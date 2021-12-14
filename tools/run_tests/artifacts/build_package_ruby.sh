@@ -21,15 +21,17 @@ base=$(pwd)
 
 mkdir -p artifacts/
 
-# All the ruby packages have been built in the artifact phase already
+# All the "grpc" gems have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
+# NOTE: Besides the platform-specific native gems, all the artifact build
+# jobs will generate a grpc-X.Y.Z.gem source package, and only one of them
+# will end up in the artifacts/ directory. They should be all equivalent
+# though.
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/ruby_native_gem_*/* artifacts/ || true
 
+# Next, build the "grpc-tools" gem by collecting the protoc and grpc_ruby_plugin binaries
+# that have been built by the the artifact build phase previously.
 well_known_protos=( any api compiler/plugin descriptor duration empty field_mask source_context struct timestamp type wrappers )
-
-# TODO: all the artifact builder configurations generate a grpc-VERSION.gem
-# source distribution package, and only one of them will end up
-# in the artifacts/ directory. They should be all equivalent though.
 
 for arch in {x86,x64}; do
   case $arch in

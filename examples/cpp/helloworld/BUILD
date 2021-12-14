@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # 3-clause BSD
+licenses(["notice"])
 
 cc_binary(
     name = "greeter_client",
@@ -37,6 +37,16 @@ cc_binary(
 cc_binary(
     name = "greeter_async_client2",
     srcs = ["greeter_async_client2.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//examples/protos:helloworld_cc_grpc",
+    ],
+)
+
+cc_binary(
+    name = "greeter_callback_client",
+    srcs = ["greeter_callback_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
@@ -73,6 +83,17 @@ cc_binary(
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
+        "//examples/protos:helloworld_cc_grpc",
+    ],
+)
+
+cc_binary(
+    name = "greeter_callback_server",
+    srcs = ["greeter_callback_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
         "//examples/protos:helloworld_cc_grpc",
     ],
 )

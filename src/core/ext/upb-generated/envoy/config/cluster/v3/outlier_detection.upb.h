@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPB_H_
 #define ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -37,13 +37,19 @@ UPB_INLINE envoy_config_cluster_v3_OutlierDetection *envoy_config_cluster_v3_Out
 UPB_INLINE envoy_config_cluster_v3_OutlierDetection *envoy_config_cluster_v3_OutlierDetection_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_cluster_v3_OutlierDetection *ret = envoy_config_cluster_v3_OutlierDetection_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_cluster_v3_OutlierDetection_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_cluster_v3_OutlierDetection_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_cluster_v3_OutlierDetection *envoy_config_cluster_v3_OutlierDetection_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_cluster_v3_OutlierDetection *ret = envoy_config_cluster_v3_OutlierDetection_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_cluster_v3_OutlierDetection_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_cluster_v3_OutlierDetection_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_cluster_v3_OutlierDetection_serialize(const envoy_config_cluster_v3_OutlierDetection *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_cluster_v3_OutlierDetection_msginit, arena, len);
@@ -354,6 +360,8 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetec
   }
   return sub;
 }
+
+extern const upb_msglayout_file envoy_config_cluster_v3_outlier_detection_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

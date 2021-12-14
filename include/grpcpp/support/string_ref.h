@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_STRING_REF_H
 #define GRPCPP_SUPPORT_STRING_REF_H
 
-#include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/impl/codegen/string_ref.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_STRING_REF_H

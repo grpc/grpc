@@ -225,10 +225,13 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     return nil;
   }
 
-  // remove trailing slash of hostname
-  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:host]];
-  if (hostURL.host && hostURL.port == nil) {
-    host = [hostURL.host stringByAppendingString:@":443"];
+  // remove trailing slash of hostname if a supported scheme is not provided
+  if (![host hasPrefix:@"dns:"] && ![host hasPrefix:@"unix:"] && ![host hasPrefix:@"ipv4:"] &&
+      ![host hasPrefix:@"ipv6:"]) {
+    NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:host]];
+    if (hostURL.host && hostURL.port == nil) {
+      host = [hostURL.host stringByAppendingString:@":443"];
+    }
   }
 
   GRPCPooledChannel *pooledChannel = nil;

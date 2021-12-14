@@ -49,7 +49,6 @@
 // headers are not private for grpcpp.h and are part of its interface.
 // IWYU pragma: begin_exports
 #include <grpc/grpc.h>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>

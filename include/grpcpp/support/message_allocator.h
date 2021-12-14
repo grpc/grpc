@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_MESSAGE_ALLOCATOR_H
 #define GRPCPP_SUPPORT_MESSAGE_ALLOCATOR_H
 
-#include <grpcpp/impl/codegen/message_allocator.h>
+#include <grpcpp/impl/codegen/message_allocator.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_MESSAGE_ALLOCATOR_H

@@ -22,10 +22,10 @@ import glob
 import json
 import logging
 import os
+from pathlib import Path
 import re
 import shlex
 import subprocess
-from pathlib import Path
 
 RE_INCLUDE_SYSTEM = re.compile("\s*-I\s+/usr/[^ ]+")
 

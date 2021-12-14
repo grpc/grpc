@@ -36,9 +36,14 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/ext/service_config/service_config.h"
+#include "src/core/ext/service_config/service_config_call_data.h"
+#include "src/core/ext/service_config/service_config_parser.h"
+#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -132,9 +137,11 @@ class ClientChannel {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
-  RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
+  OrphanablePtr<LoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
-      grpc_closure* on_call_destruction_complete);
+      grpc_closure* on_call_destruction_complete,
+      ConfigSelector::CallDispatchController* call_dispatch_controller,
+      bool is_transparent_retry);
 
  private:
   class CallData;
@@ -180,7 +187,7 @@ class ClientChannel {
     grpc_connectivity_state* state_;
     grpc_closure* on_complete_;
     grpc_closure* watcher_timer_init_;
-    Atomic<bool> done_{false};
+    std::atomic<bool> done_{false};
   };
 
   struct ResolverQueuedCall {
@@ -204,21 +211,17 @@ class ClientChannel {
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info);
 
-  // Note: Does NOT return a new ref.
-  grpc_error_handle disconnect_error() const {
-    return disconnect_error_.Load(MemoryOrder::ACQUIRE);
-  }
-
   // Note: All methods with "Locked" suffix must be invoked from within
   // work_serializer_.
 
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
-  void OnResolverErrorLocked(grpc_error_handle error)
+  void OnResolverErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
+      const absl::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const grpc_channel_args& args)
@@ -232,9 +235,7 @@ class ClientChannel {
 
   void UpdateServiceConfigInControlPlaneLocked(
       RefCountedPtr<ServiceConfig> service_config,
-      RefCountedPtr<ConfigSelector> config_selector,
-      const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-      const char* lb_policy_name)
+      RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void UpdateServiceConfigInDataPlaneLocked()
@@ -265,21 +266,17 @@ class ClientChannel {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
   void RemoveLbQueuedCall(LbQueuedCall* to_remove, grpc_polling_entity* pollent)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
-  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
-      SubchannelInterface* subchannel) const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
 
   //
   // Fields set at construction and never modified.
   //
   const bool deadline_checking_enabled_;
-  const bool enable_retries_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  std::string server_name_;
-  UniquePtr<char> target_uri_;
+  std::string uri_to_resolve_;
+  std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   grpc_pollset_set* interested_parties_;
 
@@ -291,8 +288,8 @@ class ClientChannel {
   ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
       nullptr;
   // Data from service config.
-  grpc_error_handle resolver_transient_failure_error_
-      ABSL_GUARDED_BY(resolution_mu_) = GRPC_ERROR_NONE;
+  absl::Status resolver_transient_failure_error_
+      ABSL_GUARDED_BY(resolution_mu_);
   bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) = false;
   RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
   RefCountedPtr<ConfigSelector> config_selector_
@@ -321,8 +318,6 @@ class ClientChannel {
       ABSL_GUARDED_BY(work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
       ABSL_GUARDED_BY(work_serializer_);
-  absl::optional<std::string> health_check_service_name_
-      ABSL_GUARDED_BY(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
@@ -335,18 +330,9 @@ class ClientChannel {
   // work_serializer when the SubchannelWrappers are created and destroyed.
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(work_serializer_);
-  // Pending ConnectedSubchannel updates for each SubchannelWrapper.
-  // Updates are queued here in the control plane work_serializer and then
-  // applied in the data plane mutex when the picker is updated.
-  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
-      pending_subchannel_updates_ ABSL_GUARDED_BY(work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(work_serializer_) = -1;
-
-  //
-  // Fields accessed from both data plane mutex and control plane
-  // work_serializer.
-  //
-  Atomic<grpc_error_handle> disconnect_error_;
+  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(work_serializer_) =
+      GRPC_ERROR_NONE;
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -369,12 +355,10 @@ class ClientChannel {
 // ClientChannel::LoadBalancedCall
 //
 
-// This object is ref-counted, but it cannot inherit from RefCounted<>,
-// because it is allocated on the arena and can't free its memory when
-// its refcount goes to zero.  So instead, it manually implements the
-// same API as RefCounted<>, so that it can be used with RefCountedPtr<>.
+// TODO(roth): As part of simplifying cancellation in the filter stack,
+// this should no longer need to be ref-counted.
 class ClientChannel::LoadBalancedCall
-    : public RefCounted<LoadBalancedCall, PolymorphicRefCount, kUnrefCallDtor> {
+    : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
   // If on_call_destruction_complete is non-null, then it will be
   // invoked once the LoadBalancedCall is completely destroyed.
@@ -382,10 +366,14 @@ class ClientChannel::LoadBalancedCall
   // the LB call has a subchannel call and ensuring that the
   // on_call_destruction_complete closure passed down from the surface
   // is not invoked until after the subchannel call stack is destroyed.
-  LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
-                   grpc_polling_entity* pollent,
-                   grpc_closure* on_call_destruction_complete);
+  LoadBalancedCall(
+      ClientChannel* chand, const grpc_call_element_args& args,
+      grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
+      ConfigSelector::CallDispatchController* call_dispatch_controller,
+      bool is_transparent_retry);
   ~LoadBalancedCall() override;
+
+  void Orphan() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
@@ -408,6 +396,7 @@ class ClientChannel::LoadBalancedCall
   class LbQueuedCallCanceller;
   class Metadata;
   class LbCallState;
+  class BackendMetricAccessor;
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -438,10 +427,10 @@ class ClientChannel::LoadBalancedCall
   // Resumes all pending batches on subchannel_call_.
   void PendingBatchesResume();
 
-  static void RecvTrailingMetadataReadyForLoadBalancingPolicy(
-      void* arg, grpc_error_handle error);
-  void InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
-      grpc_transport_stream_op_batch* batch);
+  static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
+  static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+  static void RecvMessageReady(void* arg, grpc_error_handle error);
+  static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
   void CreateSubchannelCall();
   // Invoked when a pick is completed, on both success or failure.
@@ -459,7 +448,6 @@ class ClientChannel::LoadBalancedCall
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
   grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -467,6 +455,11 @@ class ClientChannel::LoadBalancedCall
   grpc_call_context_element* call_context_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
+  ConfigSelector::CallDispatchController* call_dispatch_controller_;
+
+  CallTracer::CallAttemptTracer* call_attempt_tracer_;
+
+  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
@@ -485,15 +478,31 @@ class ClientChannel::LoadBalancedCall
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
-  std::function<void(grpc_error_handle, LoadBalancingPolicy::MetadataInterface*,
-                     LoadBalancingPolicy::CallState*)>
-      lb_recv_trailing_metadata_ready_;
+  const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+      backend_metric_data_ = nullptr;
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      lb_subchannel_call_tracker_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
-  // For intercepting recv_trailing_metadata_ready for the LB policy.
+  // For intercepting send_initial_metadata on_complete.
+  gpr_atm* peer_string_ = nullptr;
+  grpc_closure send_initial_metadata_on_complete_;
+  grpc_closure* original_send_initial_metadata_on_complete_ = nullptr;
+
+  // For intercepting recv_initial_metadata_ready.
+  grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  grpc_closure recv_initial_metadata_ready_;
+  grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
+
+  // For intercepting recv_message_ready.
+  OrphanablePtr<ByteStream>* recv_message_ = nullptr;
+  grpc_closure recv_message_ready_;
+  grpc_closure* original_recv_message_ready_ = nullptr;
+
+  // For intercepting recv_trailing_metadata_ready.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  grpc_transport_stream_stats* transport_stream_stats_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 
@@ -503,6 +512,69 @@ class ClientChannel::LoadBalancedCall
   // passed the batch down to the subchannel call and are not
   // intercepting any of its callbacks).
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
+};
+
+// A sub-class of ServiceConfigCallData used to access the
+// CallDispatchController.  Allocated on the arena, stored in the call
+// context, and destroyed when the call is destroyed.
+class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
+ public:
+  ClientChannelServiceConfigCallData(
+      RefCountedPtr<ServiceConfig> service_config,
+      const ServiceConfigParser::ParsedConfigVector* method_configs,
+      ServiceConfigCallData::CallAttributes call_attributes,
+      ConfigSelector::CallDispatchController* call_dispatch_controller,
+      grpc_call_context_element* call_context)
+      : ServiceConfigCallData(std::move(service_config), method_configs,
+                              std::move(call_attributes)),
+        call_dispatch_controller_(call_dispatch_controller) {
+    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
+    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
+  }
+
+  ConfigSelector::CallDispatchController* call_dispatch_controller() {
+    return &call_dispatch_controller_;
+  }
+
+ private:
+  // A wrapper for the CallDispatchController returned by the ConfigSelector.
+  // Handles the case where the ConfigSelector doees not return any
+  // CallDispatchController.
+  // Also ensures that we call Commit() at most once, which allows the
+  // client channel code to call Commit() when the call is complete in case
+  // it wasn't called earlier, without needing to know whether or not it was.
+  class CallDispatchControllerWrapper
+      : public ConfigSelector::CallDispatchController {
+   public:
+    explicit CallDispatchControllerWrapper(
+        ConfigSelector::CallDispatchController* call_dispatch_controller)
+        : call_dispatch_controller_(call_dispatch_controller) {}
+
+    bool ShouldRetry() override {
+      if (call_dispatch_controller_ != nullptr) {
+        return call_dispatch_controller_->ShouldRetry();
+      }
+      return true;
+    }
+
+    void Commit() override {
+      if (call_dispatch_controller_ != nullptr && !commit_called_) {
+        call_dispatch_controller_->Commit();
+        commit_called_ = true;
+      }
+    }
+
+   private:
+    ConfigSelector::CallDispatchController* call_dispatch_controller_;
+    bool commit_called_ = false;
+  };
+
+  static void Destroy(void* ptr) {
+    auto* self = static_cast<ClientChannelServiceConfigCallData*>(ptr);
+    self->~ClientChannelServiceConfigCallData();
+  }
+
+  CallDispatchControllerWrapper call_dispatch_controller_;
 };
 
 }  // namespace grpc_core

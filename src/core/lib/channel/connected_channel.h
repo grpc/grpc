@@ -25,8 +25,7 @@
 
 extern const grpc_channel_filter grpc_connected_filter;
 
-bool grpc_add_connected_filter(grpc_channel_stack_builder* builder,
-                               void* arg_must_be_null);
+bool grpc_add_connected_filter(grpc_channel_stack_builder* builder);
 
 /* Debug helper to dig the transport stream out of a call element */
 grpc_stream* grpc_connected_channel_get_stream(grpc_call_element* elem);

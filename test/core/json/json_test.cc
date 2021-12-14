@@ -16,19 +16,19 @@
  *
  */
 
+#include "src/core/lib/json/json.h"
+
 #include <string.h>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/json/json.h"
-
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -131,8 +131,8 @@ TEST(Json, EscapesAndControlCharactersInKeyStrings) {
 }
 
 TEST(Json, WriterCutsOffInvalidUtf8) {
-  RunSuccessTest("\"abc\xf0\x9d\x24\"", "abc\xf0\x9d\x24", "\"abc\"");
-  RunSuccessTest("\"\xff\"", "\xff", "\"\"");
+  EXPECT_EQ(Json("abc\xf0\x9d\x24").Dump(), "\"abc\"");
+  EXPECT_EQ(Json("\xff").Dump(), "\"\"");
 }
 
 TEST(Json, ValidNumbers) {

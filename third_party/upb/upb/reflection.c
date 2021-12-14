@@ -1,8 +1,34 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "upb/reflection.h"
 
 #include <string.h>
-#include "upb/table.int.h"
+#include "upb/table_internal.h"
 #include "upb/msg.h"
 
 #include "upb/port_def.inc"
@@ -82,15 +108,20 @@ static upb_msgval _upb_msg_getraw(const upb_msg *msg, const upb_fielddef *f) {
 }
 
 bool upb_msg_has(const upb_msg *msg, const upb_fielddef *f) {
-  const upb_msglayout_field *field = upb_fielddef_layout(f);
-  if (in_oneof(field)) {
-    return _upb_getoneofcase_field(msg, field) == field->number;
-  } else if (field->presence > 0) {
-    return _upb_hasbit_field(msg, field);
+  if (upb_fielddef_isextension(f)) {
+    const upb_msglayout_ext *ext = _upb_fielddef_extlayout(f);
+    return _upb_msg_getext(msg, ext) != NULL;
   } else {
-    UPB_ASSERT(field->descriptortype == UPB_DESCRIPTOR_TYPE_MESSAGE ||
-               field->descriptortype == UPB_DESCRIPTOR_TYPE_GROUP);
-    return _upb_msg_getraw(msg, f).msg_val != NULL;
+    const upb_msglayout_field *field = upb_fielddef_layout(f);
+    if (in_oneof(field)) {
+      return _upb_getoneofcase_field(msg, field) == field->number;
+    } else if (field->presence > 0) {
+      return _upb_hasbit_field(msg, field);
+    } else {
+      UPB_ASSERT(field->descriptortype == UPB_DESCRIPTOR_TYPE_MESSAGE ||
+                 field->descriptortype == UPB_DESCRIPTOR_TYPE_GROUP);
+      return _upb_msg_getraw(msg, f).msg_val != NULL;
+    }
   }
 }
 
@@ -110,106 +141,92 @@ const upb_fielddef *upb_msg_whichoneof(const upb_msg *msg,
 }
 
 upb_msgval upb_msg_get(const upb_msg *msg, const upb_fielddef *f) {
-  if (!upb_fielddef_haspresence(f) || upb_msg_has(msg, f)) {
-    return _upb_msg_getraw(msg, f);
-  } else {
-    /* TODO(haberman): change upb_fielddef to not require this switch(). */
-    upb_msgval val = {0};
-    switch (upb_fielddef_type(f)) {
-      case UPB_TYPE_INT32:
-      case UPB_TYPE_ENUM:
-        val.int32_val = upb_fielddef_defaultint32(f);
-        break;
-      case UPB_TYPE_INT64:
-        val.int64_val = upb_fielddef_defaultint64(f);
-        break;
-      case UPB_TYPE_UINT32:
-        val.uint32_val = upb_fielddef_defaultuint32(f);
-        break;
-      case UPB_TYPE_UINT64:
-        val.uint64_val = upb_fielddef_defaultuint64(f);
-        break;
-      case UPB_TYPE_FLOAT:
-        val.float_val = upb_fielddef_defaultfloat(f);
-        break;
-      case UPB_TYPE_DOUBLE:
-        val.double_val = upb_fielddef_defaultdouble(f);
-        break;
-      case UPB_TYPE_BOOL:
-        val.bool_val = upb_fielddef_defaultbool(f);
-        break;
-      case UPB_TYPE_STRING:
-      case UPB_TYPE_BYTES:
-        val.str_val.data = upb_fielddef_defaultstr(f, &val.str_val.size);
-        break;
-      case UPB_TYPE_MESSAGE:
-        val.msg_val = NULL;
-        break;
+  if (upb_fielddef_isextension(f)) {
+    const upb_msg_ext *ext = _upb_msg_getext(msg, _upb_fielddef_extlayout(f));
+    if (ext) {
+      upb_msgval val;
+      memcpy(&val, &ext->data, sizeof(val));
+      return val;
+    } else if (upb_fielddef_isseq(f)) {
+      return (upb_msgval){.array_val = NULL};
     }
-    return val;
+  } else if (!upb_fielddef_haspresence(f) || upb_msg_has(msg, f)) {
+    return _upb_msg_getraw(msg, f);
   }
+  return upb_fielddef_default(f);
 }
 
 upb_mutmsgval upb_msg_mutable(upb_msg *msg, const upb_fielddef *f,
                               upb_arena *a) {
-  const upb_msglayout_field *field = upb_fielddef_layout(f);
-  upb_mutmsgval ret;
-  char *mem = UPB_PTR_AT(msg, field->offset, char);
-  bool wrong_oneof =
-      in_oneof(field) && _upb_getoneofcase_field(msg, field) != field->number;
-
-  memcpy(&ret, mem, sizeof(void*));
-
-  if (a && (!ret.msg || wrong_oneof)) {
-    if (upb_fielddef_ismap(f)) {
-      const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
-      const upb_fielddef *key = upb_msgdef_itof(entry, UPB_MAPENTRY_KEY);
-      const upb_fielddef *value = upb_msgdef_itof(entry, UPB_MAPENTRY_VALUE);
-      ret.map = upb_map_new(a, upb_fielddef_type(key), upb_fielddef_type(value));
-    } else if (upb_fielddef_isseq(f)) {
-      ret.array = upb_array_new(a, upb_fielddef_type(f));
-    } else {
-      UPB_ASSERT(upb_fielddef_issubmsg(f));
-      ret.msg = upb_msg_new(upb_fielddef_msgsubdef(f), a);
-    }
-
-    memcpy(mem, &ret, sizeof(void*));
-
-    if (wrong_oneof) {
-      *_upb_oneofcase_field(msg, field) = field->number;
-    } else if (field->presence > 0) {
-      _upb_sethas_field(msg, field);
-    }
+  UPB_ASSERT(upb_fielddef_issubmsg(f) || upb_fielddef_isseq(f));
+  if (upb_fielddef_haspresence(f) && !upb_msg_has(msg, f)) {
+    // We need to skip the upb_msg_get() call in this case.
+    goto make;
   }
+
+  upb_msgval val = upb_msg_get(msg, f);
+  if (val.array_val) {
+    return (upb_mutmsgval){.array = (upb_array*)val.array_val};
+  }
+
+  upb_mutmsgval ret;
+make:
+  if (!a) return (upb_mutmsgval){.array = NULL};
+  if (upb_fielddef_ismap(f)) {
+    const upb_msgdef *entry = upb_fielddef_msgsubdef(f);
+    const upb_fielddef *key = upb_msgdef_itof(entry, UPB_MAPENTRY_KEY);
+    const upb_fielddef *value = upb_msgdef_itof(entry, UPB_MAPENTRY_VALUE);
+    ret.map = upb_map_new(a, upb_fielddef_type(key), upb_fielddef_type(value));
+  } else if (upb_fielddef_isseq(f)) {
+    ret.array = upb_array_new(a, upb_fielddef_type(f));
+  } else {
+    UPB_ASSERT(upb_fielddef_issubmsg(f));
+    ret.msg = upb_msg_new(upb_fielddef_msgsubdef(f), a);
+  }
+
+  val.array_val = ret.array;
+  upb_msg_set(msg, f, val, a);
+
   return ret;
 }
 
-void upb_msg_set(upb_msg *msg, const upb_fielddef *f, upb_msgval val,
+bool upb_msg_set(upb_msg *msg, const upb_fielddef *f, upb_msgval val,
                  upb_arena *a) {
-  const upb_msglayout_field *field = upb_fielddef_layout(f);
-  char *mem = UPB_PTR_AT(msg, field->offset, char);
-  UPB_UNUSED(a);  /* We reserve the right to make set insert into a map. */
-  memcpy(mem, &val, get_field_size(field));
-  if (field->presence > 0) {
-    _upb_sethas_field(msg, field);
-  } else if (in_oneof(field)) {
-    *_upb_oneofcase_field(msg, field) = field->number;
+  if (upb_fielddef_isextension(f)) {
+    upb_msg_ext *ext =
+        _upb_msg_getorcreateext(msg, _upb_fielddef_extlayout(f), a);
+    if (!ext) return false;
+    memcpy(&ext->data, &val, sizeof(val));
+  } else {
+    const upb_msglayout_field *field = upb_fielddef_layout(f);
+    char *mem = UPB_PTR_AT(msg, field->offset, char);
+    memcpy(mem, &val, get_field_size(field));
+    if (field->presence > 0) {
+      _upb_sethas_field(msg, field);
+    } else if (in_oneof(field)) {
+      *_upb_oneofcase_field(msg, field) = field->number;
+    }
   }
+  return true;
 }
 
 void upb_msg_clearfield(upb_msg *msg, const upb_fielddef *f) {
-  const upb_msglayout_field *field = upb_fielddef_layout(f);
-  char *mem = UPB_PTR_AT(msg, field->offset, char);
+  if (upb_fielddef_isextension(f)) {
+    _upb_msg_clearext(msg, _upb_fielddef_extlayout(f));
+  } else {
+    const upb_msglayout_field *field = upb_fielddef_layout(f);
+    char *mem = UPB_PTR_AT(msg, field->offset, char);
 
-  if (field->presence > 0) {
-    _upb_clearhas_field(msg, field);
-  } else if (in_oneof(field)) {
-    uint32_t *oneof_case = _upb_oneofcase_field(msg, field);
-    if (*oneof_case != field->number) return;
-    *oneof_case = 0;
+    if (field->presence > 0) {
+      _upb_clearhas_field(msg, field);
+    } else if (in_oneof(field)) {
+      uint32_t *oneof_case = _upb_oneofcase_field(msg, field);
+      if (*oneof_case != field->number) return;
+      *oneof_case = 0;
+    }
+
+    memset(mem, 0, get_field_size(field));
   }
-
-  memset(mem, 0, get_field_size(field));
 }
 
 void upb_msg_clear(upb_msg *msg, const upb_msgdef *m) {
@@ -219,10 +236,12 @@ void upb_msg_clear(upb_msg *msg, const upb_msgdef *m) {
 bool upb_msg_next(const upb_msg *msg, const upb_msgdef *m,
                   const upb_symtab *ext_pool, const upb_fielddef **out_f,
                   upb_msgval *out_val, size_t *iter) {
-  int i = *iter;
-  int n = upb_msgdef_fieldcount(m);
+  size_t i = *iter;
+  size_t n = upb_msgdef_fieldcount(m);
   const upb_msgval zero = {0};
   UPB_UNUSED(ext_pool);
+
+  /* Iterate over normal fields, returning the first one that is set. */
   while (++i < n) {
     const upb_fielddef *f = upb_msgdef_field(m, i);
     upb_msgval val = _upb_msg_getraw(msg, f);
@@ -252,6 +271,20 @@ bool upb_msg_next(const upb_msg *msg, const upb_msgdef *m,
     *iter = i;
     return true;
   }
+
+  if (ext_pool) {
+    /* Return any extensions that are set. */
+    size_t count;
+    const upb_msg_ext *ext = _upb_msg_getexts(msg, &count);
+    if (i - n < count) {
+      ext += count - 1 - (i - n);
+      memcpy(out_val, &ext->data, sizeof(*out_val));
+      *out_f = _upb_symtab_lookupextfield(ext_pool, ext->ext);
+      *iter = i;
+      return true;
+    }
+  }
+
   *iter = i;
   return false;
 }
@@ -333,10 +366,9 @@ void upb_array_set(upb_array *arr, size_t i, upb_msgval val) {
 }
 
 bool upb_array_append(upb_array *arr, upb_msgval val, upb_arena *arena) {
-  if (!_upb_array_realloc(arr, arr->len + 1, arena)) {
+  if (!upb_array_resize(arr, arr->len + 1, arena)) {
     return false;
   }
-  arr->len++;
   upb_array_set(arr, arr->len - 1, val);
   return true;
 }

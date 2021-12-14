@@ -20,7 +20,7 @@
 #define GRPCPP_SUPPORT_SLICE_H
 
 #include <grpc/slice.h>
-#include <grpcpp/impl/codegen/slice.h>
+#include <grpcpp/impl/codegen/slice.h>  // IWYU pragma: export
 #include <grpcpp/support/config.h>
 
 #endif  // GRPCPP_SUPPORT_SLICE_H

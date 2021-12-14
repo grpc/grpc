@@ -34,6 +34,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 
+// IWYU pragma: private, include <grpcpp/client_context.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -92,6 +94,7 @@ class ClientAsyncResponseReader;
 
 namespace testing {
 class InteropClientContextInspector;
+class ClientContextTestPeer;
 }  // namespace testing
 
 namespace internal {
@@ -205,7 +208,7 @@ class ClientContext {
   /// \return A newly constructed \a ClientContext instance based on \a
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
-      const grpc::ServerContext& server_context,
+      const grpc::ServerContextBase& server_context,
       PropagationOptions options = PropagationOptions());
   static std::unique_ptr<ClientContext> FromCallbackServerContext(
       const grpc::CallbackServerContext& server_context,
@@ -223,11 +226,16 @@ class ClientContext {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /// Custom-Metadata -> Binary-Header / ASCII-Header
-  /// Binary-Header -> {Header-Name "-bin" } {binary value}
-  /// ASCII-Header -> Header-Name ASCII-Value
-  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /**
+  \verbatim
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  Binary-Header -> {Header-Name "-bin" } {binary value}
+  ASCII-Header -> Header-Name ASCII-Value
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  \endverbatim
+  **/
   void AddMetadata(const std::string& meta_key, const std::string& meta_value);
 
   /// Return a collection of initial metadata key-value pairs. Note that keys
@@ -280,7 +288,7 @@ class ClientContext {
   /// with the possibility of receiving a cached response.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
-  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
+  /// Trigger wait-for-ready or not on this request.
   /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
   /// If set, if an RPC is made when a channel's connectivity state is
   /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",
@@ -423,6 +431,7 @@ class ClientContext {
   ClientContext& operator=(const ClientContext&);
 
   friend class ::grpc::testing::InteropClientContextInspector;
+  friend class ::grpc::testing::ClientContextTestPeer;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class ::grpc::Channel;

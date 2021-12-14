@@ -16,13 +16,15 @@
  *
  */
 
+#include "test/cpp/naming/dns_test_util.h"
+
 #include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "test/cpp/naming/dns_test_util.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"

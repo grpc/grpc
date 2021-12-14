@@ -9,7 +9,7 @@
 #ifndef VALIDATE_VALIDATE_PROTO_UPB_H_
 #define VALIDATE_VALIDATE_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -89,9 +89,19 @@ extern const upb_msglayout validate_MapRules_msginit;
 extern const upb_msglayout validate_AnyRules_msginit;
 extern const upb_msglayout validate_DurationRules_msginit;
 extern const upb_msglayout validate_TimestampRules_msginit;
+extern const upb_msglayout_ext validate_disabled_ext;
+extern const upb_msglayout_ext validate_ignored_ext;
+extern const upb_msglayout_ext validate_required_ext;
+extern const upb_msglayout_ext validate_rules_ext;
 struct google_protobuf_Duration;
+struct google_protobuf_FieldOptions;
+struct google_protobuf_MessageOptions;
+struct google_protobuf_OneofOptions;
 struct google_protobuf_Timestamp;
 extern const upb_msglayout google_protobuf_Duration_msginit;
+extern const upb_msglayout google_protobuf_FieldOptions_msginit;
+extern const upb_msglayout google_protobuf_MessageOptions_msginit;
+extern const upb_msglayout google_protobuf_OneofOptions_msginit;
 extern const upb_msglayout google_protobuf_Timestamp_msginit;
 
 typedef enum {
@@ -109,13 +119,19 @@ UPB_INLINE validate_FieldRules *validate_FieldRules_new(upb_arena *arena) {
 UPB_INLINE validate_FieldRules *validate_FieldRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_FieldRules *ret = validate_FieldRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_FieldRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_FieldRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_FieldRules *validate_FieldRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_FieldRules *ret = validate_FieldRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_FieldRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_FieldRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_FieldRules_serialize(const validate_FieldRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_FieldRules_msginit, arena, len);
@@ -466,13 +482,19 @@ UPB_INLINE validate_FloatRules *validate_FloatRules_new(upb_arena *arena) {
 UPB_INLINE validate_FloatRules *validate_FloatRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_FloatRules *ret = validate_FloatRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_FloatRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_FloatRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_FloatRules *validate_FloatRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_FloatRules *ret = validate_FloatRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_FloatRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_FloatRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_FloatRules_serialize(const validate_FloatRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_FloatRules_msginit, arena, len);
@@ -488,8 +510,10 @@ UPB_INLINE bool validate_FloatRules_has_gt(const validate_FloatRules *msg) { ret
 UPB_INLINE float validate_FloatRules_gt(const validate_FloatRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), float); }
 UPB_INLINE bool validate_FloatRules_has_gte(const validate_FloatRules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE float validate_FloatRules_gte(const validate_FloatRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), float); }
-UPB_INLINE float const* validate_FloatRules_in(const validate_FloatRules *msg, size_t *len) { return (float const*)_upb_array_accessor(msg, UPB_SIZE(24, 24), len); }
-UPB_INLINE float const* validate_FloatRules_not_in(const validate_FloatRules *msg, size_t *len) { return (float const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE float const* validate_FloatRules_in(const validate_FloatRules *msg, size_t *len) { return (float const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE float const* validate_FloatRules_not_in(const validate_FloatRules *msg, size_t *len) { return (float const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len); }
+UPB_INLINE bool validate_FloatRules_has_ignore_empty(const validate_FloatRules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_FloatRules_ignore_empty(const validate_FloatRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool); }
 
 UPB_INLINE void validate_FloatRules_set_const(validate_FloatRules *msg, float value) {
   _upb_sethas(msg, 1);
@@ -512,24 +536,28 @@ UPB_INLINE void validate_FloatRules_set_gte(validate_FloatRules *msg, float valu
   *UPB_PTR_AT(msg, UPB_SIZE(20, 20), float) = value;
 }
 UPB_INLINE float* validate_FloatRules_mutable_in(validate_FloatRules *msg, size_t *len) {
-  return (float*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 24), len);
+  return (float*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
 }
 UPB_INLINE float* validate_FloatRules_resize_in(validate_FloatRules *msg, size_t len, upb_arena *arena) {
-  return (float*)_upb_array_resize_accessor2(msg, UPB_SIZE(24, 24), len, 2, arena);
+  return (float*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
 }
 UPB_INLINE bool validate_FloatRules_add_in(validate_FloatRules *msg, float val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(24, 24), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
       arena);
 }
 UPB_INLINE float* validate_FloatRules_mutable_not_in(validate_FloatRules *msg, size_t *len) {
-  return (float*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+  return (float*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
 }
 UPB_INLINE float* validate_FloatRules_resize_not_in(validate_FloatRules *msg, size_t len, upb_arena *arena) {
-  return (float*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+  return (float*)_upb_array_resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
 }
 UPB_INLINE bool validate_FloatRules_add_not_in(validate_FloatRules *msg, float val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(32, 40), 2, &val,
       arena);
+}
+UPB_INLINE void validate_FloatRules_set_ignore_empty(validate_FloatRules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
 }
 
 /* validate.DoubleRules */
@@ -540,13 +568,19 @@ UPB_INLINE validate_DoubleRules *validate_DoubleRules_new(upb_arena *arena) {
 UPB_INLINE validate_DoubleRules *validate_DoubleRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_DoubleRules *ret = validate_DoubleRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_DoubleRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_DoubleRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_DoubleRules *validate_DoubleRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_DoubleRules *ret = validate_DoubleRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_DoubleRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_DoubleRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_DoubleRules_serialize(const validate_DoubleRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_DoubleRules_msginit, arena, len);
@@ -562,8 +596,10 @@ UPB_INLINE bool validate_DoubleRules_has_gt(const validate_DoubleRules *msg) { r
 UPB_INLINE double validate_DoubleRules_gt(const validate_DoubleRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), double); }
 UPB_INLINE bool validate_DoubleRules_has_gte(const validate_DoubleRules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE double validate_DoubleRules_gte(const validate_DoubleRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), double); }
-UPB_INLINE double const* validate_DoubleRules_in(const validate_DoubleRules *msg, size_t *len) { return (double const*)_upb_array_accessor(msg, UPB_SIZE(48, 48), len); }
-UPB_INLINE double const* validate_DoubleRules_not_in(const validate_DoubleRules *msg, size_t *len) { return (double const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE double const* validate_DoubleRules_in(const validate_DoubleRules *msg, size_t *len) { return (double const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE double const* validate_DoubleRules_not_in(const validate_DoubleRules *msg, size_t *len) { return (double const*)_upb_array_accessor(msg, UPB_SIZE(56, 64), len); }
+UPB_INLINE bool validate_DoubleRules_has_ignore_empty(const validate_DoubleRules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_DoubleRules_ignore_empty(const validate_DoubleRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool); }
 
 UPB_INLINE void validate_DoubleRules_set_const(validate_DoubleRules *msg, double value) {
   _upb_sethas(msg, 1);
@@ -586,24 +622,28 @@ UPB_INLINE void validate_DoubleRules_set_gte(validate_DoubleRules *msg, double v
   *UPB_PTR_AT(msg, UPB_SIZE(40, 40), double) = value;
 }
 UPB_INLINE double* validate_DoubleRules_mutable_in(validate_DoubleRules *msg, size_t *len) {
-  return (double*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 48), len);
+  return (double*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
 }
 UPB_INLINE double* validate_DoubleRules_resize_in(validate_DoubleRules *msg, size_t len, upb_arena *arena) {
-  return (double*)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 48), len, 3, arena);
+  return (double*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
 }
 UPB_INLINE bool validate_DoubleRules_add_in(validate_DoubleRules *msg, double val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(48, 48), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
       arena);
 }
 UPB_INLINE double* validate_DoubleRules_mutable_not_in(validate_DoubleRules *msg, size_t *len) {
-  return (double*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
+  return (double*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 64), len);
 }
 UPB_INLINE double* validate_DoubleRules_resize_not_in(validate_DoubleRules *msg, size_t len, upb_arena *arena) {
-  return (double*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
+  return (double*)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 64), len, 3, arena);
 }
 UPB_INLINE bool validate_DoubleRules_add_not_in(validate_DoubleRules *msg, double val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(56, 64), 3, &val,
       arena);
+}
+UPB_INLINE void validate_DoubleRules_set_ignore_empty(validate_DoubleRules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool) = value;
 }
 
 /* validate.Int32Rules */
@@ -614,13 +654,19 @@ UPB_INLINE validate_Int32Rules *validate_Int32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Int32Rules *validate_Int32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Int32Rules *ret = validate_Int32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Int32Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_Int32Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_Int32Rules *validate_Int32Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_Int32Rules *ret = validate_Int32Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_Int32Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_Int32Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_Int32Rules_serialize(const validate_Int32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Int32Rules_msginit, arena, len);
@@ -636,8 +682,10 @@ UPB_INLINE bool validate_Int32Rules_has_gt(const validate_Int32Rules *msg) { ret
 UPB_INLINE int32_t validate_Int32Rules_gt(const validate_Int32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t); }
 UPB_INLINE bool validate_Int32Rules_has_gte(const validate_Int32Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE int32_t validate_Int32Rules_gte(const validate_Int32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t); }
-UPB_INLINE int32_t const* validate_Int32Rules_in(const validate_Int32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(24, 24), len); }
-UPB_INLINE int32_t const* validate_Int32Rules_not_in(const validate_Int32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE int32_t const* validate_Int32Rules_in(const validate_Int32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE int32_t const* validate_Int32Rules_not_in(const validate_Int32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len); }
+UPB_INLINE bool validate_Int32Rules_has_ignore_empty(const validate_Int32Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_Int32Rules_ignore_empty(const validate_Int32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool); }
 
 UPB_INLINE void validate_Int32Rules_set_const(validate_Int32Rules *msg, int32_t value) {
   _upb_sethas(msg, 1);
@@ -660,24 +708,28 @@ UPB_INLINE void validate_Int32Rules_set_gte(validate_Int32Rules *msg, int32_t va
   *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = value;
 }
 UPB_INLINE int32_t* validate_Int32Rules_mutable_in(validate_Int32Rules *msg, size_t *len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 24), len);
+  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
 }
 UPB_INLINE int32_t* validate_Int32Rules_resize_in(validate_Int32Rules *msg, size_t len, upb_arena *arena) {
-  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(24, 24), len, 2, arena);
+  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
 }
 UPB_INLINE bool validate_Int32Rules_add_in(validate_Int32Rules *msg, int32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(24, 24), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
       arena);
 }
 UPB_INLINE int32_t* validate_Int32Rules_mutable_not_in(validate_Int32Rules *msg, size_t *len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
 }
 UPB_INLINE int32_t* validate_Int32Rules_resize_not_in(validate_Int32Rules *msg, size_t len, upb_arena *arena) {
-  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
 }
 UPB_INLINE bool validate_Int32Rules_add_not_in(validate_Int32Rules *msg, int32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(32, 40), 2, &val,
       arena);
+}
+UPB_INLINE void validate_Int32Rules_set_ignore_empty(validate_Int32Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
 }
 
 /* validate.Int64Rules */
@@ -688,13 +740,19 @@ UPB_INLINE validate_Int64Rules *validate_Int64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Int64Rules *validate_Int64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Int64Rules *ret = validate_Int64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Int64Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_Int64Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_Int64Rules *validate_Int64Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_Int64Rules *ret = validate_Int64Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_Int64Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_Int64Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_Int64Rules_serialize(const validate_Int64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Int64Rules_msginit, arena, len);
@@ -710,8 +768,10 @@ UPB_INLINE bool validate_Int64Rules_has_gt(const validate_Int64Rules *msg) { ret
 UPB_INLINE int64_t validate_Int64Rules_gt(const validate_Int64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), int64_t); }
 UPB_INLINE bool validate_Int64Rules_has_gte(const validate_Int64Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE int64_t validate_Int64Rules_gte(const validate_Int64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), int64_t); }
-UPB_INLINE int64_t const* validate_Int64Rules_in(const validate_Int64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(48, 48), len); }
-UPB_INLINE int64_t const* validate_Int64Rules_not_in(const validate_Int64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE int64_t const* validate_Int64Rules_in(const validate_Int64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE int64_t const* validate_Int64Rules_not_in(const validate_Int64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(56, 64), len); }
+UPB_INLINE bool validate_Int64Rules_has_ignore_empty(const validate_Int64Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_Int64Rules_ignore_empty(const validate_Int64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool); }
 
 UPB_INLINE void validate_Int64Rules_set_const(validate_Int64Rules *msg, int64_t value) {
   _upb_sethas(msg, 1);
@@ -734,24 +794,28 @@ UPB_INLINE void validate_Int64Rules_set_gte(validate_Int64Rules *msg, int64_t va
   *UPB_PTR_AT(msg, UPB_SIZE(40, 40), int64_t) = value;
 }
 UPB_INLINE int64_t* validate_Int64Rules_mutable_in(validate_Int64Rules *msg, size_t *len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 48), len);
+  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
 }
 UPB_INLINE int64_t* validate_Int64Rules_resize_in(validate_Int64Rules *msg, size_t len, upb_arena *arena) {
-  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 48), len, 3, arena);
+  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
 }
 UPB_INLINE bool validate_Int64Rules_add_in(validate_Int64Rules *msg, int64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(48, 48), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
       arena);
 }
 UPB_INLINE int64_t* validate_Int64Rules_mutable_not_in(validate_Int64Rules *msg, size_t *len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
+  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 64), len);
 }
 UPB_INLINE int64_t* validate_Int64Rules_resize_not_in(validate_Int64Rules *msg, size_t len, upb_arena *arena) {
-  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
+  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 64), len, 3, arena);
 }
 UPB_INLINE bool validate_Int64Rules_add_not_in(validate_Int64Rules *msg, int64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(56, 64), 3, &val,
       arena);
+}
+UPB_INLINE void validate_Int64Rules_set_ignore_empty(validate_Int64Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool) = value;
 }
 
 /* validate.UInt32Rules */
@@ -762,13 +826,19 @@ UPB_INLINE validate_UInt32Rules *validate_UInt32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_UInt32Rules *validate_UInt32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_UInt32Rules *ret = validate_UInt32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_UInt32Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_UInt32Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_UInt32Rules *validate_UInt32Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_UInt32Rules *ret = validate_UInt32Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_UInt32Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_UInt32Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_UInt32Rules_serialize(const validate_UInt32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_UInt32Rules_msginit, arena, len);
@@ -784,8 +854,10 @@ UPB_INLINE bool validate_UInt32Rules_has_gt(const validate_UInt32Rules *msg) { r
 UPB_INLINE uint32_t validate_UInt32Rules_gt(const validate_UInt32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t); }
 UPB_INLINE bool validate_UInt32Rules_has_gte(const validate_UInt32Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE uint32_t validate_UInt32Rules_gte(const validate_UInt32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t); }
-UPB_INLINE uint32_t const* validate_UInt32Rules_in(const validate_UInt32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(24, 24), len); }
-UPB_INLINE uint32_t const* validate_UInt32Rules_not_in(const validate_UInt32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE uint32_t const* validate_UInt32Rules_in(const validate_UInt32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE uint32_t const* validate_UInt32Rules_not_in(const validate_UInt32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len); }
+UPB_INLINE bool validate_UInt32Rules_has_ignore_empty(const validate_UInt32Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_UInt32Rules_ignore_empty(const validate_UInt32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool); }
 
 UPB_INLINE void validate_UInt32Rules_set_const(validate_UInt32Rules *msg, uint32_t value) {
   _upb_sethas(msg, 1);
@@ -808,24 +880,28 @@ UPB_INLINE void validate_UInt32Rules_set_gte(validate_UInt32Rules *msg, uint32_t
   *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t) = value;
 }
 UPB_INLINE uint32_t* validate_UInt32Rules_mutable_in(validate_UInt32Rules *msg, size_t *len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 24), len);
+  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
 }
 UPB_INLINE uint32_t* validate_UInt32Rules_resize_in(validate_UInt32Rules *msg, size_t len, upb_arena *arena) {
-  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(24, 24), len, 2, arena);
+  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
 }
 UPB_INLINE bool validate_UInt32Rules_add_in(validate_UInt32Rules *msg, uint32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(24, 24), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
       arena);
 }
 UPB_INLINE uint32_t* validate_UInt32Rules_mutable_not_in(validate_UInt32Rules *msg, size_t *len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
 }
 UPB_INLINE uint32_t* validate_UInt32Rules_resize_not_in(validate_UInt32Rules *msg, size_t len, upb_arena *arena) {
-  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
 }
 UPB_INLINE bool validate_UInt32Rules_add_not_in(validate_UInt32Rules *msg, uint32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(32, 40), 2, &val,
       arena);
+}
+UPB_INLINE void validate_UInt32Rules_set_ignore_empty(validate_UInt32Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
 }
 
 /* validate.UInt64Rules */
@@ -836,13 +912,19 @@ UPB_INLINE validate_UInt64Rules *validate_UInt64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_UInt64Rules *validate_UInt64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_UInt64Rules *ret = validate_UInt64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_UInt64Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_UInt64Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_UInt64Rules *validate_UInt64Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_UInt64Rules *ret = validate_UInt64Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_UInt64Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_UInt64Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_UInt64Rules_serialize(const validate_UInt64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_UInt64Rules_msginit, arena, len);
@@ -858,8 +940,10 @@ UPB_INLINE bool validate_UInt64Rules_has_gt(const validate_UInt64Rules *msg) { r
 UPB_INLINE uint64_t validate_UInt64Rules_gt(const validate_UInt64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), uint64_t); }
 UPB_INLINE bool validate_UInt64Rules_has_gte(const validate_UInt64Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE uint64_t validate_UInt64Rules_gte(const validate_UInt64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t); }
-UPB_INLINE uint64_t const* validate_UInt64Rules_in(const validate_UInt64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(48, 48), len); }
-UPB_INLINE uint64_t const* validate_UInt64Rules_not_in(const validate_UInt64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE uint64_t const* validate_UInt64Rules_in(const validate_UInt64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE uint64_t const* validate_UInt64Rules_not_in(const validate_UInt64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(56, 64), len); }
+UPB_INLINE bool validate_UInt64Rules_has_ignore_empty(const validate_UInt64Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_UInt64Rules_ignore_empty(const validate_UInt64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool); }
 
 UPB_INLINE void validate_UInt64Rules_set_const(validate_UInt64Rules *msg, uint64_t value) {
   _upb_sethas(msg, 1);
@@ -882,24 +966,28 @@ UPB_INLINE void validate_UInt64Rules_set_gte(validate_UInt64Rules *msg, uint64_t
   *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t) = value;
 }
 UPB_INLINE uint64_t* validate_UInt64Rules_mutable_in(validate_UInt64Rules *msg, size_t *len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 48), len);
+  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
 }
 UPB_INLINE uint64_t* validate_UInt64Rules_resize_in(validate_UInt64Rules *msg, size_t len, upb_arena *arena) {
-  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 48), len, 3, arena);
+  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
 }
 UPB_INLINE bool validate_UInt64Rules_add_in(validate_UInt64Rules *msg, uint64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(48, 48), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
       arena);
 }
 UPB_INLINE uint64_t* validate_UInt64Rules_mutable_not_in(validate_UInt64Rules *msg, size_t *len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
+  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 64), len);
 }
 UPB_INLINE uint64_t* validate_UInt64Rules_resize_not_in(validate_UInt64Rules *msg, size_t len, upb_arena *arena) {
-  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
+  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 64), len, 3, arena);
 }
 UPB_INLINE bool validate_UInt64Rules_add_not_in(validate_UInt64Rules *msg, uint64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(56, 64), 3, &val,
       arena);
+}
+UPB_INLINE void validate_UInt64Rules_set_ignore_empty(validate_UInt64Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool) = value;
 }
 
 /* validate.SInt32Rules */
@@ -910,13 +998,19 @@ UPB_INLINE validate_SInt32Rules *validate_SInt32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_SInt32Rules *validate_SInt32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SInt32Rules *ret = validate_SInt32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SInt32Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_SInt32Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_SInt32Rules *validate_SInt32Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_SInt32Rules *ret = validate_SInt32Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_SInt32Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_SInt32Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_SInt32Rules_serialize(const validate_SInt32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SInt32Rules_msginit, arena, len);
@@ -932,8 +1026,10 @@ UPB_INLINE bool validate_SInt32Rules_has_gt(const validate_SInt32Rules *msg) { r
 UPB_INLINE int32_t validate_SInt32Rules_gt(const validate_SInt32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t); }
 UPB_INLINE bool validate_SInt32Rules_has_gte(const validate_SInt32Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE int32_t validate_SInt32Rules_gte(const validate_SInt32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t); }
-UPB_INLINE int32_t const* validate_SInt32Rules_in(const validate_SInt32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(24, 24), len); }
-UPB_INLINE int32_t const* validate_SInt32Rules_not_in(const validate_SInt32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE int32_t const* validate_SInt32Rules_in(const validate_SInt32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE int32_t const* validate_SInt32Rules_not_in(const validate_SInt32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len); }
+UPB_INLINE bool validate_SInt32Rules_has_ignore_empty(const validate_SInt32Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_SInt32Rules_ignore_empty(const validate_SInt32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool); }
 
 UPB_INLINE void validate_SInt32Rules_set_const(validate_SInt32Rules *msg, int32_t value) {
   _upb_sethas(msg, 1);
@@ -956,24 +1052,28 @@ UPB_INLINE void validate_SInt32Rules_set_gte(validate_SInt32Rules *msg, int32_t 
   *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = value;
 }
 UPB_INLINE int32_t* validate_SInt32Rules_mutable_in(validate_SInt32Rules *msg, size_t *len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 24), len);
+  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
 }
 UPB_INLINE int32_t* validate_SInt32Rules_resize_in(validate_SInt32Rules *msg, size_t len, upb_arena *arena) {
-  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(24, 24), len, 2, arena);
+  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
 }
 UPB_INLINE bool validate_SInt32Rules_add_in(validate_SInt32Rules *msg, int32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(24, 24), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
       arena);
 }
 UPB_INLINE int32_t* validate_SInt32Rules_mutable_not_in(validate_SInt32Rules *msg, size_t *len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
 }
 UPB_INLINE int32_t* validate_SInt32Rules_resize_not_in(validate_SInt32Rules *msg, size_t len, upb_arena *arena) {
-  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
 }
 UPB_INLINE bool validate_SInt32Rules_add_not_in(validate_SInt32Rules *msg, int32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(32, 40), 2, &val,
       arena);
+}
+UPB_INLINE void validate_SInt32Rules_set_ignore_empty(validate_SInt32Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
 }
 
 /* validate.SInt64Rules */
@@ -984,13 +1084,19 @@ UPB_INLINE validate_SInt64Rules *validate_SInt64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_SInt64Rules *validate_SInt64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SInt64Rules *ret = validate_SInt64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SInt64Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_SInt64Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_SInt64Rules *validate_SInt64Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_SInt64Rules *ret = validate_SInt64Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_SInt64Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_SInt64Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_SInt64Rules_serialize(const validate_SInt64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SInt64Rules_msginit, arena, len);
@@ -1006,8 +1112,10 @@ UPB_INLINE bool validate_SInt64Rules_has_gt(const validate_SInt64Rules *msg) { r
 UPB_INLINE int64_t validate_SInt64Rules_gt(const validate_SInt64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), int64_t); }
 UPB_INLINE bool validate_SInt64Rules_has_gte(const validate_SInt64Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE int64_t validate_SInt64Rules_gte(const validate_SInt64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), int64_t); }
-UPB_INLINE int64_t const* validate_SInt64Rules_in(const validate_SInt64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(48, 48), len); }
-UPB_INLINE int64_t const* validate_SInt64Rules_not_in(const validate_SInt64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE int64_t const* validate_SInt64Rules_in(const validate_SInt64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE int64_t const* validate_SInt64Rules_not_in(const validate_SInt64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(56, 64), len); }
+UPB_INLINE bool validate_SInt64Rules_has_ignore_empty(const validate_SInt64Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_SInt64Rules_ignore_empty(const validate_SInt64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool); }
 
 UPB_INLINE void validate_SInt64Rules_set_const(validate_SInt64Rules *msg, int64_t value) {
   _upb_sethas(msg, 1);
@@ -1030,24 +1138,28 @@ UPB_INLINE void validate_SInt64Rules_set_gte(validate_SInt64Rules *msg, int64_t 
   *UPB_PTR_AT(msg, UPB_SIZE(40, 40), int64_t) = value;
 }
 UPB_INLINE int64_t* validate_SInt64Rules_mutable_in(validate_SInt64Rules *msg, size_t *len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 48), len);
+  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
 }
 UPB_INLINE int64_t* validate_SInt64Rules_resize_in(validate_SInt64Rules *msg, size_t len, upb_arena *arena) {
-  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 48), len, 3, arena);
+  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
 }
 UPB_INLINE bool validate_SInt64Rules_add_in(validate_SInt64Rules *msg, int64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(48, 48), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
       arena);
 }
 UPB_INLINE int64_t* validate_SInt64Rules_mutable_not_in(validate_SInt64Rules *msg, size_t *len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
+  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 64), len);
 }
 UPB_INLINE int64_t* validate_SInt64Rules_resize_not_in(validate_SInt64Rules *msg, size_t len, upb_arena *arena) {
-  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
+  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 64), len, 3, arena);
 }
 UPB_INLINE bool validate_SInt64Rules_add_not_in(validate_SInt64Rules *msg, int64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(56, 64), 3, &val,
       arena);
+}
+UPB_INLINE void validate_SInt64Rules_set_ignore_empty(validate_SInt64Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool) = value;
 }
 
 /* validate.Fixed32Rules */
@@ -1058,13 +1170,19 @@ UPB_INLINE validate_Fixed32Rules *validate_Fixed32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Fixed32Rules *validate_Fixed32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Fixed32Rules *ret = validate_Fixed32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Fixed32Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_Fixed32Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_Fixed32Rules *validate_Fixed32Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_Fixed32Rules *ret = validate_Fixed32Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_Fixed32Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_Fixed32Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_Fixed32Rules_serialize(const validate_Fixed32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Fixed32Rules_msginit, arena, len);
@@ -1080,8 +1198,10 @@ UPB_INLINE bool validate_Fixed32Rules_has_gt(const validate_Fixed32Rules *msg) {
 UPB_INLINE uint32_t validate_Fixed32Rules_gt(const validate_Fixed32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t); }
 UPB_INLINE bool validate_Fixed32Rules_has_gte(const validate_Fixed32Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE uint32_t validate_Fixed32Rules_gte(const validate_Fixed32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t); }
-UPB_INLINE uint32_t const* validate_Fixed32Rules_in(const validate_Fixed32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(24, 24), len); }
-UPB_INLINE uint32_t const* validate_Fixed32Rules_not_in(const validate_Fixed32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE uint32_t const* validate_Fixed32Rules_in(const validate_Fixed32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE uint32_t const* validate_Fixed32Rules_not_in(const validate_Fixed32Rules *msg, size_t *len) { return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len); }
+UPB_INLINE bool validate_Fixed32Rules_has_ignore_empty(const validate_Fixed32Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_Fixed32Rules_ignore_empty(const validate_Fixed32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool); }
 
 UPB_INLINE void validate_Fixed32Rules_set_const(validate_Fixed32Rules *msg, uint32_t value) {
   _upb_sethas(msg, 1);
@@ -1104,24 +1224,28 @@ UPB_INLINE void validate_Fixed32Rules_set_gte(validate_Fixed32Rules *msg, uint32
   *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t) = value;
 }
 UPB_INLINE uint32_t* validate_Fixed32Rules_mutable_in(validate_Fixed32Rules *msg, size_t *len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 24), len);
+  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
 }
 UPB_INLINE uint32_t* validate_Fixed32Rules_resize_in(validate_Fixed32Rules *msg, size_t len, upb_arena *arena) {
-  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(24, 24), len, 2, arena);
+  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
 }
 UPB_INLINE bool validate_Fixed32Rules_add_in(validate_Fixed32Rules *msg, uint32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(24, 24), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
       arena);
 }
 UPB_INLINE uint32_t* validate_Fixed32Rules_mutable_not_in(validate_Fixed32Rules *msg, size_t *len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
 }
 UPB_INLINE uint32_t* validate_Fixed32Rules_resize_not_in(validate_Fixed32Rules *msg, size_t len, upb_arena *arena) {
-  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+  return (uint32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
 }
 UPB_INLINE bool validate_Fixed32Rules_add_not_in(validate_Fixed32Rules *msg, uint32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(32, 40), 2, &val,
       arena);
+}
+UPB_INLINE void validate_Fixed32Rules_set_ignore_empty(validate_Fixed32Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
 }
 
 /* validate.Fixed64Rules */
@@ -1132,13 +1256,19 @@ UPB_INLINE validate_Fixed64Rules *validate_Fixed64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Fixed64Rules *validate_Fixed64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Fixed64Rules *ret = validate_Fixed64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Fixed64Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_Fixed64Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_Fixed64Rules *validate_Fixed64Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_Fixed64Rules *ret = validate_Fixed64Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_Fixed64Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_Fixed64Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_Fixed64Rules_serialize(const validate_Fixed64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Fixed64Rules_msginit, arena, len);
@@ -1154,8 +1284,10 @@ UPB_INLINE bool validate_Fixed64Rules_has_gt(const validate_Fixed64Rules *msg) {
 UPB_INLINE uint64_t validate_Fixed64Rules_gt(const validate_Fixed64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), uint64_t); }
 UPB_INLINE bool validate_Fixed64Rules_has_gte(const validate_Fixed64Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE uint64_t validate_Fixed64Rules_gte(const validate_Fixed64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t); }
-UPB_INLINE uint64_t const* validate_Fixed64Rules_in(const validate_Fixed64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(48, 48), len); }
-UPB_INLINE uint64_t const* validate_Fixed64Rules_not_in(const validate_Fixed64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE uint64_t const* validate_Fixed64Rules_in(const validate_Fixed64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE uint64_t const* validate_Fixed64Rules_not_in(const validate_Fixed64Rules *msg, size_t *len) { return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(56, 64), len); }
+UPB_INLINE bool validate_Fixed64Rules_has_ignore_empty(const validate_Fixed64Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_Fixed64Rules_ignore_empty(const validate_Fixed64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool); }
 
 UPB_INLINE void validate_Fixed64Rules_set_const(validate_Fixed64Rules *msg, uint64_t value) {
   _upb_sethas(msg, 1);
@@ -1178,24 +1310,28 @@ UPB_INLINE void validate_Fixed64Rules_set_gte(validate_Fixed64Rules *msg, uint64
   *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t) = value;
 }
 UPB_INLINE uint64_t* validate_Fixed64Rules_mutable_in(validate_Fixed64Rules *msg, size_t *len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 48), len);
+  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
 }
 UPB_INLINE uint64_t* validate_Fixed64Rules_resize_in(validate_Fixed64Rules *msg, size_t len, upb_arena *arena) {
-  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 48), len, 3, arena);
+  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
 }
 UPB_INLINE bool validate_Fixed64Rules_add_in(validate_Fixed64Rules *msg, uint64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(48, 48), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
       arena);
 }
 UPB_INLINE uint64_t* validate_Fixed64Rules_mutable_not_in(validate_Fixed64Rules *msg, size_t *len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
+  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 64), len);
 }
 UPB_INLINE uint64_t* validate_Fixed64Rules_resize_not_in(validate_Fixed64Rules *msg, size_t len, upb_arena *arena) {
-  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
+  return (uint64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 64), len, 3, arena);
 }
 UPB_INLINE bool validate_Fixed64Rules_add_not_in(validate_Fixed64Rules *msg, uint64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(56, 64), 3, &val,
       arena);
+}
+UPB_INLINE void validate_Fixed64Rules_set_ignore_empty(validate_Fixed64Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool) = value;
 }
 
 /* validate.SFixed32Rules */
@@ -1206,13 +1342,19 @@ UPB_INLINE validate_SFixed32Rules *validate_SFixed32Rules_new(upb_arena *arena) 
 UPB_INLINE validate_SFixed32Rules *validate_SFixed32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SFixed32Rules *ret = validate_SFixed32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SFixed32Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_SFixed32Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_SFixed32Rules *validate_SFixed32Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_SFixed32Rules *ret = validate_SFixed32Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_SFixed32Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_SFixed32Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_SFixed32Rules_serialize(const validate_SFixed32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SFixed32Rules_msginit, arena, len);
@@ -1228,8 +1370,10 @@ UPB_INLINE bool validate_SFixed32Rules_has_gt(const validate_SFixed32Rules *msg)
 UPB_INLINE int32_t validate_SFixed32Rules_gt(const validate_SFixed32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t); }
 UPB_INLINE bool validate_SFixed32Rules_has_gte(const validate_SFixed32Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE int32_t validate_SFixed32Rules_gte(const validate_SFixed32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t); }
-UPB_INLINE int32_t const* validate_SFixed32Rules_in(const validate_SFixed32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(24, 24), len); }
-UPB_INLINE int32_t const* validate_SFixed32Rules_not_in(const validate_SFixed32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE int32_t const* validate_SFixed32Rules_in(const validate_SFixed32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len); }
+UPB_INLINE int32_t const* validate_SFixed32Rules_not_in(const validate_SFixed32Rules *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len); }
+UPB_INLINE bool validate_SFixed32Rules_has_ignore_empty(const validate_SFixed32Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_SFixed32Rules_ignore_empty(const validate_SFixed32Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool); }
 
 UPB_INLINE void validate_SFixed32Rules_set_const(validate_SFixed32Rules *msg, int32_t value) {
   _upb_sethas(msg, 1);
@@ -1252,24 +1396,28 @@ UPB_INLINE void validate_SFixed32Rules_set_gte(validate_SFixed32Rules *msg, int3
   *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = value;
 }
 UPB_INLINE int32_t* validate_SFixed32Rules_mutable_in(validate_SFixed32Rules *msg, size_t *len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 24), len);
+  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
 }
 UPB_INLINE int32_t* validate_SFixed32Rules_resize_in(validate_SFixed32Rules *msg, size_t len, upb_arena *arena) {
-  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(24, 24), len, 2, arena);
+  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
 }
 UPB_INLINE bool validate_SFixed32Rules_add_in(validate_SFixed32Rules *msg, int32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(24, 24), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
       arena);
 }
 UPB_INLINE int32_t* validate_SFixed32Rules_mutable_not_in(validate_SFixed32Rules *msg, size_t *len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
 }
 UPB_INLINE int32_t* validate_SFixed32Rules_resize_not_in(validate_SFixed32Rules *msg, size_t len, upb_arena *arena) {
-  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+  return (int32_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
 }
 UPB_INLINE bool validate_SFixed32Rules_add_not_in(validate_SFixed32Rules *msg, int32_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(28, 32), 2, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(32, 40), 2, &val,
       arena);
+}
+UPB_INLINE void validate_SFixed32Rules_set_ignore_empty(validate_SFixed32Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
 }
 
 /* validate.SFixed64Rules */
@@ -1280,13 +1428,19 @@ UPB_INLINE validate_SFixed64Rules *validate_SFixed64Rules_new(upb_arena *arena) 
 UPB_INLINE validate_SFixed64Rules *validate_SFixed64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SFixed64Rules *ret = validate_SFixed64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SFixed64Rules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_SFixed64Rules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_SFixed64Rules *validate_SFixed64Rules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_SFixed64Rules *ret = validate_SFixed64Rules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_SFixed64Rules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_SFixed64Rules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_SFixed64Rules_serialize(const validate_SFixed64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SFixed64Rules_msginit, arena, len);
@@ -1302,8 +1456,10 @@ UPB_INLINE bool validate_SFixed64Rules_has_gt(const validate_SFixed64Rules *msg)
 UPB_INLINE int64_t validate_SFixed64Rules_gt(const validate_SFixed64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), int64_t); }
 UPB_INLINE bool validate_SFixed64Rules_has_gte(const validate_SFixed64Rules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE int64_t validate_SFixed64Rules_gte(const validate_SFixed64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), int64_t); }
-UPB_INLINE int64_t const* validate_SFixed64Rules_in(const validate_SFixed64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(48, 48), len); }
-UPB_INLINE int64_t const* validate_SFixed64Rules_not_in(const validate_SFixed64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE int64_t const* validate_SFixed64Rules_in(const validate_SFixed64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(52, 56), len); }
+UPB_INLINE int64_t const* validate_SFixed64Rules_not_in(const validate_SFixed64Rules *msg, size_t *len) { return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(56, 64), len); }
+UPB_INLINE bool validate_SFixed64Rules_has_ignore_empty(const validate_SFixed64Rules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_SFixed64Rules_ignore_empty(const validate_SFixed64Rules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool); }
 
 UPB_INLINE void validate_SFixed64Rules_set_const(validate_SFixed64Rules *msg, int64_t value) {
   _upb_sethas(msg, 1);
@@ -1326,24 +1482,28 @@ UPB_INLINE void validate_SFixed64Rules_set_gte(validate_SFixed64Rules *msg, int6
   *UPB_PTR_AT(msg, UPB_SIZE(40, 40), int64_t) = value;
 }
 UPB_INLINE int64_t* validate_SFixed64Rules_mutable_in(validate_SFixed64Rules *msg, size_t *len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 48), len);
+  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
 }
 UPB_INLINE int64_t* validate_SFixed64Rules_resize_in(validate_SFixed64Rules *msg, size_t len, upb_arena *arena) {
-  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 48), len, 3, arena);
+  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
 }
 UPB_INLINE bool validate_SFixed64Rules_add_in(validate_SFixed64Rules *msg, int64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(48, 48), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
       arena);
 }
 UPB_INLINE int64_t* validate_SFixed64Rules_mutable_not_in(validate_SFixed64Rules *msg, size_t *len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 56), len);
+  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 64), len);
 }
 UPB_INLINE int64_t* validate_SFixed64Rules_resize_not_in(validate_SFixed64Rules *msg, size_t len, upb_arena *arena) {
-  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(52, 56), len, 3, arena);
+  return (int64_t*)_upb_array_resize_accessor2(msg, UPB_SIZE(56, 64), len, 3, arena);
 }
 UPB_INLINE bool validate_SFixed64Rules_add_not_in(validate_SFixed64Rules *msg, int64_t val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(52, 56), 3, &val,
+  return _upb_array_append_accessor2(msg, UPB_SIZE(56, 64), 3, &val,
       arena);
+}
+UPB_INLINE void validate_SFixed64Rules_set_ignore_empty(validate_SFixed64Rules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 48), bool) = value;
 }
 
 /* validate.BoolRules */
@@ -1354,13 +1514,19 @@ UPB_INLINE validate_BoolRules *validate_BoolRules_new(upb_arena *arena) {
 UPB_INLINE validate_BoolRules *validate_BoolRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_BoolRules *ret = validate_BoolRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_BoolRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_BoolRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_BoolRules *validate_BoolRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_BoolRules *ret = validate_BoolRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_BoolRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_BoolRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_BoolRules_serialize(const validate_BoolRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_BoolRules_msginit, arena, len);
@@ -1382,13 +1548,19 @@ UPB_INLINE validate_StringRules *validate_StringRules_new(upb_arena *arena) {
 UPB_INLINE validate_StringRules *validate_StringRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_StringRules *ret = validate_StringRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_StringRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_StringRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_StringRules *validate_StringRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_StringRules *ret = validate_StringRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_StringRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_StringRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_StringRules_serialize(const validate_StringRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_StringRules_msginit, arena, len);
@@ -1457,6 +1629,8 @@ UPB_INLINE bool validate_StringRules_has_well_known_regex(const validate_StringR
 UPB_INLINE int32_t validate_StringRules_well_known_regex(const validate_StringRules *msg) { return UPB_READ_ONEOF(msg, int32_t, UPB_SIZE(116, 176), UPB_SIZE(120, 180), 24, 0); }
 UPB_INLINE bool validate_StringRules_has_strict(const validate_StringRules *msg) { return _upb_hasbit(msg, 13); }
 UPB_INLINE bool validate_StringRules_strict(const validate_StringRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(56, 56), bool); }
+UPB_INLINE bool validate_StringRules_has_ignore_empty(const validate_StringRules *msg) { return _upb_hasbit(msg, 14); }
+UPB_INLINE bool validate_StringRules_ignore_empty(const validate_StringRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(57, 57), bool); }
 
 UPB_INLINE void validate_StringRules_set_const(validate_StringRules *msg, upb_strview value) {
   _upb_sethas(msg, 1);
@@ -1560,6 +1734,10 @@ UPB_INLINE void validate_StringRules_set_strict(validate_StringRules *msg, bool 
   _upb_sethas(msg, 13);
   *UPB_PTR_AT(msg, UPB_SIZE(56, 56), bool) = value;
 }
+UPB_INLINE void validate_StringRules_set_ignore_empty(validate_StringRules *msg, bool value) {
+  _upb_sethas(msg, 14);
+  *UPB_PTR_AT(msg, UPB_SIZE(57, 57), bool) = value;
+}
 
 /* validate.BytesRules */
 
@@ -1569,13 +1747,19 @@ UPB_INLINE validate_BytesRules *validate_BytesRules_new(upb_arena *arena) {
 UPB_INLINE validate_BytesRules *validate_BytesRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_BytesRules *ret = validate_BytesRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_BytesRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_BytesRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_BytesRules *validate_BytesRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_BytesRules *ret = validate_BytesRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_BytesRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_BytesRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_BytesRules_serialize(const validate_BytesRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_BytesRules_msginit, arena, len);
@@ -1587,36 +1771,38 @@ typedef enum {
   validate_BytesRules_well_known_ipv6 = 12,
   validate_BytesRules_well_known_NOT_SET = 0
 } validate_BytesRules_well_known_oneofcases;
-UPB_INLINE validate_BytesRules_well_known_oneofcases validate_BytesRules_well_known_case(const validate_BytesRules* msg) { return (validate_BytesRules_well_known_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(84, 132), int32_t); }
+UPB_INLINE validate_BytesRules_well_known_oneofcases validate_BytesRules_well_known_case(const validate_BytesRules* msg) { return (validate_BytesRules_well_known_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(88, 140), int32_t); }
 
 UPB_INLINE bool validate_BytesRules_has_const(const validate_BytesRules *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE upb_strview validate_BytesRules_const(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), upb_strview); }
+UPB_INLINE upb_strview validate_BytesRules_const(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(36, 40), upb_strview); }
 UPB_INLINE bool validate_BytesRules_has_min_len(const validate_BytesRules *msg) { return _upb_hasbit(msg, 2); }
 UPB_INLINE uint64_t validate_BytesRules_min_len(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t); }
 UPB_INLINE bool validate_BytesRules_has_max_len(const validate_BytesRules *msg) { return _upb_hasbit(msg, 3); }
 UPB_INLINE uint64_t validate_BytesRules_max_len(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t); }
 UPB_INLINE bool validate_BytesRules_has_pattern(const validate_BytesRules *msg) { return _upb_hasbit(msg, 4); }
-UPB_INLINE upb_strview validate_BytesRules_pattern(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), upb_strview); }
+UPB_INLINE upb_strview validate_BytesRules_pattern(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(44, 56), upb_strview); }
 UPB_INLINE bool validate_BytesRules_has_prefix(const validate_BytesRules *msg) { return _upb_hasbit(msg, 5); }
-UPB_INLINE upb_strview validate_BytesRules_prefix(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 64), upb_strview); }
+UPB_INLINE upb_strview validate_BytesRules_prefix(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(52, 72), upb_strview); }
 UPB_INLINE bool validate_BytesRules_has_suffix(const validate_BytesRules *msg) { return _upb_hasbit(msg, 6); }
-UPB_INLINE upb_strview validate_BytesRules_suffix(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(56, 80), upb_strview); }
+UPB_INLINE upb_strview validate_BytesRules_suffix(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(60, 88), upb_strview); }
 UPB_INLINE bool validate_BytesRules_has_contains(const validate_BytesRules *msg) { return _upb_hasbit(msg, 7); }
-UPB_INLINE upb_strview validate_BytesRules_contains(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(64, 96), upb_strview); }
-UPB_INLINE upb_strview const* validate_BytesRules_in(const validate_BytesRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(72, 112), len); }
-UPB_INLINE upb_strview const* validate_BytesRules_not_in(const validate_BytesRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(76, 120), len); }
-UPB_INLINE bool validate_BytesRules_has_ip(const validate_BytesRules *msg) { return _upb_getoneofcase(msg, UPB_SIZE(84, 132)) == 10; }
-UPB_INLINE bool validate_BytesRules_ip(const validate_BytesRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(80, 128), UPB_SIZE(84, 132), 10, false); }
-UPB_INLINE bool validate_BytesRules_has_ipv4(const validate_BytesRules *msg) { return _upb_getoneofcase(msg, UPB_SIZE(84, 132)) == 11; }
-UPB_INLINE bool validate_BytesRules_ipv4(const validate_BytesRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(80, 128), UPB_SIZE(84, 132), 11, false); }
-UPB_INLINE bool validate_BytesRules_has_ipv6(const validate_BytesRules *msg) { return _upb_getoneofcase(msg, UPB_SIZE(84, 132)) == 12; }
-UPB_INLINE bool validate_BytesRules_ipv6(const validate_BytesRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(80, 128), UPB_SIZE(84, 132), 12, false); }
+UPB_INLINE upb_strview validate_BytesRules_contains(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(68, 104), upb_strview); }
+UPB_INLINE upb_strview const* validate_BytesRules_in(const validate_BytesRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(76, 120), len); }
+UPB_INLINE upb_strview const* validate_BytesRules_not_in(const validate_BytesRules *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(80, 128), len); }
+UPB_INLINE bool validate_BytesRules_has_ip(const validate_BytesRules *msg) { return _upb_getoneofcase(msg, UPB_SIZE(88, 140)) == 10; }
+UPB_INLINE bool validate_BytesRules_ip(const validate_BytesRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(84, 136), UPB_SIZE(88, 140), 10, false); }
+UPB_INLINE bool validate_BytesRules_has_ipv4(const validate_BytesRules *msg) { return _upb_getoneofcase(msg, UPB_SIZE(88, 140)) == 11; }
+UPB_INLINE bool validate_BytesRules_ipv4(const validate_BytesRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(84, 136), UPB_SIZE(88, 140), 11, false); }
+UPB_INLINE bool validate_BytesRules_has_ipv6(const validate_BytesRules *msg) { return _upb_getoneofcase(msg, UPB_SIZE(88, 140)) == 12; }
+UPB_INLINE bool validate_BytesRules_ipv6(const validate_BytesRules *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(84, 136), UPB_SIZE(88, 140), 12, false); }
 UPB_INLINE bool validate_BytesRules_has_len(const validate_BytesRules *msg) { return _upb_hasbit(msg, 8); }
 UPB_INLINE uint64_t validate_BytesRules_len(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), uint64_t); }
+UPB_INLINE bool validate_BytesRules_has_ignore_empty(const validate_BytesRules *msg) { return _upb_hasbit(msg, 9); }
+UPB_INLINE bool validate_BytesRules_ignore_empty(const validate_BytesRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), bool); }
 
 UPB_INLINE void validate_BytesRules_set_const(validate_BytesRules *msg, upb_strview value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 32), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(36, 40), upb_strview) = value;
 }
 UPB_INLINE void validate_BytesRules_set_min_len(validate_BytesRules *msg, uint64_t value) {
   _upb_sethas(msg, 2);
@@ -1628,52 +1814,56 @@ UPB_INLINE void validate_BytesRules_set_max_len(validate_BytesRules *msg, uint64
 }
 UPB_INLINE void validate_BytesRules_set_pattern(validate_BytesRules *msg, upb_strview value) {
   _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(44, 56), upb_strview) = value;
 }
 UPB_INLINE void validate_BytesRules_set_prefix(validate_BytesRules *msg, upb_strview value) {
   _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 64), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(52, 72), upb_strview) = value;
 }
 UPB_INLINE void validate_BytesRules_set_suffix(validate_BytesRules *msg, upb_strview value) {
   _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(56, 80), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(60, 88), upb_strview) = value;
 }
 UPB_INLINE void validate_BytesRules_set_contains(validate_BytesRules *msg, upb_strview value) {
   _upb_sethas(msg, 7);
-  *UPB_PTR_AT(msg, UPB_SIZE(64, 96), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(68, 104), upb_strview) = value;
 }
 UPB_INLINE upb_strview* validate_BytesRules_mutable_in(validate_BytesRules *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(72, 112), len);
-}
-UPB_INLINE upb_strview* validate_BytesRules_resize_in(validate_BytesRules *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(72, 112), len, UPB_SIZE(3, 4), arena);
-}
-UPB_INLINE bool validate_BytesRules_add_in(validate_BytesRules *msg, upb_strview val, upb_arena *arena) {
-  return _upb_array_append_accessor2(msg, UPB_SIZE(72, 112), UPB_SIZE(3, 4), &val,
-      arena);
-}
-UPB_INLINE upb_strview* validate_BytesRules_mutable_not_in(validate_BytesRules *msg, size_t *len) {
   return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(76, 120), len);
 }
-UPB_INLINE upb_strview* validate_BytesRules_resize_not_in(validate_BytesRules *msg, size_t len, upb_arena *arena) {
+UPB_INLINE upb_strview* validate_BytesRules_resize_in(validate_BytesRules *msg, size_t len, upb_arena *arena) {
   return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(76, 120), len, UPB_SIZE(3, 4), arena);
 }
-UPB_INLINE bool validate_BytesRules_add_not_in(validate_BytesRules *msg, upb_strview val, upb_arena *arena) {
+UPB_INLINE bool validate_BytesRules_add_in(validate_BytesRules *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor2(msg, UPB_SIZE(76, 120), UPB_SIZE(3, 4), &val,
       arena);
 }
+UPB_INLINE upb_strview* validate_BytesRules_mutable_not_in(validate_BytesRules *msg, size_t *len) {
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(80, 128), len);
+}
+UPB_INLINE upb_strview* validate_BytesRules_resize_not_in(validate_BytesRules *msg, size_t len, upb_arena *arena) {
+  return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(80, 128), len, UPB_SIZE(3, 4), arena);
+}
+UPB_INLINE bool validate_BytesRules_add_not_in(validate_BytesRules *msg, upb_strview val, upb_arena *arena) {
+  return _upb_array_append_accessor2(msg, UPB_SIZE(80, 128), UPB_SIZE(3, 4), &val,
+      arena);
+}
 UPB_INLINE void validate_BytesRules_set_ip(validate_BytesRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(80, 128), value, UPB_SIZE(84, 132), 10);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(84, 136), value, UPB_SIZE(88, 140), 10);
 }
 UPB_INLINE void validate_BytesRules_set_ipv4(validate_BytesRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(80, 128), value, UPB_SIZE(84, 132), 11);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(84, 136), value, UPB_SIZE(88, 140), 11);
 }
 UPB_INLINE void validate_BytesRules_set_ipv6(validate_BytesRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(80, 128), value, UPB_SIZE(84, 132), 12);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(84, 136), value, UPB_SIZE(88, 140), 12);
 }
 UPB_INLINE void validate_BytesRules_set_len(validate_BytesRules *msg, uint64_t value) {
   _upb_sethas(msg, 8);
   *UPB_PTR_AT(msg, UPB_SIZE(24, 24), uint64_t) = value;
+}
+UPB_INLINE void validate_BytesRules_set_ignore_empty(validate_BytesRules *msg, bool value) {
+  _upb_sethas(msg, 9);
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 32), bool) = value;
 }
 
 /* validate.EnumRules */
@@ -1684,13 +1874,19 @@ UPB_INLINE validate_EnumRules *validate_EnumRules_new(upb_arena *arena) {
 UPB_INLINE validate_EnumRules *validate_EnumRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_EnumRules *ret = validate_EnumRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_EnumRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_EnumRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_EnumRules *validate_EnumRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_EnumRules *ret = validate_EnumRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_EnumRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_EnumRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_EnumRules_serialize(const validate_EnumRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_EnumRules_msginit, arena, len);
@@ -1740,13 +1936,19 @@ UPB_INLINE validate_MessageRules *validate_MessageRules_new(upb_arena *arena) {
 UPB_INLINE validate_MessageRules *validate_MessageRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_MessageRules *ret = validate_MessageRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_MessageRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_MessageRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_MessageRules *validate_MessageRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_MessageRules *ret = validate_MessageRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_MessageRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_MessageRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_MessageRules_serialize(const validate_MessageRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_MessageRules_msginit, arena, len);
@@ -1774,13 +1976,19 @@ UPB_INLINE validate_RepeatedRules *validate_RepeatedRules_new(upb_arena *arena) 
 UPB_INLINE validate_RepeatedRules *validate_RepeatedRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_RepeatedRules *ret = validate_RepeatedRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_RepeatedRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_RepeatedRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_RepeatedRules *validate_RepeatedRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_RepeatedRules *ret = validate_RepeatedRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_RepeatedRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_RepeatedRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_RepeatedRules_serialize(const validate_RepeatedRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_RepeatedRules_msginit, arena, len);
@@ -1794,6 +2002,8 @@ UPB_INLINE bool validate_RepeatedRules_has_unique(const validate_RepeatedRules *
 UPB_INLINE bool validate_RepeatedRules_unique(const validate_RepeatedRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool); }
 UPB_INLINE bool validate_RepeatedRules_has_items(const validate_RepeatedRules *msg) { return _upb_hasbit(msg, 4); }
 UPB_INLINE const validate_FieldRules* validate_RepeatedRules_items(const validate_RepeatedRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 32), const validate_FieldRules*); }
+UPB_INLINE bool validate_RepeatedRules_has_ignore_empty(const validate_RepeatedRules *msg) { return _upb_hasbit(msg, 5); }
+UPB_INLINE bool validate_RepeatedRules_ignore_empty(const validate_RepeatedRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(25, 25), bool); }
 
 UPB_INLINE void validate_RepeatedRules_set_min_items(validate_RepeatedRules *msg, uint64_t value) {
   _upb_sethas(msg, 1);
@@ -1820,6 +2030,10 @@ UPB_INLINE struct validate_FieldRules* validate_RepeatedRules_mutable_items(vali
   }
   return sub;
 }
+UPB_INLINE void validate_RepeatedRules_set_ignore_empty(validate_RepeatedRules *msg, bool value) {
+  _upb_sethas(msg, 5);
+  *UPB_PTR_AT(msg, UPB_SIZE(25, 25), bool) = value;
+}
 
 /* validate.MapRules */
 
@@ -1829,13 +2043,19 @@ UPB_INLINE validate_MapRules *validate_MapRules_new(upb_arena *arena) {
 UPB_INLINE validate_MapRules *validate_MapRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_MapRules *ret = validate_MapRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_MapRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_MapRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_MapRules *validate_MapRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_MapRules *ret = validate_MapRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_MapRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_MapRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_MapRules_serialize(const validate_MapRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_MapRules_msginit, arena, len);
@@ -1851,6 +2071,8 @@ UPB_INLINE bool validate_MapRules_has_keys(const validate_MapRules *msg) { retur
 UPB_INLINE const validate_FieldRules* validate_MapRules_keys(const validate_MapRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 32), const validate_FieldRules*); }
 UPB_INLINE bool validate_MapRules_has_values(const validate_MapRules *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE const validate_FieldRules* validate_MapRules_values(const validate_MapRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), const validate_FieldRules*); }
+UPB_INLINE bool validate_MapRules_has_ignore_empty(const validate_MapRules *msg) { return _upb_hasbit(msg, 6); }
+UPB_INLINE bool validate_MapRules_ignore_empty(const validate_MapRules *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(25, 25), bool); }
 
 UPB_INLINE void validate_MapRules_set_min_pairs(validate_MapRules *msg, uint64_t value) {
   _upb_sethas(msg, 1);
@@ -1890,6 +2112,10 @@ UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_values(validate
   }
   return sub;
 }
+UPB_INLINE void validate_MapRules_set_ignore_empty(validate_MapRules *msg, bool value) {
+  _upb_sethas(msg, 6);
+  *UPB_PTR_AT(msg, UPB_SIZE(25, 25), bool) = value;
+}
 
 /* validate.AnyRules */
 
@@ -1899,13 +2125,19 @@ UPB_INLINE validate_AnyRules *validate_AnyRules_new(upb_arena *arena) {
 UPB_INLINE validate_AnyRules *validate_AnyRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_AnyRules *ret = validate_AnyRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_AnyRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_AnyRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_AnyRules *validate_AnyRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_AnyRules *ret = validate_AnyRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_AnyRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_AnyRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_AnyRules_serialize(const validate_AnyRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_AnyRules_msginit, arena, len);
@@ -1949,13 +2181,19 @@ UPB_INLINE validate_DurationRules *validate_DurationRules_new(upb_arena *arena) 
 UPB_INLINE validate_DurationRules *validate_DurationRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_DurationRules *ret = validate_DurationRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_DurationRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_DurationRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_DurationRules *validate_DurationRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_DurationRules *ret = validate_DurationRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_DurationRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_DurationRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_DurationRules_serialize(const validate_DurationRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_DurationRules_msginit, arena, len);
@@ -2082,13 +2320,19 @@ UPB_INLINE validate_TimestampRules *validate_TimestampRules_new(upb_arena *arena
 UPB_INLINE validate_TimestampRules *validate_TimestampRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_TimestampRules *ret = validate_TimestampRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_TimestampRules_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &validate_TimestampRules_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE validate_TimestampRules *validate_TimestampRules_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   validate_TimestampRules *ret = validate_TimestampRules_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &validate_TimestampRules_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &validate_TimestampRules_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *validate_TimestampRules_serialize(const validate_TimestampRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_TimestampRules_msginit, arena, len);
@@ -2203,6 +2447,16 @@ UPB_INLINE struct google_protobuf_Duration* validate_TimestampRules_mutable_with
   }
   return sub;
 }
+
+UPB_INLINE bool validate_has_disabled(const struct google_protobuf_MessageOptions *msg) { return _upb_msg_getext(msg, &validate_disabled_ext) != NULL; }
+UPB_INLINE bool validate_disabled(const struct google_protobuf_MessageOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_disabled_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
+UPB_INLINE bool validate_has_ignored(const struct google_protobuf_MessageOptions *msg) { return _upb_msg_getext(msg, &validate_ignored_ext) != NULL; }
+UPB_INLINE bool validate_ignored(const struct google_protobuf_MessageOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_ignored_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
+UPB_INLINE bool validate_has_required(const struct google_protobuf_OneofOptions *msg) { return _upb_msg_getext(msg, &validate_required_ext) != NULL; }
+UPB_INLINE bool validate_required(const struct google_protobuf_OneofOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_required_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
+UPB_INLINE bool validate_has_rules(const struct google_protobuf_FieldOptions *msg) { return _upb_msg_getext(msg, &validate_rules_ext) != NULL; }
+UPB_INLINE const validate_FieldRules* validate_rules(const struct google_protobuf_FieldOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &validate_rules_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const validate_FieldRules*); }
+extern const upb_msglayout_file validate_validate_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

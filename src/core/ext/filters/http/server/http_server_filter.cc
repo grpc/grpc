@@ -20,9 +20,11 @@
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <string.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
@@ -102,16 +104,10 @@ struct channel_data {
 }  // namespace
 
 static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
-  if (b->idx.named.grpc_message != nullptr) {
-    grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
-        GRPC_MDVALUE(b->idx.named.grpc_message->md),
-        grpc_compatible_percent_encoding_unreserved_bytes);
-    if (grpc_slice_is_equivalent(pct_encoded_msg,
-                                 GRPC_MDVALUE(b->idx.named.grpc_message->md))) {
-      grpc_slice_unref_internal(pct_encoded_msg);
-    } else {
-      grpc_metadata_batch_set_value(b->idx.named.grpc_message, pct_encoded_msg);
-    }
+  if (grpc_core::Slice* grpc_message =
+          b->get_pointer(grpc_core::GrpcMessageMetadata())) {
+    *grpc_message = grpc_core::PercentEncodeSlice(
+        std::move(*grpc_message), grpc_core::PercentEncodingType::Compatible);
   }
   return GRPC_ERROR_NONE;
 }
@@ -157,18 +153,19 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
-  if (b->idx.named.method != nullptr) {
-    if (md_strict_equal(b->idx.named.method->md, GRPC_MDELEM_METHOD_POST)) {
+  if (b->legacy_index()->named.method != nullptr) {
+    if (md_strict_equal(b->legacy_index()->named.method->md,
+                        GRPC_MDELEM_METHOD_POST)) {
       *calld->recv_initial_metadata_flags &=
           ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-    } else if (md_strict_equal(b->idx.named.method->md,
+    } else if (md_strict_equal(b->legacy_index()->named.method->md,
                                GRPC_MDELEM_METHOD_PUT)) {
       *calld->recv_initial_metadata_flags &=
           ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
       *calld->recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-    } else if (md_strict_equal(b->idx.named.method->md,
+    } else if (md_strict_equal(b->legacy_index()->named.method->md,
                                GRPC_MDELEM_METHOD_GET)) {
       *calld->recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
@@ -178,64 +175,63 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->idx.named.method->md));
+                       b->legacy_index()->named.method->md));
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_METHOD);
-  } else {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
-  }
-
-  if (b->idx.named.te != nullptr) {
-    if (!grpc_mdelem_static_value_eq(b->idx.named.te->md,
-                                     GRPC_MDELEM_TE_TRAILERS)) {
-      hs_add_error(error_name, &error,
-                   grpc_attach_md_to_error(
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->idx.named.te->md));
-    }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_TE);
+    b->Remove(GRPC_BATCH_METHOD);
   } else {
     hs_add_error(error_name, &error,
                  grpc_error_set_str(
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-                     GRPC_ERROR_STR_KEY, grpc_slice_from_static_string("te")));
+                     GRPC_ERROR_STR_KEY, ":method"));
   }
 
-  if (b->idx.named.scheme != nullptr) {
-    if (!md_strict_equal(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTP) &&
-        !md_strict_equal(b->idx.named.scheme->md, GRPC_MDELEM_SCHEME_HTTPS) &&
-        !grpc_mdelem_static_value_eq(b->idx.named.scheme->md,
+  auto te = b->Take(grpc_core::TeMetadata());
+  if (te == grpc_core::TeMetadata::kTrailers) {
+    // Do nothing, ok.
+  } else if (!te.has_value()) {
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, "te"));
+  } else {
+    hs_add_error(error_name, &error,
+                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad te header"));
+  }
+
+  if (b->legacy_index()->named.scheme != nullptr) {
+    if (!md_strict_equal(b->legacy_index()->named.scheme->md,
+                         GRPC_MDELEM_SCHEME_HTTP) &&
+        !md_strict_equal(b->legacy_index()->named.scheme->md,
+                         GRPC_MDELEM_SCHEME_HTTPS) &&
+        !grpc_mdelem_static_value_eq(b->legacy_index()->named.scheme->md,
                                      GRPC_MDELEM_SCHEME_GRPC)) {
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad header"),
-                       b->idx.named.scheme->md));
+                       b->legacy_index()->named.scheme->md));
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_SCHEME);
+    b->Remove(GRPC_BATCH_SCHEME);
   } else {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, ":scheme"));
   }
 
-  if (b->idx.named.content_type != nullptr) {
+  if (b->legacy_index()->named.content_type != nullptr) {
     if (!grpc_mdelem_static_value_eq(
-            b->idx.named.content_type->md,
+            b->legacy_index()->named.content_type->md,
             GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-      if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                  EXPECTED_CONTENT_TYPE,
-                                  EXPECTED_CONTENT_TYPE_LENGTH) &&
+      if (grpc_slice_buf_start_eq(
+              GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
+              EXPECTED_CONTENT_TYPE, EXPECTED_CONTENT_TYPE_LENGTH) &&
           (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               b->legacy_index()
+                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
                '+' ||
            GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
+               b->legacy_index()
+                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
                ';')) {
         /* Although the C implementation doesn't (currently) generate them,
            any custom +-suffix is explicitly valid. */
@@ -245,27 +241,27 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       } else {
         /* TODO(klempner): We're currently allowing this, but we shouldn't
            see it without a proxy so log for now. */
-        char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                    GPR_DUMP_ASCII);
+        char* val = grpc_dump_slice(
+            GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
+            GPR_DUMP_ASCII);
         gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
         gpr_free(val);
       }
     }
-    grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_TYPE);
+    b->Remove(GRPC_BATCH_CONTENT_TYPE);
   }
 
-  if (b->idx.named.path == nullptr) {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
+  if (b->legacy_index()->named.path == nullptr) {
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, ":path"));
   } else if (*calld->recv_initial_metadata_flags &
              GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
     const char k_query_separator = '?';
-    grpc_slice path_slice = GRPC_MDVALUE(b->idx.named.path->md);
+    grpc_slice path_slice = GRPC_MDVALUE(b->legacy_index()->named.path->md);
     uint8_t* path_ptr = GRPC_SLICE_START_PTR(path_slice);
     size_t path_length = GRPC_SLICE_LENGTH(path_slice);
     /* offset of the character '?' */
@@ -281,8 +277,8 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       grpc_mdelem mdelem_path_without_query = grpc_mdelem_from_slices(
           GRPC_MDSTR_PATH, grpc_slice_sub(path_slice, 0, offset));
 
-      grpc_metadata_batch_substitute(b, b->idx.named.path,
-                                     mdelem_path_without_query);
+      (void)b->Substitute(b->legacy_index()->named.path,
+                          mdelem_path_without_query);
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
@@ -302,31 +298,23 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     }
   }
 
-  if (b->idx.named.host != nullptr && b->idx.named.authority == nullptr) {
-    grpc_linked_mdelem* el = b->idx.named.host;
-    grpc_mdelem md = GRPC_MDELEM_REF(el->md);
-    grpc_metadata_batch_remove(b, el);
-    hs_add_error(
-        error_name, &error,
-        grpc_metadata_batch_add_head(
-            b, el,
-            grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                    grpc_slice_ref_internal(GRPC_MDVALUE(md))),
-            GRPC_BATCH_AUTHORITY));
-    GRPC_MDELEM_UNREF(md);
+  if (b->legacy_index()->named.authority == nullptr) {
+    absl::optional<grpc_core::Slice> host = b->Take(grpc_core::HostMetadata());
+    if (host.has_value()) {
+      b->Append(":authority", std::move(*host));
+    }
   }
 
-  if (b->idx.named.authority == nullptr) {
-    hs_add_error(
-        error_name, &error,
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
-            GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
+  if (b->legacy_index()->named.authority == nullptr) {
+    hs_add_error(error_name, &error,
+                 grpc_error_set_str(
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
+                     GRPC_ERROR_STR_KEY, ":authority"));
   }
 
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (!chand->surface_user_agent && b->idx.named.user_agent != nullptr) {
-    grpc_metadata_batch_remove(b, GRPC_BATCH_USER_AGENT);
+  if (!chand->surface_user_agent) {
+    b->Remove(grpc_core::UserAgentMetadata());
   }
 
   return error;
@@ -357,7 +345,7 @@ static void hs_recv_initial_metadata_ready(void* user_data,
           "resuming recv_message_ready from recv_initial_metadata_ready");
     }
   } else {
-    GRPC_ERROR_REF(err);
+    (void)GRPC_ERROR_REF(err);
   }
   if (calld->seen_recv_trailing_metadata_ready) {
     GRPC_CALL_COMBINER_START(calld->call_combiner,

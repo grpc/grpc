@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
+
 #include <assert.h>
 #include <string.h>
 
@@ -28,7 +30,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_args.h"
@@ -54,11 +55,14 @@ class ChannelData {
         grpc_channel_args_get_channel_default_compression_algorithm(
             args->channel_args);
     // Make sure the default is enabled.
-    if (!GPR_BITGET(enabled_compression_algorithms_bitset_,
-                    default_compression_algorithm_)) {
+    if (size_t(default_compression_algorithm_) >= 32 ||
+        !grpc_core::GetBit(enabled_compression_algorithms_bitset_,
+                           default_compression_algorithm_)) {
       const char* name;
-      GPR_ASSERT(grpc_compression_algorithm_name(default_compression_algorithm_,
-                                                 &name) == 1);
+      if (!grpc_compression_algorithm_name(default_compression_algorithm_,
+                                           &name)) {
+        name = "<unknown>";
+      }
       gpr_log(GPR_ERROR,
               "default compression algorithm %s not enabled: switching to none",
               name);
@@ -107,7 +111,8 @@ class CallData {
     ChannelData* channeld = static_cast<ChannelData*>(elem->channel_data);
     // The call's message compression algorithm is set to channel's default
     // setting. It can be overridden later by initial metadata.
-    if (GPR_LIKELY(GPR_BITGET(channeld->enabled_compression_algorithms_bitset(),
+    if (GPR_LIKELY(
+            grpc_core::GetBit(channeld->enabled_compression_algorithms_bitset(),
                               channeld->default_compression_algorithm()))) {
       message_compression_algorithm_ =
           grpc_compression_algorithm_to_message_compression_algorithm(
@@ -190,24 +195,25 @@ bool CallData::SkipMessageCompression() {
 // channel's default setting.
 grpc_compression_algorithm FindCompressionAlgorithm(
     grpc_metadata_batch* initial_metadata, ChannelData* channeld) {
-  if (initial_metadata->idx.named.grpc_internal_encoding_request == nullptr) {
+  if (initial_metadata->legacy_index()->named.grpc_internal_encoding_request ==
+      nullptr) {
     return channeld->default_compression_algorithm();
   }
   grpc_compression_algorithm compression_algorithm;
   // Parse the compression algorithm from the initial metadata.
-  grpc_mdelem md =
-      initial_metadata->idx.named.grpc_internal_encoding_request->md;
+  grpc_mdelem md = initial_metadata->legacy_index()
+                       ->named.grpc_internal_encoding_request->md;
   GPR_ASSERT(grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
                                               &compression_algorithm));
   // Remove this metadata since it's an internal one (i.e., it won't be
   // transmitted out).
-  grpc_metadata_batch_remove(initial_metadata,
-                             GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST);
+  initial_metadata->Remove(GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST);
   // Check if that algorithm is enabled. Note that GRPC_COMPRESS_NONE is always
   // enabled.
   // TODO(juanlishen): Maybe use channel default or abort() if the algorithm
   // from the initial metadata is disabled.
-  if (GPR_LIKELY(GPR_BITGET(channeld->enabled_compression_algorithms_bitset(),
+  if (GPR_LIKELY(
+          grpc_core::GetBit(channeld->enabled_compression_algorithms_bitset(),
                             compression_algorithm))) {
     return compression_algorithm;
   }
@@ -271,7 +277,7 @@ grpc_error_handle CallData::ProcessSendInitialMetadata(
   if (error != GRPC_ERROR_NONE) return error;
   // Do not overwrite accept-encoding header if it already presents (e.g., added
   // by some proxy).
-  if (!initial_metadata->idx.named.accept_encoding) {
+  if (!initial_metadata->legacy_index()->named.accept_encoding) {
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &accept_stream_encoding_storage_,
         GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(

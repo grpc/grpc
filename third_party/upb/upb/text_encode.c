@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "upb/text_encode.h"
 
@@ -28,8 +54,10 @@ static void txtenc_putbytes(txtenc *e, const void *data, size_t len) {
     memcpy(e->ptr, data, len);
     e->ptr += len;
   } else {
-    if (have) memcpy(e->ptr, data, have);
-    e->ptr += have;
+    if (have) {
+      memcpy(e->ptr, data, have);
+      e->ptr += have;
+    }
     e->overflow += (len - have);
   }
 }
@@ -50,7 +78,7 @@ static void txtenc_printf(txtenc *e, const char *fmt, ...) {
   if (UPB_LIKELY(have > n)) {
     e->ptr += n;
   } else {
-    e->ptr += have;
+    e->ptr = UPB_PTRADD(e->ptr, have);
     e->overflow += (n - have);
   }
 }
@@ -74,10 +102,10 @@ static void txtenc_endfield(txtenc *e) {
 
 static void txtenc_enum(int32_t val, const upb_fielddef *f, txtenc *e) {
   const upb_enumdef *e_def = upb_fielddef_enumsubdef(f);
-  const char *name = upb_enumdef_iton(e_def, val);
+  const upb_enumvaldef *ev = upb_enumdef_lookupnum(e_def, val);
 
-  if (name) {
-    txtenc_printf(e, "%s", name);
+  if (ev) {
+    txtenc_printf(e, "%s", upb_enumvaldef_name(ev));
   } else {
     txtenc_printf(e, "%" PRId32, val);
   }
@@ -408,7 +436,7 @@ size_t upb_text_encode(const upb_msg *msg, const upb_msgdef *m,
 
   e.buf = buf;
   e.ptr = buf;
-  e.end = buf + size;
+  e.end = UPB_PTRADD(buf, size);
   e.overflow = 0;
   e.indent_depth = 0;
   e.options = options;

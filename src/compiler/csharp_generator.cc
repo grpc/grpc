@@ -16,13 +16,14 @@
  *
  */
 
+#include "src/compiler/csharp_generator.h"
+
 #include <cctype>
 #include <map>
 #include <sstream>
 #include <vector>
 
 #include "src/compiler/config.h"
-#include "src/compiler/csharp_generator.h"
 #include "src/compiler/csharp_generator_helpers.h"
 
 using grpc::protobuf::Descriptor;
@@ -38,7 +39,7 @@ namespace grpc_csharp_generator {
 namespace {
 
 // This function is a massaged version of
-// https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/csharp/csharp_doc_comment.cc
+// https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/compiler/csharp/csharp_doc_comment.cc
 // Currently, we cannot easily reuse the functionality as
 // google/protobuf/compiler/csharp/csharp_doc_comment.h is not a public header.
 // TODO(jtattermusch): reuse the functionality from google/protobuf.
@@ -86,6 +87,17 @@ bool GenerateDocCommentBodyImpl(grpc::protobuf::io::Printer* printer,
   }
   printer->Print("/// </summary>\n");
   return true;
+}
+
+void GenerateGeneratedCodeAttribute(grpc::protobuf::io::Printer* printer) {
+  // Mark the code as generated using the [GeneratedCode] attribute.
+  // We don't provide plugin version info in attribute the because:
+  // * the version information is not readily available from the plugin's code.
+  // * it would cause a lot of churn in the pre-generated code
+  //   in this repository every time the version is updated.
+  printer->Print(
+      "[global::System.CodeDom.Compiler.GeneratedCode(\"grpc_csharp_plugin\", "
+      "null)]\n");
 }
 
 template <typename DescriptorType>
@@ -304,6 +316,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
   std::vector<const Descriptor*> used_messages = GetUsedMessages(service);
   if (used_messages.size() != 0) {
     // Generate static helper methods for serialization/deserialization
+    GenerateGeneratedCodeAttribute(out);
     out->Print(
         "static void __Helper_SerializeMessage("
         "global::Google.Protobuf.IMessage message, "
@@ -331,6 +344,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
     out->Outdent();
     out->Print("}\n\n");
 
+    GenerateGeneratedCodeAttribute(out);
     out->Print(
         "static class __Helper_MessageCache<T>\n"
         "{\n");
@@ -343,6 +357,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
     out->Outdent();
     out->Print("}\n\n");
 
+    GenerateGeneratedCodeAttribute(out);
     out->Print(
         "static T __Helper_DeserializeMessage<T>("
         "grpc::DeserializationContext context, "
@@ -368,6 +383,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
 
   for (size_t i = 0; i < used_messages.size(); i++) {
     const Descriptor* message = used_messages[i];
+    GenerateGeneratedCodeAttribute(out);
     out->Print(
         "static readonly grpc::Marshaller<$type$> $fieldname$ = "
         "grpc::Marshallers.Create(__Helper_SerializeMessage, "
@@ -379,6 +395,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor* service) {
 }
 
 void GenerateStaticMethodField(Printer* out, const MethodDescriptor* method) {
+  GenerateGeneratedCodeAttribute(out);
   out->Print(
       "static readonly grpc::Method<$request$, $response$> $fieldname$ = new "
       "grpc::Method<$request$, $response$>(\n",
@@ -433,6 +450,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
     GenerateDocCommentServerMethod(out, method);
+    GenerateGeneratedCodeAttribute(out);
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request$$response_stream_maybe$, "
@@ -468,6 +486,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       "/// <param name=\"channel\">The channel to use to make remote "
       "calls.</param>\n",
       "servicename", GetServiceClassName(service));
+  GenerateGeneratedCodeAttribute(out);
   out->Print("public $name$(grpc::ChannelBase channel) : base(channel)\n",
              "name", GetClientClassName(service));
   out->Print("{\n");
@@ -478,6 +497,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       "/// <param name=\"callInvoker\">The callInvoker to use to make remote "
       "calls.</param>\n",
       "servicename", GetServiceClassName(service));
+  GenerateGeneratedCodeAttribute(out);
   out->Print(
       "public $name$(grpc::CallInvoker callInvoker) : base(callInvoker)\n",
       "name", GetClientClassName(service));
@@ -486,6 +506,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
   out->Print(
       "/// <summary>Protected parameterless constructor to allow creation"
       " of test doubles.</summary>\n");
+  GenerateGeneratedCodeAttribute(out);
   out->Print("protected $name$() : base()\n", "name",
              GetClientClassName(service));
   out->Print("{\n");
@@ -494,6 +515,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       "/// <summary>Protected constructor to allow creation of configured "
       "clients.</summary>\n"
       "/// <param name=\"configuration\">The client configuration.</param>\n");
+  GenerateGeneratedCodeAttribute(out);
   out->Print(
       "protected $name$(ClientBaseConfiguration configuration)"
       " : base(configuration)\n",
@@ -506,6 +528,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
     if (!method->client_streaming() && !method->server_streaming()) {
       // unary calls have an extra synchronous stub method
       GenerateDocCommentClientMethod(out, method, true, false);
+      GenerateGeneratedCodeAttribute(out);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "grpc::Metadata "
@@ -528,6 +551,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
 
       // overload taking CallOptions as a param
       GenerateDocCommentClientMethod(out, method, true, true);
+      GenerateGeneratedCodeAttribute(out);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "grpc::CallOptions options)\n",
@@ -549,6 +573,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     GenerateDocCommentClientMethod(out, method, false, false);
+    GenerateGeneratedCodeAttribute(out);
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request_maybe$grpc::Metadata "
@@ -573,6 +598,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
 
     // overload taking CallOptions as a param
     GenerateDocCommentClientMethod(out, method, false, true);
+    GenerateGeneratedCodeAttribute(out);
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request_maybe$grpc::CallOptions "
@@ -615,6 +641,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
   out->Print(
       "/// <summary>Creates a new instance of client from given "
       "<c>ClientBaseConfiguration</c>.</summary>\n");
+  GenerateGeneratedCodeAttribute(out);
   out->Print(
       "protected override $name$ NewInstance(ClientBaseConfiguration "
       "configuration)\n",
@@ -638,6 +665,7 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Print(
       "/// <param name=\"serviceImpl\">An object implementing the server-side"
       " handling logic.</param>\n");
+  GenerateGeneratedCodeAttribute(out);
   out->Print(
       "public static grpc::ServerServiceDefinition BindService($implclass$ "
       "serviceImpl)\n",
@@ -679,6 +707,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   out->Print(
       "/// <param name=\"serviceImpl\">An object implementing the server-side"
       " handling logic.</param>\n");
+  GenerateGeneratedCodeAttribute(out);
   out->Print(
       "public static void BindService(grpc::ServiceBinderBase serviceBinder, "
       "$implclass$ "
@@ -709,6 +738,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool generate_client, bool generate_server,
                      bool internal_access) {
   GenerateDocCommentBody(out, service);
+
   out->Print("$access_level$ static partial class $classname$\n",
              "access_level", GetAccessLevel(internal_access), "classname",
              GetServiceClassName(service));

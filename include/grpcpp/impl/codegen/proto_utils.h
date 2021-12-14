@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_PROTO_UTILS_H
 #define GRPCPP_IMPL_CODEGEN_PROTO_UTILS_H
 
+// IWYU pragma: private
+
 #include <type_traits>
 
 #include <grpc/impl/codegen/byte_buffer_reader.h>

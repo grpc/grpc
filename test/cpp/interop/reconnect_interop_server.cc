@@ -18,11 +18,6 @@
 
 // Test description at doc/connection-backoff-interop-test-description.md
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
 #include <signal.h>
 
 #include <condition_variable>
@@ -31,6 +26,13 @@
 #include <sstream>
 
 #include "absl/flags/flag.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

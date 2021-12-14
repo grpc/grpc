@@ -13,6 +13,7 @@ for general contribution guidelines.
 - [arjunroy](https://github.com/arjunroy), Google LLC
 - [AspirinSJL](https://github.com/AspirinSJL), Google LLC
 - [bogdandrutu](https://github.com/bogdandrutu), Google LLC
+- [ctiller](https://github.com/ctiller), Google LLC
 - [daniel-j-born](https://github.com/daniel-j-born), Google LLC
 - [dapengzhang0](https://github.com/dapengzhang0), Google LLC
 - [dfawley](https://github.com/dfawley), Google LLC
@@ -64,7 +65,6 @@ for general contribution guidelines.
 ## Emeritus Maintainers (in alphabetical order)
 - [adelez](https://github.com/adelez), Google LLC
 - [billfeng327](https://github.com/billfeng327), Google LLC
-- [ctiller](https://github.com/ctiller), Google LLC
 - [dgquintas](https://github.com/dgquintas), Google LLC
 - [fengli79](https://github.com/fengli79), Google LLC
 - [jcanizales](https://github.com/jcanizales), Google LLC

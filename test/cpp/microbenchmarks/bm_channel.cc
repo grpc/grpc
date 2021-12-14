@@ -19,7 +19,9 @@
 /* Benchmark channel */
 
 #include <benchmark/benchmark.h>
+
 #include <grpc/grpc.h>
+
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

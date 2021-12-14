@@ -5,10 +5,12 @@
     <NativeReference Include="$(MSBuildThisFileDirectory)..\..\native\ios\universal\libgrpc_csharp_ext.a">
       <Kind>Static</Kind>
       <ForceLoad>True</ForceLoad>
+      <IsCxx>true</IsCxx>
     </NativeReference>
     <NativeReference Include="$(MSBuildThisFileDirectory)..\..\native\ios\universal\libgrpc.a">
       <Kind>Static</Kind>
       <ForceLoad>True</ForceLoad>
+      <IsCxx>true</IsCxx>
     </NativeReference>
   </ItemGroup>
 

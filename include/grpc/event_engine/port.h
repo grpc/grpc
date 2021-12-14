@@ -17,16 +17,16 @@
 #include <grpc/support/port_platform.h>
 
 // Platform-specific sockaddr includes
-#ifdef GRPC_UV
-#include <uv.h>
-#elif defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
+#if defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||     \
     defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
     defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
     defined(GRPC_POSIX_SOCKET)
 #define GRPC_EVENT_ENGINE_POSIX
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #elif defined(GPR_WINDOWS)
 #include <winsock2.h>
 #include <ws2tcpip.h>

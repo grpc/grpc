@@ -18,6 +18,7 @@
 
 #import "GRPCSecureChannelFactory.h"
 
+#import <GRPCClient/GRPCTypes.h>
 #include <grpc/grpc_security.h>
 
 #import "ChannelArgsUtil.h"
@@ -25,12 +26,13 @@
 
 @implementation GRPCSecureChannelFactory {
   grpc_channel_credentials *_channelCreds;
+  NSString *_sslRootPathStr;
 }
 
 + (instancetype)factoryWithPEMRootCertificates:(NSString *)rootCerts
                                     privateKey:(NSString *)privateKey
                                      certChain:(NSString *)certChain
-                                         error:(NSError **)errorPtr {
+                                         error:(NSError *__autoreleasing *)errorPtr {
   return [[self alloc] initWithPEMRootCerts:rootCerts
                                  privateKey:privateKey
                                   certChain:certChain
@@ -51,7 +53,7 @@
 - (instancetype)initWithPEMRootCerts:(NSString *)rootCerts
                           privateKey:(NSString *)privateKey
                            certChain:(NSString *)certChain
-                               error:(NSError **)errorPtr {
+                               error:(NSError *__autoreleasing *)errorPtr {
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
     NSString *rootsPEM = @"roots";
@@ -60,8 +62,20 @@
     NSBundle *bundle = [NSBundle bundleForClass:[self class]];
     NSBundle *resourceBundle = [NSBundle
         bundleWithURL:[[bundle resourceURL] URLByAppendingPathComponent:resourceBundlePath]];
-    NSString *path = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
-    setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", [path cStringUsingEncoding:NSUTF8StringEncoding], 1);
+    _sslRootPathStr = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
+    const char *utf8Str = [_sslRootPathStr cStringUsingEncoding:NSUTF8StringEncoding];
+    if (utf8Str != NULL) {
+      setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", utf8Str, 1);
+    } else {
+      if (errorPtr) {
+        *errorPtr = [NSError
+            errorWithDomain:kGRPCErrorDomain
+                       code:GRPCErrorCodeInternal
+                   userInfo:@{
+                     NSLocalizedDescriptionKey : @"Failed to set default ssl root file path."
+                   }];
+      }
+    }
   });
 
   NSData *rootsASCII = nil;

@@ -95,8 +95,8 @@ class JsonReader {
 
   size_t CurrentIndex() const { return input_ - original_input_ - 1; }
 
-  void StringAddChar(uint32_t c);
-  void StringAddUtf32(uint32_t c);
+  GRPC_MUST_USE_RESULT bool StringAddChar(uint32_t c);
+  GRPC_MUST_USE_RESULT bool StringAddUtf32(uint32_t c);
 
   Json* CreateAndLinkValue();
   bool StartContainer(Json::Type type);
@@ -119,6 +119,7 @@ class JsonReader {
   uint16_t unicode_high_surrogate_ = 0;
   std::vector<grpc_error_handle> errors_;
   bool truncated_errors_ = false;
+  uint8_t utf8_bytes_remaining_ = 0;
 
   Json root_value_;
   std::vector<Json*> stack_;
@@ -127,34 +128,55 @@ class JsonReader {
   std::string string_;
 };
 
-void JsonReader::StringAddChar(uint32_t c) {
+bool JsonReader::StringAddChar(uint32_t c) {
+  switch (utf8_bytes_remaining_) {
+    case 0:
+      if ((c & 0x80) == 0) {
+        utf8_bytes_remaining_ = 0;
+      } else if ((c & 0xe0) == 0xc0) {
+        utf8_bytes_remaining_ = 1;
+      } else if ((c & 0xf0) == 0xe0) {
+        utf8_bytes_remaining_ = 2;
+      } else if ((c & 0xf8) == 0xf0) {
+        utf8_bytes_remaining_ = 3;
+      } else {
+        return false;
+      }
+      break;
+    case 1:
+    case 2:
+    case 3:
+      if ((c & 0xc0) != 0x80) return false;
+      --utf8_bytes_remaining_;
+      break;
+    default:
+      abort();
+  }
   string_.push_back(static_cast<uint8_t>(c));
+  return true;
 }
 
-void JsonReader::StringAddUtf32(uint32_t c) {
+bool JsonReader::StringAddUtf32(uint32_t c) {
   if (c <= 0x7f) {
-    StringAddChar(c);
+    return StringAddChar(c);
   } else if (c <= 0x7ff) {
     uint32_t b1 = 0xc0 | ((c >> 6) & 0x1f);
     uint32_t b2 = 0x80 | (c & 0x3f);
-    StringAddChar(b1);
-    StringAddChar(b2);
+    return StringAddChar(b1) && StringAddChar(b2);
   } else if (c <= 0xffff) {
     uint32_t b1 = 0xe0 | ((c >> 12) & 0x0f);
     uint32_t b2 = 0x80 | ((c >> 6) & 0x3f);
     uint32_t b3 = 0x80 | (c & 0x3f);
-    StringAddChar(b1);
-    StringAddChar(b2);
-    StringAddChar(b3);
+    return StringAddChar(b1) && StringAddChar(b2) && StringAddChar(b3);
   } else if (c <= 0x1fffff) {
     uint32_t b1 = 0xf0 | ((c >> 18) & 0x07);
     uint32_t b2 = 0x80 | ((c >> 12) & 0x3f);
     uint32_t b3 = 0x80 | ((c >> 6) & 0x3f);
     uint32_t b4 = 0x80 | (c & 0x3f);
-    StringAddChar(b1);
-    StringAddChar(b2);
-    StringAddChar(b3);
-    StringAddChar(b4);
+    return StringAddChar(b1) && StringAddChar(b2) && StringAddChar(b3) &&
+           StringAddChar(b4);
+  } else {
+    return false;
   }
 }
 
@@ -180,10 +202,9 @@ Json* JsonReader::CreateAndLinkValue() {
         if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
           truncated_errors_ = true;
         } else {
-          errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrFormat("duplicate key \"%s\" at index %" PRIuPTR, key_,
-                              CurrentIndex())
-                  .c_str()));
+                              CurrentIndex())));
         }
       }
       value = &(*parent->mutable_object())[std::move(key_)];
@@ -201,10 +222,9 @@ bool JsonReader::StartContainer(Json::Type type) {
     if (errors_.size() == GRPC_JSON_MAX_ERRORS) {
       truncated_errors_ = true;
     } else {
-      errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrFormat("exceeded max stack depth (%d) at index %" PRIuPTR,
-                          GRPC_JSON_MAX_DEPTH, CurrentIndex())
-              .c_str()));
+                          GRPC_JSON_MAX_DEPTH, CurrentIndex())));
     }
     return false;
   }
@@ -277,12 +297,22 @@ JsonReader::Status JsonReader::Run() {
     switch (c) {
       /* Let's process the error case first. */
       case GRPC_JSON_READ_CHAR_EOF:
+        switch (state_) {
+          case State::GRPC_JSON_STATE_VALUE_NUMBER:
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
+          case State::GRPC_JSON_STATE_VALUE_NUMBER_EPM:
+            if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
+            state_ = State::GRPC_JSON_STATE_VALUE_END;
+            break;
+
+          default:
+            break;
+        }
         if (IsComplete()) {
           return Status::GRPC_JSON_DONE;
-        } else {
-          return Status::GRPC_JSON_PARSE_ERROR;
         }
-        break;
+        return Status::GRPC_JSON_PARSE_ERROR;
 
       /* Processing whitespaces. */
       case ' ':
@@ -303,7 +333,7 @@ JsonReader::Status JsonReader::Run() {
             if (unicode_high_surrogate_ != 0) {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER:
@@ -329,7 +359,7 @@ JsonReader::Status JsonReader::Run() {
             if (unicode_high_surrogate_ != 0) {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER:
@@ -341,14 +371,12 @@ JsonReader::Status JsonReader::Run() {
             } else if (c == '}' &&
                        stack_.back()->type() != Json::Type::OBJECT) {
               return Status::GRPC_JSON_PARSE_ERROR;
-              return Status::GRPC_JSON_PARSE_ERROR;
             } else if (c == ']' && stack_.back()->type() != Json::Type::ARRAY) {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
             if (!SetNumber()) return Status::GRPC_JSON_PARSE_ERROR;
             state_ = State::GRPC_JSON_STATE_VALUE_END;
-            /* The missing break here is intentional. */
-            /* fallthrough */
+            ABSL_FALLTHROUGH_INTENDED;
 
           case State::GRPC_JSON_STATE_VALUE_END:
           case State::GRPC_JSON_STATE_OBJECT_KEY_BEGIN:
@@ -416,7 +444,7 @@ JsonReader::Status JsonReader::Run() {
             if (unicode_high_surrogate_ != 0) {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
-            StringAddChar('\\');
+            if (!StringAddChar('\\')) return Status::GRPC_JSON_PARSE_ERROR;
             if (escaped_string_was_key_) {
               state_ = State::GRPC_JSON_STATE_OBJECT_KEY_STRING;
             } else {
@@ -443,10 +471,15 @@ JsonReader::Status JsonReader::Run() {
             }
             if (c == '"') {
               state_ = State::GRPC_JSON_STATE_OBJECT_KEY_END;
+              // Once the key is parsed, there should no un-matched utf8
+              // encoded bytes.
+              if (utf8_bytes_remaining_ != 0) {
+                return Status::GRPC_JSON_PARSE_ERROR;
+              }
               SetKey();
             } else {
               if (c < 32) return Status::GRPC_JSON_PARSE_ERROR;
-              StringAddChar(c);
+              if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             }
             break;
 
@@ -456,10 +489,15 @@ JsonReader::Status JsonReader::Run() {
             }
             if (c == '"') {
               state_ = State::GRPC_JSON_STATE_VALUE_END;
+              // Once the value is parsed, there should no un-matched utf8
+              // encoded bytes.
+              if (utf8_bytes_remaining_ != 0) {
+                return Status::GRPC_JSON_PARSE_ERROR;
+              }
               SetString();
             } else {
               if (c < 32) return Status::GRPC_JSON_PARSE_ERROR;
-              StringAddChar(c);
+              if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             }
             break;
 
@@ -487,7 +525,7 @@ JsonReader::Status JsonReader::Run() {
                 break;
 
               case '0':
-                StringAddChar(c);
+                if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
                 state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO;
                 break;
 
@@ -501,7 +539,7 @@ JsonReader::Status JsonReader::Run() {
               case '8':
               case '9':
               case '-':
-                StringAddChar(c);
+                if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
                 state_ = State::GRPC_JSON_STATE_VALUE_NUMBER;
                 break;
 
@@ -536,22 +574,22 @@ JsonReader::Status JsonReader::Run() {
             switch (c) {
               case '"':
               case '/':
-                StringAddChar(c);
+                if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
                 break;
               case 'b':
-                StringAddChar('\b');
+                if (!StringAddChar('\b')) return Status::GRPC_JSON_PARSE_ERROR;
                 break;
               case 'f':
-                StringAddChar('\f');
+                if (!StringAddChar('\f')) return Status::GRPC_JSON_PARSE_ERROR;
                 break;
               case 'n':
-                StringAddChar('\n');
+                if (!StringAddChar('\n')) return Status::GRPC_JSON_PARSE_ERROR;
                 break;
               case 'r':
-                StringAddChar('\r');
+                if (!StringAddChar('\r')) return Status::GRPC_JSON_PARSE_ERROR;
                 break;
               case 't':
-                StringAddChar('\t');
+                if (!StringAddChar('\t')) return Status::GRPC_JSON_PARSE_ERROR;
                 break;
               case 'u':
                 state_ = State::GRPC_JSON_STATE_STRING_ESCAPE_U1;
@@ -608,14 +646,18 @@ JsonReader::Status JsonReader::Run() {
                   utf32 += static_cast<uint32_t>(
                       (unicode_high_surrogate_ - 0xd800) * 0x400);
                   utf32 += static_cast<uint32_t>(unicode_char_ - 0xdc00);
-                  StringAddUtf32(utf32);
+                  if (!StringAddUtf32(utf32)) {
+                    return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                   unicode_high_surrogate_ = 0;
                 } else {
                   /* anything else */
                   if (unicode_high_surrogate_ != 0) {
                     return Status::GRPC_JSON_PARSE_ERROR;
                   }
-                  StringAddUtf32(unicode_char_);
+                  if (!StringAddUtf32(unicode_char_)) {
+                    return Status::GRPC_JSON_PARSE_ERROR;
+                  }
                 }
                 if (escaped_string_was_key_) {
                   state_ = State::GRPC_JSON_STATE_OBJECT_KEY_STRING;
@@ -629,7 +671,7 @@ JsonReader::Status JsonReader::Run() {
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER:
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             switch (c) {
               case '0':
               case '1':
@@ -655,7 +697,7 @@ JsonReader::Status JsonReader::Run() {
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_WITH_DECIMAL:
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             switch (c) {
               case '0':
               case '1':
@@ -679,12 +721,12 @@ JsonReader::Status JsonReader::Run() {
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_ZERO:
             if (c != '.') return Status::GRPC_JSON_PARSE_ERROR;
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             state_ = State::GRPC_JSON_STATE_VALUE_NUMBER_DOT;
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_DOT:
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             switch (c) {
               case '0':
               case '1':
@@ -704,7 +746,7 @@ JsonReader::Status JsonReader::Run() {
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_E:
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             switch (c) {
               case '0':
               case '1':
@@ -726,7 +768,7 @@ JsonReader::Status JsonReader::Run() {
             break;
 
           case State::GRPC_JSON_STATE_VALUE_NUMBER_EPM:
-            StringAddChar(c);
+            if (!StringAddChar(c)) return Status::GRPC_JSON_PARSE_ERROR;
             switch (c) {
               case '0':
               case '1':
@@ -830,14 +872,11 @@ grpc_error_handle JsonReader::Parse(absl::string_view input, Json* output) {
         "errors and try again to see additional errors"));
   }
   if (status == Status::GRPC_JSON_INTERNAL_ERROR) {
-    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("internal error in JSON parser at index ",
-                     reader.CurrentIndex())
-            .c_str()));
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "internal error in JSON parser at index ", reader.CurrentIndex())));
   } else if (status == Status::GRPC_JSON_PARSE_ERROR) {
-    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("JSON parse error at index ", reader.CurrentIndex())
-            .c_str()));
+    reader.errors_.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("JSON parse error at index ", reader.CurrentIndex())));
   }
   if (!reader.errors_.empty()) {
     return GRPC_ERROR_CREATE_FROM_VECTOR("JSON parsing failed",

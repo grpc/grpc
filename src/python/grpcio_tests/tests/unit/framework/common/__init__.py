@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import contextlib
+import errno
 import os
 import socket
-import errno
 
 _DEFAULT_SOCK_OPTIONS = (socket.SO_REUSEADDR,
                          socket.SO_REUSEPORT) if os.name != 'nt' else (

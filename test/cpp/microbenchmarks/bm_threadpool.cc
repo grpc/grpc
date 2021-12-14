@@ -16,11 +16,12 @@
  *
  */
 
-#include <benchmark/benchmark.h>
-#include <grpc/grpc.h>
-
 #include <condition_variable>
 #include <mutex>
+
+#include <benchmark/benchmark.h>
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/executor/threadpool.h"
 #include "test/core/util/test_config.h"
@@ -62,7 +63,7 @@ class BlockingCounter {
 // number passed in (num_add) is greater than 0. Otherwise, it will decrement
 // the counter to indicate that task is finished. This functor will suicide at
 // the end, therefore, no need for caller to do clean-ups.
-class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
+class AddAnotherFunctor : public grpc_completion_queue_functor {
  public:
   AddAnotherFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter,
                     int num_add)
@@ -74,7 +75,7 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
   }
   // When the functor gets to run in thread pool, it will take itself as first
   // argument and internal_success as second one.
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<AddAnotherFunctor*>(cb);
     if (--callback->num_add_ > 0) {
       callback->pool_->Add(new AddAnotherFunctor(
@@ -128,7 +129,7 @@ BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 2048)
     ->RangePair(524288, 524288, 1, 1024);
 
 // A functor class that will delete self on end of running.
-class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
+class SuicideFunctorForAdd : public grpc_completion_queue_functor {
  public:
   explicit SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
     functor_run = &SuicideFunctorForAdd::Run;
@@ -137,7 +138,7 @@ class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
     internal_success = 0;
   }
 
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     // On running, the first argument would be itself.
     auto* callback = static_cast<SuicideFunctorForAdd*>(cb);
     callback->counter_->DecrementCount();
@@ -151,12 +152,13 @@ class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
 // Performs the scenario of external thread(s) adding closures into pool.
 static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   static grpc_core::ThreadPool* external_add_pool = nullptr;
+  int thread_idx = state.thread_index();
   // Setup for each run of test.
-  if (state.thread_index == 0) {
+  if (thread_idx == 0) {
     const int num_threads = state.range(1);
     external_add_pool = new grpc_core::ThreadPool(num_threads);
   }
-  const int num_iterations = state.range(0) / state.threads;
+  const int num_iterations = state.range(0) / state.threads();
   while (state.KeepRunningBatch(num_iterations)) {
     BlockingCounter counter(num_iterations);
     for (int i = 0; i < num_iterations; ++i) {
@@ -166,7 +168,7 @@ static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   }
 
   // Teardown at the end of each test run.
-  if (state.thread_index == 0) {
+  if (thread_idx == 0) {
     state.SetItemsProcessed(state.range(0));
     delete external_add_pool;
   }
@@ -179,7 +181,7 @@ BENCHMARK(BM_ThreadPoolExternalAdd)
 
 // Functor (closure) that adds itself into pool repeatedly. By adding self, the
 // overhead would be low and can measure the time of add more accurately.
-class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
+class AddSelfFunctor : public grpc_completion_queue_functor {
  public:
   AddSelfFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter,
                  int num_add)
@@ -191,7 +193,7 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
   }
   // When the functor gets to run in thread pool, it will take itself as first
   // argument and internal_success as second one.
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<AddSelfFunctor*>(cb);
     if (--callback->num_add_ > 0) {
       callback->pool_->Add(cb);
@@ -258,8 +260,7 @@ BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 2048)->RangePair(524288, 524288, 1, 1024);
 
 // A functor (closure) that simulates closures with small but non-trivial amount
 // of work.
-class ShortWorkFunctorForAdd
-    : public grpc_experimental_completion_queue_functor {
+class ShortWorkFunctorForAdd : public grpc_completion_queue_functor {
  public:
   BlockingCounter* counter_;
 
@@ -270,7 +271,7 @@ class ShortWorkFunctorForAdd
     internal_success = 0;
     val_ = 0;
   }
-  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<ShortWorkFunctorForAdd*>(cb);
     // Uses pad to avoid compiler complaining unused variable error.
     callback->pad[0] = 0;

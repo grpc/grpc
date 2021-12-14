@@ -19,8 +19,10 @@ cd "$(dirname "$0")/../../.."
 
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
-export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
+
+# Needed for building binary distribution wheels -- bdist_wheel
+"${PYTHON}" -m pip install --upgrade wheel
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -31,7 +33,7 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  "${PIP}" install --upgrade cython
+  "${PYTHON}" -m pip install --upgrade cython
 fi
 
 # Allow build_ext to build C/C++ files in parallel
@@ -124,19 +126,40 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 # shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
+# run twine check before auditwheel, because auditwheel puts the repaired wheels into
+# the artifacts output dir.
+if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
+then
+  # Ensure the generated artifacts are valid.
+  # TODO(jtattermusch): avoid the need for always re-installing virtualenv and twine
+  "${PYTHON}" -m pip install virtualenv
+  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
+  venv/bin/python -m pip install "twine<=2.0"
+  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+  rm -rf venv/
+fi
+
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then
   for wheel in dist/*.whl; do
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
-    "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
+    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
-    "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
+    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
+else
+  cp -r dist/*.whl "$ARTIFACT_DIR"
+  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
 fi
+
+# grpcio and grpcio-tools wheels have already been copied to artifact_dir
+# by "auditwheel repair", now copy the .tar.gz source archives as well.
+cp -r dist/*.tar.gz "$ARTIFACT_DIR"
+cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
 
 # We need to use the built grpcio-tools/grpcio to compile the health proto
 # Wheels are not supported by setup_requires/dependency_links, so we
@@ -144,15 +167,15 @@ fi
 # are in a docker image or in a virtualenv.
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
-  "${PIP}" install -rrequirements.txt
+  "${PYTHON}" -m pip install -rrequirements.txt
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then
-    "${PIP}" install futures>=2.2.0 enum34>=1.0.4
+    "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
   fi
 
-  "${PIP}" install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
-  "${PIP}" install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Note(lidiz) setuptools's "sdist" command creates a source tarball, which
   # demands an extra step of building the wheel. The building step is merely ran
@@ -188,17 +211,13 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
-fi
 
-if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
-then
-  # Ensure the generated artifacts are valid.
-  "${PYTHON}" -m pip install virtualenv
-  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
-  venv/bin/python -m pip install "twine<=2.0"
-  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
-  rm -rf venv/
+  # Build grpcio_admin source distribution and it needs the cutting-edge version
+  # of Channelz and CSDS to be installed.
+  "${PYTHON}" -m pip install --upgrade xds-protos==0.0.8
+  "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
+      sdist bdist_wheel
+  cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 fi
-
-cp -r dist/* "$ARTIFACT_DIR"
-cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"

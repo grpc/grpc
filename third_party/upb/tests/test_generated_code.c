@@ -1,3 +1,30 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* Test of generated code, with a special focus on features that are not used in
  * descriptor.proto or conformance.proto (since these get some testing from
  * upb/def.c and tests/conformance_upb.c, respectively).
@@ -410,6 +437,118 @@ void test_status_truncation(void) {
   }
 }
 
+void decrement_int(void *ptr) {
+  int* iptr = ptr;
+  (*iptr)--;
+}
+
+void test_arena_fuse(void) {
+  int i1 = 5;
+  int i2 = 5;
+  int i3 = 5;
+  int i4 = 5;
+
+  upb_arena *arena1 = upb_arena_new();
+  upb_arena *arena2 = upb_arena_new();
+
+  upb_arena_addcleanup(arena1, &i1, decrement_int);
+  upb_arena_addcleanup(arena2, &i2, decrement_int);
+
+  ASSERT(upb_arena_fuse(arena1, arena2));
+
+  upb_arena_addcleanup(arena1, &i3, decrement_int);
+  upb_arena_addcleanup(arena2, &i4, decrement_int);
+
+  upb_arena_free(arena1);
+  ASSERT(i1 == 5);
+  ASSERT(i2 == 5);
+  ASSERT(i3 == 5);
+  ASSERT(i4 == 5);
+  upb_arena_free(arena2);
+  ASSERT(i1 == 4);
+  ASSERT(i2 == 4);
+  ASSERT(i3 == 4);
+  ASSERT(i4 == 4);
+}
+
+/* Do nothing allocator for testing */
+static void *test_allocfunc(upb_alloc *alloc, void *ptr, size_t oldsize,
+                            size_t size) {
+  return upb_alloc_global.func(alloc, ptr, oldsize, size);
+}
+upb_alloc test_alloc = {&test_allocfunc};
+
+void test_arena_fuse_with_initial_block(void) {
+  char buf1[1024];
+  char buf2[1024];
+  upb_arena *arenas[] = {upb_arena_init(buf1, 1024, &upb_alloc_global),
+                         upb_arena_init(buf2, 1024, &upb_alloc_global),
+                         upb_arena_init(NULL, 0, &test_alloc),
+                         upb_arena_init(NULL, 0, &upb_alloc_global)};
+  int size = sizeof(arenas)/sizeof(arenas[0]);
+  for (int i = 0; i < size; ++i) {
+    for (int j = 0; j < size; ++j) {
+      if (i == j) {
+        ASSERT(upb_arena_fuse(arenas[i], arenas[j]));
+      } else {
+        ASSERT(!upb_arena_fuse(arenas[i], arenas[j]));
+      }
+    }
+  }
+
+  for (int i = 0; i < size; ++i) upb_arena_free(arenas[i]);
+}
+
+void test_arena_decode(void) {
+  // Tests against a bug that previously existed when passing an arena to
+  // upb_decode().
+  char large_string[1024] = {0};
+  upb_strview large_string_view = {large_string, sizeof(large_string)};
+  upb_arena *tmp = upb_arena_new();
+
+  protobuf_test_messages_proto3_TestAllTypesProto3 *msg =
+      protobuf_test_messages_proto3_TestAllTypesProto3_new(tmp);
+
+  protobuf_test_messages_proto3_TestAllTypesProto3_set_optional_bytes(
+      msg, large_string_view);
+
+  upb_strview serialized;
+  serialized.data = protobuf_test_messages_proto3_TestAllTypesProto3_serialize(
+      msg, tmp, &serialized.size);
+
+  upb_arena *arena = upb_arena_new();
+  // Parse the large payload, forcing an arena block to be allocated. This used
+  // to corrupt the cleanup list, preventing subsequent upb_arena_addcleanup()
+  // calls from working properly.
+  protobuf_test_messages_proto3_TestAllTypesProto3_parse(
+      serialized.data, serialized.size, arena);
+
+  int i1 = 5;
+  upb_arena_addcleanup(arena, &i1, decrement_int);
+  ASSERT(i1 == 5);
+  upb_arena_free(arena);
+  ASSERT(i1 == 4);
+
+  upb_arena_free(tmp);
+}
+
+void test_arena_unaligned(void) {
+  char buf1[1024];
+  // Force the pointer to be unaligned.
+  char *unaligned_buf_ptr = (char*)((uintptr_t)buf1 | 7);
+  upb_arena *arena = upb_arena_init(
+      unaligned_buf_ptr, &buf1[sizeof(buf1)] - unaligned_buf_ptr, NULL);
+  char *mem = upb_arena_malloc(arena, 5);
+  ASSERT(((uintptr_t)mem & 15) == 0);
+  upb_arena_free(arena);
+
+  // Try the same, but with a size so small that aligning up will overflow.
+  arena = upb_arena_init(unaligned_buf_ptr, 5, &upb_alloc_global);
+  mem = upb_arena_malloc(arena, 5);
+  ASSERT(((uintptr_t)mem & 15) == 0);
+  upb_arena_free(arena);
+}
+
 int run_tests(int argc, char *argv[]) {
   test_scalars();
   test_utf8();
@@ -419,5 +558,9 @@ int run_tests(int argc, char *argv[]) {
   test_repeated();
   test_null_decode_buf();
   test_status_truncation();
+  test_arena_fuse();
+  test_arena_fuse_with_initial_block();
+  test_arena_decode();
+  test_arena_unaligned();
   return 0;
 }

@@ -9,7 +9,7 @@
 #ifndef SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H_
 #define SRC_PROTO_GRPC_GCP_HANDSHAKER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -80,13 +80,19 @@ UPB_INLINE grpc_gcp_Endpoint *grpc_gcp_Endpoint_new(upb_arena *arena) {
 UPB_INLINE grpc_gcp_Endpoint *grpc_gcp_Endpoint_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_Endpoint *ret = grpc_gcp_Endpoint_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_Endpoint_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_Endpoint_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_Endpoint *grpc_gcp_Endpoint_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_Endpoint *ret = grpc_gcp_Endpoint_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_Endpoint_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_Endpoint_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_Endpoint_serialize(const grpc_gcp_Endpoint *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_Endpoint_msginit, arena, len);
@@ -114,13 +120,19 @@ UPB_INLINE grpc_gcp_Identity *grpc_gcp_Identity_new(upb_arena *arena) {
 UPB_INLINE grpc_gcp_Identity *grpc_gcp_Identity_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_Identity *ret = grpc_gcp_Identity_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_Identity_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_Identity_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_Identity *grpc_gcp_Identity_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_Identity *ret = grpc_gcp_Identity_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_Identity_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_Identity_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_Identity_serialize(const grpc_gcp_Identity *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_Identity_msginit, arena, len);
@@ -178,13 +190,19 @@ UPB_INLINE grpc_gcp_StartClientHandshakeReq *grpc_gcp_StartClientHandshakeReq_ne
 UPB_INLINE grpc_gcp_StartClientHandshakeReq *grpc_gcp_StartClientHandshakeReq_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_StartClientHandshakeReq *ret = grpc_gcp_StartClientHandshakeReq_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_StartClientHandshakeReq_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_StartClientHandshakeReq_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_StartClientHandshakeReq *grpc_gcp_StartClientHandshakeReq_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_StartClientHandshakeReq *ret = grpc_gcp_StartClientHandshakeReq_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_StartClientHandshakeReq_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_StartClientHandshakeReq_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_StartClientHandshakeReq_serialize(const grpc_gcp_StartClientHandshakeReq *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_StartClientHandshakeReq_msginit, arena, len);
@@ -309,13 +327,19 @@ UPB_INLINE grpc_gcp_ServerHandshakeParameters *grpc_gcp_ServerHandshakeParameter
 UPB_INLINE grpc_gcp_ServerHandshakeParameters *grpc_gcp_ServerHandshakeParameters_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_ServerHandshakeParameters *ret = grpc_gcp_ServerHandshakeParameters_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_ServerHandshakeParameters_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_ServerHandshakeParameters_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_ServerHandshakeParameters *grpc_gcp_ServerHandshakeParameters_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_ServerHandshakeParameters *ret = grpc_gcp_ServerHandshakeParameters_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_ServerHandshakeParameters_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_ServerHandshakeParameters_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_ServerHandshakeParameters_serialize(const grpc_gcp_ServerHandshakeParameters *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_ServerHandshakeParameters_msginit, arena, len);
@@ -357,13 +381,19 @@ UPB_INLINE grpc_gcp_StartServerHandshakeReq *grpc_gcp_StartServerHandshakeReq_ne
 UPB_INLINE grpc_gcp_StartServerHandshakeReq *grpc_gcp_StartServerHandshakeReq_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_StartServerHandshakeReq *ret = grpc_gcp_StartServerHandshakeReq_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_StartServerHandshakeReq_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_StartServerHandshakeReq_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_StartServerHandshakeReq *grpc_gcp_StartServerHandshakeReq_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_StartServerHandshakeReq *ret = grpc_gcp_StartServerHandshakeReq_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_StartServerHandshakeReq_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_StartServerHandshakeReq_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_StartServerHandshakeReq_serialize(const grpc_gcp_StartServerHandshakeReq *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_StartServerHandshakeReq_msginit, arena, len);
@@ -469,13 +499,19 @@ UPB_INLINE grpc_gcp_NextHandshakeMessageReq *grpc_gcp_NextHandshakeMessageReq_ne
 UPB_INLINE grpc_gcp_NextHandshakeMessageReq *grpc_gcp_NextHandshakeMessageReq_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_NextHandshakeMessageReq *ret = grpc_gcp_NextHandshakeMessageReq_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_NextHandshakeMessageReq_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_NextHandshakeMessageReq_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_NextHandshakeMessageReq *grpc_gcp_NextHandshakeMessageReq_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_NextHandshakeMessageReq *ret = grpc_gcp_NextHandshakeMessageReq_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_NextHandshakeMessageReq_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_NextHandshakeMessageReq_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_NextHandshakeMessageReq_serialize(const grpc_gcp_NextHandshakeMessageReq *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_NextHandshakeMessageReq_msginit, arena, len);
@@ -495,13 +531,19 @@ UPB_INLINE grpc_gcp_HandshakerReq *grpc_gcp_HandshakerReq_new(upb_arena *arena) 
 UPB_INLINE grpc_gcp_HandshakerReq *grpc_gcp_HandshakerReq_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_HandshakerReq *ret = grpc_gcp_HandshakerReq_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_HandshakerReq_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_HandshakerReq_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_HandshakerReq *grpc_gcp_HandshakerReq_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_HandshakerReq *ret = grpc_gcp_HandshakerReq_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_HandshakerReq_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_HandshakerReq_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_HandshakerReq_serialize(const grpc_gcp_HandshakerReq *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_HandshakerReq_msginit, arena, len);
@@ -567,13 +609,19 @@ UPB_INLINE grpc_gcp_HandshakerResult *grpc_gcp_HandshakerResult_new(upb_arena *a
 UPB_INLINE grpc_gcp_HandshakerResult *grpc_gcp_HandshakerResult_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_HandshakerResult *ret = grpc_gcp_HandshakerResult_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_HandshakerResult_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_HandshakerResult_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_HandshakerResult *grpc_gcp_HandshakerResult_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_HandshakerResult *ret = grpc_gcp_HandshakerResult_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_HandshakerResult_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_HandshakerResult_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_HandshakerResult_serialize(const grpc_gcp_HandshakerResult *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_HandshakerResult_msginit, arena, len);
@@ -654,13 +702,19 @@ UPB_INLINE grpc_gcp_HandshakerStatus *grpc_gcp_HandshakerStatus_new(upb_arena *a
 UPB_INLINE grpc_gcp_HandshakerStatus *grpc_gcp_HandshakerStatus_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_HandshakerStatus *ret = grpc_gcp_HandshakerStatus_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_HandshakerStatus_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_HandshakerStatus_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_HandshakerStatus *grpc_gcp_HandshakerStatus_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_HandshakerStatus *ret = grpc_gcp_HandshakerStatus_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_HandshakerStatus_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_HandshakerStatus_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_HandshakerStatus_serialize(const grpc_gcp_HandshakerStatus *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_HandshakerStatus_msginit, arena, len);
@@ -684,13 +738,19 @@ UPB_INLINE grpc_gcp_HandshakerResp *grpc_gcp_HandshakerResp_new(upb_arena *arena
 UPB_INLINE grpc_gcp_HandshakerResp *grpc_gcp_HandshakerResp_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_HandshakerResp *ret = grpc_gcp_HandshakerResp_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_HandshakerResp_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_HandshakerResp_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_HandshakerResp *grpc_gcp_HandshakerResp_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_HandshakerResp *ret = grpc_gcp_HandshakerResp_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_HandshakerResp_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_HandshakerResp_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_HandshakerResp_serialize(const grpc_gcp_HandshakerResp *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_HandshakerResp_msginit, arena, len);
@@ -735,6 +795,8 @@ UPB_INLINE struct grpc_gcp_HandshakerStatus* grpc_gcp_HandshakerResp_mutable_sta
   }
   return sub;
 }
+
+extern const upb_msglayout_file src_proto_grpc_gcp_handshaker_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

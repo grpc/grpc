@@ -17,7 +17,6 @@
  */
 
 #include <grpcpp/generic/async_generic_service.h>
-
 #include <grpcpp/server.h>
 
 namespace grpc {

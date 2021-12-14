@@ -347,7 +347,7 @@ void grpc_endpoint_tests(grpc_endpoint_test_config config,
   read_and_write_test(config, 10000000, 100000, 8192, false);
   read_and_write_test(config, 1000000, 100000, 1, false);
   read_and_write_test(config, 100000000, 100000, 1, true);
-  for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
+  for (i = 1; i < 1000; i = std::max(i + 1, i * 5 / 4)) {
     read_and_write_test(config, 40320, i, i, false);
   }
   g_pollset = nullptr;

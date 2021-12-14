@@ -18,13 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/alloc.h"
 
 #include <stdlib.h>
 #include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gpr/alloc.h"
 
 grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 

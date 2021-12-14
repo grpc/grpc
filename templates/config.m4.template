@@ -60,7 +60,9 @@
       , $ext_shared, , -fvisibility=hidden ${"\\"}
       -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
       -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 ${"\\"}
-      -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
+      -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 ${"\\"}
+      -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' ${"\\"}
+      -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"${settings.php_version.php()}\""')
   <%
     dirs = sorted(set(src[:src.rfind('/')] for src in srcs))
   %>

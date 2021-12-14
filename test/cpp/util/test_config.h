@@ -19,6 +19,11 @@
 #ifndef GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
 #define GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
 
+#ifndef GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE
+#define GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE(style) \
+  ::testing::FLAGS_gtest_death_test_style = style
+#endif  // GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE
+
 namespace grpc {
 namespace testing {
 

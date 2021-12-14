@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_INTERFACE_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -50,13 +52,7 @@ namespace internal {
 class ServerAsyncStreamingInterface;
 }  // namespace internal
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-namespace experimental {
-#endif
 class CallbackGenericService;
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-}  // namespace experimental
-#endif
 
 namespace experimental {
 class ServerInterceptorFactoryInterface;
@@ -130,35 +126,12 @@ class ServerInterface : public internal::CallHook {
   /// service. The service must exist for the lifetime of the Server instance.
   virtual void RegisterAsyncGenericService(AsyncGenericService* service) = 0;
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   /// Register a callback generic service. This call does not take ownership of
   /// the  service. The service must exist for the lifetime of the Server
   /// instance. May not be abstract since this is a post-1.0 API addition.
 
   virtual void RegisterCallbackGenericService(CallbackGenericService*
                                               /*service*/) {}
-#else
-  /// NOTE: class experimental_registration_interface is not part of the public
-  /// API of this class
-  /// TODO(vjpai): Move these contents to public API when no longer experimental
-  class experimental_registration_interface {
-   public:
-    virtual ~experimental_registration_interface() {}
-    /// May not be abstract since this is a post-1.0 API addition
-    virtual void RegisterCallbackGenericService(
-        experimental::CallbackGenericService* /*service*/) {}
-    virtual void RegisterContextAllocator(
-        std::unique_ptr<ContextAllocator> context_allocator) {}
-  };
-
-  /// NOTE: The function experimental_registration() is not stable public API.
-  /// It is a view to the experimental components of this class. It may be
-  /// changed or removed at any time. May not be abstract since this is a
-  /// post-1.0 API addition
-  virtual experimental_registration_interface* experimental_registration() {
-    return nullptr;
-  }
-#endif
 
   /// Tries to bind \a server to the given \a addr.
   ///
@@ -383,7 +356,6 @@ class ServerInterface : public internal::CallHook {
     return nullptr;
   }
 
-  // EXPERIMENTAL
   // A method to get the callbackable completion queue associated with this
   // server. If the return value is nullptr, this server doesn't support
   // callback operations.

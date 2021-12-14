@@ -14,6 +14,6 @@
 
 FROM ubuntu:18.04
 
-RUN apt-get update -y && apt-get install -y python python-pip
+RUN apt-get update -y && apt-get install -y python3 python3-pip
 
-RUN pip install virtualenv
+RUN python3 -m pip install virtualenv

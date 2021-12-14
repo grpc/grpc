@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_
 #define ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -35,13 +35,19 @@ UPB_INLINE envoy_config_listener_v3_ApiListener *envoy_config_listener_v3_ApiLis
 UPB_INLINE envoy_config_listener_v3_ApiListener *envoy_config_listener_v3_ApiListener_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_listener_v3_ApiListener *ret = envoy_config_listener_v3_ApiListener_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_listener_v3_ApiListener_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_listener_v3_ApiListener_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_listener_v3_ApiListener *envoy_config_listener_v3_ApiListener_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_listener_v3_ApiListener *ret = envoy_config_listener_v3_ApiListener_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_listener_v3_ApiListener_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_listener_v3_ApiListener_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_listener_v3_ApiListener_serialize(const envoy_config_listener_v3_ApiListener *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_listener_v3_ApiListener_msginit, arena, len);
@@ -63,6 +69,8 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_ApiListener_muta
   }
   return sub;
 }
+
+extern const upb_msglayout_file envoy_config_listener_v3_api_listener_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

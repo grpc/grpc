@@ -28,9 +28,14 @@ function build {
     PATH_CC="$(xcrun --sdk $SDK --find clang)"
     PATH_CXX="$(xcrun --sdk $SDK --find clang++)"
 
-    CPPFLAGS="-O2 -Wframe-larger-than=16384 -arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -mios-version-min=9.0 -DPB_NO_PACKED_STRUCTS=1"
+    CPPFLAGS="-O2 -Wframe-larger-than=16384 -arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -mios-version-min=9.0 -DPB_NO_PACKED_STRUCTS=1 -DBORINGSSL_PREFIX=GRPC -Isrc/boringssl"
     LDFLAGS="-arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -Wl,ios_version_min=9.0"
 
+    # TODO(jtattermusch): Ideally we'd be setting build defines that correspond to using cmake's
+    # gRPC_XDS_USER_AGENT_IS_CSHARP option here, but since using XDS with C# on iOS is unlikely
+    # and gRPC C#'s support of iOS is only experimental, it's fair to skip that for now
+    # (which will result in XDS user agent language being "not specified" and that's ok
+    # since there are other circumstances in which it isn't set).
     # TODO(jtattermusch): revisit the build arguments
     make -j4 static_csharp \
         VALID_CONFIG_ios_$ARCH="1" \

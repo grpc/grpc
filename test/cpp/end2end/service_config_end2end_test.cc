@@ -24,6 +24,9 @@
 #include <string>
 #include <thread>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
@@ -52,17 +55,14 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -174,6 +174,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
     grpc_core::Resolver::Result result;
+    result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
       std::string lb_uri_str =
           absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
@@ -181,8 +182,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      result.addresses.emplace_back(address.addr, address.len,
-                                    nullptr /* args */);
+      result.addresses->emplace_back(address.addr, address.len,
+                                     nullptr /* args */);
     }
     return result;
   }
@@ -196,16 +197,18 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, "{}", &result.service_config_error);
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    result.service_config =
+        grpc_core::ServiceConfig::Create(nullptr, "{}", &error);
+    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
     response_generator_->SetResponse(result);
   }
 
   void SetNextResolutionInvalidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, "{", &result.service_config_error);
+    result.service_config =
+        absl::InvalidArgumentError("error parsing service config");
     response_generator_->SetResponse(result);
   }
 
@@ -213,8 +216,13 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, svc_cfg, &result.service_config_error);
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    result.service_config =
+        grpc_core::ServiceConfig::Create(nullptr, svc_cfg, &error);
+    if (error != GRPC_ERROR_NONE) {
+      result.service_config = grpc_error_to_absl_status(error);
+      GRPC_ERROR_UNREF(error);
+    }
     response_generator_->SetResponse(result);
   }
 
@@ -300,32 +308,33 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   }
 
   struct ServerData {
-    int port_;
+    const int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<std::thread> thread_;
-    bool server_ready_ = false;
-    bool started_ = false;
 
-    explicit ServerData(int port = 0) {
-      port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
-    }
+    grpc::internal::Mutex mu_;
+    grpc::internal::CondVar cond_;
+    bool server_ready_ ABSL_GUARDED_BY(mu_) = false;
+    bool started_ ABSL_GUARDED_BY(mu_) = false;
+
+    explicit ServerData(int port = 0)
+        : port_(port > 0 ? port : grpc_pick_unused_port_or_die()) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
+      grpc::internal::MutexLock lock(&mu_);
       started_ = true;
-      grpc::internal::Mutex mu;
-      grpc::internal::MutexLock lock(&mu);
-      grpc::internal::CondVar cond;
       thread_ = absl::make_unique<std::thread>(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
-      grpc::internal::WaitUntil(&cond, &mu, [this] { return server_ready_; });
+          std::bind(&ServerData::Serve, this, server_host));
+      while (!server_ready_) {
+        cond_.Wait(&mu_);
+      }
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const std::string& server_host, grpc::internal::Mutex* mu,
-               grpc::internal::CondVar* cond) {
+    void Serve(const std::string& server_host) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -334,12 +343,13 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
-      grpc::internal::MutexLock lock(mu);
+      grpc::internal::MutexLock lock(&mu_);
       server_ready_ = true;
-      cond->Signal();
+      cond_.Signal();
     }
 
     void Shutdown() {
+      grpc::internal::MutexLock lock(&mu_);
       if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();

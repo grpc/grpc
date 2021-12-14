@@ -15,14 +15,14 @@
  * limitations under the License.
  *
  */
-#include <grpcpp/support/channel_arguments.h>
-
 #include <sstream>
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/resource_quota.h>
+#include <grpcpp/support/channel_arguments.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -66,9 +66,9 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
 }
 
 ChannelArguments::~ChannelArguments() {
-  grpc_core::ExecCtx exec_ctx;
   for (auto& arg : args_) {
     if (arg.type == GRPC_ARG_POINTER) {
+      grpc_core::ExecCtx exec_ctx;
       arg.value.pointer.vtable->destroy(arg.value.pointer.p);
     }
   }

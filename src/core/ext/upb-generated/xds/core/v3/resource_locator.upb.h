@@ -9,7 +9,7 @@
 #ifndef XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H_
 #define XDS_CORE_V3_RESOURCE_LOCATOR_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -44,13 +44,19 @@ UPB_INLINE xds_core_v3_ResourceLocator *xds_core_v3_ResourceLocator_new(upb_aren
 UPB_INLINE xds_core_v3_ResourceLocator *xds_core_v3_ResourceLocator_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   xds_core_v3_ResourceLocator *ret = xds_core_v3_ResourceLocator_new(arena);
-  return (ret && upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE xds_core_v3_ResourceLocator *xds_core_v3_ResourceLocator_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   xds_core_v3_ResourceLocator *ret = xds_core_v3_ResourceLocator_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *xds_core_v3_ResourceLocator_serialize(const xds_core_v3_ResourceLocator *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &xds_core_v3_ResourceLocator_msginit, arena, len);
@@ -117,13 +123,19 @@ UPB_INLINE xds_core_v3_ResourceLocator_Directive *xds_core_v3_ResourceLocator_Di
 UPB_INLINE xds_core_v3_ResourceLocator_Directive *xds_core_v3_ResourceLocator_Directive_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   xds_core_v3_ResourceLocator_Directive *ret = xds_core_v3_ResourceLocator_Directive_new(arena);
-  return (ret && upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_Directive_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_Directive_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE xds_core_v3_ResourceLocator_Directive *xds_core_v3_ResourceLocator_Directive_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   xds_core_v3_ResourceLocator_Directive *ret = xds_core_v3_ResourceLocator_Directive_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_Directive_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &xds_core_v3_ResourceLocator_Directive_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *xds_core_v3_ResourceLocator_Directive_serialize(const xds_core_v3_ResourceLocator_Directive *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &xds_core_v3_ResourceLocator_Directive_msginit, arena, len);
@@ -156,6 +168,8 @@ UPB_INLINE struct xds_core_v3_ResourceLocator* xds_core_v3_ResourceLocator_Direc
 UPB_INLINE void xds_core_v3_ResourceLocator_Directive_set_entry(xds_core_v3_ResourceLocator_Directive *msg, upb_strview value) {
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 2);
 }
+
+extern const upb_msglayout_file xds_core_v3_resource_locator_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

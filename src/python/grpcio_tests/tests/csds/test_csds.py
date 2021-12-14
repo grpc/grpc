@@ -13,21 +13,24 @@
 # limitations under the License.
 """A simple test to ensure that the Python wrapper can get xDS config."""
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
+import sys
 import time
-from six.moves import queue
 import unittest
-from concurrent.futures import ThreadPoolExecutor
-
-import grpc
-import grpc_csds
 
 from google.protobuf import json_format
+import grpc
+import grpc_csds
+from six.moves import queue
+
 try:
-    from envoy.service.status.v3 import csds_pb2, csds_pb2_grpc
+    from envoy.service.status.v3 import csds_pb2
+    from envoy.service.status.v3 import csds_pb2_grpc
 except ImportError:
-    from src.proto.grpc.testing.xds.v3 import csds_pb2, csds_pb2_grpc
+    from src.proto.grpc.testing.xds.v3 import csds_pb2
+    from src.proto.grpc.testing.xds.v3 import csds_pb2_grpc
 
 _DUMMY_XDS_ADDRESS = 'xds:///foo.bar'
 _DUMMY_BOOTSTRAP_FILE = """
@@ -59,6 +62,8 @@ _DUMMY_BOOTSTRAP_FILE = """
 """
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class TestCsds(unittest.TestCase):
 
     def setUp(self):
@@ -83,7 +88,6 @@ class TestCsds(unittest.TestCase):
     def test_has_node(self):
         resp = self.get_xds_config_dump()
         self.assertEqual(1, len(resp.config))
-        self.assertEqual(4, len(resp.config[0].xds_config))
         self.assertEqual('python_test_csds', resp.config[0].node.id)
         self.assertEqual('test', resp.config[0].node.cluster)
 
@@ -102,11 +106,18 @@ class TestCsds(unittest.TestCase):
             config = json_format.MessageToDict(resp)
             ok = False
             try:
-                for xds_config in config["config"][0]["xdsConfig"]:
+                for xds_config in config["config"][0].get("xdsConfig", []):
                     if "listenerConfig" in xds_config:
                         listener = xds_config["listenerConfig"][
                             "dynamicListeners"][0]
                         if listener['clientStatus'] == 'DOES_NOT_EXIST':
+                            ok = True
+                            break
+                for generic_xds_config in config["config"][0].get(
+                        "genericXdsConfigs", []):
+                    if "Listener" in generic_xds_config["typeUrl"]:
+                        if generic_xds_config[
+                                'clientStatus'] == 'DOES_NOT_EXIST':
                             ok = True
                             break
             except KeyError as e:
@@ -118,6 +129,8 @@ class TestCsds(unittest.TestCase):
         dummy_channel.close()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class TestCsdsStream(TestCsds):
 
     def get_xds_config_dump(self):

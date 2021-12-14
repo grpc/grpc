@@ -14,12 +14,11 @@
 """The Python AsyncIO implementation of the gRPC route guide client."""
 
 import asyncio
-import random
 import logging
-from typing import List, Iterable
+import random
+from typing import Iterable, List
 
 import grpc
-
 import route_guide_pb2
 import route_guide_pb2_grpc
 import route_guide_resources

@@ -9,7 +9,7 @@
 #ifndef XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_
 #define XDS_CORE_V3_CONTEXT_PARAMS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -36,13 +36,19 @@ UPB_INLINE xds_core_v3_ContextParams *xds_core_v3_ContextParams_new(upb_arena *a
 UPB_INLINE xds_core_v3_ContextParams *xds_core_v3_ContextParams_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   xds_core_v3_ContextParams *ret = xds_core_v3_ContextParams_new(arena);
-  return (ret && upb_decode(buf, size, ret, &xds_core_v3_ContextParams_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &xds_core_v3_ContextParams_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE xds_core_v3_ContextParams *xds_core_v3_ContextParams_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   xds_core_v3_ContextParams *ret = xds_core_v3_ContextParams_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &xds_core_v3_ContextParams_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &xds_core_v3_ContextParams_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *xds_core_v3_ContextParams_serialize(const xds_core_v3_ContextParams *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &xds_core_v3_ContextParams_msginit, arena, len);
@@ -74,6 +80,8 @@ UPB_INLINE upb_strview xds_core_v3_ContextParams_ParamsEntry_value(const xds_cor
 UPB_INLINE void xds_core_v3_ContextParams_ParamsEntry_set_value(xds_core_v3_ContextParams_ParamsEntry *msg, upb_strview value) {
   _upb_msg_map_set_value(msg, &value, 0);
 }
+
+extern const upb_msglayout_file xds_core_v3_context_params_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

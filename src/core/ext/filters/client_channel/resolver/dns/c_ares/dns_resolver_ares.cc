@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -24,13 +22,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <address_sorting/address_sorting.h>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-
-#include <address_sorting/address_sorting.h>
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -39,7 +37,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -50,6 +48,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -59,8 +58,6 @@
 namespace grpc_core {
 
 namespace {
-
-const char kDefaultPort[] = "https";
 
 class AresDnsResolver : public Resolver {
  public:
@@ -195,7 +192,7 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -307,7 +304,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 
 void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -315,28 +312,42 @@ void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
 void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
-  gpr_free(pending_request_);
+  delete pending_request_;
   pending_request_ = nullptr;
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
     GRPC_ERROR_UNREF(error);
     return;
   }
+  // TODO(roth): Change logic to be able to report failures for addresses
+  // and service config independently of each other.
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
     Result result;
     if (addresses_ != nullptr) {
       result.addresses = std::move(*addresses_);
+    } else {
+      result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
-      std::string service_config_string = ChooseServiceConfig(
-          service_config_json_, &result.service_config_error);
+      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+      std::string service_config_string =
+          ChooseServiceConfig(service_config_json_, &service_config_error);
       gpr_free(service_config_json_);
-      if (result.service_config_error == GRPC_ERROR_NONE &&
+      RefCountedPtr<ServiceConfig> service_config;
+      if (service_config_error == GRPC_ERROR_NONE &&
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
-        result.service_config = ServiceConfig::Create(
-            channel_args_, service_config_string, &result.service_config_error);
+        service_config = ServiceConfig::Create(
+            channel_args_, service_config_string, &service_config_error);
+      }
+      if (service_config_error != GRPC_ERROR_NONE) {
+        result.service_config = absl::UnavailableError(
+            absl::StrCat("failed to parse service config: ",
+                         grpc_error_std_string(service_config_error)));
+        GRPC_ERROR_UNREF(service_config_error);
+      } else {
+        result.service_config = std::move(service_config);
       }
     }
     absl::InlinedVector<grpc_arg, 1> new_args;
@@ -346,7 +357,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     }
     result.args = grpc_channel_args_copy_and_add(channel_args_, new_args.data(),
                                                  new_args.size());
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
     addresses_.reset();
     balancer_addresses_.reset();
     // Reset backoff state so that we start from the beginning when the
@@ -355,12 +366,14 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
                          grpc_error_std_string(error).c_str());
-    std::string error_message =
-        absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
-    result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
-                                                         &error, 1),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    std::string error_message;
+    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    absl::Status status = absl::UnavailableError(absl::StrCat(
+        "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
+    Result result;
+    result.addresses = status;
+    result.service_config = status;
+    result_handler_->ReportResult(std::move(result));
     // Set retry timer.
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
@@ -400,10 +413,10 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
     const grpc_millis ms_until_next_resolution =
-        earliest_next_resolution - grpc_core::ExecCtx::Get()->Now();
+        earliest_next_resolution - ExecCtx::Get()->Now();
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
-          grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
+          ExecCtx::Get()->Now() - last_resolution_timestamp_;
       GRPC_CARES_TRACE_LOG(
           "resolver:%p In cooldown from last resolution (from %" PRId64
           " ms ago). Will resolve again in %" PRId64 " ms",
@@ -431,12 +444,12 @@ void AresDnsResolver::StartResolvingLocked() {
   resolving_ = true;
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares_locked(
-      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultPort,
+      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultSecurePort,
       interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, work_serializer_);
-  last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
+  last_resolution_timestamp_ = ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
                        this, pending_request_);
 }
@@ -447,7 +460,13 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& /*uri*/) const override { return true; }
+  bool IsValidUri(const URI& uri) const override {
+    if (absl::StripPrefix(uri.path(), "/").empty()) {
+      gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+      return false;
+    }
+    return true;
+  }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresDnsResolver>(std::move(args));
@@ -473,13 +492,6 @@ static grpc_error_handle blocking_resolve_address_ares(
 static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
-#ifdef GRPC_UV
-/* TODO(murgatroid99): Remove this when we want the cares resolver to be the
- * default when using libuv */
-static bool should_use_ares(const char* resolver_env) {
-  return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
-}
-#else  /* GRPC_UV */
 static bool should_use_ares(const char* resolver_env) {
   // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
   // custom IO managers (e.g. gevent).
@@ -487,7 +499,6 @@ static bool should_use_ares(const char* resolver_env) {
          (resolver_env == nullptr || strlen(resolver_env) == 0 ||
           gpr_stricmp(resolver_env, "ares") == 0);
 }
-#endif /* GRPC_UV */
 
 static bool g_use_ares_dns_resolver;
 

@@ -19,6 +19,8 @@
 #include <memory>
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -37,17 +39,9 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 
-#include <gtest/gtest.h>
-
 namespace grpc {
 namespace testing {
 namespace {
-
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-using ::grpc::experimental::CallbackGenericService;
-using ::grpc::experimental::GenericCallbackServerContext;
-using ::grpc::experimental::ServerGenericBidiReactor;
-#endif
 
 void* tag(int i) { return reinterpret_cast<void*>(i); }
 
@@ -273,12 +267,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
       builder.RegisterAsyncGenericService(generic_service);
     }
     if (callback_generic_service) {
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       builder.RegisterCallbackGenericService(callback_generic_service);
-#else
-      builder.experimental().RegisterCallbackGenericService(
-          callback_generic_service);
-#endif
     }
 
     if (max_message_size != 0) {

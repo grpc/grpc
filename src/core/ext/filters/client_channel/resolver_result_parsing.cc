@@ -100,7 +100,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
     grpc_error_handle parse_error = GRPC_ERROR_NONE;
     parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
         it->second, &parse_error);
-    if (parsed_lb_config == nullptr) {
+    if (parse_error != GRPC_ERROR_NONE) {
       std::vector<grpc_error_handle> lb_errors;
       lb_errors.push_back(parse_error);
       error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -125,11 +125,10 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
                          " requires a config. Please use loadBalancingConfig "
-                         "instead.")
-                .c_str()));
+                         "instead.")));
       }
     }
   }

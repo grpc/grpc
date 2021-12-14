@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -27,7 +29,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"

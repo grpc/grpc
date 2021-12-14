@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "google/api/annotations.upb.h"
@@ -20,7 +20,18 @@
 const upb_msglayout envoy_service_route_v3_RdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 255,
+  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
+};
+
+static const upb_msglayout *messages_layout[1] = {
+  &envoy_service_route_v3_RdsDummy_msginit,
+};
+
+const upb_msglayout_file envoy_service_route_v3_rds_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  1,
+  0,
 };
 
 #include "upb/port_undef.inc"

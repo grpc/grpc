@@ -19,13 +19,13 @@
 #ifndef GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_MAP_INL_H
 #define GRPC_INTERNAL_COMPILER_RUBY_GENERATOR_MAP_INL_H
 
-#include "src/compiler/config.h"
-
 #include <initializer_list>
 #include <iostream>
 #include <map>
 #include <ostream>  // NOLINT
 #include <vector>
+
+#include "src/compiler/config.h"
 
 using std::initializer_list;
 using std::map;

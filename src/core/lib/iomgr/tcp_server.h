@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <vector>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
-
-#include <vector>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -84,7 +84,8 @@ typedef struct grpc_tcp_server_vtable {
 
 /* Create a server, initially not bound to any ports. The caller owns one ref.
    If shutdown_complete is not NULL, it will be used by
-   grpc_tcp_server_unref() when the ref count reaches zero. */
+   grpc_tcp_server_unref() when the ref count reaches zero.
+   Takes ownership of the slice_allocator_factory. */
 grpc_error_handle grpc_tcp_server_create(grpc_closure* shutdown_complete,
                                          const grpc_channel_args* args,
                                          grpc_tcp_server** server);

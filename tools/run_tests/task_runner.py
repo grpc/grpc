@@ -35,7 +35,7 @@ _TARGETS += package_targets.targets()
 def _create_build_map():
     """Maps task names and labels to list of tasks to be built."""
     target_build_map = dict([(target.name, [target]) for target in _TARGETS])
-    if len(_TARGETS) > len(target_build_map.keys()):
+    if len(_TARGETS) > len(list(target_build_map.keys())):
         raise Exception('Target names need to be unique')
 
     label_build_map = {}
@@ -47,7 +47,7 @@ def _create_build_map():
             else:
                 label_build_map[label] = [target]
 
-    if set(target_build_map.keys()).intersection(label_build_map.keys()):
+    if set(target_build_map.keys()).intersection(list(label_build_map.keys())):
         raise Exception('Target names need to be distinct from label names')
     return dict(list(target_build_map.items()) + list(label_build_map.items()))
 
@@ -73,6 +73,11 @@ argp.add_argument('-t',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('-x',
+                  '--xml_report',
+                  default='report_taskrunner_sponge_log.xml',
+                  type=str,
+                  help='Filename for the JUnit-compatible XML report')
 
 args = argp.parse_args()
 
@@ -109,7 +114,7 @@ num_failures, resultset = jobset.run(build_jobs,
                                      newline_on_success=True,
                                      maxjobs=args.jobs)
 report_utils.render_junit_xml_report(resultset,
-                                     'report_taskrunner_sponge_log.xml',
+                                     args.xml_report,
                                      suite_name='tasks')
 if num_failures == 0:
     jobset.message('SUCCESS',

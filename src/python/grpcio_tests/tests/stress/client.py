@@ -19,9 +19,9 @@ import threading
 
 import grpc
 from six.moves import queue
+
 from src.proto.grpc.testing import metrics_pb2_grpc
 from src.proto.grpc.testing import test_pb2_grpc
-
 from tests.interop import methods
 from tests.interop import resources
 from tests.qps import histogram

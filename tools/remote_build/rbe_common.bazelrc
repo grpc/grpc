@@ -87,8 +87,3 @@ build:ubsan --copt=-gmlt
 # use double the default value for "moderate" and "long" timeout as sanitizer
 # tests tend to be slower
 build:ubsan --test_timeout=60,600,1800,3600
-# override the config-agnostic crosstool_top
-# how to update the bazel toolchain for ubsan:
-# - check for the latest released version in https://github.com/bazelbuild/bazel-toolchains/tree/master/configs/experimental/ubuntu16_04_clang
-# - you might need to update the bazel_toolchains dependency in grpc_deps.bzl
-build:ubsan --crosstool_top=@bazel_toolchains//configs/experimental/ubuntu16_04_clang/1.3/bazel_0.29.1/ubsan:toolchain

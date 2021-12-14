@@ -1,8 +1,8 @@
 workspace(name = "upb")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 load("//bazel:workspace_deps.bzl", "upb_deps")
+load("//bazel:workspace_defs.bzl", "system_python")
 
 upb_deps()
 
@@ -18,31 +18,43 @@ http_archive(
 )
 
 http_archive(
-    name = "ragel",
-    build_file = "//bazel:ragel.BUILD",
-    sha256 = "5f156edb65d20b856d638dd9ee2dfb43285914d9aa2b6ec779dac0270cd56c3f",
-    strip_prefix = "ragel-6.10",
-    urls = ["http://www.colm.net/files/ragel/ragel-6.10.tar.gz"],
-)
-
-http_archive(
-    name = "com_google_googletest",
-    sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
-    strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
-    urls = ["https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip"],  # 2019-01-07
+     name = "com_google_googletest",
+     urls = ["https://github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip"],  # 2019-01-07
+     strip_prefix = "googletest-b6cd405286ed8635ece71c72f118e659f4ade3fb",
+     sha256 = "ff7a82736e158c077e76188232eac77913a15dac0b22508c390ab3f88e6d6d86",
 )
 
 http_archive(
     name = "com_github_google_benchmark",
-    sha256 = "59f918c8ccd4d74b6ac43484467b500f1d64b40cc1010daa055375b322a43ba3",
-    strip_prefix = "benchmark-16703ff83c1ae6d53e5155df3bb3ab0bc96083be",
-    urls = ["https://github.com/google/benchmark/archive/16703ff83c1ae6d53e5155df3bb3ab0bc96083be.zip"],
+    urls = ["https://github.com/google/benchmark/archive/0baacde3618ca617da95375e0af13ce1baadea47.zip"],
+    strip_prefix = "benchmark-0baacde3618ca617da95375e0af13ce1baadea47",
+    sha256 = "62e2f2e6d8a744d67e4bbc212fcfd06647080de4253c97ad5c6749e09faf2cb0",
 )
 
-new_git_repository(
+http_archive(
     name = "com_google_googleapis",
-    remote = "https://github.com/googleapis/googleapis.git",
-    branch = "master",
+    urls = ["https://github.com/googleapis/googleapis/archive/refs/heads/master.zip"],
     build_file = "//benchmarks:BUILD.googleapis",
+    strip_prefix = "googleapis-master",
     patch_cmds = ["find google -type f -name BUILD.bazel -delete"],
+    sha256 = "a3353ef2cea09074eac8a99b6ad8e1c802c9bfac6a6192401287de8d6991b6bc",
 )
+
+system_python(
+    name = "system_python"
+)
+
+http_archive(
+    name = "rules_fuzzing",
+    sha256 = "127d7c45e9b7520b3c42145b3cb1b8c26477cdaed0521b02a0298907339fefa1",
+    strip_prefix = "rules_fuzzing-0.2.0",
+    urls = ["https://github.com/bazelbuild/rules_fuzzing/archive/v0.2.0.zip"],
+)
+
+load("@rules_fuzzing//fuzzing:repositories.bzl", "rules_fuzzing_dependencies")
+
+rules_fuzzing_dependencies()
+
+load("@rules_fuzzing//fuzzing:init.bzl", "rules_fuzzing_init")
+
+rules_fuzzing_init()

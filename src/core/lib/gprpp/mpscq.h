@@ -21,10 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/sync.h"
+#include <atomic>
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -35,12 +36,12 @@ class MultiProducerSingleConsumerQueue {
  public:
   // List node.  Application node types can inherit from this.
   struct Node {
-    Atomic<Node*> next;
+    std::atomic<Node*> next{nullptr};
   };
 
   MultiProducerSingleConsumerQueue() : head_{&stub_}, tail_(&stub_) {}
   ~MultiProducerSingleConsumerQueue() {
-    GPR_ASSERT(head_.Load(MemoryOrder::RELAXED) == &stub_);
+    GPR_ASSERT(head_.load(std::memory_order_relaxed) == &stub_);
     GPR_ASSERT(tail_ == &stub_);
   }
 
@@ -61,7 +62,7 @@ class MultiProducerSingleConsumerQueue {
   // make sure head & tail don't share a cacheline
   union {
     char padding_[GPR_CACHELINE_SIZE];
-    Atomic<Node*> head_;
+    std::atomic<Node*> head_{nullptr};
   };
   Node* tail_;
   Node stub_;

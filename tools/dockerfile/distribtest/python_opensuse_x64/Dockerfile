@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM opensuse:42.1
+FROM opensuse/leap:latest
 
-RUN zypper --non-interactive install python
-RUN zypper --non-interactive install python-pip
+RUN zypper --non-interactive install python3
+RUN zypper --non-interactive install python3-pip
 
 # "which" command required by python's run_distrib_test.sh
 RUN zypper --non-interactive install which
@@ -24,4 +24,4 @@ RUN zypper --non-interactive install which
 # https://pypi.python.org/simple/
 RUN zypper --non-interactive install ca-certificates-mozilla
 
-RUN pip install virtualenv
+RUN python3 -m pip install virtualenv

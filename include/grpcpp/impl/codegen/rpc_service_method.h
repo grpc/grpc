@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_RPC_SERVICE_METHOD_H
 #define GRPCPP_IMPL_CODEGEN_RPC_SERVICE_METHOD_H
 
+// IWYU pragma: private, include <grpcpp/impl/rpc_service_method.h>
+
 #include <climits>
 #include <functional>
 #include <map>

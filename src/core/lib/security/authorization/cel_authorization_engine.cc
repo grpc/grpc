@@ -14,9 +14,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/cel_authorization_engine.h"
+
 #include "absl/memory/memory.h"
 
-#include "src/core/lib/security/authorization/cel_authorization_engine.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 
 namespace grpc_core {
 
@@ -113,17 +115,17 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
                                 mock_cel::CelValue::CreateStringView(method));
       }
     } else if (elem == kHeaders) {
-      std::multimap<absl::string_view, absl::string_view> headers =
-          args.GetHeaders();
       std::vector<std::pair<mock_cel::CelValue, mock_cel::CelValue>>
           header_items;
       for (const auto& header_key : header_keys_) {
-        auto header_item = headers.find(header_key);
-        if (header_item != headers.end()) {
+        std::string temp_value;
+        absl::optional<absl::string_view> header_value =
+            args.GetHeaderValue(header_key, &temp_value);
+        if (header_value.has_value()) {
           header_items.push_back(
               std::pair<mock_cel::CelValue, mock_cel::CelValue>(
                   mock_cel::CelValue::CreateStringView(header_key),
-                  mock_cel::CelValue::CreateStringView(header_item->second)));
+                  mock_cel::CelValue::CreateStringView(*header_value)));
         }
       }
       headers_ = mock_cel::ContainerBackedMapImpl::Create(
@@ -132,7 +134,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       activation->InsertValue(kHeaders,
                               mock_cel::CelValue::CreateMap(headers_.get()));
     } else if (elem == kSourceAddress) {
-      absl::string_view source_address(args.GetPeerAddress());
+      absl::string_view source_address(args.GetPeerAddressString());
       if (!source_address.empty()) {
         activation->InsertValue(
             kSourceAddress,
@@ -142,7 +144,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       activation->InsertValue(
           kSourcePort, mock_cel::CelValue::CreateInt64(args.GetPeerPort()));
     } else if (elem == kDestinationAddress) {
-      absl::string_view destination_address(args.GetLocalAddress());
+      absl::string_view destination_address(args.GetLocalAddressString());
       if (!destination_address.empty()) {
         activation->InsertValue(
             kDestinationAddress,

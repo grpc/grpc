@@ -16,12 +16,12 @@
  *
  */
 
-#include <grpc++/support/slice.h>
-#include <grpcpp/impl/grpc_library.h>
+#include <gtest/gtest.h>
 
+#include <grpc++/support/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <gtest/gtest.h>
+#include <grpcpp/impl/grpc_library.h>
 
 #include "test/core/util/test_config.h"
 
@@ -122,6 +122,12 @@ TEST_F(SliceTest, Add) {
   Slice spp(s, Slice::ADD_REF);
   grpc_slice_unref(s);
   CheckSlice(spp, kContent);
+}
+
+TEST_F(SliceTest, Sub) {
+  Slice spp("0123456789");
+  Slice sub = spp.sub(1, 9);
+  CheckSlice(sub, "12345678");
 }
 
 TEST_F(SliceTest, Cslice) {

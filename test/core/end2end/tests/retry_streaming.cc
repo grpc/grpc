@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -28,16 +26,15 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/static_metadata.h"
-
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -137,8 +134,6 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   char* peer;
 
   grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
           1024 * 8),

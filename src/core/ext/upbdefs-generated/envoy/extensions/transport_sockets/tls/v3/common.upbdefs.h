@@ -41,6 +41,11 @@ UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_TlsSessio
   return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.TlsSessionTicketKeys");
 }
 
+UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_common_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.CertificateProviderPluginInstance");
+}
+
 UPB_INLINE const upb_msgdef *envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_extensions_transport_sockets_tls_v3_common_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext");

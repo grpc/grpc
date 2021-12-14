@@ -15,15 +15,16 @@
 
 import abc
 import asyncio
-import time
 import logging
 import random
+import time
 
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import (benchmark_service_pb2_grpc, control_pb2,
-                                    messages_pb2)
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import control_pb2
+from src.proto.grpc.testing import messages_pb2
 from tests.qps import histogram
 from tests.unit import resources
 

@@ -62,6 +62,7 @@ namespace Grpc.Core.Internal
 
         protected bool initialMetadataSent;
         protected long streamingWritesCounter;  // Number of streaming send operations started so far.
+        protected bool receiveResponseHeadersPending;  // True if this is a call with streaming response and the recv_initial_metadata_on_client operation hasn't finished yet.
 
         public AsyncCallBase(Action<TWrite, SerializationContext> serializer, Func<DeserializationContext, TRead> deserializer)
         {
@@ -171,7 +172,7 @@ namespace Grpc.Core.Internal
             if (!disposed && call != null)
             {
                 bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
-                if (noMoreSendCompletions && readingDone && finished)
+                if (noMoreSendCompletions && readingDone && finished && !receiveResponseHeadersPending)
                 {
                     ReleaseResources();
                     return true;

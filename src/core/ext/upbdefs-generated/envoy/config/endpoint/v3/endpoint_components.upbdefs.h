@@ -36,9 +36,19 @@ UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LbEndpoint_getmsgdef(upb_s
   return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LbEndpoint");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LedsClusterLocalityConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LedsClusterLocalityConfig");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LocalityLbEndpoints_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LocalityLbEndpoints");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LocalityLbEndpoints.LbEndpointList");
 }
 
 #ifdef __cplusplus

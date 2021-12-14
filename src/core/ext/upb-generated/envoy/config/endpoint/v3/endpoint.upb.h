@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_H_
 #define ENVOY_CONFIG_ENDPOINT_V3_ENDPOINT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -52,13 +52,19 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment *envoy_config_endpoint
 UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment *envoy_config_endpoint_v3_ClusterLoadAssignment_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterLoadAssignment *ret = envoy_config_endpoint_v3_ClusterLoadAssignment_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment *envoy_config_endpoint_v3_ClusterLoadAssignment_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterLoadAssignment *ret = envoy_config_endpoint_v3_ClusterLoadAssignment_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(const envoy_config_endpoint_v3_ClusterLoadAssignment *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_ClusterLoadAssignment_msginit, arena, len);
@@ -116,13 +122,19 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy *envoy_config_e
 UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterLoadAssignment_Policy *ret = envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterLoadAssignment_Policy *ret = envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_serialize(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit, arena, len);
@@ -183,13 +195,19 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload *e
 UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload *ret = envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload *ret = envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_serialize(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit, arena, len);
@@ -233,6 +251,8 @@ UPB_INLINE const struct envoy_config_endpoint_v3_Endpoint* envoy_config_endpoint
 UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_set_value(envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry *msg, struct envoy_config_endpoint_v3_Endpoint* value) {
   _upb_msg_map_set_value(msg, &value, sizeof(struct envoy_config_endpoint_v3_Endpoint*));
 }
+
+extern const upb_msglayout_file envoy_config_endpoint_v3_endpoint_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

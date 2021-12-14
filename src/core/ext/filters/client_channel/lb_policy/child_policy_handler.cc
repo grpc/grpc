@@ -16,9 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <cstring>
-
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+
+#include <cstring>
 
 #include "absl/strings/str_cat.h"
 
@@ -88,6 +88,10 @@ class ChildPolicyHandler::Helper
               parent_.get());
     }
     parent_->channel_control_helper()->RequestReresolution();
+  }
+
+  absl::string_view GetAuthority() override {
+    return parent_->channel_control_helper()->GetAuthority();
   }
 
   void AddTraceEvent(TraceSeverity severity,

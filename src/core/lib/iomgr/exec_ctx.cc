@@ -23,11 +23,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
-static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
+static void exec_ctx_run(grpc_closure* closure) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {
@@ -37,18 +37,27 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
             closure->line_initiated);
   }
 #endif
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  grpc_error_handle error =
+      grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
+  closure->error_data.error = 0;
+  closure->cb(closure->cb_arg, std::move(error));
+#else
+  grpc_error_handle error =
+      reinterpret_cast<grpc_error_handle>(closure->error_data.error);
+  closure->error_data.error = 0;
   closure->cb(closure->cb_arg, error);
+  GRPC_ERROR_UNREF(error);
+#endif
 #ifndef NDEBUG
   if (grpc_trace_closure.enabled()) {
     gpr_log(GPR_DEBUG, "closure %p finished", closure);
   }
 #endif
-  GRPC_ERROR_UNREF(error);
 }
 
-static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
-  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
-                           error);
+static void exec_ctx_sched(grpc_closure* closure) {
+  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure);
 }
 
 static gpr_timespec g_start_time;
@@ -123,13 +132,13 @@ grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
 }
 
 namespace grpc_core {
-GPR_TLS_CLASS_DEF(ExecCtx::exec_ctx_);
-GPR_TLS_CLASS_DEF(ApplicationCallbackExecCtx::callback_exec_ctx_);
+GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
+GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
+ApplicationCallbackExecCtx::callback_exec_ctx_;
 
 // WARNING: for testing purposes only!
 void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
   g_start_time = new_val;
-  gpr_tls_init(&exec_ctx_);
 }
 
 void ExecCtx::GlobalInit(void) {
@@ -140,7 +149,6 @@ void ExecCtx::GlobalInit(void) {
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   const gpr_cycle_counter cycle_after = gpr_get_cycle_counter();
   g_start_cycle = (cycle_before + cycle_after) / 2;
-  gpr_tls_init(&exec_ctx_);
 }
 
 bool ExecCtx::Flush() {
@@ -152,9 +160,8 @@ bool ExecCtx::Flush() {
       closure_list_.head = closure_list_.tail = nullptr;
       while (c != nullptr) {
         grpc_closure* next = c->next_data.next;
-        grpc_error_handle error = c->error_data.error;
         did_something = true;
-        exec_ctx_run(c, error);
+        exec_ctx_run(c);
         c = next;
       }
     } else if (!grpc_combiner_continue_exec_ctx()) {
@@ -196,7 +203,12 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   closure->run = false;
   GPR_ASSERT(closure->cb != nullptr);
 #endif
-  exec_ctx_sched(closure, error);
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  closure->error_data.error = internal::StatusAllocHeapPtr(error);
+#else
+  closure->error_data.error = reinterpret_cast<intptr_t>(error);
+#endif
+  exec_ctx_sched(closure);
 }
 
 void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
@@ -219,7 +231,7 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
     c->run = false;
     GPR_ASSERT(c->cb != nullptr);
 #endif
-    exec_ctx_sched(c, c->error_data.error);
+    exec_ctx_sched(c);
     c = next;
   }
   list->head = list->tail = nullptr;

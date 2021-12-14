@@ -20,8 +20,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -352,7 +353,7 @@ const uint8_t grpc_stats_table_7[102] = {
 const int grpc_stats_table_8[9] = {0, 1, 2, 4, 7, 13, 23, 39, 64};
 const uint8_t grpc_stats_table_9[9] = {0, 0, 1, 2, 2, 3, 4, 4, 5};
 void grpc_stats_inc_call_initial_size(int value) {
-  value = GPR_CLAMP(value, 0, 262144);
+  value = grpc_core::Clamp(value, 0, 262144);
   if (value < 6) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE, value);
     return;
@@ -375,7 +376,7 @@ void grpc_stats_inc_call_initial_size(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_0, 64));
 }
 void grpc_stats_inc_poll_events_returned(int value) {
-  value = GPR_CLAMP(value, 0, 1024);
+  value = grpc_core::Clamp(value, 0, 1024);
   if (value < 29) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_POLL_EVENTS_RETURNED, value);
     return;
@@ -398,7 +399,7 @@ void grpc_stats_inc_poll_events_returned(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 128));
 }
 void grpc_stats_inc_tcp_write_size(int value) {
-  value = GPR_CLAMP(value, 0, 16777216);
+  value = grpc_core::Clamp(value, 0, 16777216);
   if (value < 5) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE, value);
     return;
@@ -421,7 +422,7 @@ void grpc_stats_inc_tcp_write_size(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
 }
 void grpc_stats_inc_tcp_write_iov_size(int value) {
-  value = GPR_CLAMP(value, 0, 1024);
+  value = grpc_core::Clamp(value, 0, 1024);
   if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE, value);
     return;
@@ -444,7 +445,7 @@ void grpc_stats_inc_tcp_write_iov_size(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
 void grpc_stats_inc_tcp_read_size(int value) {
-  value = GPR_CLAMP(value, 0, 16777216);
+  value = grpc_core::Clamp(value, 0, 16777216);
   if (value < 5) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_SIZE, value);
     return;
@@ -467,7 +468,7 @@ void grpc_stats_inc_tcp_read_size(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
 }
 void grpc_stats_inc_tcp_read_offer(int value) {
-  value = GPR_CLAMP(value, 0, 16777216);
+  value = grpc_core::Clamp(value, 0, 16777216);
   if (value < 5) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_OFFER, value);
     return;
@@ -490,7 +491,7 @@ void grpc_stats_inc_tcp_read_offer(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
 }
 void grpc_stats_inc_tcp_read_offer_iov_size(int value) {
-  value = GPR_CLAMP(value, 0, 1024);
+  value = grpc_core::Clamp(value, 0, 1024);
   if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
                              value);
@@ -515,7 +516,7 @@ void grpc_stats_inc_tcp_read_offer_iov_size(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
 void grpc_stats_inc_http2_send_message_size(int value) {
-  value = GPR_CLAMP(value, 0, 16777216);
+  value = grpc_core::Clamp(value, 0, 16777216);
   if (value < 5) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
                              value);
@@ -540,7 +541,7 @@ void grpc_stats_inc_http2_send_message_size(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
 }
 void grpc_stats_inc_http2_send_initial_metadata_per_write(int value) {
-  value = GPR_CLAMP(value, 0, 1024);
+  value = grpc_core::Clamp(value, 0, 1024);
   if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM(
         GRPC_STATS_HISTOGRAM_HTTP2_SEND_INITIAL_METADATA_PER_WRITE, value);
@@ -565,7 +566,7 @@ void grpc_stats_inc_http2_send_initial_metadata_per_write(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
 void grpc_stats_inc_http2_send_message_per_write(int value) {
-  value = GPR_CLAMP(value, 0, 1024);
+  value = grpc_core::Clamp(value, 0, 1024);
   if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE,
                              value);
@@ -590,7 +591,7 @@ void grpc_stats_inc_http2_send_message_per_write(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
 void grpc_stats_inc_http2_send_trailing_metadata_per_write(int value) {
-  value = GPR_CLAMP(value, 0, 1024);
+  value = grpc_core::Clamp(value, 0, 1024);
   if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM(
         GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE, value);
@@ -615,7 +616,7 @@ void grpc_stats_inc_http2_send_trailing_metadata_per_write(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
 void grpc_stats_inc_http2_send_flowctl_per_write(int value) {
-  value = GPR_CLAMP(value, 0, 1024);
+  value = grpc_core::Clamp(value, 0, 1024);
   if (value < 13) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE,
                              value);
@@ -640,7 +641,7 @@ void grpc_stats_inc_http2_send_flowctl_per_write(int value) {
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
 void grpc_stats_inc_server_cqs_checked(int value) {
-  value = GPR_CLAMP(value, 0, 64);
+  value = grpc_core::Clamp(value, 0, 64);
   if (value < 3) {
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, value);
     return;

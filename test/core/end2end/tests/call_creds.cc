@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -30,6 +28,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static const char iam_token[] = "token";
 static const char iam_selector[] = "selector";

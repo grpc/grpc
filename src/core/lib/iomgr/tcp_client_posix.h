@@ -30,10 +30,12 @@
    fd: a connected FD. Ownership is taken.
    channel_args: may contain custom settings for the endpoint
    addr_str: destination address in printable format
+   slice_allocator: ownership is taken by client.
    Returns: a new endpoint
 */
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str);
+    grpc_fd* fd, const grpc_channel_args* channel_args,
+    absl::string_view addr_str);
 
 /* Return a configured, unbound, unconnected TCP client fd.
 

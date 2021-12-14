@@ -24,13 +24,13 @@
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "absl/strings/str_format.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
@@ -153,7 +153,7 @@ void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
   if (error == GRPC_ERROR_NONE) {
     grpc_linked_mdelem* grpc_encoding =
-        calld->recv_initial_metadata_->idx.named.grpc_encoding;
+        calld->recv_initial_metadata_->legacy_index()->named.grpc_encoding;
     if (grpc_encoding != nullptr) {
       calld->algorithm_ = DecodeMessageCompressionAlgorithm(grpc_encoding->md);
     }
@@ -196,12 +196,12 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
       if (calld->max_recv_message_length_ >= 0 &&
           (*calld->recv_message_)->length() >
               static_cast<uint32_t>(calld->max_recv_message_length_)) {
-        std::string message_string = absl::StrFormat(
-            "Received message larger than max (%u vs. %d)",
-            (*calld->recv_message_)->length(), calld->max_recv_message_length_);
         GPR_DEBUG_ASSERT(calld->error_ == GRPC_ERROR_NONE);
         calld->error_ = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string.c_str()),
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                absl::StrFormat("Received message larger than max (%u vs. %d)",
+                                (*calld->recv_message_)->length(),
+                                calld->max_recv_message_length_)),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
         return calld->ContinueRecvMessageReadyCallback(
             GRPC_ERROR_REF(calld->error_));
@@ -260,11 +260,10 @@ void CallData::FinishRecvMessage() {
   if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) ==
       0) {
     GPR_DEBUG_ASSERT(error_ == GRPC_ERROR_NONE);
-    error_ = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    error_ = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unexpected error decompressing data for algorithm with "
                      "enum value ",
-                     algorithm_)
-            .c_str());
+                     algorithm_));
     grpc_slice_buffer_destroy_internal(&decompressed_slices);
   } else {
     uint32_t recv_flags =

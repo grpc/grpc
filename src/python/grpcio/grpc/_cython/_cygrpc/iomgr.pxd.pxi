@@ -110,7 +110,7 @@ cdef extern from "src/core/lib/iomgr/timer_custom.h":
 cdef extern from "src/core/lib/iomgr/pollset_custom.h":
   struct grpc_custom_poller_vtable:
     void (*init)()
-    void (*poll)(size_t timeout_ms)
+    grpc_error_handle (*poll)(size_t timeout_ms)
     void (*kick)()
     void (*shutdown)()
 

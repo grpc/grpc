@@ -18,8 +18,8 @@ import logging
 import time
 
 import grpc
-from src.proto.grpc.testing import worker_service_pb2_grpc
 
+from src.proto.grpc.testing import worker_service_pb2_grpc
 from tests.qps import worker_server
 from tests.unit import test_common
 

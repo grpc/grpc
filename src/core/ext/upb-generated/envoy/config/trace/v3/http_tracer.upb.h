@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H_
 #define ENVOY_CONFIG_TRACE_V3_HTTP_TRACER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -38,13 +38,19 @@ UPB_INLINE envoy_config_trace_v3_Tracing *envoy_config_trace_v3_Tracing_new(upb_
 UPB_INLINE envoy_config_trace_v3_Tracing *envoy_config_trace_v3_Tracing_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_trace_v3_Tracing *ret = envoy_config_trace_v3_Tracing_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_trace_v3_Tracing *envoy_config_trace_v3_Tracing_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_trace_v3_Tracing *ret = envoy_config_trace_v3_Tracing_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_trace_v3_Tracing_serialize(const envoy_config_trace_v3_Tracing *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_trace_v3_Tracing_msginit, arena, len);
@@ -75,13 +81,19 @@ UPB_INLINE envoy_config_trace_v3_Tracing_Http *envoy_config_trace_v3_Tracing_Htt
 UPB_INLINE envoy_config_trace_v3_Tracing_Http *envoy_config_trace_v3_Tracing_Http_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_trace_v3_Tracing_Http *ret = envoy_config_trace_v3_Tracing_Http_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_trace_v3_Tracing_Http *envoy_config_trace_v3_Tracing_Http_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_trace_v3_Tracing_Http *ret = envoy_config_trace_v3_Tracing_Http_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_trace_v3_Tracing_Http_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_trace_v3_Tracing_Http_serialize(const envoy_config_trace_v3_Tracing_Http *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_trace_v3_Tracing_Http_msginit, arena, len);
@@ -112,6 +124,8 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_mutabl
   }
   return sub;
 }
+
+extern const upb_msglayout_file envoy_config_trace_v3_http_tracer_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

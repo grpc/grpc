@@ -19,14 +19,16 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 
+// IWYU pragma: private, include <grpcpp/server_context.h>
+
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <atomic>
 #include <cassert>
 #include <map>
 #include <memory>
 #include <type_traits>
 #include <vector>
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpcpp/impl/codegen/call.h>
@@ -62,6 +64,8 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+
+extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 template <class ServiceType, class RequestType, class ResponseType>
@@ -101,22 +105,8 @@ class GenericServerContext;
 class Server;
 class ServerInterface;
 class ContextAllocator;
-
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
-namespace experimental {
-
-typedef ::grpc::ServerContextBase ServerContextBase;
-typedef ::grpc::CallbackServerContext CallbackServerContext;
-
-}  // namespace experimental
-
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-namespace experimental {
-#endif
 class GenericCallbackServerContext;
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-}  // namespace experimental
-#endif
+
 namespace internal {
 class Call;
 }  // namespace internal
@@ -127,7 +117,7 @@ class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
 
-/// Base class of ServerContext. Experimental until callback API is final.
+/// Base class of ServerContext.
 class ServerContextBase {
  public:
   virtual ~ServerContextBase();
@@ -154,11 +144,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /// Custom-Metadata -> Binary-Header / ASCII-Header
-  /// Binary-Header -> {Header-Name "-bin" } {binary value}
-  /// ASCII-Header -> Header-Name ASCII-Value
-  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /**
+  \verbatim
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  Binary-Header -> {Header-Name "-bin" } {binary value}
+  ASCII-Header -> Header-Name ASCII-Value
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  \endverbatim
+  **/
   void AddInitialMetadata(const std::string& key, const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -175,11 +169,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /// Custom-Metadata -> Binary-Header / ASCII-Header
-  /// Binary-Header -> {Header-Name "-bin" } {binary value}
-  /// ASCII-Header -> Header-Name ASCII-Value
-  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /**
+  \verbatim
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  Binary-Header -> {Header-Name "-bin" } {binary value}
+  ASCII-Header -> Header-Name ASCII-Value
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  \endverbatim
+  **/
   void AddTrailingMetadata(const std::string& key, const std::string& value);
 
   /// Return whether this RPC failed before the server could provide its status
@@ -299,10 +297,7 @@ class ServerContextBase {
   /// NOTE: This is an API for advanced users who need custom allocators.
   /// Get and maybe mutate the allocator state associated with the current RPC.
   /// Currently only applicable for callback unary RPC methods.
-  /// WARNING: This is experimental API and could be changed or removed.
-  ::grpc::experimental::RpcAllocatorState* GetRpcAllocatorState() {
-    return message_allocator_state_;
-  }
+  RpcAllocatorState* GetRpcAllocatorState() { return message_allocator_state_; }
 
   /// Get a library-owned default unary reactor for use in minimal reaction
   /// cases. This supports typical unary RPC usage of providing a response and
@@ -318,8 +313,6 @@ class ServerContextBase {
   ///
   /// This method should not be called more than once or called after return
   /// from the method handler.
-  ///
-  /// WARNING: This is experimental API and could be changed or removed.
   ::grpc::ServerUnaryReactor* DefaultReactor() {
     // Short-circuit the case where a default reactor was already set up by
     // the TestPeer.
@@ -394,11 +387,7 @@ class ServerContextBase {
   friend class ::grpc::internal::FinishOnlyReactor;
   friend class ::grpc::ClientContext;
   friend class ::grpc::GenericServerContext;
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   friend class ::grpc::GenericCallbackServerContext;
-#else
-  friend class ::grpc::experimental::GenericCallbackServerContext;
-#endif
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -429,9 +418,15 @@ class ServerContextBase {
     return rpc_info_;
   }
 
-  void set_message_allocator_state(
-      ::grpc::experimental::RpcAllocatorState* allocator_state) {
+  void set_message_allocator_state(RpcAllocatorState* allocator_state) {
     message_allocator_state_ = allocator_state;
+  }
+
+  void MaybeMarkCancelledOnRead() {
+    if (g_core_codegen_interface->grpc_call_failed_before_recv_message(
+            call_.call)) {
+      marked_cancelled_.store(true, std::memory_order_release);
+    }
   }
 
   struct CallWrapper {
@@ -469,7 +464,7 @@ class ServerContextBase {
   bool has_pending_ops_ = false;
 
   ::grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
-  ::grpc::experimental::RpcAllocatorState* message_allocator_state_ = nullptr;
+  RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
 
   class Reactor : public ::grpc::ServerUnaryReactor {
@@ -524,6 +519,9 @@ class ServerContextBase {
   typename std::aligned_storage<sizeof(Reactor), alignof(Reactor)>::type
       default_reactor_;
   std::atomic_bool default_reactor_used_{false};
+
+  std::atomic_bool marked_cancelled_{false};
+
   std::unique_ptr<TestServerCallbackUnary> test_unary_;
 };
 
@@ -633,24 +631,13 @@ class ContextAllocator {
 
   virtual CallbackServerContext* NewCallbackServerContext() { return nullptr; }
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  virtual experimental::GenericCallbackServerContext*
-  NewGenericCallbackServerContext() {
-    return nullptr;
-  }
-#else
   virtual GenericCallbackServerContext* NewGenericCallbackServerContext() {
     return nullptr;
   }
-#endif
 
   virtual void Release(CallbackServerContext*) {}
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  virtual void Release(experimental::GenericCallbackServerContext*) {}
-#else
   virtual void Release(GenericCallbackServerContext*) {}
-#endif
 };
 
 }  // namespace grpc

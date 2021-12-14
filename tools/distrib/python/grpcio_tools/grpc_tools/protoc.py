@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2016 gRPC authors.
 #
@@ -14,12 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pkg_resources
+import os
 import sys
 
-import os
-
 from grpc_tools import _protoc_compiler
+import pkg_resources
 
 _PROTO_MODULE_SUFFIX = "_pb2"
 _SERVICE_MODULE_SUFFIX = "_pb2_grpc"

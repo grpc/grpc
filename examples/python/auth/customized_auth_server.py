@@ -14,12 +14,12 @@
 """Server of the Python example of customizing authentication mechanism."""
 
 import argparse
+from concurrent import futures
 import contextlib
 import logging
-from concurrent import futures
 
-import grpc
 import _credentials
+import grpc
 
 helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
     "helloworld.proto")

@@ -9,7 +9,7 @@
 #ifndef ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_H_
 #define ENVOY_TYPE_MATCHER_V3_STRUCT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -38,13 +38,19 @@ UPB_INLINE envoy_type_matcher_v3_StructMatcher *envoy_type_matcher_v3_StructMatc
 UPB_INLINE envoy_type_matcher_v3_StructMatcher *envoy_type_matcher_v3_StructMatcher_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_matcher_v3_StructMatcher *ret = envoy_type_matcher_v3_StructMatcher_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_type_matcher_v3_StructMatcher *envoy_type_matcher_v3_StructMatcher_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_type_matcher_v3_StructMatcher *ret = envoy_type_matcher_v3_StructMatcher_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_matcher_v3_StructMatcher_serialize(const envoy_type_matcher_v3_StructMatcher *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_matcher_v3_StructMatcher_msginit, arena, len);
@@ -90,13 +96,19 @@ UPB_INLINE envoy_type_matcher_v3_StructMatcher_PathSegment *envoy_type_matcher_v
 UPB_INLINE envoy_type_matcher_v3_StructMatcher_PathSegment *envoy_type_matcher_v3_StructMatcher_PathSegment_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_matcher_v3_StructMatcher_PathSegment *ret = envoy_type_matcher_v3_StructMatcher_PathSegment_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_PathSegment_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_PathSegment_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_type_matcher_v3_StructMatcher_PathSegment *envoy_type_matcher_v3_StructMatcher_PathSegment_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_type_matcher_v3_StructMatcher_PathSegment *ret = envoy_type_matcher_v3_StructMatcher_PathSegment_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_PathSegment_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_matcher_v3_StructMatcher_PathSegment_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_matcher_v3_StructMatcher_PathSegment_serialize(const envoy_type_matcher_v3_StructMatcher_PathSegment *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_matcher_v3_StructMatcher_PathSegment_msginit, arena, len);
@@ -114,6 +126,8 @@ UPB_INLINE upb_strview envoy_type_matcher_v3_StructMatcher_PathSegment_key(const
 UPB_INLINE void envoy_type_matcher_v3_StructMatcher_PathSegment_set_key(envoy_type_matcher_v3_StructMatcher_PathSegment *msg, upb_strview value) {
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 1);
 }
+
+extern const upb_msglayout_file envoy_type_matcher_v3_struct_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

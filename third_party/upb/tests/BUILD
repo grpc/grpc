@@ -1,3 +1,28 @@
+# Copyright (c) 2009-2021, Google LLC
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Google LLC nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 load(
     "//bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
@@ -9,13 +34,9 @@ load(
     "upb_proto_library",
     "upb_proto_reflection_library",
 )
+load("@rules_fuzzing//fuzzing:cc_defs.bzl", "cc_fuzz_test")
 
 licenses(["notice"])
-
-config_setting(
-    name = "fuzz",
-    values = {"define": "fuzz=true"},
-)
 
 cc_library(
     name = "upb_test",
@@ -24,12 +45,10 @@ cc_library(
         "testmain.cc",
     ],
     hdrs = [
-        "test_util.h",
         "upb_test.h",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
     deps = [
-        "//:handlers",
         "//:port",
         "//:upb",
     ],
@@ -77,40 +96,19 @@ upb_proto_library(
 )
 
 proto_library(
-    name = "test_decoder_proto",
-    srcs = [
-        "pb/test_decoder.proto",
-    ],
-)
-
-upb_proto_reflection_library(
-    name = "test_decoder_upb_proto",
-    deps = [":test_decoder_proto"],
-)
-
-cc_test(
-    name = "test_decoder",
-    srcs = ["pb/test_decoder.cc"],
-    copts = UPB_DEFAULT_CPPOPTS,
-    deps = [
-        ":test_decoder_upb_proto",
-        ":upb_test",
-        "//:handlers",
-        "//:port",
-        "//:upb",
-        "//:upb_pb",
-    ],
-)
-
-proto_library(
     name = "test_cpp_proto",
     srcs = [
         "test_cpp.proto",
     ],
 )
 
-upb_proto_reflection_library(
+upb_proto_library(
     name = "test_cpp_upb_proto",
+    deps = ["test_cpp_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "test_cpp_upb_proto_reflection",
     deps = ["test_cpp_proto"],
 )
 
@@ -120,12 +118,12 @@ cc_test(
     copts = UPB_DEFAULT_CPPOPTS,
     deps = [
         ":test_cpp_upb_proto",
+        ":test_cpp_upb_proto_reflection",
         ":upb_test",
-        "//:handlers",
+        "//:json",
         "//:port",
         "//:reflection",
         "//:upb",
-        "//:upb_pb",
     ],
 )
 
@@ -142,78 +140,23 @@ cc_test(
 )
 
 # OSS-Fuzz test
-cc_binary(
+config_setting(
+    name = "is_clang",
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
+)
+
+cc_fuzz_test(
     name = "file_descriptor_parsenew_fuzzer",
-    testonly = 1,
     srcs = ["file_descriptor_parsenew_fuzzer.cc"],
-    copts = UPB_DEFAULT_CPPOPTS + select({
-        "//conditions:default": [],
-        ":fuzz": ["-fsanitize=fuzzer,address"],
-    }),
-    defines = select({
-        "//conditions:default": [],
-        ":fuzz": ["HAVE_FUZZER"],
-    }),
     deps = [
         "//:descriptor_upb_proto",
         "//:upb",
     ],
+    target_compatible_with = select({
+        ":is_clang": [],
+        "//conditions:default": ["@platforms//:incompatible"]
+    }),
 )
-
-# copybara:strip_for_google3_begin
-cc_test(
-    name = "test_encoder",
-    srcs = ["pb/test_encoder.cc"],
-    copts = UPB_DEFAULT_CPPOPTS,
-    deps = [
-        ":upb_test",
-        "//:descriptor_upb_proto",
-        "//:descriptor_upb_proto_reflection",
-        "//:upb",
-        "//:upb_pb",
-    ],
-)
-
-proto_library(
-    name = "test_json_enum_from_separate",
-    srcs = ["json/enum_from_separate_file.proto"],
-    deps = [":test_json_proto"],
-)
-
-proto_library(
-    name = "test_json_proto",
-    srcs = ["json/test.proto"],
-)
-
-upb_proto_reflection_library(
-    name = "test_json_upb_proto_reflection",
-    deps = ["test_json_proto"],
-)
-
-upb_proto_library(
-    name = "test_json_enum_from_separate_upb_proto",
-    deps = [":test_json_enum_from_separate"],
-)
-
-upb_proto_library(
-    name = "test_json_upb_proto",
-    deps = [":test_json_proto"],
-)
-
-cc_test(
-    name = "test_json",
-    srcs = [
-        "json/test_json.cc",
-    ],
-    copts = UPB_DEFAULT_CPPOPTS,
-    deps = [
-        ":test_json_upb_proto",
-        ":test_json_upb_proto_reflection",
-        ":upb_test",
-        "//:upb_json",
-    ],
-)
-# copybara:strip_end
 
 upb_proto_library(
     name = "conformance_proto_upb",

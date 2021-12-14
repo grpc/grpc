@@ -7,3 +7,5 @@ validate/
 google/
 opencensus/
 xds/
+build/
+opentelemetry/

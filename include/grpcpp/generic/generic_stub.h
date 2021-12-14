@@ -87,13 +87,13 @@ class TemplatedGenericStub final {
                         true, tag);
   }
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   /// Setup and start a unary call to a named method \a method using
   /// \a context and specifying the \a request and \a response buffers.
   void UnaryCall(ClientContext* context, const std::string& method,
-                 const RequestType* request, ResponseType* response,
+                 StubOptions options, const RequestType* request,
+                 ResponseType* response,
                  std::function<void(grpc::Status)> on_completion) {
-    UnaryCallInternal(context, method, /*options=*/{}, request, response,
+    UnaryCallInternal(context, method, options, request, response,
                       std::move(on_completion));
   }
 
@@ -102,9 +102,9 @@ class TemplatedGenericStub final {
   /// Like any other reactor-based RPC, it will not be activated until
   /// StartCall is invoked on its reactor.
   void PrepareUnaryCall(ClientContext* context, const std::string& method,
-                        const RequestType* request, ResponseType* response,
-                        ClientUnaryReactor* reactor) {
-    PrepareUnaryCallInternal(context, method, /*options=*/{}, request, response,
+                        StubOptions options, const RequestType* request,
+                        ResponseType* response, ClientUnaryReactor* reactor) {
+    PrepareUnaryCallInternal(context, method, options, request, response,
                              reactor);
   }
 
@@ -112,58 +112,10 @@ class TemplatedGenericStub final {
   /// \a reactor . Like any other bidi streaming RPC, it will not be activated
   /// until StartCall is invoked on its reactor.
   void PrepareBidiStreamingCall(
-      ClientContext* context, const std::string& method,
+      ClientContext* context, const std::string& method, StubOptions options,
       ClientBidiReactor<RequestType, ResponseType>* reactor) {
-    PrepareBidiStreamingCallInternal(context, method, /*options=*/{}, reactor);
+    PrepareBidiStreamingCallInternal(context, method, options, reactor);
   }
-#endif
-
-  /// NOTE: class experimental_type is not part of the public API of this class
-  /// TODO(vjpai): Move these contents to the public API of GenericStub when
-  ///              they are no longer experimental
-  class experimental_type {
-   public:
-    explicit experimental_type(TemplatedGenericStub* stub) : stub_(stub) {}
-
-    /// Setup and start a unary call to a named method \a method using
-    /// \a context and specifying the \a request and \a response buffers.
-    void UnaryCall(ClientContext* context, const std::string& method,
-                   StubOptions options, const RequestType* request,
-                   ResponseType* response,
-                   std::function<void(grpc::Status)> on_completion) {
-      stub_->UnaryCallInternal(context, method, options, request, response,
-                               std::move(on_completion));
-    }
-
-    /// Setup a unary call to a named method \a method using
-    /// \a context and specifying the \a request and \a response buffers.
-    /// Like any other reactor-based RPC, it will not be activated until
-    /// StartCall is invoked on its reactor.
-    void PrepareUnaryCall(ClientContext* context, const std::string& method,
-                          StubOptions options, const RequestType* request,
-                          ResponseType* response, ClientUnaryReactor* reactor) {
-      stub_->PrepareUnaryCallInternal(context, method, options, request,
-                                      response, reactor);
-    }
-
-    /// Setup a call to a named method \a method using \a context and tied to
-    /// \a reactor . Like any other bidi streaming RPC, it will not be activated
-    /// until StartCall is invoked on its reactor.
-    void PrepareBidiStreamingCall(
-        ClientContext* context, const std::string& method, StubOptions options,
-        ClientBidiReactor<RequestType, ResponseType>* reactor) {
-      stub_->PrepareBidiStreamingCallInternal(context, method, options,
-                                              reactor);
-    }
-
-   private:
-    TemplatedGenericStub* stub_;
-  };
-
-  /// NOTE: The function experimental() is not stable public API. It is a view
-  /// to the experimental components of this class. It may be changed or removed
-  /// at any time.
-  experimental_type experimental() { return experimental_type(this); }
 
  private:
   std::shared_ptr<grpc::ChannelInterface> channel_;

@@ -25,7 +25,6 @@ import operator
 import sys
 
 import grpc
-
 import prime_pb2
 import prime_pb2_grpc
 

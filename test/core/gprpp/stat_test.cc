@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "src/core/lib/gprpp/stat.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -27,7 +29,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
@@ -45,8 +46,7 @@ TEST(STAT, GetTimestampOnTmpFile) {
   fclose(tmp);
   // Check the last modified date is correctly set.
   time_t timestamp = 0;
-  absl::Status status =
-      grpc_core::GetFileModificationTime(tmp_name, &timestamp);
+  absl::Status status = GetFileModificationTime(tmp_name, &timestamp);
   EXPECT_EQ(status.code(), absl::StatusCode::kOk);
   EXPECT_GT(timestamp, 0);
   // Clean up.
@@ -56,8 +56,7 @@ TEST(STAT, GetTimestampOnTmpFile) {
 
 TEST(STAT, GetTimestampOnFailure) {
   time_t timestamp = 0;
-  absl::Status status =
-      grpc_core::GetFileModificationTime("/DOES_NOT_EXIST", &timestamp);
+  absl::Status status = GetFileModificationTime("/DOES_NOT_EXIST", &timestamp);
   EXPECT_EQ(status.code(), absl::StatusCode::kInternal);
   // Check the last modified date is not set.
   EXPECT_EQ(timestamp, 0);

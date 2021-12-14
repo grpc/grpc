@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,8 +16,9 @@
 from __future__ import print_function
 
 import re
-import six
 import subprocess
+
+import six
 
 
 class TestSuite:
@@ -113,7 +113,7 @@ _ALLOWLIST_DICT = {
 }
 
 # Regex that combines all keys in _ALLOWLIST_DICT
-_ALL_TRIGGERS = "(" + ")|(".join(_ALLOWLIST_DICT.keys()) + ")"
+_ALL_TRIGGERS = "(" + ")|(".join(list(_ALLOWLIST_DICT.keys())) + ")"
 
 # Add all triggers to their respective test suites
 for trigger, test_suites in six.iteritems(_ALLOWLIST_DICT):

@@ -1,15 +1,11 @@
 #====================
-# Python dependencies
+# Python dependencies to run tools/run_tests scripts
 
 # Install dependencies
 
-RUN apt-get update && apt-get install -y ${'\\'}
-    python-all-dev ${'\\'}
-    python3-all-dev ${'\\'}
-    python-setuptools
+RUN apt-get update && apt-get install -y python3-all-dev python3-pip
 
 # Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv==16.7.9
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
+RUN python3 -m pip install --upgrade pip==19.3.1
+RUN python3 -m pip install virtualenv==16.7.9
+RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0

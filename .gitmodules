@@ -7,7 +7,7 @@
 	ignore = dirty
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
-	url = https://github.com/google/protobuf.git
+	url = https://github.com/protocolbuffers/protobuf.git
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
@@ -40,12 +40,15 @@
 [submodule "third_party/protoc-gen-validate"]
 	path = third_party/protoc-gen-validate
 	url = https://github.com/envoyproxy/protoc-gen-validate.git
-[submodule "third_party/udpa"]
-	path = third_party/udpa
-	url = https://github.com/cncf/udpa.git
 [submodule "third_party/libuv"]
 	path = third_party/libuv
 	url = https://github.com/libuv/libuv.git
 [submodule "third_party/opencensus-proto"]
 	path = third_party/opencensus-proto
 	url = https://github.com/census-instrumentation/opencensus-proto.git
+[submodule "third_party/opentelemetry"]
+	path = third_party/opentelemetry
+	url = https://github.com/open-telemetry/opentelemetry-proto.git
+[submodule "third_party/xds"]
+	path = third_party/xds
+	url = https://github.com/cncf/xds.git

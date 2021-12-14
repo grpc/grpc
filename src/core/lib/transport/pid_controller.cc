@@ -31,8 +31,8 @@ double PidController::Update(double error, double dt) {
   if (dt <= 0) return last_control_value_;
   /* integrate error using the trapezoid rule */
   error_integral_ += dt * (last_error_ + error) * 0.5;
-  error_integral_ = GPR_CLAMP(error_integral_, -args_.integral_range(),
-                              args_.integral_range());
+  error_integral_ =
+      Clamp(error_integral_, -args_.integral_range(), args_.integral_range());
   double diff_error = (error - last_error_) / dt;
   /* calculate derivative of control value vs time */
   double dc_dt = args_.gain_p() * error + args_.gain_i() * error_integral_ +
@@ -40,8 +40,8 @@ double PidController::Update(double error, double dt) {
   /* and perform trapezoidal integration */
   double new_control_value =
       last_control_value_ + dt * (last_dc_dt_ + dc_dt) * 0.5;
-  new_control_value = GPR_CLAMP(new_control_value, args_.min_control_value(),
-                                args_.max_control_value());
+  new_control_value = Clamp(new_control_value, args_.min_control_value(),
+                            args_.max_control_value());
   last_error_ = error;
   last_dc_dt_ = dc_dt;
   last_control_value_ = new_control_value;

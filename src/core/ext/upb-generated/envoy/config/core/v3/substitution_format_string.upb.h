@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_CORE_V3_SUBSTITUTION_FORMAT_STRING_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_SUBSTITUTION_FORMAT_STRING_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -39,13 +39,19 @@ UPB_INLINE envoy_config_core_v3_SubstitutionFormatString *envoy_config_core_v3_S
 UPB_INLINE envoy_config_core_v3_SubstitutionFormatString *envoy_config_core_v3_SubstitutionFormatString_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_core_v3_SubstitutionFormatString *ret = envoy_config_core_v3_SubstitutionFormatString_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_SubstitutionFormatString_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_SubstitutionFormatString_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_core_v3_SubstitutionFormatString *envoy_config_core_v3_SubstitutionFormatString_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_core_v3_SubstitutionFormatString *ret = envoy_config_core_v3_SubstitutionFormatString_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_SubstitutionFormatString_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_SubstitutionFormatString_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_core_v3_SubstitutionFormatString_serialize(const envoy_config_core_v3_SubstitutionFormatString *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_core_v3_SubstitutionFormatString_msginit, arena, len);
@@ -116,6 +122,8 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_core_v
   if (!ok) return NULL;
   return sub;
 }
+
+extern const upb_msglayout_file envoy_config_core_v3_substitution_format_string_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

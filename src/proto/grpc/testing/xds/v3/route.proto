@@ -31,6 +31,18 @@ import "google/protobuf/wrappers.proto";
 // * Routing :ref:`architecture overview <arch_overview_http_routing>`
 // * HTTP :ref:`router filter <config_http_filters_router>`
 
+message RetryPolicy {
+  string retry_on = 1;
+  google.protobuf.UInt32Value num_retries = 2;
+
+  message RetryBackOff {
+    google.protobuf.Duration base_interval = 1;
+    google.protobuf.Duration max_interval = 2;
+  }
+
+  RetryBackOff retry_back_off = 8;
+}
+
 // The top level element in the routing configuration is a virtual host. Each virtual host has
 // a logical name as well as a set of domains that get routed to it based on the incoming request's
 // host header. This allows a single listener to service multiple top level domain path trees. Once
@@ -72,6 +84,8 @@ message VirtualHost {
   // specific; see the :ref:`HTTP filter documentation <config_http_filters>`
   // for if and how it is utilized.
   map<string, google.protobuf.Any> typed_per_filter_config = 15;
+
+  RetryPolicy retry_policy = 16;
 }
 
 // A route is both a specification of how to match a request as well as an indication of what to do
@@ -89,12 +103,21 @@ message Route {
   // Route matching parameters.
   RouteMatch match = 1;
 
+  message NonForwardingAction {
+  }  
+
   oneof action {
     // Route request to some upstream cluster.
     RouteAction route = 2;
 
     // Return a redirect.
     RedirectAction redirect = 3;
+
+    // An action used when the route will generate a response directly,
+    // without forwarding to an upstream host. This will be used in non-proxy
+    // xDS clients like the gRPC server. It could also be used in the future
+    // in Envoy for a filter that directly generates responses for requests.
+    NonForwardingAction non_forwarding_action = 18;
   }
 
   // The typed_per_filter_config field can be used to provide route-specific
@@ -246,6 +269,80 @@ message RouteAction {
     // for additional documentation.
     WeightedCluster weighted_clusters = 3;
   }
+
+  message HashPolicy {
+    message Header {
+      // The name of the request header that will be used to obtain the hash
+      // key. If the request header is not present, no hash will be produced.
+      string header_name = 1;
+
+      // If specified, the request header value will be rewritten and used
+      // to produce the hash key.
+      type.matcher.v3.RegexMatchAndSubstitute regex_rewrite = 2;
+    }
+    
+    message Cookie {
+      string name = 1;
+    }
+
+    message ConnectionProperties {
+      bool source_ip = 1;
+    }
+
+    message QueryParameter {
+      string name = 1;
+    }
+
+    message FilterState {
+      // The name of the Object in the per-request filterState, which is an
+      // Envoy::Http::Hashable object. If there is no data associated with the key,
+      // or the stored object is not Envoy::Http::Hashable, no hash will be produced.
+      string key = 1;
+    }
+
+    oneof policy_specifier {
+      // Header hash policy.
+      Header header = 1;
+
+      // Cookie hash policy.
+      Cookie cookie = 2;
+
+      // Connection properties hash policy.
+      ConnectionProperties connection_properties = 3;
+
+      // Query parameter hash policy.
+      QueryParameter query_parameter = 5;
+
+      // Filter state hash policy.
+      FilterState filter_state = 6;
+    }
+
+    // The flag that short-circuits the hash computing. This field provides a
+    // 'fallback' style of configuration: "if a terminal policy doesn't work,
+    // fallback to rest of the policy list", it saves time when the terminal
+    // policy works.
+    //
+    // If true, and there is already a hash computed, ignore rest of the
+    // list of hash polices.
+    // For example, if the following hash methods are configured:
+    //
+    //  ========= ========
+    //  specifier terminal
+    //  ========= ========
+    //  Header A  true
+    //  Header B  false
+    //  Header C  false
+    //  ========= ========
+    //
+    // The generateHash process ends if policy "header A" generates a hash, as
+    // it's a terminal policy.
+    bool terminal = 4;
+  }
+
+  repeated HashPolicy hash_policy = 15;
+
+  RetryPolicy retry_policy = 9;
+
   // Specifies the maximum stream duration for this route.
   MaxStreamDuration max_stream_duration = 36;
 }

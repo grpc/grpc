@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
@@ -25,10 +23,11 @@
 #include <iterator>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -81,26 +80,6 @@ extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 // interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
-  // Represents backend metrics reported by the backend to the client.
-  struct BackendMetricData {
-    /// CPU utilization expressed as a fraction of available CPU resources.
-    double cpu_utilization;
-    /// Memory utilization expressed as a fraction of available memory
-    /// resources.
-    double mem_utilization;
-    /// Total requests per second being served by the backend.  This
-    /// should include all services that a backend is responsible for.
-    uint64_t requests_per_second;
-    /// Application-specific requests cost metrics.  Metric names are
-    /// determined by the application.  Each value is an absolute cost
-    /// (e.g. 3487 bytes of storage) associated with the request.
-    std::map<absl::string_view, double> request_cost;
-    /// Application-specific resource utilization metrics.  Metric names
-    /// are determined by the application.  Each value is expressed as a
-    /// fraction of total resources available.
-    std::map<absl::string_view, double> utilization;
-  };
-
   /// Interface for accessing per-call state.
   /// Implemented by the client channel and used by the SubchannelPicker.
   class CallState {
@@ -114,13 +93,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// for allocations that need to be made on a per-call basis.
     virtual void* Alloc(size_t size) = 0;
 
-    /// Returns the backend metric data returned by the server for the call,
-    /// or null if no backend metric data was returned.
-    // TODO(roth): Move this out of CallState, since it should not be
-    // accessible to the picker, only to the recv_trailing_metadata_ready
-    // callback.  It should instead be in its own interface.
-    virtual const BackendMetricData* GetBackendMetricData() = 0;
-
     /// EXPERIMENTAL API.
     /// Returns the value of the call attribute \a key.
     /// Keys are static strings, so an attribute can be accessed by an LB
@@ -133,34 +105,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Implemented by the client channel and used by the SubchannelPicker.
   class MetadataInterface {
    public:
-    class iterator
-        : public std::iterator<
-              std::input_iterator_tag,
-              std::pair<absl::string_view, absl::string_view>,  // value_type
-              std::ptrdiff_t,  // difference_type
-              std::pair<absl::string_view, absl::string_view>*,  // pointer
-              std::pair<absl::string_view, absl::string_view>&   // reference
-              > {
-     public:
-      iterator(const MetadataInterface* md, intptr_t handle)
-          : md_(md), handle_(handle) {}
-      iterator& operator++() {
-        handle_ = md_->IteratorHandleNext(handle_);
-        return *this;
-      }
-      bool operator==(iterator other) const {
-        return md_ == other.md_ && handle_ == other.handle_;
-      }
-      bool operator!=(iterator other) const { return !(*this == other); }
-      value_type operator*() const { return md_->IteratorHandleGet(handle_); }
-
-     private:
-      friend class MetadataInterface;
-      const MetadataInterface* md_;
-      intptr_t handle_;
-    };
-
     virtual ~MetadataInterface() = default;
+
+    //////////////////////////////////////////////////////////////////////////
+    // TODO(ctiller): DO NOT MAKE THIS A PUBLIC API YET
+    // This needs some API design to ensure we can add/remove/replace metadata
+    // keys... we're deliberately not doing so to save some time whilst
+    // cleaning up the internal metadata representation, but we should add
+    // something back before making this a public API.
+    //////////////////////////////////////////////////////////////////////////
 
     /// Adds a key/value pair.
     /// Does NOT take ownership of \a key or \a value.
@@ -169,23 +122,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// CallState::Alloc().
     virtual void Add(absl::string_view key, absl::string_view value) = 0;
 
-    /// Iteration interface.
-    virtual iterator begin() const = 0;
-    virtual iterator end() const = 0;
+    /// Produce a vector of metadata key/value strings for tests.
+    virtual std::vector<std::pair<std::string, std::string>>
+    TestOnlyCopyToVector() = 0;
 
-    /// Removes the element pointed to by \a it.
-    /// Returns an iterator pointing to the next element.
-    virtual iterator erase(iterator it) = 0;
-
-   protected:
-    intptr_t GetIteratorHandle(const iterator& it) const { return it.handle_; }
-
-   private:
-    friend class iterator;
-
-    virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
-    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */>
-    IteratorHandleGet(intptr_t handle) const = 0;
+    virtual absl::optional<absl::string_view> Lookup(
+        absl::string_view key, std::string* buffer) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -202,49 +144,116 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     CallState* call_state;
   };
 
+  /// Interface for accessing backend metric data.
+  /// Implemented by the client channel and used by
+  /// SubchannelCallTrackerInterface.
+  class BackendMetricAccessor {
+   public:
+    // Represents backend metrics reported by the backend to the client.
+    struct BackendMetricData {
+      /// CPU utilization expressed as a fraction of available CPU resources.
+      double cpu_utilization;
+      /// Memory utilization expressed as a fraction of available memory
+      /// resources.
+      double mem_utilization;
+      /// Total requests per second being served by the backend.  This
+      /// should include all services that a backend is responsible for.
+      uint64_t requests_per_second;
+      /// Application-specific requests cost metrics.  Metric names are
+      /// determined by the application.  Each value is an absolute cost
+      /// (e.g. 3487 bytes of storage) associated with the request.
+      std::map<absl::string_view, double> request_cost;
+      /// Application-specific resource utilization metrics.  Metric names
+      /// are determined by the application.  Each value is expressed as a
+      /// fraction of total resources available.
+      std::map<absl::string_view, double> utilization;
+    };
+
+    virtual ~BackendMetricAccessor() = default;
+
+    /// Returns the backend metric data returned by the server for the call,
+    /// or null if no backend metric data was returned.
+    virtual const BackendMetricData* GetBackendMetricData() = 0;
+  };
+
+  /// Interface for tracking subchannel calls.
+  /// Implemented by LB policy and used by the channel.
+  class SubchannelCallTrackerInterface {
+   public:
+    virtual ~SubchannelCallTrackerInterface() = default;
+
+    /// Called when a subchannel call is started after an LB pick.
+    virtual void Start() = 0;
+
+    /// Called when a subchannel call is completed.
+    /// The metadata may be modified by the implementation.  However, the
+    /// implementation does not take ownership, so any data that needs to be
+    /// used after returning must be copied.
+    struct FinishArgs {
+      absl::Status status;
+      MetadataInterface* trailing_metadata;
+      BackendMetricAccessor* backend_metric_accessor;
+    };
+    virtual void Finish(FinishArgs args) = 0;
+  };
+
   /// The result of picking a subchannel for a call.
   struct PickResult {
-    enum ResultType {
-      /// Pick complete.  If \a subchannel is non-null, the client channel
-      /// will immediately proceed with the call on that subchannel;
-      /// otherwise, it will drop the call.
-      PICK_COMPLETE,
-      /// Pick cannot be completed until something changes on the control
-      /// plane.  The client channel will queue the pick and try again the
-      /// next time the picker is updated.
-      PICK_QUEUE,
-      /// Pick failed.  If the call is wait_for_ready, the client channel
-      /// will wait for the next picker and try again; otherwise, it
-      /// will immediately fail the call with the status indicated via
-      /// \a error (although the call may be retried if the client channel
-      /// is configured to do so).
-      PICK_FAILED,
+    /// A successful pick.
+    struct Complete {
+      /// The subchannel to be used for the call.  Must be non-null.
+      RefCountedPtr<SubchannelInterface> subchannel;
+
+      /// Optionally set by the LB policy when it wishes to be notified
+      /// about the resulting subchannel call.
+      /// Note that if the pick is abandoned by the channel, this may never
+      /// be used.
+      std::unique_ptr<SubchannelCallTrackerInterface> subchannel_call_tracker;
+
+      explicit Complete(
+          RefCountedPtr<SubchannelInterface> sc,
+          std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr)
+          : subchannel(std::move(sc)),
+            subchannel_call_tracker(std::move(tracker)) {}
     };
-    ResultType type;
 
-    /// Used only if type is PICK_COMPLETE.  Will be set to the selected
-    /// subchannel, or nullptr if the LB policy decides to drop the call.
-    RefCountedPtr<SubchannelInterface> subchannel;
+    /// Pick cannot be completed until something changes on the control
+    /// plane.  The client channel will queue the pick and try again the
+    /// next time the picker is updated.
+    struct Queue {};
 
-    /// Used only if type is PICK_FAILED.
-    /// Error to be set when returning a failure.
-    // TODO(roth): Replace this with something similar to grpc::Status,
-    // so that we don't expose grpc_error to this API.
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    /// Pick failed.  If the call is wait_for_ready, the client channel
+    /// will wait for the next picker and try again; otherwise, it
+    /// will immediately fail the call with the status indicated (although
+    /// the call may be retried if the client channel is configured to do so).
+    struct Fail {
+      absl::Status status;
 
-    /// Used only if type is PICK_COMPLETE.
-    /// Callback set by LB policy to be notified of trailing metadata.
-    /// If set by LB policy, the client channel will invoke the callback
-    /// when trailing metadata is returned.
-    /// The metadata may be modified by the callback.  However, the callback
-    /// does not take ownership, so any data that needs to be used after
-    /// returning must be copied.
-    /// The call state can be used to obtain backend metric data.
-    // TODO(roth): The arguments to this callback should be moved into a
-    // struct, so that we can later add new fields without breaking
-    // existing implementations.
-    std::function<void(grpc_error_handle, MetadataInterface*, CallState*)>
-        recv_trailing_metadata_ready;
+      explicit Fail(absl::Status s) : status(s) {}
+    };
+
+    /// Pick will be dropped with the status specified.
+    /// Unlike FailPick, the call will be dropped even if it is
+    /// wait_for_ready, and retries (if configured) will be inhibited.
+    struct Drop {
+      absl::Status status;
+
+      explicit Drop(absl::Status s) : status(s) {}
+    };
+
+    // A pick result must be one of these types.
+    // Default to Queue, just to allow default construction.
+    absl::variant<Complete, Queue, Fail, Drop> result = Queue();
+
+    PickResult() = default;
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Complete complete) : result(std::move(complete)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Queue queue) : result(queue) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Fail fail) : result(std::move(fail)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Drop drop) : result(std::move(drop)) {}
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
@@ -271,6 +280,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// A proxy object implemented by the client channel and used by the
   /// LB policy to communicate with the channel.
+  // TODO(roth): Once insecure builds go away, add methods for accessing
+  // channel creds.  By default, that should strip off the call creds
+  // attached to the channel creds, but there should also be a "use at
+  // your own risk" option to get the channel creds without stripping
+  // off the attached call creds.
   class ChannelControlHelper {
    public:
     ChannelControlHelper() = default;
@@ -288,6 +302,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;
+
+    /// Returns the channel authority.
+    virtual absl::string_view GetAuthority() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
@@ -309,8 +326,20 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Data passed to the UpdateLocked() method when new addresses and
   /// config are available.
   struct UpdateArgs {
-    ServerAddressList addresses;
+    /// A list of addresses, or an error indicating a failure to obtain the
+    /// list of addresses.
+    absl::StatusOr<ServerAddressList> addresses;
+    /// The LB policy config.
     RefCountedPtr<Config> config;
+    /// A human-readable note providing context about the name resolution that
+    /// provided this update.  LB policies may wish to include this message
+    /// in RPC failure status messages.  For example, if the update has an
+    /// empty list of addresses, this message might say "no DNS entries
+    /// found for <name>".
+    std::string resolution_note;
+
+    // TODO(roth): Before making this a public API, find a better
+    // abstraction for representing channel args.
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is
@@ -352,6 +381,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
   /// the resolver returns a new result.
+  // TODO(roth): Change this to return some indication as to whether the
+  // update has been accepted, so that we can indicate to the resolver
+  // whether it should go into backoff to retry the resolution.
   virtual void UpdateLocked(UpdateArgs) = 0;  // NOLINT
 
   /// Tries to enter a READY connectivity state.
@@ -367,7 +399,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // Note: This must be invoked while holding the work_serializer.
   void Orphan() override;
 
-  // A picker that returns PICK_QUEUE for all picks.
+  // A picker that returns PickResult::Queue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
   class QueuePicker : public SubchannelPicker {
@@ -384,16 +416,17 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     bool exit_idle_called_ = false;
   };
 
-  // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
+  // A picker that returns PickResult::Fail for all picks.
   class TransientFailurePicker : public SubchannelPicker {
    public:
-    explicit TransientFailurePicker(grpc_error_handle error) : error_(error) {}
-    ~TransientFailurePicker() override { GRPC_ERROR_UNREF(error_); }
+    explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 
-    PickResult Pick(PickArgs args) override;
+    PickResult Pick(PickArgs /*args*/) override {
+      return PickResult::Fail(status_);
+    }
 
    private:
-    grpc_error_handle error_;
+    absl::Status status_;
   };
 
  protected:
@@ -421,4 +454,4 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H

@@ -1,6 +1,33 @@
 /*
-** lupb_msg -- Message/Array/Map objects in Lua/C that wrap upb/msg.h
-*/
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * lupb_msg -- Message/Array/Map objects in Lua/C that wrap upb/msg.h
+ */
 
 #include "upb/msg.h"
 
@@ -363,6 +390,7 @@ static int lupb_array_checkindex(lua_State *L, int narg, uint32_t max) {
  *   Array(message_type)
  */
 static int lupb_array_new(lua_State *L) {
+  int arg_count = lua_gettop(L);
   lupb_array *larray;
   upb_arena *arena;
 
@@ -383,6 +411,17 @@ static int lupb_array_new(lua_State *L) {
 
   larray->arr = upb_array_new(arena, larray->type);
   lupb_cacheset(L, larray->arr);
+
+  if (arg_count > 1) {
+    /* Set initial fields from table. */
+    int msg = arg_count + 1;
+    lua_pushnil(L);
+    while (lua_next(L, 2) != 0) {
+      lua_pushvalue(L, -2);  /* now stack is key, val, key */
+      lua_insert(L, -3);  /* now stack is key, key, val */
+      lua_settable(L, msg);
+    }
+  }
 
   return 1;
 }
@@ -922,7 +961,7 @@ static int lupb_decode(lua_State *L) {
   buf = upb_arena_malloc(arena, len);
   memcpy(buf, pb, len);
 
-  ok = _upb_decode(buf, len, msg, layout, arena, UPB_DECODE_ALIAS);
+  ok = _upb_decode(buf, len, msg, layout, NULL, UPB_DECODE_ALIAS, arena);
 
   if (!ok) {
     lua_pushstring(L, "Error decoding protobuf.");

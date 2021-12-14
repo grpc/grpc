@@ -14,14 +14,15 @@
 """Test the time_remaining() method of async ServicerContext."""
 
 import asyncio
+import datetime
 import logging
 import unittest
-import datetime
 
 import grpc
 from grpc import aio
 
-from tests_aio.unit._common import ADHOC_METHOD, AdhocGenericHandler
+from tests_aio.unit._common import ADHOC_METHOD
+from tests_aio.unit._common import AdhocGenericHandler
 from tests_aio.unit._test_base import AioTestBase
 
 _REQUEST = b'\x09\x05'

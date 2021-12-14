@@ -16,16 +16,16 @@
  *
  */
 
-#include <grpc++/support/byte_buffer.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include <cstring>
 #include <vector>
 
+#include <gtest/gtest.h>
+
+#include <grpc++/support/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/slice.h>
-#include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
 
@@ -121,6 +121,35 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
   EXPECT_TRUE(status.ok());
   EXPECT_TRUE(owned);
   EXPECT_TRUE(send_buffer.Valid());
+}
+
+TEST_F(ByteBufferTest, TrySingleSliceWithSingleSlice) {
+  std::vector<Slice> slices;
+  slices.emplace_back(kContent1);
+  ByteBuffer buffer(&slices[0], 1);
+  Slice slice;
+  EXPECT_TRUE(buffer.TrySingleSlice(&slice).ok());
+  EXPECT_EQ(slice.size(), slices[0].size());
+  EXPECT_EQ(memcmp(slice.begin(), slices[0].begin(), slice.size()), 0);
+}
+
+TEST_F(ByteBufferTest, TrySingleSliceWithMultipleSlices) {
+  std::vector<Slice> slices;
+  slices.emplace_back(kContent1);
+  slices.emplace_back(kContent2);
+  ByteBuffer buffer(&slices[0], 2);
+  Slice slice;
+  EXPECT_FALSE(buffer.TrySingleSlice(&slice).ok());
+}
+
+TEST_F(ByteBufferTest, DumpToSingleSlice) {
+  std::vector<Slice> slices;
+  slices.emplace_back(kContent1);
+  slices.emplace_back(kContent2);
+  ByteBuffer buffer(&slices[0], 2);
+  Slice slice;
+  EXPECT_TRUE(buffer.DumpToSingleSlice(&slice).ok());
+  EXPECT_EQ(strlen(kContent1) + strlen(kContent2), slice.size());
 }
 
 }  // namespace

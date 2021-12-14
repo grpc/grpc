@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_GPR_TYPES_H
 #define GRPC_IMPL_CODEGEN_GPR_TYPES_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <stddef.h>

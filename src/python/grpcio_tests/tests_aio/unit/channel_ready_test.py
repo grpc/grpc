@@ -23,7 +23,8 @@ import unittest
 import grpc
 from grpc.experimental import aio
 
-from tests.unit.framework.common import get_socket, test_constants
+from tests.unit.framework.common import get_socket
+from tests.unit.framework.common import test_constants
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server

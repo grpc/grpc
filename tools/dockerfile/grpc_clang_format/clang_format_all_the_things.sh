@@ -16,13 +16,16 @@
 set -e
 
 # directories to run against
-DIRS="examples/cpp src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/csharp src/ruby third_party/address_sorting src/objective-c tools/distrib/python"
+DIRS="examples/cpp examples/android/binder src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/csharp src/ruby src/objective-c tools/distrib/python"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc *.m *.mm"
 
 # clang format command
 CLANG_FORMAT=${CLANG_FORMAT:-clang-format}
+
+# number of CPUs available
+CPU_COUNT=`nproc`
 
 files=
 for dir in $DIRS
@@ -41,7 +44,7 @@ fi
 
 if [ "$TEST" == "" ]
 then
-  echo $files | xargs $CLANG_FORMAT -i
+  echo $files | xargs -P $CPU_COUNT -n 10 $CLANG_FORMAT -i
 else
   ok=yes
   for file in $files

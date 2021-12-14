@@ -21,11 +21,12 @@
 #ifdef GPR_ANDROID
 
 #include <android/log.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
   switch (severity) {

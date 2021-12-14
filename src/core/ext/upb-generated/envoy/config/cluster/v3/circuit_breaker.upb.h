@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPB_H_
 #define ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -43,13 +43,19 @@ UPB_INLINE envoy_config_cluster_v3_CircuitBreakers *envoy_config_cluster_v3_Circ
 UPB_INLINE envoy_config_cluster_v3_CircuitBreakers *envoy_config_cluster_v3_CircuitBreakers_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_cluster_v3_CircuitBreakers *ret = envoy_config_cluster_v3_CircuitBreakers_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_cluster_v3_CircuitBreakers *envoy_config_cluster_v3_CircuitBreakers_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_cluster_v3_CircuitBreakers *ret = envoy_config_cluster_v3_CircuitBreakers_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_cluster_v3_CircuitBreakers_serialize(const envoy_config_cluster_v3_CircuitBreakers *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_cluster_v3_CircuitBreakers_msginit, arena, len);
@@ -80,13 +86,19 @@ UPB_INLINE envoy_config_cluster_v3_CircuitBreakers_Thresholds *envoy_config_clus
 UPB_INLINE envoy_config_cluster_v3_CircuitBreakers_Thresholds *envoy_config_cluster_v3_CircuitBreakers_Thresholds_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_cluster_v3_CircuitBreakers_Thresholds *ret = envoy_config_cluster_v3_CircuitBreakers_Thresholds_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_cluster_v3_CircuitBreakers_Thresholds *envoy_config_cluster_v3_CircuitBreakers_Thresholds_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_cluster_v3_CircuitBreakers_Thresholds *ret = envoy_config_cluster_v3_CircuitBreakers_Thresholds_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_cluster_v3_CircuitBreakers_Thresholds_serialize(const envoy_config_cluster_v3_CircuitBreakers_Thresholds *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_msginit, arena, len);
@@ -200,13 +212,19 @@ UPB_INLINE envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget *envoy
 UPB_INLINE envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget *envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget *ret = envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget *envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget *ret = envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_serialize(const envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_msginit, arena, len);
@@ -243,6 +261,8 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_CircuitBr
   }
   return sub;
 }
+
+extern const upb_msglayout_file envoy_config_cluster_v3_circuit_breaker_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

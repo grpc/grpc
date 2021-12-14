@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/type/v3/range.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -15,36 +15,49 @@
 #include "upb/port_def.inc"
 
 static const upb_msglayout_field envoy_type_v3_Int64Range__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 3, 1},
-  {2, UPB_SIZE(8, 8), 0, 0, 3, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(8, 8), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_type_v3_Int64Range_msginit = {
   NULL,
   &envoy_type_v3_Int64Range__fields[0],
-  UPB_SIZE(16, 16), 2, false, 255,
+  UPB_SIZE(16, 16), 2, _UPB_MSGEXT_NONE, 2, 255,
 };
 
 static const upb_msglayout_field envoy_type_v3_Int32Range__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 5, 1},
-  {2, UPB_SIZE(4, 4), 0, 0, 5, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 5, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(4, 4), 0, 0, 5, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_type_v3_Int32Range_msginit = {
   NULL,
   &envoy_type_v3_Int32Range__fields[0],
-  UPB_SIZE(8, 8), 2, false, 255,
+  UPB_SIZE(8, 8), 2, _UPB_MSGEXT_NONE, 2, 255,
 };
 
 static const upb_msglayout_field envoy_type_v3_DoubleRange__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 1, 1},
-  {2, UPB_SIZE(8, 8), 0, 0, 1, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 1, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(8, 8), 0, 0, 1, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_type_v3_DoubleRange_msginit = {
   NULL,
   &envoy_type_v3_DoubleRange__fields[0],
-  UPB_SIZE(16, 16), 2, false, 255,
+  UPB_SIZE(16, 16), 2, _UPB_MSGEXT_NONE, 2, 255,
+};
+
+static const upb_msglayout *messages_layout[3] = {
+  &envoy_type_v3_Int64Range_msginit,
+  &envoy_type_v3_Int32Range_msginit,
+  &envoy_type_v3_DoubleRange_msginit,
+};
+
+const upb_msglayout_file envoy_type_v3_range_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  3,
+  0,
 };
 
 #include "upb/port_undef.inc"

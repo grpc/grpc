@@ -17,10 +17,10 @@ from concurrent import futures
 import logging
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
-from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
+from request_header_validator_interceptor import \
+    RequestHeaderValidatorInterceptor
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):

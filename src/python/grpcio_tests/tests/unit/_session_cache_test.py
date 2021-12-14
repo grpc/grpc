@@ -13,16 +13,16 @@
 # limitations under the License.
 """Tests experimental TLS Session Resumption API"""
 
+import logging
 import pickle
 import unittest
-import logging
 
 import grpc
 from grpc import _channel
 from grpc.experimental import session_cache
 
-from tests.unit import test_common
 from tests.unit import resources
+from tests.unit import test_common
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x00\x00\x00'

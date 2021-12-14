@@ -20,8 +20,6 @@
 
 #ifdef GPR_POSIX_TMPFILE
 
-#include "src/core/lib/gpr/tmpfile.h"
-
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/tmpfile.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   FILE* result = nullptr;

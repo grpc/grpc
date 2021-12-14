@@ -186,6 +186,11 @@ UPB_INLINE const upb_msgdef *envoy_config_route_v3_DirectResponseAction_getmsgde
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.DirectResponseAction");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_route_v3_NonForwardingAction_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.route.v3.NonForwardingAction");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_route_v3_Decorator_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.route.v3.Decorator");

@@ -13,9 +13,9 @@
 # limitations under the License.
 """Porting auth context tests from sync stack."""
 
+import logging
 import pickle
 import unittest
-import logging
 
 import grpc
 from grpc.experimental import aio

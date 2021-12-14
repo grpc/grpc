@@ -24,8 +24,6 @@
 
 #include <limits.h>
 
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -36,6 +34,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
@@ -117,8 +116,6 @@ typedef struct grpc_tcp {
   grpc_slice_buffer* write_slices;
   grpc_slice_buffer* read_slices;
 
-  grpc_resource_user* resource_user;
-
   /* The IO Completion Port runs from another thread. We need some mechanism
      to protect ourselves when requesting a shutdown. */
   gpr_mu mu;
@@ -133,7 +130,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
-  grpc_resource_user_unref(tcp->resource_user);
   if (tcp->shutting_down) GRPC_ERROR_UNREF(tcp->shutdown_error);
   delete tcp;
 }
@@ -187,7 +183,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
   }
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
@@ -323,7 +319,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
   }
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;
@@ -467,7 +463,6 @@ static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   }
   grpc_winsocket_shutdown(tcp->socket);
   gpr_mu_unlock(&tcp->mu);
-  grpc_resource_user_shutdown(tcp->resource_user);
 }
 
 static void win_destroy(grpc_endpoint* ep) {
@@ -486,11 +481,6 @@ static absl::string_view win_get_local_address(grpc_endpoint* ep) {
   return tcp->local_address;
 }
 
-static grpc_resource_user* win_get_resource_user(grpc_endpoint* ep) {
-  grpc_tcp* tcp = (grpc_tcp*)ep;
-  return tcp->resource_user;
-}
-
 static int win_get_fd(grpc_endpoint* ep) { return -1; }
 
 static bool win_can_track_err(grpc_endpoint* ep) { return false; }
@@ -502,7 +492,6 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_delete_from_pollset_set,
                                       win_shutdown,
                                       win_destroy,
-                                      win_get_resource_user,
                                       win_get_peer,
                                       win_get_local_address,
                                       win_get_fd,
@@ -510,17 +499,7 @@ static grpc_endpoint_vtable vtable = {win_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
-                               const char* peer_string) {
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
-  if (channel_args != NULL) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_unref_internal(resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
-            (grpc_resource_quota*)channel_args->args[i].value.pointer.p);
-      }
-    }
-  }
+                               absl::string_view peer_string) {
   grpc_tcp* tcp = new grpc_tcp;
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
@@ -538,11 +517,8 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   } else {
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
-  tcp->peer_string = peer_string;
+  tcp->peer_string = std::string(peer_string);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
-  grpc_resource_quota_unref_internal(resource_quota);
-
   return &tcp->base;
 }
 

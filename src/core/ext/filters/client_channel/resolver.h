@@ -1,30 +1,30 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -53,13 +53,23 @@ class Resolver : public InternallyRefCounted<Resolver> {
  public:
   /// Results returned by the resolver.
   struct Result {
-    ServerAddressList addresses;
-    RefCountedPtr<ServiceConfig> service_config;
-    grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+    /// A list of addresses, or an error.
+    absl::StatusOr<ServerAddressList> addresses;
+    /// A service config, or an error.
+    absl::StatusOr<RefCountedPtr<ServiceConfig>> service_config = nullptr;
+    /// An optional human-readable note describing context about the resolution,
+    /// to be passed along to the LB policy for inclusion in RPC failure status
+    /// messages in cases where neither \a addresses nor \a service_config
+    /// has a non-OK status.  For example, a resolver that returns an empty
+    /// address list but a valid service config may set to this to something
+    /// like "no DNS entries found for <name>".
+    std::string resolution_note;
+    // TODO(roth): Before making this a public API, figure out a way to
+    // avoid exposing channel args this way.
     const grpc_channel_args* args = nullptr;
 
-    // TODO(roth): Remove everything below once grpc_error and
-    // grpc_channel_args are convert to copyable and movable C++ objects.
+    // TODO(roth): Remove everything below once grpc_channel_args is
+    // converted to a copyable and movable C++ object.
     Result() = default;
     ~Result();
     Result(const Result& other);
@@ -74,17 +84,11 @@ class Resolver : public InternallyRefCounted<Resolver> {
    public:
     virtual ~ResultHandler() {}
 
-    /// Returns a result to the channel.
-    /// Takes ownership of \a result.args.
-    virtual void ReturnResult(Result result) = 0;  // NOLINT
-
-    /// Returns a transient error to the channel.
-    /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
-    /// attribute on the error, calls will be failed with status UNKNOWN.
-    virtual void ReturnError(grpc_error_handle error) = 0;
-
-    // TODO(yashkt): As part of the service config error handling
-    // changes, add a method to parse the service config JSON string.
+    /// Reports a result to the channel.
+    // TODO(roth): Add a mechanism for the resolver to get back a signal
+    // indicating if the result was accepted by the LB policy, so that it
+    // knows whether to go into backoff to retry to resolution.
+    virtual void ReportResult(Result result) = 0;  // NOLINT
   };
 
   // Not copyable nor movable.
@@ -113,9 +117,6 @@ class Resolver : public InternallyRefCounted<Resolver> {
   /// Resets the re-resolution backoff, if any.
   /// This needs to be implemented only by pull-based implementations;
   /// for push-based implementations, it will be a no-op.
-  /// TODO(roth): Pull the backoff code out of resolver and into
-  /// client_channel, so that it can be shared across resolver
-  /// implementations.  At that point, this method can go away.
   virtual void ResetBackoffLocked() {}
 
   // Note: This must be invoked while holding the work_serializer.
@@ -133,4 +134,4 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H

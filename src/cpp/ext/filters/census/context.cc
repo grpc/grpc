@@ -18,10 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/cpp/ext/filters/census/context.h"
+
 #include "opencensus/tags/context_util.h"
 #include "opencensus/trace/context_util.h"
 #include "opencensus/trace/propagation/grpc_trace_bin.h"
-#include "src/cpp/ext/filters/census/context.h"
 
 namespace grpc {
 

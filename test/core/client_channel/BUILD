@@ -58,3 +58,17 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "rls_lb_config_parser_test",
+    srcs = ["rls_lb_config_parser_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_test_ios"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

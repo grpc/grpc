@@ -51,7 +51,7 @@ bundle install
 bundle exec ./distribtest.rb
 
 [[ "$PACKAGE_TYPE" == "source" ]] && exit 0
-# Attempt to repro https://github.com/google/protobuf/issues/4210.
+# Attempt to repro https://github.com/protocolbuffers/protobuf/issues/4210.
 # This sanity check only works for linux-based distrib tests and for
 # binary gRPC packages.
 INSTALLATION_DIR="$(gem env | grep '\- INSTALLATION DIRECTORY' | awk '{ print $4 }')"

@@ -15,6 +15,7 @@
 
 from libc cimport string
 import errno
+import sys
 gevent_g = None
 gevent_socket = None
 gevent_hub = None
@@ -348,11 +349,23 @@ cdef void destroy_loop() with gil:
 cdef void kick_loop() with gil:
   g_event.set()
 
-cdef void run_loop(size_t timeout_ms) with gil:
-    timeout = timeout_ms / 1000.0
-    if timeout_ms > 0:
+def _run_loop(timeout_ms):
+  timeout = timeout_ms / 1000.0
+  if timeout_ms > 0:
+    try:
       g_event.wait(timeout)
+    finally:
       g_event.clear()
+
+cdef grpc_error_handle run_loop(size_t timeout_ms) with gil:
+  try:
+    _run_loop(timeout_ms)
+    return grpc_error_none()
+  except BaseException:
+    exc_info = sys.exc_info()
+    # Avoid running any Python code after setting the exception
+    cpython.PyErr_SetObject(exc_info[0], exc_info[1])
+    return GRPC_ERROR_CANCELLED
 
 ###############################
 ### Initializer ###############

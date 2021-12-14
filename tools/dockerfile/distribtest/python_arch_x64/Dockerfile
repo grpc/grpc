@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM base/archlinux
+FROM archlinux:base
 
 RUN pacman --noconfirm -Syy
 RUN pacman --noconfirm -S openssl
-RUN pacman --noconfirm -S python2
-RUN pacman --noconfirm -S python2-pip
-RUN pip2 install virtualenv
+RUN pacman --noconfirm -S python
+RUN pacman --noconfirm -S python-pip
+RUN python3 -m pip install virtualenv

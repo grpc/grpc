@@ -13,8 +13,8 @@
 # limitations under the License.
 """Test of RPCs made against gRPC Python's application-layer API."""
 
-import unittest
 import logging
+import unittest
 
 import grpc
 

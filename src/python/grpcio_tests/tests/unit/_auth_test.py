@@ -14,9 +14,9 @@
 """Tests of standard AuthMetadataPlugins."""
 
 import collections
+import logging
 import threading
 import unittest
-import logging
 
 from grpc import _auth
 

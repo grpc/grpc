@@ -1,3 +1,31 @@
+--[[--------------------------------------------------------------------------
+
+  Copyright (c) 2009-2021, Google LLC
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+      * Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+      * Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+      * Neither the name of Google LLC nor the
+        names of its contributors may be used to endorse or promote products
+        derived from this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--]]--------------------------------------------------------------------------
 
 local upb = require "lupb"
 local lunit = require "lunit"
@@ -63,7 +91,7 @@ function test_def_readers()
   -- enum
   local e = test_messages_proto3['TestAllTypesProto3.NestedEnum']
   assert_true(#e > 3 and #e < 10)
-  assert_equal(2, e:value("BAZ"))
+  assert_equal(2, e:value("BAZ"):number())
 end
 
 function test_msg_map()
@@ -319,6 +347,16 @@ function test_msg_array()
   assert_error_match("array expected", function() msg.repeated_int32 = nil end)
   assert_error_match("array expected", function() msg.repeated_int32 = {} end)
   assert_error_match("array expected", function() msg.repeated_int32 = print end)
+end
+
+function test_array_append()
+  local arr = upb.Array(upb.TYPE_INT32)
+  for i=1,200000 do
+    arr[i] = i
+  end
+  for i=1,200000 do
+    assert_equal(i, arr[i])
+  end
 end
 
 function test_msg_submsg()
@@ -679,6 +717,39 @@ function test_descriptor_error()
   assert_nil(symtab:lookup_msg("ABC"))
 end
 
+function test_duplicate_enumval()
+  local symtab = upb.SymbolTable()
+  local file_proto = descriptor.FileDescriptorProto {
+    name = "test.proto",
+    message_type = upb.Array(descriptor.DescriptorProto, {
+      descriptor.DescriptorProto{
+        name = "ABC",
+      },
+    }),
+    enum_type = upb.Array(descriptor.EnumDescriptorProto, {
+      descriptor.EnumDescriptorProto{
+        name = "MyEnum",
+        value = upb.Array(descriptor.EnumValueDescriptorProto, {
+          descriptor.EnumValueDescriptorProto{
+            name = "ABC",
+            number = 1,
+          }
+        }),
+      },
+    })
+  }
+  assert_error(function () symtab:add_file(upb.encode(file_proto)) end)
+end
+
+function test_duplicate_filename_error()
+  local symtab = upb.SymbolTable()
+  local file = descriptor.FileDescriptorProto()
+  file.name = "test.proto"
+  symtab:add_file(upb.encode(file))
+  -- Second add with the same filename fails.
+  assert_error(function () symtab:add_file(upb.encode(file)) end)
+end
+
 function test_encode_skipunknown()
   -- Test that upb.ENCODE_SKIPUNKNOWN does not encode unknown fields.
   local msg = test_messages_proto3.TestAllTypesProto3{
@@ -700,6 +771,17 @@ function test_json_emit_defaults()
   local json = upb.json_encode(msg, {upb.JSONENC_EMITDEFAULTS})
 end
 
+function test_json_locale()
+  local msg = test_messages_proto3.TestAllTypesProto3()
+  msg.optional_double = 1.1
+  local original_locale = os.setlocale(nil)
+  os.setlocale("C")
+  local json = upb.json_encode(msg)
+  os.setlocale("de_DE.utf8")
+  assert_equal(json, upb.json_encode(msg))
+  os.setlocale(original_locale)  -- Restore.
+end
+
 function test_encode_depth_limit()
   local msg = test_messages_proto3.TestAllTypesProto3()
   msg.recursive_message = msg
@@ -712,6 +794,11 @@ function test_large_field_number()
   local serialized = upb.encode(msg)
   local msg2 = upb.decode(upb_test.TestLargeFieldNumber, serialized)
   assert_equal(msg.i32, msg2.i32)
+end
+
+function test_timestamp_minutes()
+  local msg = upb.json_decode(upb_test.TestTimestamp, '{"ts": "2000-01-01T00:00:00-06:59"}')
+  assert_equal(msg.ts.seconds, 946684800 + ((6 * 60) + 59) * 60)
 end
 
 function test_gc()

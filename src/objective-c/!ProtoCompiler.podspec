@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.15.8'
+  v = '3.18.1'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -45,7 +45,7 @@ Pod::Spec.new do |s|
     The generated code will have a dependency on the Protobuf Objective-C runtime of the same
     version. The runtime can be obtained as the "Protobuf" pod.
   DESC
-  s.homepage = 'https://github.com/google/protobuf'
+  s.homepage = 'https://github.com/protocolbuffers/protobuf'
   s.license  = {
     :type => 'New BSD',
     :text => <<-LICENSE
@@ -121,8 +121,9 @@ Pod::Spec.new do |s|
   # and, if absent, build it from the local sources.
   repo_root = '../..'
   bazel = "#{repo_root}/tools/bazel"
-  
+
   s.prepare_command = <<-CMD
+    set -e
     if [ ! -f bin/protoc ]; then
       #{bazel} build @com_google_protobuf//:protoc
     else

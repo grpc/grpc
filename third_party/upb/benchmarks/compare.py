@@ -1,4 +1,30 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
+#
+# Copyright (c) 2009-2021, Google LLC
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of Google LLC nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 """Benchmarks the current working directory against a given baseline.
 
 This script benchmarks both size and speed. Sample output:
@@ -38,27 +64,29 @@ def Benchmark(outbase, bench_cpu=True, runs=12, fasttable=False):
 
   if bench_cpu:
     Run("CC=clang bazel build -c opt --copt=-march=native benchmarks:benchmark" + extra_args)
-    Run("./bazel-bin/benchmarks/benchmark --benchmark_out_format=json --benchmark_out={} --benchmark_repetitions={}".format(tmpfile, runs))
+    Run("./bazel-bin/benchmarks/benchmark --benchmark_out_format=json --benchmark_out={} --benchmark_repetitions={} --benchmark_min_time=0.05 --benchmark_enable_random_interleaving=true".format(tmpfile, runs))
     with open(tmpfile) as f:
       bench_json = json.load(f)
 
     # Translate into the format expected by benchstat.
-    with open(outbase + ".txt", "w") as f:
+    txt_filename = outbase + ".txt"
+    with open(txt_filename, "w") as f:
       for run in bench_json["benchmarks"]:
+        if run["run_type"] == "aggregate":
+          continue
         name = run["name"]
         name = name.replace(" ", "")
         name = re.sub(r'^BM_', 'Benchmark', name)
-        if name.endswith("_mean") or name.endswith("_median") or name.endswith("_stddev"):
-          continue
         values = (name, run["iterations"], run["cpu_time"])
         print("{} {} {} ns/op".format(*values), file=f)
+    Run("sort {} -o {} ".format(txt_filename, txt_filename))
 
   Run("CC=clang bazel build -c opt --copt=-g tests:conformance_upb" + extra_args)
   Run("cp -f bazel-bin/tests/conformance_upb {}.bin".format(outbase))
 
 
-baseline = "master"
-bench_cpu = False
+baseline = "bm-interleave"
+bench_cpu = True
 fasttable = False
 
 if len(sys.argv) > 1:

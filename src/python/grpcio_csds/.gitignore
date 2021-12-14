@@ -2,5 +2,5 @@
 *_pb2.py
 *_pb2_grpc.py
 build/
-grpcio_channelz.egg-info/
+grpcio_csds.egg-info/
 dist/

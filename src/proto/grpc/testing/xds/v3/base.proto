@@ -96,6 +96,9 @@ message Node {
   repeated string client_features = 10;
 }
 
+// Data source consisting of either a file or an inline value.
+message DataSource {}
+
 // Runtime derived FractionalPercent with defaults for when the numerator or denominator is not
 // specified via a runtime key.
 //

@@ -91,23 +91,11 @@ TEST(StringMatcherTest, InvalidRegex) {
 
 TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
   auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
-                                              /*matcher=*/"regex.*",
-                                              /*case_sensitive=*/true);
+                                              /*matcher=*/"regex.*");
   ASSERT_TRUE(string_matcher.ok());
   EXPECT_TRUE(string_matcher->Match("regex-test"));
   EXPECT_FALSE(string_matcher->Match("xx-regex-test"));
   EXPECT_FALSE(string_matcher->Match("Regex-test"));
-  EXPECT_FALSE(string_matcher->Match("test-regex"));
-}
-
-TEST(StringMatcherTest, SafeRegexMatchCaseInSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
-                                              /*matcher=*/"regex.*",
-                                              /*case_sensitive=*/false);
-  ASSERT_TRUE(string_matcher.ok());
-  EXPECT_TRUE(string_matcher->Match("regex-test"));
-  EXPECT_TRUE(string_matcher->Match("Regex-test"));
-  EXPECT_FALSE(string_matcher->Match("xx-Regex-test"));
   EXPECT_FALSE(string_matcher->Match("test-regex"));
 }
 

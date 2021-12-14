@@ -24,13 +24,16 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "include/grpc++/grpc++.h"
-#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/tag_key.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
+#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -47,13 +50,25 @@ using ::opencensus::stats::testing::TestUtils;
 using ::opencensus::tags::TagKey;
 using ::opencensus::tags::WithTagMap;
 
-static const auto TEST_TAG_KEY = TagKey::Register("my_key");
-static const auto TEST_TAG_VALUE = "my_value";
+const auto TEST_TAG_KEY = TagKey::Register("my_key");
+const auto TEST_TAG_VALUE = "my_value";
+const char* kExpectedTraceIdKey = "expected_trace_id";
 
 class EchoServer final : public EchoTestService::Service {
-  ::grpc::Status Echo(::grpc::ServerContext* /*context*/,
+  ::grpc::Status Echo(::grpc::ServerContext* context,
                       const EchoRequest* request,
                       EchoResponse* response) override {
+    for (const auto& metadata : context->client_metadata()) {
+      if (metadata.first == kExpectedTraceIdKey) {
+        EXPECT_EQ(metadata.second, reinterpret_cast<const grpc::CensusContext*>(
+                                       context->census_context())
+                                       ->Span()
+                                       .context()
+                                       .trace_id()
+                                       .ToHex());
+        break;
+      }
+    }
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
       return ::grpc::Status::OK;
@@ -86,6 +101,10 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 
     stub_ = EchoTestService::NewStub(::grpc::CreateChannel(
         server_address_, ::grpc::InsecureChannelCredentials()));
+  }
+
+  void ResetStub(std::shared_ptr<Channel> channel) {
+    stub_ = EchoTestService::NewStub(channel);
   }
 
   void TearDown() override {
@@ -412,6 +431,121 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
                              ::testing::Property(&Distribution::mean,
                                                  ::testing::DoubleEq(1.0))))));
   }
+}
+
+TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
+  View client_retries_cumulative_view(ClientRetriesCumulative());
+  View client_transparent_retries_cumulative_view(
+      ClientTransparentRetriesCumulative());
+  View client_retry_delay_per_call_view(ClientRetryDelayPerCallCumulative());
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  const int count = 5;
+  for (int i = 0; i < count; ++i) {
+    {
+      ::grpc::ClientContext context;
+      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      ASSERT_TRUE(status.ok());
+      EXPECT_EQ("foo", response.message());
+    }
+    absl::SleepFor(absl::Milliseconds(500));
+    TestUtils::Flush();
+    EXPECT_THAT(
+        client_retries_cumulative_view.GetData().int_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
+    EXPECT_THAT(
+        client_transparent_retries_cumulative_view.GetData().int_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
+    EXPECT_THAT(
+        client_retry_delay_per_call_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::Property(&Distribution::mean, ::testing::Eq(0)))));
+  }
+}
+
+TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
+  View client_retries_cumulative_view(ClientRetriesCumulative());
+  View client_transparent_retries_cumulative_view(
+      ClientTransparentRetriesCumulative());
+  View client_retry_delay_per_call_view(ClientRetryDelayPerCallCumulative());
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
+  args.SetString(GRPC_ARG_SERVICE_CONFIG,
+                 "{\n"
+                 "  \"methodConfig\": [ {\n"
+                 "    \"name\": [\n"
+                 "      { \"service\": \"grpc.testing.EchoTestService\" }\n"
+                 "    ],\n"
+                 "    \"retryPolicy\": {\n"
+                 "      \"maxAttempts\": 3,\n"
+                 "      \"initialBackoff\": \"0.1s\",\n"
+                 "      \"maxBackoff\": \"120s\",\n"
+                 "      \"backoffMultiplier\": 1,\n"
+                 "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+                 "    }\n"
+                 "  } ]\n"
+                 "}");
+  auto channel =
+      CreateCustomChannel(server_address_, InsecureChannelCredentials(), args);
+  ResetStub(channel);
+  EchoRequest request;
+  request.mutable_param()->mutable_expected_error()->set_code(
+      StatusCode::ABORTED);
+  request.set_message("foo");
+  EchoResponse response;
+  const int count = 5;
+  for (int i = 0; i < count; ++i) {
+    {
+      ::grpc::ClientContext context;
+      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
+    }
+    absl::SleepFor(absl::Milliseconds(500));
+    TestUtils::Flush();
+    EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
+                ::testing::UnorderedElementsAre(
+                    ::testing::Pair(::testing::ElementsAre(client_method_name_),
+                                    ::testing::Eq((i + 1) * 2))));
+    EXPECT_THAT(
+        client_transparent_retries_cumulative_view.GetData().int_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
+    auto data = client_retry_delay_per_call_view.GetData().distribution_data();
+    for (const auto& entry : data) {
+      gpr_log(GPR_ERROR, "Mean Retry Delay %s: %lf ms", entry.first[0].c_str(),
+              entry.second.mean());
+    }
+    // We expect the retry delay to be around 100ms.
+    EXPECT_THAT(
+        client_retry_delay_per_call_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::Property(
+                &Distribution::mean,
+                ::testing::AllOf(::testing::Ge(50), ::testing::Le(300))))));
+  }
+}
+
+// Test that CensusContext object set by application is used.
+TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
+  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  ResetStub(channel);
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  ::grpc::ClientContext context;
+  ::grpc::CensusContext app_census_context("root",
+                                           ::opencensus::tags::TagMap{});
+  context.set_census_context(
+      reinterpret_cast<census_context*>(&app_census_context));
+  context.AddMetadata(kExpectedTraceIdKey,
+                      app_census_context.Span().context().trace_id().ToHex());
+  ::grpc::Status status = stub_->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok());
 }
 
 }  // namespace

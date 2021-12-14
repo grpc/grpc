@@ -9,7 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_FILTERS_COMMON_FAULT_V3_FAULT_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_FILTERS_COMMON_FAULT_V3_FAULT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -53,13 +53,19 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay *envoy_extensions
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay *envoy_extensions_filters_common_fault_v3_FaultDelay_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultDelay *ret = envoy_extensions_filters_common_fault_v3_FaultDelay_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay *envoy_extensions_filters_common_fault_v3_FaultDelay_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultDelay *ret = envoy_extensions_filters_common_fault_v3_FaultDelay_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_common_fault_v3_FaultDelay_serialize(const envoy_extensions_filters_common_fault_v3_FaultDelay *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit, arena, len);
@@ -125,13 +131,19 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay *envo
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay *envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay *ret = envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay *envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay *ret = envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_serialize(const envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit, arena, len);
@@ -147,13 +159,19 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit *envoy_extens
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit *envoy_extensions_filters_common_fault_v3_FaultRateLimit_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultRateLimit *ret = envoy_extensions_filters_common_fault_v3_FaultRateLimit_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit *envoy_extensions_filters_common_fault_v3_FaultRateLimit_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultRateLimit *ret = envoy_extensions_filters_common_fault_v3_FaultRateLimit_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_common_fault_v3_FaultRateLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit, arena, len);
@@ -219,13 +237,19 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit *e
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit *envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit *ret = envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit *envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit *ret = envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit, arena, len);
@@ -245,19 +269,27 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit *
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit *envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit *ret = envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit *envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit *ret = envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_serialize(const envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit, arena, len);
 }
 
 
+
+extern const upb_msglayout_file envoy_extensions_filters_common_fault_v3_fault_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

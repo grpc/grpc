@@ -21,6 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/byte_buffer_reader.h>  // IWYU pragma: export
 
 #endif /* GRPC_BYTE_BUFFER_READER_H */

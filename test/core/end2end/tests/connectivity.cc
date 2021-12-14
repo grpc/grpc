@@ -16,14 +16,13 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -34,10 +33,10 @@ typedef struct {
 } child_events;
 
 struct CallbackContext {
-  grpc_experimental_completion_queue_functor functor;
+  grpc_completion_queue_functor functor;
   gpr_event finished;
-  explicit CallbackContext(void (*cb)(
-      grpc_experimental_completion_queue_functor* functor, int success)) {
+  explicit CallbackContext(void (*cb)(grpc_completion_queue_functor* functor,
+                                      int success)) {
     functor.functor_run = cb;
     functor.inlineable = false;
     gpr_event_init(&finished);
@@ -174,8 +173,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
   cq_verifier_destroy(cqv);
 }
 
-static void cb_watch_connectivity(
-    grpc_experimental_completion_queue_functor* functor, int success) {
+static void cb_watch_connectivity(grpc_completion_queue_functor* functor,
+                                  int success) {
   CallbackContext* cb_ctx = reinterpret_cast<CallbackContext*>(functor);
 
   gpr_log(GPR_DEBUG, "cb_watch_connectivity called, verifying");
@@ -186,7 +185,7 @@ static void cb_watch_connectivity(
   gpr_event_set(&cb_ctx->finished, reinterpret_cast<void*>(1));
 }
 
-static void cb_shutdown(grpc_experimental_completion_queue_functor* functor,
+static void cb_shutdown(grpc_completion_queue_functor* functor,
                         int /*success*/) {
   CallbackContext* cb_ctx = reinterpret_cast<CallbackContext*>(functor);
 

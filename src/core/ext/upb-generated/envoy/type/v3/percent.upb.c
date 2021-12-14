@@ -7,7 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -16,24 +16,36 @@
 #include "upb/port_def.inc"
 
 static const upb_msglayout_field envoy_type_v3_Percent__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 1, 1},
+  {1, UPB_SIZE(0, 0), 0, 0, 1, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_type_v3_Percent_msginit = {
   NULL,
   &envoy_type_v3_Percent__fields[0],
-  UPB_SIZE(8, 8), 1, false, 255,
+  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
 };
 
 static const upb_msglayout_field envoy_type_v3_FractionalPercent__fields[2] = {
-  {1, UPB_SIZE(4, 4), 0, 0, 13, 1},
-  {2, UPB_SIZE(0, 0), 0, 0, 14, 1},
+  {1, UPB_SIZE(4, 4), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_type_v3_FractionalPercent_msginit = {
   NULL,
   &envoy_type_v3_FractionalPercent__fields[0],
-  UPB_SIZE(8, 8), 2, false, 255,
+  UPB_SIZE(8, 8), 2, _UPB_MSGEXT_NONE, 2, 255,
+};
+
+static const upb_msglayout *messages_layout[2] = {
+  &envoy_type_v3_Percent_msginit,
+  &envoy_type_v3_FractionalPercent_msginit,
+};
+
+const upb_msglayout_file envoy_type_v3_percent_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  2,
+  0,
 };
 
 #include "upb/port_undef.inc"

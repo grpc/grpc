@@ -64,28 +64,29 @@ enable_testing()
 add_library(port INTERFACE)
 add_library(upb
   ../upb/decode.c
-  ../upb/decode.int.h
+  ../upb/decode_internal.h
   ../upb/encode.c
   ../upb/msg.c
-  ../upb/msg.h
+  ../upb/msg_internal.h
   ../upb/table.c
-  ../upb/table.int.h
+  ../upb/table_internal.h
   ../upb/upb.c
-  ../upb/upb.int.h
+  ../upb/upb_internal.h
   ../upb/decode.h
   ../upb/encode.h
+  ../upb/msg.h
   ../upb/upb.h
   ../upb/upb.hpp)
 target_link_libraries(upb
   fastdecode
-  port
-  /third_party/wyhash)
+  port)
 add_library(fastdecode
-  ../upb/decode.int.h
+  ../upb/decode_internal.h
   ../upb/decode_fast.c
   ../upb/decode_fast.h
   ../upb/msg.h
-  ../upb/upb.int.h)
+  ../upb/msg_internal.h
+  ../upb/upb_internal.h)
 target_link_libraries(fastdecode
   port
   table)
@@ -99,7 +100,8 @@ add_library(reflection
   ../upb/reflection.c
   ../upb/def.h
   ../upb/def.hpp
-  ../upb/reflection.h)
+  ../upb/reflection.h
+  ../upb/reflection.hpp)
 target_link_libraries(reflection
   descriptor_upb_proto
   port
@@ -123,43 +125,5 @@ target_link_libraries(json
 add_library(table INTERFACE)
 target_link_libraries(table INTERFACE
   port)
-add_library(handlers
-  ../upb/handlers.c
-  ../upb/handlers-inl.h
-  ../upb/sink.c
-  ../upb/handlers.h
-  ../upb/sink.h)
-target_link_libraries(handlers
-  port
-  reflection
-  table
-  upb)
-add_library(upb_pb
-  ../upb/pb/compile_decoder.c
-  ../upb/pb/decoder.c
-  ../upb/pb/decoder.int.h
-  ../upb/pb/encoder.c
-  ../upb/pb/textprinter.c
-  ../upb/pb/varint.c
-  ../upb/pb/varint.int.h
-  ../upb/pb/decoder.h
-  ../upb/pb/encoder.h
-  ../upb/pb/textprinter.h)
-target_link_libraries(upb_pb
-  descriptor_upb_proto
-  handlers
-  port
-  reflection
-  table
-  upb)
-add_library(upb_json
-  ../cmake/upb/json/parser.c
-  ../upb/json/printer.c
-  ../upb/json/parser.h
-  ../upb/json/printer.h)
-target_link_libraries(upb_json
-  upb
-  upb_pb)
-add_library(wyhash INTERFACE)
 
 

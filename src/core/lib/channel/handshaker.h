@@ -23,9 +23,8 @@
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/support/string_util.h>
-
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"

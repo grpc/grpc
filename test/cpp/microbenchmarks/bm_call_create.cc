@@ -19,9 +19,11 @@
 /* This benchmark exists to ensure that the benchmark integration is
  * working */
 
-#include <benchmark/benchmark.h>
 #include <string.h>
+
 #include <sstream>
+
+#include <benchmark/benchmark.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -37,8 +39,10 @@
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
 #include "src/cpp/client/create_channel_internal.h"
@@ -46,6 +50,10 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 void BM_Zalloc(benchmark::State& state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting
@@ -321,6 +329,7 @@ static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
+      const grpc_resolved_address& /*address*/,
       const grpc_channel_args* /*args*/) override {
     return nullptr;
   }
@@ -446,7 +455,7 @@ class NoOp {
  public:
   class Op {
    public:
-    Op(NoOp* /*p*/, grpc_call_stack* /*s*/) {}
+    Op(NoOp* /*p*/, grpc_call_stack* /*s*/, grpc_core::Arena*) {}
     void Finish() {}
   };
 };
@@ -463,11 +472,11 @@ class SendEmptyMetadata {
 
   class Op {
    public:
-    Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/) {
-      grpc_metadata_batch_init(&batch_);
+    Op(SendEmptyMetadata* p, grpc_call_stack* /*s*/, grpc_core::Arena* arena)
+        : batch_(arena) {
       p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
     }
-    void Finish() { grpc_metadata_batch_destroy(&batch_); }
+    void Finish() {}
 
    private:
     grpc_metadata_batch batch_;
@@ -532,26 +541,28 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   TestOp test_op_data;
   const int kArenaSize = 4096;
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
-  grpc_call_element_args call_args{call_stack,
-                                   nullptr,
-                                   context,
-                                   method,
-                                   start_time,
-                                   deadline,
-                                   grpc_core::Arena::Create(kArenaSize),
-                                   nullptr};
+  grpc_call_element_args call_args{
+      call_stack,
+      nullptr,
+      context,
+      method,
+      start_time,
+      deadline,
+      grpc_core::Arena::Create(kArenaSize, g_memory_allocator),
+      nullptr};
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(
         grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
-    typename TestOp::Op op(&test_op_data, call_stack);
+    typename TestOp::Op op(&test_op_data, call_stack, call_args.arena);
     grpc_call_stack_destroy(call_stack, &final_info, nullptr);
     op.Finish();
     grpc_core::ExecCtx::Get()->Flush();
     // recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
       call_args.arena->Destroy();
-      call_args.arena = grpc_core::Arena::Create(kArenaSize);
+      call_args.arena =
+          grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
     }
   }
   call_args.arena->Destroy();
@@ -693,17 +704,23 @@ class IsolatedCallFixture : public TrackCounters {
     // the grpc_shutdown() run by grpc_channel_destroy().  So we need to
     // call grpc_init() manually here to balance things out.
     grpc_init();
+    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                        .channel_args_preconditioning()
+                                        .PreconditionChannelArgs(nullptr);
     grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
     grpc_channel_stack_builder_set_name(builder, "phony");
     grpc_channel_stack_builder_set_target(builder, "phony_target");
+    grpc_channel_stack_builder_set_channel_arguments(builder, args);
     GPR_ASSERT(grpc_channel_stack_builder_append_filter(
         builder, &isolated_call_filter::isolated_call_filter, nullptr,
         nullptr));
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL);
+      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL,
+                                                  nullptr);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel_args_destroy(args);
   }
 
   void Finish(benchmark::State& state) override {

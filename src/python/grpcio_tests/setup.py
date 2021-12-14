@@ -18,9 +18,8 @@ import os
 import os.path
 import sys
 
-import setuptools
-
 import grpc_tools.command
+import setuptools
 
 PY3 = sys.version_info.major == 3
 

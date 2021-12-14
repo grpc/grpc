@@ -23,7 +23,8 @@
 
 #include <stdbool.h>
 
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 
 typedef struct grpc_iomgr_object {
   char* name;
@@ -44,7 +45,7 @@ typedef struct grpc_iomgr_platform_vtable {
 void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name);
 void grpc_iomgr_unregister_object(grpc_iomgr_object* obj);
 
-void grpc_determine_iomgr_platform();
+bool grpc_have_determined_iomgr_platform();
 
 void grpc_set_iomgr_platform_vtable(grpc_iomgr_platform_vtable* vtable);
 

@@ -17,6 +17,7 @@
 #include "src/core/lib/transport/error_utils.h"
 
 #include <gtest/gtest.h>
+
 #include "absl/status/status.h"
 
 #include "src/core/lib/slice/slice_internal.h"
@@ -40,7 +41,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
 // ---- Asymmetry of conversions of "Special" errors ----
 TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
   grpc_error_handle error =
-      absl_status_to_grpc_error(absl::CancelledError("Cancelled"));
+      absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
   ASSERT_NE(error, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
@@ -48,13 +49,13 @@ TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
 TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_CANCELLED);
   ASSERT_TRUE(absl::IsCancelled(status));
-  ASSERT_EQ(status.message(), "Cancelled");
+  ASSERT_EQ(status.message(), "CANCELLED");
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_OOM);
   ASSERT_TRUE(absl::IsResourceExhausted(status));
-  ASSERT_EQ(status.message(), "Out of memory");
+  ASSERT_EQ(status.message(), "RESOURCE_EXHAUSTED");
 }
 
 // ---- Ordinary statuses ----
@@ -66,11 +67,9 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
   ASSERT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &code));
   ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
   // Status message checks
-  grpc_slice message;
+  std::string message;
   ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
-  absl::string_view str = grpc_core::StringViewFromSlice(message);
-  ASSERT_EQ(str, "Making tea");
-  grpc_slice_unref(message);
+  ASSERT_EQ(message, "Making tea");
   GRPC_ERROR_UNREF(error);
 }
 

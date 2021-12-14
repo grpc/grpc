@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/http/httpcli.h"
-
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -30,9 +28,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -96,10 +95,8 @@ class grpc_httpcli_ssl_channel_security_connector final
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&
         !tsi_ssl_peer_matches_name(&peer, secure_peer_name_)) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Peer name ", secure_peer_name_,
-                       " is not in peer certificate")
-              .c_str());
+      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Peer name ", secure_peer_name_, " is not in peer certificate"));
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
@@ -206,7 +203,7 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
   grpc_channel_args args = {1, &channel_arg};
   c->handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-  grpc_core::HandshakerRegistry::AddHandshakers(
+  grpc_core::CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       grpc_core::HANDSHAKER_CLIENT, &args,
       /*interested_parties=*/nullptr, c->handshake_mgr.get());
   c->handshake_mgr->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,

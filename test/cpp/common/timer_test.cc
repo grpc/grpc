@@ -16,14 +16,16 @@
  *
  */
 
+#include "src/core/lib/iomgr/timer.h"
+
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 

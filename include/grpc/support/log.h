@@ -21,6 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/log.h>
+#include <grpc/impl/codegen/log.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_LOG_H */

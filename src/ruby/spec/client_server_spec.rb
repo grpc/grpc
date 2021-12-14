@@ -311,7 +311,7 @@ shared_examples 'basic GRPC message delivery is OK' do
 
   it 'clients can cancel a call on the server' do
     expected_code = StatusCodes::CANCELLED
-    expected_details = 'Cancelled'
+    expected_details = 'CANCELLED'
     cancel_proc = proc { |call| call.cancel }
     client_cancel_test(cancel_proc, expected_code, expected_details)
   end

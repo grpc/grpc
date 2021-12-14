@@ -23,12 +23,11 @@
 #include <set>
 #include <vector>
 
+#include <grpcpp/channel.h>
 #include <grpcpp/support/config.h>
 
-#include "test/cpp/qps/driver.h"
-
-#include <grpcpp/channel.h>
 #include "src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h"
+#include "test/cpp/qps/driver.h"
 
 namespace grpc {
 namespace testing {

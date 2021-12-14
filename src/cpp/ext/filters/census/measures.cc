@@ -21,6 +21,7 @@
 #include "src/cpp/ext/filters/census/measures.h"
 
 #include "opencensus/stats/stats.h"
+
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
 namespace grpc {
@@ -85,6 +86,32 @@ MeasureInt64 RpcClientReceivedMessagesPerRpc() {
   static const auto measure =
       MeasureInt64::Register(kRpcClientReceivedMessagesPerRpcMeasureName,
                              "Number of messages received per RPC", kCount);
+  return measure;
+}
+
+// Client per-overall-client-call measures
+MeasureInt64 RpcClientRetriesPerCall() {
+  static const auto measure =
+      MeasureInt64::Register(kRpcClientRetriesPerCallMeasureName,
+                             "Number of retry or hedging attempts excluding "
+                             "transparent retries made during the client call",
+                             kCount);
+  return measure;
+}
+
+MeasureInt64 RpcClientTransparentRetriesPerCall() {
+  static const auto measure = MeasureInt64::Register(
+      kRpcClientTransparentRetriesPerCallMeasureName,
+      "Number of transparent retries made during the client call", kCount);
+  return measure;
+}
+
+MeasureDouble RpcClientRetryDelayPerCall() {
+  static const auto measure =
+      MeasureDouble::Register(kRpcClientRetryDelayPerCallMeasureName,
+                              "Total time of delay while there is no active "
+                              "attempt during the client call",
+                              kUnitMilliseconds);
   return measure;
 }
 

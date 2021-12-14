@@ -34,7 +34,8 @@ class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest
 
                                 return $a_copy;
                               },
-         ]);
+            ] + self::$clientOptions
+        );
     }
 
     public function tearDown(): void

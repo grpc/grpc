@@ -27,11 +27,11 @@
 
 import argparse
 import sys
-
-from typing import Any, Dict, Iterable, Mapping, Type
+from typing import Any, Dict, Iterable, List, Mapping, Type
 
 import yaml
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import loadtest_config
 
 TEMPLATE_FILE_HEADER_COMMENT = """
@@ -48,20 +48,42 @@ TEMPLATE_FILE_HEADER_COMMENT = """
 """
 
 
+def insert_worker(worker: Dict[str, Any], workers: List[Dict[str,
+                                                             Any]]) -> None:
+    """Inserts client or server into a list, without inserting duplicates."""
+
+    def dump(w):
+        return yaml.dump(w, Dumper=yaml.SafeDumper, default_flow_style=False)
+
+    worker_str = dump(worker)
+    if any((worker_str == dump(w) for w in workers)):
+        return
+    workers.append(worker)
+
+
+def uniquify_workers(workermap: Dict[str, List[Dict[str, Any]]]) -> None:
+    """Name workers if there is more than one for the same map key."""
+    for workers in list(workermap.values()):
+        if len(workers) <= 1:
+            continue
+        for i, worker in enumerate(workers):
+            worker['name'] = str(i)
+
+
 def loadtest_template(
         input_file_names: Iterable[str],
         metadata: Mapping[str, Any],
         inject_client_pool: bool,
+        inject_driver_image: bool,
+        inject_driver_pool: bool,
         inject_server_pool: bool,
         inject_big_query_table: bool,
         inject_timeout_seconds: bool,
         inject_ttl_seconds: bool) -> Dict[str, Any]:  # yapf: disable
     """Generates the load test template."""
-    clients = list()
-    servers = list()
-    spec = dict()
-    client_languages = set()
-    server_languages = set()
+    spec = dict()  # type: Dict[str, Any]
+    clientmap = dict()  # Dict[str, List[Dict[str, Any]]]
+    servermap = dict()  # Dict[Str, List[Dict[str, Any]]]
     template = {
         'apiVersion': 'e2etest.grpc.io/v1',
         'kind': 'LoadTest',
@@ -79,20 +101,20 @@ def loadtest_template(
                     input_file_name, input_config.get('kind')))
 
             for client in input_config['spec']['clients']:
-                if client['language'] in client_languages:
-                    continue
+                del client['name']
                 if inject_client_pool:
                     client['pool'] = '${client_pool}'
-                clients.append(client)
-                client_languages.add(client['language'])
+                if client['language'] not in clientmap:
+                    clientmap[client['language']] = []
+                insert_worker(client, clientmap[client['language']])
 
             for server in input_config['spec']['servers']:
-                if server['language'] in server_languages:
-                    continue
+                del server['name']
                 if inject_server_pool:
                     server['pool'] = '${server_pool}'
-                servers.append(server)
-                server_languages.add(server['language'])
+                if server['language'] not in servermap:
+                    servermap[server['language']] = []
+                insert_worker(server, servermap[server['language']])
 
             input_spec = input_config['spec']
             del input_spec['clients']
@@ -100,13 +122,35 @@ def loadtest_template(
             del input_spec['scenariosJSON']
             spec.update(input_config['spec'])
 
-    clients.sort(key=lambda x: x['language'])
-    servers.sort(key=lambda x: x['language'])
+    uniquify_workers(clientmap)
+    uniquify_workers(servermap)
 
     spec.update({
-        'clients': clients,
-        'servers': servers,
+        'clients':
+            sum((clientmap[language] for language in sorted(clientmap)),
+                start=[]),
+        'servers':
+            sum((servermap[language] for language in sorted(servermap)),
+                start=[]),
     })
+
+    if 'driver' not in spec:
+        spec['driver'] = {'language': 'cxx'}
+
+    driver = spec['driver']
+    if 'name' in driver:
+        del driver['name']
+    if inject_driver_image:
+        if 'run' not in driver:
+            driver['run'] = {}
+        driver['run']['image'] = '${driver_image}'
+    if inject_driver_pool:
+        driver['pool'] = '${driver_pool}'
+
+    if 'run' not in driver:
+        if inject_driver_pool:
+            raise ValueError('Cannot inject driver.pool: missing driver.run.')
+        del spec['driver']
 
     if inject_big_query_table:
         if 'results' not in spec:
@@ -133,14 +177,14 @@ def template_dumper(header_comment: str) -> Type[yaml.SafeDumper]:
                 self.write_indent()
                 self.write_indicator(header_comment, need_whitespace=False)
 
-        def expect_block_sequence(self):
-            super().expect_block_sequence()
-            self.increase_indent()
+    def str_presenter(dumper, data):
+        if '\n' in data:
+            return dumper.represent_scalar('tag:yaml.org,2002:str',
+                                           data,
+                                           style='|')
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
-        def expect_block_sequence_item(self, first=False):
-            if isinstance(self.event, yaml.SequenceEndEvent):
-                self.indent = self.indents.pop()
-            super().expect_block_sequence_item(first)
+    TemplateDumper.add_representer(str, str_presenter)
 
     return TemplateDumper
 
@@ -163,6 +207,14 @@ def main() -> None:
         '--inject_client_pool',
         action='store_true',
         help='Set spec.client(s).pool values to \'${client_pool}\'.')
+    argp.add_argument(
+        '--inject_driver_image',
+        action='store_true',
+        help='Set spec.driver(s).image values to \'${driver_image}\'.')
+    argp.add_argument(
+        '--inject_driver_pool',
+        action='store_true',
+        help='Set spec.driver(s).pool values to \'${driver_pool}\'.')
     argp.add_argument(
         '--inject_server_pool',
         action='store_true',
@@ -200,6 +252,8 @@ def main() -> None:
         input_file_names=args.inputs,
         metadata=metadata,
         inject_client_pool=args.inject_client_pool,
+        inject_driver_image=args.inject_driver_image,
+        inject_driver_pool=args.inject_driver_pool,
         inject_server_pool=args.inject_server_pool,
         inject_big_query_table=args.inject_big_query_table,
         inject_timeout_seconds=args.inject_timeout_seconds,

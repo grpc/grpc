@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -87,10 +88,8 @@ static grpc_error_handle process_plugin_result(
     size_t num_md, grpc_status_code status, const char* error_details) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (status != GRPC_STATUS_OK) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Getting metadata from plugin failed with error: ",
-                     error_details)
-            .c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Getting metadata from plugin failed with error: ", error_details));
   } else {
     bool seen_illegal_header = false;
     for (size_t i = 0; i < num_md; ++i) {
@@ -161,8 +160,7 @@ bool grpc_plugin_credentials::get_request_metadata(
   bool retval = true;  // Synchronous return.
   if (plugin_.get_metadata != nullptr) {
     // Create pending_request object.
-    pending_request* request =
-        static_cast<pending_request*>(gpr_zalloc(sizeof(*request)));
+    pending_request* request = grpc_core::Zalloc<pending_request>();
     request->creds = this;
     request->md_array = md_array;
     request->on_request_metadata = on_request_metadata;

@@ -36,6 +36,11 @@ UPB_INLINE const upb_msgdef *envoy_service_status_v3_ClientConfig_getmsgdef(upb_
   return upb_symtab_lookupmsg(s, "envoy.service.status.v3.ClientConfig");
 }
 
+UPB_INLINE const upb_msgdef *envoy_service_status_v3_ClientConfig_GenericXdsConfig_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.service.status.v3.ClientConfig.GenericXdsConfig");
+}
+
 UPB_INLINE const upb_msgdef *envoy_service_status_v3_ClientStatusResponse_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.service.status.v3.ClientStatusResponse");

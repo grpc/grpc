@@ -20,7 +20,7 @@ If you plan to build using CMake
 If you are a contributor and plan to build and run tests, install the following as well:
 ```sh
  $ # clang and LLVM C++ lib is only required for sanitizer builds
- $ [sudo] apt-get install clang-5.0 libc++-dev
+ $ [sudo] apt-get install clang libc++-dev
 ```
 
 ## MacOS
@@ -269,10 +269,10 @@ $ make
 
 ### A note on `protoc`
 
-By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
+By default gRPC uses [protocol buffers](https://github.com/protocolbuffers/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
 
-If you compile gRPC from source, as described below, the Makefile will
+If you compile gRPC from source, as described above, the Makefile will
 automatically try compiling the `protoc` in third_party if you cloned the
 repository recursively and it detects that you do not already have 'protoc' compiler
 installed.

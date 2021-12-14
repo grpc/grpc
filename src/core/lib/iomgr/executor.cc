@@ -27,12 +27,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
 
 #define MAX_DEPTH 2
 
@@ -53,7 +52,7 @@
 namespace grpc_core {
 namespace {
 
-GPR_TLS_DECL(g_this_thread_state);
+GPR_THREAD_LOCAL(ThreadState*) g_this_thread_state;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
@@ -92,7 +91,7 @@ TraceFlag executor_trace(false, "executor");
 Executor::Executor(const char* name) : name_(name) {
   adding_thread_lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   gpr_atm_rel_store(&num_threads_, 0);
-  max_threads_ = GPR_MAX(1, 2 * gpr_cpu_num_cores());
+  max_threads_ = std::max(1u, 2 * gpr_cpu_num_cores());
 }
 
 void Executor::Init() { SetThreading(true); }
@@ -109,13 +108,12 @@ size_t Executor::RunClosures(const char* executor_name,
   // invoked on its destruction, which will be after completing any closures in
   // the executor's closure list (which were explicitly scheduled onto the
   // executor).
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
+  ApplicationCallbackExecCtx callback_exec_ctx(
       GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
   grpc_closure* c = list.head;
   while (c != nullptr) {
     grpc_closure* next = c->next_data.next;
-    grpc_error_handle error = c->error_data.error;
 #ifndef NDEBUG
     EXECUTOR_TRACE("(%s) run %p [created by %s:%d]", executor_name, c,
                    c->file_created, c->line_created);
@@ -123,11 +121,21 @@ size_t Executor::RunClosures(const char* executor_name,
 #else
     EXECUTOR_TRACE("(%s) run %p", executor_name, c);
 #endif
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    grpc_error_handle error =
+        internal::StatusMoveFromHeapPtr(c->error_data.error);
+    c->error_data.error = 0;
+    c->cb(c->cb_arg, std::move(error));
+#else
+    grpc_error_handle error =
+        reinterpret_cast<grpc_error_handle>(c->error_data.error);
+    c->error_data.error = 0;
     c->cb(c->cb_arg, error);
     GRPC_ERROR_UNREF(error);
+#endif
     c = next;
     n++;
-    grpc_core::ExecCtx::Get()->Flush();
+    ExecCtx::Get()->Flush();
   }
 
   return n;
@@ -157,12 +165,11 @@ void Executor::SetThreading(bool threading) {
       gpr_cv_init(&thd_state_[i].cv);
       thd_state_[i].id = i;
       thd_state_[i].name = name_;
-      thd_state_[i].thd = grpc_core::Thread();
+      thd_state_[i].thd = Thread();
       thd_state_[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
-    thd_state_[0].thd =
-        grpc_core::Thread(name_, &Executor::ThreadMain, &thd_state_[0]);
+    thd_state_[0].thd = Thread(name_, &Executor::ThreadMain, &thd_state_[0]);
     thd_state_[0].thd.Start();
   } else {  // !threading
     if (curr_num_threads == 0) {
@@ -203,8 +210,8 @@ void Executor::SetThreading(bool threading) {
     // finish. Thus, never call Executor::SetThreading(false) in the middle of
     // an application.
     // TODO(guantaol): create another method to finish all the pending closures
-    // registered in the background poller by grpc_core::Executor.
-    grpc_iomgr_shutdown_background_closure();
+    // registered in the background poller by Executor.
+    grpc_iomgr_platform_shutdown_background_closure();
   }
 
   EXECUTOR_TRACE("(%s) SetThreading(%d) done", name_, threading);
@@ -214,9 +221,9 @@ void Executor::Shutdown() { SetThreading(false); }
 
 void Executor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
-  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(ts));
+  g_this_thread_state = ts;
 
-  grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
+  ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
   size_t subtract_depth = 0;
   for (;;) {
@@ -237,28 +244,22 @@ void Executor::ThreadMain(void* arg) {
       break;
     }
 
-    GRPC_STATS_INC_EXECUTOR_QUEUE_DRAINED();
     grpc_closure_list closures = ts->elems;
     ts->elems = GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
 
     EXECUTOR_TRACE("(%s) [%" PRIdPTR "]: execute", ts->name, ts->id);
 
-    grpc_core::ExecCtx::Get()->InvalidateNow();
+    ExecCtx::Get()->InvalidateNow();
     subtract_depth = RunClosures(ts->name, closures);
   }
 
-  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
+  g_this_thread_state = nullptr;
 }
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
                        bool is_short) {
   bool retry_push;
-  if (is_short) {
-    GRPC_STATS_INC_EXECUTOR_SCHEDULED_SHORT_ITEMS();
-  } else {
-    GRPC_STATS_INC_EXECUTOR_SCHEDULED_LONG_ITEMS();
-  }
 
   do {
     retry_push = false;
@@ -274,22 +275,17 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
 #else
       EXECUTOR_TRACE("(%s) schedule %p inline", name_, closure);
 #endif
-      grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(),
-                               closure, error);
+      grpc_closure_list_append(ExecCtx::Get()->closure_list(), closure, error);
       return;
     }
 
-    if (grpc_iomgr_add_closure_to_background_poller(closure, error)) {
+    if (grpc_iomgr_platform_add_closure_to_background_poller(closure, error)) {
       return;
     }
 
-    ThreadState* ts =
-        reinterpret_cast<ThreadState*>(gpr_tls_get(&g_this_thread_state));
+    ThreadState* ts = g_this_thread_state;
     if (ts == nullptr) {
-      ts = &thd_state_[GPR_HASH_POINTER(grpc_core::ExecCtx::Get(),
-                                        cur_thread_count)];
-    } else {
-      GRPC_STATS_INC_EXECUTOR_SCHEDULED_TO_SELF();
+      ts = &thd_state_[HashPointer(ExecCtx::Get(), cur_thread_count)];
     }
 
     ThreadState* orig_ts = ts;
@@ -342,7 +338,6 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
       // - Note that gpr_cv_signal() won't immediately wakeup the thread. That
       //   happens after we release the mutex &ts->mu a few lines below
       if (grpc_closure_list_empty(ts->elems) && !ts->shutdown) {
-        GRPC_STATS_INC_EXECUTOR_WAKEUP_INITIATED();
         gpr_cv_signal(&ts->cv);
       }
 
@@ -367,15 +362,11 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
         // always increment num_threads under the 'adding_thread_lock')
         gpr_atm_rel_store(&num_threads_, cur_thread_count + 1);
 
-        thd_state_[cur_thread_count].thd = grpc_core::Thread(
-            name_, &Executor::ThreadMain, &thd_state_[cur_thread_count]);
+        thd_state_[cur_thread_count].thd =
+            Thread(name_, &Executor::ThreadMain, &thd_state_[cur_thread_count]);
         thd_state_[cur_thread_count].thd.Start();
       }
       gpr_spinlock_unlock(&adding_thread_lock_);
-    }
-
-    if (retry_push) {
-      GRPC_STATS_INC_EXECUTOR_PUSH_RETRIES();
     }
   } while (retry_push);
 }
@@ -465,6 +456,6 @@ void Executor::SetThreadingDefault(bool enable) {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
 }
 
-void grpc_executor_global_init() { gpr_tls_init(&g_this_thread_state); }
+void grpc_executor_global_init() {}
 
 }  // namespace grpc_core

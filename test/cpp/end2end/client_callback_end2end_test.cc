@@ -16,6 +16,17 @@
  *
  */
 
+#include <algorithm>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -25,16 +36,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
-#include <gtest/gtest.h>
 
-#include <algorithm>
-#include <condition_variable>
-#include <functional>
-#include <mutex>
-#include <sstream>
-#include <thread>
-
-#include "absl/memory/memory.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -67,8 +69,7 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{callback_server="
              << (scenario.callback_server ? "true" : "false") << ",protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
@@ -191,7 +192,7 @@ class ClientCallbackEnd2endTest
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental_async()->Echo(
+      stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&cli_ctx, &request, &response, &done, &mu, &cv, val,
            with_binary_metadata](Status s) {
@@ -234,7 +235,7 @@ class ClientCallbackEnd2endTest
       std::condition_variable cv;
       bool done = false;
       StubOptions options(suffix_for_stats);
-      generic_stub_->experimental().UnaryCall(
+      generic_stub_->UnaryCall(
           &cli_ctx, kMethodName, options, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
             GPR_ASSERT(s.ok());
@@ -266,8 +267,7 @@ class ClientCallbackEnd2endTest
     std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       test_string += "Hello world. ";
-      class Client : public grpc::experimental::ClientBidiReactor<ByteBuffer,
-                                                                  ByteBuffer> {
+      class Client : public grpc::ClientBidiReactor<ByteBuffer, ByteBuffer> {
        public:
         Client(ClientCallbackEnd2endTest* test, const std::string& method_name,
                const char* suffix_for_stats, const std::string& test_str,
@@ -278,7 +278,7 @@ class ClientCallbackEnd2endTest
               cli_ctx_ = absl::make_unique<ClientContext>();
               reuses_remaining_--;
               StubOptions options(suffix_for_stats);
-              test->generic_stub_->experimental().PrepareBidiStreamingCall(
+              test->generic_stub_->PrepareBidiStreamingCall(
                   cli_ctx_.get(), method_name, options, this);
               request_.set_message(test_str);
               send_buf_ = SerializeToByteBuffer(&request_);
@@ -365,16 +365,16 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcExpectedError) {
   std::condition_variable cv;
   bool done = false;
 
-  stub_->experimental_async()->Echo(
-      &cli_ctx, &request, &response,
-      [&response, &done, &mu, &cv, &error_status](Status s) {
-        EXPECT_EQ("", response.message());
-        EXPECT_EQ(error_status.code(), s.error_code());
-        EXPECT_EQ(error_status.error_message(), s.error_message());
-        std::lock_guard<std::mutex> l(mu);
-        done = true;
-        cv.notify_one();
-      });
+  stub_->async()->Echo(&cli_ctx, &request, &response,
+                       [&response, &done, &mu, &cv, &error_status](Status s) {
+                         EXPECT_EQ("", response.message());
+                         EXPECT_EQ(error_status.code(), s.error_code());
+                         EXPECT_EQ(error_status.error_message(),
+                                   s.error_message());
+                         std::lock_guard<std::mutex> l(mu);
+                         done = true;
+                         cv.notify_one();
+                       });
 
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
@@ -415,19 +415,18 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
   std::function<void(int)> nested_call = [this, &nested_call,
                                           &rpc_state](int index) {
     std::lock_guard<std::mutex> l(rpc_state[index].mu);
-    stub_->experimental_async()->Echo(
-        &rpc_state[index].cli_ctx, &rpc_state[index].request,
-        &rpc_state[index].response,
-        [index, &nested_call, &rpc_state](Status s) {
-          std::lock_guard<std::mutex> l1(rpc_state[index].mu);
-          EXPECT_TRUE(s.ok());
-          rpc_state[index].done = true;
-          rpc_state[index].cv.notify_all();
-          // Call the next level of nesting if possible
-          if (index + 1 < int(rpc_state.size())) {
-            nested_call(index + 1);
-          }
-        });
+    stub_->async()->Echo(&rpc_state[index].cli_ctx, &rpc_state[index].request,
+                         &rpc_state[index].response,
+                         [index, &nested_call, &rpc_state](Status s) {
+                           std::lock_guard<std::mutex> l1(rpc_state[index].mu);
+                           EXPECT_TRUE(s.ok());
+                           rpc_state[index].done = true;
+                           rpc_state[index].cv.notify_all();
+                           // Call the next level of nesting if possible
+                           if (index + 1 < int(rpc_state.size())) {
+                             nested_call(index + 1);
+                           }
+                         });
   };
 
   nested_call(0);
@@ -453,15 +452,14 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
   ClientContext cli_ctx;
   {
     std::lock_guard<std::mutex> l(mu);
-    stub_->experimental_async()->Echo(
-        &cli_ctx, &request, &response,
-        [&mu, &cv, &done, &request, &response](Status s) {
-          std::lock_guard<std::mutex> l(mu);
-          EXPECT_TRUE(s.ok());
-          EXPECT_EQ(request.message(), response.message());
-          done = true;
-          cv.notify_one();
-        });
+    stub_->async()->Echo(&cli_ctx, &request, &response,
+                         [&mu, &cv, &done, &request, &response](Status s) {
+                           std::lock_guard<std::mutex> l(mu);
+                           EXPECT_TRUE(s.ok());
+                           EXPECT_EQ(request.message(), response.message());
+                           done = true;
+                           cv.notify_one();
+                         });
   }
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
@@ -486,7 +484,7 @@ TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
   std::mutex mu;
   std::condition_variable cv;
   bool done = false;
-  stub_->experimental_async()->CheckClientInitialMetadata(
+  stub_->async()->CheckClientInitialMetadata(
       &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
         GPR_ASSERT(s.ok());
 
@@ -589,14 +587,14 @@ TEST_P(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
   std::mutex mu;
   std::condition_variable cv;
   bool done = false;
-  stub_->experimental_async()->Echo(
-      &context, &request, &response, [&response, &done, &mu, &cv](Status s) {
-        EXPECT_EQ("", response.message());
-        EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
-        std::lock_guard<std::mutex> l(mu);
-        done = true;
-        cv.notify_one();
-      });
+  stub_->async()->Echo(&context, &request, &response,
+                       [&response, &done, &mu, &cv](Status s) {
+                         EXPECT_EQ("", response.message());
+                         EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+                         std::lock_guard<std::mutex> l(mu);
+                         done = true;
+                         cv.notify_one();
+                       });
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
     cv.wait(l);
@@ -618,14 +616,14 @@ TEST_P(ClientCallbackEnd2endTest, RequestEchoServerCancel) {
   std::mutex mu;
   std::condition_variable cv;
   bool done = false;
-  stub_->experimental_async()->Echo(
-      &context, &request, &response, [&done, &mu, &cv](Status s) {
-        EXPECT_FALSE(s.ok());
-        EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
-        std::lock_guard<std::mutex> l(mu);
-        done = true;
-        cv.notify_one();
-      });
+  stub_->async()->Echo(&context, &request, &response,
+                       [&done, &mu, &cv](Status s) {
+                         EXPECT_FALSE(s.ok());
+                         EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+                         std::lock_guard<std::mutex> l(mu);
+                         done = true;
+                         cv.notify_one();
+                       });
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
     cv.wait(l);
@@ -640,7 +638,7 @@ struct ClientCancelInfo {
   explicit ClientCancelInfo(int ops) : cancel{true}, ops_before_cancel{ops} {}
 };
 
-class WriteClient : public grpc::experimental::ClientWriteReactor<EchoRequest> {
+class WriteClient : public grpc::ClientWriteReactor<EchoRequest> {
  public:
   WriteClient(grpc::testing::EchoTestService::Stub* stub,
               ServerTryCancelRequestPhase server_try_cancel,
@@ -658,7 +656,7 @@ class WriteClient : public grpc::experimental::ClientWriteReactor<EchoRequest> {
                            std::to_string(server_try_cancel));
     }
     context_.set_initial_metadata_corked(true);
-    stub->experimental_async()->RequestStream(&context_, &response_, this);
+    stub->async()->RequestStream(&context_, &response_, this);
     StartCall();
     request_.set_message(msg);
     MaybeWrite();
@@ -792,14 +790,14 @@ TEST_P(ClientCallbackEnd2endTest, RequestStreamServerCancelAfterReads) {
 
 TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
   ResetStub();
-  class UnaryClient : public grpc::experimental::ClientUnaryReactor {
+  class UnaryClient : public grpc::ClientUnaryReactor {
    public:
     explicit UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
       cli_ctx_.AddMetadata("key1", "val1");
       cli_ctx_.AddMetadata("key2", "val2");
       request_.mutable_param()->set_echo_metadata_initially(true);
       request_.set_message("Hello metadata");
-      stub->experimental_async()->Echo(&cli_ctx_, &request_, &response_, this);
+      stub->async()->Echo(&cli_ctx_, &request_, &response_, this);
       StartCall();
     }
     void OnReadInitialMetadataDone(bool ok) override {
@@ -853,7 +851,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   constexpr char kSuffixForStats[] = "TestSuffixForStats";
   ResetStub(
       absl::make_unique<TestInterceptorFactory>(kMethodName, kSuffixForStats));
-  class UnaryClient : public grpc::experimental::ClientUnaryReactor {
+  class UnaryClient : public grpc::ClientUnaryReactor {
    public:
     UnaryClient(grpc::GenericStub* stub, const std::string& method_name,
                 const char* suffix_for_stats) {
@@ -864,8 +862,8 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
       send_buf_ = SerializeToByteBuffer(&request_);
 
       StubOptions options(suffix_for_stats);
-      stub->experimental().PrepareUnaryCall(&cli_ctx_, method_name, options,
-                                            send_buf_.get(), &recv_buf_, this);
+      stub->PrepareUnaryCall(&cli_ctx_, method_name, options, send_buf_.get(),
+                             &recv_buf_, this);
       StartCall();
     }
     void OnReadInitialMetadataDone(bool ok) override {
@@ -917,7 +915,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   }
 }
 
-class ReadClient : public grpc::experimental::ClientReadReactor<EchoResponse> {
+class ReadClient : public grpc::ClientReadReactor<EchoResponse> {
  public:
   ReadClient(grpc::testing::EchoTestService::Stub* stub,
              ServerTryCancelRequestPhase server_try_cancel,
@@ -929,7 +927,7 @@ class ReadClient : public grpc::experimental::ClientReadReactor<EchoResponse> {
                            std::to_string(server_try_cancel));
     }
     request_.set_message("Hello client ");
-    stub->experimental_async()->ResponseStream(&context_, &request_, this);
+    stub->async()->ResponseStream(&context_, &request_, this);
     if (client_cancel_.cancel &&
         reads_complete_ == client_cancel_.ops_before_cancel) {
       context_.TryCancel();
@@ -1069,8 +1067,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelAfter) {
   }
 }
 
-class BidiClient
-    : public grpc::experimental::ClientBidiReactor<EchoRequest, EchoResponse> {
+class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
   BidiClient(grpc::testing::EchoTestService::Stub* stub,
              ServerTryCancelRequestPhase server_try_cancel,
@@ -1086,7 +1083,7 @@ class BidiClient
     }
     request_.set_message("Hello fren ");
     context_.set_initial_metadata_corked(cork_metadata);
-    stub->experimental_async()->BidiStream(&context_, this);
+    stub->async()->BidiStream(&context_, this);
     MaybeAsyncWrite(first_write_async);
     StartRead(&response_);
     StartCall();
@@ -1325,12 +1322,11 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelAfter) {
 
 TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
   ResetStub();
-  class Client : public grpc::experimental::ClientBidiReactor<EchoRequest,
-                                                              EchoResponse> {
+  class Client : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Client(grpc::testing::EchoTestService::Stub* stub) {
       request_.set_message("Hello bidi ");
-      stub->experimental_async()->BidiStream(&context_, this);
+      stub->async()->BidiStream(&context_, this);
       StartWrite(&request_);
       StartCall();
     }
@@ -1388,7 +1384,7 @@ TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
   std::mutex mu;
   std::condition_variable cv;
   bool done = false;
-  stub->experimental_async()->Unimplemented(
+  stub->async()->Unimplemented(
       &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
         EXPECT_EQ(StatusCode::UNIMPLEMENTED, s.error_code());
         EXPECT_EQ("", s.error_message());
@@ -1403,16 +1399,56 @@ TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
   }
 }
 
+TEST_P(ClientCallbackEnd2endTest, TestTrailersOnlyOnError) {
+  // Note that trailers-only is an HTTP/2 concept so we shouldn't do this test
+  // for any other transport such as inproc.
+  if (GetParam().protocol != Protocol::TCP) {
+    return;
+  }
+
+  ResetStub();
+  class Reactor : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
+   public:
+    explicit Reactor(grpc::testing::EchoTestService::Stub* stub) {
+      stub->async()->UnimplementedBidi(&context_, this);
+      StartCall();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        done_cv_.wait(l);
+      }
+    }
+
+   private:
+    void OnReadInitialMetadataDone(bool ok) override { EXPECT_FALSE(ok); }
+    void OnDone(const Status& s) override {
+      EXPECT_EQ(s.error_code(), grpc::StatusCode::UNIMPLEMENTED);
+      EXPECT_EQ(s.error_message(), "");
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      done_cv_.notify_one();
+    }
+
+    ClientContext context_;
+    std::mutex mu_;
+    std::condition_variable done_cv_;
+    bool done_ = false;
+  } client(stub_.get());
+
+  client.Await();
+}
+
 TEST_P(ClientCallbackEnd2endTest,
        ResponseStreamExtraReactionFlowReadsUntilDone) {
   ResetStub();
   class ReadAllIncomingDataClient
-      : public grpc::experimental::ClientReadReactor<EchoResponse> {
+      : public grpc::ClientReadReactor<EchoResponse> {
    public:
     explicit ReadAllIncomingDataClient(
         grpc::testing::EchoTestService::Stub* stub) {
       request_.set_message("Hello client ");
-      stub->experimental_async()->ResponseStream(&context_, &request_, this);
+      stub->async()->ResponseStream(&context_, &request_, this);
     }
     bool WaitForReadDone() {
       std::unique_lock<std::mutex> l(mu_);

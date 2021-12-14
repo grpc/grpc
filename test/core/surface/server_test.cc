@@ -72,8 +72,6 @@ void test_request_call_on_no_server_cq(void) {
   grpc_server_destroy(server);
 }
 
-// GRPC_ARG_ALLOW_REUSEPORT isn't supported for custom servers
-#ifndef GRPC_UV
 void test_bind_server_twice(void) {
   grpc_arg a = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_ALLOW_REUSEPORT), 0);
@@ -104,7 +102,6 @@ void test_bind_server_twice(void) {
   grpc_server_destroy(server2);
   grpc_completion_queue_destroy(cq);
 }
-#endif
 
 void test_bind_server_to_addr(const char* host, bool secure) {
   int port = grpc_pick_unused_port_or_die();
@@ -153,9 +150,7 @@ int main(int argc, char** argv) {
   grpc_init();
   test_register_method_fail();
   test_request_call_on_no_server_cq();
-#ifndef GRPC_UV
   test_bind_server_twice();
-#endif
 
   static const char* addrs[] = {
       "::1", "127.0.0.1", "::ffff:127.0.0.1", "localhost", "0.0.0.0", "::",

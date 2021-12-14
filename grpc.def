@@ -50,6 +50,7 @@ EXPORTS
     grpc_channel_destroy
     grpc_call_cancel
     grpc_call_cancel_with_status
+    grpc_call_failed_before_recv_message
     grpc_call_ref
     grpc_call_unref
     grpc_server_request_call
@@ -84,6 +85,7 @@ EXPORTS
     grpc_channelz_get_channel
     grpc_channelz_get_subchannel
     grpc_channelz_get_socket
+    grpc_authorization_policy_provider_arg_vtable
     grpc_insecure_channel_create_from_fd
     grpc_server_add_insecure_channel_from_fd
     grpc_auth_property_iterator_next
@@ -147,19 +149,20 @@ EXPORTS
     grpc_tls_certificate_provider_file_watcher_create
     grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
-    grpc_tls_credentials_options_set_cert_request_type
-    grpc_tls_credentials_options_set_server_verification_option
     grpc_tls_credentials_options_set_certificate_provider
     grpc_tls_credentials_options_watch_root_certs
     grpc_tls_credentials_options_set_root_cert_name
     grpc_tls_credentials_options_watch_identity_key_cert_pairs
     grpc_tls_credentials_options_set_identity_cert_name
-    grpc_tls_credentials_options_set_server_authorization_check_config
+    grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_crl_directory
-    grpc_tls_server_authorization_check_config_create
-    grpc_tls_server_authorization_check_config_release
+    grpc_tls_credentials_options_set_verify_server_cert
+    grpc_tls_credentials_options_set_check_call_host
     grpc_xds_credentials_create
     grpc_xds_server_credentials_create
+    grpc_authorization_policy_provider_static_data_create
+    grpc_authorization_policy_provider_file_watcher_create
+    grpc_authorization_policy_provider_release
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy

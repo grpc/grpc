@@ -18,14 +18,16 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security.h"
@@ -35,6 +37,7 @@
 
 extern "C" {
 #include <openssl/crypto.h>
+#include <openssl/err.h>
 #include <openssl/pem.h>
 }
 
@@ -267,35 +270,18 @@ static bool check_property(tsi_peer* peer, const char* property_name,
   return false;
 }
 
-static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
-                        name);
-}
-
-static bool check_dns(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_DNS_PEER_PROPERTY, name);
-}
-
-static bool check_uri(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_URI_PEER_PROPERTY, name);
-}
-
-static bool check_email(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_EMAIL_PEER_PROPERTY, name);
-}
-
-static bool check_ip(tsi_peer* peer, const char* name) {
-  return check_property(peer, TSI_X509_IP_PEER_PROPERTY, name);
-}
-
 void check_server1_peer(tsi_peer* peer) {
   const tsi_peer_property* property =
       check_basic_authenticated_peer_and_get_common_name(peer);
   const char* expected_match = "*.test.google.com";
   GPR_ASSERT(memcmp(property->value.data, expected_match,
                     property->value.length) == 0);
-  GPR_ASSERT(check_subject_alt_name(peer, "*.test.google.fr") == 1);
-  GPR_ASSERT(check_subject_alt_name(peer, "waterzooi.test.google.be") == 1);
+  GPR_ASSERT(check_property(peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "*.test.google.fr") == 1);
+  GPR_ASSERT(check_property(peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "waterzooi.test.google.be") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "foo.test.google.fr") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "bar.test.google.fr") == 1);
   GPR_ASSERT(tsi_ssl_peer_matches_name(peer, "waterzooi.test.google.be") == 1);
@@ -429,6 +415,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
       ssl_fixture->server_handshaker_factory);
   tsi_ssl_client_handshaker_factory_unref(
       ssl_fixture->client_handshaker_factory);
+  gpr_free(ssl_fixture);
 }
 
 static const struct tsi_test_fixture_vtable vtable = {
@@ -449,14 +436,12 @@ static char* load_file(const char* dir_path, const char* file_name) {
 }
 
 static tsi_test_fixture* ssl_tsi_test_fixture_create() {
-  ssl_tsi_test_fixture* ssl_fixture =
-      static_cast<ssl_tsi_test_fixture*>(gpr_zalloc(sizeof(*ssl_fixture)));
+  ssl_tsi_test_fixture* ssl_fixture = grpc_core::Zalloc<ssl_tsi_test_fixture>();
   tsi_test_fixture_init(&ssl_fixture->base);
   ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
   /* Create ssl_key_cert_lib. */
-  ssl_key_cert_lib* key_cert_lib =
-      static_cast<ssl_key_cert_lib*>(gpr_zalloc(sizeof(*key_cert_lib)));
+  ssl_key_cert_lib* key_cert_lib = grpc_core::Zalloc<ssl_key_cert_lib>();
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
   key_cert_lib->use_root_store = false;
@@ -498,8 +483,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   GPR_ASSERT(key_cert_lib->root_store != nullptr);
   ssl_fixture->key_cert_lib = key_cert_lib;
   /* Create ssl_alpn_lib. */
-  ssl_alpn_lib* alpn_lib =
-      static_cast<ssl_alpn_lib*>(gpr_zalloc(sizeof(*alpn_lib)));
+  ssl_alpn_lib* alpn_lib = grpc_core::Zalloc<ssl_alpn_lib>();
   alpn_lib->server_alpn_protocols = static_cast<const char**>(
       gpr_zalloc(sizeof(char*) * SSL_TSI_TEST_ALPN_NUM));
   alpn_lib->client_alpn_protocols = static_cast<const char**>(
@@ -703,6 +687,17 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
     tsi_test_fixture_destroy(fixture);
   }
   gpr_free(bit_array);
+}
+
+void ssl_tsi_test_do_round_trip_with_error_on_stack() {
+  gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_with_error_on_stack");
+  // Invoke an SSL function that causes an error, and ensure the error
+  // makes it to the stack.
+  GPR_ASSERT(!EC_KEY_new_by_curve_name(NID_rsa));
+  GPR_ASSERT(ERR_peek_error() != 0);
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  tsi_test_do_round_trip(fixture);
+  tsi_test_fixture_destroy(fixture);
 }
 
 static bool is_slow_build() {
@@ -917,14 +912,21 @@ void ssl_tsi_test_extract_x509_subject_names() {
   tsi_peer peer;
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
-  // tsi_peer should include one common name, one certificate, one security
-  // level, ten SAN fields, two DNS SAN fields, three URI fields, two email
-  // addresses and two IP addresses.
-  size_t expected_property_count = 21;
+  // tsi_peer should include one subject, one common name, one certificate, one
+  // security level, ten SAN fields, two DNS SAN fields, three URI fields, two
+  // email addresses and two IP addresses.
+  size_t expected_property_count = 22;
   GPR_ASSERT(peer.property_count == expected_property_count);
+  // Check subject
+  const char* expected_subject = "CN=xpigors,OU=Google,L=SF,ST=CA,C=US";
+  const tsi_peer_property* property =
+      tsi_peer_get_property_by_name(&peer, TSI_X509_SUBJECT_PEER_PROPERTY);
+  GPR_ASSERT(property != nullptr);
+  GPR_ASSERT(memcmp(property->value.data, expected_subject,
+                    property->value.length) == 0);
   // Check common name
   const char* expected_cn = "xpigors";
-  const tsi_peer_property* property = tsi_peer_get_property_by_name(
+  property = tsi_peer_get_property_by_name(
       &peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
   GPR_ASSERT(property != nullptr);
   GPR_ASSERT(
@@ -934,32 +936,58 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(property != nullptr);
   GPR_ASSERT(memcmp(property->value.data, cert, property->value.length) == 0);
   // Check DNS
-  GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
-  GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
-  GPR_ASSERT(check_dns(&peer, "foo.test.domain.com") == 1);
-  GPR_ASSERT(check_dns(&peer, "bar.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "bar.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_DNS_PEER_PROPERTY,
+                            "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_DNS_PEER_PROPERTY,
+                            "bar.test.domain.com") == 1);
   // Check URI
   // Note that a valid SPIFFE certificate should only have one URI.
-  GPR_ASSERT(check_subject_alt_name(&peer, "spiffe://foo.com/bar/baz") == 1);
-  GPR_ASSERT(
-      check_subject_alt_name(&peer, "https://foo.test.domain.com/test") == 1);
-  GPR_ASSERT(
-      check_subject_alt_name(&peer, "https://bar.test.domain.com/test") == 1);
-  GPR_ASSERT(check_uri(&peer, "spiffe://foo.com/bar/baz") == 1);
-  GPR_ASSERT(check_uri(&peer, "https://foo.test.domain.com/test") == 1);
-  GPR_ASSERT(check_uri(&peer, "https://bar.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "spiffe://foo.com/bar/baz") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "https://bar.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                            "spiffe://foo.com/bar/baz") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                            "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_URI_PEER_PROPERTY,
+                            "https://bar.test.domain.com/test") == 1);
   // Check email address
-  GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
-  GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
-  GPR_ASSERT(check_email(&peer, "foo@test.domain.com") == 1);
-  GPR_ASSERT(check_email(&peer, "bar@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "bar@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_EMAIL_PEER_PROPERTY,
+                            "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_EMAIL_PEER_PROPERTY,
+                            "bar@test.domain.com") == 1);
   // Check ip address
-  GPR_ASSERT(check_subject_alt_name(&peer, "192.168.7.1") == 1);
-  GPR_ASSERT(check_subject_alt_name(&peer, "13::17") == 1);
-  GPR_ASSERT(check_ip(&peer, "192.168.7.1") == 1);
-  GPR_ASSERT(check_ip(&peer, "13::17") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "192.168.7.1") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "13::17") == 1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_IP_PEER_PROPERTY, "192.168.7.1") ==
+             1);
+  GPR_ASSERT(check_property(&peer, TSI_X509_IP_PEER_PROPERTY, "13::17") == 1);
   // Check other fields
-  GPR_ASSERT(check_subject_alt_name(&peer, "other types of SAN") == 1);
+  GPR_ASSERT(check_property(&peer,
+                            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                            "other types of SAN") == 1);
   // Free memory
   gpr_free(cert);
   tsi_peer_destruct(&peer);
@@ -1035,6 +1063,7 @@ int main(int argc, char** argv) {
     ssl_tsi_test_do_handshake_alpn_client_server_ok();
     ssl_tsi_test_do_handshake_session_cache();
     ssl_tsi_test_do_round_trip_for_all_configs();
+    ssl_tsi_test_do_round_trip_with_error_on_stack();
     ssl_tsi_test_do_round_trip_odd_buffer_size();
     ssl_tsi_test_handshaker_factory_internals();
     ssl_tsi_test_duplicate_root_certificates();

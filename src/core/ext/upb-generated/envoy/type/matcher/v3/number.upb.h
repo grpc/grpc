@@ -9,7 +9,7 @@
 #ifndef ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H_
 #define ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -35,13 +35,19 @@ UPB_INLINE envoy_type_matcher_v3_DoubleMatcher *envoy_type_matcher_v3_DoubleMatc
 UPB_INLINE envoy_type_matcher_v3_DoubleMatcher *envoy_type_matcher_v3_DoubleMatcher_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_matcher_v3_DoubleMatcher *ret = envoy_type_matcher_v3_DoubleMatcher_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_matcher_v3_DoubleMatcher_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_matcher_v3_DoubleMatcher_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_type_matcher_v3_DoubleMatcher *envoy_type_matcher_v3_DoubleMatcher_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_type_matcher_v3_DoubleMatcher *ret = envoy_type_matcher_v3_DoubleMatcher_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_type_matcher_v3_DoubleMatcher_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_matcher_v3_DoubleMatcher_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_matcher_v3_DoubleMatcher_serialize(const envoy_type_matcher_v3_DoubleMatcher *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, arena, len);
@@ -74,6 +80,8 @@ UPB_INLINE struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_set_exact(envoy_type_matcher_v3_DoubleMatcher *msg, double value) {
   UPB_WRITE_ONEOF(msg, double, UPB_SIZE(0, 0), value, UPB_SIZE(8, 8), 2);
 }
+
+extern const upb_msglayout_file envoy_type_matcher_v3_number_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

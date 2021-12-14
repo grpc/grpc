@@ -53,17 +53,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 EOT
 
-# Build and install absl (absl won't be installed down below)
-mkdir -p "third_party/abseil-cpp/cmake/build_arm"
-pushd "third_party/abseil-cpp/cmake/build_arm"
-cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_PREFIX=/tmp/install \
-      -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE \
-      ../..
-make -j4 install
-popd
-
 # Build and install gRPC for ARM.
 # This build will use the host architecture copies of protoc and
 # grpc_cpp_plugin that we built earlier because we installed them
@@ -84,6 +73,7 @@ mkdir -p "examples/cpp/helloworld/cmake/build_arm"
 pushd "examples/cpp/helloworld/cmake/build_arm"
 cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
       -DCMAKE_BUILD_TYPE=Release \
+      -Dabsl_DIR=/tmp/stage/lib/cmake/absl \
       -DProtobuf_DIR=/tmp/stage/lib/cmake/protobuf \
       -DgRPC_DIR=/tmp/stage/lib/cmake/grpc \
       ../..

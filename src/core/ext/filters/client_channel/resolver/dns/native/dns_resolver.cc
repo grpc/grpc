@@ -1,24 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
+
 #include <climits>
 #include <cstring>
 
@@ -47,8 +46,6 @@
 namespace grpc_core {
 
 namespace {
-
-const char kDefaultPort[] = "https";
 
 class NativeDnsResolver : public Resolver {
  public:
@@ -150,7 +147,7 @@ void NativeDnsResolver::ShutdownLocked() {
 
 void NativeDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -166,7 +163,7 @@ void NativeDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
 
 void NativeDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
-  GRPC_ERROR_REF(error);  // owned by lambda
+  (void)GRPC_ERROR_REF(error);  // owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }
@@ -180,15 +177,16 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     return;
   }
   if (addresses_ != nullptr) {
-    Result result;
+    ServerAddressList addresses;
     for (size_t i = 0; i < addresses_->naddrs; ++i) {
-      result.addresses.emplace_back(&addresses_->addrs[i].addr,
-                                    addresses_->addrs[i].len,
-                                    nullptr /* args */);
+      addresses.emplace_back(&addresses_->addrs[i].addr,
+                             addresses_->addrs[i].len, nullptr /* args */);
     }
     grpc_resolved_addresses_destroy(addresses_);
+    Result result;
+    result.addresses = std::move(addresses);
     result.args = grpc_channel_args_copy(channel_args_);
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     backoff_.Reset();
@@ -196,12 +194,12 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_std_string(error).c_str());
     // Return transient error.
-    std::string error_message =
-        absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
-    result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
-                                                         &error, 1),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    std::string error_message;
+    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    Result result;
+    result.addresses = absl::UnavailableError(absl::StrCat(
+        "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
+    result_handler_->ReportResult(std::move(result));
     // Set up for retry.
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
@@ -240,10 +238,10 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
     const grpc_millis ms_until_next_resolution =
-        earliest_next_resolution - grpc_core::ExecCtx::Get()->Now();
+        earliest_next_resolution - ExecCtx::Get()->Now();
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
-          grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
+          ExecCtx::Get()->Now() - last_resolution_timestamp_;
       gpr_log(GPR_DEBUG,
               "In cooldown from last resolution (from %" PRId64
               " ms ago). Will resolve again in %" PRId64 " ms",
@@ -276,9 +274,9 @@ void NativeDnsResolver::StartResolvingLocked() {
   addresses_ = nullptr;
   GRPC_CLOSURE_INIT(&on_resolved_, NativeDnsResolver::OnResolved, this,
                     grpc_schedule_on_exec_ctx);
-  grpc_resolve_address(name_to_resolve_.c_str(), kDefaultPort,
+  grpc_resolve_address(name_to_resolve_.c_str(), kDefaultSecurePort,
                        interested_parties_, &on_resolved_, &addresses_);
-  last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
+  last_resolution_timestamp_ = ExecCtx::Get()->Now();
 }
 
 //
@@ -290,6 +288,10 @@ class NativeDnsResolverFactory : public ResolverFactory {
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
+      return false;
+    }
+    if (absl::StripPrefix(uri.path(), "/").empty()) {
+      gpr_log(GPR_ERROR, "no server name supplied in dns URI");
       return false;
     }
     return true;

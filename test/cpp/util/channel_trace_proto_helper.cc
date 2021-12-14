@@ -20,11 +20,12 @@
 
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"

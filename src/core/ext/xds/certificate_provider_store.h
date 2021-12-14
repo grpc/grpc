@@ -74,7 +74,7 @@ class CertificateProviderStore
       store_->ReleaseCertificateProvider(key_, this);
     }
 
-    grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
+    RefCountedPtr<grpc_tls_certificate_distributor> distributor()
         const override {
       return certificate_provider_->distributor();
     }
@@ -101,7 +101,7 @@ class CertificateProviderStore
 
   Mutex mu_;
   // Map of plugin configurations
-  PluginDefinitionMap plugin_config_map_ ABSL_GUARDED_BY(mu_);
+  const PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
   std::map<absl::string_view, CertificateProviderWrapper*>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);

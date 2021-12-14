@@ -21,15 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
 #include <atomic>
 #include <cassert>
 #include <cinttypes>
 
-#include "src/core/lib/gprpp/atomic.h"
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
+#include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -70,18 +70,18 @@ class RefCount {
   // Increases the ref-count by `n`.
   void Ref(Value n = 1) {
 #ifndef NDEBUG
-    const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
+    const Value prior = value_.fetch_add(n, std::memory_order_relaxed);
     if (trace_ != nullptr) {
       gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
               prior, prior + n);
     }
 #else
-    value_.FetchAdd(n, MemoryOrder::RELAXED);
+    value_.fetch_add(n, std::memory_order_relaxed);
 #endif
   }
   void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
 #ifndef NDEBUG
-    const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
+    const Value prior = value_.fetch_add(n, std::memory_order_relaxed);
     if (trace_ != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_, this, location.file(), location.line(), prior, prior + n,
@@ -91,26 +91,26 @@ class RefCount {
     // Use conditionally-important parameters
     (void)location;
     (void)reason;
-    value_.FetchAdd(n, MemoryOrder::RELAXED);
+    value_.fetch_add(n, std::memory_order_relaxed);
 #endif
   }
 
   // Similar to Ref() with an assert on the ref-count being non-zero.
   void RefNonZero() {
 #ifndef NDEBUG
-    const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
+    const Value prior = value_.fetch_add(1, std::memory_order_relaxed);
     if (trace_ != nullptr) {
       gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
               prior, prior + 1);
     }
     assert(prior > 0);
 #else
-    value_.FetchAdd(1, MemoryOrder::RELAXED);
+    value_.fetch_add(1, std::memory_order_relaxed);
 #endif
   }
   void RefNonZero(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
-    const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
+    const Value prior = value_.fetch_add(1, std::memory_order_relaxed);
     if (trace_ != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_, this, location.file(), location.line(), prior, prior + 1,
@@ -133,7 +133,7 @@ class RefCount {
               trace_, this, prior, prior + 1);
     }
 #endif
-    return value_.IncrementIfNonzero();
+    return IncrementIfNonzero(&value_);
   }
   bool RefIfNonZero(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
@@ -148,7 +148,7 @@ class RefCount {
     // Avoid unused-parameter warnings for debug-only parameters
     (void)location;
     (void)reason;
-    return value_.IncrementIfNonzero();
+    return IncrementIfNonzero(&value_);
   }
 
   // Decrements the ref-count and returns true if the ref-count reaches 0.
@@ -159,7 +159,7 @@ class RefCount {
     // safely access it, since another thread might free us in the interim.
     auto* trace = trace_;
 #endif
-    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const Value prior = value_.fetch_sub(1, std::memory_order_acq_rel);
 #ifndef NDEBUG
     if (trace != nullptr) {
       gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace, this,
@@ -176,7 +176,7 @@ class RefCount {
     // safely access it, since another thread might free us in the interim.
     auto* trace = trace_;
 #endif
-    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const Value prior = value_.fetch_sub(1, std::memory_order_acq_rel);
 #ifndef NDEBUG
     if (trace != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
@@ -193,12 +193,12 @@ class RefCount {
   }
 
  private:
-  Value get() const { return value_.Load(MemoryOrder::RELAXED); }
+  Value get() const { return value_.load(std::memory_order_relaxed); }
 
 #ifndef NDEBUG
   const char* trace_;
 #endif
-  Atomic<Value> value_;
+  std::atomic<Value> value_{0};
 };
 
 // PolymorphicRefCount enforces polymorphic destruction of RefCounted.
@@ -208,7 +208,7 @@ class PolymorphicRefCount {
 };
 
 // NonPolymorphicRefCount does not enforce polymorphic destruction of
-// RefCounted. Please refer to grpc_core::RefCounted for more details, and
+// RefCounted. Please refer to RefCounted for more details, and
 // when in doubt use PolymorphicRefCount.
 class NonPolymorphicRefCount {
  public:

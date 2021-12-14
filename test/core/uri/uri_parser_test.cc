@@ -18,13 +18,14 @@
 
 #include "src/core/lib/uri/uri_parser.h"
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
 

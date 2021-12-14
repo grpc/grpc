@@ -15,11 +15,12 @@
 
 # setuptools need to be imported before distutils. Otherwise it might lead to
 # undesirable behaviors or errors.
-import setuptools
+import setuptools  # isort:skip
 
 # Monkey Patch the unix compiler to accept ASM
 # files used by boring SSL.
 from distutils.unixccompiler import UnixCCompiler
+
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
 
@@ -28,18 +29,18 @@ from distutils import extension as _extension
 from distutils import util
 import os
 import os.path
-import pkg_resources
 import platform
 import re
 import shlex
 import shutil
+import subprocess
+from subprocess import PIPE
 import sys
 import sysconfig
 
+import _metadata
+import pkg_resources
 from setuptools.command import egg_info
-
-import subprocess
-from subprocess import PIPE
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
@@ -84,8 +85,9 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import _parallel_compile_patch
 import _spawn_patch
-import commands
 import grpc_core_dependencies
+
+import commands
 import grpc_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
@@ -96,14 +98,13 @@ LICENSE = 'Apache License 2.0'
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -246,7 +247,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     elif "linux" in sys.platform:
         EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
     elif "darwin" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions'
+        EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions -DHAVE_UNISTD_H'
 
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ''
@@ -311,8 +312,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'ws2_32',
+        'bcrypt',
         'dbghelp',
+        'ws2_32',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
@@ -328,6 +330,22 @@ if BUILD_WITH_SYSTEM_RE2:
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
+
+
+# Quotes on Windows build macros are evaluated differently from other platforms,
+# so we must apply quotes asymmetrically in order to yield the proper result in
+# the binary.
+def _quote_build_define(argument):
+    if "win32" in sys.platform:
+        return '"\\\"{}\\\""'.format(argument)
+    return '"{}"'.format(argument)
+
+
+DEFINE_MACROS += (
+    ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
+    ("GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
+     _quote_build_define(_metadata.__version__)),
+)
 
 asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
@@ -519,6 +537,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
+    python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

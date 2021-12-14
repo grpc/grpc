@@ -14,16 +14,17 @@
 """Tests behavior around the Core channel arguments."""
 
 import asyncio
+import errno
 import logging
 import platform
 import random
-import errno
 import unittest
 
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework import common
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
@@ -97,6 +98,8 @@ class TestChannelArgument(AioTestBase):
 
     @unittest.skipIf(platform.system() == 'Windows',
                      'SO_REUSEPORT only available in Linux-like OS.')
+    @unittest.skipIf('aarch64' in platform.machine(),
+                     'SO_REUSEPORT needs to be enabled in Core\'s port.h.')
     async def test_server_so_reuse_port_is_set_properly(self):
 
         async def test_body():

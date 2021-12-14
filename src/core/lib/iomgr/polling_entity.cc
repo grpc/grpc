@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/polling_entity.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include "src/core/lib/iomgr/polling_entity.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
     grpc_pollset_set* pollset_set) {

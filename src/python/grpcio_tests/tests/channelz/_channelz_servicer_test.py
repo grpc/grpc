@@ -13,12 +13,11 @@
 # limitations under the License.
 """Tests of grpc_channelz.v1.channelz."""
 
+from concurrent import futures
+import sys
 import unittest
 
-from concurrent import futures
-
 import grpc
-
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc
@@ -92,6 +91,8 @@ def _close_channel_server_pairs(pairs):
         pair.channel.close()
 
 
+@unittest.skipIf(sys.version_info[0] < 3,
+                 'ProtoBuf descriptor has moved on from Python2')
 class ChannelzServicerTest(unittest.TestCase):
 
     def _send_successful_unary_unary(self, idx):

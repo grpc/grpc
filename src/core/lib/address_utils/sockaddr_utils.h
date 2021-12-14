@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/iomgr/resolve_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
@@ -96,5 +98,13 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
 bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
                                 const grpc_resolved_address* subnet_address,
                                 uint32_t mask_bits);
+
+namespace grpc_event_engine {
+namespace experimental {
+
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H */

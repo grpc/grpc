@@ -43,12 +43,14 @@ namespace chttp2 {
 TestOnlyTransportTargetWindowEstimatesMocker*
     g_test_only_transport_target_window_estimates_mocker;
 
+bool g_test_only_transport_flow_control_window_check;
+
 namespace {
 
-static constexpr const int kTracePadding = 30;
-static constexpr const uint32_t kMaxWindowUpdateSize = (1u << 31) - 1;
+constexpr const int kTracePadding = 30;
+constexpr const int64_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
-static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
+char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   std::string str;
   if (old_val != new_val) {
     str = absl::StrFormat("%" PRId64 " -> %" PRId64 "", old_val, new_val);
@@ -58,7 +60,7 @@ static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   return gpr_leftpad(str.c_str(), ' ', kTracePadding);
 }
 
-static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
+char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
   std::string str;
   if (old_val != new_val) {
     str = absl::StrFormat("%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
@@ -179,7 +181,7 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
       bdp_estimator_(t->peer_string.c_str()),
-      pid_controller_(grpc_core::PidController::Args()
+      pid_controller_(PidController::Args()
                           .set_gain_p(4)
                           .set_gain_i(8)
                           .set_gain_d(0)
@@ -187,7 +189,7 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
                           .set_min_control_value(-1)
                           .set_max_control_value(25)
                           .set_integral_range(10)),
-      last_pid_update_(grpc_core::ExecCtx::Get()->Now()) {}
+      last_pid_update_(ExecCtx::Get()->Now()) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
@@ -195,8 +197,9 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
       static_cast<uint32_t>(target_window());
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
-    const uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
-        target_announced_window - announced_window_, 0, kMaxWindowUpdateSize);
+    const uint32_t announce =
+        static_cast<uint32_t>(Clamp(target_announced_window - announced_window_,
+                                    int64_t(0), kMaxWindowUpdateSize));
     announced_window_ += announce;
     return announce;
   }
@@ -206,11 +209,9 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
 grpc_error_handle TransportFlowControl::ValidateRecvData(
     int64_t incoming_frame_size) {
   if (incoming_frame_size > announced_window_) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("frame of size %" PRId64
-                        " overflows local window of %" PRId64,
-                        incoming_frame_size, announced_window_)
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "frame of size %" PRId64 " overflows local window of %" PRId64,
+        incoming_frame_size, announced_window_));
   }
   return GRPC_ERROR_NONE;
 }
@@ -248,11 +249,9 @@ grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
               "See (for example) https://github.com/netty/netty/issues/6520.",
               incoming_frame_size, acked_stream_window, sent_stream_window);
     } else {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrFormat("frame of size %" PRId64
-                          " overflows local window of %" PRId64,
-                          incoming_frame_size, acked_stream_window)
-              .c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+          "frame of size %" PRId64 " overflows local window of %" PRId64,
+          incoming_frame_size, acked_stream_window));
     }
   }
 
@@ -264,9 +263,27 @@ grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   FlowControlTrace trace("s updt sent", tfc_, this);
+  // If a recently sent settings frame caused the stream's flow control window
+  // to go in the negative (or < GRPC_HEADER_SIZE_IN_BYTES), update the delta if
+  // one of the following conditions is satisfied -
+  // 1) There is a pending byte_stream and higher layers have expressed interest
+  // in reading additional data through the invokation of `Next()` where the
+  // bytes are to be available asynchronously. 2) There is a pending
+  // recv_message op.
+  // In these cases, we want to make sure that bytes are still flowing.
+  if (local_window_delta_ < GRPC_HEADER_SIZE_IN_BYTES) {
+    if (s_->on_next != nullptr) {
+      GPR_DEBUG_ASSERT(s_->pending_byte_stream);
+      IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES, 0);
+    } else if (s_->recv_message != nullptr) {
+      IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
+                               s_->frame_storage.length);
+    }
+  }
   if (local_window_delta_ > announced_window_delta_) {
-    uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
-        local_window_delta_ - announced_window_delta_, 0, kMaxWindowUpdateSize);
+    uint32_t announce = static_cast<uint32_t>(
+        Clamp(local_window_delta_ - announced_window_delta_, int64_t(0),
+              kMaxWindowUpdateSize));
     UpdateAnnouncedWindowDelta(tfc_, announce);
     return announce;
   }
@@ -277,13 +294,10 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
                                                  size_t have_already) {
   FlowControlTrace trace("app st recv", tfc_, this);
   uint32_t max_recv_bytes;
-  uint32_t sent_init_window =
-      tfc_->transport()->settings[GRPC_SENT_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
 
   /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= kMaxWindowUpdateSize - sent_init_window) {
-    max_recv_bytes = kMaxWindowUpdateSize - sent_init_window;
+  if (max_size_hint >= kMaxWindowDelta) {
+    max_recv_bytes = kMaxWindowDelta;
   } else {
     max_recv_bytes = static_cast<uint32_t>(max_size_hint);
   }
@@ -296,7 +310,12 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_DEBUG_ASSERT(max_recv_bytes <= kMaxWindowUpdateSize - sent_init_window);
+  GPR_DEBUG_ASSERT(
+      max_recv_bytes <=
+      kMaxWindowUpdateSize -
+          tfc_->transport()
+              ->settings[GRPC_SENT_SETTINGS]
+                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
   if (local_window_delta_ < max_recv_bytes) {
     uint32_t add_max_recv_bytes =
         static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
@@ -305,10 +324,8 @@ void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
 }
 
 // Take in a target and modifies it based on the memory pressure of the system
-static double AdjustForMemoryPressure(grpc_resource_quota* quota,
-                                      double target) {
+static double AdjustForMemoryPressure(double memory_pressure, double target) {
   // do not increase window under heavy memory pressure.
-  double memory_pressure = grpc_resource_quota_get_memory_pressure(quota);
   static const double kLowMemPressure = 0.1;
   static const double kZeroTarget = 22;
   static const double kHighMemPressure = 0.8;
@@ -317,20 +334,21 @@ static double AdjustForMemoryPressure(grpc_resource_quota* quota,
     target = (target - kZeroTarget) * memory_pressure / kLowMemPressure +
              kZeroTarget;
   } else if (memory_pressure > kHighMemPressure) {
-    target *= 1 - GPR_MIN(1, (memory_pressure - kHighMemPressure) /
-                                 (kMaxMemPressure - kHighMemPressure));
+    target *= 1 - std::min(1.0, (memory_pressure - kHighMemPressure) /
+                                    (kMaxMemPressure - kHighMemPressure));
   }
   return target;
 }
 
 double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(
-      grpc_resource_user_quota(grpc_endpoint_get_resource_user(t_->ep)),
-      1 + log2(bdp_estimator_.EstimateBdp()));
+  return AdjustForMemoryPressure(t_->memory_owner.is_valid()
+                                     ? t_->memory_owner.InstantaneousPressure()
+                                     : 0.0,
+                                 1 + log2(bdp_estimator_.EstimateBdp()));
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
-  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  grpc_millis now = ExecCtx::Get()->Now();
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = static_cast<double>(now - last_pid_update_) * 1e-3;
   last_pid_update_ = now;
@@ -365,10 +383,10 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                    ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
                        target_initial_window_size_ /* current target */);
     }
-    // Though initial window 'could' drop to 0, we keep the floor at 128
-    target_initial_window_size_ =
-        static_cast<int32_t> GPR_CLAMP(target, 128, INT32_MAX);
-
+    // Though initial window 'could' drop to 0, we keep the floor at
+    // kMinInitialWindowSize
+    target_initial_window_size_ = static_cast<int32_t>(Clamp(
+        target, double(kMinInitialWindowSize), double(kMaxInitialWindowSize)));
     action.set_send_initial_window_update(
         DeltaUrgency(target_initial_window_size_,
                      GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),
@@ -377,10 +395,11 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = bdp_estimator_.EstimateBandwidth();
     // we target the max of BDP or bandwidth in microseconds.
-    int32_t frame_size = static_cast<int32_t> GPR_CLAMP(
-        GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
-                target_initial_window_size_),
-        16384, 16777215);
+    int32_t frame_size = static_cast<int32_t>(Clamp(
+        std::max(
+            static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) / 1000,
+            static_cast<int32_t>(target_initial_window_size_)),
+        16384, 16777215));
     action.set_send_max_frame_size_update(
         DeltaUrgency(static_cast<int64_t>(frame_size),
                      GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),

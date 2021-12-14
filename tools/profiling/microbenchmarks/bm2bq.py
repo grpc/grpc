@@ -17,12 +17,12 @@
 # Convert google-benchmark json output to something that can be uploaded to
 # BigQuery
 
-import sys
-import json
 import csv
-import bm_json
 import json
 import subprocess
+import sys
+
+import bm_json
 
 columns = []
 

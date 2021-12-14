@@ -89,7 +89,7 @@ static dump_out dump_out_create(void) {
 
 static void dump_out_append(dump_out* out, char c) {
   if (out->length == out->capacity) {
-    out->capacity = GPR_MAX(8, 2 * out->capacity);
+    out->capacity = std::max(size_t(8), 2 * out->capacity);
     out->data = static_cast<char*>(gpr_realloc(out->data, out->capacity));
   }
   out->data[out->length++] = c;
@@ -290,7 +290,7 @@ static void add_string_to_split(const char* beg, const char* end, char*** strs,
   memcpy(out, beg, static_cast<size_t>(end - beg));
   out[end - beg] = 0;
   if (*nstrs == *capstrs) {
-    *capstrs = GPR_MAX(8, 2 * *capstrs);
+    *capstrs = std::max(size_t(8), 2 * *capstrs);
     *strs = static_cast<char**>(gpr_realloc(*strs, sizeof(*strs) * *capstrs));
   }
   (*strs)[*nstrs] = out;

@@ -18,12 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 
-#include <string.h>
-
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 static void mdelem_list_ensure_capacity(grpc_credentials_mdelem_array* list,

@@ -18,8 +18,8 @@ import argparse
 import os
 import os.path
 import re
-import sys
 import subprocess
+import sys
 
 
 def build_valid_guard(fpath):
@@ -66,15 +66,15 @@ class GuardValidator(object):
                         if c_core_header else '#endif  // {2}')
         if not match_txt:
             print(
-                invalid_guards_msg_template.format(fpath, regexp.pattern,
-                                                   build_valid_guard(fpath)))
+                (invalid_guards_msg_template.format(fpath, regexp.pattern,
+                                                    build_valid_guard(fpath))))
             return fcontents
 
-        print(('{}: Wrong preprocessor guards (RE {}):'
-               '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
-                                                   match_txt, correct))
+        print((('{}: Wrong preprocessor guards (RE {}):'
+                '\n\tFound {}, expected {}').format(fpath, regexp.pattern,
+                                                    match_txt, correct)))
         if fix:
-            print('Fixing {}...\n'.format(fpath))
+            print(('Fixing {}...\n'.format(fpath)))
             fixed_fcontents = re.sub(match_txt, correct, fcontents)
             if fixed_fcontents:
                 self.failed = False
@@ -91,7 +91,7 @@ class GuardValidator(object):
 
         match = self.ifndef_re.search(fcontents)
         if not match:
-            print('something drastically wrong with: %s' % fpath)
+            print(('something drastically wrong with: %s' % fpath))
             return False  # failed
         if match.lastindex is None:
             # No ifndef. Request manual addition with hints

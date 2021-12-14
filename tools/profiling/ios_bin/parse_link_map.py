@@ -18,8 +18,8 @@
 # symbols.
 # The script takes one parameter, which is the path to the link map file.
 
-import sys
 import re
+import sys
 
 
 def parse_link_map(filename):
@@ -95,11 +95,11 @@ def main():
     filename = sys.argv[1]
     core_size, objc_size, boringssl_size, protobuf_size, total_size = parse_link_map(
         filename)
-    print('Core size:{:,}'.format(core_size))
-    print('ObjC size:{:,}'.format(objc_size))
-    print('BoringSSL size:{:,}'.format(boringssl_size))
-    print('Protobuf size:{:,}\n'.format(protobuf_size))
-    print('Total size:{:,}'.format(total_size))
+    print(('Core size:{:,}'.format(core_size)))
+    print(('ObjC size:{:,}'.format(objc_size)))
+    print(('BoringSSL size:{:,}'.format(boringssl_size)))
+    print(('Protobuf size:{:,}\n'.format(protobuf_size)))
+    print(('Total size:{:,}'.format(total_size)))
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
       c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
         c_timeout = c_deadline
-  
+
       c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
   
       if (c_event.type != GRPC_QUEUE_TIMEOUT or
@@ -73,6 +73,7 @@ cdef class CompletionQueue:
       c_attrs.version = 1
       c_attrs.cq_completion_type = GRPC_CQ_NEXT
       c_attrs.cq_polling_type = GRPC_CQ_NON_LISTENING
+      c_attrs.cq_shutdown_cb = NULL
       self.c_completion_queue = grpc_completion_queue_create(
           grpc_completion_queue_factory_lookup(&c_attrs), &c_attrs, NULL);
     else:

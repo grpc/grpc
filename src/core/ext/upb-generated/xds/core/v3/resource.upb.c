@@ -7,29 +7,40 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "xds/core/v3/resource.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "udpa/annotations/status.upb.h"
+#include "xds/annotations/v3/status.upb.h"
 #include "xds/core/v3/resource_name.upb.h"
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const xds_core_v3_Resource_submsgs[2] = {
-  &google_protobuf_Any_msginit,
-  &xds_core_v3_ResourceName_msginit,
+static const upb_msglayout_sub xds_core_v3_Resource_submsgs[2] = {
+  {.submsg = &google_protobuf_Any_msginit},
+  {.submsg = &xds_core_v3_ResourceName_msginit},
 };
 
 static const upb_msglayout_field xds_core_v3_Resource__fields[3] = {
-  {1, UPB_SIZE(12, 24), 1, 1, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), 2, 0, 11, 1},
+  {1, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(16, 32), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout xds_core_v3_Resource_msginit = {
   &xds_core_v3_Resource_submsgs[0],
   &xds_core_v3_Resource__fields[0],
-  UPB_SIZE(24, 48), 3, false, 255,
+  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 3, 255,
+};
+
+static const upb_msglayout *messages_layout[1] = {
+  &xds_core_v3_Resource_msginit,
+};
+
+const upb_msglayout_file xds_core_v3_resource_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  1,
+  0,
 };
 
 #include "upb/port_undef.inc"

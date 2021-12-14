@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # 3-clause BSD
+licenses(["notice"])
 
 cc_library(
     name = "route_guide_helper",
@@ -45,6 +45,34 @@ cc_binary(
     name = "route_guide_server",
     srcs = [
         "route_guide_server.cc",
+    ],
+    data = ["route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide_helper",
+        "//:grpc++",
+        "//examples/protos:route_guide",
+    ],
+)
+
+cc_binary(
+    name = "route_guide_callback_client",
+    srcs = [
+        "route_guide_callback_client.cc",
+    ],
+    data = ["route_guide_db.json"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        ":route_guide_helper",
+        "//:grpc++",
+        "//examples/protos:route_guide",
+    ],
+)
+
+cc_binary(
+    name = "route_guide_callback_server",
+    srcs = [
+        "route_guide_callback_server.cc",
     ],
     data = ["route_guide_db.json"],
     defines = ["BAZEL_BUILD"],

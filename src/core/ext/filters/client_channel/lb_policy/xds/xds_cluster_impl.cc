@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -28,10 +30,10 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -57,13 +59,15 @@ class CircuitBreakerCallCounterMap {
     explicit CallCounter(Key key) : key_(std::move(key)) {}
     ~CallCounter() override;
 
-    uint32_t Load() { return concurrent_requests_.Load(MemoryOrder::SEQ_CST); }
-    uint32_t Increment() { return concurrent_requests_.FetchAdd(1); }
-    void Decrement() { concurrent_requests_.FetchSub(1); }
+    uint32_t Load() {
+      return concurrent_requests_.load(std::memory_order_seq_cst);
+    }
+    uint32_t Increment() { return concurrent_requests_.fetch_add(1); }
+    void Decrement() { concurrent_requests_.fetch_sub(1); }
 
    private:
     Key key_;
-    Atomic<uint32_t> concurrent_requests_{0};
+    std::atomic<uint32_t> concurrent_requests_{0};
   };
 
   RefCountedPtr<CallCounter> GetOrCreate(const std::string& cluster,
@@ -117,7 +121,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
       std::string cluster_name, std::string eds_service_name,
       absl::optional<std::string> lrs_load_reporting_server_name,
       uint32_t max_concurrent_requests,
-      RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config)
+      RefCountedPtr<XdsEndpointResource::DropConfig> drop_config)
       : child_policy_(std::move(child_policy)),
         cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
@@ -137,7 +141,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
     return lrs_load_reporting_server_name_;
   };
   uint32_t max_concurrent_requests() const { return max_concurrent_requests_; }
-  RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config() const {
+  RefCountedPtr<XdsEndpointResource::DropConfig> drop_config() const {
     return drop_config_;
   }
 
@@ -147,7 +151,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   std::string eds_service_name_;
   absl::optional<std::string> lrs_load_reporting_server_name_;
   uint32_t max_concurrent_requests_;
-  RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
+  RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
 };
 
 // xDS Cluster Impl LB policy.
@@ -198,9 +202,11 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    class SubchannelCallTracker;
+
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
-    RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
+    RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<RefCountedPicker> picker_;
   };
@@ -219,6 +225,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
+    absl::string_view GetAuthority() override;
     void AddTraceEvent(TraceSeverity severity,
                        absl::string_view message) override;
 
@@ -232,7 +239,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const grpc_channel_args* args);
-  void UpdateChildPolicyLocked(ServerAddressList addresses,
+  void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
                                const grpc_channel_args* args);
 
   void MaybeUpdatePickerLocked();
@@ -261,6 +268,71 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 };
 
 //
+// XdsClusterImplLb::Picker::SubchannelCallTracker
+//
+
+class XdsClusterImplLb::Picker::SubchannelCallTracker
+    : public LoadBalancingPolicy::SubchannelCallTrackerInterface {
+ public:
+  SubchannelCallTracker(
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+          original_subchannel_call_tracker,
+      RefCountedPtr<XdsClusterLocalityStats> locality_stats,
+      RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter)
+      : original_subchannel_call_tracker_(
+            std::move(original_subchannel_call_tracker)),
+        locality_stats_(std::move(locality_stats)),
+        call_counter_(std::move(call_counter)) {}
+
+  ~SubchannelCallTracker() override {
+    locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    GPR_DEBUG_ASSERT(!started_);
+  }
+
+  void Start() override {
+    // Increment number of calls in flight.
+    call_counter_->Increment();
+    // Record a call started.
+    if (locality_stats_ != nullptr) {
+      locality_stats_->AddCallStarted();
+    }
+    // Delegate if needed.
+    if (original_subchannel_call_tracker_ != nullptr) {
+      original_subchannel_call_tracker_->Start();
+    }
+#ifndef NDEBUG
+    started_ = true;
+#endif
+  }
+
+  void Finish(FinishArgs args) override {
+    // Delegate if needed.
+    if (original_subchannel_call_tracker_ != nullptr) {
+      original_subchannel_call_tracker_->Finish(args);
+    }
+    // Record call completion for load reporting.
+    if (locality_stats_ != nullptr) {
+      locality_stats_->AddCallFinished(!args.status.ok());
+    }
+    // Decrement number of calls in flight.
+    call_counter_->Decrement();
+#ifndef NDEBUG
+    started_ = false;
+#endif
+  }
+
+ private:
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      original_subchannel_call_tracker_;
+  RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
+  RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
+#ifndef NDEBUG
+  bool started_ = false;
+#endif
+};
+
+//
 // XdsClusterImplLb::Picker
 //
 
@@ -284,75 +356,48 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
     if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
-    PickResult result;
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
+    return PickResult::Drop(absl::UnavailableError(
+        absl::StrCat("EDS-configured drop: ", *drop_category)));
   }
-  // Handle circuit breaking.
-  uint32_t current = call_counter_->Load();
-  // Check and see if we exceeded the max concurrent requests count.
-  if (current >= max_concurrent_requests_) {
+  // Check if we exceeded the max concurrent requests circuit breaking limit.
+  // Note: We check the value here, but we don't actually increment the
+  // counter for the current request until the channel calls the subchannel
+  // call tracker's Start() method.  This means that we may wind up
+  // allowing more concurrent requests than the configured limit.
+  if (call_counter_->Load() >= max_concurrent_requests_) {
     if (drop_stats_ != nullptr) drop_stats_->AddUncategorizedDrops();
-    PickResult result;
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
+    return PickResult::Drop(absl::UnavailableError("circuit breaker drop"));
   }
-  call_counter_->Increment();
   // If we're not dropping the call, we should always have a child picker.
   if (picker_ == nullptr) {  // Should never happen.
-    PickResult result;
-    result.type = PickResult::PICK_FAILED;
-    result.error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "xds_cluster_impl picker not given any child picker"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-    call_counter_->Decrement();
-    return result;
+    return PickResult::Fail(absl::InternalError(
+        "xds_cluster_impl picker not given any child picker"));
   }
   // Not dropping, so delegate to child picker.
   PickResult result = picker_->Pick(args);
-  if (result.type == result.PICK_COMPLETE && result.subchannel != nullptr) {
-    XdsClusterLocalityStats* locality_stats = nullptr;
+  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  if (complete_pick != nullptr) {
+    RefCountedPtr<XdsClusterLocalityStats> locality_stats;
     if (drop_stats_ != nullptr) {  // If load reporting is enabled.
       auto* subchannel_wrapper =
-          static_cast<StatsSubchannelWrapper*>(result.subchannel.get());
+          static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
       // Handle load reporting.
-      locality_stats = subchannel_wrapper->locality_stats()->Ref().release();
-      // Record a call started.
-      locality_stats->AddCallStarted();
+      locality_stats = subchannel_wrapper->locality_stats()->Ref(
+          DEBUG_LOCATION, "SubchannelCallTracker");
       // Unwrap subchannel to pass back up the stack.
-      result.subchannel = subchannel_wrapper->wrapped_subchannel();
+      complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     }
-    // Intercept the recv_trailing_metadata op to record call completion.
-    auto* call_counter = call_counter_->Ref(DEBUG_LOCATION, "call").release();
-    auto original_recv_trailing_metadata_ready =
-        result.recv_trailing_metadata_ready;
-    result.recv_trailing_metadata_ready =
-        // Note: This callback does not run in either the control plane
-        // work serializer or in the data plane mutex.
-        [locality_stats, original_recv_trailing_metadata_ready, call_counter](
-            grpc_error_handle error, MetadataInterface* metadata,
-            CallState* call_state) {
-          // Record call completion for load reporting.
-          if (locality_stats != nullptr) {
-            const bool call_failed = error != GRPC_ERROR_NONE;
-            locality_stats->AddCallFinished(call_failed);
-            locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
-          }
-          // Decrement number of calls in flight.
-          call_counter->Decrement();
-          call_counter->Unref(DEBUG_LOCATION, "call");
-          // Invoke the original recv_trailing_metadata_ready callback, if any.
-          if (original_recv_trailing_metadata_ready != nullptr) {
-            original_recv_trailing_metadata_ready(error, metadata, call_state);
-          }
-        };
+    // Inject subchannel call tracker to record call completion.
+    complete_pick->subchannel_call_tracker =
+        absl::make_unique<SubchannelCallTracker>(
+            std::move(complete_pick->subchannel_call_tracker),
+            std::move(locality_stats),
+            call_counter_->Ref(DEBUG_LOCATION, "SubchannelCallTracker"));
   } else {
     // TODO(roth): We should ideally also record call failures here in the case
     // where a pick fails.  This is challenging, because we don't know which
     // picks are for wait_for_ready RPCs or how many times we'll return a
     // failure for the same wait_for_ready RPC.
-    call_counter_->Decrement();
   }
   return result;
 }
@@ -426,8 +471,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
         config_->cluster_name(), config_->eds_service_name());
   } else {
     // Cluster name, EDS service name, and LRS server name should never
-    // change, because the EDS policy above us should be swapped out if
-    // that happens.
+    // change, because the xds_cluster_resolver policy above us should be
+    // swapped out if that happens.
     GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
     GPR_ASSERT(config_->eds_service_name() == old_config->eds_service_name());
     GPR_ASSERT(config_->lrs_load_reporting_server_name() ==
@@ -497,8 +542,9 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void XdsClusterImplLb::UpdateChildPolicyLocked(ServerAddressList addresses,
-                                               const grpc_channel_args* args) {
+void XdsClusterImplLb::UpdateChildPolicyLocked(
+    absl::StatusOr<ServerAddressList> addresses,
+    const grpc_channel_args* args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
@@ -579,6 +625,10 @@ void XdsClusterImplLb::Helper::UpdateState(
 void XdsClusterImplLb::Helper::RequestReresolution() {
   if (xds_cluster_impl_policy_->shutting_down_) return;
   xds_cluster_impl_policy_->channel_control_helper()->RequestReresolution();
+}
+
+absl::string_view XdsClusterImplLb::Helper::GetAuthority() {
+  return xds_cluster_impl_policy_->channel_control_helper()->GetAuthority();
 }
 
 void XdsClusterImplLb::Helper::AddTraceEvent(TraceSeverity severity,
@@ -688,7 +738,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // Drop config.
-    auto drop_config = MakeRefCounted<XdsApi::EdsUpdate::DropConfig>();
+    auto drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
     it = json.object_value().find("dropCategories");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -714,7 +764,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
  private:
   static std::vector<grpc_error_handle> ParseDropCategories(
-      const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
+      const Json& json, XdsEndpointResource::DropConfig* drop_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::ARRAY) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -726,8 +776,8 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       std::vector<grpc_error_handle> child_errors =
           ParseDropCategory(entry, drop_config);
       if (!child_errors.empty()) {
-        grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("errors parsing index ", i).c_str());
+        grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("errors parsing index ", i));
         for (size_t i = 0; i < child_errors.size(); ++i) {
           error = grpc_error_add_child(error, child_errors[i]);
         }
@@ -738,7 +788,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
   }
 
   static std::vector<grpc_error_handle> ParseDropCategory(
-      const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
+      const Json& json, XdsEndpointResource::DropConfig* drop_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(

@@ -141,7 +141,7 @@ v1.8.0 | 3.5.0 | v1.21.3 | 3.7.0
 
 If `protoc` hasn't been installed, you can download the `protoc` binary from
 the protocol buffers
-[Github repository](https://github.com/google/protobuf/releases).
+[Github repository](https://github.com/protocolbuffers/protobuf/releases).
 Then unzip this file and update the environment variable `PATH` to include the
 path to the protoc binary file.
 

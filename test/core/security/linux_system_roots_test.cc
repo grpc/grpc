@@ -17,15 +17,19 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include <stdio.h>
 
 #ifdef GPR_LINUX
+#include <string.h>
+#include <sys/param.h>
+
+#include "gtest/gtest.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <string.h>
-#include <sys/param.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
@@ -38,8 +42,6 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
-
-#include "gtest/gtest.h"
 
 namespace grpc {
 namespace {

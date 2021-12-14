@@ -18,20 +18,21 @@
 
 #include <ruby/ruby.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_server.h"
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 #include "rb_server_credentials.h"
 #include "rb_xds_server_credentials.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
 static VALUE grpc_rb_cServer = Qnil;

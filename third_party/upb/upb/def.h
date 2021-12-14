@@ -1,23 +1,51 @@
 /*
-** Defs are upb's internal representation of the constructs that can appear
-** in a .proto file:
-**
-** - upb_msgdef: describes a "message" construct.
-** - upb_fielddef: describes a message field.
-** - upb_filedef: describes a .proto file and its defs.
-** - upb_enumdef: describes an enum.
-** - upb_oneofdef: describes a oneof.
-**
-** TODO: definitions of services.
-*/
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * Defs are upb's internal representation of the constructs that can appear
+ * in a .proto file:
+ *
+ * - upb_msgdef: describes a "message" construct.
+ * - upb_fielddef: describes a message field.
+ * - upb_filedef: describes a .proto file and its defs.
+ * - upb_enumdef: describes an enum.
+ * - upb_oneofdef: describes a oneof.
+ *
+ * TODO: definitions of services.
+ */
 
 #ifndef UPB_DEF_H_
 #define UPB_DEF_H_
 
 #include "upb/upb.h"
-#include "upb/table.int.h"
+#include "upb/table_internal.h"
 #include "google/protobuf/descriptor.upb.h"
 
+/* Must be last. */
 #include "upb/port_def.inc"
 
 #ifdef __cplusplus
@@ -26,6 +54,10 @@ extern "C" {
 
 struct upb_enumdef;
 typedef struct upb_enumdef upb_enumdef;
+struct upb_enumvaldef;
+typedef struct upb_enumvaldef upb_enumvaldef;
+struct upb_extrange;
+typedef struct upb_extrange upb_extrange;
 struct upb_fielddef;
 typedef struct upb_fielddef upb_fielddef;
 struct upb_filedef;
@@ -107,9 +139,7 @@ bool upb_fielddef_haspresence(const upb_fielddef *f);
 const upb_msgdef *upb_fielddef_msgsubdef(const upb_fielddef *f);
 const upb_enumdef *upb_fielddef_enumsubdef(const upb_fielddef *f);
 const upb_msglayout_field *upb_fielddef_layout(const upb_fielddef *f);
-
-/* Internal only. */
-uint32_t upb_fielddef_selectorbase(const upb_fielddef *f);
+const upb_msglayout_ext *_upb_fielddef_extlayout(const upb_fielddef *f);
 
 /* upb_oneofdef ***************************************************************/
 
@@ -174,8 +204,10 @@ bool upb_msgdef_mapentry(const upb_msgdef *m);
 upb_wellknowntype_t upb_msgdef_wellknowntype(const upb_msgdef *m);
 bool upb_msgdef_iswrapper(const upb_msgdef *m);
 bool upb_msgdef_isnumberwrapper(const upb_msgdef *m);
+int upb_msgdef_extrangecount(const upb_msgdef *m);
 int upb_msgdef_fieldcount(const upb_msgdef *m);
 int upb_msgdef_oneofcount(const upb_msgdef *m);
+const upb_extrange *upb_msgdef_extrange(const upb_msgdef *m, int i);
 const upb_fielddef *upb_msgdef_field(const upb_msgdef *m, int i);
 const upb_oneofdef *upb_msgdef_oneof(const upb_msgdef *m, int i);
 const upb_fielddef *upb_msgdef_itof(const upb_msgdef *m, uint32_t i);
@@ -194,10 +226,6 @@ UPB_INLINE const upb_fielddef *upb_msgdef_ntofz(const upb_msgdef *m,
                                                 const char *name) {
   return upb_msgdef_ntof(m, name, strlen(name));
 }
-
-/* Internal-only. */
-size_t upb_msgdef_selectorcount(const upb_msgdef *m);
-uint32_t upb_msgdef_submsgfieldcount(const upb_msgdef *m);
 
 /* Lookup of either field or oneof by name.  Returns whether either was found.
  * If the return is true, then the found def will be set, and the non-found
@@ -235,6 +263,14 @@ bool upb_msg_oneof_iter_isequal(const upb_msg_oneof_iter *iter1,
                                 const upb_msg_oneof_iter *iter2);
 /* END DEPRECATED */
 
+/* upb_extrange ***************************************************************/
+
+const google_protobuf_ExtensionRangeOptions *upb_extrange_options(
+    const upb_extrange *r);
+bool upb_extrange_hasoptions(const upb_extrange *r);
+int32_t upb_extrange_start(const upb_extrange *r);
+int32_t upb_extrange_end(const upb_extrange *r);
+
 /* upb_enumdef ****************************************************************/
 
 typedef upb_strtable_iter upb_enum_iter;
@@ -243,26 +279,34 @@ const char *upb_enumdef_fullname(const upb_enumdef *e);
 const char *upb_enumdef_name(const upb_enumdef *e);
 const upb_filedef *upb_enumdef_file(const upb_enumdef *e);
 int32_t upb_enumdef_default(const upb_enumdef *e);
+int upb_enumdef_valuecount(const upb_enumdef *e);
+const upb_enumvaldef *upb_enumdef_value(const upb_enumdef *e, int i);
+
+const upb_enumvaldef *upb_enumdef_lookupname(const upb_enumdef *e,
+                                             const char *name, size_t len);
+const upb_enumvaldef *upb_enumdef_lookupnum(const upb_enumdef *e, int32_t num);
+
+/* DEPRECATED, slated for removal */
 int upb_enumdef_numvals(const upb_enumdef *e);
-
-/* Enum lookups:
- * - ntoi:  look up a name with specified length.
- * - ntoiz: look up a name provided as a null-terminated string.
- * - iton:  look up an integer, returning the name as a null-terminated
- *          string. */
-bool upb_enumdef_ntoi(const upb_enumdef *e, const char *name, size_t len,
-                      int32_t *num);
-UPB_INLINE bool upb_enumdef_ntoiz(const upb_enumdef *e,
-                                  const char *name, int32_t *num) {
-  return upb_enumdef_ntoi(e, name, strlen(name), num);
-}
-const char *upb_enumdef_iton(const upb_enumdef *e, int32_t num);
-
 void upb_enum_begin(upb_enum_iter *iter, const upb_enumdef *e);
 void upb_enum_next(upb_enum_iter *iter);
 bool upb_enum_done(upb_enum_iter *iter);
 const char *upb_enum_iter_name(upb_enum_iter *iter);
 int32_t upb_enum_iter_number(upb_enum_iter *iter);
+/* END DEPRECATED */
+
+// Convenience wrapper.
+UPB_INLINE const upb_enumvaldef *upb_enumdef_lookupnamez(const upb_enumdef *e,
+                                                         const char *name) {
+  return upb_enumdef_lookupname(e, name, strlen(name));
+}
+
+/* upb_enumvaldef *************************************************************/
+
+const char *upb_enumvaldef_fullname(const upb_enumvaldef *e);
+const char *upb_enumvaldef_name(const upb_enumvaldef *e);
+int32_t upb_enumvaldef_number(const upb_enumvaldef *e);
+const upb_enumdef *upb_enumvaldef_enum(const upb_enumvaldef *e);
 
 /* upb_filedef ****************************************************************/
 
@@ -287,6 +331,11 @@ const upb_msgdef *upb_symtab_lookupmsg(const upb_symtab *s, const char *sym);
 const upb_msgdef *upb_symtab_lookupmsg2(
     const upb_symtab *s, const char *sym, size_t len);
 const upb_enumdef *upb_symtab_lookupenum(const upb_symtab *s, const char *sym);
+const upb_enumvaldef *upb_symtab_lookupenumval(const upb_symtab *s,
+                                               const char *sym);
+const upb_fielddef *upb_symtab_lookupext(const upb_symtab *s, const char *sym);
+const upb_fielddef *upb_symtab_lookupext2(const upb_symtab *s, const char *sym,
+                                         size_t len);
 const upb_filedef *upb_symtab_lookupfile(const upb_symtab *s, const char *name);
 const upb_filedef *upb_symtab_lookupfile2(
     const upb_symtab *s, const char *name, size_t len);
@@ -295,11 +344,15 @@ const upb_filedef *upb_symtab_addfile(
     upb_symtab *s, const google_protobuf_FileDescriptorProto *file,
     upb_status *status);
 size_t _upb_symtab_bytesloaded(const upb_symtab *s);
+upb_arena *_upb_symtab_arena(const upb_symtab *s);
+const upb_fielddef *_upb_symtab_lookupextfield(const upb_symtab *s,
+                                               const upb_msglayout_ext *ext);
+const upb_extreg *upb_symtab_extreg(const upb_symtab *s);
 
 /* For generated code only: loads a generated descriptor. */
 typedef struct upb_def_init {
   struct upb_def_init **deps;     /* Dependencies of this file. */
-  const upb_msglayout **layouts;  /* Pre-order layouts of all messages. */
+  const upb_msglayout_file *layout;
   const char *filename;
   upb_strview descriptor;         /* Serialized descriptor. */
 } upb_def_init;

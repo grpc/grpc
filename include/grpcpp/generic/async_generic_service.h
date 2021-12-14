@@ -19,6 +19,6 @@
 #ifndef GRPCPP_GENERIC_ASYNC_GENERIC_SERVICE_H
 #define GRPCPP_GENERIC_ASYNC_GENERIC_SERVICE_H
 
-#include <grpcpp/impl/codegen/async_generic_service.h>
+#include <grpcpp/impl/codegen/async_generic_service.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_GENERIC_ASYNC_GENERIC_SERVICE_H

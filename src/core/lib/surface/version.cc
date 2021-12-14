@@ -23,8 +23,6 @@
 
 #include <grpc/grpc.h>
 
-const char* grpc_version_string(void) { return "16.0.0"; }
+const char* grpc_version_string(void) { return "21.0.0"; }
 
-const char* grpc_g_stands_for(void) {
-  return "guadalupe_river_park_conservancy";
-}
+const char* grpc_g_stands_for(void) { return "great"; }

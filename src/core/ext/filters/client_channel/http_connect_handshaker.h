@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/config/core_configuration.h"
+
 /// Channel arg indicating the server in HTTP CONNECT request (string).
 /// The presence of this arg triggers the use of HTTP CONNECT.
 #define GRPC_ARG_HTTP_CONNECT_SERVER "grpc.http_connect_server"
@@ -28,7 +32,11 @@
 /// separated by colons.
 #define GRPC_ARG_HTTP_CONNECT_HEADERS "grpc.http_connect_headers"
 
-/// Registers handshaker factory.
-void grpc_http_connect_register_handshaker_factory();
+namespace grpc_core {
+
+// Register the HTTP Connect handshaker into the configuration builder.
+void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_CONNECT_HANDSHAKER_H */

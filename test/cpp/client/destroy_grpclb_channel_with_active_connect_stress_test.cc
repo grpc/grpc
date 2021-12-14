@@ -44,7 +44,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

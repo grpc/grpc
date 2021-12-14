@@ -22,7 +22,7 @@
 #include <memory>
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
+#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 
@@ -47,12 +47,14 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
  public:
   RetryMethodConfig(int max_attempts, grpc_millis initial_backoff,
                     grpc_millis max_backoff, float backoff_multiplier,
-                    StatusCodeSet retryable_status_codes)
+                    StatusCodeSet retryable_status_codes,
+                    absl::optional<grpc_millis> per_attempt_recv_timeout)
       : max_attempts_(max_attempts),
         initial_backoff_(initial_backoff),
         max_backoff_(max_backoff),
         backoff_multiplier_(backoff_multiplier),
-        retryable_status_codes_(retryable_status_codes) {}
+        retryable_status_codes_(retryable_status_codes),
+        per_attempt_recv_timeout_(per_attempt_recv_timeout) {}
 
   int max_attempts() const { return max_attempts_; }
   grpc_millis initial_backoff() const { return initial_backoff_; }
@@ -61,6 +63,9 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
   StatusCodeSet retryable_status_codes() const {
     return retryable_status_codes_;
   }
+  absl::optional<grpc_millis> per_attempt_recv_timeout() const {
+    return per_attempt_recv_timeout_;
+  }
 
  private:
   int max_attempts_ = 0;
@@ -68,6 +73,7 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
   grpc_millis max_backoff_ = 0;
   float backoff_multiplier_ = 0;
   StatusCodeSet retryable_status_codes_;
+  absl::optional<grpc_millis> per_attempt_recv_timeout_;
 };
 
 class RetryServiceConfigParser : public ServiceConfigParser::Parser {
@@ -77,7 +83,7 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
       grpc_error_handle* error) override;
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* /*args*/, const Json& json,
+      const grpc_channel_args* args, const Json& json,
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();

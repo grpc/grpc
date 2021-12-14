@@ -17,10 +17,11 @@
 from __future__ import print_function
 
 import os
-import six
 import sys
 import time
 import uuid
+
+import six
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '../../gcp/utils'))
@@ -87,7 +88,7 @@ def _get_build_metadata(test_results):
 def _insert_rows_with_retries(bq, bq_table, bq_rows):
     """Insert rows to bq table. Retry on error."""
     # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
-    for i in range((len(bq_rows) / 1000) + 1):
+    for i in range((len(bq_rows) // 1000) + 1):
         max_retries = 3
         for attempt in range(max_retries):
             if big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID,

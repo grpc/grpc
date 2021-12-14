@@ -86,18 +86,22 @@ class BaseStub
     }
 
     private static function updateOpts($opts) {
-        if (!file_exists($composerFile = __DIR__.'/../../composer.json')) {
-            // for grpc/grpc-php subpackage
-            $composerFile = __DIR__.'/../composer.json';
-        }
-        $package_config = json_decode(file_get_contents($composerFile), true);
         if (!empty($opts['grpc.primary_user_agent'])) {
             $opts['grpc.primary_user_agent'] .= ' ';
         } else {
             $opts['grpc.primary_user_agent'] = '';
         }
-        $opts['grpc.primary_user_agent'] .=
-            'grpc-php/'.$package_config['version'];
+        if (defined('\Grpc\VERSION')) {
+            $version_str = \Grpc\VERSION;
+        } else {
+            if (!file_exists($composerFile = __DIR__.'/../../composer.json')) {
+                // for grpc/grpc-php subpackage
+                $composerFile = __DIR__.'/../composer.json';
+            }
+            $package_config = json_decode(file_get_contents($composerFile), true);
+            $version_str = $package_config['version'];
+        }
+        $opts['grpc.primary_user_agent'] .= 'grpc-php/'.$version_str;
         if (!array_key_exists('credentials', $opts)) {
             throw new \Exception("The opts['credentials'] key is now ".
                 'required. Please see one of the '.

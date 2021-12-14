@@ -21,8 +21,6 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -30,20 +28,20 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
 grpc_error_handle grpc_resolve_unix_domain_address(
-    const char* name, grpc_resolved_addresses** addresses) {
+    absl::string_view name, grpc_resolved_addresses** addresses) {
   *addresses = static_cast<grpc_resolved_addresses*>(
       gpr_malloc(sizeof(grpc_resolved_addresses)));
   (*addresses)->naddrs = 1;

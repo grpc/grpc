@@ -9,7 +9,7 @@
 #ifndef ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H_
 #define ENVOY_SERVICE_STATUS_V3_CSDS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -23,29 +23,38 @@ extern "C" {
 struct envoy_service_status_v3_ClientStatusRequest;
 struct envoy_service_status_v3_PerXdsConfig;
 struct envoy_service_status_v3_ClientConfig;
+struct envoy_service_status_v3_ClientConfig_GenericXdsConfig;
 struct envoy_service_status_v3_ClientStatusResponse;
 typedef struct envoy_service_status_v3_ClientStatusRequest envoy_service_status_v3_ClientStatusRequest;
 typedef struct envoy_service_status_v3_PerXdsConfig envoy_service_status_v3_PerXdsConfig;
 typedef struct envoy_service_status_v3_ClientConfig envoy_service_status_v3_ClientConfig;
+typedef struct envoy_service_status_v3_ClientConfig_GenericXdsConfig envoy_service_status_v3_ClientConfig_GenericXdsConfig;
 typedef struct envoy_service_status_v3_ClientStatusResponse envoy_service_status_v3_ClientStatusResponse;
 extern const upb_msglayout envoy_service_status_v3_ClientStatusRequest_msginit;
 extern const upb_msglayout envoy_service_status_v3_PerXdsConfig_msginit;
 extern const upb_msglayout envoy_service_status_v3_ClientConfig_msginit;
+extern const upb_msglayout envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit;
 extern const upb_msglayout envoy_service_status_v3_ClientStatusResponse_msginit;
 struct envoy_admin_v3_ClustersConfigDump;
 struct envoy_admin_v3_EndpointsConfigDump;
 struct envoy_admin_v3_ListenersConfigDump;
 struct envoy_admin_v3_RoutesConfigDump;
 struct envoy_admin_v3_ScopedRoutesConfigDump;
+struct envoy_admin_v3_UpdateFailureState;
 struct envoy_config_core_v3_Node;
 struct envoy_type_matcher_v3_NodeMatcher;
+struct google_protobuf_Any;
+struct google_protobuf_Timestamp;
 extern const upb_msglayout envoy_admin_v3_ClustersConfigDump_msginit;
 extern const upb_msglayout envoy_admin_v3_EndpointsConfigDump_msginit;
 extern const upb_msglayout envoy_admin_v3_ListenersConfigDump_msginit;
 extern const upb_msglayout envoy_admin_v3_RoutesConfigDump_msginit;
 extern const upb_msglayout envoy_admin_v3_ScopedRoutesConfigDump_msginit;
+extern const upb_msglayout envoy_admin_v3_UpdateFailureState_msginit;
 extern const upb_msglayout envoy_config_core_v3_Node_msginit;
 extern const upb_msglayout envoy_type_matcher_v3_NodeMatcher_msginit;
+extern const upb_msglayout google_protobuf_Any_msginit;
+extern const upb_msglayout google_protobuf_Timestamp_msginit;
 
 typedef enum {
   envoy_service_status_v3_CLIENT_UNKNOWN = 0,
@@ -71,13 +80,19 @@ UPB_INLINE envoy_service_status_v3_ClientStatusRequest *envoy_service_status_v3_
 UPB_INLINE envoy_service_status_v3_ClientStatusRequest *envoy_service_status_v3_ClientStatusRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_service_status_v3_ClientStatusRequest *ret = envoy_service_status_v3_ClientStatusRequest_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusRequest_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusRequest_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_service_status_v3_ClientStatusRequest *envoy_service_status_v3_ClientStatusRequest_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_service_status_v3_ClientStatusRequest *ret = envoy_service_status_v3_ClientStatusRequest_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusRequest_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusRequest_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_service_status_v3_ClientStatusRequest_serialize(const envoy_service_status_v3_ClientStatusRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_status_v3_ClientStatusRequest_msginit, arena, len);
@@ -123,13 +138,19 @@ UPB_INLINE envoy_service_status_v3_PerXdsConfig *envoy_service_status_v3_PerXdsC
 UPB_INLINE envoy_service_status_v3_PerXdsConfig *envoy_service_status_v3_PerXdsConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_service_status_v3_PerXdsConfig *ret = envoy_service_status_v3_PerXdsConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_status_v3_PerXdsConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_status_v3_PerXdsConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_service_status_v3_PerXdsConfig *envoy_service_status_v3_PerXdsConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_service_status_v3_PerXdsConfig *ret = envoy_service_status_v3_PerXdsConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_service_status_v3_PerXdsConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_status_v3_PerXdsConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_service_status_v3_PerXdsConfig_serialize(const envoy_service_status_v3_PerXdsConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_status_v3_PerXdsConfig_msginit, arena, len);
@@ -233,13 +254,19 @@ UPB_INLINE envoy_service_status_v3_ClientConfig *envoy_service_status_v3_ClientC
 UPB_INLINE envoy_service_status_v3_ClientConfig *envoy_service_status_v3_ClientConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_service_status_v3_ClientConfig *ret = envoy_service_status_v3_ClientConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_status_v3_ClientConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_status_v3_ClientConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_service_status_v3_ClientConfig *envoy_service_status_v3_ClientConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_service_status_v3_ClientConfig *ret = envoy_service_status_v3_ClientConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_service_status_v3_ClientConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_status_v3_ClientConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_service_status_v3_ClientConfig_serialize(const envoy_service_status_v3_ClientConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_status_v3_ClientConfig_msginit, arena, len);
@@ -249,6 +276,8 @@ UPB_INLINE bool envoy_service_status_v3_ClientConfig_has_node(const envoy_servic
 UPB_INLINE const struct envoy_config_core_v3_Node* envoy_service_status_v3_ClientConfig_node(const envoy_service_status_v3_ClientConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_Node*); }
 UPB_INLINE bool envoy_service_status_v3_ClientConfig_has_xds_config(const envoy_service_status_v3_ClientConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
 UPB_INLINE const envoy_service_status_v3_PerXdsConfig* const* envoy_service_status_v3_ClientConfig_xds_config(const envoy_service_status_v3_ClientConfig *msg, size_t *len) { return (const envoy_service_status_v3_PerXdsConfig* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
+UPB_INLINE bool envoy_service_status_v3_ClientConfig_has_generic_xds_configs(const envoy_service_status_v3_ClientConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
+UPB_INLINE const envoy_service_status_v3_ClientConfig_GenericXdsConfig* const* envoy_service_status_v3_ClientConfig_generic_xds_configs(const envoy_service_status_v3_ClientConfig *msg, size_t *len) { return (const envoy_service_status_v3_ClientConfig_GenericXdsConfig* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len); }
 
 UPB_INLINE void envoy_service_status_v3_ClientConfig_set_node(envoy_service_status_v3_ClientConfig *msg, struct envoy_config_core_v3_Node* value) {
   _upb_sethas(msg, 1);
@@ -276,6 +305,116 @@ UPB_INLINE struct envoy_service_status_v3_PerXdsConfig* envoy_service_status_v3_
   if (!ok) return NULL;
   return sub;
 }
+UPB_INLINE envoy_service_status_v3_ClientConfig_GenericXdsConfig** envoy_service_status_v3_ClientConfig_mutable_generic_xds_configs(envoy_service_status_v3_ClientConfig *msg, size_t *len) {
+  return (envoy_service_status_v3_ClientConfig_GenericXdsConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
+}
+UPB_INLINE envoy_service_status_v3_ClientConfig_GenericXdsConfig** envoy_service_status_v3_ClientConfig_resize_generic_xds_configs(envoy_service_status_v3_ClientConfig *msg, size_t len, upb_arena *arena) {
+  return (envoy_service_status_v3_ClientConfig_GenericXdsConfig**)_upb_array_resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_service_status_v3_ClientConfig_GenericXdsConfig* envoy_service_status_v3_ClientConfig_add_generic_xds_configs(envoy_service_status_v3_ClientConfig *msg, upb_arena *arena) {
+  struct envoy_service_status_v3_ClientConfig_GenericXdsConfig* sub = (struct envoy_service_status_v3_ClientConfig_GenericXdsConfig*)_upb_msg_new(&envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
+
+/* envoy.service.status.v3.ClientConfig.GenericXdsConfig */
+
+UPB_INLINE envoy_service_status_v3_ClientConfig_GenericXdsConfig *envoy_service_status_v3_ClientConfig_GenericXdsConfig_new(upb_arena *arena) {
+  return (envoy_service_status_v3_ClientConfig_GenericXdsConfig *)_upb_msg_new(&envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, arena);
+}
+UPB_INLINE envoy_service_status_v3_ClientConfig_GenericXdsConfig *envoy_service_status_v3_ClientConfig_GenericXdsConfig_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_service_status_v3_ClientConfig_GenericXdsConfig *ret = envoy_service_status_v3_ClientConfig_GenericXdsConfig_new(arena);
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE envoy_service_status_v3_ClientConfig_GenericXdsConfig *envoy_service_status_v3_ClientConfig_GenericXdsConfig_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  envoy_service_status_v3_ClientConfig_GenericXdsConfig *ret = envoy_service_status_v3_ClientConfig_GenericXdsConfig_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char *envoy_service_status_v3_ClientConfig_GenericXdsConfig_serialize(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, arena, len);
+}
+
+UPB_INLINE upb_strview envoy_service_status_v3_ClientConfig_GenericXdsConfig_type_url(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_strview); }
+UPB_INLINE upb_strview envoy_service_status_v3_ClientConfig_GenericXdsConfig_name(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), upb_strview); }
+UPB_INLINE upb_strview envoy_service_status_v3_ClientConfig_GenericXdsConfig_version_info(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 48), upb_strview); }
+UPB_INLINE bool envoy_service_status_v3_ClientConfig_GenericXdsConfig_has_xds_config(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Any* envoy_service_status_v3_ClientConfig_GenericXdsConfig_xds_config(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 64), const struct google_protobuf_Any*); }
+UPB_INLINE bool envoy_service_status_v3_ClientConfig_GenericXdsConfig_has_last_updated(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE const struct google_protobuf_Timestamp* envoy_service_status_v3_ClientConfig_GenericXdsConfig_last_updated(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(44, 72), const struct google_protobuf_Timestamp*); }
+UPB_INLINE int32_t envoy_service_status_v3_ClientConfig_GenericXdsConfig_config_status(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t); }
+UPB_INLINE int32_t envoy_service_status_v3_ClientConfig_GenericXdsConfig_client_status(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t); }
+UPB_INLINE bool envoy_service_status_v3_ClientConfig_GenericXdsConfig_has_error_state(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return _upb_hasbit(msg, 3); }
+UPB_INLINE const struct envoy_admin_v3_UpdateFailureState* envoy_service_status_v3_ClientConfig_GenericXdsConfig_error_state(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(48, 80), const struct envoy_admin_v3_UpdateFailureState*); }
+UPB_INLINE bool envoy_service_status_v3_ClientConfig_GenericXdsConfig_is_static_resource(const envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 12), bool); }
+
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_strview) = value;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), upb_strview) = value;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 48), upb_strview) = value;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_xds_config(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, struct google_protobuf_Any* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 64), struct google_protobuf_Any*) = value;
+}
+UPB_INLINE struct google_protobuf_Any* envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_arena *arena) {
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_service_status_v3_ClientConfig_GenericXdsConfig_xds_config(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
+    if (!sub) return NULL;
+    envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_xds_config(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, struct google_protobuf_Timestamp* value) {
+  _upb_sethas(msg, 2);
+  *UPB_PTR_AT(msg, UPB_SIZE(44, 72), struct google_protobuf_Timestamp*) = value;
+}
+UPB_INLINE struct google_protobuf_Timestamp* envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_last_updated(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_arena *arena) {
+  struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_service_status_v3_ClientConfig_GenericXdsConfig_last_updated(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Timestamp*)_upb_msg_new(&google_protobuf_Timestamp_msginit, arena);
+    if (!sub) return NULL;
+    envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_config_status(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, int32_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, int32_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, struct envoy_admin_v3_UpdateFailureState* value) {
+  _upb_sethas(msg, 3);
+  *UPB_PTR_AT(msg, UPB_SIZE(48, 80), struct envoy_admin_v3_UpdateFailureState*) = value;
+}
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_error_state(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, upb_arena *arena) {
+  struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_service_status_v3_ClientConfig_GenericXdsConfig_error_state(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_msg_new(&envoy_admin_v3_UpdateFailureState_msginit, arena);
+    if (!sub) return NULL;
+    envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_is_static_resource(envoy_service_status_v3_ClientConfig_GenericXdsConfig *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), bool) = value;
+}
 
 /* envoy.service.status.v3.ClientStatusResponse */
 
@@ -285,13 +424,19 @@ UPB_INLINE envoy_service_status_v3_ClientStatusResponse *envoy_service_status_v3
 UPB_INLINE envoy_service_status_v3_ClientStatusResponse *envoy_service_status_v3_ClientStatusResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_service_status_v3_ClientStatusResponse *ret = envoy_service_status_v3_ClientStatusResponse_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusResponse_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusResponse_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_service_status_v3_ClientStatusResponse *envoy_service_status_v3_ClientStatusResponse_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_service_status_v3_ClientStatusResponse *ret = envoy_service_status_v3_ClientStatusResponse_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusResponse_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_status_v3_ClientStatusResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_service_status_v3_ClientStatusResponse_serialize(const envoy_service_status_v3_ClientStatusResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_status_v3_ClientStatusResponse_msginit, arena, len);
@@ -313,6 +458,8 @@ UPB_INLINE struct envoy_service_status_v3_ClientConfig* envoy_service_status_v3_
   if (!ok) return NULL;
   return sub;
 }
+
+extern const upb_msglayout_file envoy_service_status_v3_csds_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

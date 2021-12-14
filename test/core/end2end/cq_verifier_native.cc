@@ -16,9 +16,6 @@
  *
  */
 
-/* This check is for testing only. */
-#ifndef GRPC_UV
-
 #include <grpc/support/alloc.h>
 
 #include "test/core/end2end/cq_verifier_internal.h"
@@ -56,5 +53,3 @@ grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds) {
       grpc_timeout_seconds_to_deadline(timeout_seconds);
   return grpc_completion_queue_next(v->cq, deadline, nullptr);
 }
-
-#endif /* GRPC_UV */

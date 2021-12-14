@@ -48,8 +48,8 @@ static NSString *const kBearerPrefix = @"Bearer ";
 
 @interface GRPCCall () <GRXWriteable>
 // Make them read-write.
-@property(atomic, strong) NSDictionary *responseHeaders;
-@property(atomic, strong) NSDictionary *responseTrailers;
+@property(atomic, copy) NSDictionary *responseHeaders;
+@property(atomic, copy) NSDictionary *responseTrailers;
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 

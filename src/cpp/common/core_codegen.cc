@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpcpp/impl/codegen/core_codegen.h>
+#include <grpc/support/port_platform.h>
 
 #include <stdlib.h>
 
@@ -27,8 +27,8 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/profiling/timers.h"
@@ -117,6 +117,10 @@ grpc_call_error CoreCodegen::grpc_call_cancel_with_status(
     grpc_call* call, grpc_status_code status, const char* description,
     void* reserved) {
   return ::grpc_call_cancel_with_status(call, status, description, reserved);
+}
+
+int CoreCodegen::grpc_call_failed_before_recv_message(const grpc_call* c) {
+  return ::grpc_call_failed_before_recv_message(c);
 }
 void CoreCodegen::grpc_call_ref(grpc_call* call) { ::grpc_call_ref(call); }
 void CoreCodegen::grpc_call_unref(grpc_call* call) { ::grpc_call_unref(call); }

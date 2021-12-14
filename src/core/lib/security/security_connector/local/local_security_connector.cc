@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -39,9 +40,11 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/local_transport_security.h"
 
 #define GRPC_UDS_URI_PATTERN "unix:"
+#define GRPC_ABSTRACT_UDS_URI_PATTERN "unix-abstract:"
 #define GRPC_LOCAL_TRANSPORT_SECURITY_TYPE "local"
 
 namespace {
@@ -70,13 +73,14 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                       grpc_closure* on_peer_checked,
                       grpc_local_connect_type type) {
-  int fd = grpc_endpoint_get_fd(ep);
   grpc_resolved_address resolved_addr;
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = GRPC_MAX_SOCKADDR_SIZE;
   bool is_endpoint_local = false;
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr),
-                  &resolved_addr.len) == 0) {
+  absl::string_view local_addr = grpc_endpoint_get_local_address(ep);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(local_addr);
+  if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
+    gpr_log(GPR_ERROR, "Could not parse endpoint address: %s",
+            std::string(local_addr.data(), local_addr.size()).c_str());
+  } else {
     grpc_resolved_address addr_normalized;
     grpc_resolved_address* addr =
         grpc_sockaddr_is_v4mapped(&resolved_addr, &addr_normalized)
@@ -103,7 +107,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       }
     }
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
@@ -267,7 +271,9 @@ grpc_local_channel_security_connector_create(
   const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
   if (creds->connect_type() == UDS &&
       strncmp(GRPC_UDS_URI_PATTERN, server_uri_str,
-              strlen(GRPC_UDS_URI_PATTERN)) != 0) {
+              strlen(GRPC_UDS_URI_PATTERN)) != 0 &&
+      strncmp(GRPC_ABSTRACT_UDS_URI_PATTERN, server_uri_str,
+              strlen(GRPC_ABSTRACT_UDS_URI_PATTERN)) != 0) {
     gpr_log(GPR_ERROR,
             "Invalid UDS target name to "
             "grpc_local_channel_security_connector_create()");

@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/atomic.h"
+#include <atomic>
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -48,14 +48,14 @@ class Fork {
   // Increment the count of active ExecCtxs.
   // Will block until a pending fork is complete if one is in progress.
   static void IncExecCtxCount() {
-    if (GPR_UNLIKELY(support_enabled_.Load(MemoryOrder::RELAXED))) {
+    if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
       DoIncExecCtxCount();
     }
   }
 
   // Decrement the count of active ExecCtxs
   static void DecExecCtxCount() {
-    if (GPR_UNLIKELY(support_enabled_.Load(MemoryOrder::RELAXED))) {
+    if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
       DoDecExecCtxCount();
     }
   }
@@ -93,7 +93,7 @@ class Fork {
 
   static internal::ExecCtxState* exec_ctx_state_;
   static internal::ThreadState* thread_state_;
-  static grpc_core::Atomic<bool> support_enabled_;
+  static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
   static child_postfork_func reset_child_polling_engine_;
 };

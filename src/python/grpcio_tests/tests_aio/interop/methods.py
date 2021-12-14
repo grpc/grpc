@@ -25,14 +25,16 @@ import threading
 import time
 from typing import Any, Optional, Union
 
-import grpc
 from google import auth as google_auth
 from google.auth import environment_vars as google_auth_environment_vars
 from google.auth.transport import grpc as google_auth_transport_grpc
 from google.auth.transport import requests as google_auth_transport_requests
+import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import empty_pb2, messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import empty_pb2
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"

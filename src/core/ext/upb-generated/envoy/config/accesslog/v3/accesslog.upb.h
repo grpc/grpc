@@ -9,7 +9,7 @@
 #ifndef ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H_
 #define ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -113,13 +113,19 @@ UPB_INLINE envoy_config_accesslog_v3_AccessLog *envoy_config_accesslog_v3_Access
 UPB_INLINE envoy_config_accesslog_v3_AccessLog *envoy_config_accesslog_v3_AccessLog_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_AccessLog *ret = envoy_config_accesslog_v3_AccessLog_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLog_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLog_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_AccessLog *envoy_config_accesslog_v3_AccessLog_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_AccessLog *ret = envoy_config_accesslog_v3_AccessLog_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLog_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLog_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_AccessLog_serialize(const envoy_config_accesslog_v3_AccessLog *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_AccessLog_msginit, arena, len);
@@ -174,13 +180,19 @@ UPB_INLINE envoy_config_accesslog_v3_AccessLogFilter *envoy_config_accesslog_v3_
 UPB_INLINE envoy_config_accesslog_v3_AccessLogFilter *envoy_config_accesslog_v3_AccessLogFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_AccessLogFilter *ret = envoy_config_accesslog_v3_AccessLogFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLogFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLogFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_AccessLogFilter *envoy_config_accesslog_v3_AccessLogFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_AccessLogFilter *ret = envoy_config_accesslog_v3_AccessLogFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLogFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AccessLogFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_AccessLogFilter_serialize(const envoy_config_accesslog_v3_AccessLogFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_AccessLogFilter_msginit, arena, len);
@@ -381,13 +393,19 @@ UPB_INLINE envoy_config_accesslog_v3_ComparisonFilter *envoy_config_accesslog_v3
 UPB_INLINE envoy_config_accesslog_v3_ComparisonFilter *envoy_config_accesslog_v3_ComparisonFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_ComparisonFilter *ret = envoy_config_accesslog_v3_ComparisonFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ComparisonFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ComparisonFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_ComparisonFilter *envoy_config_accesslog_v3_ComparisonFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_ComparisonFilter *ret = envoy_config_accesslog_v3_ComparisonFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ComparisonFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ComparisonFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_ComparisonFilter_serialize(const envoy_config_accesslog_v3_ComparisonFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_ComparisonFilter_msginit, arena, len);
@@ -422,13 +440,19 @@ UPB_INLINE envoy_config_accesslog_v3_StatusCodeFilter *envoy_config_accesslog_v3
 UPB_INLINE envoy_config_accesslog_v3_StatusCodeFilter *envoy_config_accesslog_v3_StatusCodeFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_StatusCodeFilter *ret = envoy_config_accesslog_v3_StatusCodeFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_StatusCodeFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_StatusCodeFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_StatusCodeFilter *envoy_config_accesslog_v3_StatusCodeFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_StatusCodeFilter *ret = envoy_config_accesslog_v3_StatusCodeFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_StatusCodeFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_StatusCodeFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_StatusCodeFilter_serialize(const envoy_config_accesslog_v3_StatusCodeFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_StatusCodeFilter_msginit, arena, len);
@@ -459,13 +483,19 @@ UPB_INLINE envoy_config_accesslog_v3_DurationFilter *envoy_config_accesslog_v3_D
 UPB_INLINE envoy_config_accesslog_v3_DurationFilter *envoy_config_accesslog_v3_DurationFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_DurationFilter *ret = envoy_config_accesslog_v3_DurationFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_DurationFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_DurationFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_DurationFilter *envoy_config_accesslog_v3_DurationFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_DurationFilter *ret = envoy_config_accesslog_v3_DurationFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_DurationFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_DurationFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_DurationFilter_serialize(const envoy_config_accesslog_v3_DurationFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_DurationFilter_msginit, arena, len);
@@ -496,13 +526,19 @@ UPB_INLINE envoy_config_accesslog_v3_NotHealthCheckFilter *envoy_config_accesslo
 UPB_INLINE envoy_config_accesslog_v3_NotHealthCheckFilter *envoy_config_accesslog_v3_NotHealthCheckFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_NotHealthCheckFilter *ret = envoy_config_accesslog_v3_NotHealthCheckFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_NotHealthCheckFilter *envoy_config_accesslog_v3_NotHealthCheckFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_NotHealthCheckFilter *ret = envoy_config_accesslog_v3_NotHealthCheckFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_NotHealthCheckFilter_serialize(const envoy_config_accesslog_v3_NotHealthCheckFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit, arena, len);
@@ -518,13 +554,19 @@ UPB_INLINE envoy_config_accesslog_v3_TraceableFilter *envoy_config_accesslog_v3_
 UPB_INLINE envoy_config_accesslog_v3_TraceableFilter *envoy_config_accesslog_v3_TraceableFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_TraceableFilter *ret = envoy_config_accesslog_v3_TraceableFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_TraceableFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_TraceableFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_TraceableFilter *envoy_config_accesslog_v3_TraceableFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_TraceableFilter *ret = envoy_config_accesslog_v3_TraceableFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_TraceableFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_TraceableFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_TraceableFilter_serialize(const envoy_config_accesslog_v3_TraceableFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_TraceableFilter_msginit, arena, len);
@@ -540,13 +582,19 @@ UPB_INLINE envoy_config_accesslog_v3_RuntimeFilter *envoy_config_accesslog_v3_Ru
 UPB_INLINE envoy_config_accesslog_v3_RuntimeFilter *envoy_config_accesslog_v3_RuntimeFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_RuntimeFilter *ret = envoy_config_accesslog_v3_RuntimeFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_RuntimeFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_RuntimeFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_RuntimeFilter *envoy_config_accesslog_v3_RuntimeFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_RuntimeFilter *ret = envoy_config_accesslog_v3_RuntimeFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_RuntimeFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_RuntimeFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_RuntimeFilter_serialize(const envoy_config_accesslog_v3_RuntimeFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_RuntimeFilter_msginit, arena, len);
@@ -585,13 +633,19 @@ UPB_INLINE envoy_config_accesslog_v3_AndFilter *envoy_config_accesslog_v3_AndFil
 UPB_INLINE envoy_config_accesslog_v3_AndFilter *envoy_config_accesslog_v3_AndFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_AndFilter *ret = envoy_config_accesslog_v3_AndFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AndFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AndFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_AndFilter *envoy_config_accesslog_v3_AndFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_AndFilter *ret = envoy_config_accesslog_v3_AndFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AndFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_AndFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_AndFilter_serialize(const envoy_config_accesslog_v3_AndFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_AndFilter_msginit, arena, len);
@@ -622,13 +676,19 @@ UPB_INLINE envoy_config_accesslog_v3_OrFilter *envoy_config_accesslog_v3_OrFilte
 UPB_INLINE envoy_config_accesslog_v3_OrFilter *envoy_config_accesslog_v3_OrFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_OrFilter *ret = envoy_config_accesslog_v3_OrFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_OrFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_OrFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_OrFilter *envoy_config_accesslog_v3_OrFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_OrFilter *ret = envoy_config_accesslog_v3_OrFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_OrFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_OrFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_OrFilter_serialize(const envoy_config_accesslog_v3_OrFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_OrFilter_msginit, arena, len);
@@ -659,13 +719,19 @@ UPB_INLINE envoy_config_accesslog_v3_HeaderFilter *envoy_config_accesslog_v3_Hea
 UPB_INLINE envoy_config_accesslog_v3_HeaderFilter *envoy_config_accesslog_v3_HeaderFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_HeaderFilter *ret = envoy_config_accesslog_v3_HeaderFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_HeaderFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_HeaderFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_HeaderFilter *envoy_config_accesslog_v3_HeaderFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_HeaderFilter *ret = envoy_config_accesslog_v3_HeaderFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_HeaderFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_HeaderFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_HeaderFilter_serialize(const envoy_config_accesslog_v3_HeaderFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_HeaderFilter_msginit, arena, len);
@@ -696,13 +762,19 @@ UPB_INLINE envoy_config_accesslog_v3_ResponseFlagFilter *envoy_config_accesslog_
 UPB_INLINE envoy_config_accesslog_v3_ResponseFlagFilter *envoy_config_accesslog_v3_ResponseFlagFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_ResponseFlagFilter *ret = envoy_config_accesslog_v3_ResponseFlagFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ResponseFlagFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ResponseFlagFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_ResponseFlagFilter *envoy_config_accesslog_v3_ResponseFlagFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_ResponseFlagFilter *ret = envoy_config_accesslog_v3_ResponseFlagFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ResponseFlagFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ResponseFlagFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_ResponseFlagFilter_serialize(const envoy_config_accesslog_v3_ResponseFlagFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_ResponseFlagFilter_msginit, arena, len);
@@ -729,13 +801,19 @@ UPB_INLINE envoy_config_accesslog_v3_GrpcStatusFilter *envoy_config_accesslog_v3
 UPB_INLINE envoy_config_accesslog_v3_GrpcStatusFilter *envoy_config_accesslog_v3_GrpcStatusFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_GrpcStatusFilter *ret = envoy_config_accesslog_v3_GrpcStatusFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_GrpcStatusFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_GrpcStatusFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_GrpcStatusFilter *envoy_config_accesslog_v3_GrpcStatusFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_GrpcStatusFilter *ret = envoy_config_accesslog_v3_GrpcStatusFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_GrpcStatusFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_GrpcStatusFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_GrpcStatusFilter_serialize(const envoy_config_accesslog_v3_GrpcStatusFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_GrpcStatusFilter_msginit, arena, len);
@@ -766,13 +844,19 @@ UPB_INLINE envoy_config_accesslog_v3_MetadataFilter *envoy_config_accesslog_v3_M
 UPB_INLINE envoy_config_accesslog_v3_MetadataFilter *envoy_config_accesslog_v3_MetadataFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_MetadataFilter *ret = envoy_config_accesslog_v3_MetadataFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_MetadataFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_MetadataFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_MetadataFilter *envoy_config_accesslog_v3_MetadataFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_MetadataFilter *ret = envoy_config_accesslog_v3_MetadataFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_MetadataFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_MetadataFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_MetadataFilter_serialize(const envoy_config_accesslog_v3_MetadataFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_MetadataFilter_msginit, arena, len);
@@ -818,13 +902,19 @@ UPB_INLINE envoy_config_accesslog_v3_ExtensionFilter *envoy_config_accesslog_v3_
 UPB_INLINE envoy_config_accesslog_v3_ExtensionFilter *envoy_config_accesslog_v3_ExtensionFilter_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_config_accesslog_v3_ExtensionFilter *ret = envoy_config_accesslog_v3_ExtensionFilter_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ExtensionFilter_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ExtensionFilter_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_config_accesslog_v3_ExtensionFilter *envoy_config_accesslog_v3_ExtensionFilter_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_config_accesslog_v3_ExtensionFilter *ret = envoy_config_accesslog_v3_ExtensionFilter_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ExtensionFilter_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_config_accesslog_v3_ExtensionFilter_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_config_accesslog_v3_ExtensionFilter_serialize(const envoy_config_accesslog_v3_ExtensionFilter *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_accesslog_v3_ExtensionFilter_msginit, arena, len);
@@ -855,6 +945,8 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_accesslog_v3_ExtensionFilter
   }
   return sub;
 }
+
+extern const upb_msglayout_file envoy_config_accesslog_v3_accesslog_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -18,7 +18,6 @@ import logging
 
 import grpc
 from grpc_reflection.v1alpha import reflection
-
 import helloworld_pb2
 import helloworld_pb2_grpc
 

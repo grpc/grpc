@@ -8,19 +8,14 @@
 
 #include "upb/def.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "envoy/extensions/filters/http/router/v3/router.upb.h"
 
 extern upb_def_init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
 extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_extensions_filters_http_router_v3_Router_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_extensions_filters_http_router_v3_Router_msginit,
-};
-
-static const char descriptor[909] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
+static const char descriptor[996] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
 's', '/', 'h', 't', 't', 'p', '/', 'r', 'o', 'u', 't', 'e', 'r', '/', 'v', '3', '/', 'r', 'o', 'u', 't', 'e', 'r', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '\'', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'f', 'i', 
 'l', 't', 'e', 'r', 's', '.', 'h', 't', 't', 'p', '.', 'r', 'o', 'u', 't', 'e', 'r', '.', 'v', '3', '\032', ')', 'e', 'n', 'v', 
@@ -30,7 +25,7 @@ static const char descriptor[909] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e
 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 
 'o', '\032', '!', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', 'e', 'r', 's', 'i', 
 'o', 'n', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\032', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 
-'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\"', '\255', '\004', '\n', '\006', 'R', 'o', 'u', 't', 'e', 'r', '\022', '?', '\n', 
+'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\"', '\204', '\005', '\n', '\006', 'R', 'o', 'u', 't', 'e', 'r', '\022', '?', '\n', 
 '\r', 'd', 'y', 'n', 'a', 'm', 'i', 'c', '_', 's', 't', 'a', 't', 's', '\030', '\001', ' ', '\001', '(', '\013', '2', '\032', '.', 'g', 'o', 
 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'B', 'o', 'o', 'l', 'V', 'a', 'l', 'u', 'e', 'R', '\014', 
 'd', 'y', 'n', 'a', 'm', 'i', 'c', 'S', 't', 'a', 't', 's', '\022', '(', '\n', '\020', 's', 't', 'a', 'r', 't', '_', 'c', 'h', 'i', 
@@ -50,13 +45,16 @@ static const char descriptor[909] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e
 'n', 'v', 'o', 'y', '-', 'r', 'e', 't', 'r', 'y', '-', 'o', 'n', 'R', '\022', 's', 't', 'r', 'i', 'c', 't', 'C', 'h', 'e', 'c', 
 'k', 'H', 'e', 'a', 'd', 'e', 'r', 's', '\022', '=', '\n', '\033', 'r', 'e', 's', 'p', 'e', 'c', 't', '_', 'e', 'x', 'p', 'e', 'c', 
 't', 'e', 'd', '_', 'r', 'q', '_', 't', 'i', 'm', 'e', 'o', 'u', 't', '\030', '\006', ' ', '\001', '(', '\010', 'R', '\030', 'r', 'e', 's', 
-'p', 'e', 'c', 't', 'E', 'x', 'p', 'e', 'c', 't', 'e', 'd', 'R', 'q', 'T', 'i', 'm', 'e', 'o', 'u', 't', ':', '0', '\232', '\305', 
-'\210', '\036', '+', '\n', ')', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'f', 'i', 'l', 't', 'e', 'r', '.', 
-'h', 't', 't', 'p', '.', 'r', 'o', 'u', 't', 'e', 'r', '.', 'v', '2', '.', 'R', 'o', 'u', 't', 'e', 'r', 'B', 'N', '\n', '5', 
-'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 
-'s', 'i', 'o', 'n', 's', '.', 'f', 'i', 'l', 't', 'e', 'r', 's', '.', 'h', 't', 't', 'p', '.', 'r', 'o', 'u', 't', 'e', 'r', 
-'.', 'v', '3', 'B', '\013', 'R', 'o', 'u', 't', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', 
-'\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'p', 'e', 'c', 't', 'E', 'x', 'p', 'e', 'c', 't', 'e', 'd', 'R', 'q', 'T', 'i', 'm', 'e', 'o', 'u', 't', '\022', 'U', '\n', '(', 
+'s', 'u', 'p', 'p', 'r', 'e', 's', 's', '_', 'g', 'r', 'p', 'c', '_', 'r', 'e', 'q', 'u', 'e', 's', 't', '_', 'f', 'a', 'i', 
+'l', 'u', 'r', 'e', '_', 'c', 'o', 'd', 'e', '_', 's', 't', 'a', 't', 's', '\030', '\007', ' ', '\001', '(', '\010', 'R', '#', 's', 'u', 
+'p', 'p', 'r', 'e', 's', 's', 'G', 'r', 'p', 'c', 'R', 'e', 'q', 'u', 'e', 's', 't', 'F', 'a', 'i', 'l', 'u', 'r', 'e', 'C', 
+'o', 'd', 'e', 'S', 't', 'a', 't', 's', ':', '0', '\232', '\305', '\210', '\036', '+', '\n', ')', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 
+'n', 'f', 'i', 'g', '.', 'f', 'i', 'l', 't', 'e', 'r', '.', 'h', 't', 't', 'p', '.', 'r', 'o', 'u', 't', 'e', 'r', '.', 'v', 
+'2', '.', 'R', 'o', 'u', 't', 'e', 'r', 'B', 'N', '\n', '5', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', 
+'.', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'f', 'i', 'l', 't', 'e', 'r', 's', 
+'.', 'h', 't', 't', 'p', '.', 'r', 'o', 'u', 't', 'e', 'r', '.', 'v', '3', 'B', '\013', 'R', 'o', 'u', 't', 'e', 'r', 'P', 'r', 
+'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[6] = {
@@ -70,7 +68,7 @@ static upb_def_init *deps[6] = {
 
 upb_def_init envoy_extensions_filters_http_router_v3_router_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout,
   "envoy/extensions/filters/http/router/v3/router.proto",
-  UPB_STRVIEW_INIT(descriptor, 909)
+  UPB_STRVIEW_INIT(descriptor, 996)
 };

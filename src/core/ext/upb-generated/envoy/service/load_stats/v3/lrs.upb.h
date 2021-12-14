@@ -9,7 +9,7 @@
 #ifndef ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H_
 #define ENVOY_SERVICE_LOAD_STATS_V3_LRS_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -42,13 +42,19 @@ UPB_INLINE envoy_service_load_stats_v3_LoadStatsRequest *envoy_service_load_stat
 UPB_INLINE envoy_service_load_stats_v3_LoadStatsRequest *envoy_service_load_stats_v3_LoadStatsRequest_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_service_load_stats_v3_LoadStatsRequest *ret = envoy_service_load_stats_v3_LoadStatsRequest_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_service_load_stats_v3_LoadStatsRequest *envoy_service_load_stats_v3_LoadStatsRequest_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_service_load_stats_v3_LoadStatsRequest *ret = envoy_service_load_stats_v3_LoadStatsRequest_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_service_load_stats_v3_LoadStatsRequest_serialize(const envoy_service_load_stats_v3_LoadStatsRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_load_stats_v3_LoadStatsRequest_msginit, arena, len);
@@ -94,13 +100,19 @@ UPB_INLINE envoy_service_load_stats_v3_LoadStatsResponse *envoy_service_load_sta
 UPB_INLINE envoy_service_load_stats_v3_LoadStatsResponse *envoy_service_load_stats_v3_LoadStatsResponse_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_service_load_stats_v3_LoadStatsResponse *ret = envoy_service_load_stats_v3_LoadStatsResponse_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_service_load_stats_v3_LoadStatsResponse *envoy_service_load_stats_v3_LoadStatsResponse_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_service_load_stats_v3_LoadStatsResponse *ret = envoy_service_load_stats_v3_LoadStatsResponse_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_service_load_stats_v3_LoadStatsResponse_serialize(const envoy_service_load_stats_v3_LoadStatsResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_service_load_stats_v3_LoadStatsResponse_msginit, arena, len);
@@ -141,6 +153,8 @@ UPB_INLINE void envoy_service_load_stats_v3_LoadStatsResponse_set_report_endpoin
 UPB_INLINE void envoy_service_load_stats_v3_LoadStatsResponse_set_send_all_clusters(envoy_service_load_stats_v3_LoadStatsResponse *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
 }
+
+extern const upb_msglayout_file envoy_service_load_stats_v3_lrs_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

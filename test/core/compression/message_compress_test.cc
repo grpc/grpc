@@ -124,7 +124,6 @@ static compressability get_compressability(
       return SHOULD_COMPRESS;
     case TEST_VALUE_COUNT:
       abort();
-      break;
   }
   return MAYBE_COMPRESSES;
 }
@@ -139,7 +138,6 @@ static grpc_slice create_test_value(test_value id) {
       return repeated('a', 1024 * 1024);
     case TEST_VALUE_COUNT:
       abort();
-      break;
   }
   return grpc_slice_from_copied_string("bad value");
 }

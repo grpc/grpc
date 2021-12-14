@@ -18,8 +18,8 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import logging
 from concurrent import futures
+import logging
 import random
 
 import grpc

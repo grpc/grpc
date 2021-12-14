@@ -14,22 +14,24 @@
 """Testing the compatibility between AsyncIO stack and the old stack."""
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import random
 import threading
-import unittest
-from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Iterable, Sequence, Tuple
+import unittest
 
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework.common import test_constants
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
-from tests_aio.unit._test_server import TestServiceServicer, start_test_server
+from tests_aio.unit._test_server import TestServiceServicer
+from tests_aio.unit._test_server import start_test_server
 
 _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
@@ -76,7 +78,7 @@ class TestCompatibility(AioTestBase):
         await self._async_server.stop(None)
 
     async def _run_in_another_thread(self, func: Callable[[], None]):
-        work_done = asyncio.Event(loop=self.loop)
+        work_done = asyncio.Event()
 
         def thread_work():
             func()

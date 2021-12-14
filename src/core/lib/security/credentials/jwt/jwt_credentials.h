@@ -23,10 +23,11 @@
 
 #include <string>
 
-#include <grpc/support/time.h>
-
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
+
+#include <grpc/support/time.h>
+
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
@@ -64,7 +65,7 @@ class grpc_service_account_jwt_access_credentials
   gpr_mu cache_mu_;
   struct {
     grpc_mdelem jwt_md = GRPC_MDNULL;
-    char* service_url = nullptr;
+    std::string service_url;
     gpr_timespec jwt_expiration;
   } cached_;
 
@@ -77,5 +78,12 @@ class grpc_service_account_jwt_access_credentials
 grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime);
+
+namespace grpc_core {
+
+// Exposed for testing purposes only.
+absl::StatusOr<std::string> RemoveServiceNameFromJwtUri(absl::string_view uri);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */

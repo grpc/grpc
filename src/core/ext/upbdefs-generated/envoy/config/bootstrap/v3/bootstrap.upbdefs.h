@@ -106,6 +106,11 @@ UPB_INLINE const upb_msgdef *envoy_config_bootstrap_v3_LayeredRuntime_getmsgdef(
   return upb_symtab_lookupmsg(s, "envoy.config.bootstrap.v3.LayeredRuntime");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_bootstrap_v3_CustomInlineHeader_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.bootstrap.v3.CustomInlineHeader");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

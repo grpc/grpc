@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include <stddef.h>
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +48,9 @@ GRPCAPI grpc_channel* grpc_insecure_channel_create_from_fd(
     grpc_server_register_completion_queue API).
 
     The 'reserved' pointer MUST be NULL.
+
+    TODO(hork): add channel_args to this API to allow endpoints and transports
+    created in this function to participate in the resource quota feature.
     */
 GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
                                                       void* reserved, int fd);

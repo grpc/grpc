@@ -14,10 +14,10 @@
 """Channelz debug service implementation in gRPC Python."""
 
 import sys
-import grpc
 
-import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
+import grpc
 from grpc_channelz.v1._servicer import ChannelzServicer
+import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
 
 _add_channelz_servicer_doc = """Add Channelz servicer to a server.
 

@@ -21,14 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/log.h>
+#include <atomic>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_utils.h"
 
@@ -203,8 +203,8 @@ typedef void (*destroy_user_data_func)(void* data);
 
 struct UserData {
   Mutex mu_user_data;
-  grpc_core::Atomic<destroy_user_data_func> destroy_user_data;
-  grpc_core::Atomic<void*> data;
+  std::atomic<destroy_user_data_func> destroy_user_data{nullptr};
+  std::atomic<void*> data{nullptr};
 };
 
 class StaticMetadata {
@@ -241,7 +241,7 @@ class RefcountedMdBase {
 #ifndef NDEBUG
   void Ref(const char* file, int line) {
     grpc_mdelem_trace_ref(this, key_, value_, RefValue(), file, line);
-    const intptr_t prior = refcnt_.FetchAdd(1, MemoryOrder::RELAXED);
+    const intptr_t prior = refcnt_.fetch_add(1, std::memory_order_relaxed);
     GPR_ASSERT(prior > 0);
   }
   bool Unref(const char* file, int line) {
@@ -253,10 +253,10 @@ class RefcountedMdBase {
     /* we can assume the ref count is >= 1 as the application is calling
        this function - meaning that no adjustment to mdtab_free is necessary,
        simplifying the logic here to be just an atomic increment */
-    refcnt_.FetchAdd(1, MemoryOrder::RELAXED);
+    refcnt_.fetch_add(1, std::memory_order_relaxed);
   }
   bool Unref() {
-    const intptr_t prior = refcnt_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const intptr_t prior = refcnt_.fetch_sub(1, std::memory_order_acq_rel);
     GPR_DEBUG_ASSERT(prior > 0);
     return prior == 1;
   }
@@ -266,15 +266,17 @@ class RefcountedMdBase {
   void TraceAtStart(const char* tag);
 #endif
 
-  intptr_t RefValue() { return refcnt_.Load(MemoryOrder::RELAXED); }
-  bool AllRefsDropped() { return refcnt_.Load(MemoryOrder::ACQUIRE) == 0; }
-  bool FirstRef() { return refcnt_.FetchAdd(1, MemoryOrder::RELAXED) == 0; }
+  intptr_t RefValue() { return refcnt_.load(std::memory_order_relaxed); }
+  bool AllRefsDropped() { return refcnt_.load(std::memory_order_acquire) == 0; }
+  bool FirstRef() {
+    return refcnt_.fetch_add(1, std::memory_order_relaxed) == 0;
+  }
 
  private:
   /* must be byte compatible with grpc_mdelem_data */
   grpc_slice key_;
   grpc_slice value_;
-  grpc_core::Atomic<intptr_t> refcnt_;
+  std::atomic<intptr_t> refcnt_{0};
   uint32_t hash_ = 0;
 };
 
@@ -311,10 +313,10 @@ class AllocatedMetadata : public RefcountedMdBase {
   // TODO(arjunroy): Change to use strongly typed slices instead.
   struct NoRefKey {};
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value);
-  AllocatedMetadata(const grpc_core::ManagedMemorySlice& key,
-                    const grpc_core::UnmanagedMemorySlice& value);
-  AllocatedMetadata(const grpc_core::ExternallyManagedSlice& key,
-                    const grpc_core::UnmanagedMemorySlice& value);
+  AllocatedMetadata(const ManagedMemorySlice& key,
+                    const UnmanagedMemorySlice& value);
+  AllocatedMetadata(const ExternallyManagedSlice& key,
+                    const UnmanagedMemorySlice& value);
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value,
                     const NoRefKey*);
   ~AllocatedMetadata();
@@ -407,7 +409,8 @@ inline void grpc_mdelem_unref(grpc_mdelem gmd) {
   (GRPC_SLICE_LENGTH(GRPC_MDKEY((e))) + GRPC_SLICE_LENGTH(GRPC_MDVALUE((e))) + \
    32)
 
-#define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
+#define GRPC_MDSTR_KV_HASH(k_hash, v_hash) \
+  (::grpc_core::RotateLeft(size_t(k_hash), size_t(2)) ^ (v_hash))
 
 void grpc_mdctx_global_init(void);
 void grpc_mdctx_global_shutdown();

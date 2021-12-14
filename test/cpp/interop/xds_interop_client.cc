@@ -16,13 +16,6 @@
  *
  */
 
-#include <grpcpp/ext/admin_services.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/server_context.h>
-
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -38,6 +31,14 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -465,12 +466,15 @@ class XdsUpdateClientConfigureServiceImpl
 void RunTestLoop(std::chrono::duration<double> duration_per_query,
                  StatsWatchers* stats_watchers,
                  RpcConfigurationsQueue* rpc_configs_queue) {
+  grpc::ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
   TestClient client(
-      grpc::CreateChannel(absl::GetFlag(FLAGS_server),
-                          absl::GetFlag(FLAGS_secure_mode)
-                              ? grpc::experimental::XdsCredentials(
-                                    grpc::InsecureChannelCredentials())
-                              : grpc::InsecureChannelCredentials()),
+      grpc::CreateCustomChannel(absl::GetFlag(FLAGS_server),
+                                absl::GetFlag(FLAGS_secure_mode)
+                                    ? grpc::experimental::XdsCredentials(
+                                          grpc::InsecureChannelCredentials())
+                                    : grpc::InsecureChannelCredentials(),
+                                channel_args),
       stats_watchers);
   std::chrono::time_point<std::chrono::system_clock> start =
       std::chrono::system_clock::now();
@@ -503,7 +507,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
       }
     }
   }
-  thread.join();
+  GPR_UNREACHABLE_CODE(thread.join());
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,

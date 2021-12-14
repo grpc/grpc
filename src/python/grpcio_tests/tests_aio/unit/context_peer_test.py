@@ -16,17 +16,19 @@
 import asyncio
 import logging
 import os
-import unittest
 from typing import Callable, Iterable, Sequence, Tuple
+import unittest
 
 import grpc
 from grpc.experimental import aio
 
-from src.proto.grpc.testing import messages_pb2, test_pb2_grpc
+from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework.common import test_constants
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
-from tests_aio.unit._test_server import TestServiceServicer, start_test_server
+from tests_aio.unit._test_server import TestServiceServicer
+from tests_aio.unit._test_server import start_test_server
 
 _REQUEST = b'\x03\x07'
 _TEST_METHOD = '/test/UnaryUnary'

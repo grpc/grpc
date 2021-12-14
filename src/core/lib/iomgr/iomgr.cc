@@ -53,7 +53,9 @@ static bool g_grpc_abort_on_leaks;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_determine_iomgr_platform();
+  if (!grpc_have_determined_iomgr_platform()) {
+    grpc_set_default_iomgr_platform();
+  }
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
@@ -94,7 +96,6 @@ void grpc_iomgr_shutdown() {
   {
     grpc_timer_manager_shutdown();
     grpc_iomgr_platform_flush();
-    grpc_core::Executor::ShutdownAll();
 
     gpr_mu_lock(&g_mu);
     g_shutdown = 1;
@@ -149,6 +150,7 @@ void grpc_iomgr_shutdown() {
     gpr_mu_unlock(&g_mu);
     grpc_timer_list_shutdown();
     grpc_core::ExecCtx::Get()->Flush();
+    grpc_core::Executor::ShutdownAll();
   }
 
   /* ensure all threads have left g_mu */

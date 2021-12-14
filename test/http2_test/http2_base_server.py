@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import logging
-import messages_pb2
 import struct
 
 import h2
 import h2.connection
+import messages_pb2
 import twisted
 import twisted.internet
 import twisted.internet.protocol

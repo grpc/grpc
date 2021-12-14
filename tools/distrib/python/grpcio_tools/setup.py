@@ -18,19 +18,18 @@ from distutils import util
 import errno
 import os
 import os.path
-import pkg_resources
 import platform
 import re
 import shlex
 import shutil
+import subprocess
+from subprocess import PIPE
 import sys
 import sysconfig
 
+import pkg_resources
 import setuptools
 from setuptools.command import build_ext
-
-import subprocess
-from subprocess import PIPE
 
 # TODO(atash) add flag to disable Cython use
 
@@ -42,6 +41,7 @@ sys.path.insert(0, os.path.abspath('.'))
 
 import _parallel_compile_patch
 import protoc_lib_deps
+
 import grpc_version
 
 _EXT_INIT_SYMBOL = None
@@ -55,12 +55,7 @@ _parallel_compile_patch.monkeypatch_compile_maybe()
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.4',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -293,6 +288,7 @@ setuptools.setup(name='grpcio-tools',
                  classifiers=CLASSIFIERS,
                  ext_modules=extension_modules(),
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=[
                      'protobuf>=3.5.0.post1, < 4.0dev',
                      'grpcio>={version}'.format(version=grpc_version.VERSION),

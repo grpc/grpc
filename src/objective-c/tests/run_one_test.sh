@@ -29,7 +29,7 @@ INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
 }
 
 [ -f $INTEROP ] || {
-    BAZEL build //test/cpp/interop:interop_server
+    $BAZEL build //test/cpp/interop:interop_server
 }
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
@@ -85,6 +85,7 @@ xcodebuild \
     HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    GCC_OPTIMIZATION_LEVEL=s \
     test \
     | ./verbose_time.sh \
     | egrep -v "$XCODEBUILD_FILTER" \

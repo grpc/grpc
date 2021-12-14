@@ -15,13 +15,14 @@
  * limitations under the License.
  *
  */
+#include <sstream>
+
+#include "absl/flags/flag.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/server_builder.h>
 
-#include <sstream>
-
-#include "absl/flags/flag.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"

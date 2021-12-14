@@ -18,6 +18,14 @@
 
 #include "test/cpp/interop/client_helper.h"
 
+#include <fstream>
+#include <memory>
+#include <sstream>
+
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/match.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -25,12 +33,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -136,6 +139,48 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
                                creds, std::move(interceptor_creators));
     }
   }
+}
+
+static void log_metadata_entry(const std::string& prefix,
+                               const grpc::string_ref& key,
+                               const grpc::string_ref& value) {
+  auto key_str = std::string(key.begin(), key.end());
+  auto value_str = std::string(value.begin(), value.end());
+  if (absl::EndsWith(key_str, "-bin")) {
+    auto converted =
+        grpc_base64_encode(value_str.c_str(), value_str.length(), 0, 0);
+    value_str = std::string(converted);
+    gpr_free(converted);
+  }
+  gpr_log(GPR_ERROR, "%s %s: %s", prefix.c_str(), key_str.c_str(),
+          value_str.c_str());
+}
+
+void MetadataAndStatusLoggerInterceptor::Intercept(
+    experimental::InterceptorBatchMethods* methods) {
+  if (methods->QueryInterceptionHookPoint(
+          experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
+    auto initial_metadata = methods->GetRecvInitialMetadata();
+
+    for (const auto& entry : *initial_metadata) {
+      log_metadata_entry("GRPC_INITIAL_METADATA", entry.first, entry.second);
+    }
+  }
+
+  if (methods->QueryInterceptionHookPoint(
+          experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
+    auto trailing_metadata = methods->GetRecvTrailingMetadata();
+    for (const auto& entry : *trailing_metadata) {
+      log_metadata_entry("GRPC_TRAILING_METADATA", entry.first, entry.second);
+    }
+
+    auto status = methods->GetRecvStatus();
+    gpr_log(GPR_ERROR, "GRPC_STATUS %d", status->error_code());
+    gpr_log(GPR_ERROR, "GRPC_ERROR_MESSAGE %s",
+            status->error_message().c_str());
+  }
+
+  methods->Proceed();
 }
 
 }  // namespace testing

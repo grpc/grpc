@@ -18,34 +18,44 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/surface/validate_metadata.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/validate_metadata.h"
+
+#if __cplusplus > 201103l
+#define GRPC_VALIDATE_METADATA_CONSTEXPR_FN constexpr
+#define GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE constexpr
+#else
+#define GRPC_VALIDATE_METADATA_CONSTEXPR_FN
+#define GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE const
+#endif
 
 static grpc_error_handle conforms_to(const grpc_slice& slice,
-                                     const uint8_t* legal_bits,
+                                     const grpc_core::BitSet<256>& legal_bits,
                                      const char* err_desc) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice);
   const uint8_t* e = GRPC_SLICE_END_PTR(slice);
   for (; p != e; p++) {
-    int idx = *p;
-    int byte = idx / 8;
-    int bit = idx % 8;
-    if ((legal_bits[byte] & (1 << bit)) == 0) {
+    if (!legal_bits.is_set(*p)) {
+      size_t len;
+      grpc_core::UniquePtr<char> ptr(gpr_dump_return_len(
+          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
+          GRPC_SLICE_LENGTH(slice), GPR_DUMP_HEX | GPR_DUMP_ASCII, &len));
       grpc_error_handle error = grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
                              GRPC_ERROR_INT_OFFSET,
                              p - GRPC_SLICE_START_PTR(slice)),
-          GRPC_ERROR_STR_RAW_BYTES,
-          grpc_dump_slice_to_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+          GRPC_ERROR_STR_RAW_BYTES, absl::string_view(ptr.get(), len));
       return error;
     }
   }
@@ -58,11 +68,22 @@ static int error2int(grpc_error_handle error) {
   return r;
 }
 
+namespace {
+class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
+ public:
+  GRPC_VALIDATE_METADATA_CONSTEXPR_FN LegalHeaderKeyBits() {
+    for (int i = 'a'; i <= 'z'; i++) set(i);
+    for (int i = '0'; i <= '9'; i++) set(i);
+    set('-');
+    set('_');
+    set('.');
+  }
+};
+GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderKeyBits
+    g_legal_header_key_bits;
+}  // namespace
+
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
-  static const uint8_t legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0x00, 0x00, 0x00,
-      0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   if (GRPC_SLICE_LENGTH(slice) == 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Metadata keys cannot be zero length");
@@ -75,20 +96,30 @@ grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Metadata keys cannot start with :");
   }
-  return conforms_to(slice, legal_header_bits, "Illegal header key");
+  return conforms_to(slice, g_legal_header_key_bits, "Illegal header key");
 }
 
 int grpc_header_key_is_legal(grpc_slice slice) {
   return error2int(grpc_validate_header_key_is_legal(slice));
 }
 
+namespace {
+class LegalHeaderNonBinValueBits : public grpc_core::BitSet<256> {
+ public:
+  GRPC_VALIDATE_METADATA_CONSTEXPR_FN LegalHeaderNonBinValueBits() {
+    for (int i = 32; i <= 126; i++) {
+      set(i);
+    }
+  }
+};
+GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderNonBinValueBits
+    g_legal_header_non_bin_value_bits;
+}  // namespace
+
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(
     const grpc_slice& slice) {
-  static const uint8_t legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-      0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  return conforms_to(slice, legal_header_bits, "Illegal header value");
+  return conforms_to(slice, g_legal_header_non_bin_value_bits,
+                     "Illegal header value");
 }
 
 int grpc_header_nonbin_value_is_legal(grpc_slice slice) {

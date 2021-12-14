@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -33,8 +31,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/static_metadata.h"
-
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -121,8 +119,6 @@ static void test_retry(grpc_end2end_test_config config) {
   char* peer;
 
   grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
           const_cast<char*>(
@@ -199,8 +195,9 @@ static void test_retry(grpc_end2end_test_config config) {
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(!grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                              GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS));
+    GPR_ASSERT(!grpc_slice_eq(
+        request_metadata_recv.metadata[i].key,
+        grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
   }
 
   peer = grpc_call_get_peer(s);
@@ -248,10 +245,11 @@ static void test_retry(grpc_end2end_test_config config) {
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
+    if (grpc_slice_eq(
+            request_metadata_recv.metadata[i].key,
+            grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               grpc_slice_from_static_string("1")));
       found_retry_header = true;
       break;
     }

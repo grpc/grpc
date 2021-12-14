@@ -25,11 +25,14 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+
 #include <new>
 #include <type_traits>
 #include <utility>
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/construct_destruct.h"
 
 namespace grpc_core {
 
@@ -160,9 +163,8 @@ class PolymorphicManualConstructor {
   }
 
   typename std::aligned_storage<
-      grpc_core::manual_ctor_impl::max_size_of<DerivedTypes...>::value,
-      grpc_core::manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type
-      space_;
+      manual_ctor_impl::max_size_of<DerivedTypes...>::value,
+      manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type space_;
 };
 
 template <typename Type>
@@ -182,7 +184,7 @@ class ManualConstructor {
   Type& operator*() { return *get(); }
   const Type& operator*() const { return *get(); }
 
-  void Init() { new (&space_) Type; }
+  void Init() { Construct(get()); }
 
   // Init() constructs the Type instance using the given arguments
   // (which are forwarded to Type's constructor).
@@ -192,17 +194,17 @@ class ManualConstructor {
   // "new Type();"), so it will leave non-class types uninitialized.
   template <typename... Ts>
   void Init(Ts&&... args) {
-    new (&space_) Type(std::forward<Ts>(args)...);
+    Construct(get(), std::forward<Ts>(args)...);
   }
 
   // Init() that is equivalent to copy and move construction.
   // Enables usage like this:
   //   ManualConstructor<std::vector<int>> v;
   //   v.Init({1, 2, 3});
-  void Init(const Type& x) { new (&space_) Type(x); }
-  void Init(Type&& x) { new (&space_) Type(std::move(x)); }
+  void Init(const Type& x) { Construct(get(), x); }
+  void Init(Type&& x) { Construct(get(), std::forward<Type>(x)); }
 
-  void Destroy() { get()->~Type(); }
+  void Destroy() { Destruct(get()); }
 
  private:
   typename std::aligned_storage<sizeof(Type), alignof(Type)>::type space_;
@@ -210,4 +212,4 @@ class ManualConstructor {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_MANUAL_CONSTRUCTOR_H

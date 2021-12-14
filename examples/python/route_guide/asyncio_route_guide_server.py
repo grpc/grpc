@@ -14,13 +14,12 @@
 """The Python AsyncIO implementation of the gRPC route guide server."""
 
 import asyncio
-import time
-import math
 import logging
+import math
+import time
 from typing import AsyncIterable, Iterable
 
 import grpc
-
 import route_guide_pb2
 import route_guide_pb2_grpc
 import route_guide_resources

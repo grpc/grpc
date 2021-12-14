@@ -37,7 +37,7 @@ def create_docker_jobspec(name,
         environ['RELATIVE_COPY_PATH'] = copy_rel_path
 
     docker_args = []
-    for k, v in environ.items():
+    for k, v in list(environ.items()):
         docker_args += ['-e', '%s=%s' % (k, v)]
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,
@@ -85,12 +85,15 @@ class CSharpDistribTest(object):
                  platform,
                  arch,
                  docker_suffix=None,
-                 use_dotnet_cli=False):
+                 use_dotnet_cli=False,
+                 presubmit=False):
         self.name = 'csharp_%s_%s' % (platform, arch)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.labels = ['distribtest', 'csharp', platform, arch]
+        if presubmit:
+            self.labels.append('presubmit')
         self.script_suffix = ''
         if docker_suffix:
             self.name += '_%s' % docker_suffix
@@ -146,7 +149,12 @@ class CSharpDistribTest(object):
 class PythonDistribTest(object):
     """Tests Python package"""
 
-    def __init__(self, platform, arch, docker_suffix, source=False):
+    def __init__(self,
+                 platform,
+                 arch,
+                 docker_suffix,
+                 source=False,
+                 presubmit=False):
         self.source = source
         if source:
             self.name = 'python_dev_%s_%s_%s' % (platform, arch, docker_suffix)
@@ -156,6 +164,8 @@ class PythonDistribTest(object):
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.labels = ['distribtest', 'python', platform, arch, docker_suffix]
+        if presubmit:
+            self.labels.append('presubmit')
 
     def pre_build_jobspecs(self):
         return []
@@ -191,7 +201,8 @@ class RubyDistribTest(object):
                  arch,
                  docker_suffix,
                  ruby_version=None,
-                 source=False):
+                 source=False,
+                 presubmit=False):
         self.package_type = 'binary'
         if source:
             self.package_type = 'source'
@@ -203,6 +214,8 @@ class RubyDistribTest(object):
         self.docker_suffix = docker_suffix
         self.ruby_version = ruby_version
         self.labels = ['distribtest', 'ruby', platform, arch, docker_suffix]
+        if presubmit:
+            self.labels.append('presubmit')
 
     def pre_build_jobspecs(self):
         return []
@@ -233,12 +246,14 @@ class RubyDistribTest(object):
 class PHP7DistribTest(object):
     """Tests PHP7 package"""
 
-    def __init__(self, platform, arch, docker_suffix=None):
+    def __init__(self, platform, arch, docker_suffix=None, presubmit=False):
         self.name = 'php7_%s_%s_%s' % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
-        self.labels = ['distribtest', 'php7', platform, arch]
+        self.labels = ['distribtest', 'php', 'php7', platform, arch]
+        if presubmit:
+            self.labels.append('presubmit')
         if docker_suffix:
             self.labels.append(docker_suffix)
 
@@ -269,7 +284,12 @@ class PHP7DistribTest(object):
 class CppDistribTest(object):
     """Tests Cpp make install by building examples."""
 
-    def __init__(self, platform, arch, docker_suffix=None, testcase=None):
+    def __init__(self,
+                 platform,
+                 arch,
+                 docker_suffix=None,
+                 testcase=None,
+                 presubmit=False):
         if platform == 'linux':
             self.name = 'cpp_%s_%s_%s_%s' % (platform, arch, docker_suffix,
                                              testcase)
@@ -286,6 +306,8 @@ class CppDistribTest(object):
             arch,
             testcase,
         ]
+        if presubmit:
+            self.labels.append('presubmit')
         if docker_suffix:
             self.labels.append(docker_suffix)
 
@@ -318,67 +340,125 @@ def targets():
     """Gets list of supported targets"""
     return [
         # C++
-        CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
-        CppDistribTest('linux', 'x64', 'stretch', 'cmake'),
-        CppDistribTest('linux', 'x64', 'stretch', 'cmake_as_externalproject'),
-        CppDistribTest('linux', 'x64', 'stretch', 'cmake_fetchcontent'),
-        CppDistribTest('linux', 'x64', 'stretch', 'cmake_module_install'),
-        CppDistribTest('linux', 'x64', 'stretch',
-                       'cmake_module_install_pkgconfig'),
-        CppDistribTest('linux', 'x64', 'stretch', 'cmake_pkgconfig'),
-        CppDistribTest('linux', 'x64', 'stretch_aarch64_cross',
-                       'cmake_aarch64_cross'),
-        CppDistribTest('windows', 'x86', testcase='cmake'),
-        CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
+        CppDistribTest('linux',
+                       'x64',
+                       'jessie',
+                       'cmake_as_submodule',
+                       presubmit=True),
+        CppDistribTest('linux', 'x64', 'stretch', 'cmake', presubmit=True),
+        CppDistribTest('linux',
+                       'x64',
+                       'stretch',
+                       'cmake_as_externalproject',
+                       presubmit=True),
+        CppDistribTest('linux',
+                       'x64',
+                       'stretch',
+                       'cmake_fetchcontent',
+                       presubmit=True),
+        CppDistribTest('linux',
+                       'x64',
+                       'stretch',
+                       'cmake_module_install',
+                       presubmit=True),
+        CppDistribTest('linux',
+                       'x64',
+                       'stretch',
+                       'cmake_module_install_pkgconfig',
+                       presubmit=True),
+        CppDistribTest('linux',
+                       'x64',
+                       'stretch',
+                       'cmake_pkgconfig',
+                       presubmit=True),
+        CppDistribTest('linux',
+                       'x64',
+                       'stretch_aarch64_cross',
+                       'cmake_aarch64_cross',
+                       presubmit=True),
+        CppDistribTest('windows', 'x86', testcase='cmake', presubmit=True),
+        CppDistribTest('windows',
+                       'x86',
+                       testcase='cmake_as_externalproject',
+                       presubmit=True),
         # C#
-        CSharpDistribTest('linux', 'x64', 'jessie'),
+        CSharpDistribTest('linux', 'x64', 'jessie', presubmit=True),
         CSharpDistribTest('linux', 'x64', 'stretch'),
-        CSharpDistribTest('linux', 'x64', 'stretch', use_dotnet_cli=True),
+        CSharpDistribTest('linux',
+                          'x64',
+                          'stretch',
+                          use_dotnet_cli=True,
+                          presubmit=True),
         CSharpDistribTest('linux', 'x64', 'centos7'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
-        CSharpDistribTest('linux', 'x64', 'alpine', use_dotnet_cli=True),
-        CSharpDistribTest('linux', 'x64', 'dotnet31', use_dotnet_cli=True),
-        CSharpDistribTest('linux', 'x64', 'dotnet5', use_dotnet_cli=True),
-        CSharpDistribTest('macos', 'x64'),
-        CSharpDistribTest('windows', 'x86'),
-        CSharpDistribTest('windows', 'x64'),
+        CSharpDistribTest('linux',
+                          'x64',
+                          'alpine',
+                          use_dotnet_cli=True,
+                          presubmit=True),
+        CSharpDistribTest('linux',
+                          'x64',
+                          'dotnet31',
+                          use_dotnet_cli=True,
+                          presubmit=True),
+        CSharpDistribTest('linux',
+                          'x64',
+                          'dotnet5',
+                          use_dotnet_cli=True,
+                          presubmit=True),
+        CSharpDistribTest('macos', 'x64', presubmit=True),
+        CSharpDistribTest('windows', 'x86', presubmit=True),
+        CSharpDistribTest('windows', 'x64', presubmit=True),
         # Python
-        PythonDistribTest('linux', 'x64', 'jessie'),
-        PythonDistribTest('linux', 'x86', 'jessie'),
-        PythonDistribTest('linux', 'x64', 'centos6'),
+        PythonDistribTest('linux', 'x64', 'buster', presubmit=True),
+        PythonDistribTest('linux', 'x86', 'buster', presubmit=True),
         PythonDistribTest('linux', 'x64', 'centos7'),
-        PythonDistribTest('linux', 'x64', 'fedora23'),
+        PythonDistribTest('linux', 'x64', 'fedora34'),
         PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
-        PythonDistribTest('linux', 'aarch64', 'python38_buster'),
-        PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
-        PythonDistribTest('linux', 'x64', 'jessie', source=True),
-        PythonDistribTest('linux', 'x86', 'jessie', source=True),
+        PythonDistribTest('linux', 'aarch64', 'python38_buster',
+                          presubmit=True),
+        PythonDistribTest('linux',
+                          'x64',
+                          'alpine3.7',
+                          source=True,
+                          presubmit=True),
+        PythonDistribTest('linux', 'x64', 'buster', source=True,
+                          presubmit=True),
+        PythonDistribTest('linux', 'x86', 'buster', source=True,
+                          presubmit=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
-        PythonDistribTest('linux', 'x64', 'fedora23', source=True),
+        PythonDistribTest('linux', 'x64', 'fedora34', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
-        PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
         # Ruby
-        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
+        RubyDistribTest('linux',
+                        'x64',
+                        'jessie',
+                        ruby_version='ruby_2_4',
+                        presubmit=True),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
-        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_7'),
+        RubyDistribTest('linux',
+                        'x64',
+                        'jessie',
+                        ruby_version='ruby_2_7',
+                        presubmit=True),
         # TODO(apolcyn): add a ruby 3.0 test once protobuf adds support
         RubyDistribTest('linux',
                         'x64',
                         'jessie',
                         ruby_version='ruby_2_4',
-                        source=True),
+                        source=True,
+                        presubmit=True),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'fedora23'),
         RubyDistribTest('linux', 'x64', 'opensuse'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
-        RubyDistribTest('linux', 'x64', 'ubuntu1804'),
+        RubyDistribTest('linux', 'x64', 'ubuntu1804', presubmit=True),
         # PHP7
-        PHP7DistribTest('linux', 'x64', 'stretch'),
-        PHP7DistribTest('macos', 'x64'),
+        PHP7DistribTest('linux', 'x64', 'stretch', presubmit=True),
+        PHP7DistribTest('macos', 'x64', presubmit=True),
     ]

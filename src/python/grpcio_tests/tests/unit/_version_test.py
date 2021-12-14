@@ -13,9 +13,10 @@
 # limitations under the License.
 """Test for grpc.__version__"""
 
-import unittest
-import grpc
 import logging
+import unittest
+
+import grpc
 from grpc import _grpcio_metadata
 
 

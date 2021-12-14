@@ -28,7 +28,7 @@ gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm* value, gpr_atm delta,
   gpr_atm new_value;
   do {
     current_value = gpr_atm_no_barrier_load(value);
-    new_value = GPR_CLAMP(current_value + delta, min, max);
+    new_value = grpc_core::Clamp(current_value + delta, min, max);
     if (new_value == current_value) break;
   } while (!gpr_atm_no_barrier_cas(value, current_value, new_value));
   return new_value;

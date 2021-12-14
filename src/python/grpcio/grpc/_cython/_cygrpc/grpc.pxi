@@ -42,8 +42,8 @@ cdef extern from "grpc/byte_buffer_reader.h":
 
 
 cdef extern from "grpc/impl/codegen/grpc_types.h":
-    ctypedef struct grpc_experimental_completion_queue_functor:
-        void (*functor_run)(grpc_experimental_completion_queue_functor*, int);
+    ctypedef struct grpc_completion_queue_functor:
+        void (*functor_run)(grpc_completion_queue_functor*, int);
 
 
 cdef extern from "grpc/grpc.h":
@@ -236,6 +236,7 @@ cdef extern from "grpc/grpc.h":
     int version
     grpc_cq_completion_type cq_completion_type
     grpc_cq_polling_type cq_polling_type
+    void* cq_shutdown_cb
 
   ctypedef enum grpc_connectivity_state:
     GRPC_CHANNEL_IDLE
@@ -358,7 +359,7 @@ cdef extern from "grpc/grpc.h":
   void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
 
   grpc_completion_queue *grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
+    grpc_completion_queue_functor* shutdown_callback,
     void *reserved) nogil
 
   grpc_call_error grpc_call_start_batch(
@@ -699,3 +700,8 @@ cdef extern from "grpc/grpc_security_constants.h":
   ctypedef enum grpc_local_connect_type:
     UDS
     LOCAL_TCP
+
+
+cdef extern from "src/core/lib/iomgr/error.h":
+  ctypedef grpc_error* grpc_error_handle
+  grpc_error_handle GRPC_ERROR_CANCELLED

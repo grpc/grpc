@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_STUB_OPTIONS_H
 #define GRPCPP_SUPPORT_STUB_OPTIONS_H
 
-#include <grpcpp/impl/codegen/stub_options.h>
+#include <grpcpp/impl/codegen/stub_options.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_STUB_OPTIONS_H

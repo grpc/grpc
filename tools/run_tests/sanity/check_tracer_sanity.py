@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import os
-import sys
 import re
+import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
@@ -38,9 +38,9 @@ with open('doc/environment_variables.md') as f:
 
 for t in tracers:
     if t not in text:
-        print(
+        print((
             "ERROR: tracer \"%s\" is not mentioned in doc/environment_variables.md"
-            % t)
+            % t))
         errors += 1
 
 assert errors == 0

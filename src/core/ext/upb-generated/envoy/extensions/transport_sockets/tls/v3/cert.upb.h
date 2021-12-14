@@ -9,15 +9,15 @@
 #ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 /* Public Imports. */
-#include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/secret.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/cert.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/cert.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/cert.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+
+extern const upb_msglayout_file envoy_extensions_transport_sockets_tls_v3_cert_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

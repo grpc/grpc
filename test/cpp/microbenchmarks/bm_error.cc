@@ -18,21 +18,25 @@
 
 /* Test various operations on grpc_error */
 
-#include <benchmark/benchmark.h>
 #include <memory>
+
+#include <benchmark/benchmark.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-class ErrorDeleter {
+class ErrorHandleHolder {
  public:
-  void operator()(grpc_error_handle error) { GRPC_ERROR_UNREF(error); }
+  explicit ErrorHandleHolder(grpc_error_handle error) : error_(error) {}
+  ~ErrorHandleHolder() { GRPC_ERROR_UNREF(error_); }
+  const grpc_error_handle& get() const { return error_; }
+
+ private:
+  grpc_error_handle error_;
 };
-typedef std::unique_ptr<grpc_error, ErrorDeleter> ErrorPtr;
 
 static void BM_ErrorCreateFromStatic(benchmark::State& state) {
   TrackCounters track_counters;
@@ -70,7 +74,7 @@ static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
             GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)0),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_static_string("raw bytes")));
+        GRPC_ERROR_STR_RAW_BYTES, "raw bytes"));
   }
   track_counters.Finish(state);
 }
@@ -93,8 +97,7 @@ static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
   const char* str = "hello";
   for (auto _ : state) {
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                               grpc_slice_from_static_string(str));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, str);
   }
   GRPC_ERROR_UNREF(error);
   track_counters.Finish(state);
@@ -132,7 +135,7 @@ BENCHMARK(BM_ErrorGetIntFromNoError);
 
 static void BM_ErrorGetMissingInt(benchmark::State& state) {
   TrackCounters track_counters;
-  ErrorPtr error(grpc_error_set_int(
+  ErrorHandleHolder error(grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_INDEX, 1));
   for (auto _ : state) {
     intptr_t value;
@@ -144,7 +147,7 @@ BENCHMARK(BM_ErrorGetMissingInt);
 
 static void BM_ErrorGetPresentInt(benchmark::State& state) {
   TrackCounters track_counters;
-  ErrorPtr error(grpc_error_set_int(
+  ErrorHandleHolder error(grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_OFFSET, 1));
   for (auto _ : state) {
     intptr_t value;
@@ -180,7 +183,7 @@ class SimpleError {
 
  private:
   const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
-  ErrorPtr error_{GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error")};
+  ErrorHandleHolder error_{GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error")};
 };
 
 class ErrorWithGrpcStatus {
@@ -190,7 +193,7 @@ class ErrorWithGrpcStatus {
 
  private:
   const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
-  ErrorPtr error_{grpc_error_set_int(
+  ErrorHandleHolder error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
       GRPC_STATUS_UNIMPLEMENTED)};
 };
@@ -202,7 +205,7 @@ class ErrorWithHttpError {
 
  private:
   const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
-  ErrorPtr error_{grpc_error_set_int(
+  ErrorHandleHolder error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_HTTP2_ERROR,
       GRPC_HTTP2_COMPRESSION_ERROR)};
 };
@@ -214,11 +217,11 @@ class ErrorWithNestedGrpcStatus {
 
  private:
   const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
-  ErrorPtr nested_error_{grpc_error_set_int(
+  ErrorHandleHolder nested_error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
       GRPC_STATUS_UNIMPLEMENTED)};
   grpc_error_handle nested_errors_[1] = {nested_error_.get()};
-  ErrorPtr error_{GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+  ErrorHandleHolder error_{GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
       "Error", nested_errors_, 1)};
 };
 
@@ -227,7 +230,7 @@ static void BM_ErrorStringOnNewError(benchmark::State& state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     Fixture fixture;
-    grpc_error_string(fixture.error());
+    grpc_error_std_string(fixture.error());
   }
   track_counters.Finish(state);
 }
@@ -237,7 +240,7 @@ static void BM_ErrorStringRepeatedly(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
   for (auto _ : state) {
-    grpc_error_string(fixture.error());
+    grpc_error_std_string(fixture.error());
   }
   track_counters.Finish(state);
 }
@@ -249,9 +252,9 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_status_code status;
-    grpc_slice slice;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
-                          nullptr, nullptr);
+    std::string message;
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status,
+                          &message, nullptr, nullptr);
   }
 
   track_counters.Finish(state);

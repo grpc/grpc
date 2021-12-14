@@ -13,10 +13,13 @@
 # limitations under the License.
 """Test of RPCs made using local credentials."""
 
-import unittest
-import os
 from concurrent.futures import ThreadPoolExecutor
+import os
+import unittest
+
 import grpc
+
+from tests.unit import test_common
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -55,6 +58,8 @@ class LocalCredentialsTest(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt',
                      'Unix Domain Socket is not supported on Windows')
+    @unittest.skipIf(test_common.running_under_gevent(),
+                     'UDS not supported under gevent.')
     def test_uds(self):
         server_addr = 'unix:/tmp/grpc_fullstack_test'
         channel_creds = grpc.local_channel_credentials(

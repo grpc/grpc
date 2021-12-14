@@ -16,8 +16,8 @@
 import asyncio
 import collections
 from typing import MutableMapping
-import grpc
 
+import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
 from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 

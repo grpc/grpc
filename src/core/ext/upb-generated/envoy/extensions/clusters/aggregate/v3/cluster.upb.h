@@ -9,7 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_CLUSTERS_AGGREGATE_V3_CLUSTER_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_CLUSTERS_AGGREGATE_V3_CLUSTER_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -33,13 +33,19 @@ UPB_INLINE envoy_extensions_clusters_aggregate_v3_ClusterConfig *envoy_extension
 UPB_INLINE envoy_extensions_clusters_aggregate_v3_ClusterConfig *envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_clusters_aggregate_v3_ClusterConfig *ret = envoy_extensions_clusters_aggregate_v3_ClusterConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_clusters_aggregate_v3_ClusterConfig *envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_clusters_aggregate_v3_ClusterConfig *ret = envoy_extensions_clusters_aggregate_v3_ClusterConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_clusters_aggregate_v3_ClusterConfig_serialize(const envoy_extensions_clusters_aggregate_v3_ClusterConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_clusters_aggregate_v3_ClusterConfig_msginit, arena, len);
@@ -57,6 +63,8 @@ UPB_INLINE bool envoy_extensions_clusters_aggregate_v3_ClusterConfig_add_cluster
   return _upb_array_append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(3, 4), &val,
       arena);
 }
+
+extern const upb_msglayout_file envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

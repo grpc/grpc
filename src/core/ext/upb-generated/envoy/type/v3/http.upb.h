@@ -9,7 +9,7 @@
 #ifndef ENVOY_TYPE_V3_HTTP_PROTO_UPB_H_
 #define ENVOY_TYPE_V3_HTTP_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -26,6 +26,8 @@ typedef enum {
   envoy_type_v3_HTTP3 = 2
 } envoy_type_v3_CodecClientType;
 
+
+extern const upb_msglayout_file envoy_type_v3_http_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

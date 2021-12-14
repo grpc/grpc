@@ -13,9 +13,9 @@
 # limitations under the License.
 """Tests server responding with RESOURCE_EXHAUSTED."""
 
+import logging
 import threading
 import unittest
-import logging
 
 import grpc
 from grpc import _channel

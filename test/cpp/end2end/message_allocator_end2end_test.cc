@@ -26,10 +26,9 @@
 #include <thread>
 
 #include <google/protobuf/arena.h>
-
-#include <grpc/impl/codegen/log.h>
 #include <gtest/gtest.h>
 
+#include <grpc/impl/codegen/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -49,21 +48,20 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class CallbackTestServiceImpl
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
   explicit CallbackTestServiceImpl() {}
 
   void SetAllocatorMutator(
-      std::function<void(experimental::RpcAllocatorState* allocator_state,
+      std::function<void(RpcAllocatorState* allocator_state,
                          const EchoRequest* req, EchoResponse* resp)>
           mutator) {
     allocator_mutator_ = std::move(mutator);
   }
 
-  experimental::ServerUnaryReactor* Echo(
-      experimental::CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override {
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
       allocator_mutator_(context->GetRpcAllocatorState(), request, response);
@@ -74,8 +72,8 @@ class CallbackTestServiceImpl
   }
 
  private:
-  std::function<void(experimental::RpcAllocatorState* allocator_state,
-                     const EchoRequest* req, EchoResponse* resp)>
+  std::function<void(RpcAllocatorState* allocator_state, const EchoRequest* req,
+                     EchoResponse* resp)>
       allocator_mutator_;
 };
 
@@ -90,8 +88,7 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
              << "," << scenario.credentials_type << "}";
@@ -110,8 +107,7 @@ class MessageAllocatorEnd2endTestBase
 
   ~MessageAllocatorEnd2endTestBase() override = default;
 
-  void CreateServer(
-      experimental::MessageAllocator<EchoRequest, EchoResponse>* allocator) {
+  void CreateServer(MessageAllocator<EchoRequest, EchoResponse>* allocator) {
     ServerBuilder builder;
 
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -174,7 +170,7 @@ class MessageAllocatorEnd2endTestBase
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental_async()->Echo(
+      stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
             GPR_ASSERT(s.ok());
@@ -209,11 +205,9 @@ TEST_P(NullAllocatorTest, SimpleRpc) {
 
 class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class SimpleAllocator
-      : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
+  class SimpleAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl
-        : public experimental::MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl(std::atomic_int* request_deallocation_count,
                         std::atomic_int* messages_deallocation_count)
@@ -244,8 +238,7 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
       std::atomic_int* const request_deallocation_count_;
       std::atomic_int* const messages_deallocation_count_;
     };
-    experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
-        override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl(&request_deallocation_count,
                                    &messages_deallocation_count);
@@ -273,8 +266,8 @@ TEST_P(SimpleAllocatorTest, SimpleRpc) {
 TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
-  auto mutator = [](experimental::RpcAllocatorState* allocator_state,
-                    const EchoRequest* req, EchoResponse* resp) {
+  auto mutator = [](RpcAllocatorState* allocator_state, const EchoRequest* req,
+                    EchoResponse* resp) {
     auto* info =
         static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
@@ -298,9 +291,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   std::vector<EchoRequest*> released_requests;
-  auto mutator = [&released_requests](
-                     experimental::RpcAllocatorState* allocator_state,
-                     const EchoRequest* req, EchoResponse* resp) {
+  auto mutator = [&released_requests](RpcAllocatorState* allocator_state,
+                                      const EchoRequest* req,
+                                      EchoResponse* resp) {
     auto* info =
         static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
@@ -326,11 +319,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
 
 class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class ArenaAllocator
-      : public experimental::MessageAllocator<EchoRequest, EchoResponse> {
+  class ArenaAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl
-        : public experimental::MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
         set_request(
@@ -344,8 +335,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
      private:
       google::protobuf::Arena arena_;
     };
-    experimental::MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
-        override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl;
     }

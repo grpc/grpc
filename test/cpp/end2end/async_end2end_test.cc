@@ -20,6 +20,8 @@
 #include <memory>
 #include <thread>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -31,8 +33,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/tls.h"
@@ -238,8 +238,7 @@ class TestScenario {
   const std::string message_content;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{inproc=" << (scenario.inproc ? "true" : "false")
              << ", credentials='" << scenario.credentials_type
              << ", health_check_service="

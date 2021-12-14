@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -156,10 +158,10 @@ static tsi_result alts_protect(tsi_frame_protector* self,
    */
   if (impl->in_place_protect_bytes_buffered + impl->overhead_length <
       max_encrypted_payload_bytes(impl)) {
-    size_t bytes_to_buffer = GPR_MIN(*unprotected_bytes_size,
-                                     max_encrypted_payload_bytes(impl) -
-                                         impl->in_place_protect_bytes_buffered -
-                                         impl->overhead_length);
+    size_t bytes_to_buffer = std::min(
+        *unprotected_bytes_size, max_encrypted_payload_bytes(impl) -
+                                     impl->in_place_protect_bytes_buffered -
+                                     impl->overhead_length);
     *unprotected_bytes_size = bytes_to_buffer;
     if (bytes_to_buffer > 0) {
       memcpy(
@@ -266,9 +268,9 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
   if (!alts_is_frame_reader_done(impl->reader)) {
     ensure_buffer_size(impl);
     *protected_frames_bytes_size =
-        GPR_MIN(impl->max_unprotected_frame_size -
-                    alts_get_output_bytes_read(impl->reader),
-                *protected_frames_bytes_size);
+        std::min(impl->max_unprotected_frame_size -
+                     alts_get_output_bytes_read(impl->reader),
+                 *protected_frames_bytes_size);
     size_t read_frames_bytes_size = *protected_frames_bytes_size;
     if (!alts_read_frame_bytes(impl->reader, protected_frames_bytes,
                                &read_frames_bytes_size)) {
@@ -290,7 +292,7 @@ static tsi_result alts_unprotect(tsi_frame_protector* self,
         return result;
       }
     }
-    size_t bytes_to_write = GPR_MIN(
+    size_t bytes_to_write = std::min(
         *unprotected_bytes_size, alts_get_output_bytes_read(impl->reader) -
                                      impl->in_place_unprotect_bytes_processed -
                                      impl->overhead_length);
@@ -368,8 +370,7 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
     return TSI_INTERNAL_ERROR;
   }
   char* error_details = nullptr;
-  alts_frame_protector* impl =
-      static_cast<alts_frame_protector*>(gpr_zalloc(sizeof(*impl)));
+  alts_frame_protector* impl = grpc_core::Zalloc<alts_frame_protector>();
   grpc_status_code status = create_alts_crypters(
       key, key_size, is_client, is_rekey, impl, &error_details);
   if (status != GRPC_STATUS_OK) {
@@ -385,9 +386,9 @@ tsi_result alts_create_frame_protector(const uint8_t* key, size_t key_size,
   size_t max_protected_frame_size_to_set = kDefaultFrameLength;
   if (max_protected_frame_size != nullptr) {
     *max_protected_frame_size =
-        GPR_MIN(*max_protected_frame_size, kMaxFrameLength);
+        std::min(*max_protected_frame_size, kMaxFrameLength);
     *max_protected_frame_size =
-        GPR_MAX(*max_protected_frame_size, kMinFrameLength);
+        std::max(*max_protected_frame_size, kMinFrameLength);
     max_protected_frame_size_to_set = *max_protected_frame_size;
   }
   impl->max_protected_frame_size = max_protected_frame_size_to_set;

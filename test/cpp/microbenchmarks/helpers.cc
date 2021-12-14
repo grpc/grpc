@@ -16,9 +16,9 @@
  *
  */
 
-#include <string.h>
-
 #include "test/cpp/microbenchmarks/helpers.h"
+
+#include <string.h>
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 static LibraryInitializer* g_libraryInitializer;
@@ -32,13 +32,11 @@ LibraryInitializer::LibraryInitializer() {
   grpc_memory_counters_init();
 #endif
   init_lib_.init();
-  rq_ = grpc_resource_quota_create("bm");
 }
 
 LibraryInitializer::~LibraryInitializer() {
   g_libraryInitializer = nullptr;
   init_lib_.shutdown();
-  grpc_resource_quota_unref(rq_);
 }
 
 LibraryInitializer& LibraryInitializer::get() {

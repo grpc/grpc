@@ -24,13 +24,13 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -59,7 +59,6 @@ typedef struct grpc_stream_refcount {
 #ifndef NDEBUG
   const char* object_type;
 #endif
-  grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
 #ifndef NDEBUG
@@ -295,6 +294,8 @@ struct grpc_transport_stream_op_batch_payload {
     // containing a received message.
     // Will be NULL if trailing metadata is received instead of a message.
     grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+    // Was this recv_message failed for reasons other than a clean end-of-stream
+    bool* call_failed_before_recv_message = nullptr;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure* recv_message_ready = nullptr;
   } recv_message;

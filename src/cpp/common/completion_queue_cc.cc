@@ -15,13 +15,12 @@
  *
  */
 
-#include <grpcpp/completion_queue.h>
-
 #include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
 
@@ -53,7 +52,8 @@ struct CallbackAlternativeCQ {
     refs++;
     if (refs == 1) {
       cq = new CompletionQueue;
-      int num_nexting_threads = GPR_CLAMP(gpr_cpu_num_cores() / 2, 2, 16);
+      int num_nexting_threads =
+          grpc_core::Clamp(gpr_cpu_num_cores() / 2, 2u, 16u);
       nexting_threads = new std::vector<grpc_core::Thread>;
       for (int i = 0; i < num_nexting_threads; i++) {
         nexting_threads->emplace_back(
@@ -89,8 +89,7 @@ struct CallbackAlternativeCQ {
                 // hold any application locks before executing the callback,
                 // and cannot be entered recursively.
                 auto* functor =
-                    static_cast<grpc_experimental_completion_queue_functor*>(
-                        ev.tag);
+                    static_cast<grpc_completion_queue_functor*>(ev.tag);
                 functor->functor_run(functor, ev.success);
               }
             },

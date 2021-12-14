@@ -14,7 +14,6 @@
 
 FROM debian:jessie
 
-
 RUN echo "deb http://archive.debian.org/debian/ jessie-backports main contrib non-free" > /etc/apt/sources.list.d/jessie-backports.list && \
     echo 'Acquire::Check-Valid-Until no;' > /etc/apt/apt.conf.d/99no-check-valid-until && \
     apt-get update && \

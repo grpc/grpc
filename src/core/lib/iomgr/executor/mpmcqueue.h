@@ -21,8 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
@@ -70,18 +71,13 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // Returns number of elements in queue currently.
   // There might be concurrently add/remove on queue, so count might change
   // quickly.
-  int count() const override { return count_.Load(MemoryOrder::RELAXED); }
+  int count() const override { return count_.load(std::memory_order_relaxed); }
 
   struct Node {
-    Node* next;  // Linking
-    Node* prev;
-    void* content;             // Points to actual element
+    Node* next = nullptr;  // Linking
+    Node* prev = nullptr;
+    void* content = nullptr;   // Points to actual element
     gpr_timespec insert_time;  // Time for stats
-
-    Node() {
-      next = prev = nullptr;
-      content = nullptr;
-    }
   };
 
   // For test purpose only. Returns number of nodes allocated in queue.
@@ -157,7 +153,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   Node* queue_head_ = nullptr;  // Head of the queue, remove position
   Node* queue_tail_ = nullptr;  // End of queue, insert position
-  Atomic<int> count_{0};        // Number of elements in queue
+  std::atomic<int> count_{0};   // Number of elements in queue
   int num_nodes_ = 0;           // Number of nodes allocated
 
   Stats stats_;            // Stats info

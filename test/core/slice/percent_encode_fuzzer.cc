@@ -29,28 +29,21 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
+static void test(const uint8_t* data, size_t size,
+                 grpc_core::PercentEncodingType type) {
   grpc_init();
-  grpc_slice input =
-      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size);
-  grpc_slice output = grpc_percent_encode_slice(input, dict);
-  grpc_slice decoded_output;
-  // encoder must always produce decodable output
-  GPR_ASSERT(grpc_strict_percent_decode_slice(output, dict, &decoded_output));
-  grpc_slice permissive_decoded_output =
-      grpc_permissive_percent_decode_slice(output);
-  // and decoded output must always match the input
-  GPR_ASSERT(grpc_slice_eq(input, decoded_output));
-  GPR_ASSERT(grpc_slice_eq(input, permissive_decoded_output));
-  grpc_slice_unref(input);
-  grpc_slice_unref(output);
-  grpc_slice_unref(decoded_output);
-  grpc_slice_unref(permissive_decoded_output);
+  auto input = grpc_core::Slice::FromCopiedBuffer(
+      reinterpret_cast<const char*>(data), size);
+  auto output = grpc_core::PercentEncodeSlice(input.Ref(), type);
+  auto permissive_decoded_output =
+      grpc_core::PermissivePercentDecodeSlice(std::move(output));
+  // decoded output must always match the input
+  GPR_ASSERT(input == permissive_decoded_output);
   grpc_shutdown();
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  test(data, size, grpc_url_percent_encoding_unreserved_bytes);
-  test(data, size, grpc_compatible_percent_encoding_unreserved_bytes);
+  test(data, size, grpc_core::PercentEncodingType::URL);
+  test(data, size, grpc_core::PercentEncodingType::Compatible);
   return 0;
 }

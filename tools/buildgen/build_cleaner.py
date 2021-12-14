@@ -18,6 +18,7 @@
 import collections
 import os
 import sys
+
 import yaml
 
 TEST = (os.environ.get('TEST', 'false') == 'true')

@@ -26,13 +26,14 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/surface/api_trace.h"
 
 /* -- Composite call credentials. -- */
 
@@ -146,7 +147,7 @@ void grpc_composite_call_credentials::push_to_inner(
   auto composite_creds =
       static_cast<grpc_composite_call_credentials*>(creds.get());
   for (size_t i = 0; i < composite_creds->inner().size(); ++i) {
-    inner_.push_back(std::move(composite_creds->inner_[i]));
+    inner_.push_back(composite_creds->inner_[i]);
   }
 }
 

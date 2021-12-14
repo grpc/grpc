@@ -13,10 +13,10 @@
 # limitations under the License.
 """The Python AsyncIO implementation of the GRPC helloworld.Greeter server."""
 
-import logging
 import asyncio
-import grpc
+import logging
 
+import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 
@@ -36,13 +36,7 @@ async def serve() -> None:
     server.add_insecure_port(listen_addr)
     logging.info("Starting server on %s", listen_addr)
     await server.start()
-    try:
-        await server.wait_for_termination()
-    except KeyboardInterrupt:
-        # Shuts down the server with 0 seconds of grace period. During the
-        # grace period, the server won't accept new connections and allow
-        # existing RPCs to continue within the grace period.
-        await server.stop(0)
+    await server.wait_for_termination()
 
 
 if __name__ == '__main__':

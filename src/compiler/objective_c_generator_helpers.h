@@ -20,10 +20,11 @@
 #define GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 
 #include <map>
-#include "src/compiler/config.h"
-#include "src/compiler/generator_helpers.h"
 
 #include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
+
+#include "src/compiler/config.h"
+#include "src/compiler/generator_helpers.h"
 
 namespace grpc_objective_c_generator {
 
@@ -37,7 +38,7 @@ inline string MessageHeaderName(const FileDescriptor* file) {
 
 inline string ServiceClassName(const ServiceDescriptor* service) {
   const FileDescriptor* file = service->file();
-  string prefix = file->options().objc_class_prefix();
+  string prefix = google::protobuf::compiler::objectivec::FileClassPrefix(file);
   return prefix + service->name();
 }
 

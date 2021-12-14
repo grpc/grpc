@@ -16,14 +16,13 @@
 # This file is auto-generated
 
 import argparse
-import sys
-import subprocess
-import tempfile
 import os
-import time
-import signal
 import platform
-
+import signal
+import subprocess
+import sys
+import tempfile
+import time
 
 argp = argparse.ArgumentParser(description='Run c-ares resolver tests')
 argp.add_argument('--test_bin_path', default=None, type=str,
@@ -613,7 +612,7 @@ current_test_subprocess = subprocess.Popen([
   '--target_name', 'ipv4-config-causing-fallback-to-tcp-inject-broken-nameservers.resolver-tests-version-4.grpctestingexp.',
   '--do_ordered_address_comparison', 'False',
   '--expected_addrs', '1.2.3.4:443,False',
-  '--expected_chosen_service_config', '{"loadBalancingPolicy":["round_robin"]}',
+  '--expected_chosen_service_config', '',
   '--expected_service_config_error', 'field:loadBalancingPolicy error:type should be string',
   '--expected_lb_policy', '',
   '--enable_srv_queries', 'True',

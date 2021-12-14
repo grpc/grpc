@@ -1,3 +1,16 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Generates C++ grpc stubs from proto_library rules.
 
 This is an internal rule used by cc_grpc_library, and shouldn't be used
@@ -41,7 +54,13 @@ def _join_directories(directories):
     return "/".join(massaged_directories)
 
 def generate_cc_impl(ctx):
-    """Implementation of the generate_cc rule."""
+    """Implementation of the generate_cc rule.
+
+    Args:
+      ctx: The context object.
+    Returns:
+      The provider for the generated files.
+    """
     protos = [f for src in ctx.attr.srcs for f in src[ProtoInfo].check_deps_sources.to_list()]
     includes = [
         f
@@ -105,7 +124,7 @@ def generate_cc_impl(ctx):
         )
         tools = [ctx.executable.plugin]
     else:
-        arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
+        arguments.append("--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out)
         tools = []
 
     arguments += [
@@ -115,7 +134,7 @@ def generate_cc_impl(ctx):
 
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
-    arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
+    arguments.append("--proto_path={0}{1}".format(dir_out, proto_root))
     arguments += [_get_srcs_file_path(proto) for proto in protos]
 
     # create a list of well known proto files if the argument is non-None
@@ -125,11 +144,11 @@ def generate_cc_impl(ctx):
         if f != "external/com_google_protobuf/src/google/protobuf":
             print(
                 "Error: Only @com_google_protobuf//:well_known_protos is supported",
-            )
+            )  # buildifier: disable=print
         else:
             # f points to "external/com_google_protobuf/src/google/protobuf"
             # add -I argument to protoc so it knows where to look for the proto files.
-            arguments += ["-I{0}".format(f + "/../..")]
+            arguments.append("-I{0}".format(f + "/../.."))
             well_known_proto_files = [
                 f
                 for f in ctx.attr.well_known_protos.files.to_list()
@@ -141,9 +160,10 @@ def generate_cc_impl(ctx):
         outputs = out_files,
         executable = ctx.executable._protoc,
         arguments = arguments,
+        use_default_shell_env = True,
     )
 
-    return struct(files = depset(out_files))
+    return struct(files = depset(out_files))  # buildifier: disable=rule-impl-return
 
 _generate_cc = rule(
     attrs = {

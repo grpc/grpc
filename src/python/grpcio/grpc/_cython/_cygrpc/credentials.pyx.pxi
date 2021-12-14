@@ -57,7 +57,11 @@ cdef int _get_metadata(void *state,
       with nogil:
         cb(user_data, NULL, 0, status, c_error_details)
   args = context.service_url, context.method_name, callback,
-  _spawn_callback_async(<object>state, args)
+  plugin = <object>state
+  if plugin._stored_ctx is not None:
+    plugin._stored_ctx.copy().run(_spawn_callback_async, plugin, args)
+  else:
+    _spawn_callback_async(<object>state, args)
   return 0  # Asynchronous return
 
 

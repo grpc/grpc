@@ -5,17 +5,12 @@ Package for gRPC Python tools.
 
 Supported Python Versions
 -------------------------
-Python >= 3.5
-
-Deprecated Python Versions
---------------------------
-Python == 2.7. Python 2.7 support will be removed on January 1, 2020.
+Python >= 3.6
 
 Installation
 ------------
 
-The gRPC Python tools package is available for Linux, Mac OS X, and Windows
-running Python 2.7.
+The gRPC Python tools package is available for Linux, Mac OS X, and Windows.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~

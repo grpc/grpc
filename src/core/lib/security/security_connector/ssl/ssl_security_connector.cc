@@ -54,9 +54,8 @@ grpc_error_handle ssl_check_peer(
   }
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
@@ -162,10 +161,8 @@ class grpc_ssl_channel_security_connector final
             verify_options_->verify_peer_callback_userdata);
         gpr_free(peer_pem);
         if (callback_status) {
-          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat("Verify peer callback returned a failure (%d)",
-                              callback_status)
-                  .c_str());
+          error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+              "Verify peer callback returned a failure (%d)", callback_status));
         }
       }
     }

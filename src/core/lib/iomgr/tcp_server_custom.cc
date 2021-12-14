@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <assert.h>
 #include <string.h>
 
@@ -30,9 +28,11 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -76,35 +76,14 @@ struct grpc_tcp_server {
 
   bool shutdown;
   bool so_reuseport;
-
-  grpc_resource_quota* resource_quota;
 };
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const grpc_channel_args* args,
                                            grpc_tcp_server** server) {
-  grpc_tcp_server* s =
-      static_cast<grpc_tcp_server*>(gpr_malloc(sizeof(grpc_tcp_server)));
-  // Let the implementation decide if so_reuseport can be enabled or not.
-  s->so_reuseport = true;
-  s->resource_quota = grpc_resource_quota_create(nullptr);
-  for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
-    if (!grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true)) {
-      s->so_reuseport = false;
-    }
-    if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(s->resource_quota);
-        s->resource_quota = grpc_resource_quota_ref_internal(
-            static_cast<grpc_resource_quota*>(args->args[i].value.pointer.p));
-      } else {
-        grpc_resource_quota_unref_internal(s->resource_quota);
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
-      }
-    }
-  }
+  grpc_tcp_server* s = new grpc_tcp_server();
+  s->so_reuseport =
+      grpc_channel_args_find_bool(args, GRPC_ARG_ALLOW_REUSEPORT, true);
   gpr_ref_init(&s->refs, 1);
   s->on_accept_cb = nullptr;
   s->on_accept_cb_arg = nullptr;
@@ -144,7 +123,6 @@ static void finish_shutdown(grpc_tcp_server* s) {
     sp->next = nullptr;
     gpr_free(sp);
   }
-  grpc_resource_quota_unref_internal(s->resource_quota);
   gpr_free(s);
 }
 
@@ -235,8 +213,7 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s", sp->server,
             peer_name_string.c_str());
   }
-  ep = custom_tcp_endpoint_create(socket, sp->server->resource_quota,
-                                  peer_name_string.c_str());
+  ep = custom_tcp_endpoint_create(socket, peer_name_string.c_str());
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
@@ -317,7 +294,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s,
 
   GPR_ASSERT(port >= 0);
   GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-  sp = static_cast<grpc_tcp_listener*>(gpr_zalloc(sizeof(grpc_tcp_listener)));
+  sp = grpc_core::Zalloc<grpc_tcp_listener>();
   sp->next = nullptr;
   if (s->head == nullptr) {
     s->head = sp;
@@ -362,10 +339,9 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     for (sp = s->head; sp; sp = sp->next) {
       socket = sp->socket;
       sockname_temp.len = GRPC_MAX_SOCKADDR_SIZE;
-      if (nullptr == grpc_custom_socket_vtable->getsockname(
-                         socket,
-                         reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
-                         reinterpret_cast<int*>(&sockname_temp.len))) {
+      if (grpc_custom_socket_vtable->getsockname(
+              socket, reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
+              reinterpret_cast<int*>(&sockname_temp.len)) == GRPC_ERROR_NONE) {
         *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
           allocated_addr = static_cast<grpc_resolved_address*>(
@@ -479,7 +455,3 @@ grpc_tcp_server_vtable custom_tcp_server_vtable = {
     tcp_server_port_fd_count, tcp_server_port_fd,
     tcp_server_ref,           tcp_server_shutdown_starting_add,
     tcp_server_unref,         tcp_server_shutdown_listeners};
-
-#ifdef GRPC_UV_TEST
-grpc_tcp_server_vtable* default_tcp_server_vtable = &custom_tcp_server_vtable;
-#endif

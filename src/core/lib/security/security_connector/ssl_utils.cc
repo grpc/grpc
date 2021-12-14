@@ -173,9 +173,8 @@ grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
                                            const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
   return GRPC_ERROR_NONE;
 }
@@ -197,6 +196,7 @@ bool grpc_ssl_check_call_host(absl::string_view host,
   if (status != GRPC_SECURITY_OK) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "call host does not match SSL server name");
+    gpr_log(GPR_ERROR, "call host does not match SSL server name");
   }
   grpc_shallow_peer_destruct(&peer);
   return true;
@@ -277,7 +277,11 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+    if (strcmp(prop->name, TSI_X509_SUBJECT_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) ==
+               0) {
       /* If there is no subject alt name, have the CN as the identity. */
       if (peer_identity_property_name == nullptr) {
         peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
@@ -309,6 +313,8 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(), GRPC_PEER_DNS_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_URI_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
       uri_count++;
       absl::string_view spiffe_id(prop->value.data, prop->value.length);
       if (IsSpiffeId(spiffe_id)) {
@@ -371,6 +377,9 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_X509_SUBJECT_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_SUBJECT_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_X509_CN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
@@ -388,6 +397,9 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       } else if (strcmp(prop->name, GRPC_PEER_DNS_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_DNS_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_PEER_URI_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_URI_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_URI_PEER_PROPERTY);
@@ -523,7 +535,7 @@ static void grpc_ssl_session_cache_arg_destroy(void* p) {
 }
 
 static int grpc_ssl_session_cache_arg_cmp(void* p, void* q) {
-  return GPR_ICMP(p, q);
+  return grpc_core::QsortCompare(p, q);
 }
 
 grpc_arg grpc_ssl_session_cache_create_channel_arg(
@@ -562,7 +574,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   const bool not_use_system_roots =
       GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
   // First try to load the roots from the configuration.
-  grpc_core::UniquePtr<char> default_root_certs_path =
+  UniquePtr<char> default_root_certs_path =
       GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
   if (strlen(default_root_certs_path.get()) > 0) {
     GRPC_LOG_IF_ERROR(

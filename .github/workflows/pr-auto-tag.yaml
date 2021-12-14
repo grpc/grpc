@@ -1,0 +1,12 @@
+name: PR AutoTag
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronized, edited]
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/labeler@v3
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+

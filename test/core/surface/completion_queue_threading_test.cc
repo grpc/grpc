@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/surface/completion_queue.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -25,6 +23,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/completion_queue.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)

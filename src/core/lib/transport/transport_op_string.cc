@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
-
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -33,6 +31,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -40,27 +40,47 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
-  out->push_back("key=");
-  char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  out->push_back(dump);
-  gpr_free(dump);
-  out->push_back(" value=");
-  dump = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  out->push_back(dump);
-  gpr_free(dump);
-}
+namespace {
+class MetadataListEncoder {
+ public:
+  explicit MetadataListEncoder(std::vector<std::string>* out) : out_(out) {}
+  void Encode(const grpc_mdelem& md) {
+    MaybeAddComma();
+    out_->push_back("key=");
+    char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    out_->push_back(dump);
+    gpr_free(dump);
+    out_->push_back(" value=");
+    dump = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    out_->push_back(dump);
+    gpr_free(dump);
+  }
 
-static void put_metadata_list(grpc_metadata_batch md,
+  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis deadline) {
+    MaybeAddComma();
+    out_->push_back(absl::StrFormat("deadline=%" PRId64, deadline));
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    MaybeAddComma();
+    out_->push_back(
+        absl::StrCat(Which::key(), "=", Which::DisplayValue(value)));
+  }
+
+ private:
+  void MaybeAddComma() {
+    if (out_->size() != initial_size_) out_->push_back(", ");
+  }
+  std::vector<std::string>* const out_;
+  const size_t initial_size_ = out_->size();
+};
+}  // namespace
+
+static void put_metadata_list(const grpc_metadata_batch& md,
                               std::vector<std::string>* out) {
-  grpc_linked_mdelem* m;
-  for (m = md.list.head; m != nullptr; m = m->next) {
-    if (m != md.list.head) out->push_back(", ");
-    put_metadata(m->md, out);
-  }
-  if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
-    out->push_back(absl::StrFormat(" deadline=%" PRId64, md.deadline));
-  }
+  MetadataListEncoder encoder(out);
+  md.Encode(&encoder);
 }
 
 std::string grpc_transport_stream_op_batch_string(
@@ -135,7 +155,7 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
         " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
   }
 
-  if (op->goaway_error) {
+  if (op->goaway_error != GRPC_ERROR_NONE) {
     out.push_back(absl::StrCat(" SEND_GOAWAY:%s",
                                grpc_error_std_string(op->goaway_error)));
   }

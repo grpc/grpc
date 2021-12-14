@@ -1,0 +1,57 @@
+actions {
+  create_channel {
+    target: "unix:"
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 1000002
+    }
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "0"
+    }
+    timeout: 869738192
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+        }
+        message {
+          intern: true
+        }
+        message {
+        }
+        message {
+          value: "Z"
+          intern: true
+        }
+        message {
+          intern: true
+        }
+        message {
+          value: "http"
+          intern: true
+        }
+      }
+    }
+    operations {
+      receive_message {
+      }
+      flags: 11008
+    }
+  }
+}

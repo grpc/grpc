@@ -14,9 +14,9 @@
 """Defines a number of module-scope gRPC scenarios to test clean exit."""
 
 import argparse
+import logging
 import threading
 import time
-import logging
 
 import grpc
 

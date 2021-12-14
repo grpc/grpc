@@ -21,8 +21,10 @@
 #ifndef TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
 #define TEST_CPP_MICROBENCHMARKS_CALLBACK_UNARY_PING_PONG_H
 
-#include <benchmark/benchmark.h>
 #include <sstream>
+
+#include <benchmark/benchmark.h>
+
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
@@ -42,7 +44,7 @@ inline void SendCallbackUnaryPingPong(
     std::mutex* mu, std::condition_variable* cv) {
   int response_msgs_size = state->range(1);
   cli_ctx->AddMetadata(kServerMessageSize, std::to_string(response_msgs_size));
-  stub_->experimental_async()->Echo(
+  stub_->async()->Echo(
       cli_ctx, request, response,
       [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
         GPR_ASSERT(s.ok());

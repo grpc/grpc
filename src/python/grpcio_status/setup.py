@@ -46,8 +46,6 @@ class _NoOpCommand(setuptools.Command):
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
@@ -55,6 +53,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
     'License :: OSI Approved :: Apache Software License',
 ]
 
@@ -70,6 +69,7 @@ INSTALL_REQUIRES = (
 
 try:
     import status_commands as _status_commands
+
     # we are in the build environment, otherwise the above import fails
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
@@ -94,5 +94,6 @@ setuptools.setup(name='grpcio-status',
                  classifiers=CLASSIFIERS,
                  package_dir=PACKAGE_DIRECTORIES,
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=INSTALL_REQUIRES,
                  cmdclass=COMMAND_CLASS)

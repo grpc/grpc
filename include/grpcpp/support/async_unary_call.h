@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H
 #define GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H
 
-#include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/async_unary_call.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H

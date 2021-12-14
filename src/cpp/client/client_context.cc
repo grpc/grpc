@@ -16,14 +16,12 @@
  *
  */
 
-#include <grpcpp/client_context.h>
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
+#include <grpcpp/client_context.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -98,7 +96,7 @@ std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
-    const grpc::ServerContext& server_context, PropagationOptions options) {
+    const grpc::ServerContextBase& server_context, PropagationOptions options) {
   return FromInternalServerContext(server_context, options);
 }
 

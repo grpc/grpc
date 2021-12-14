@@ -19,9 +19,10 @@ from typing import Any, Optional
 import grpc
 
 from . import _base_call
-from ._typing import (DeserializingFunction, RequestIterableType,
-                      SerializingFunction)
-from ._metadata import Metadata
+from ._typing import DeserializingFunction
+from ._typing import MetadataType
+from ._typing import RequestIterableType
+from ._typing import SerializingFunction
 
 
 class UnaryUnaryMultiCallable(abc.ABC):
@@ -33,7 +34,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         request: Any,
         *,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None
@@ -72,7 +73,7 @@ class UnaryStreamMultiCallable(abc.ABC):
         request: Any,
         *,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None
@@ -110,7 +111,7 @@ class StreamUnaryMultiCallable(abc.ABC):
         self,
         request_iterator: Optional[RequestIterableType] = None,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None
@@ -149,7 +150,7 @@ class StreamStreamMultiCallable(abc.ABC):
         self,
         request_iterator: Optional[RequestIterableType] = None,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None

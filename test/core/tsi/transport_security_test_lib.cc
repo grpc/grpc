@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/core/tsi/transport_security_test_lib.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,8 +26,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/security/transport/tsi_error.h"
-#include "test/core/tsi/transport_security_test_lib.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {
   gpr_mu_lock(&fixture->mu);
@@ -57,8 +59,7 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
                                                bool is_client) {
   GPR_ASSERT(fixture != nullptr);
   GPR_ASSERT(fixture->config != nullptr);
-  handshaker_args* args =
-      static_cast<handshaker_args*>(gpr_zalloc(sizeof(*args)));
+  handshaker_args* args = new handshaker_args();
   args->fixture = fixture;
   args->handshake_buffer_size = fixture->handshake_buffer_size;
   args->handshake_buffer =
@@ -71,7 +72,7 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
 static void handshaker_args_destroy(handshaker_args* args) {
   gpr_free(args->handshake_buffer);
   GRPC_ERROR_UNREF(args->error);
-  gpr_free(args);
+  delete args;
 }
 
 static void do_handshaker_next(handshaker_args* args);
@@ -582,8 +583,7 @@ void tsi_test_frame_protector_config_destroy(
 }
 
 static tsi_test_channel* tsi_test_channel_create() {
-  tsi_test_channel* channel =
-      static_cast<tsi_test_channel*>(gpr_zalloc(sizeof(*channel)));
+  tsi_test_channel* channel = grpc_core::Zalloc<tsi_test_channel>();
   channel->client_channel =
       static_cast<uint8_t*>(gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE));
   channel->server_channel =
@@ -605,6 +605,7 @@ static void tsi_test_channel_destroy(tsi_test_channel* channel) {
 }
 
 void tsi_test_fixture_init(tsi_test_fixture* fixture) {
+  memset(fixture, 0, sizeof(tsi_test_fixture));
   fixture->config = tsi_test_frame_protector_config_create(
       true, true, true, true, true, true, true);
   fixture->handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
@@ -628,10 +629,9 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   tsi_test_channel_destroy(fixture->channel);
   GPR_ASSERT(fixture->vtable != nullptr);
   GPR_ASSERT(fixture->vtable->destruct != nullptr);
-  fixture->vtable->destruct(fixture);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
-  gpr_free(fixture);
+  fixture->vtable->destruct(fixture);
 }
 
 tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create() {

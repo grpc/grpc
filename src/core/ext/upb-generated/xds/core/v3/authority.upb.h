@@ -9,7 +9,7 @@
 #ifndef XDS_CORE_V3_AUTHORITY_PROTO_UPB_H_
 #define XDS_CORE_V3_AUTHORITY_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -33,13 +33,19 @@ UPB_INLINE xds_core_v3_Authority *xds_core_v3_Authority_new(upb_arena *arena) {
 UPB_INLINE xds_core_v3_Authority *xds_core_v3_Authority_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   xds_core_v3_Authority *ret = xds_core_v3_Authority_new(arena);
-  return (ret && upb_decode(buf, size, ret, &xds_core_v3_Authority_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &xds_core_v3_Authority_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE xds_core_v3_Authority *xds_core_v3_Authority_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   xds_core_v3_Authority *ret = xds_core_v3_Authority_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &xds_core_v3_Authority_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &xds_core_v3_Authority_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *xds_core_v3_Authority_serialize(const xds_core_v3_Authority *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &xds_core_v3_Authority_msginit, arena, len);
@@ -50,6 +56,8 @@ UPB_INLINE upb_strview xds_core_v3_Authority_name(const xds_core_v3_Authority *m
 UPB_INLINE void xds_core_v3_Authority_set_name(xds_core_v3_Authority *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
+
+extern const upb_msglayout_file xds_core_v3_authority_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

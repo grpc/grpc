@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef MOCK_ENDPOINT_H
-#define MOCK_ENDPOINT_H
+#ifndef PASSTHRU_ENDPOINT_H
+#define PASSTHRU_ENDPOINT_H
 
 #include <grpc/support/atm.h>
 
@@ -31,13 +31,24 @@ typedef struct {
   gpr_atm num_writes;
 } grpc_passthru_endpoint_stats;
 
+typedef struct {
+  uint64_t wait_ms;
+  uint64_t add_n_writable_bytes;
+  uint64_t add_n_readable_bytes;
+} grpc_passthru_endpoint_channel_action;
+
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
-                                   grpc_resource_quota* resource_quota,
-                                   grpc_passthru_endpoint_stats* stats);
+                                   grpc_passthru_endpoint_stats* stats,
+                                   bool simulate_channel_actions = false);
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
 
 void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
 
-#endif
+void start_scheduling_grpc_passthru_endpoint_channel_effects(
+    grpc_endpoint* ep,
+    const std::vector<grpc_passthru_endpoint_channel_action>& actions,
+    std::function<void()> on_complete);
+
+#endif  // PASSTHRU_ENDPOINT_H

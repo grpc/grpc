@@ -23,85 +23,292 @@
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "src/core/ext/transport/chttp2/transport/popularity_count.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-// This should be <= 8. We use 6 to save space.
-#define GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS 6
-#define GRPC_CHTTP2_HPACKC_NUM_VALUES (1 << GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS)
-/* initial table size, per spec */
-#define GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE 4096
-/* maximum table size we'll actually use */
-#define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024 * 1024)
-
 extern grpc_core::TraceFlag grpc_http_trace;
 
-struct grpc_chttp2_hpack_compressor {
-  uint32_t max_table_size;
-  uint32_t max_table_elems;
-  uint32_t cap_table_elems;
-  /** maximum number of bytes we'll use for the decode table (to guard against
-      peers ooming us by setting decode table size high) */
-  uint32_t max_usable_size;
-  /* one before the lowest usable table index */
-  uint32_t tail_remote_index;
-  uint32_t table_size;
-  uint32_t table_elems;
-  uint16_t* table_elem_size;
-  /** if non-zero, advertise to the decoder that we'll start using a table
-      of this size */
-  uint8_t advertise_table_size_change;
+namespace grpc_core {
 
-  /* filter tables for elems: this tables provides an approximate
-     popularity count for particular hashes, and are used to determine whether
-     a new literal should be added to the compression table or not.
-     They track a single integer that counts how often a particular value has
-     been seen. When that count reaches max (255), all values are halved. */
-  uint32_t filter_elems_sum;
-  uint8_t filter_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
+// Wrapper to take an array of mdelems and make them encodable
+class MetadataArray {
+ public:
+  MetadataArray(grpc_mdelem** elems, size_t count)
+      : elems_(elems), count_(count) {}
 
-  /* entry tables for keys & elems: these tables track values that have been
-     seen and *may* be in the decompressor table */
-  struct {
-    struct {
-      grpc_mdelem value;
-      uint32_t index;
-    } entries[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  } elem_table; /* Metadata table management */
-  struct {
-    struct {
-      /* Only store the slice refcount - we do not need the byte buffer or
-         length of the slice since we only need to store a mapping between the
-         identity of the slice and the corresponding HPACK index. Since the
-         slice *must* be static or interned, the refcount is sufficient to
-         establish identity. */
-      grpc_slice_refcount* value;
-      uint32_t index;
-    } entries[GRPC_CHTTP2_HPACKC_NUM_VALUES];
-  } key_table; /* Key table management */
+  template <typename Encoder>
+  void Encode(Encoder* encoder) const {
+    for (size_t i = 0; i < count_; i++) {
+      encoder->Encode(*elems_[i]);
+    }
+  }
+
+ private:
+  grpc_mdelem** elems_;
+  size_t count_;
 };
 
-void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c);
-void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor* c);
-void grpc_chttp2_hpack_compressor_set_max_table_size(
-    grpc_chttp2_hpack_compressor* c, uint32_t max_table_size);
-void grpc_chttp2_hpack_compressor_set_max_usable_size(
-    grpc_chttp2_hpack_compressor* c, uint32_t max_table_size);
+namespace metadata_detail {
+template <typename A, typename B>
+class ConcatMetadata {
+ public:
+  ConcatMetadata(const A& a, const B& b) : a_(a), b_(b) {}
 
-struct grpc_encode_header_options {
-  uint32_t stream_id;
-  bool is_eof;
-  bool use_true_binary_metadata;
-  size_t max_frame_size;
-  grpc_transport_one_way_stats* stats;
+  template <typename Encoder>
+  void Encode(Encoder* encoder) const {
+    a_.Encode(encoder);
+    b_.Encode(encoder);
+  }
+
+ private:
+  const A& a_;
+  const B& b_;
 };
-void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
-                               grpc_mdelem** extra_headers,
-                               size_t extra_headers_size,
-                               grpc_metadata_batch* metadata,
-                               const grpc_encode_header_options* options,
-                               grpc_slice_buffer* outbuf);
+}  // namespace metadata_detail
+
+template <typename A, typename B>
+metadata_detail::ConcatMetadata<A, B> ConcatMetadata(const A& a, const B& b) {
+  return metadata_detail::ConcatMetadata<A, B>(a, b);
+}
+
+class HPackCompressor {
+ public:
+  HPackCompressor() = default;
+  ~HPackCompressor() = default;
+
+  // Maximum table size we'll actually use.
+  static constexpr uint32_t kMaxTableSize = 1024 * 1024;
+
+  void SetMaxTableSize(uint32_t max_table_size);
+  void SetMaxUsableSize(uint32_t max_table_size);
+
+  uint32_t test_only_table_size() const {
+    return table_.test_only_table_size();
+  }
+
+  struct EncodeHeaderOptions {
+    uint32_t stream_id;
+    bool is_end_of_stream;
+    bool use_true_binary_metadata;
+    size_t max_frame_size;
+    grpc_transport_one_way_stats* stats;
+  };
+
+  template <typename HeaderSet>
+  void EncodeHeaders(const EncodeHeaderOptions& options,
+                     const HeaderSet& headers, grpc_slice_buffer* output) {
+    Framer framer(options, this, output);
+    headers.Encode(&framer);
+  }
+
+  class Framer {
+   public:
+    Framer(const EncodeHeaderOptions& options, HPackCompressor* compressor,
+           grpc_slice_buffer* output);
+    ~Framer() { FinishFrame(true); }
+
+    Framer(const Framer&) = delete;
+    Framer& operator=(const Framer&) = delete;
+
+    void Encode(grpc_mdelem md);
+    void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
+    void Encode(TeMetadata, TeMetadata::ValueType value);
+    void Encode(UserAgentMetadata, const Slice& slice);
+    void Encode(GrpcStatusMetadata, grpc_status_code status);
+    void Encode(GrpcMessageMetadata, const Slice& slice) {
+      if (slice.empty()) return;
+      EmitLitHdrWithNonBinaryStringKeyNotIdx(
+          StaticSlice::FromStaticString("grpc-message").c_slice(),
+          slice.c_slice());
+    }
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      const Slice& slice = MetadataValueAsSlice<Which>(value);
+      if (absl::EndsWith(Which::key(), "-bin")) {
+        EmitLitHdrWithBinaryStringKeyNotIdx(
+            StaticSlice::FromStaticString(Which::key()).c_slice(),
+            slice.c_slice());
+      } else {
+        EmitLitHdrWithNonBinaryStringKeyNotIdx(
+            StaticSlice::FromStaticString(Which::key()).c_slice(),
+            slice.c_slice());
+      }
+    }
+
+   private:
+    struct FramePrefix {
+      // index (in output_) of the header for the frame
+      size_t header_idx;
+      // number of bytes in 'output' when we started the frame - used to
+      // calculate frame length
+      size_t output_length_at_start_of_frame;
+    };
+
+    FramePrefix BeginFrame();
+    void FinishFrame(bool is_header_boundary);
+    void EnsureSpace(size_t need_bytes);
+
+    void AdvertiseTableSizeChange();
+    void EmitIndexed(uint32_t index);
+    void EncodeDynamic(grpc_mdelem elem);
+    static GPR_ATTRIBUTE_NOINLINE void Log(grpc_mdelem elem);
+
+    void EmitLitHdrIncIdx(uint32_t key_index, grpc_mdelem elem);
+    void EmitLitHdrNotIdx(uint32_t key_index, grpc_mdelem elem);
+    void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
+    void EmitLitHdrWithNonBinaryStringKeyIncIdx(const grpc_slice& key_slice,
+                                                const grpc_slice& value_slice);
+    void EmitLitHdrWithBinaryStringKeyNotIdx(const grpc_slice& key_slice,
+                                             const grpc_slice& value_slice);
+    void EmitLitHdrWithNonBinaryStringKeyNotIdx(const grpc_slice& key_slice,
+                                                const grpc_slice& value_slice);
+    void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
+
+    void EncodeAlwaysIndexed(uint32_t* index, const grpc_slice& key,
+                             const grpc_slice& value,
+                             uint32_t transport_length);
+
+    size_t CurrentFrameSize() const;
+    void Add(grpc_slice slice);
+    uint8_t* AddTiny(size_t len);
+
+    // maximum size of a frame
+    const size_t max_frame_size_;
+    bool is_first_frame_ = true;
+    const bool use_true_binary_metadata_;
+    const bool is_end_of_stream_;
+    // output stream id
+    const uint32_t stream_id_;
+#ifndef NDEBUG
+    // have we seen a regular (non-colon-prefixed) header yet?
+    bool seen_regular_header_ = false;
+#endif
+    grpc_slice_buffer* const output_;
+    grpc_transport_one_way_stats* const stats_;
+    HPackCompressor* const compressor_;
+    FramePrefix prefix_;
+  };
+
+ private:
+  static constexpr size_t kNumFilterValues = 64;
+  static constexpr uint32_t kNumCachedGrpcStatusValues = 16;
+
+  void AddKeyWithIndex(grpc_slice_refcount* key_ref, uint32_t new_index,
+                       uint32_t key_hash);
+  void AddElemWithIndex(grpc_mdelem elem, uint32_t new_index,
+                        uint32_t elem_hash, uint32_t key_hash);
+  void AddElem(grpc_mdelem elem, size_t elem_size, uint32_t elem_hash,
+               uint32_t key_hash);
+  void AddKey(grpc_mdelem elem, size_t elem_size, uint32_t key_hash);
+
+  // maximum number of bytes we'll use for the decode table (to guard against
+  // peers ooming us by setting decode table size high)
+  uint32_t max_usable_size_ = hpack_constants::kInitialTableSize;
+  // if non-zero, advertise to the decoder that we'll start using a table
+  // of this size
+  bool advertise_table_size_change_ = false;
+  HPackEncoderTable table_;
+
+  // filter tables for elems: this tables provides an approximate
+  // popularity count for particular hashes, and are used to determine whether
+  // a new literal should be added to the compression table or not.
+  // They track a single integer that counts how often a particular value has
+  // been seen. When that count reaches max (255), all values are halved.
+  PopularityCount<kNumFilterValues> filter_elems_;
+
+  class KeyElem {
+   public:
+    class Stored {
+     public:
+      Stored() : elem_(GRPC_MDNULL) {}
+      explicit Stored(grpc_mdelem elem) : elem_(GRPC_MDELEM_REF(elem)) {}
+      Stored(const Stored& other) : elem_(GRPC_MDELEM_REF(other.elem_)) {}
+      Stored& operator=(Stored other) {
+        std::swap(elem_, other.elem_);
+        return *this;
+      }
+      ~Stored() { GRPC_MDELEM_UNREF(elem_); }
+
+      const grpc_mdelem& elem() const { return elem_; }
+
+      bool operator==(const Stored& other) const noexcept {
+        return elem_.payload == other.elem_.payload;
+      }
+
+     private:
+      grpc_mdelem elem_;
+    };
+
+    KeyElem(grpc_mdelem elem, uint32_t hash) : elem_(elem), hash_(hash) {}
+    KeyElem(const KeyElem&);
+    KeyElem& operator=(const KeyElem&);
+
+    uint32_t hash() const {
+      // TODO(ctiller): unify this with what's in the cc file when we move this
+      // code to c++
+      return hash_ >> 6;
+    }
+
+    Stored stored() const { return Stored(elem_); }
+
+    bool operator==(const Stored& stored) const noexcept {
+      return elem_.payload == stored.elem().payload;
+    }
+
+   private:
+    grpc_mdelem elem_;
+    uint32_t hash_;
+  };
+
+  class KeySliceRef {
+   public:
+    using Stored = RefCountedPtr<grpc_slice_refcount>;
+
+    KeySliceRef(grpc_slice_refcount* ref, uint32_t hash)
+        : ref_(ref), hash_(hash) {}
+    KeySliceRef(const KeySliceRef&) = delete;
+    KeySliceRef& operator=(const KeySliceRef&) = delete;
+
+    uint32_t hash() const {
+      // TODO(ctiller): unify this with what's in the cc file when we move this
+      // code to c++
+      return hash_ >> 6;
+    }
+
+    Stored stored() const {
+      ref_->Ref();
+      return Stored(ref_);
+    }
+
+    bool operator==(const Stored& stored) const noexcept {
+      return ref_ == stored.get();
+    }
+
+   private:
+    grpc_slice_refcount* ref_;
+    uint32_t hash_;
+  };
+
+  // entry tables for keys & elems: these tables track values that have been
+  // seen and *may* be in the decompressor table
+  HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
+  HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
+  // Index into table_ for the te:trailers metadata element
+  uint32_t te_index_ = 0;
+  // Index into table_ for the user-agent metadata element
+  uint32_t user_agent_index_ = 0;
+  // Cached grpc-status values
+  uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};
+  // The user-agent string referred to by user_agent_index_
+  Slice user_agent_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_H */

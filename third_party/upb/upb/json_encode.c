@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) 2009-2021, Google LLC
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Google LLC nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "upb/json_encode.h"
 
@@ -32,7 +58,7 @@ static void jsonenc_scalar(jsonenc *e, upb_msgval val, const upb_fielddef *f);
 static void jsonenc_msgfield(jsonenc *e, const upb_msg *msg,
                              const upb_msgdef *m);
 static void jsonenc_msgfields(jsonenc *e, const upb_msg *msg,
-                              const upb_msgdef *m);
+                              const upb_msgdef *m, bool first);
 static void jsonenc_value(jsonenc *e, const upb_msg *msg, const upb_msgdef *m);
 
 UPB_NORETURN static void jsonenc_err(jsonenc *e, const char *msg) {
@@ -40,6 +66,7 @@ UPB_NORETURN static void jsonenc_err(jsonenc *e, const char *msg) {
   longjmp(e->err, 1);
 }
 
+UPB_PRINTF(2, 3)
 UPB_NORETURN static void jsonenc_errf(jsonenc *e, const char *fmt, ...) {
   va_list argp;
   va_start(argp, fmt);
@@ -62,8 +89,10 @@ static void jsonenc_putbytes(jsonenc *e, const void *data, size_t len) {
     memcpy(e->ptr, data, len);
     e->ptr += len;
   } else {
-    if (have) memcpy(e->ptr, data, have);
-    e->ptr += have;
+    if (have) {
+      memcpy(e->ptr, data, have);
+      e->ptr += have;
+    }
     e->overflow += (len - have);
   }
 }
@@ -72,6 +101,7 @@ static void jsonenc_putstr(jsonenc *e, const char *str) {
   jsonenc_putbytes(e, str, strlen(str));
 }
 
+UPB_PRINTF(2, 3)
 static void jsonenc_printf(jsonenc *e, const char *fmt, ...) {
   size_t n;
   size_t have = e->end - e->ptr;
@@ -84,7 +114,7 @@ static void jsonenc_printf(jsonenc *e, const char *fmt, ...) {
   if (UPB_LIKELY(have > n)) {
     e->ptr += n;
   } else {
-    e->ptr += have;
+    e->ptr = UPB_PTRADD(e->ptr, have);
     e->overflow += (n - have);
   }
 }
@@ -102,7 +132,7 @@ static void jsonenc_nanos(jsonenc *e, int32_t nanos) {
     digits -= 3;
   }
 
-  jsonenc_printf(e, ".%0.*" PRId32, digits, nanos);
+  jsonenc_printf(e, ".%.*" PRId32, digits, nanos);
 }
 
 static void jsonenc_timestamp(jsonenc *e, const upb_msg *msg,
@@ -173,10 +203,10 @@ static void jsonenc_enum(int32_t val, const upb_fielddef *f, jsonenc *e) {
   if (strcmp(upb_enumdef_fullname(e_def), "google.protobuf.NullValue") == 0) {
     jsonenc_putstr(e, "null");
   } else {
-    const char *name = upb_enumdef_iton(e_def, val);
+    const upb_enumvaldef *ev = upb_enumdef_lookupnum(e_def, val);
 
-    if (name) {
-      jsonenc_printf(e, "\"%s\"", name);
+    if (ev) {
+      jsonenc_printf(e, "\"%s\"", upb_enumvaldef_name(ev));
     } else {
       jsonenc_printf(e, "%" PRId32, val);
     }
@@ -188,7 +218,7 @@ static void jsonenc_bytes(jsonenc *e, upb_strview str) {
   static const char base64[] =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   const unsigned char *ptr = (unsigned char*)str.data;
-  const unsigned char *end = ptr + str.size;
+  const unsigned char *end = UPB_PTRADD(ptr, str.size);
   char buf[4];
 
   jsonenc_putstr(e, "\"");
@@ -224,7 +254,7 @@ static void jsonenc_bytes(jsonenc *e, upb_strview str) {
 
 static void jsonenc_stringbody(jsonenc *e, upb_strview str) {
   const char *ptr = str.data;
-  const char *end = ptr + str.size;
+  const char *end = UPB_PTRADD(ptr, str.size);
 
   while (ptr < end) {
     switch (*ptr) {
@@ -277,7 +307,17 @@ static void jsonenc_double(jsonenc *e, const char *fmt, double val) {
   } else if (val != val) {
     jsonenc_putstr(e, "\"NaN\"");
   } else {
+    char *p = e->ptr;
     jsonenc_printf(e, fmt, val);
+
+    /* printf() is dependent on locales; sadly there is no easy and portable way
+     * to avoid this. This little post-processing step will translate 1,2 -> 1.2
+     * since JSON needs the latter. Arguably a hack, but it is simple and the
+     * alternatives are far more complicated, platform-dependent, and/or larger
+     * in code size. */
+    for (char *end = e->ptr; p < end; p++) {
+      if (*p == ',') *p = '.';
+    }
   }
 }
 
@@ -340,14 +380,13 @@ static void jsonenc_any(jsonenc *e, const upb_msg *msg, const upb_msgdef *m) {
 
   jsonenc_putstr(e, "{\"@type\":");
   jsonenc_string(e, type_url);
-  jsonenc_putstr(e, ",");
 
   if (upb_msgdef_wellknowntype(any_m) == UPB_WELLKNOWN_UNSPECIFIED) {
     /* Regular messages: {"@type": "...","foo": 1, "bar": 2} */
-    jsonenc_msgfields(e, any, any_m);
+    jsonenc_msgfields(e, any, any_m, false);
   } else {
     /* Well-known type: {"@type": "...","value": <well-known encoding>} */
-    jsonenc_putstr(e, "\"value\":");
+    jsonenc_putstr(e, ",\"value\":");
     jsonenc_msgfield(e, any, any_m);
   }
 
@@ -631,14 +670,21 @@ static void jsonenc_fieldval(jsonenc *e, const upb_fielddef *f,
                              upb_msgval val, bool *first) {
   const char *name;
 
-  if (e->options & UPB_JSONENC_PROTONAMES) {
-    name = upb_fielddef_name(f);
-  } else {
-    name = upb_fielddef_jsonname(f);
-  }
-
   jsonenc_putsep(e, ",", first);
-  jsonenc_printf(e, "\"%s\":", name);
+
+  if (upb_fielddef_isextension(f)) {
+    // TODO: For MessageSet, I would have expected this to print the message
+    // name here, but Python doesn't appear to do this. We should do more
+    // research here about what various implementations do.
+    jsonenc_printf(e, "\"[%s]\":", upb_fielddef_fullname(f));
+  } else {
+    if (e->options & UPB_JSONENC_PROTONAMES) {
+      name = upb_fielddef_name(f);
+    } else {
+      name = upb_fielddef_jsonname(f);
+    }
+    jsonenc_printf(e, "\"%s\":", name);
+  }
 
   if (upb_fielddef_ismap(f)) {
     jsonenc_map(e, val.map_val, f);
@@ -650,10 +696,9 @@ static void jsonenc_fieldval(jsonenc *e, const upb_fielddef *f,
 }
 
 static void jsonenc_msgfields(jsonenc *e, const upb_msg *msg,
-                              const upb_msgdef *m) {
+                              const upb_msgdef *m, bool first) {
   upb_msgval val;
   const upb_fielddef *f;
-  bool first = true;
 
   if (e->options & UPB_JSONENC_EMITDEFAULTS) {
     /* Iterate over all fields. */
@@ -676,7 +721,7 @@ static void jsonenc_msgfields(jsonenc *e, const upb_msg *msg,
 
 static void jsonenc_msg(jsonenc *e, const upb_msg *msg, const upb_msgdef *m) {
   jsonenc_putstr(e, "{");
-  jsonenc_msgfields(e, msg, m);
+  jsonenc_msgfields(e, msg, m, true);
   jsonenc_putstr(e, "}");
 }
 
@@ -698,7 +743,7 @@ size_t upb_json_encode(const upb_msg *msg, const upb_msgdef *m,
 
   e.buf = buf;
   e.ptr = buf;
-  e.end = buf + size;
+  e.end = UPB_PTRADD(buf, size);
   e.overflow = 0;
   e.options = options;
   e.ext_pool = ext_pool;

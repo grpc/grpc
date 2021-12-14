@@ -18,12 +18,12 @@ explicitly invoked. The recommended way of using Channel object is using `with`
 clause, and let context manager automatically close the channel.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import resource
 import sys
 import unittest
-from concurrent.futures import ThreadPoolExecutor
 
 import grpc
 

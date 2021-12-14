@@ -9,7 +9,7 @@
 #ifndef ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_
 #define ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -33,13 +33,19 @@ UPB_INLINE envoy_type_v3_SemanticVersion *envoy_type_v3_SemanticVersion_new(upb_
 UPB_INLINE envoy_type_v3_SemanticVersion *envoy_type_v3_SemanticVersion_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_v3_SemanticVersion *ret = envoy_type_v3_SemanticVersion_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_type_v3_SemanticVersion *envoy_type_v3_SemanticVersion_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_type_v3_SemanticVersion *ret = envoy_type_v3_SemanticVersion_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_type_v3_SemanticVersion_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_type_v3_SemanticVersion_serialize(const envoy_type_v3_SemanticVersion *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_v3_SemanticVersion_msginit, arena, len);
@@ -58,6 +64,8 @@ UPB_INLINE void envoy_type_v3_SemanticVersion_set_minor_number(envoy_type_v3_Sem
 UPB_INLINE void envoy_type_v3_SemanticVersion_set_patch(envoy_type_v3_SemanticVersion *msg, uint32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = value;
 }
+
+extern const upb_msglayout_file envoy_type_v3_semantic_version_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

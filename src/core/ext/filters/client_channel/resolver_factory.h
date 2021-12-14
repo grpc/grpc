@@ -36,6 +36,8 @@ namespace grpc_core {
 struct ResolverArgs {
   /// The parsed URI to resolve.
   URI uri;
+  /// The URI string.
+  std::string uri_string;
   /// Channel args to be included in resolver results.
   const grpc_channel_args* args = nullptr;
   /// Used to drive I/O in the name resolution process.

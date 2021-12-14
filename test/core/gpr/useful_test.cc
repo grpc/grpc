@@ -16,44 +16,55 @@
  *
  */
 
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
+#include <grpc/impl/codegen/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "test/core/util/test_config.h"
 
-int main(int argc, char** argv) {
+#include <gtest/gtest.h>
+
+namespace grpc_core {
+
+TEST(UsefulTest, ClampWorks) {
+  EXPECT_EQ(Clamp(1, 0, 2), 1);
+  EXPECT_EQ(Clamp(0, 0, 2), 0);
+  EXPECT_EQ(Clamp(2, 0, 2), 2);
+  EXPECT_EQ(Clamp(-1, 0, 2), 0);
+  EXPECT_EQ(Clamp(3, 0, 2), 2);
+}
+
+TEST(UsefulTest, Rotate) {
+  EXPECT_EQ(RotateLeft(0x80000001u, 1u), 3);
+  EXPECT_EQ(RotateRight(0x80000001u, 1u), 0xc0000000);
+}
+
+TEST(UsefulTest, ArraySize) {
   int four[4];
   int five[5];
+
+  EXPECT_EQ(GPR_ARRAY_SIZE(four), 4);
+  EXPECT_EQ(GPR_ARRAY_SIZE(five), 5);
+}
+
+TEST(UsefulTest, BitOps) {
   uint32_t bitset = 0;
-  grpc::testing::TestEnvironment env(argc, argv);
 
-  GPR_ASSERT(GPR_MIN(1, 2) == 1);
-  GPR_ASSERT(GPR_MAX(1, 2) == 2);
-  GPR_ASSERT(GPR_MIN(2, 1) == 1);
-  GPR_ASSERT(GPR_MAX(2, 1) == 2);
-  GPR_ASSERT(GPR_CLAMP(1, 0, 2) == 1);
-  GPR_ASSERT(GPR_CLAMP(0, 0, 2) == 0);
-  GPR_ASSERT(GPR_CLAMP(2, 0, 2) == 2);
-  GPR_ASSERT(GPR_CLAMP(-1, 0, 2) == 0);
-  GPR_ASSERT(GPR_CLAMP(3, 0, 2) == 2);
-  GPR_ASSERT(GPR_ROTL((uint32_t)0x80000001, 1) == 3);
-  GPR_ASSERT(GPR_ROTR((uint32_t)0x80000001, 1) == 0xc0000000);
-  GPR_ASSERT(GPR_ARRAY_SIZE(four) == 4);
-  GPR_ASSERT(GPR_ARRAY_SIZE(five) == 5);
+  EXPECT_EQ(BitCount((1u << 31) - 1), 31);
+  EXPECT_EQ(BitCount(1u << 3), 1);
+  EXPECT_EQ(BitCount(0), 0);
+  EXPECT_EQ(SetBit(&bitset, 3), 8);
+  EXPECT_EQ(BitCount(bitset), 1);
+  EXPECT_EQ(GetBit(bitset, 3), 1);
+  EXPECT_EQ(SetBit(&bitset, 1), 10);
+  EXPECT_EQ(BitCount(bitset), 2);
+  EXPECT_EQ(ClearBit(&bitset, 3), 2);
+  EXPECT_EQ(BitCount(bitset), 1);
+  EXPECT_EQ(GetBit(bitset, 3), 0);
+  EXPECT_EQ(BitCount(std::numeric_limits<uint64_t>::max()), 64);
+}
 
-  GPR_ASSERT(GPR_BITCOUNT((1u << 31) - 1) == 31);
-  GPR_ASSERT(GPR_BITCOUNT(1u << 3) == 1);
-  GPR_ASSERT(GPR_BITCOUNT(0) == 0);
+}  // namespace grpc_core
 
-  GPR_ASSERT(GPR_BITSET(&bitset, 3) == 8);
-  GPR_ASSERT(GPR_BITCOUNT(bitset) == 1);
-  GPR_ASSERT(GPR_BITGET(bitset, 3) == 1);
-  GPR_ASSERT(GPR_BITSET(&bitset, 1) == 10);
-  GPR_ASSERT(GPR_BITCOUNT(bitset) == 2);
-  GPR_ASSERT(GPR_BITCLEAR(&bitset, 3) == 2);
-  GPR_ASSERT(GPR_BITCOUNT(bitset) == 1);
-  GPR_ASSERT(GPR_BITGET(bitset, 3) == 0);
-
-  return 0;
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

@@ -36,6 +36,11 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
   explicit GrpcAuthorizationEngine(Rbac policy);
 
+  Rbac::Action action() { return action_; }
+
+  // Required only for testing purpose.
+  size_t num_policies() { return policies_.size(); }
+
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.
   Decision Evaluate(const EvaluateArgs& args) const override;

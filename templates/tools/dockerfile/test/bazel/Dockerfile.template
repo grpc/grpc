@@ -14,37 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  # Pinned version of the base image is used to avoid regressions caused
-  # by rebuilding of this docker image. To see available versions, you can run
-  # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-  # TODO(jtattermusch): with the latest version we'd get clang12+
-  # which makes our build fail due to new warnings being treated
-  # as errors.
-  FROM gcr.io/oss-fuzz-base/base-builder@sha256:de220fd2433cd53bd06b215770dcd14a5e74632e0215acea7401fee8cafb18da
-  
-  # -------------------------- WARNING --------------------------------------
-  # If you are making changes to this file, consider changing
-  # https://github.com/google/oss-fuzz/blob/master/projects/grpc/Dockerfile
-  # accordingly.
-  # -------------------------------------------------------------------------
-
-  # Install basic packages and Bazel dependencies.
-  RUN apt-get update && apt-get install -y software-properties-common python-software-properties
-  RUN add-apt-repository ppa:webupd8team/java
-  RUN apt-get update && apt-get -y install ${'\\'}
-    autoconf ${'\\'}
-    build-essential ${'\\'}
-    curl ${'\\'}
-    wget ${'\\'}
-    libtool ${'\\'}
-    make ${'\\'}
-    openjdk-8-jdk ${'\\'}
-    vim
-  
-  <%include file="../../python_deps.include"/>
-
-  <%include file="../../compile_python_36.include"/>
-
+  <%include file="../../oss_fuzz_base.include"/>
   <%include file="../../bazel.include"/>
   
   RUN mkdir -p /var/local/jenkins

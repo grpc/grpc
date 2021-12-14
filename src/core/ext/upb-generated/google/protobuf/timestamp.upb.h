@@ -9,7 +9,7 @@
 #ifndef GOOGLE_PROTOBUF_TIMESTAMP_PROTO_UPB_H_
 #define GOOGLE_PROTOBUF_TIMESTAMP_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -33,13 +33,19 @@ UPB_INLINE google_protobuf_Timestamp *google_protobuf_Timestamp_new(upb_arena *a
 UPB_INLINE google_protobuf_Timestamp *google_protobuf_Timestamp_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   google_protobuf_Timestamp *ret = google_protobuf_Timestamp_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_protobuf_Timestamp_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &google_protobuf_Timestamp_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE google_protobuf_Timestamp *google_protobuf_Timestamp_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   google_protobuf_Timestamp *ret = google_protobuf_Timestamp_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &google_protobuf_Timestamp_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &google_protobuf_Timestamp_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *google_protobuf_Timestamp_serialize(const google_protobuf_Timestamp *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_Timestamp_msginit, arena, len);
@@ -54,6 +60,8 @@ UPB_INLINE void google_protobuf_Timestamp_set_seconds(google_protobuf_Timestamp 
 UPB_INLINE void google_protobuf_Timestamp_set_nanos(google_protobuf_Timestamp *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
 }
+
+extern const upb_msglayout_file google_protobuf_timestamp_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

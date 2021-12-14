@@ -16,6 +16,10 @@
  *
  */
 
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -27,15 +31,11 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "absl/memory/memory.h"
-
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
-
-#include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {

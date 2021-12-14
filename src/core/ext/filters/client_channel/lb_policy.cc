@@ -54,27 +54,27 @@ void LoadBalancingPolicy::Orphan() {
 // LoadBalancingPolicy::UpdateArgs
 //
 
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
-  addresses = other.addresses;
-  config = other.config;
-  args = grpc_channel_args_copy(other.args);
-}
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other)
+    : addresses(other.addresses),
+      config(other.config),
+      resolution_note(other.resolution_note),
+      args(grpc_channel_args_copy(other.args)) {}
 
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
-  addresses = std::move(other.addresses);
-  config = std::move(other.config);
-  // TODO(roth): Use std::move() once channel args is converted to C++.
-  args = other.args;
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept
+    : addresses(std::move(other.addresses)),
+      config(std::move(other.config)),
+      resolution_note(std::move(other.resolution_note)),
+      // TODO(roth): Use std::move() once channel args is converted to C++.
+      args(other.args) {
   other.args = nullptr;
 }
 
 LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
     const UpdateArgs& other) {
-  if (&other == this) {
-    return *this;
-  }
+  if (&other == this) return *this;
   addresses = other.addresses;
   config = other.config;
+  resolution_note = other.resolution_note;
   grpc_channel_args_destroy(args);
   args = grpc_channel_args_copy(other.args);
   return *this;
@@ -84,6 +84,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
     UpdateArgs&& other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
+  resolution_note = std::move(other.resolution_note);
   // TODO(roth): Use std::move() once channel args is converted to C++.
   grpc_channel_args_destroy(args);
   args = other.args;
@@ -125,21 +126,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                      parent, nullptr),
                  GRPC_ERROR_NONE);
   }
-  PickResult result;
-  result.type = PickResult::PICK_QUEUE;
-  return result;
-}
-
-//
-// LoadBalancingPolicy::TransientFailurePicker
-//
-
-LoadBalancingPolicy::PickResult
-LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs /*args*/) {
-  PickResult result;
-  result.type = PickResult::PICK_FAILED;
-  result.error = GRPC_ERROR_REF(error_);
-  return result;
+  return PickResult::Queue();
 }
 
 }  // namespace grpc_core

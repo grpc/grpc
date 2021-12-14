@@ -18,8 +18,9 @@
 
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
-#include <openssl/evp.h>
 #include <string.h>
+
+#include <openssl/evp.h>
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>

@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "opencensus/stats/stats.h"
+
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 
 namespace grpc {
@@ -33,6 +34,9 @@ namespace grpc {
 ::opencensus::stats::MeasureDouble RpcClientRoundtripLatency();
 ::opencensus::stats::MeasureDouble RpcClientServerLatency();
 ::opencensus::stats::MeasureInt64 RpcClientCompletedRpcs();
+::opencensus::stats::MeasureInt64 RpcClientRetriesPerCall();
+::opencensus::stats::MeasureInt64 RpcClientTransparentRetriesPerCall();
+::opencensus::stats::MeasureDouble RpcClientRetryDelayPerCall();
 
 ::opencensus::stats::MeasureInt64 RpcServerSentMessagesPerRpc();
 ::opencensus::stats::MeasureDouble RpcServerSentBytesPerRpc();

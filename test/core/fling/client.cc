@@ -16,11 +16,10 @@
  *
  */
 
-#include <grpc/grpc.h>
-
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

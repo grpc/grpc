@@ -14,16 +14,16 @@
 """Defines a number of module-scope gRPC scenarios to test server shutdown."""
 
 import argparse
+from concurrent import futures
+import logging
 import os
 import threading
 import time
-import logging
 
 import grpc
-from tests.unit import test_common
-
-from concurrent import futures
 from six.moves import queue
+
+from tests.unit import test_common
 
 WAIT_TIME = 1000
 

@@ -9,7 +9,7 @@
 #ifndef SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H_
 #define SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -38,13 +38,19 @@ UPB_INLINE grpc_gcp_AltsContext *grpc_gcp_AltsContext_new(upb_arena *arena) {
 UPB_INLINE grpc_gcp_AltsContext *grpc_gcp_AltsContext_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   grpc_gcp_AltsContext *ret = grpc_gcp_AltsContext_new(arena);
-  return (ret && upb_decode(buf, size, ret, &grpc_gcp_AltsContext_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &grpc_gcp_AltsContext_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE grpc_gcp_AltsContext *grpc_gcp_AltsContext_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   grpc_gcp_AltsContext *ret = grpc_gcp_AltsContext_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &grpc_gcp_AltsContext_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &grpc_gcp_AltsContext_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *grpc_gcp_AltsContext_serialize(const grpc_gcp_AltsContext *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_gcp_AltsContext_msginit, arena, len);
@@ -111,6 +117,8 @@ UPB_INLINE upb_strview grpc_gcp_AltsContext_PeerAttributesEntry_value(const grpc
 UPB_INLINE void grpc_gcp_AltsContext_PeerAttributesEntry_set_value(grpc_gcp_AltsContext_PeerAttributesEntry *msg, upb_strview value) {
   _upb_msg_map_set_value(msg, &value, 0);
 }
+
+extern const upb_msglayout_file src_proto_grpc_gcp_altscontext_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -22,14 +22,15 @@
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <arpa/inet.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <string>
+
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include "absl/strings/str_cat.h"
 
@@ -38,6 +39,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -47,10 +50,36 @@
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
+grpc_core::TraceFlag client_ssl_tsi_tracing_enabled(false, "tsi");
+
+class SslLibraryInfo {
+ public:
+  SslLibraryInfo() {}
+
+  void Notify() {
+    grpc_core::MutexLock lock(&mu_);
+    ready_ = true;
+    cv_.Signal();
+  }
+
+  void Await() {
+    grpc_core::MutexLock lock(&mu_);
+    while (!ready_) {
+      cv_.Wait(&mu_);
+    }
+  }
+
+ private:
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_;
+  bool ready_ ABSL_GUARDED_BY(mu_) = false;
+};
+
 // Arguments for TLS server thread.
 typedef struct {
   int socket;
   char* alpn_preferred;
+  SslLibraryInfo* ssl_library_info;
 } server_args;
 
 // Based on https://wiki.openssl.org/index.php/Simple_TLS_Server.
@@ -135,6 +164,28 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
   return SSL_TLSEXT_ERR_OK;
 }
 
+static void ssl_log_where_info(const SSL* ssl, int where, int flag,
+                               const char* msg) {
+  if ((where & flag) &&
+      GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
+    gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
+            SSL_state_string_long(ssl), SSL_state_string(ssl));
+  }
+}
+
+static void ssl_server_info_callback(const SSL* ssl, int where, int ret) {
+  if (ret == 0) {
+    gpr_log(GPR_ERROR, "ssl_server_info_callback: error occurred.\n");
+    return;
+  }
+
+  ssl_log_where_info(ssl, where, SSL_CB_LOOP, "Server: LOOP");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_START,
+                     "Server: HANDSHAKE START");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE,
+                     "Server: HANDSHAKE DONE");
+}
+
 // Minimal TLS server. This is largely based on the example at
 // https://wiki.openssl.org/index.php/Simple_TLS_Server and the gRPC core
 // internals in src/core/tsi/ssl_transport_security.c.
@@ -143,6 +194,7 @@ static void server_thread(void* arg) {
 
   SSL_load_error_strings();
   OpenSSL_add_ssl_algorithms();
+  args->ssl_library_info->Notify();
 
   const SSL_METHOD* method = TLSv1_2_server_method();
   SSL_CTX* ctx = SSL_CTX_new(method);
@@ -154,22 +206,37 @@ static void server_thread(void* arg) {
 
   // Load key pair.
   if (SSL_CTX_use_certificate_file(ctx, SSL_CERT_PATH, SSL_FILETYPE_PEM) < 0) {
+    perror("Unable to use certificate file.");
     ERR_print_errors_fp(stderr);
     abort();
   }
   if (SSL_CTX_use_PrivateKey_file(ctx, SSL_KEY_PATH, SSL_FILETYPE_PEM) < 0) {
+    perror("Unable to use private key file.");
+    ERR_print_errors_fp(stderr);
+    abort();
+  }
+  if (SSL_CTX_check_private_key(ctx) != 1) {
+    perror("Check private key failed.");
     ERR_print_errors_fp(stderr);
     abort();
   }
 
   // Set the cipher list to match the one expressed in
-  // src/core/tsi/ssl_transport_security.c.
+  // src/core/tsi/ssl_transport_security.cc.
   const char* cipher_list =
       "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
+    abort();
+  }
+
+  // Enable automatic curve selection. This is a NO-OP when using OpenSSL
+  // versions > 1.0.2.
+  if (!SSL_CTX_set_ecdh_auto(ctx, /*onoff=*/1)) {
+    ERR_print_errors_fp(stderr);
+    gpr_log(GPR_ERROR, "Couldn't set automatic curve selection.");
     abort();
   }
 
@@ -190,6 +257,7 @@ static void server_thread(void* arg) {
 
   // Establish a SSL* and accept at SSL layer.
   SSL* ssl = SSL_new(ctx);
+  SSL_set_info_callback(ssl, ssl_server_info_callback);
   GPR_ASSERT(ssl);
   SSL_set_fd(ssl, client);
   if (SSL_accept(ssl) <= 0) {
@@ -212,7 +280,6 @@ static void server_thread(void* arg) {
   close(client);
   close(sock);
   SSL_CTX_free(ctx);
-  EVP_cleanup();
 }
 
 // This test launches a minimal TLS server on a separate thread and then
@@ -238,11 +305,13 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   GPR_ASSERT(server_socket > 0 && port > 0);
 
   // Launch the TLS server thread.
-  server_args args = {server_socket, server_alpn_preferred};
+  SslLibraryInfo ssl_library_info;
+  server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
   bool ok;
   grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
   GPR_ASSERT(ok);
   thd.Start();
+  ssl_library_info.Await();
 
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
@@ -326,6 +395,8 @@ int main(int argc, char* argv[]) {
   // preference. This validates the client is correctly validating ALPN returns
   // and sanity checks the client_ssl_test.
   GPR_ASSERT(!client_ssl_test(const_cast<char*>("foo")));
+  // Clean up the SSL libraries.
+  EVP_cleanup();
   return 0;
 }
 

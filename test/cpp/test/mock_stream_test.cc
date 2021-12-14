@@ -16,10 +16,11 @@
  *
  */
 
-#include <grpcpp/test/mock_stream.h>
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+
+#include <grpcpp/test/mock_stream.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
@@ -52,6 +53,16 @@ TEST(MockStreamTest, Basic) {
   auto carw = absl::make_unique<
       grpc::testing::MockClientAsyncReaderWriter<EchoRequest, EchoResponse>>();
   ASSERT_NE(carw, nullptr);
+
+  auto sr = absl::make_unique<grpc::testing::MockServerReader<EchoRequest>>();
+  ASSERT_NE(sr, nullptr);
+
+  auto sw = absl::make_unique<grpc::testing::MockServerWriter<EchoResponse>>();
+  ASSERT_NE(sw, nullptr);
+
+  auto srw = absl::make_unique<
+      grpc::testing::MockServerReaderWriter<EchoResponse, EchoRequest>>();
+  ASSERT_NE(srw, nullptr);
 }
 
 int main(int argc, char** argv) {

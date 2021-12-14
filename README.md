@@ -54,7 +54,7 @@ Sometimes things go wrong. Please check out the [Troubleshooting guide](TROUBLES
 
 # Performance 
 
-See the [Performance dashboard](https://performance-dot-grpc-testing.appspot.com/explore?dashboard=5652536396611584) for performance numbers of master branch daily builds.
+See the [Performance dashboard](https://performance-dot-grpc-testing.appspot.com/explore?dashboard=5180705743044608) for performance numbers of master branch daily builds.
 
 # Concepts
 

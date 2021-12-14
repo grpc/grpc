@@ -12,20 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The aarch64 wheels are being crosscompiled to allow running the build
-# on x64 machine. The dockcross/manylinux2014-aarch64 image is a x86_64
-# image with crosscompilation toolchain installed.
-# Use an older version of dockcross image that has gcc4.9.4 because it was built
-# before https://github.com/dockcross/dockcross/pull/449
-FROM dockcross/manylinux2014-aarch64:20200929-608e6ac
+FROM dockcross/manylinux2014-aarch64:20210826-19322ba
+
+# manylinux_2_17 is the preferred alias of manylinux2014
+ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
 
 ###################################
 # Install Python build requirements
-RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
 
 # the dockcross docker image sets variables like CC, CXX etc.
 # to point to the crosscompilation toolchain, but doesn't set corresponding

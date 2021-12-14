@@ -4,9 +4,11 @@
 - script: tools/run_tests/sanity/check_buildifier.sh
 - script: tools/run_tests/sanity/check_cache_mk.sh
 - script: tools/run_tests/sanity/check_deprecated_grpc++.py
+- script: tools/run_tests/sanity/check_do_not_submit.sh
 - script: tools/run_tests/sanity/check_illegal_terms.sh
 - script: tools/run_tests/sanity/check_owners.sh
 - script: tools/run_tests/sanity/check_port_platform.py
+- script: tools/run_tests/sanity/check_include_style.py
 - script: tools/run_tests/sanity/check_qps_scenario_changes.py
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh
@@ -16,6 +18,7 @@
 - script: tools/run_tests/sanity/core_banned_functions.py
 - script: tools/run_tests/sanity/core_untyped_structs.sh
 - script: tools/run_tests/sanity/cpp_banned_constructs.sh
+- script: tools/run_tests/sanity/check_package_name.py
 - script: tools/buildgen/generate_projects.sh -j 3
   cpu_cost: 3
 - script: tools/distrib/check_copyright.py
@@ -32,5 +35,10 @@
 - script: tools/distrib/python/check_grpcio_tools.py
 - script: tools/distrib/yapf_code.sh --diff
   cpu_cost: 1000
+- script: tools/distrib/isort_code.sh --diff
+  cpu_cost: 1000
 - script: tools/distrib/check_protobuf_pod_version.sh
 - script: tools/distrib/check_boringssl_prefix_symbol.sh
+- script: tools/run_tests/sanity/build_banned_constructs.sh
+- script: tools/distrib/check_redundant_namespace_qualifiers.py
+

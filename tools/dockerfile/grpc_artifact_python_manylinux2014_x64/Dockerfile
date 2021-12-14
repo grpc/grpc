@@ -13,17 +13,19 @@
 # limitations under the License.
 
 # Docker file for building gRPC manylinux Python artifacts.
-# Updated: 2020-10-08
 
-FROM quay.io/pypa/manylinux2014_x86_64
+FROM quay.io/pypa/manylinux2014_x86_64:2021-08-26-12e5da0
+
+# manylinux_2_17 is the preferred alias of manylinux2014
+ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
 
 # TODO(jtattermusch): revisit which of the deps are really required
 RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
 
 ###################################
 # Install Python build requirements
-RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
 RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython

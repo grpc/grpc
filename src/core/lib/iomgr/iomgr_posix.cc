@@ -41,11 +41,13 @@ extern grpc_address_resolver_vtable grpc_posix_resolver_vtable;
 static void iomgr_platform_init(void) {
   grpc_wakeup_fd_global_init();
   grpc_event_engine_init();
+  grpc_tcp_posix_init();
 }
 
 static void iomgr_platform_flush(void) {}
 
 static void iomgr_platform_shutdown(void) {
+  grpc_tcp_posix_shutdown();
   grpc_event_engine_shutdown();
   grpc_wakeup_fd_global_destroy();
 }

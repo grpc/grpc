@@ -250,7 +250,7 @@ static void timer_main_loop() {
           gpr_log(GPR_INFO, "timers not checked: expect another thread to");
         }
         next = GRPC_MILLIS_INF_FUTURE;
-      // fallthrough
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         if (!wait_until(next)) {
           return;

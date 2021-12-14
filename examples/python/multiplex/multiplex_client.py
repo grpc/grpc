@@ -15,12 +15,11 @@
 
 from __future__ import print_function
 
+import logging
 import random
 import time
-import logging
 
 import grpc
-
 import helloworld_pb2
 import helloworld_pb2_grpc
 import route_guide_pb2

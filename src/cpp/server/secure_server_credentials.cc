@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/cpp/server/secure_server_credentials.h"
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -25,7 +27,6 @@
 #include <grpcpp/security/auth_metadata_processor.h>
 
 #include "src/cpp/common/secure_auth_context.h"
-#include "src/cpp/server/secure_server_credentials.h"
 
 namespace grpc {
 
@@ -74,7 +75,6 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_metadata md_entry;
     md_entry.key = SliceReferencingString(consumed.first);
     md_entry.value = SliceReferencingString(consumed.second);
-    md_entry.flags = 0;
     consumed_md.push_back(md_entry);
   }
   std::vector<grpc_metadata> response_md;
@@ -82,7 +82,6 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_metadata md_entry;
     md_entry.key = SliceReferencingString(response.first);
     md_entry.value = SliceReferencingString(response.second);
-    md_entry.flags = 0;
     response_md.push_back(md_entry);
   }
   auto consumed_md_data = consumed_md.empty() ? nullptr : &consumed_md[0];

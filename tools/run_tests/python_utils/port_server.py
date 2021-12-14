@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,18 @@
 from __future__ import print_function
 
 import argparse
-from six.moves.BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from six.moves.socketserver import ThreadingMixIn
 import hashlib
 import os
+import platform
+import random
 import socket
 import sys
-import time
-import random
 import threading
-import platform
+import time
+
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
+from six.moves.BaseHTTPServer import HTTPServer
+from six.moves.socketserver import ThreadingMixIn
 
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
@@ -191,7 +193,7 @@ class Handler(BaseHTTPRequestHandler):
             now = time.time()
             out = yaml.dump({
                 'pool': pool,
-                'in_use': dict((k, now - v) for k, v in in_use.items())
+                'in_use': dict((k, now - v) for k, v in list(in_use.items()))
             })
             mu.release()
             self.wfile.write(out.encode('ascii'))

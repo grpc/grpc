@@ -41,6 +41,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_Node_getmsgdef(upb_symtab *s) 
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Node");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_Node_DynamicParametersEntry_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Node.DynamicParametersEntry");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_Metadata_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Metadata");
@@ -49,6 +54,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_Metadata_getmsgdef(upb_symtab 
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_Metadata_FilterMetadataEntry_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Metadata.FilterMetadataEntry");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_Metadata_TypedFilterMetadataEntry_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Metadata.TypedFilterMetadataEntry");
 }
 
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_RuntimeUInt32_getmsgdef(upb_symtab *s) {
@@ -69,6 +79,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_RuntimeDouble_getmsgdef(upb_sy
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_RuntimeFeatureFlag_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.RuntimeFeatureFlag");
+}
+
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_QueryParameter_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.QueryParameter");
 }
 
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_HeaderValue_getmsgdef(upb_symtab *s) {

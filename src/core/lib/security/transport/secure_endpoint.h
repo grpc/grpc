@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
 
 struct tsi_frame_protector;

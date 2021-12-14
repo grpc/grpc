@@ -18,8 +18,9 @@
 
 #include <limits.h>
 
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
+
+#include <grpc/grpc.h>
 
 namespace grpc {
 namespace testing {

@@ -9,7 +9,7 @@
 #ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_SECRET_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_SECRET_PROTO_UPB_H_
 
-#include "upb/msg.h"
+#include "upb/msg_internal.h"
 #include "upb/decode.h"
 #include "upb/decode_fast.h"
 #include "upb/encode.h"
@@ -49,13 +49,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_GenericSecret *envoy_extens
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_GenericSecret *envoy_extensions_transport_sockets_tls_v3_GenericSecret_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_GenericSecret *ret = envoy_extensions_transport_sockets_tls_v3_GenericSecret_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_GenericSecret *envoy_extensions_transport_sockets_tls_v3_GenericSecret_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_GenericSecret *ret = envoy_extensions_transport_sockets_tls_v3_GenericSecret_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_GenericSecret_serialize(const envoy_extensions_transport_sockets_tls_v3_GenericSecret *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit, arena, len);
@@ -86,13 +92,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *envoy_exte
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *ret = envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *ret = envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_serialize(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit, arena, len);
@@ -127,13 +139,19 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_Secret *envoy_extensions_tr
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_Secret *envoy_extensions_transport_sockets_tls_v3_Secret_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_Secret *ret = envoy_extensions_transport_sockets_tls_v3_Secret_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_Secret_msginit, arena)) ? ret : NULL;
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_Secret_msginit, arena)) return NULL;
+  return ret;
 }
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_Secret *envoy_extensions_transport_sockets_tls_v3_Secret_parse_ex(const char *buf, size_t size,
-                           upb_arena *arena, int options) {
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
   envoy_extensions_transport_sockets_tls_v3_Secret *ret = envoy_extensions_transport_sockets_tls_v3_Secret_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_Secret_msginit, arena, options))
-      ? ret : NULL;
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_Secret_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
 }
 UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_Secret_serialize(const envoy_extensions_transport_sockets_tls_v3_Secret *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_Secret_msginit, arena, len);
@@ -209,6 +227,8 @@ UPB_INLINE struct envoy_extensions_transport_sockets_tls_v3_GenericSecret* envoy
   }
   return sub;
 }
+
+extern const upb_msglayout_file envoy_extensions_transport_sockets_tls_v3_secret_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

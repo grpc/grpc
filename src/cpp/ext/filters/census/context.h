@@ -21,18 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/status.h>
-
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
 #include "opencensus/context/context.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/context_util.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/trace_params.h"
+
+#include <grpc/status.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/cpp/common/channel_filter.h"
@@ -63,6 +62,11 @@ class CensusContext {
       : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
             name, parent_ctxt)),
         tags_({}) {}
+
+  void AddSpanAttribute(absl::string_view key,
+                        opencensus::trace::AttributeValueRef attribute) {
+    span_.AddAttribute(key, attribute);
+  }
 
   const ::opencensus::trace::Span& Span() const { return span_; }
   const ::opencensus::tags::TagMap& tags() const { return tags_; }

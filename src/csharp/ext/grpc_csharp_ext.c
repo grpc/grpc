@@ -16,17 +16,18 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#include <string.h>
+
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd_id.h>
-
-#include <string.h>
 
 #ifdef GPR_WINDOWS
 #define GPR_EXPORT __declspec(dllexport)
