@@ -32,9 +32,6 @@ using ::grpc::ServerContext;
 using ::grpc::Status;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
-using ::grpc::experimental::TlsServerAuthorizationCheckArg;
-using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
-using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
 using ::grpc::experimental::TlsServerCredentialsOptions;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -66,7 +63,6 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
   options.set_certificate_provider(certificate_provider);
   options.watch_root_certs();
   options.watch_identity_key_cert_pairs();
-  options.set_server_verification_option(GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
   auto channel_creds = grpc::experimental::TlsCredentials(options);
   grpc::ChannelArguments args;
   if (revoked_server_certs) {
