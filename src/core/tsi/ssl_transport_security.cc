@@ -993,6 +993,7 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 }
 
 /* --- tsi_ssl_root_certs_store methods implementation. ---*/
+
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     const char* pem_roots) {
   if (pem_roots == nullptr) {
@@ -2229,9 +2230,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                              nullptr);
           break;
       }
-
-      X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-      X509_STORE_set_verify_cb(cert_store, verify_cb);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       if (options->crl_directory != nullptr &&
