@@ -19,7 +19,7 @@ When prompted for certificate information, everything is default except the
 common name which is set to valid.
 
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in valid.csr \
-  -out valid.pem -days 3650
+  -out valid.pem  -days 3650
 
 revoked is issued by CA:
 -----------------------
