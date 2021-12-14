@@ -137,7 +137,7 @@ class ParsedMetadata {
   }
   // Construct metadata from a string key, slice value pair.
   ParsedMetadata(Slice key, Slice value)
-      : vtable_(ParsedMetadata::KeyValueVTable()),
+      : vtable_(ParsedMetadata::KeyValueVTable(key.as_string_view())),
         transport_size_(value.size()) {
     value_.pointer =
         new std::pair<Slice, Slice>(std::move(key), std::move(value));
@@ -164,7 +164,7 @@ class ParsedMetadata {
 
   // Set this parsed value on a container.
   void SetOnContainer(MetadataContainer* container) const {
-     vtable_->set(value_, container);
+    vtable_->set(value_, container);
   }
 
   // Is this a binary header or not?
@@ -197,8 +197,7 @@ class ParsedMetadata {
   struct VTable {
     const bool is_binary_header;
     void (*const destroy)(const Buffer& value);
-    void (*const set)(const Buffer& value,
-                                   MetadataContainer* container);
+    void (*const set)(const Buffer& value, MetadataContainer* container);
     // result is a bitwise copy of the originating ParsedMetadata.
     void (*const with_new_value)(Slice* new_value,
                                  MetadataParseErrorFn on_error,
@@ -208,7 +207,7 @@ class ParsedMetadata {
   };
 
   static const VTable* EmptyVTable();
-  static const VTable* KeyValueVTable();
+  static const VTable* KeyValueVTable(absl::string_view key);
   template <typename Which>
   static const VTable* TrivialTraitVTable();
   template <typename Which>
@@ -245,7 +244,7 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
       // destroy
       metadata_detail::DestroyTrivialMemento,
       // set
-      [](const Buffer&, MetadataContainer*) {  },
+      [](const Buffer&, MetadataContainer*) {},
       // with_new_value
       [](Slice*, MetadataParseErrorFn, ParsedMetadata*) {},
       // debug_string
@@ -266,7 +265,9 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       metadata_detail::DestroyTrivialMemento,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        map->Set(Which(), metadata_detail::FieldFromTrivial<typename Which::MementoType>(value));
+        map->Set(Which(),
+                 metadata_detail::FieldFromTrivial<typename Which::MementoType>(
+                     value));
       },
       // with_new_value
       WithNewValueSetTrivial<typename Which::MementoType, Which::ParseMemento>,
@@ -341,6 +342,40 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       [](const Buffer&) { return Which::key(); },
   };
   return &vtable;
+}
+
+template <typename MetadataContainer>
+const typename ParsedMetadata<MetadataContainer>::VTable*
+ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
+  using KV = std::pair<Slice, Slice>;
+  static const auto destroy = [](const Buffer& value) {
+    delete static_cast<KV*>(value.pointer);
+  };
+  static const auto set = [](const Buffer& value, MetadataContainer* map) {
+    auto* p = static_cast<KV*>(value.pointer);
+    map->AppendUnknown(p->first.as_string_view(), p->second.Ref());
+  };
+  static const auto with_new_value =
+      [](Slice* value, MetadataParseErrorFn on_error, ParsedMetadata* result) {
+        auto* p = new KV{
+            static_cast<KV*>(result->value_.pointer)->first.Ref(),
+            std::move(*value),
+        };
+        result->value_.pointer = p;
+      };
+  static const auto debug_string = [](const Buffer& value) {
+    auto* p = static_cast<KV*>(value.pointer);
+    return absl::StrCat(p->first.as_string_view(), ": ",
+                        p->second.as_string_view());
+  };
+  static const auto key_fn = [](const Buffer& value) {
+    return static_cast<KV*>(value.pointer)->first.as_string_view();
+  };
+  static const VTable vtable[2] = {
+      {false, destroy, set, with_new_value, debug_string, key_fn},
+      {true, destroy, set, with_new_value, debug_string, key_fn},
+  };
+  return &vtable[absl::EndsWith(key, "-bin")];
 }
 
 }  // namespace grpc_core

@@ -435,7 +435,9 @@ struct GrpcLbClientStatsMetadata {
   static const char* DisplayValue(MementoType x) {
     return "<internal-lb-stats>";
   }
-  static MementoType ParseMemento(Slice, MetadataParseErrorFn) { return nullptr; }
+  static MementoType ParseMemento(Slice, MetadataParseErrorFn) {
+    return nullptr;
+  }
 };
 
 namespace metadata_detail {
@@ -518,7 +520,7 @@ class ParseHelper {
 };
 
 // This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
+// Used for MetadataMap::Append, its Found/NotFound methods turn a slice into a
 // value and add it to a container.
 template <typename Container>
 class AppendHelper {
@@ -543,6 +545,61 @@ class AppendHelper {
   Container* const container_;
   Slice value_;
   MetadataParseErrorFn on_error_;
+};
+
+// This is an "Op" type for NameLookup.
+// Used for MetadataMap::Remove, its Found/NotFound methods remove a key from
+// the container.
+template <typename Container>
+class RemoveHelper {
+ public:
+  explicit RemoveHelper(Container* container) : container_(container) {}
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
+    container_->Remove(trait);
+  }
+
+  GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
+    container_->RemoveUnknown(key);
+  }
+
+ private:
+  Container* const container_;
+};
+
+// This is an "Op" type for NameLookup.
+// Used for MetadataMap::GetStringValue, its Found/NotFound methods generated a
+// string value from the container.
+template <typename Container>
+class GetStringValueHelper {
+ public:
+  explicit GetStringValueHelper(Container* container,
+                                std::string* backing_store)
+      : container_(container) {}
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE
+      absl::enable_if_t<std::is_same<Slice, typename Trait::ValueType>::value,
+                        absl::optional<absl::string_view>>
+      Found(Trait trait) {}
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE
+      absl::enable_if_t<!std::is_same<Slice, typename Trait::ValueType>::value,
+                        absl::optional<absl::string_view>>
+      Found(Trait trait) {
+    *backing_ = std::string(Trait::Encode(container_->Get(trait)));
+  }
+
+  GPR_ATTRIBUTE_NOINLINE absl::optional<absl::string_view> NotFound(
+      absl::string_view key) {
+    return container_->GetStringValueUnknown(key, backing_);
+  }
+
+ private:
+  Container* const container_;
+  std::string* backing_;
 };
 
 }  // namespace metadata_detail
@@ -653,7 +710,8 @@ class MetadataMap {
 
   // Similar to Encode, but targeted at logging: for each metadatum,
   // call f(key, value) as absl::string_views.
-  void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> f) const;
+  void Log(
+      absl::FunctionRef<void(absl::string_view, absl::string_view)> f) const;
 
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
@@ -697,7 +755,10 @@ class MetadataMap {
   }
 
   // Remove some metadata by name
-  void Remove(absl::string_view name);
+  void Remove(absl::string_view key) {
+    metadata_detail::RemoveHelper<MetadataMap> helper(this);
+    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+  }
 
   // Retrieve some metadata by name
   absl::optional<absl::string_view> GetStringValue(absl::string_view name,
@@ -731,10 +792,7 @@ class MetadataMap {
   }
 
   // Set a value from a parsed metadata object.
-  void
-  Set(const ParsedMetadata<MetadataMap>& m) {
-    m.SetOnContainer(this);
-  }
+  void Set(const ParsedMetadata<MetadataMap>& m) { m.SetOnContainer(this); }
 
   // Append a key/value pair - takes ownership of value
   void Append(absl::string_view key, Slice value,
@@ -747,11 +805,13 @@ class MetadataMap {
   void Clear();
   size_t TransportSize() const;
   MetadataMap Copy() const;
-  bool empty() const;
-  size_t count() const;
+  bool empty() const { return table_.empty() && unknown_.empty(); }
+  size_t count() const { return table_.count() + unknown_.size(); }
 
  private:
   friend class metadata_detail::AppendHelper<MetadataMap>;
+  friend class metadata_detail::RemoveHelper<MetadataMap>;
+  friend class ParsedMetadata<MetadataMap>;
 
   // Generate a strong type for metadata values per trait.
   template <typename Which>
@@ -798,7 +858,59 @@ class MetadataMap {
     uint32_t size_ = 0;
   };
 
-  void AppendUnknown(absl::string_view key, Slice value);
+  // Encoder to copy some metadata
+  class CopySink {
+   public:
+    explicit CopySink(MetadataMap* dst) : dst_(dst) {}
+
+    template <class T, class V>
+    void Encode(T trait, V value) {
+      dst_->Set(trait, value);
+    }
+
+    template <class T>
+    void Encode(T trait, const grpc_core::Slice& value) {
+      dst_->Set(trait, std::move(value.AsOwned()));
+    }
+
+    void Encode(const Slice& key, const Slice& value) {
+      dst_->AppendUnknown(key.as_string_view(), value.Ref());
+    }
+
+   private:
+    MetadataMap* dst_;
+  };
+
+  // Encoder to log some metadata
+  class LogEncoder {
+   public:
+    explicit LogEncoder(
+        absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
+        : log_fn_(log_fn) {}
+
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
+    }
+
+    void Encode(const Slice& key, const Slice& value) {
+      log_fn_(key.as_string_view(), value.as_string_view());
+    }
+
+   private:
+    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
+  };
+
+  void AppendUnknown(absl::string_view key, Slice value) {
+    unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
+  }
+
+  void RemoveUnknown(absl::string_view key) {
+    unknown_.SetEnd(std::remove_if(unknown_.begin(), unknown_.end(),
+                                   [key](const std::pair<Slice, Slice>& p) {
+                                     return p.first.as_string_view() == key;
+                                   }));
+  }
 
   // Table of known metadata types.
   Table<Value<Traits>...> table_;
@@ -835,6 +947,22 @@ size_t MetadataMap<Traits...>::TransportSize() const {
   TransportSizeEncoder enc;
   Encode(&enc);
   return enc.size();
+}
+
+template <typename... Traits>
+MetadataMap<Traits...> MetadataMap<Traits...>::Copy() const {
+  MetadataMap out(unknown_.arena());
+  CopySink sink(&out);
+  Encode(&sink);
+  return out;
+}
+
+template <typename... Traits>
+void MetadataMap<Traits...>::Log(
+    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
+    const {
+  LogEncoder enc(log_fn);
+  Encode(&enc);
 }
 
 }  // namespace grpc_core

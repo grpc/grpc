@@ -101,12 +101,10 @@ class HPackCompressor {
       const Slice& slice = MetadataValueAsSlice<Which>(value);
       if (absl::EndsWith(Which::key(), "-bin")) {
         EmitLitHdrWithBinaryStringKeyNotIdx(
-            Slice::FromStaticString(Which::key()),
-            slice.Ref());
+            Slice::FromStaticString(Which::key()), slice.Ref());
       } else {
         EmitLitHdrWithNonBinaryStringKeyNotIdx(
-            Slice::FromStaticString(Which::key()),
-            slice.Ref());
+            Slice::FromStaticString(Which::key()), slice.Ref());
       }
     }
 
@@ -154,10 +152,6 @@ class HPackCompressor {
     const bool is_end_of_stream_;
     // output stream id
     const uint32_t stream_id_;
-#ifndef NDEBUG
-    // have we seen a regular (non-colon-prefixed) header yet?
-    bool seen_regular_header_ = false;
-#endif
     grpc_slice_buffer* const output_;
     grpc_transport_one_way_stats* const stats_;
     HPackCompressor* const compressor_;

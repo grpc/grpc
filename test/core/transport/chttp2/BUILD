@@ -18,25 +18,25 @@ load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/transport/chttp2")
+grpc_package(name="test/core/transport/chttp2")
 
 grpc_proto_fuzzer(
-    name = "hpack_parser_fuzzer",
-    srcs = ["hpack_parser_fuzzer_test.cc"],
-    corpus = "hpack_parser_corpus",
-    proto = "hpack_parser_fuzzer.proto",
-    tags = ["no_windows"],
-    deps = [
+    name="hpack_parser_fuzzer",
+    srcs=["hpack_parser_fuzzer_test.cc"],
+    corpus="hpack_parser_corpus",
+    proto="hpack_parser_fuzzer.proto",
+    tags=["no_windows"],
+    deps=[
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
-    name = "alpn_test",
-    srcs = ["alpn_test.cc"],
-    language = "C++",
-    deps = [
+    name="alpn_test",
+    srcs=["alpn_test.cc"],
+    language="C++",
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -44,11 +44,11 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bin_decoder_test",
-    srcs = ["bin_decoder_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+    name="bin_decoder_test",
+    srcs=["bin_decoder_test.cc"],
+    language="C++",
+    uses_polling=False,
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -56,11 +56,11 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bin_encoder_test",
-    srcs = ["bin_encoder_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+    name="bin_encoder_test",
+    srcs=["bin_encoder_test.cc"],
+    language="C++",
+    uses_polling=False,
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -68,14 +68,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "context_list_test",
-    srcs = ["context_list_test.cc"],
-    external_deps = [
+    name="context_list_test",
+    srcs=["context_list_test.cc"],
+    external_deps=[
         "gtest",
     ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+    language="C++",
+    uses_polling=False,
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -83,14 +83,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "flow_control_test",
-    size = "large",
-    srcs = ["flow_control_test.cc"],
-    external_deps = [
+    name="flow_control_test",
+    size="large",
+    srcs=["flow_control_test.cc"],
+    external_deps=[
         "gtest",
     ],
-    language = "C++",
-    deps = [
+    language="C++",
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:cq_verifier",
@@ -99,11 +99,11 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "hpack_encoder_test",
-    srcs = ["hpack_encoder_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+    name="hpack_encoder_test",
+    srcs=["hpack_encoder_test.cc"],
+    language="C++",
+    uses_polling=False,
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -111,12 +111,12 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "hpack_parser_test",
-    srcs = ["hpack_parser_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+    name="hpack_parser_test",
+    srcs=["hpack_parser_test.cc"],
+    external_deps=["gtest"],
+    language="C++",
+    uses_polling=False,
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -124,12 +124,12 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "hpack_parser_table_test",
-    srcs = ["hpack_parser_table_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+    name="hpack_parser_table_test",
+    srcs=["hpack_parser_table_test.cc"],
+    external_deps=["gtest"],
+    language="C++",
+    uses_polling=False,
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -137,10 +137,10 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "stream_map_test",
-    srcs = ["stream_map_test.cc"],
-    language = "C++",
-    deps = [
+    name="stream_map_test",
+    srcs=["stream_map_test.cc"],
+    language="C++",
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -148,14 +148,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "settings_timeout_test",
-    srcs = ["settings_timeout_test.cc"],
-    external_deps = [
+    name="settings_timeout_test",
+    srcs=["settings_timeout_test.cc"],
+    external_deps=[
         "gtest",
     ],
-    flaky = True,  # TODO(b/148399919)
-    language = "C++",
-    deps = [
+    flaky=True,  # TODO(b/148399919)
+    language="C++",
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -163,11 +163,11 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "too_many_pings_test",
-    timeout = "long",  # Required for internal test infrastructure (cl/325757166)
-    srcs = ["too_many_pings_test.cc"],
-    external_deps = ["gtest"],
-    deps = [
+    name="too_many_pings_test",
+    timeout="long",  # Required for internal test infrastructure (cl/325757166)
+    srcs=["too_many_pings_test.cc"],
+    external_deps=["gtest"],
+    deps=[
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -179,11 +179,11 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "varint_test",
-    srcs = ["varint_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
+    name="varint_test",
+    srcs=["varint_test.cc"],
+    language="C++",
+    uses_polling=False,
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -191,8 +191,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "remove_stream_from_stalled_lists_test",
-    srcs = ["remove_stream_from_stalled_lists_test.cc"],
+    name="remove_stream_from_stalled_lists_test",
+    srcs=["remove_stream_from_stalled_lists_test.cc"],
     # use LARGE_MACHINE because this test needs a certaim amount
     # of parallelism in order to reproduce the original crash that it's meant
     # to regression test for (a crash which is fixed by
@@ -200,41 +200,15 @@ grpc_cc_test(
     # test doesn't use LARGE_MACHINE, then it will almost never reproduce the
     # intended crash (as it's meant to before the fix is applied). But with
     # LARGE_MACHINE, it can reproduce at a high rate.
-    exec_properties = LARGE_MACHINE,
-    external_deps = [
+    exec_properties=LARGE_MACHINE,
+    external_deps=[
         "gtest",
     ],
-    language = "C++",
-    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
-    deps = [
+    language="C++",
+    tags=["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    deps=[
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "popularity_count_test",
-    srcs = ["popularity_count_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr_platform",
-        "//:popularity_count",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "hpack_encoder_index_test",
-    srcs = ["hpack_encoder_index_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr_platform",
-        "//:hpack_encoder_index",
-        "//test/core/util:grpc_suppressions",
     ],
 )

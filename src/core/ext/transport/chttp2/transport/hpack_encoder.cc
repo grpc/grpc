@@ -332,15 +332,6 @@ void HPackCompressor::Framer::AdvertiseTableSizeChange() {
   w.Write(0x20, AddTiny(w.length()));
 }
 
-struct EmitIndexedStatus {
-  EmitIndexedStatus() = default;
-  EmitIndexedStatus(uint32_t elem_hash, bool emitted, bool can_add)
-      : elem_hash(elem_hash), emitted(emitted), can_add(can_add) {}
-  const uint32_t elem_hash = 0;
-  const bool emitted = false;
-  const bool can_add = false;
-};
-
 void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
                                          const Slice& value, Framer* framer) {
   auto& table = framer->compressor_->table_;
@@ -380,6 +371,14 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key),
                                                  value.Ref());
   values_.emplace_back(value.Ref(), index);
+}
+
+void HPackCompressor::Framer::Encode(const Slice& key, const Slice& value) {
+  if (absl::EndsWith(key.as_string_view(), "-bin")) {
+    EmitLitHdrWithBinaryStringKeyNotIdx(key.Ref(), value.Ref());
+  } else {
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(key.Ref(), value.Ref());
+  }
 }
 
 void HPackCompressor::Framer::Encode(HttpPathMetadata, const Slice& value) {

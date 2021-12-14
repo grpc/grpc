@@ -761,15 +761,16 @@ class CronetMetadataEncoder {
     *url_ = absl::StrCat("https://", host_, path.as_string_view());
   }
 
-  void Encode(grpc_mdelem mdelem) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
+  void Encode(const grpc_core::Slice& key_slice,
+              const grpc_core::Slice& value_slice) {
+    char* key = grpc_slice_to_c_string(key_slice.c_slice());
     char* value;
-    if (grpc_is_binary_header_internal(GRPC_MDKEY(mdelem))) {
-      grpc_slice wire_value = grpc_chttp2_base64_encode(GRPC_MDVALUE(mdelem));
+    if (grpc_is_binary_header_internal(value_slice.c_slice())) {
+      grpc_slice wire_value = grpc_chttp2_base64_encode(value_slice.c_slice());
       value = grpc_slice_to_c_string(wire_value);
       grpc_slice_unref_internal(wire_value);
     } else {
-      value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
+      value = grpc_slice_to_c_string(value_slice.c_slice());
     }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
     GPR_ASSERT(count_ < capacity_);

@@ -311,6 +311,9 @@ class Table {
   // Count the number of set fields in the table
   size_t count() const { return present_bits_.count(); }
 
+  // Check if the table is completely empty
+  bool empty() const { return present_bits_.none(); }
+
   // Clear all elements in the table.
   void ClearAll() { *this = Table(); }
 
