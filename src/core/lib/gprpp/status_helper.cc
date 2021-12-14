@@ -231,7 +231,7 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
     absl::optional<absl::string_view> sv = p->TryFlat();
     if (sv.has_value()) {
       // copy the content before casting to avoid misaligned address access
-      char buf[sizeof(const absl::Time)];
+      alignas(absl::Time) char buf[sizeof(const absl::Time)];
       memcpy(buf, sv->data(), sizeof(const absl::Time));
       return *reinterpret_cast<const absl::Time*>(buf);
     } else {
