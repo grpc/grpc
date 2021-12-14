@@ -84,10 +84,10 @@ void grpc_free_port_using_server(int port) {
     req.http.path = path;
 
     HttpCliRequest::Get(&pr.pops, grpc_core::ResourceQuota::Default(), &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &rsp);
+                        grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
+                        GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
+                                            grpc_schedule_on_exec_ctx),
+                        &rsp);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (!pr.done) {
@@ -162,10 +162,10 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
     HttpCliRequest::Get(&pr->pops, grpc_core::ResourceQuota::Default(), &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(got_port_from_server, pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &pr->response);
+                        grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
+                        GRPC_CLOSURE_CREATE(got_port_from_server, pr,
+                                            grpc_schedule_on_exec_ctx),
+                        &pr->response);
     return;
   }
   GPR_ASSERT(response);
@@ -206,10 +206,10 @@ int grpc_pick_port_using_server(void) {
     req.http.path = const_cast<char*>("/get");
 
     HttpCliRequest::Get(&pr.pops, grpc_core::ResourceQuota::Default(), &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &pr.response);
+                        grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
+                        GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
+                                            grpc_schedule_on_exec_ctx),
+                        &pr.response);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (pr.port == -1) {

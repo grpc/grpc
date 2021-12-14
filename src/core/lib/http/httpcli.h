@@ -25,11 +25,11 @@
 
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
@@ -91,13 +91,14 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   // 'resource_quota' allows the caller to specify the quota against which to
   // allocate
   // 'request' contains request parameters - these are caller owned and
-  // can be destroyed once the call returns 'deadline' contains a deadline for the
-  // request (or gpr_inf_future)
-  // 'on_response' is a callback to report results to
-  static OrphanablePtr<HttpCliRequest> Get(grpc_polling_entity* pollent,
-                        ResourceQuotaRefPtr resource_quota,
-                        const grpc_httpcli_request* request, grpc_millis deadline,
-                        grpc_closure* on_done, grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
+  // can be destroyed once the call returns 'deadline' contains a deadline for
+  // the request (or gpr_inf_future) 'on_response' is a callback to report
+  // results to
+  static OrphanablePtr<HttpCliRequest> Get(
+      grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
+      const grpc_httpcli_request* request, grpc_millis deadline,
+      grpc_closure* on_done,
+      grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
   // Asynchronously perform a HTTP POST.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
@@ -114,16 +115,14 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   //   lifetime of the request
   // 'on_response' is a callback to report results to
   // Does not support ?var1=val1&var2=val2 in the path.
-  static OrphanablePtr<HttpCliRequest> Post(grpc_polling_entity* pollent,
-                         ResourceQuotaRefPtr resource_quota,
-                         const grpc_httpcli_request* request,
-                         const char* body_bytes, size_t body_size,
-                         grpc_millis deadline, grpc_closure* on_done,
-                         grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
+  static OrphanablePtr<HttpCliRequest> Post(
+      grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
+      const grpc_httpcli_request* request, const char* body_bytes,
+      size_t body_size, grpc_millis deadline, grpc_closure* on_done,
+      grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
   void SetOverride(grpc_httpcli_get_override get,
                    grpc_httpcli_post_override post);
-
 
   HttpCliRequest(const grpc_slice& request_text,
                  grpc_httpcli_response* response,
@@ -141,8 +140,8 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
     // TODO(apolcyn): implement cancellation
     Unref();
   }
- private:
 
+ private:
   void Finish(grpc_error_handle error) {
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
     delete this;
@@ -199,7 +198,6 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   OrphanablePtr<DNSResolver::Request> dns_request_;
 };
 
-
-} // namespace grpc_core
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_H */

@@ -127,9 +127,10 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   // TODO(ctiller): share the quota from whomever instantiates this!
-  httpcli_request_ = HttpCliRequest::Get(pollent, ResourceQuota::Default(), &request,
-                   ExecCtx::Get()->Now() + 10000,  // 10s timeout
-                   &on_done_, &response_);
+  httpcli_request_ =
+      HttpCliRequest::Get(pollent, ResourceQuota::Default(), &request,
+                          ExecCtx::Get()->Now() + 10000,  // 10s timeout
+                          &on_done_, &response_);
   httpcli_request_->Start();
 }
 

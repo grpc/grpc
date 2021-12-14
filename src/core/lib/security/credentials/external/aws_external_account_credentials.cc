@@ -170,8 +170,9 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
   GPR_ASSERT(httpcli_request_ == nullptr);
-  httpcli_request_ = HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
-                   ctx_->deadline, &ctx_->closure, &ctx_->response);
+  httpcli_request_ =
+      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
+                          ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
 }
@@ -220,8 +221,9 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
   GPR_ASSERT(httpcli_request_ == nullptr);
-  httpcli_request_ = HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
-                   ctx_->deadline, &ctx_->closure, &ctx_->response);
+  httpcli_request_ =
+      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
+                          ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
 }
@@ -282,8 +284,9 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
   GPR_ASSERT(httpcli_request_ == nullptr);
-  httpcli_request_ = HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
-                   ctx_->deadline, &ctx_->closure, &ctx_->response);
+  httpcli_request_ =
+      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
+                          ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
 }
