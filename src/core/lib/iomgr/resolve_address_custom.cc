@@ -117,16 +117,13 @@ void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
   Unref();
 }
 
-namespace {
-CustomDNSResolver* g_custom_dns_resolver;
-}  // namespace
-
 CustomDNSResolver* CustomDNSResolver::GetOrCreate(
     grpc_custom_resolver_vtable* resolve_address_vtable) {
-  if (g_custom_dns_resolver == nullptr) {
-    g_custom_dns_resolver = new CustomDNSResolver(resolve_address_vtable);
+  static CustomDNSResolver* instance;
+  if (instance == nullptr) {
+    instance = new CustomDNSResolver(resolve_address_vtable);
   }
-  return g_custom_dns_resolver;
+  return instance;
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>

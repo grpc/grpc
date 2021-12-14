@@ -89,14 +89,14 @@ class NativeDNSRequest : public DNSResolver::Request {
   grpc_closure request_closure_;
 };
 
-NativeDNSResolver* g_native_dns_resolver;
 }  // namespace
 
 NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
-  if (g_native_dns_resolver == nullptr) {
-    g_native_dns_resolver = new NativeDNSResolver();
+  static NativeDNSResolver* instance;
+  if (instance == nullptr) {
+    instance = new NativeDNSResolver();
   }
-  return g_native_dns_resolver;
+  return instance;
 }
 
 OrphanablePtr<DNSResolver::Request> NativeDNSResolver::ResolveName(

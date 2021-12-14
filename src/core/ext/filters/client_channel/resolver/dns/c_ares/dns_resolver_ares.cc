@@ -482,10 +482,6 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   const char* scheme() const override { return "dns"; }
 };
 
-class AresDNSResolver;
-
-AresDNSResolver* g_ares_dns_resolver;
-
 class AresDNSResolver : public DNSResolver {
  public:
   class AresRequest : public DNSResolver::Request {
@@ -581,10 +577,11 @@ class AresDNSResolver : public DNSResolver {
 
   // gets the singleton instance, possibly creating it first
   static AresDNSResolver* GetOrCreate() {
-    if (g_ares_dns_resolver == nullptr) {
-      g_ares_dns_resolver = new AresDNSResolver();
+    static AresDNSResolver* instance;
+    if (instance == nullptr) {
+      instance = new AresDNSResolver();
     }
-    return g_ares_dns_resolver;
+    return instance;
   }
 
   OrphanablePtr<DNSResolver::Request> ResolveName(

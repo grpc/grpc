@@ -95,15 +95,14 @@ class EventEngineDNSRequest : DNSRequest {
       on_done_;
 };
 
-EventEngineDNSResolver* g_dns_resolver;
-
 }  // namespace
 
 DNSResolver* EventEngineDNSResolver::GetOrCreate() {
-  if (g_dns_resolver == nullptr) {
-    g_dns_resolver = new EventEngineDNSResolver();
+  static EventEngineDNSResolver* instance;
+  if (instance == nullptr) {
+    instance = new EventEngineDNSResolver();
   }
-  return g_dns_resolver;
+  return instance;
 }
 
 OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::ResolveName(
