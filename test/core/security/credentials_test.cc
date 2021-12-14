@@ -2346,7 +2346,7 @@ class TestExternalAccountCredentials final
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
  protected:
-  void RetrieveSubjectToken(
+  OrphanablePtr<HttpCliRequest> RetrieveSubjectToken(
       HTTPRequestContext* /*ctx*/, const Options& /*options*/,
       std::function<void(std::string, grpc_error_handle)> cb) override {
     cb("test_subject_token", GRPC_ERROR_NONE);

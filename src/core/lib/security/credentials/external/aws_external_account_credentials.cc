@@ -120,7 +120,7 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
   regional_cred_verification_url_ = it->second.string_value();
 }
 
-void AwsExternalAccountCredentials::RetrieveSubjectToken(
+OrphanablePtr<HttpCliRequest> AwsExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   if (ctx == nullptr) {

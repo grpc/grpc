@@ -379,7 +379,7 @@ class grpc_compute_engine_token_fetcher_credentials
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
  protected:
-  OrphanablePtr<HttpCliRequest> fetch_oauth2(
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> fetch_oauth2(
       grpc_credentials_metadata_request* metadata_req,
       grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
       grpc_millis deadline) override {
@@ -395,7 +395,7 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    return HttpCliRequest::Get(
+    return grpc_core::HttpCliRequest::Get(
         pollent, grpc_core::ResourceQuota::Default(), &request, deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
@@ -409,7 +409,6 @@ class grpc_compute_engine_token_fetcher_credentials
   }
 
  private:
-  OrphanablePtr<HttpCliRequest> httpcli_request_;
   grpc_closure http_get_cb_closure_;
 };
 
@@ -434,7 +433,7 @@ grpc_google_refresh_token_credentials::
   grpc_auth_refresh_token_destruct(&refresh_token_);
 }
 
-OrphanablePtr<HttpCliRequest>
+grpc_core::OrphanablePtr<grpc_core::HttpCliRequest>
 grpc_google_refresh_token_credentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
@@ -557,7 +556,7 @@ class StsTokenFetcherCredentials
   }
 
  private:
-  OrphanablePtr<HttpCliRequest> fetch_oauth2(
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> fetch_oauth2(
       grpc_credentials_metadata_request* metadata_req,
       grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
       grpc_millis deadline) override {
@@ -567,7 +566,7 @@ class StsTokenFetcherCredentials
     if (err != GRPC_ERROR_NONE) {
       response_cb(metadata_req, err);
       GRPC_ERROR_UNREF(err);
-      return;
+      return nullptr;
     }
     grpc_http_header header = {
         const_cast<char*>("Content-Type"),
@@ -584,7 +583,7 @@ class StsTokenFetcherCredentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    OrphanablePtr<HttpCliRequest> httpcli_request = HttpCliRequest::Post(
+    grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request = grpc_core::HttpCliRequest::Post(
         pollent, ResourceQuota::Default(), &request, body, body_length,
         deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,

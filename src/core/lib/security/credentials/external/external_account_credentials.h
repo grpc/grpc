@@ -80,14 +80,14 @@ class ExternalAccountCredentials
   // Once the subject token is ready, subclasses need to invoke
   // the callback function (cb) to pass the subject token (or error)
   // back.
-  virtual void RetrieveSubjectToken(
+  virtual OrphanablePtr<HttpCliRequest> RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) = 0;
 
  private:
   // This method implements the common token fetch logic and it will be called
   // when grpc_oauth2_token_fetcher_credentials request a new access token.
-  void fetch_oauth2(grpc_credentials_metadata_request* req,
+  OrphanablePtr<HttpCliRequest> fetch_oauth2(grpc_credentials_metadata_request* req,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                     grpc_millis deadline) override;
 
@@ -107,6 +107,7 @@ class ExternalAccountCredentials
   Options options_;
   std::vector<std::string> scopes_;
 
+  OrphanablePtr<HttpCliRequest> httpcli_request_;
   HTTPRequestContext* ctx_ = nullptr;
   grpc_credentials_metadata_request* metadata_req_ = nullptr;
   grpc_iomgr_cb_func response_cb_ = nullptr;

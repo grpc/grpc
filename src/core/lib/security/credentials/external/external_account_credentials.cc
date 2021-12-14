@@ -235,7 +235,7 @@ std::string ExternalAccountCredentials::debug_string() {
 // token in FinishTokenFetch().
 // TODO(chuanr): Avoid starting the remaining requests if the channel gets shut
 // down.
-void ExternalAccountCredentials::fetch_oauth2(
+OrphanablePtr<HttpCliRequest> ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
     grpc_millis deadline) {
@@ -246,7 +246,7 @@ void ExternalAccountCredentials::fetch_oauth2(
   auto cb = [this](std::string token, grpc_error_handle error) {
     OnRetrieveSubjectTokenInternal(token, error);
   };
-  RetrieveSubjectToken(ctx_, options_, cb);
+  return RetrieveSubjectToken(ctx_, options_, cb);
 }
 
 void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(

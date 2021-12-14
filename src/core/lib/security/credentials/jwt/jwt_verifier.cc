@@ -346,7 +346,7 @@ struct verifier_cb_ctx {
   void* user_data;
   grpc_jwt_verification_done_cb user_cb;
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
-  OrphanablePtr<HttpCliRequest> httpcli_request;
+  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request;
 };
 /* Takes ownership of the header, claims and signature. */
 static verifier_cb_ctx* verifier_cb_ctx_create(
@@ -700,7 +700,7 @@ static void on_openid_config_retrieved(void* user_data,
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   GPR_ASSERT(ctx->httpcli_request == nullptr);
-  ctx->httpcli_request = HttpCliRequest::Get(
+  ctx->httpcli_request = grpc_core::HttpCliRequest::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
@@ -825,7 +825,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   GPR_ASSERT(ctx->httpcli_request == nullptr);
-  ctx->httpcli_request = HttpCliRequest::Get(
+  ctx->httpcli_request = grpc_core::HttpCliRequest::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
