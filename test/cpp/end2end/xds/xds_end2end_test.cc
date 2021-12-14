@@ -589,15 +589,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
 
    private:
-    bool v2_ = false;
-    std::string top_server_;
     struct AuthorityInfo {
       std::string server;
       std::string client_listener_resource_name_template;
     };
-    std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
-    std::string server_listener_resource_name_template_ =
-        "grpc/server?xds.resource.listening_address=%s";
 
     std::string MakeXdsServersText(absl::string_view server_uri) {
       constexpr char kXdsServerTemplate[] =
@@ -632,7 +627,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           "      \"sub_zone\": \"mp3\"\n"
           "    }\n"
           "  }";
-      return absl::StrCat(kXdsNode);
+      return kXdsNode;
     }
 
     std::string MakeCertificateProviderText() {
@@ -677,6 +672,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return absl::StrCat("\"authorities\": {\n", absl::StrJoin(entries, ",\n"),
                           "\n}");
     }
+
+    bool v2_ = false;
+    std::string top_server_;
+    std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
+    std::string server_listener_resource_name_template_ =
+        "grpc/server?xds.resource.listening_address=%s";
   };
 
   // TODO(roth): We currently set the number of backends on a per-test-suite
@@ -770,8 +771,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           xds_resource_does_not_exist_timeout_ms_));
     }
     if (!lb_expected_authority_.empty()) {
-      if (lb_expected_authority_ == "localhost:%s") {
-        lb_expected_authority_ = absl::StrCat("localhost:", balancer_->port());
+      if (lb_expected_authority_ == "localhost:%d") {
+        lb_expected_authority_ =
+            absl::StrFormat("localhost:%d", balancer_->port());
       }
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
@@ -786,7 +788,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       bootstrap_builder_.SetV2();
     }
     bootstrap_ = bootstrap_builder_.Build();
-    gpr_log(GPR_INFO, "donna bootstrap %s", bootstrap_.c_str());
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
@@ -2641,7 +2642,7 @@ class SecureNamingSuccessTest : public XdsEnd2endTest {
                        /*client_load_reporting_interval_seconds=*/100,
                        /*xds_resource_does_not_exist_timeout_ms=*/0,
                        /*use_xds_enabled_server=*/false,
-                       /*lb_expected_authority=*/"localhost:%s") {}
+                       /*lb_expected_authority=*/"localhost:%d") {}
   void SetUp() override {
     XdsEnd2endTest::SetUp();
     StartAllBackends();
