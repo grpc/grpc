@@ -688,10 +688,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // time, change each test to directly start the number of backends
   // that it needs, so that we aren't wasting resources.
   explicit XdsEnd2endTest(size_t num_backends,
-                 int client_load_reporting_interval_seconds = 100,
-                 int xds_resource_does_not_exist_timeout_ms = 0,
-                 bool use_xds_enabled_server = false,
-                 const std::string& lb_expected_authority = "")
+                          int client_load_reporting_interval_seconds = 100,
+                          int xds_resource_does_not_exist_timeout_ms = 0,
+                          bool use_xds_enabled_server = false,
+                          const std::string& lb_expected_authority = "")
       : num_backends_(num_backends),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
@@ -12330,21 +12330,31 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerSecurityTest,
-    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
+    ::testing::Values(TestType()
+                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+                          .set_use_xds_credentials()),
+    &TestTypeName);
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsEnabledServerStatusNotificationTest,
     ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerFilterChainMatchTest,
-    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
+    ::testing::Values(TestType()
+                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+                          .set_use_xds_credentials()),
+    &TestTypeName);
 
 // Test xDS-enabled server with and without RDS.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
-                         ::testing::Values(TestType().set_use_xds_credentials(),
-                                           TestType()
-                                               .set_use_xds_credentials()
-                                               .set_enable_rds_testing()),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsServerRdsTest,
+    ::testing::Values(TestType()
+                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+                          .set_use_xds_credentials(),
+                      TestType()
+                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+                          .set_use_xds_credentials()
+                          .set_enable_rds_testing()),
+    &TestTypeName);
 
 // EDS could be tested with or without XdsResolver, but the tests would
 // be the same either way, so we test it only with XdsResolver.
