@@ -40,42 +40,11 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-namespace {
-class MetadataListEncoder {
- public:
-  explicit MetadataListEncoder(std::vector<std::string>* out) : out_(out) {}
-
-  void Encode(grpc_core::GrpcTimeoutMetadata, grpc_millis deadline) {
-    MaybeAddComma();
-    out_->push_back(absl::StrFormat("deadline=%" PRId64, deadline));
-  }
-
-  template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {
-    MaybeAddComma();
-    out_->push_back(
-        absl::StrCat(Which::key(), "=", Which::DisplayValue(value)));
-  }
-
-  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
-    MaybeAddComma();
-    out_->push_back(
-        absl::StrCat(key.as_string_view(), "=", value.as_string_view()));
-  }
-
- private:
-  void MaybeAddComma() {
-    if (out_->size() != initial_size_) out_->push_back(", ");
-  }
-  std::vector<std::string>* const out_;
-  const size_t initial_size_ = out_->size();
-};
-}  // namespace
-
 static void put_metadata_list(const grpc_metadata_batch& md,
                               std::vector<std::string>* out) {
-  MetadataListEncoder encoder(out);
-  md.Encode(&encoder);
+  md.Log([out](absl::string_view key, absl::string_view value) {
+    out->push_back(absl::StrCat(key, "=", value));
+  });
 }
 
 std::string grpc_transport_stream_op_batch_string(

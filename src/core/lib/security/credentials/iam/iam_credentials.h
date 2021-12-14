@@ -43,7 +43,8 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
   std::string debug_string() override { return debug_string_; }
 
  private:
-  grpc_core::CredentialsMetadataArray md_array_;
+  const absl::optional<grpc_core::Slice> token_;
+  const grpc_core::Slice authority_selector_;
   const std::string debug_string_;
 };
 

@@ -145,7 +145,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
   if (error == GRPC_ERROR_NONE) {
     for (size_t i = 0; i < num_consumed_md; i++) {
       batch->payload->recv_initial_metadata.recv_initial_metadata->Remove(
-          consumed_md[i].key);
+          grpc_core::StringViewFromSlice(consumed_md[i].key));
     }
   }
   calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);

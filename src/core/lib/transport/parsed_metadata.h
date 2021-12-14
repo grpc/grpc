@@ -40,12 +40,12 @@ template <typename Which>
 struct HasSimpleMemento {
   static constexpr bool value =
       std::is_trivial<typename Which::MementoType>::value &&
-      sizeof(typename Which::MementoType) <= sizeof(uint64_t);
+      sizeof(typename Which::MementoType) <= sizeof(grpc_slice);
 };
 
 // Storage type for a single metadata entry.
 union Buffer {
-  uint64_t trivial;
+  char trivial[sizeof(grpc_slice)];
   void* pointer;
   grpc_slice slice;
 };
@@ -72,7 +72,9 @@ GPR_ATTRIBUTE_NOINLINE std::string MakeDebugStringPipeline(
 // Extract a trivial field value from a Buffer - for MakeDebugStringPipeline.
 template <typename Field>
 Field FieldFromTrivial(const Buffer& value) {
-  return static_cast<Field>(value.trivial);
+  Field x;
+  memcpy(&x, value.trivial, sizeof(x));
+  return x;
 }
 
 // Extract a pointer field value from a Buffer - for MakeDebugStringPipeline.
@@ -111,7 +113,7 @@ class ParsedMetadata {
       uint32_t transport_size)
       : vtable_(ParsedMetadata::template TrivialTraitVTable<Which>()),
         transport_size_(transport_size) {
-    value_.trivial = static_cast<uint64_t>(value);
+    memcpy(value_.trivial, &value, sizeof(value));
   }
   template <typename Which>
   ParsedMetadata(
@@ -161,9 +163,8 @@ class ParsedMetadata {
   }
 
   // Set this parsed value on a container.
-  GRPC_MUST_USE_RESULT grpc_error_handle
-  SetOnContainer(MetadataContainer* container) const {
-    return vtable_->set(value_, container);
+  void SetOnContainer(MetadataContainer* container) const {
+     vtable_->set(value_, container);
   }
 
   // Is this a binary header or not?
@@ -196,7 +197,7 @@ class ParsedMetadata {
   struct VTable {
     const bool is_binary_header;
     void (*const destroy)(const Buffer& value);
-    grpc_error_handle (*const set)(const Buffer& value,
+    void (*const set)(const Buffer& value,
                                    MetadataContainer* container);
     // result is a bitwise copy of the originating ParsedMetadata.
     void (*const with_new_value)(Slice* new_value,
@@ -225,8 +226,8 @@ class ParsedMetadata {
   template <typename T, T (*ParseMemento)(Slice, MetadataParseErrorFn)>
   GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetTrivial(
       Slice* slice, MetadataParseErrorFn on_error, ParsedMetadata* result) {
-    result->value_.trivial =
-        static_cast<uint64_t>(ParseMemento(std::move(*slice), on_error));
+    T memento = ParseMemento(std::move(*slice), on_error);
+    memcpy(result->value_.trivial, &memento, sizeof(memento));
   }
 
   const VTable* vtable_;
@@ -244,7 +245,7 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
       // destroy
       metadata_detail::DestroyTrivialMemento,
       // set
-      [](const Buffer&, MetadataContainer*) { return GRPC_ERROR_NONE; },
+      [](const Buffer&, MetadataContainer*) {  },
       // with_new_value
       [](Slice*, MetadataParseErrorFn, ParsedMetadata*) {},
       // debug_string
@@ -265,10 +266,7 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       metadata_detail::DestroyTrivialMemento,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        map->Set(Which(),
-                 Which::MementoToValue(
-                     static_cast<typename Which::MementoType>(value.trivial)));
-        return GRPC_ERROR_NONE;
+        map->Set(Which(), metadata_detail::FieldFromTrivial<typename Which::MementoType>(value));
       },
       // with_new_value
       WithNewValueSetTrivial<typename Which::MementoType, Which::ParseMemento>,
@@ -299,7 +297,6 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       [](const Buffer& value, MetadataContainer* map) {
         auto* p = static_cast<typename Which::MementoType*>(value.pointer);
         map->Set(Which(), Which::MementoToValue(*p));
-        return GRPC_ERROR_NONE;
       },
       // with_new_value
       [](Slice* value, MetadataParseErrorFn on_error, ParsedMetadata* result) {
@@ -331,7 +328,6 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       [](const Buffer& value, MetadataContainer* map) {
         map->Set(Which(), Which::MementoToValue(
                               metadata_detail::SliceFromBuffer(value)));
-        return GRPC_ERROR_NONE;
       },
       // with_new_value
       WithNewValueSetSlice<Which::ParseMemento>,

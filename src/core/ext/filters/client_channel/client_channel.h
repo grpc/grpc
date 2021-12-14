@@ -447,7 +447,7 @@ class ClientChannel::LoadBalancedCall
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
-  grpc_slice path_;  // Request path.
+  Slice path_;  // Request path.
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;

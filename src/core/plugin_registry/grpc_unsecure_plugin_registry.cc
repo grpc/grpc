@@ -27,8 +27,6 @@ void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
 void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
-void grpc_inproc_plugin_init(void);
-void grpc_inproc_plugin_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
 void grpc_resolver_dns_native_init(void);
@@ -63,7 +61,6 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_core::ServiceConfigParserInit,
                        grpc_core::ServiceConfigParserShutdown);
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
-  grpc_register_plugin(grpc_inproc_plugin_init, grpc_inproc_plugin_shutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,
                        grpc_resolver_dns_ares_shutdown);
   grpc_register_plugin(grpc_resolver_dns_native_init,

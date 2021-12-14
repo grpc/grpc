@@ -1076,11 +1076,7 @@ class HPackParser::Parser {
       return HandleMetadataSizeLimitExceeded(md);
     }
 
-    grpc_error_handle err = metadata_buffer_->Set(md);
-    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-      input_->SetError(err);
-      return false;
-    }
+    metadata_buffer_->Set(md);
     return true;
   }
 

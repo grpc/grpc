@@ -47,8 +47,6 @@ namespace grpc_core {
 
 namespace {
 
-/* don't consider adding anything bigger than this to the hpack table */
-constexpr size_t kMaxDecoderSpaceUsage = 512;
 constexpr size_t kDataFrameHeaderSize = 9;
 
 } /* namespace */

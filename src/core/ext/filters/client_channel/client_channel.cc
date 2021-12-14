@@ -2543,7 +2543,6 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
           GetCallAttemptTracer(args.context, is_transparent_retry)) {}
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
-  grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
   GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
@@ -2902,7 +2901,7 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
 
 void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
   SubchannelCall::Args call_args = {
-      std::move(connected_subchannel_), pollent_, path_, /*start_time=*/0,
+      std::move(connected_subchannel_), pollent_, path_.Ref(), /*start_time=*/0,
       deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
@@ -3046,7 +3045,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
       send_initial_metadata.send_initial_metadata_flags;
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
-  pick_args.path = StringViewFromSlice(path_);
+  pick_args.path = path_.as_string_view();
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
   Metadata initial_metadata(initial_metadata_batch);

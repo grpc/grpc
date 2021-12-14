@@ -97,7 +97,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 
  private:
   gpr_mu mu_;
-  grpc_mdelem access_token_md_ = GRPC_MDNULL;
+  absl::optional<grpc_core::Slice> access_token_value_;
   gpr_timespec token_expiration_;
   bool token_fetch_pending_ = false;
   grpc_oauth2_pending_get_request_metadata* pending_requests_ = nullptr;
@@ -149,7 +149,7 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
   std::string debug_string() override;
 
  private:
-  grpc_mdelem access_token_md_;
+  const grpc_core::Slice access_token_value_;
 };
 
 // Private constructor for refresh token credentials from an already parsed
@@ -161,8 +161,8 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 // Exposed for testing only.
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_millis* token_lifetime);
+    const struct grpc_http_response* response,
+    absl::optional<grpc_core::Slice>* token_value, grpc_millis* token_lifetime);
 
 namespace grpc_core {
 // Exposed for testing only. This function validates the options, ensuring that

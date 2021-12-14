@@ -22,6 +22,7 @@
 
 #include "absl/strings/numbers.h"
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -44,6 +45,13 @@ std::atomic<uint32_t> g_active_faults{0};
 static_assert(
     std::is_trivially_destructible<std::atomic<uint32_t>>::value,
     "the active fault counter needs to have a trivially destructible type");
+
+template <typename T>
+auto AsInt(absl::string_view s) -> absl::optional<T> {
+  T x;
+  if (absl::SimpleAtoi(s, &x)) return x;
+  return absl::nullopt;
+}
 
 inline bool UnderFraction(const uint32_t numerator,
                           const uint32_t denominator) {
@@ -327,7 +335,7 @@ void CallData::DecideWhetherToInjectFaults(
           fi_policy_->abort_code_header, &buffer);
       if (value.has_value()) {
         maybe_copy_policy_func();
-        grpc_status_code_from_int(GetMetadatumValueInt(*value),
+        grpc_status_code_from_int(AsInt<int>(*value).value_or(GRPC_STATUS_UNKNOWN),
                                   &copied_policy->abort_code);
       }
     }
@@ -337,7 +345,7 @@ void CallData::DecideWhetherToInjectFaults(
       if (value.has_value()) {
         maybe_copy_policy_func();
         copied_policy->abort_percentage_numerator =
-            std::min(GetMetadatumValueUnsignedInt(*value),
+            std::min(AsInt<uint32_t>(*value).value_or(-1),
                      fi_policy_->abort_percentage_numerator);
       }
     }
@@ -348,7 +356,7 @@ void CallData::DecideWhetherToInjectFaults(
       if (value.has_value()) {
         maybe_copy_policy_func();
         copied_policy->delay = static_cast<grpc_millis>(
-            std::max(GetMetadatumValueInt64(*value), int64_t(0)));
+            std::max(AsInt<int64_t>(*value).value_or(0), int64_t(0)));
       }
     }
     if (!fi_policy_->delay_percentage_header.empty()) {
@@ -357,7 +365,7 @@ void CallData::DecideWhetherToInjectFaults(
       if (value.has_value()) {
         maybe_copy_policy_func();
         copied_policy->delay_percentage_numerator =
-            std::min(GetMetadatumValueUnsignedInt(*value),
+            std::min(AsInt<uint32_t>(*value).value_or(-1),
                      fi_policy_->delay_percentage_numerator);
       }
     }

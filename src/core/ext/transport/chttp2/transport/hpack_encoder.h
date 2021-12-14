@@ -101,12 +101,12 @@ class HPackCompressor {
       const Slice& slice = MetadataValueAsSlice<Which>(value);
       if (absl::EndsWith(Which::key(), "-bin")) {
         EmitLitHdrWithBinaryStringKeyNotIdx(
-            StaticSlice::FromStaticString(Which::key()).c_slice(),
-            slice.c_slice());
+            Slice::FromStaticString(Which::key()),
+            slice.Ref());
       } else {
         EmitLitHdrWithNonBinaryStringKeyNotIdx(
-            StaticSlice::FromStaticString(Which::key()).c_slice(),
-            slice.c_slice());
+            Slice::FromStaticString(Which::key()),
+            slice.Ref());
       }
     }
 

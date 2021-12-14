@@ -74,7 +74,7 @@ class SubchannelCall {
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
-    grpc_slice path;
+    Slice path;
     gpr_cycle_counter start_time;
     grpc_millis deadline;
     Arena* arena;

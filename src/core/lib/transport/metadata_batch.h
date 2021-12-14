@@ -435,7 +435,7 @@ struct GrpcLbClientStatsMetadata {
   static const char* DisplayValue(MementoType x) {
     return "<internal-lb-stats>";
   }
-  static MementoType ParseMemento(Slice value) { return nullptr; }
+  static MementoType ParseMemento(Slice, MetadataParseErrorFn) { return nullptr; }
 };
 
 namespace metadata_detail {
@@ -651,6 +651,10 @@ class MetadataMap {
     }
   }
 
+  // Similar to Encode, but targeted at logging: for each metadatum,
+  // call f(key, value) as absl::string_views.
+  void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> f) const;
+
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.
@@ -727,9 +731,9 @@ class MetadataMap {
   }
 
   // Set a value from a parsed metadata object.
-  GRPC_MUST_USE_RESULT grpc_error_handle
+  void
   Set(const ParsedMetadata<MetadataMap>& m) {
-    return m.SetOnContainer(this);
+    m.SetOnContainer(this);
   }
 
   // Append a key/value pair - takes ownership of value
@@ -849,6 +853,6 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
-    grpc_core::GrpcTagsBinMetadata>;
+    grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata>;
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

@@ -41,17 +41,9 @@
 
 using grpc_core::Json;
 
-void grpc_service_account_jwt_access_credentials::reset_cache() {
-  GRPC_MDELEM_UNREF(cached_.jwt_md);
-  cached_.jwt_md = GRPC_MDNULL;
-  cached_.service_url.clear();
-  cached_.jwt_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
-}
-
 grpc_service_account_jwt_access_credentials::
     ~grpc_service_account_jwt_access_credentials() {
   grpc_auth_json_key_destruct(&key_);
-  reset_cache();
   gpr_mu_destroy(&cache_mu_);
 }
 
@@ -71,42 +63,38 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
     return true;
   }
   /* See if we can return a cached jwt. */
-  grpc_mdelem jwt_md = GRPC_MDNULL;
+  absl::optional<grpc_core::Slice> jwt_value;
   {
     gpr_mu_lock(&cache_mu_);
-    if (!cached_.service_url.empty() && cached_.service_url == *uri &&
-        !GRPC_MDISNULL(cached_.jwt_md) &&
+    if (cached_.has_value() && cached_->service_url == *uri &&
         (gpr_time_cmp(
-             gpr_time_sub(cached_.jwt_expiration, gpr_now(GPR_CLOCK_REALTIME)),
+             gpr_time_sub(cached_->jwt_expiration, gpr_now(GPR_CLOCK_REALTIME)),
              refresh_threshold) > 0)) {
-      jwt_md = GRPC_MDELEM_REF(cached_.jwt_md);
+      jwt_value = cached_->jwt_value.Ref();
     }
     gpr_mu_unlock(&cache_mu_);
   }
 
-  if (GRPC_MDISNULL(jwt_md)) {
+  if (!jwt_value.has_value()) {
     char* jwt = nullptr;
     /* Generate a new jwt. */
     gpr_mu_lock(&cache_mu_);
-    reset_cache();
+    cached_.reset();
     jwt = grpc_jwt_encode_and_sign(&key_, uri->c_str(), jwt_lifetime_, nullptr);
     if (jwt != nullptr) {
       std::string md_value = absl::StrCat("Bearer ", jwt);
       gpr_free(jwt);
-      cached_.jwt_expiration =
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), jwt_lifetime_);
-      cached_.service_url = std::move(*uri);
-      cached_.jwt_md = grpc_mdelem_from_slices(
-          grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
-          grpc_slice_from_cpp_string(std::move(md_value)));
-      jwt_md = GRPC_MDELEM_REF(cached_.jwt_md);
+      jwt_value = grpc_core::Slice::FromCopiedString(md_value);
+      cached_ = {jwt_value->Ref(), std::move(*uri),
+                 gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), jwt_lifetime_)};
     }
     gpr_mu_unlock(&cache_mu_);
   }
 
-  if (!GRPC_MDISNULL(jwt_md)) {
-    grpc_credentials_mdelem_array_add(md_array, jwt_md);
-    GRPC_MDELEM_UNREF(jwt_md);
+  if (jwt_value.has_value()) {
+    md_array->emplace_back(
+        grpc_core::Slice::FromStaticString(GRPC_AUTHORIZATION_METADATA_KEY),
+        std::move(*jwt_value));
   } else {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT.");
   }
@@ -132,7 +120,6 @@ grpc_service_account_jwt_access_credentials::
   }
   jwt_lifetime_ = token_lifetime;
   gpr_mu_init(&cache_mu_);
-  reset_cache();
 }
 
 grpc_core::RefCountedPtr<grpc_call_credentials>

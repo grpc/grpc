@@ -59,16 +59,15 @@ class grpc_service_account_jwt_access_credentials
   };
 
  private:
-  void reset_cache();
-
   // Have a simple cache for now with just 1 entry. We could have a map based on
   // the service_url for a more sophisticated one.
   gpr_mu cache_mu_;
-  struct {
-    grpc_mdelem jwt_md = GRPC_MDNULL;
+  struct Cache {
+    grpc_core::Slice jwt_value;
     std::string service_url;
     gpr_timespec jwt_expiration;
-  } cached_;
+  };
+  absl::optional<Cache> cached_;
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;

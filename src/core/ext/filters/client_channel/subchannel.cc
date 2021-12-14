@@ -144,7 +144,7 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
       callstk,           /* call_stack */
       nullptr,           /* server_transport_data */
       args.context,      /* context */
-      args.path,         /* path */
+      args.path.c_slice(),         /* path */
       args.start_time,   /* start_time */
       args.deadline,     /* deadline */
       args.arena,        /* arena */
