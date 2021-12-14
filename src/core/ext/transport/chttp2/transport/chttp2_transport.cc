@@ -1331,23 +1331,24 @@ static void complete_fetch_locked(void* gs, grpc_error_handle error) {
 namespace {
 
 class LogMetadataEncoder {
-  public:
-  LogMetadataEncoder(uint32_t id,bool is_client, bool is_initial)
-      : prefix_(absl::StrCat("HTTP:", id, is_initial? ":HDR":":TRL", is_client? ":CLI:":":SVR:")) {}
+ public:
+  LogMetadataEncoder(uint32_t id, bool is_client, bool is_initial)
+      : prefix_(absl::StrCat("HTTP:", id, is_initial ? ":HDR" : ":TRL",
+                             is_client ? ":CLI:" : ":SVR:")) {}
 
-   void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
-     Log(key.as_string_view(), value.as_string_view());
-   }
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    Log(key.as_string_view(), value.as_string_view());
+  }
 
-  private:
-   void Log(absl::string_view key, absl::string_view value) {
-     gpr_log(GPR_INFO, "%s", absl::StrCat(prefix_, key, ":", value).c_str());
-   }
+ private:
+  void Log(absl::string_view key, absl::string_view value) {
+    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix_, key, ":", value).c_str());
+  }
 
-   const std::string prefix_;
+  const std::string prefix_;
 };
 
-}
+}  // namespace
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {

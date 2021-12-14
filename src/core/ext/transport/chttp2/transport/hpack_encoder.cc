@@ -136,19 +136,20 @@ void HPackCompressor::Framer::EnsureSpace(size_t need_bytes) {
   prefix_ = BeginFrame();
 }
 
-void HPackCompressor::Framer::Add(grpc_slice slice) {
-  const size_t len = GRPC_SLICE_LENGTH(slice);
+void HPackCompressor::Framer::Add(Slice slice) {
+  const size_t len = slice.length();
   if (len == 0) return;
   const size_t remaining = max_frame_size_ - CurrentFrameSize();
   if (len <= remaining) {
     stats_->header_bytes += len;
-    grpc_slice_buffer_add(output_, slice);
+    grpc_slice_buffer_add(output_, slice.TakeCSlice());
   } else {
     stats_->header_bytes += remaining;
-    grpc_slice_buffer_add(output_, grpc_slice_split_head(&slice, remaining));
+    grpc_slice_buffer_add(output_,
+                          slice.RefSubSlice(0, remaining).TakeCSlice());
     FinishFrame(false);
     prefix_ = BeginFrame();
-    Add(slice);
+    Add(std::move(slice));
   }
 }
 
@@ -166,35 +167,33 @@ void HPackCompressor::Framer::EmitIndexed(uint32_t elem_index) {
 
 struct WireValue {
   WireValue(uint8_t huffman_prefix, bool insert_null_before_wire_value,
-            const grpc_slice& slice)
-      : data(slice),
+            Slice slice)
+      : data(std::move(slice)),
         huffman_prefix(huffman_prefix),
         insert_null_before_wire_value(insert_null_before_wire_value),
-        length(GRPC_SLICE_LENGTH(slice) +
-               (insert_null_before_wire_value ? 1 : 0)) {}
-  // While wire_value is const from the POV of hpack encoder code, actually
-  // adding it to a slice buffer will possibly split the slice.
-  const grpc_slice data;
+        length(data.length() + (insert_null_before_wire_value ? 1 : 0)) {}
+  Slice data;
   const uint8_t huffman_prefix;
   const bool insert_null_before_wire_value;
   const size_t length;
 };
 
-static WireValue GetWireValue(const grpc_slice& value, bool true_binary_enabled,
+static WireValue GetWireValue(Slice value, bool true_binary_enabled,
                               bool is_bin_hdr) {
   if (is_bin_hdr) {
     if (true_binary_enabled) {
       GRPC_STATS_INC_HPACK_SEND_BINARY();
-      return WireValue(0x00, true, grpc_slice_ref_internal(value));
+      return WireValue(0x00, true, std::move(value));
     } else {
       GRPC_STATS_INC_HPACK_SEND_BINARY_BASE64();
       return WireValue(0x80, false,
-                       grpc_chttp2_base64_encode_and_huffman_compress(value));
+                       Slice(grpc_chttp2_base64_encode_and_huffman_compress(
+                           value.c_slice())));
     }
   } else {
     /* TODO(ctiller): opportunistically compress non-binary headers */
     GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-    return WireValue(0x00, false, grpc_slice_ref_internal(value));
+    return WireValue(0x00, false, std::move(value));
   }
 }
 
@@ -211,9 +210,9 @@ struct UnsureIfInterned {
 
 class BinaryStringValue {
  public:
-  explicit BinaryStringValue(const grpc_slice& value,
-                             bool use_true_binary_metadata)
-      : wire_value_(GetWireValue(value, use_true_binary_metadata, true)),
+  explicit BinaryStringValue(Slice value, bool use_true_binary_metadata)
+      : wire_value_(
+            GetWireValue(std::move(value), use_true_binary_metadata, true)),
         len_val_(wire_value_.length) {}
 
   size_t prefix_length() const {
@@ -228,7 +227,7 @@ class BinaryStringValue {
     }
   }
 
-  const grpc_slice& data() { return wire_value_.data; }
+  Slice data() { return std::move(wire_value_.data); }
 
  private:
   WireValue wire_value_;
@@ -237,24 +236,24 @@ class BinaryStringValue {
 
 class NonBinaryStringValue {
  public:
-  explicit NonBinaryStringValue(const grpc_slice& value)
-      : value_(value), len_val_(GRPC_SLICE_LENGTH(value)) {}
+  explicit NonBinaryStringValue(Slice value)
+      : value_(std::move(value)), len_val_(value_.length()) {}
 
   size_t prefix_length() const { return len_val_.length(); }
 
   void WritePrefix(uint8_t* prefix_data) { len_val_.Write(0x00, prefix_data); }
 
-  const grpc_slice& data() { return value_; }
+  Slice data() { return std::move(value_); }
 
  private:
-  grpc_slice value_;
+  Slice value_;
   VarintWriter<1> len_val_;
 };
 
 class StringKey {
  public:
-  explicit StringKey(grpc_slice key)
-      : key_(key), len_key_(GRPC_SLICE_LENGTH(key)) {}
+  explicit StringKey(Slice key)
+      : key_(std::move(key)), len_key_(key_.length()) {}
 
   size_t prefix_length() const { return 1 + len_key_.length(); }
 
@@ -263,54 +262,54 @@ class StringKey {
     len_key_.Write(0x00, data + 1);
   }
 
-  grpc_slice key() const { return key_; }
+  Slice key() { return std::move(key_); }
 
  private:
-  grpc_slice key_;
+  Slice key_;
   VarintWriter<1> len_key_;
 };
 
 void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyIncIdx(
-    const grpc_slice& key_slice, const grpc_slice& value_slice) {
+    Slice key_slice, Slice value_slice) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  StringKey key(key_slice);
+  StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, AddTiny(key.prefix_length()));
-  Add(grpc_slice_ref_internal(key.key()));
-  NonBinaryStringValue emit(value_slice);
+  Add(key.key());
+  NonBinaryStringValue emit(std::move(value_slice));
   emit.WritePrefix(AddTiny(emit.prefix_length()));
-  Add(grpc_slice_ref_internal(emit.data()));
+  Add(emit.data());
 }
 
 void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
-    const grpc_slice& key_slice, const grpc_slice& value_slice) {
+    Slice key_slice, Slice value_slice) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  StringKey key(key_slice);
+  StringKey key(std::move(key_slice));
   key.WritePrefix(0x00, AddTiny(key.prefix_length()));
-  Add(grpc_slice_ref_internal(key.key()));
-  BinaryStringValue emit(value_slice, use_true_binary_metadata_);
+  Add(key.key());
+  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
   emit.WritePrefix(AddTiny(emit.prefix_length()));
   Add(emit.data());
 }
 
 void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyIncIdx(
-    const grpc_slice& key_slice, const grpc_slice& value_slice) {
+    Slice key_slice, Slice value_slice) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  StringKey key(key_slice);
+  StringKey key(std::move(key_slice));
   key.WritePrefix(0x40, AddTiny(key.prefix_length()));
-  Add(grpc_slice_ref_internal(key.key()));
-  BinaryStringValue emit(value_slice, use_true_binary_metadata_);
+  Add(key.key());
+  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
   emit.WritePrefix(AddTiny(emit.prefix_length()));
   Add(emit.data());
 }
 
 void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
-    uint32_t key_index, const grpc_slice& value_slice) {
+    uint32_t key_index, Slice value_slice) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  BinaryStringValue emit(value_slice, use_true_binary_metadata_);
+  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
   VarintWriter<4> key(key_index);
   uint8_t* data = AddTiny(key.length() + emit.prefix_length());
   key.Write(0x00, data);
@@ -319,15 +318,15 @@ void HPackCompressor::Framer::EmitLitHdrWithBinaryStringKeyNotIdx(
 }
 
 void HPackCompressor::Framer::EmitLitHdrWithNonBinaryStringKeyNotIdx(
-    const grpc_slice& key_slice, const grpc_slice& value_slice) {
+    Slice key_slice, Slice value_slice) {
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  StringKey key(key_slice);
+  StringKey key(std::move(key_slice));
   key.WritePrefix(0x00, AddTiny(key.prefix_length()));
-  Add(grpc_slice_ref_internal(key.key()));
-  NonBinaryStringValue emit(value_slice);
+  Add(key.key());
+  NonBinaryStringValue emit(std::move(value_slice));
   emit.WritePrefix(AddTiny(emit.prefix_length()));
-  Add(grpc_slice_ref_internal(emit.data()));
+  Add(emit.data());
 }
 
 void HPackCompressor::Framer::AdvertiseTableSizeChange() {
@@ -380,7 +379,8 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   }
   // No hit, emit a new literal and add it to the index.
   uint32_t index = table.AllocateIndex(transport_length);
-  framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key), value.c_slice());
+  framer->EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key),
+                                                 value.Ref());
   values_.emplace_back(value.Ref(), index);
 }
 
@@ -390,7 +390,8 @@ void HPackCompressor::Framer::Encode(HttpPathMetadata, const Slice& value) {
 
 void HPackCompressor::Framer::Encode(HttpAuthorityMetadata,
                                      const Slice& value) {
-  compressor_->authority_index_.EmitTo(HttpAuthorityMetadata::key(), value, this);
+  compressor_->authority_index_.EmitTo(HttpAuthorityMetadata::key(), value,
+                                       this);
 }
 
 void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
@@ -403,11 +404,10 @@ void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
 void HPackCompressor::Framer::Encode(ContentTypeMetadata,
                                      ContentTypeMetadata::ValueType value) {
   GPR_ASSERT(value == ContentTypeMetadata::ValueType::kApplicationGrpc);
-  EncodeAlwaysIndexed(
-      &compressor_->content_type_index_, "content-type",
-      Slice::FromStaticString("application/grpc"),
-      12 /* content-type */ + 16 /* application/grpc */ +
-          hpack_constants::kEntryOverhead);
+  EncodeAlwaysIndexed(&compressor_->content_type_index_, "content-type",
+                      Slice::FromStaticString("application/grpc"),
+                      12 /* content-type */ + 16 /* application/grpc */ +
+                          hpack_constants::kEntryOverhead);
 }
 
 void HPackCompressor::Framer::Encode(HttpSchemeMetadata,
@@ -464,10 +464,8 @@ void HPackCompressor::Framer::Encode(HttpStatusMetadata, uint32_t status) {
   if (GPR_LIKELY(index != 0)) {
     EmitIndexed(index);
   } else {
-    char buffer[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(status, buffer);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(
-        GRPC_MDSTR_STATUS, Slice::FromCopiedString(buffer).c_slice());
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(":status"),
+                                           Slice::FromInt64(status));
   }
 }
 
@@ -481,9 +479,8 @@ void HPackCompressor::Framer::Encode(HttpMethodMetadata,
       EmitIndexed(3);  // :method: POST
       break;
     case HttpMethodMetadata::ValueType::kPut:
-      EmitLitHdrWithNonBinaryStringKeyNotIdx(
-          Slice::FromStaticString(":method"),
-          Slice::FromStaticString("PUT"));
+      EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(":method"),
+                                             Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
@@ -499,7 +496,8 @@ void HPackCompressor::Framer::EncodeAlwaysIndexed(uint32_t* index,
     EmitIndexed(compressor_->table_.DynamicIndex(*index));
   } else {
     *index = compressor_->table_.AllocateIndex(transport_length);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key), std::move(value));
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice::FromStaticString(key),
+                                           std::move(value));
   }
 }
 
@@ -509,10 +507,10 @@ void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
     EmitLitHdrWithBinaryStringKeyNotIdx(
         compressor_->table_.DynamicIndex(*index), std::move(value));
   } else {
-    *index = compressor_->table_.AllocateIndex(key.length() +
-                                               value.length() +
+    *index = compressor_->table_.AllocateIndex(key.length() + value.length() +
                                                hpack_constants::kEntryOverhead);
-    EmitLitHdrWithBinaryStringKeyIncIdx(Slice::FromStaticString(key), std::move(value));
+    EmitLitHdrWithBinaryStringKeyIncIdx(Slice::FromStaticString(key),
+                                        std::move(value));
   }
 }
 
@@ -545,8 +543,7 @@ void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
       hpack_constants::kEntryOverhead);
   compressor_->previous_timeouts_.push_back(PreviousTimeout{timeout, index});
   EmitLitHdrWithNonBinaryStringKeyIncIdx(
-      StaticSlice::FromStaticString(GrpcTimeoutMetadata::key()).c_slice(),
-      encoded.c_slice());
+      Slice::FromStaticString(GrpcTimeoutMetadata::key()), std::move(encoded));
 }
 
 void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
@@ -555,7 +552,7 @@ void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
     compressor_->user_agent_index_ = 0;
   }
   EncodeAlwaysIndexed(
-      &compressor_->user_agent_index_, GRPC_MDSTR_USER_AGENT, slice.c_slice(),
+      &compressor_->user_agent_index_, "user-agent", slice.Ref(),
       10 /* user-agent */ + slice.size() + hpack_constants::kEntryOverhead);
 }
 
@@ -570,19 +567,15 @@ void HPackCompressor::Framer::Encode(GrpcStatusMetadata,
       return;
     }
   }
-  char buffer[GPR_LTOA_MIN_BUFSIZE];
-  gpr_ltoa(code, buffer);
-  grpc_slice key = ExternallyManagedSlice(GrpcStatusMetadata::key().data(),
-                                          GrpcStatusMetadata::key().size());
-  grpc_slice value = grpc_slice_from_copied_string(buffer);
-  const uint32_t transport_length = GRPC_SLICE_LENGTH(key) +
-                                    GRPC_SLICE_LENGTH(value) +
-                                    hpack_constants::kEntryOverhead;
+  Slice key = Slice::FromStaticString(GrpcStatusMetadata::key());
+  Slice value = Slice::FromInt64(code);
+  const uint32_t transport_length =
+      key.length() + value.length() + hpack_constants::kEntryOverhead;
   if (index != nullptr) {
     *index = compressor_->table_.AllocateIndex(transport_length);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(key, value);
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key), std::move(value));
   } else {
-    EmitLitHdrWithNonBinaryStringKeyNotIdx(key, value);
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(std::move(key), std::move(value));
   }
 }
 
@@ -596,17 +589,17 @@ void HPackCompressor::Framer::Encode(GrpcEncodingMetadata,
       return;
     }
   }
-  auto key = StaticSlice::FromStaticString(GrpcEncodingMetadata::key());
+  auto key = Slice::FromStaticString(GrpcEncodingMetadata::key());
   auto encoded_value = GrpcEncodingMetadata::Encode(value);
   uint32_t transport_length =
       key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
   if (index != nullptr) {
     *index = compressor_->table_.AllocateIndex(transport_length);
-    EmitLitHdrWithNonBinaryStringKeyIncIdx(key.c_slice(),
-                                           encoded_value.c_slice());
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key),
+                                           std::move(encoded_value));
   } else {
-    EmitLitHdrWithNonBinaryStringKeyNotIdx(key.c_slice(),
-                                           encoded_value.c_slice());
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(std::move(key),
+                                           std::move(encoded_value));
   }
 }
 
@@ -620,15 +613,15 @@ void HPackCompressor::Framer::Encode(GrpcAcceptEncodingMetadata,
         compressor_->grpc_accept_encoding_index_));
     return;
   }
-  auto key = StaticSlice::FromStaticString(GrpcAcceptEncodingMetadata::key());
+  auto key = Slice::FromStaticString(GrpcAcceptEncodingMetadata::key());
   auto encoded_value = GrpcAcceptEncodingMetadata::Encode(value);
   uint32_t transport_length =
       key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
   compressor_->grpc_accept_encoding_index_ =
       compressor_->table_.AllocateIndex(transport_length);
   compressor_->grpc_accept_encoding_ = value;
-  EmitLitHdrWithNonBinaryStringKeyIncIdx(key.c_slice(),
-                                         encoded_value.c_slice());
+  EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key),
+                                         std::move(encoded_value));
 }
 
 void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
@@ -660,18 +653,6 @@ HPackCompressor::Framer::Framer(const EncodeHeaderOptions& options,
   if (absl::exchange(compressor_->advertise_table_size_change_, false)) {
     AdvertiseTableSizeChange();
   }
-}
-
-void HPackCompressor::Framer::Encode(grpc_mdelem md) {
-  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
-    const uintptr_t static_index =
-        reinterpret_cast<StaticMetadata*>(GRPC_MDELEM_DATA(md))->StaticIndex();
-    if (static_index < hpack_constants::kLastStaticEntry) {
-      EmitIndexed(static_cast<uint32_t>(static_index + 1));
-      return;
-    }
-  }
-  EncodeDynamic(md);
 }
 
 }  // namespace grpc_core

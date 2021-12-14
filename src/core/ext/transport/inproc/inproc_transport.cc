@@ -297,7 +297,8 @@ class CopySink {
   explicit CopySink(grpc_metadata_batch* dst) : dst_(dst) {}
 
   void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
-    dst_->Append(key.as_string_view(), value.AsOwned(), [](absl::string_view error, const grpc_core::Slice& value) {});
+    dst_->Append(key.as_string_view(), value.AsOwned(),
+                 [](absl::string_view error, const grpc_core::Slice& value) {});
   }
 
   template <class T, class V>

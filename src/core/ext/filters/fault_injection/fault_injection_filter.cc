@@ -320,9 +320,11 @@ void CallData::DecideWhetherToInjectFaults(
       }
     };
     std::string buffer;
-    if (!fi_policy_->abort_code_header.empty() && (copied_policy == nullptr ||
-           copied_policy->abort_code == GRPC_STATUS_OK)) {
-      auto value = initial_metadata->GetStringValue(fi_policy_->abort_code_header, &buffer);
+    if (!fi_policy_->abort_code_header.empty() &&
+        (copied_policy == nullptr ||
+         copied_policy->abort_code == GRPC_STATUS_OK)) {
+      auto value = initial_metadata->GetStringValue(
+          fi_policy_->abort_code_header, &buffer);
       if (value.has_value()) {
         maybe_copy_policy_func();
         grpc_status_code_from_int(GetMetadatumValueInt(*value),
@@ -336,12 +338,13 @@ void CallData::DecideWhetherToInjectFaults(
         maybe_copy_policy_func();
         copied_policy->abort_percentage_numerator =
             std::min(GetMetadatumValueUnsignedInt(*value),
-                      fi_policy_->abort_percentage_numerator);
+                     fi_policy_->abort_percentage_numerator);
       }
     }
     if (!fi_policy_->delay_header.empty() &&
         (copied_policy == nullptr || copied_policy->delay == 0)) {
-      auto value = initial_metadata->GetStringValue(fi_policy_->delay_header, &buffer);
+      auto value =
+          initial_metadata->GetStringValue(fi_policy_->delay_header, &buffer);
       if (value.has_value()) {
         maybe_copy_policy_func();
         copied_policy->delay = static_cast<grpc_millis>(
@@ -355,7 +358,7 @@ void CallData::DecideWhetherToInjectFaults(
         maybe_copy_policy_func();
         copied_policy->delay_percentage_numerator =
             std::min(GetMetadatumValueUnsignedInt(*value),
-                      fi_policy_->delay_percentage_numerator);
+                     fi_policy_->delay_percentage_numerator);
       }
     }
     if (copied_policy != nullptr) fi_policy_ = copied_policy;

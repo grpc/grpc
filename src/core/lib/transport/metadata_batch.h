@@ -280,9 +280,9 @@ struct CompressionAlgorithmBasedMetadata {
     return *algorithm;
   }
   static ValueType MementoToValue(MementoType x) { return x; }
-  static StaticSlice Encode(ValueType x) {
+  static Slice Encode(ValueType x) {
     GPR_ASSERT(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
-    return StaticSlice::FromStaticString(CompressionAlgorithmAsString(x));
+    return Slice::FromStaticString(CompressionAlgorithmAsString(x));
   }
   static const char* DisplayValue(MementoType x) {
     if (const char* p = CompressionAlgorithmAsString(x)) {
@@ -696,8 +696,8 @@ class MetadataMap {
   void Remove(absl::string_view name);
 
   // Retrieve some metadata by name
-  absl::optional<absl::string_view>
-   GetStringValue(absl::string_view name, std::string* buffer) const;
+  absl::optional<absl::string_view> GetStringValue(absl::string_view name,
+                                                   std::string* buffer) const;
 
   // Extract a piece of known metadata.
   // Returns nullopt if the metadata was not present, or the value if it was.

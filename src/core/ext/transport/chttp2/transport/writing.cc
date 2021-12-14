@@ -188,19 +188,21 @@ static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
 namespace {
 
 class CountDefaultMetadataEncoder {
-public:
+ public:
   int count() const { return count_; }
 
   void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
 
   template <typename Which>
-  void Encode(Which, const typename Which::ValueType&) { count_++; }
+  void Encode(Which, const typename Which::ValueType&) {
+    count_++;
+  }
 
-private:
+ private:
   int count_ = 0;
 };
 
-}
+}  // namespace
 
 // Returns true if initial_metadata contains only default headers.
 static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {

@@ -94,8 +94,7 @@ class HPackCompressor {
     void Encode(GrpcMessageMetadata, const Slice& slice) {
       if (slice.empty()) return;
       EmitLitHdrWithNonBinaryStringKeyNotIdx(
-          StaticSlice::FromStaticString("grpc-message").c_slice(),
-          slice.c_slice());
+          Slice::FromStaticString("grpc-message"), slice.Ref());
     }
     template <typename Which>
     void Encode(Which, const typename Which::ValueType& value) {
@@ -140,8 +139,7 @@ class HPackCompressor {
                                                 Slice value_slice);
 
     void EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
-                             Slice value,
-                             uint32_t transport_length);
+                             Slice value, uint32_t transport_length);
     void EncodeIndexedKeyWithBinaryValue(uint32_t* index, absl::string_view key,
                                          Slice value);
 
@@ -196,7 +194,7 @@ class HPackCompressor {
     Timeout timeout;
     uint32_t index;
   };
-  
+
   // Index into table_ for the te:trailers metadata element
   uint32_t te_index_ = 0;
   // Index into table_ for the content-type metadata element
