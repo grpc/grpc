@@ -29,13 +29,12 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
-
-namespace grpc_core {
 
 /* TODO(ctiller): allow caching and capturing multiple requests for the
                   same content and combining them */
@@ -66,16 +65,18 @@ typedef struct grpc_httpcli_request {
 typedef struct grpc_http_response grpc_httpcli_response;
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*HttpCliRequest::GetOverride)(const grpc_httpcli_request* request,
+typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
                                          grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
-typedef int (*HttpCliRequest::PostOverride)(const grpc_httpcli_request* request,
+typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
                                           const char* body_bytes,
                                           size_t body_size,
                                           grpc_millis deadline,
                                           grpc_closure* on_complete,
                                           grpc_httpcli_response* response);
+
+namespace grpc_core {
 
 // Tracks an in-progress GET or POST request. Calling \a Start()
 // begins async work and calling \a Orphan() arranges for aysnc work
@@ -120,8 +121,8 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
                          grpc_millis deadline, grpc_closure* on_done,
                          grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
-  void SetOverride(HttpCliRequest::GetOverride get,
-                   HttpCliRequest::PostOverride post);
+  void SetOverride(grpc_httpcli_get_override get,
+                   grpc_httpcli_post_override post);
 
 
   HttpCliRequest(const grpc_slice& request_text,

@@ -76,8 +76,8 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(grpc_polling_entity* pollent,
 
 namespace {
 
-HttpCliRequest::GetOverride g_get_override;
-HttpCliRequest::PostOverride g_post_override;
+grpc_httpcli_get_override g_get_override;
+grpc_httpcli_post_override g_post_override;
 
 } // namespace
 
@@ -99,8 +99,8 @@ OrphanablePtr<HttpCliRequest> grpc_core::HttpCliRequest::Post(grpc_polling_entit
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
 }
 
-void HttpCliRequest::SetOverride(HttpCliRequest::GetOverride get,
-                                 grpc_core::HttpCliRequest::PostOverride post) {
+void HttpCliRequest::SetOverride(grpc_httpcli_get_override get,
+                                 grpc_httpcli_post_override post) {
   g_get_override = get;
   g_post_override = post;
 }
