@@ -38,7 +38,7 @@
 namespace grpc_core {
 namespace {
 
-static void assert_encodes_as(grpc_millis ts, const char* s) {
+void assert_encodes_as(grpc_millis ts, const char* s) {
   EXPECT_EQ(absl::string_view(s),
             Timeout::FromDuration(ts).Encode().as_string_view())
       << " ts=" << ts;
@@ -71,7 +71,7 @@ TEST(TimeoutTest, Encoding) {
   assert_encodes_as(100000000000, "27000H");
 }
 
-static void assert_decodes_as(const char* buffer, grpc_millis expected) {
+void assert_decodes_as(const char* buffer, grpc_millis expected) {
   EXPECT_EQ(expected, ParseTimeout(Slice::FromCopiedString(buffer)));
 }
 
@@ -94,22 +94,22 @@ void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
   }
 }
 
-static grpc_millis millis_from_nanos(int64_t x) {
+grpc_millis millis_from_nanos(int64_t x) {
   return static_cast<grpc_millis>(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
 }
-static grpc_millis millis_from_micros(int64_t x) {
+grpc_millis millis_from_micros(int64_t x) {
   return static_cast<grpc_millis>(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
 }
-static grpc_millis millis_from_millis(int64_t x) {
+grpc_millis millis_from_millis(int64_t x) {
   return static_cast<grpc_millis>(x);
 }
-static grpc_millis millis_from_seconds(int64_t x) {
+grpc_millis millis_from_seconds(int64_t x) {
   return static_cast<grpc_millis>(x * GPR_MS_PER_SEC);
 }
-static grpc_millis millis_from_minutes(int64_t x) {
+grpc_millis millis_from_minutes(int64_t x) {
   return static_cast<grpc_millis>(x * 60 * GPR_MS_PER_SEC);
 }
-static grpc_millis millis_from_hours(int64_t x) {
+grpc_millis millis_from_hours(int64_t x) {
   return static_cast<grpc_millis>(x * 3600 * GPR_MS_PER_SEC);
 }
 
@@ -127,7 +127,7 @@ TEST(TimeoutTest, DecodingSucceeds) {
   assert_decodes_as("9999999999S", GRPC_MILLIS_INF_FUTURE);
 }
 
-static void assert_decoding_fails(const char* s) {
+void assert_decoding_fails(const char* s) {
   EXPECT_EQ(absl::nullopt, ParseTimeout(Slice::FromCopiedString(s)))
       << " s=" << s;
 }
