@@ -57,12 +57,12 @@ struct GrpcTimeoutMetadata {
   using MementoType = grpc_millis;
   static absl::string_view key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
-    grpc_millis timeout;
-    if (GPR_UNLIKELY(!grpc_http2_decode_timeout(value.c_slice(), &timeout))) {
+    auto timeout = ParseTimeout(value);
+    if (!timeout.has_value()) {
       on_error("invalid value", value);
-      timeout = GRPC_MILLIS_INF_FUTURE;
+      return GRPC_MILLIS_INF_FUTURE;
     }
-    return timeout;
+    return *timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
     if (timeout == GRPC_MILLIS_INF_FUTURE) {
@@ -71,9 +71,7 @@ struct GrpcTimeoutMetadata {
     return ExecCtx::Get()->Now() + timeout;
   }
   static Slice Encode(ValueType x) {
-    char timeout[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
-    grpc_http2_encode_timeout(x, timeout);
-    return Slice::FromCopiedString(timeout);
+    return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
   }
   static MementoType DisplayValue(MementoType x) { return x; }
 };

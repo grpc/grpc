@@ -192,6 +192,11 @@ class HPackCompressor {
     std::vector<ValueIndex> values_;
   };
 
+  struct PreviousTimeout {
+    Timeout timeout;
+    uint32_t index;
+  };
+  
   // Index into table_ for the te:trailers metadata element
   uint32_t te_index_ = 0;
   // Index into table_ for the content-type metadata element
@@ -214,6 +219,7 @@ class HPackCompressor {
   Slice user_agent_;
   SliceIndex path_index_;
   SliceIndex authority_index_;
+  std::vector<PreviousTimeout> previous_timeouts_;
 };
 
 }  // namespace grpc_core

@@ -4244,15 +4244,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: timeout_encoding_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/timeout_encoding_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: timer_heap_test
   build: test
   language: c
@@ -7908,6 +7899,16 @@ targets:
   headers: []
   src:
   - test/core/gprpp/time_util_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: timeout_encoding_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/timeout_encoding_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
