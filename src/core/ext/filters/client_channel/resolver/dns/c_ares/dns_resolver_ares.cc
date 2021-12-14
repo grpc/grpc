@@ -595,6 +595,8 @@ class AresDNSResolver : public DNSResolver {
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
+    // TODO(apolcyn): change this to wrap the async version of the c-ares
+    // API with a promise, and remove the reference to the previous resolver.
     return default_resolver_->ResolveNameBlocking(name, default_port);
   }
 
