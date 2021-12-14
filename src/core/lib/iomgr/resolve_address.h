@@ -44,16 +44,6 @@ struct grpc_resolved_address {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
   socklen_t len;
 };
-// TODO(apolcyn): the only usage left of this in the codebase is in the
-// custom resolver API. This type could be deleted as a part of converting
-// that API to C++.
-struct grpc_resolved_addresses {
-  size_t naddrs;
-  grpc_resolved_address* addrs;
-};
-
-/* Destroy resolved addresses */
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
 
 namespace grpc_core {
 extern const char* kDefaultSecurePort;

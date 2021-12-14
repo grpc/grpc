@@ -78,7 +78,7 @@ class InternalRequest {
     grpc_polling_entity_add_to_pollset_set(pollent_, context->pollset_set);
     dns_request_ = GetDNSResolver()->ResolveName(
         host_.c_str(), handshaker_->default_port, context_->pollset_set,
-        std::bind(&InternalRequest::OnResolved, this, std::placeholders::_1));
+        absl::bind_front(&InternalRequest::OnResolved, this));
     dns_request_->Start();
   }
 

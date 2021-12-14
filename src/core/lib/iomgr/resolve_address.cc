@@ -22,13 +22,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
-  if (addresses != nullptr) {
-    gpr_free(addresses->addrs);
-  }
-  gpr_free(addresses);
-}
-
 namespace grpc_core {
 const char* kDefaultSecurePort = "https";
 

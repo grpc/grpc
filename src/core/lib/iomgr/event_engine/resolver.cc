@@ -55,7 +55,7 @@ class EventEngineDNSRequest : DNSRequest {
         on_done_(std::move(on_done)) {}
 
   void Start() override {
-    if (dns_resolver == nullptr) {
+    if (dns_resolver_ == nullptr) {
       new DNSCallbackExecCtxScheduler(
           std::move(on_done_),
           absl::UnknownError("Failed to get DNS Resolver."));

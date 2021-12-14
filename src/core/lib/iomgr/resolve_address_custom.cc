@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -43,6 +41,13 @@ struct grpc_custom_resolver {
   grpc_core::CustomDNSResolver::CustomDNSRequest* request;
 };
 
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
+  if (addresses != nullptr) {
+    gpr_free(addresses->addrs);
+  }
+  gpr_free(addresses);
+}
+
 void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
@@ -70,7 +75,7 @@ namespace {
 absl::Status TrySplitHostPort(absl::string_view name,
                               absl::string_view default_port, std::string* host,
                               std::string* port) {
-  /* parse name, splitting it into host and port parts */
+  // parse name, splitting it into host and port parts
   SplitHostPort(name, host, port);
   if (host->empty()) {
     return absl::UnknownError(
@@ -139,7 +144,7 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
     return parse_status;
   }
 
-  /* Call getaddrinfo */
+  // Call getaddrinfo
   ExecCtx* curr = ExecCtx::Get();
   ExecCtx::Set(nullptr);
   grpc_resolved_addresses* addrs;

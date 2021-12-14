@@ -115,7 +115,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
   std::vector<grpc_resolved_address> addresses;
   std::string host;
   std::string port;
-  /* parse name, splitting it into host and port parts */
+  // parse name, splitting it into host and port parts
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
     err = grpc_error_set_str(
@@ -132,7 +132,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
     }
     port = std::string(default_port);
   }
-  /* Call getaddrinfo */
+  // Call getaddrinfo
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
@@ -141,7 +141,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
   s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
-    /* Retry if well-known service name is recognized */
+    // Retry if well-known service name is recognized
     const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
     for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (port == svc[i][0]) {
