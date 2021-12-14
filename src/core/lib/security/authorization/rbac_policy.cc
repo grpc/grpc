@@ -75,6 +75,52 @@ std::string Rbac::CidrRange::ToString() const {
 // Permission
 //
 
+Rbac::Permission Rbac::Permission::MakeAndPermission(
+    std::vector<std::unique_ptr<Permission>> permissions) {
+  return Permission(Permission::RuleType::kAnd, std::move(permissions));
+}
+
+Rbac::Permission Rbac::Permission::MakeOrPermission(
+    std::vector<std::unique_ptr<Permission>> permissions) {
+  return Permission(Permission::RuleType::kOr, std::move(permissions));
+}
+
+Rbac::Permission Rbac::Permission::MakeNotPermission(Permission permission) {
+  return Permission(Permission::RuleType::kNot, std::move(permission));
+}
+
+Rbac::Permission Rbac::Permission::MakeAnyPermission() {
+  return Permission(Permission::RuleType::kAny);
+}
+
+Rbac::Permission Rbac::Permission::MakeHeaderPermission(
+    HeaderMatcher header_matcher) {
+  return Permission(Permission::RuleType::kHeader, std::move(header_matcher));
+}
+
+Rbac::Permission Rbac::Permission::MakePathPermission(
+    StringMatcher string_matcher) {
+  return Permission(Permission::RuleType::kPath, std::move(string_matcher));
+}
+
+Rbac::Permission Rbac::Permission::MakeDestIpPermission(CidrRange ip) {
+  return Permission(Permission::RuleType::kDestIp, std::move(ip));
+}
+
+Rbac::Permission Rbac::Permission::MakeDestPortPermission(int port) {
+  return Permission(Permission::RuleType::kDestPort, port);
+}
+
+Rbac::Permission Rbac::Permission::MakeMetadataPermission(bool invert) {
+  return Permission(Permission::RuleType::kMetadata, invert);
+}
+
+Rbac::Permission Rbac::Permission::MakeReqServerNamePermission(
+    StringMatcher string_matcher) {
+  return Permission(Permission::RuleType::kReqServerName,
+                    std::move(string_matcher));
+}
+
 Rbac::Permission::Permission(
     Permission::RuleType type,
     std::vector<std::unique_ptr<Permission>> permissions)
@@ -194,6 +240,56 @@ std::string Rbac::Permission::ToString() const {
 //
 // Principal
 //
+
+Rbac::Principal Rbac::Principal::MakeAndPrincipal(
+    std::vector<std::unique_ptr<Principal>> principals) {
+  return Principal(Principal::RuleType::kAnd, std::move(principals));
+}
+
+Rbac::Principal Rbac::Principal::MakeOrPrincipal(
+    std::vector<std::unique_ptr<Principal>> principals) {
+  return Principal(Principal::RuleType::kOr, std::move(principals));
+}
+
+Rbac::Principal Rbac::Principal::MakeNotPrincipal(Principal principal) {
+  return Principal(Principal::RuleType::kNot, std::move(principal));
+}
+
+Rbac::Principal Rbac::Principal::MakeAnyPrincipal() {
+  return Principal(Principal::RuleType::kAny);
+}
+
+Rbac::Principal Rbac::Principal::MakeAuthenticatedPrincipal(
+    StringMatcher string_matcher) {
+  return Principal(Principal::RuleType::kPrincipalName,
+                   std::move(string_matcher));
+}
+
+Rbac::Principal Rbac::Principal::MakeSourceIpPrincipal(CidrRange ip) {
+  return Principal(Principal::RuleType::kSourceIp, std::move(ip));
+}
+
+Rbac::Principal Rbac::Principal::MakeDirectRemoteIpPrincipal(CidrRange ip) {
+  return Principal(Principal::RuleType::kDirectRemoteIp, std::move(ip));
+}
+
+Rbac::Principal Rbac::Principal::MakeRemoteIpPrincipal(CidrRange ip) {
+  return Principal(Principal::RuleType::kRemoteIp, std::move(ip));
+}
+
+Rbac::Principal Rbac::Principal::MakeHeaderPrincipal(
+    HeaderMatcher header_matcher) {
+  return Principal(Principal::RuleType::kHeader, std::move(header_matcher));
+}
+
+Rbac::Principal Rbac::Principal::MakePathPrincipal(
+    StringMatcher string_matcher) {
+  return Principal(Principal::RuleType::kPath, std::move(string_matcher));
+}
+
+Rbac::Principal Rbac::Principal::MakeMetadataPrincipal(bool invert) {
+  return Principal(Principal::RuleType::kMetadata, invert);
+}
 
 Rbac::Principal::Principal(Principal::RuleType type,
                            std::vector<std::unique_ptr<Principal>> principals)

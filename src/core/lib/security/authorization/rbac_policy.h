@@ -46,6 +46,7 @@ struct Rbac {
 
   // TODO(ashithasantosh): Support for destination_port_range.
   struct Permission {
+   public:
     enum class RuleType {
       kAnd,
       kOr,
@@ -59,25 +60,21 @@ struct Rbac {
       kReqServerName,
     };
 
+    static Permission MakeAndPermission(
+        std::vector<std::unique_ptr<Permission>> permissions);
+    static Permission MakeOrPermission(
+        std::vector<std::unique_ptr<Permission>> permissions);
+    static Permission MakeNotPermission(Permission permission);
+    static Permission MakeAnyPermission();
+    static Permission MakeHeaderPermission(HeaderMatcher header_matcher);
+    static Permission MakePathPermission(StringMatcher string_matcher);
+    static Permission MakeDestIpPermission(CidrRange ip);
+    static Permission MakeDestPortPermission(int port);
+    // All the other fields in MetadataMatcher are ignored except invert.
+    static Permission MakeMetadataPermission(bool invert);
+    static Permission MakeReqServerNamePermission(StringMatcher string_matcher);
+
     Permission() = default;
-    // For kAnd/kOr RuleType.
-    Permission(Permission::RuleType type,
-               std::vector<std::unique_ptr<Permission>> permissions);
-    // For kNot RuleType.
-    Permission(Permission::RuleType type, Permission permission);
-    // For kAny RuleType.
-    explicit Permission(Permission::RuleType type);
-    // For kHeader RuleType.
-    Permission(Permission::RuleType type, HeaderMatcher header_matcher);
-    // For kPath/kReqServerName RuleType.
-    Permission(Permission::RuleType type, StringMatcher string_matcher);
-    // For kDestIp RuleType.
-    Permission(Permission::RuleType type, CidrRange ip);
-    // For kDestPort RuleType.
-    Permission(Permission::RuleType type, int port);
-    // For kMetadata RuleType. All the other fields in MetadataMatcher are
-    // ignored except invert.
-    Permission(Permission::RuleType type, bool invert);
 
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
@@ -94,9 +91,29 @@ struct Rbac {
     std::vector<std::unique_ptr<Permission>> permissions;
     // For kMetadata
     bool invert;
+
+   private:
+    // For kAnd/kOr RuleType.
+    Permission(Permission::RuleType type,
+               std::vector<std::unique_ptr<Permission>> permissions);
+    // For kNot RuleType.
+    Permission(Permission::RuleType type, Permission permission);
+    // For kAny RuleType.
+    explicit Permission(Permission::RuleType type);
+    // For kHeader RuleType.
+    Permission(Permission::RuleType type, HeaderMatcher header_matcher);
+    // For kPath/kReqServerName RuleType.
+    Permission(Permission::RuleType type, StringMatcher string_matcher);
+    // For kDestIp RuleType.
+    Permission(Permission::RuleType type, CidrRange ip);
+    // For kDestPort RuleType.
+    Permission(Permission::RuleType type, int port);
+    // For kMetadata RuleType.
+    Permission(Permission::RuleType type, bool invert);
   };
 
   struct Principal {
+   public:
     enum class RuleType {
       kAnd,
       kOr,
@@ -111,7 +128,39 @@ struct Rbac {
       kMetadata,
     };
 
+    static Principal MakeAndPrincipal(
+        std::vector<std::unique_ptr<Principal>> principals);
+    static Principal MakeOrPrincipal(
+        std::vector<std::unique_ptr<Principal>> principals);
+    static Principal MakeNotPrincipal(Principal principal);
+    static Principal MakeAnyPrincipal();
+    static Principal MakeAuthenticatedPrincipal(StringMatcher string_matcher);
+    static Principal MakeSourceIpPrincipal(CidrRange ip);
+    static Principal MakeDirectRemoteIpPrincipal(CidrRange ip);
+    static Principal MakeRemoteIpPrincipal(CidrRange ip);
+    static Principal MakeHeaderPrincipal(HeaderMatcher header_matcher);
+    static Principal MakePathPrincipal(StringMatcher string_matcher);
+    // All the other fields in MetadataMatcher are ignored except invert.
+    static Principal MakeMetadataPrincipal(bool invert);
+
     Principal() = default;
+
+    Principal(Principal&& other) noexcept;
+    Principal& operator=(Principal&& other) noexcept;
+
+    std::string ToString() const;
+
+    RuleType type;
+    HeaderMatcher header_matcher;
+    StringMatcher string_matcher;
+    CidrRange ip;
+    // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
+    // element.
+    std::vector<std::unique_ptr<Principal>> principals;
+    // For kMetadata
+    bool invert;
+
+   private:
     // For kAnd/kOr RuleType.
     Principal(Principal::RuleType type,
               std::vector<std::unique_ptr<Principal>> principals);
@@ -128,21 +177,6 @@ struct Rbac {
     // For kMetadata RuleType. All the other fields in MetadataMatcher are
     // ignored except invert.
     Principal(Principal::RuleType type, bool invert);
-
-    Principal(Principal&& other) noexcept;
-    Principal& operator=(Principal&& other) noexcept;
-
-    std::string ToString() const;
-
-    RuleType type;
-    HeaderMatcher header_matcher;
-    StringMatcher string_matcher;
-    CidrRange ip;
-    // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
-    // element.
-    std::vector<std::unique_ptr<Principal>> principals;
-    // For kMetadata
-    bool invert;
   };
 
   struct Policy {
