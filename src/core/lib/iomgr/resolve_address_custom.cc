@@ -50,8 +50,8 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* c_resolver,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::CustomDNSResolver* resolver =
-      grpc_core::CustomDNSResolver::FromC(c_resolver);
+  grpc_core::CustomDNSResolver::CustomDNSRequest* resolver =
+      grpc_core::CustomDNSResolver::CustomDNSRequest::FromC(c_resolver);
   if (error != GRPC_ERROR_NONE) {
     resolver->ResolveCallback(grpc_error_to_absl_status(error));
   } else {

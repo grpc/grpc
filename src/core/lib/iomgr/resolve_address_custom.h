@@ -21,6 +21,7 @@
 
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -59,8 +60,9 @@ namespace grpc_core {
 
 class CustomDNSResolver : public DNSResolver {
  public:
-  class CustomDNSRequest : public DNSResolver::Request,
-                           CppImplOf<CustomDNSRequest, grpc_custom_resolver> {
+  class CustomDNSRequest
+      : public DNSResolver::Request,
+        public CppImplOf<CustomDNSRequest, grpc_custom_resolver> {
    public:
     CustomDNSRequest(
         absl::string_view name, absl::string_view default_port,
