@@ -20,10 +20,9 @@
 
 #include <string.h>
 
+#include <address_sorting/address_sorting.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-#include <address_sorting/address_sorting.h>
 
 #include "absl/flags/flag.h"
 #include "absl/functional/bind_front.h"
@@ -47,7 +46,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(std::string, resolver_type, "", "DNS resolver type (ares or native)");
+ABSL_FLAG(std::string, resolver, "", "DNS resolver type (ares or native)");
 
 namespace {
 
@@ -56,9 +55,10 @@ grpc_millis NSecDeadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-class ResolveAddressTest : public ::testing::Test {
+class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
  public:
   ResolveAddressTest() {
+    fprintf(stderr, "ResolveAddressTest ctor\n");
     grpc_init();
     grpc_core::ExecCtx exec_ctx;
     gpr_event_init(&ev_);
@@ -70,6 +70,7 @@ class ResolveAddressTest : public ::testing::Test {
   }
 
   ~ResolveAddressTest() {
+    fprintf(stderr, "ResolveAddressTest dtor\n");
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(gpr_event_wait(&ev_, grpc_timeout_seconds_to_deadline(100)));
     grpc_pollset_set_del_pollset(pollset_set_, pollset_);
@@ -108,6 +109,7 @@ class ResolveAddressTest : public ::testing::Test {
                                                             NSecDeadline(1)));
       }
     }
+    fprintf(stderr, "setting ev_ to 1\n");
     gpr_event_set(&ev_, reinterpret_cast<void*>(1));
   }
 
@@ -200,7 +202,7 @@ TEST_F(ResolveAddressTest, DefaultPort) {
 }
 
 TEST_F(ResolveAddressTest, LocalhostResultHasIPv6First) {
-  if (absl::GetFlag(FLAGS_resolver_type) != "ares") {
+  if (absl::GetFlag(FLAGS_resolver) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
   grpc_core::ExecCtx exec_ctx;
@@ -241,7 +243,7 @@ const address_sorting_source_addr_factory_vtable
 }  // namespace
 
 TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
-  if (absl::GetFlag(FLAGS_resolver_type) != "ares") {
+  if (absl::GetFlag(FLAGS_resolver) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
   // Mock the kernel source address selection. Note that source addr factory
@@ -290,56 +292,54 @@ TEST_F(ResolveAddressTest, IPv6WithPort) {
   PollPollsetUntilRequestDone();
 }
 
-TEST_F(ResolveAddressTest, IPv6WithoutPort) {
-  const char* const kCases[] = {
-      "2001:db8::1",
-      "2001:db8::1.2.3.4",
-      "[2001:db8::1]",
-  };
-  unsigned i;
-  for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    grpc_core::ExecCtx exec_ctx;
-    auto r = grpc_core::GetDNSResolver()->ResolveName(
-        kCases[i], "80", pollset_set(),
-        absl::bind_front(&ResolveAddressTest::MustSucceed, this));
-    r->Start();
-    grpc_core::ExecCtx::Get()->Flush();
-    PollPollsetUntilRequestDone();
-  }
+class IPv6WithoutPort : public ResolveAddressTest {};
+
+TEST_P(IPv6WithoutPort, IPv6WithoutPort) {
+  grpc_core::ExecCtx exec_ctx;
+  auto r = grpc_core::GetDNSResolver()->ResolveName(
+      GetParam(), "80", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
+  r->Start();
+  grpc_core::ExecCtx::Get()->Flush();
+  PollPollsetUntilRequestDone();
 }
 
-TEST_F(ResolveAddressTest, InvalidIPAddresses) {
-  const char* const kCases[] = {
-      "293.283.1238.3:1",
-      "[2001:db8::11111]:1",
-  };
-  unsigned i;
-  for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    grpc_core::ExecCtx exec_ctx;
-    auto r = grpc_core::GetDNSResolver()->ResolveName(
-        kCases[i], nullptr, pollset_set(),
-        absl::bind_front(&ResolveAddressTest::MustFail, this));
-    r->Start();
-    grpc_core::ExecCtx::Get()->Flush();
-    PollPollsetUntilRequestDone();
-  }
+INSTANTIATE_TEST_SUITE_P(IPv6WithoutPort, IPv6WithoutPort,
+                         testing::Values("2001:db8::1", "2001:db8::1.2.3.4",
+                                         "[2001:db8::1]"));
+
+class InvalidIPAddresses : public ResolveAddressTest {};
+
+TEST_P(InvalidIPAddresses, InvalidIPAddresses) {
+  fprintf(stderr, "GetParam(): %s\n", GetParam());
+  grpc_core::ExecCtx exec_ctx;
+  auto r = grpc_core::GetDNSResolver()->ResolveName(
+      GetParam(), nullptr, pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustFail, this));
+  r->Start();
+  grpc_core::ExecCtx::Get()->Flush();
+  PollPollsetUntilRequestDone();
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPorts) {
-  const char* const kCases[] = {
-      "[", "[::1", "[::1]bad", "[1.2.3.4]", "[localhost]", "[localhost]:1",
-  };
-  unsigned i;
-  for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
-    grpc_core::ExecCtx exec_ctx;
-    auto r = grpc_core::GetDNSResolver()->ResolveName(
-        kCases[i], "1", pollset_set(),
-        absl::bind_front(&ResolveAddressTest::MustFail, this));
-    r->Start();
-    grpc_core::ExecCtx::Get()->Flush();
-    PollPollsetUntilRequestDone();
-  }
+INSTANTIATE_TEST_SUITE_P(InvalidIPAddresses, InvalidIPAddresses,
+                         testing::Values("293.283.1238.3:1",
+                                         "[2001:db8::11111]:1"));
+
+class UnparseableHostPorts : public ResolveAddressTest {};
+
+TEST_P(UnparseableHostPorts, UnparseableHostPorts) {
+  grpc_core::ExecCtx exec_ctx;
+  auto r = grpc_core::GetDNSResolver()->ResolveName(
+      GetParam(), "1", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustFail, this));
+  r->Start();
+  grpc_core::ExecCtx::Get()->Flush();
+  PollPollsetUntilRequestDone();
 }
+
+INSTANTIATE_TEST_SUITE_P(UnparseableHostPorts, UnparseableHostPorts,
+                         testing::Values("[", "[::1", "[::1]bad", "[1.2.3.4]",
+                                         "[localhost]", "[localhost]:1"));
 
 // Kick off a simple DNS resolution and then immediately cancel. This
 // test doesn't care what the result is, just that we don't crash etc.
@@ -407,12 +407,12 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
             resolver.get());
   }
-  if (absl::GetFlag(FLAGS_resolver_type) == "native") {
+  if (absl::GetFlag(FLAGS_resolver) == "native") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-  } else if (absl::GetFlag(FLAGS_resolver_type) == "ares") {
+  } else if (absl::GetFlag(FLAGS_resolver) == "ares") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else {
-    gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
+    gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
     abort();
   }
   const auto result = RUN_ALL_TESTS();
