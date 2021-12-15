@@ -99,7 +99,11 @@ class ArrayEncoder {
   }
 
   template <typename Which>
-  void Encode(Which, const typename Which::ValueType&) {}
+  void Encode(Which, const typename Which::ValueType& value) {
+    Append(grpc_core::Slice(
+               grpc_core::StaticSlice::FromStaticString(Which::key())),
+           grpc_core::Slice(Which::Encode(value)));
+  }
 
  private:
   void Append(grpc_core::Slice key, grpc_core::Slice value) {

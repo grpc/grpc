@@ -16,7 +16,7 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -ev
+set -ex
 
 cd $(dirname $0)
 
@@ -40,6 +40,8 @@ INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
 PLAIN_PORT=$(curl localhost:32766/get)
 TLS_PORT=$(curl localhost:32766/get)
 
+# start interop_server for plaintext and interop_server for TLS on random ports obtained
+# from the port server.
 $INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
 $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
@@ -63,9 +65,7 @@ function finish {
 }
 trap finish EXIT
 
-set -o pipefail
-
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
+set -o pipefail  # preserve xcodebuild exit code when piping output
 
 if [ -z $PLATFORM ]; then
 DESTINATION='name=iPhone 8'
@@ -77,8 +77,9 @@ elif [ $PLATFORM == tvos ]; then
 DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
 
+XCODEBUILD_FILTER_OUTPUT_SCRIPT="./xcodebuild_filter_output.sh"
 
-xcodebuild \
+time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
     -destination "$DESTINATION" \
@@ -86,9 +87,4 @@ xcodebuild \
     HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     GCC_OPTIMIZATION_LEVEL=s \
-    test \
-    | ./verbose_time.sh \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
+    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
