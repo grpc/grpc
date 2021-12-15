@@ -4288,15 +4288,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: timeout_encoding_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/timeout_encoding_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: timer_heap_test
   build: test
   language: c
@@ -4531,12 +4522,14 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
+  - test/core/util/fake_udp_and_tcp_server.h
   src:
   - test/core/tsi/alts/fake_handshaker/handshaker.proto
   - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
   - test/core/end2end/cq_verifier.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc++
   - grpc_test_util
@@ -4907,11 +4900,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/cpp/naming/dns_test_util.h
+  - test/core/util/fake_udp_and_tcp_server.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   - test/cpp/naming/cancel_ares_query_test.cc
-  - test/cpp/naming/dns_test_util.cc
   deps:
   - grpc++_test_config
   - grpc++_test_util
@@ -7952,6 +7945,16 @@ targets:
   headers: []
   src:
   - test/core/gprpp/time_util_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: timeout_encoding_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/timeout_encoding_test.cc
   deps:
   - grpc_test_util
   uses_polling: false

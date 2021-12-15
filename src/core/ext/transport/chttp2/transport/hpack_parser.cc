@@ -1129,8 +1129,11 @@ class HPackParser::Parser {
     auto value_slice = value->Take<TakeValueType>();
     const auto transport_size = key_string.size() + value_slice.size() +
                                 hpack_constants::kEntryOverhead;
-    return grpc_metadata_batch::Parse(key->string_view(),
-                                      std::move(value_slice), transport_size);
+    return grpc_metadata_batch::Parse(
+        key->string_view(), std::move(value_slice), transport_size,
+        [key_string](absl::string_view error, const Slice& value) {
+          ReportMetadataParseError(key_string, error, value.as_string_view());
+        });
   }
 
   // Parse an index encoded key and a string encoded value
@@ -1143,7 +1146,11 @@ class HPackParser::Parser {
     }
     auto value = ParseValueString(elem->is_binary_header());
     if (GPR_UNLIKELY(!value.has_value())) return {};
-    return elem->WithNewValue(value->Take<TakeValueType>());
+    return elem->WithNewValue(value->Take<TakeValueType>(),
+                              [=](absl::string_view error, const Slice& value) {
+                                ReportMetadataParseError(
+                                    elem->key(), error, value.as_string_view());
+                              });
   }
 
   // Parse a varint index encoded key and a string encoded value
@@ -1228,6 +1235,14 @@ class HPackParser::Parser {
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
         },
         false);
+  }
+
+  static void ReportMetadataParseError(absl::string_view key,
+                                       absl::string_view error,
+                                       absl::string_view value) {
+    gpr_log(
+        GPR_ERROR, "Error parsing metadata: %s",
+        absl::StrCat("error=", error, " key=", key, " value=", value).c_str());
   }
 
   Input* const input_;

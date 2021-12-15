@@ -132,14 +132,42 @@ void MockCallback(void* arg, grpc_error_handle error) {
   }
 }
 
+std::string MetadataString(const Metadata& a) {
+  return absl::StrCat(
+      "{",
+      absl::StrJoin(
+          a, ", ",
+          [](std::string* out, const std::pair<std::string, std::string>& kv) {
+            out->append(
+                absl::StrCat("\"", kv.first, "\": \"", kv.second, "\""));
+          }),
+      "}");
+}
+
+bool MetadataEquivalent(Metadata a, Metadata b) {
+  std::sort(a.begin(), a.end());
+  std::sort(b.begin(), b.end());
+  return a == b;
+}
+
 // Matches with transactions having the desired flag, method_ref,
 // initial_metadata, and message_data.
 MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
            "") {
   if (arg.GetFlags() != flag) return false;
   if (flag & kFlagPrefix) {
-    if (arg.GetMethodRef() != method_ref) return false;
-    if (arg.GetPrefixMetadata() != initial_metadata) return false;
+    if (arg.GetMethodRef() != method_ref) {
+      printf("METHOD REF NOT EQ: %s %s\n",
+             std::string(arg.GetMethodRef()).c_str(),
+             std::string(method_ref).c_str());
+      return false;
+    }
+    if (!MetadataEquivalent(arg.GetPrefixMetadata(), initial_metadata)) {
+      printf("METADATA NOT EQUIVALENT: %s %s\n",
+             MetadataString(arg.GetPrefixMetadata()).c_str(),
+             MetadataString(initial_metadata).c_str());
+      return false;
+    }
   }
   if (flag & kFlagMessageData) {
     if (arg.GetMessageData() != message_data) return false;
@@ -181,33 +209,24 @@ void VerifyMetadataEqual(const Metadata& md,
                          const grpc_metadata_batch& grpc_md) {
   MetadataEncoder encoder;
   grpc_md.Encode(&encoder);
-  EXPECT_EQ(encoder.metadata(), md);
+  EXPECT_TRUE(MetadataEquivalent(encoder.metadata(), md));
 }
 
 // RAII helper classes for constructing gRPC metadata and receiving callbacks.
 struct MakeSendInitialMetadata {
   MakeSendInitialMetadata(const Metadata& initial_metadata,
                           const std::string& method_ref,
-                          grpc_transport_stream_op_batch* op)
-      : storage(initial_metadata.size()) {
-    size_t i = 0;
+                          grpc_transport_stream_op_batch* op) {
     for (const auto& md : initial_metadata) {
       const std::string& key = md.first;
       const std::string& value = md.second;
-      EXPECT_EQ(grpc_metadata_batch_add_tail(
-                    &grpc_initial_metadata, &storage[i],
-                    grpc_mdelem_from_slices(grpc_slice_from_cpp_string(key),
-                                            grpc_slice_from_cpp_string(value))),
-                GRPC_ERROR_NONE);
-      i++;
+      grpc_initial_metadata.Append(
+          key, grpc_core::Slice::FromCopiedString(value),
+          [](absl::string_view, const grpc_core::Slice&) { abort(); });
     }
     if (!method_ref.empty()) {
-      EXPECT_EQ(
-          grpc_metadata_batch_add_tail(
-              &grpc_initial_metadata, &method_ref_storage,
-              grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
-                                      grpc_slice_from_cpp_string(method_ref))),
-          GRPC_ERROR_NONE);
+      grpc_initial_metadata.Set(grpc_core::HttpPathMetadata(),
+                                grpc_core::Slice::FromCopiedString(method_ref));
     }
     op->send_initial_metadata = true;
     op->payload->send_initial_metadata.send_initial_metadata =
@@ -215,8 +234,6 @@ struct MakeSendInitialMetadata {
   }
   ~MakeSendInitialMetadata() {}
 
-  std::vector<grpc_linked_mdelem> storage;
-  grpc_linked_mdelem method_ref_storage;
   grpc_core::ScopedArenaPtr arena =
       grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};

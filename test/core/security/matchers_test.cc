@@ -99,6 +99,14 @@ TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
   EXPECT_FALSE(string_matcher->Match("test-regex"));
 }
 
+TEST(StringMatcherTest, PresenceMatchUsingSafeRegex) {
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                                              /*matcher=*/".+");
+  ASSERT_TRUE(string_matcher.ok());
+  EXPECT_TRUE(string_matcher->Match("any-value"));
+  EXPECT_FALSE(string_matcher->Match(""));
+}
+
 TEST(StringMatcherTest, ContainsMatchCaseSensitive) {
   auto string_matcher = StringMatcher::Create(StringMatcher::Type::kContains,
                                               /*matcher=*/"contains",
