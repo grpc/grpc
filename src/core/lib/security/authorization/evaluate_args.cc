@@ -101,13 +101,13 @@ absl::string_view EvaluateArgs::GetHost() const {
 }
 
 absl::string_view EvaluateArgs::GetAuthority() const {
-  absl::string_view host;
+  absl::string_view authority;
   if (metadata_ != nullptr) {
-    if (auto* host_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
-      host = host_md->as_string_view();
+    if (auto* authority_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
+      authority = authority_md->as_string_view();
     }
   }
-  return host;
+  return authority;
 }
 
 absl::string_view EvaluateArgs::GetMethod() const {
