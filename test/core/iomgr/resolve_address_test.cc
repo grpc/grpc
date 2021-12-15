@@ -41,6 +41,8 @@
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/test_config.h"
 
+ABSL_FLAG(std::string, resolver_type, "", "DNS resolver type (ares or native)");
+
 namespace {
 
 grpc_millis NSecDeadline(int seconds) {
@@ -190,6 +192,9 @@ TEST_P(ResolveAddressTest, DefaultPort) {
 }
 
 TEST_P(ResolveAddressTest, LocalhostResultHasIPv6First) {
+  if (absl::GetFlag(resolver_type) != "ares") {
+    GTEST_SKIP() << "this test is only valid with the c-ares resolver;
+  }
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
       "localhost:1", nullptr, pollset_set_,
@@ -228,6 +233,9 @@ const address_sorting_source_addr_factory_vtable
 }  // namespace
 
 TEST_P(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
+  if (absl::GetFlag(resolver_type) != "ares") {
+    GTEST_SKIP() << "this test is only valid with the c-ares resolver;
+  }
   // Mock the kernel source address selection. Note that source addr factory
   // is reset to its default value during grpc initialization for each test.
   address_sorting_source_addr_factory* factory =
@@ -382,52 +390,22 @@ TEST_P(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
 }
 
 int main(int argc, char** argv) {
-  // First set the resolver type based off of --resolver
-  const char* resolver_type = nullptr;
-  gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
-  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
-                         &resolver_type);
-  // In case that there are more than one argument on the command line,
-  // --resolver will always be the first one, so only parse the first argument
-  // (other arguments may be unknown to cl)
-  gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
             resolver.get());
   }
-  if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
+  if (resolver_type == "native") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-  } else if (resolver_type != nullptr &&
-             gpr_stricmp(resolver_type, "ares") == 0) {
+  } else if (resolver_type == "ares") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();
   }
-  gpr_cmdline_destroy(cl);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
   const auto result = RUN_ALL_TESTS();
   return result;
-  // Run the test.
-  grpc::testing::TestEnvironment env(argc, argv);
-  // The following test uses
-  // "address_sorting_override_source_addr_factory_for_testing", which works
-  // on a per-grpc-init basis, and so it's simplest to run this next test
-  // within a standalone grpc_init/grpc_shutdown pair.
-  if (gpr_stricmp(resolver_type, "ares") == 0) {
-    // Run a test case in which c-ares's address sorter
-    // thinks that IPv4 is available and IPv6 isn't.
-    grpc_init();
-    mock_ipv6_disabled_source_addr_factory* factory =
-        static_cast<mock_ipv6_disabled_source_addr_factory*>(
-            gpr_malloc(sizeof(mock_ipv6_disabled_source_addr_factory)));
-    factory->base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
-    address_sorting_override_source_addr_factory_for_testing(&factory->base);
-    test_localhost_result_has_ipv4_first_when_ipv6_isnt_available();
-    grpc_shutdown();
-  }
-  return 0;
 }
