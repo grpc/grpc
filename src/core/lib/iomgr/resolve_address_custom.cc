@@ -50,8 +50,8 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::CustomDNSResolver::CustomDNSRequest* request =
-      grpc_core::CustomDNSResolver::CustomDNSRequest::FromC(resolver);
+  grpc_core::CustomDNSResolver::Request* request =
+      grpc_core::CustomDNSResolver::Request::FromC(resolver);
   if (error != GRPC_ERROR_NONE) {
     request->ResolveCallback(grpc_error_to_absl_status(error));
   } else {
@@ -100,7 +100,7 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
 
 }  // namespace
 
-void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
+void CustomDNSResolver::Request::ResolveCallback(
     absl::StatusOr<std::vector<grpc_resolved_address>> result) {
   if (!result.ok()) {
     auto numeric_port_or = NamedPortToNumeric(port_);
@@ -169,7 +169,7 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   return error_result;
 }
 
-void CustomDNSResolver::CustomDNSRequest::Start() {
+void CustomDNSResolver::Request::Start() {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   absl::Status parse_status =
       TrySplitHostPort(name_, default_port_, &host_, &port_);

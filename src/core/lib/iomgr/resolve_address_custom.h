@@ -49,7 +49,7 @@ typedef struct grpc_custom_resolver_vtable {
 
 // TODO(apolcyn): as a part of converting this API to C++,
 // callers of \a grpc_custom_resolve_callback could instead just invoke
-// CustomDNSResolver::CustomDNSRequest::ResolveCallback directly.
+// CustomDNSResolver::Request::ResolveCallback directly.
 void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error);
@@ -60,11 +60,10 @@ namespace grpc_core {
 
 class CustomDNSResolver : public DNSResolver {
  public:
-  class CustomDNSRequest
-      : public DNSResolver::Request,
-        public CppImplOf<CustomDNSRequest, grpc_custom_resolver> {
+  class Request : public DNSResolver::Request,
+                  public CppImplOf<Request, grpc_custom_resolver> {
    public:
-    CustomDNSRequest(
+    Request(
         absl::string_view name, absl::string_view default_port,
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_done,
@@ -105,8 +104,8 @@ class CustomDNSResolver : public DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override {
-    return MakeOrphanable<CustomDNSRequest>(
-        name, default_port, std::move(on_done), resolve_address_vtable_);
+    return MakeOrphanable<Request>(name, default_port, std::move(on_done),
+                                   resolve_address_vtable_);
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
