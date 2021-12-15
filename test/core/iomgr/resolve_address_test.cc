@@ -58,10 +58,8 @@ grpc_millis NSecDeadline(int seconds) {
 class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
  public:
   ResolveAddressTest() {
-    fprintf(stderr, "ResolveAddressTest ctor\n");
     grpc_init();
     grpc_core::ExecCtx exec_ctx;
-    gpr_event_init(&ev_);
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
     pollset_set_ = grpc_pollset_set_create();
@@ -70,9 +68,7 @@ class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
   }
 
   ~ResolveAddressTest() {
-    fprintf(stderr, "ResolveAddressTest dtor\n");
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(gpr_event_wait(&ev_, grpc_timeout_seconds_to_deadline(100)));
     grpc_pollset_set_del_pollset(pollset_set_, pollset_);
     grpc_pollset_set_destroy(pollset_set_);
     grpc_closure do_nothing_cb;
@@ -109,8 +105,6 @@ class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
                                                             NSecDeadline(1)));
       }
     }
-    fprintf(stderr, "setting ev_ to 1\n");
-    gpr_event_set(&ev_, reinterpret_cast<void*>(1));
   }
 
   void MustSucceed(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
@@ -169,7 +163,6 @@ class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(pollset_, nullptr));
   }
 
-  gpr_event ev_;
   gpr_mu* mu_;
   bool done_ = false;      // guarded by mu
   grpc_pollset* pollset_;  // guarded by mu
@@ -311,7 +304,6 @@ INSTANTIATE_TEST_SUITE_P(IPv6WithoutPort, IPv6WithoutPort,
 class InvalidIPAddresses : public ResolveAddressTest {};
 
 TEST_P(InvalidIPAddresses, InvalidIPAddresses) {
-  fprintf(stderr, "GetParam(): %s\n", GetParam());
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
       GetParam(), nullptr, pollset_set(),
@@ -377,6 +369,10 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
 }  // namespace
 
 TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
+  if (absl::GetFlag(FLAGS_resolver) != "ares") {
+    GTEST_SKIP() << "the native resolver doesn't support cancellation, so we "
+                    "can only test this with c-ares";
+  }
   // Inject an unresponsive DNS server into the resolver's DNS server config
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
