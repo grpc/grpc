@@ -3963,30 +3963,34 @@ targets:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc_test_util
-- name: resolve_address_using_ares_resolver_test
+- name: resolve_address_using_ares_resolver_posix_test
   build: test
   language: c
-  headers:
-  - test/core/util/fake_udp_and_tcp_server.h
+  headers: []
   src:
-  - test/core/iomgr/resolve_address_test.cc
-  - test/core/util/fake_udp_and_tcp_server.cc
+  - test/core/iomgr/resolve_address_posix_test.cc
   deps:
   - grpc_test_util
   args:
   - --resolver=ares
-- name: resolve_address_using_native_resolver_test
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: resolve_address_using_native_resolver_posix_test
   build: test
   language: c
-  headers:
-  - test/core/util/fake_udp_and_tcp_server.h
+  headers: []
   src:
-  - test/core/iomgr/resolve_address_test.cc
-  - test/core/util/fake_udp_and_tcp_server.cc
+  - test/core/iomgr/resolve_address_posix_test.cc
   deps:
   - grpc_test_util
   args:
   - --resolver=native
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: secure_channel_create_test
   build: test
   language: c
@@ -7319,38 +7323,34 @@ targets:
   - linux
   - posix
   - mac
-- name: resolve_address_using_ares_resolver_posix_test
+- name: resolve_address_using_ares_resolver_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
   src:
-  - test/core/iomgr/resolve_address_posix_test.cc
+  - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - absl/flags:flag
   - grpc_test_util
   args:
   - --resolver=ares
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: resolve_address_using_native_resolver_posix_test
+- name: resolve_address_using_native_resolver_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
   src:
-  - test/core/iomgr/resolve_address_posix_test.cc
+  - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - absl/flags:flag
   - grpc_test_util
   args:
   - --resolver=native
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: resource_quota_test
   gtest: true
   build: test

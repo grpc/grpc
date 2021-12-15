@@ -612,17 +612,30 @@ retry_throttle_test/fast:
 .PHONY : retry_throttle_test/fast
 
 #=============================================================================
-# Target rules for targets named resolve_address_using_ares_resolver_posix_test
+# Target rules for targets named resolve_address_using_native_resolver_test
 
 # Build rule for target.
-resolve_address_using_ares_resolver_posix_test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 resolve_address_using_ares_resolver_posix_test
-.PHONY : resolve_address_using_ares_resolver_posix_test
+resolve_address_using_native_resolver_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 resolve_address_using_native_resolver_test
+.PHONY : resolve_address_using_native_resolver_test
 
 # fast build rule for target.
-resolve_address_using_ares_resolver_posix_test/fast:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build
-.PHONY : resolve_address_using_ares_resolver_posix_test/fast
+resolve_address_using_native_resolver_test/fast:
+	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/build
+.PHONY : resolve_address_using_native_resolver_test/fast
+
+#=============================================================================
+# Target rules for targets named resolve_address_using_ares_resolver_test
+
+# Build rule for target.
+resolve_address_using_ares_resolver_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 resolve_address_using_ares_resolver_test
+.PHONY : resolve_address_using_ares_resolver_test
+
+# fast build rule for target.
+resolve_address_using_ares_resolver_test/fast:
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/build
+.PHONY : resolve_address_using_ares_resolver_test/fast
 
 #=============================================================================
 # Target rules for targets named remove_stream_from_stalled_lists_test
@@ -1457,30 +1470,17 @@ timer_list_test/fast:
 .PHONY : timer_list_test/fast
 
 #=============================================================================
-# Target rules for targets named resolve_address_using_ares_resolver_test
+# Target rules for targets named resolve_address_using_ares_resolver_posix_test
 
 # Build rule for target.
-resolve_address_using_ares_resolver_test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 resolve_address_using_ares_resolver_test
-.PHONY : resolve_address_using_ares_resolver_test
+resolve_address_using_ares_resolver_posix_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 resolve_address_using_ares_resolver_posix_test
+.PHONY : resolve_address_using_ares_resolver_posix_test
 
 # fast build rule for target.
-resolve_address_using_ares_resolver_test/fast:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/build
-.PHONY : resolve_address_using_ares_resolver_test/fast
-
-#=============================================================================
-# Target rules for targets named grpc_php_plugin
-
-# Build rule for target.
-grpc_php_plugin: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 grpc_php_plugin
-.PHONY : grpc_php_plugin
-
-# fast build rule for target.
-grpc_php_plugin/fast:
-	$(MAKE) -f CMakeFiles/grpc_php_plugin.dir/build.make CMakeFiles/grpc_php_plugin.dir/build
-.PHONY : grpc_php_plugin/fast
+resolve_address_using_ares_resolver_posix_test/fast:
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build
+.PHONY : resolve_address_using_ares_resolver_posix_test/fast
 
 #=============================================================================
 # Target rules for targets named xds_interop_server
@@ -1572,6 +1572,19 @@ hybrid_end2end_test: cmake_check_build_system
 hybrid_end2end_test/fast:
 	$(MAKE) -f CMakeFiles/hybrid_end2end_test.dir/build.make CMakeFiles/hybrid_end2end_test.dir/build
 .PHONY : hybrid_end2end_test/fast
+
+#=============================================================================
+# Target rules for targets named grpc_php_plugin
+
+# Build rule for target.
+grpc_php_plugin: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 grpc_php_plugin
+.PHONY : grpc_php_plugin
+
+# fast build rule for target.
+grpc_php_plugin/fast:
+	$(MAKE) -f CMakeFiles/grpc_php_plugin.dir/build.make CMakeFiles/grpc_php_plugin.dir/build
+.PHONY : grpc_php_plugin/fast
 
 #=============================================================================
 # Target rules for targets named histogram_test
@@ -2898,19 +2911,6 @@ async_end2end_test: cmake_check_build_system
 async_end2end_test/fast:
 	$(MAKE) -f CMakeFiles/async_end2end_test.dir/build.make CMakeFiles/async_end2end_test.dir/build
 .PHONY : async_end2end_test/fast
-
-#=============================================================================
-# Target rules for targets named resolve_address_using_native_resolver_test
-
-# Build rule for target.
-resolve_address_using_native_resolver_test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 resolve_address_using_native_resolver_test
-.PHONY : resolve_address_using_native_resolver_test
-
-# fast build rule for target.
-resolve_address_using_native_resolver_test/fast:
-	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/build
-.PHONY : resolve_address_using_native_resolver_test/fast
 
 #=============================================================================
 # Target rules for targets named check_gcp_environment_linux_test
@@ -40636,8 +40636,8 @@ test/core/iomgr/resolve_address_test.o: test/core/iomgr/resolve_address_test.cc.
 
 # target to build an object file
 test/core/iomgr/resolve_address_test.cc.o:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.o
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.o
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.o
 .PHONY : test/core/iomgr/resolve_address_test.cc.o
 
 test/core/iomgr/resolve_address_test.i: test/core/iomgr/resolve_address_test.cc.i
@@ -40646,8 +40646,8 @@ test/core/iomgr/resolve_address_test.i: test/core/iomgr/resolve_address_test.cc.
 
 # target to preprocess a source file
 test/core/iomgr/resolve_address_test.cc.i:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.i
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.i
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.i
 .PHONY : test/core/iomgr/resolve_address_test.cc.i
 
 test/core/iomgr/resolve_address_test.s: test/core/iomgr/resolve_address_test.cc.s
@@ -40656,8 +40656,8 @@ test/core/iomgr/resolve_address_test.s: test/core/iomgr/resolve_address_test.cc.
 
 # target to generate assembly for a file
 test/core/iomgr/resolve_address_test.cc.s:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.s
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.s
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/iomgr/resolve_address_test.cc.s
 .PHONY : test/core/iomgr/resolve_address_test.cc.s
 
 test/core/iomgr/socket_utils_test.o: test/core/iomgr/socket_utils_test.cc.o
@@ -44617,8 +44617,8 @@ test/core/util/fake_udp_and_tcp_server.o: test/core/util/fake_udp_and_tcp_server
 
 # target to build an object file
 test/core/util/fake_udp_and_tcp_server.cc.o:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
 	$(MAKE) -f CMakeFiles/cancel_ares_query_test.dir/build.make CMakeFiles/cancel_ares_query_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
 	$(MAKE) -f CMakeFiles/alts_concurrent_connectivity_test.dir/build.make CMakeFiles/alts_concurrent_connectivity_test.dir/test/core/util/fake_udp_and_tcp_server.cc.o
 .PHONY : test/core/util/fake_udp_and_tcp_server.cc.o
@@ -44629,8 +44629,8 @@ test/core/util/fake_udp_and_tcp_server.i: test/core/util/fake_udp_and_tcp_server
 
 # target to preprocess a source file
 test/core/util/fake_udp_and_tcp_server.cc.i:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
 	$(MAKE) -f CMakeFiles/cancel_ares_query_test.dir/build.make CMakeFiles/cancel_ares_query_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
 	$(MAKE) -f CMakeFiles/alts_concurrent_connectivity_test.dir/build.make CMakeFiles/alts_concurrent_connectivity_test.dir/test/core/util/fake_udp_and_tcp_server.cc.i
 .PHONY : test/core/util/fake_udp_and_tcp_server.cc.i
@@ -44641,8 +44641,8 @@ test/core/util/fake_udp_and_tcp_server.s: test/core/util/fake_udp_and_tcp_server
 
 # target to generate assembly for a file
 test/core/util/fake_udp_and_tcp_server.cc.s:
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
 	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
 	$(MAKE) -f CMakeFiles/cancel_ares_query_test.dir/build.make CMakeFiles/cancel_ares_query_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
 	$(MAKE) -f CMakeFiles/alts_concurrent_connectivity_test.dir/build.make CMakeFiles/alts_concurrent_connectivity_test.dir/test/core/util/fake_udp_and_tcp_server.cc.s
 .PHONY : test/core/util/fake_udp_and_tcp_server.cc.s
@@ -48957,7 +48957,8 @@ third_party/googletest/googlemock/src/gmock-all.cc.o:
 	$(MAKE) -f CMakeFiles/server_builder_plugin_test.dir/build.make CMakeFiles/server_builder_plugin_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/secure_auth_context_test.dir/build.make CMakeFiles/secure_auth_context_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/retry_throttle_test.dir/build.make CMakeFiles/retry_throttle_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
+	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/remove_stream_from_stalled_lists_test.dir/build.make CMakeFiles/remove_stream_from_stalled_lists_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/ref_counted_test.dir/build.make CMakeFiles/ref_counted_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/ref_counted_ptr_test.dir/build.make CMakeFiles/ref_counted_ptr_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
@@ -49025,7 +49026,6 @@ third_party/googletest/googlemock/src/gmock-all.cc.o:
 	$(MAKE) -f CMakeFiles/server_builder_test.dir/build.make CMakeFiles/server_builder_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/channel_arguments_test.dir/build.make CMakeFiles/channel_arguments_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/orphanable_test.dir/build.make CMakeFiles/orphanable_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
-	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/binder_server_test.dir/build.make CMakeFiles/binder_server_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/client_lb_end2end_test.dir/build.make CMakeFiles/client_lb_end2end_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
 	$(MAKE) -f CMakeFiles/status_helper_test.dir/build.make CMakeFiles/status_helper_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.o
@@ -49179,7 +49179,8 @@ third_party/googletest/googlemock/src/gmock-all.cc.i:
 	$(MAKE) -f CMakeFiles/server_builder_plugin_test.dir/build.make CMakeFiles/server_builder_plugin_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/secure_auth_context_test.dir/build.make CMakeFiles/secure_auth_context_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/retry_throttle_test.dir/build.make CMakeFiles/retry_throttle_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
+	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/remove_stream_from_stalled_lists_test.dir/build.make CMakeFiles/remove_stream_from_stalled_lists_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/ref_counted_test.dir/build.make CMakeFiles/ref_counted_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/ref_counted_ptr_test.dir/build.make CMakeFiles/ref_counted_ptr_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
@@ -49247,7 +49248,6 @@ third_party/googletest/googlemock/src/gmock-all.cc.i:
 	$(MAKE) -f CMakeFiles/server_builder_test.dir/build.make CMakeFiles/server_builder_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/channel_arguments_test.dir/build.make CMakeFiles/channel_arguments_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/orphanable_test.dir/build.make CMakeFiles/orphanable_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
-	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/binder_server_test.dir/build.make CMakeFiles/binder_server_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/client_lb_end2end_test.dir/build.make CMakeFiles/client_lb_end2end_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
 	$(MAKE) -f CMakeFiles/status_helper_test.dir/build.make CMakeFiles/status_helper_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.i
@@ -49401,7 +49401,8 @@ third_party/googletest/googlemock/src/gmock-all.cc.s:
 	$(MAKE) -f CMakeFiles/server_builder_plugin_test.dir/build.make CMakeFiles/server_builder_plugin_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/secure_auth_context_test.dir/build.make CMakeFiles/secure_auth_context_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/retry_throttle_test.dir/build.make CMakeFiles/retry_throttle_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
+	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/remove_stream_from_stalled_lists_test.dir/build.make CMakeFiles/remove_stream_from_stalled_lists_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/ref_counted_test.dir/build.make CMakeFiles/ref_counted_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/ref_counted_ptr_test.dir/build.make CMakeFiles/ref_counted_ptr_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
@@ -49469,7 +49470,6 @@ third_party/googletest/googlemock/src/gmock-all.cc.s:
 	$(MAKE) -f CMakeFiles/server_builder_test.dir/build.make CMakeFiles/server_builder_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/channel_arguments_test.dir/build.make CMakeFiles/channel_arguments_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/orphanable_test.dir/build.make CMakeFiles/orphanable_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
-	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/binder_server_test.dir/build.make CMakeFiles/binder_server_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/client_lb_end2end_test.dir/build.make CMakeFiles/client_lb_end2end_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
 	$(MAKE) -f CMakeFiles/status_helper_test.dir/build.make CMakeFiles/status_helper_test.dir/third_party/googletest/googlemock/src/gmock-all.cc.s
@@ -49623,7 +49623,8 @@ third_party/googletest/googletest/src/gtest-all.cc.o:
 	$(MAKE) -f CMakeFiles/server_builder_plugin_test.dir/build.make CMakeFiles/server_builder_plugin_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/secure_auth_context_test.dir/build.make CMakeFiles/secure_auth_context_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/retry_throttle_test.dir/build.make CMakeFiles/retry_throttle_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
+	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/remove_stream_from_stalled_lists_test.dir/build.make CMakeFiles/remove_stream_from_stalled_lists_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/ref_counted_test.dir/build.make CMakeFiles/ref_counted_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/ref_counted_ptr_test.dir/build.make CMakeFiles/ref_counted_ptr_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
@@ -49691,7 +49692,6 @@ third_party/googletest/googletest/src/gtest-all.cc.o:
 	$(MAKE) -f CMakeFiles/server_builder_test.dir/build.make CMakeFiles/server_builder_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/channel_arguments_test.dir/build.make CMakeFiles/channel_arguments_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/orphanable_test.dir/build.make CMakeFiles/orphanable_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
-	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/binder_server_test.dir/build.make CMakeFiles/binder_server_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/client_lb_end2end_test.dir/build.make CMakeFiles/client_lb_end2end_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
 	$(MAKE) -f CMakeFiles/status_helper_test.dir/build.make CMakeFiles/status_helper_test.dir/third_party/googletest/googletest/src/gtest-all.cc.o
@@ -49845,7 +49845,8 @@ third_party/googletest/googletest/src/gtest-all.cc.i:
 	$(MAKE) -f CMakeFiles/server_builder_plugin_test.dir/build.make CMakeFiles/server_builder_plugin_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/secure_auth_context_test.dir/build.make CMakeFiles/secure_auth_context_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/retry_throttle_test.dir/build.make CMakeFiles/retry_throttle_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
+	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/remove_stream_from_stalled_lists_test.dir/build.make CMakeFiles/remove_stream_from_stalled_lists_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/ref_counted_test.dir/build.make CMakeFiles/ref_counted_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/ref_counted_ptr_test.dir/build.make CMakeFiles/ref_counted_ptr_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
@@ -49913,7 +49914,6 @@ third_party/googletest/googletest/src/gtest-all.cc.i:
 	$(MAKE) -f CMakeFiles/server_builder_test.dir/build.make CMakeFiles/server_builder_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/channel_arguments_test.dir/build.make CMakeFiles/channel_arguments_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/orphanable_test.dir/build.make CMakeFiles/orphanable_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
-	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/binder_server_test.dir/build.make CMakeFiles/binder_server_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/client_lb_end2end_test.dir/build.make CMakeFiles/client_lb_end2end_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
 	$(MAKE) -f CMakeFiles/status_helper_test.dir/build.make CMakeFiles/status_helper_test.dir/third_party/googletest/googletest/src/gtest-all.cc.i
@@ -50067,7 +50067,8 @@ third_party/googletest/googletest/src/gtest-all.cc.s:
 	$(MAKE) -f CMakeFiles/server_builder_plugin_test.dir/build.make CMakeFiles/server_builder_plugin_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/secure_auth_context_test.dir/build.make CMakeFiles/secure_auth_context_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/retry_throttle_test.dir/build.make CMakeFiles/retry_throttle_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
-	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_posix_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
+	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
+	$(MAKE) -f CMakeFiles/resolve_address_using_ares_resolver_test.dir/build.make CMakeFiles/resolve_address_using_ares_resolver_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/remove_stream_from_stalled_lists_test.dir/build.make CMakeFiles/remove_stream_from_stalled_lists_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/ref_counted_test.dir/build.make CMakeFiles/ref_counted_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/ref_counted_ptr_test.dir/build.make CMakeFiles/ref_counted_ptr_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
@@ -50135,7 +50136,6 @@ third_party/googletest/googletest/src/gtest-all.cc.s:
 	$(MAKE) -f CMakeFiles/server_builder_test.dir/build.make CMakeFiles/server_builder_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/channel_arguments_test.dir/build.make CMakeFiles/channel_arguments_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/orphanable_test.dir/build.make CMakeFiles/orphanable_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
-	$(MAKE) -f CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/build.make CMakeFiles/resolve_address_using_native_resolver_posix_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/binder_server_test.dir/build.make CMakeFiles/binder_server_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/client_lb_end2end_test.dir/build.make CMakeFiles/client_lb_end2end_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
 	$(MAKE) -f CMakeFiles/status_helper_test.dir/build.make CMakeFiles/status_helper_test.dir/third_party/googletest/googletest/src/gtest-all.cc.s
@@ -50561,7 +50561,8 @@ help:
 	@echo "... server_builder_plugin_test"
 	@echo "... secure_auth_context_test"
 	@echo "... retry_throttle_test"
-	@echo "... resolve_address_using_ares_resolver_posix_test"
+	@echo "... resolve_address_using_native_resolver_test"
+	@echo "... resolve_address_using_ares_resolver_test"
 	@echo "... remove_stream_from_stalled_lists_test"
 	@echo "... ref_counted_test"
 	@echo "... ref_counted_ptr_test"
@@ -50627,8 +50628,7 @@ help:
 	@echo "... mpscq_test"
 	@echo "... slice_string_helpers_test"
 	@echo "... timer_list_test"
-	@echo "... resolve_address_using_ares_resolver_test"
-	@echo "... grpc_php_plugin"
+	@echo "... resolve_address_using_ares_resolver_posix_test"
 	@echo "... xds_interop_server"
 	@echo "... settings_timeout_test"
 	@echo "... race_test"
@@ -50636,6 +50636,7 @@ help:
 	@echo "... alts_counter_test"
 	@echo "... global_config_env_test"
 	@echo "... hybrid_end2end_test"
+	@echo "... grpc_php_plugin"
 	@echo "... histogram_test"
 	@echo "... tcp_posix_test"
 	@echo "... handshake_server_with_readahead_handshaker_test"
@@ -50739,7 +50740,6 @@ help:
 	@echo "... algorithm_test"
 	@echo "... bin_decoder_test"
 	@echo "... async_end2end_test"
-	@echo "... resolve_address_using_native_resolver_test"
 	@echo "... check_gcp_environment_linux_test"
 	@echo "... buildtests_c"
 	@echo "... alloc_test"

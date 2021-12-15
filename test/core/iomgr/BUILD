@@ -221,6 +221,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -241,6 +242,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
