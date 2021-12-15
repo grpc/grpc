@@ -100,6 +100,16 @@ absl::string_view EvaluateArgs::GetHost() const {
   return host;
 }
 
+absl::string_view EvaluateArgs::GetAuthority() const {
+  absl::string_view host;
+  if (metadata_ != nullptr) {
+    if (auto* host_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
+      host = host_md->as_string_view();
+    }
+  }
+  return host;
+}
+
 absl::string_view EvaluateArgs::GetMethod() const {
   if (metadata_ != nullptr) {
     auto method_md = metadata_->get(HttpMethodMetadata());
@@ -120,7 +130,7 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   }
   if (absl::EqualsIgnoreCase(key, "host")) {
     // Maps legacy host header to :authority.
-    return metadata_->GetValue(":authority", concatenated_value);
+    return GetAuthority();
   }
   return metadata_->GetValue(key, concatenated_value);
 }
