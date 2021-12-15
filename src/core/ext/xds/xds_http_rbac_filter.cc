@@ -268,7 +268,7 @@ absl::StatusOr<Json> ParsePermissionToJson(
     if (!requested_server_name_json.ok()) {
       return requested_server_name_json;
     }
-    permission_json.emplace("requestedServerNameJson",
+    permission_json.emplace("requestedServerName",
                             std::move(*requested_server_name_json));
   } else {
     return absl::InvalidArgumentError("Permission: Invalid rule");

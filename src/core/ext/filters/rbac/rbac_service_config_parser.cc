@@ -48,14 +48,15 @@ absl::StatusOr<HeaderMatcher> ParseHeaderMatcher(
   int64_t start = 0;
   int64_t end = 0;
   bool present_match = false;
-  bool invert_match;
+  bool invert_match = false;
   ParseJsonObjectField(header_matcher_json, "invertMatch", &invert_match,
-                       error_list);
+                       error_list, /*required=*/false);
   if (ParseJsonObjectField(header_matcher_json, "exactMatch", &match,
-                           error_list)) {
+                           error_list, /*required=*/false)) {
     type = HeaderMatcher::Type::kExact;
   } else if (ParseJsonObjectField(header_matcher_json, "safeRegexMatch",
-                                  &inner_json, error_list)) {
+                                  &inner_json, error_list,
+                                  /*required=*/false)) {
     type = HeaderMatcher::Type::kSafeRegex;
     std::vector<grpc_error_handle> safe_regex_matcher_error_list;
     match = ParseRegexMatcher(*inner_json, &safe_regex_matcher_error_list);
@@ -64,7 +65,8 @@ absl::StatusOr<HeaderMatcher> ParseHeaderMatcher(
           "safeRegexMatch", &safe_regex_matcher_error_list));
     }
   } else if (ParseJsonObjectField(header_matcher_json, "rangeMatch",
-                                  &inner_json, error_list)) {
+                                  &inner_json, error_list,
+                                  /*required=*/false)) {
     type = HeaderMatcher::Type::kRange;
     std::vector<grpc_error_handle> range_error_list;
     ParseJsonObjectField(*inner_json, "start", &start, &range_error_list);
@@ -74,19 +76,20 @@ absl::StatusOr<HeaderMatcher> ParseHeaderMatcher(
           GRPC_ERROR_CREATE_FROM_VECTOR("rangeMatch", &range_error_list));
     }
   } else if (ParseJsonObjectField(header_matcher_json, "presentMatch",
-                                  &present_match, error_list)) {
+                                  &present_match, error_list,
+                                  /*required=*/false)) {
     type = HeaderMatcher::Type::kPresent;
   } else if (ParseJsonObjectField(header_matcher_json, "prefixMatch", &match,
-                                  error_list)) {
+                                  error_list, /*required=*/false)) {
     type = HeaderMatcher::Type::kPrefix;
   } else if (ParseJsonObjectField(header_matcher_json, "suffixMatch", &match,
-                                  error_list)) {
+                                  error_list, /*required=*/false)) {
     type = HeaderMatcher::Type::kSuffix;
   } else if (ParseJsonObjectField(header_matcher_json, "containsMatch", &match,
-                                  error_list)) {
+                                  error_list, /*required=*/false)) {
     type = HeaderMatcher::Type::kContains;
   } else {
-    return absl::InvalidArgumentError("No valid matche found");
+    return absl::InvalidArgumentError("No valid matcher found");
   }
   return HeaderMatcher::Create(name, type, match, start, end, present_match,
                                invert_match);
@@ -100,17 +103,17 @@ absl::StatusOr<StringMatcher> ParseStringMatcher(
   const Json::Object* inner_json;
   bool ignore_case = false;
   ParseJsonObjectField(string_matcher_json, "ignoreCase", &ignore_case,
-                       error_list);
+                       error_list, /*required=*/false);
   if (ParseJsonObjectField(string_matcher_json, "exact", &match, error_list)) {
     type = StringMatcher::Type::kExact;
   } else if (ParseJsonObjectField(string_matcher_json, "prefix", &match,
-                                  error_list)) {
+                                  error_list, /*required=*/false)) {
     type = StringMatcher::Type::kPrefix;
   } else if (ParseJsonObjectField(string_matcher_json, "suffix", &match,
-                                  error_list)) {
+                                  error_list, /*required=*/false)) {
     type = StringMatcher::Type::kSuffix;
   } else if (ParseJsonObjectField(string_matcher_json, "safeRegex", &inner_json,
-                                  error_list)) {
+                                  error_list, /*required=*/false)) {
     type = StringMatcher::Type::kSafeRegex;
     std::vector<grpc_error_handle> safe_regex_matcher_error_list;
     match = ParseRegexMatcher(*inner_json, &safe_regex_matcher_error_list);
@@ -119,7 +122,7 @@ absl::StatusOr<StringMatcher> ParseStringMatcher(
           "safeRegex", &safe_regex_matcher_error_list));
     }
   } else if (ParseJsonObjectField(string_matcher_json, "contains", &match,
-                                  error_list)) {
+                                  error_list, /*required=*/false)) {
     type = StringMatcher::Type::kContains;
   } else {
     return absl::InvalidArgumentError("No valid matcher found");
@@ -269,7 +272,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
       error_list->push_back(
           GRPC_ERROR_CREATE_FROM_VECTOR("notRule", &not_rule_error_list));
     }
-  } else if (ParseJsonObjectField(permission_json, "requestedServerNameJson",
+  } else if (ParseJsonObjectField(permission_json, "requestedServerName",
                                   &inner_json, error_list,
                                   /*required=*/false)) {
     std::vector<grpc_error_handle> req_server_name_error_list;
@@ -439,11 +442,11 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
                         ParsePrincipal(*inner_json, &not_rule_error_list));
     if (!not_rule_error_list.empty()) {
       error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("notRule", &not_rule_error_list));
+          GRPC_ERROR_CREATE_FROM_VECTOR("notId", &not_rule_error_list));
     }
   } else {
     error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid rule found"));
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid id found"));
   }
   return principal;
 }
@@ -506,7 +509,6 @@ Rbac ParseRbac(const Json::Object& rbac_json,
                             /*required=*/false)) {
     // No enforcing to be applied. An empty deny policy with an empty map is
     // equivalent to no enforcing.
-    // TODO(review): Verify that an empty deny policy is fine here
     return Rbac(Rbac::Action::kDeny, {});
   }
   int action;
