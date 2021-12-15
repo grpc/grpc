@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -39,9 +37,12 @@
 #include "src/core/lib/iomgr/resolve_address_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 
-struct grpc_custom_resolver {
-  grpc_core::CustomDNSResolver::CustomDNSRequest* request;
-};
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
+  if (addresses != nullptr) {
+    gpr_free(addresses->addrs);
+  }
+  gpr_free(addresses);
+}
 
 void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
@@ -49,18 +50,19 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  grpc_core::CustomDNSResolver::Request* request =
+      grpc_core::CustomDNSResolver::Request::FromC(resolver);
   if (error != GRPC_ERROR_NONE) {
-    resolver->request->ResolveCallback(grpc_error_to_absl_status(error));
+    request->ResolveCallback(grpc_error_to_absl_status(error));
   } else {
     std::vector<grpc_resolved_address> addresses;
     for (size_t i = 0; i < result->naddrs; i++) {
       addresses.push_back(result->addrs[i]);
     }
-    resolver->request->ResolveCallback(std::move(addresses));
+    request->ResolveCallback(std::move(addresses));
     grpc_resolved_addresses_destroy(result);
   }
   GRPC_ERROR_UNREF(error);
-  delete resolver;
 }
 
 namespace grpc_core {
@@ -70,7 +72,7 @@ namespace {
 absl::Status TrySplitHostPort(absl::string_view name,
                               absl::string_view default_port, std::string* host,
                               std::string* port) {
-  /* parse name, splitting it into host and port parts */
+  // parse name, splitting it into host and port parts
   SplitHostPort(name, host, port);
   if (host->empty()) {
     return absl::UnknownError(
@@ -98,15 +100,14 @@ absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
 
 }  // namespace
 
-void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
+void CustomDNSResolver::Request::ResolveCallback(
     absl::StatusOr<std::vector<grpc_resolved_address>> result) {
   if (!result.ok()) {
     auto numeric_port_or = NamedPortToNumeric(port_);
     if (numeric_port_or.ok()) {
       port_ = *numeric_port_or;
-      grpc_custom_resolver* r = new grpc_custom_resolver();
-      r->request = this;
-      resolve_address_vtable_->resolve_async(r, host_.c_str(), port_.c_str());
+      resolve_address_vtable_->resolve_async(c_ptr(), host_.c_str(),
+                                             port_.c_str());
       // keep holding ref for active resolution
       return;
     }
@@ -117,16 +118,12 @@ void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
   Unref();
 }
 
-namespace {
-CustomDNSResolver* g_custom_dns_resolver;
-}  // namespace
-
-CustomDNSResolver* CustomDNSResolver::GetOrCreate(
-    grpc_custom_resolver_vtable* resolve_address_vtable) {
-  if (g_custom_dns_resolver == nullptr) {
-    g_custom_dns_resolver = new CustomDNSResolver(resolve_address_vtable);
+CustomDNSResolver* CustomDNSResolver::GetOrCreate() {
+  static CustomDNSResolver* instance;
+  if (instance == nullptr) {
+    instance = new CustomDNSResolver();
   }
-  return g_custom_dns_resolver;
+  return instance;
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -142,7 +139,7 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
     return parse_status;
   }
 
-  /* Call getaddrinfo */
+  // Call getaddrinfo
   ExecCtx* curr = ExecCtx::Get();
   ExecCtx::Set(nullptr);
   grpc_resolved_addresses* addrs;
@@ -172,7 +169,7 @@ CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
   return error_result;
 }
 
-void CustomDNSResolver::CustomDNSRequest::Start() {
+void CustomDNSResolver::Request::Start() {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   absl::Status parse_status =
       TrySplitHostPort(name_, default_port_, &host_, &port_);
@@ -183,9 +180,7 @@ void CustomDNSResolver::CustomDNSRequest::Start() {
   }
   // Call getaddrinfo
   Ref().release();  // ref held by resolution
-  grpc_custom_resolver* r = new grpc_custom_resolver();
-  r->request = this;
-  resolve_address_vtable_->resolve_async(r, host_.c_str(), port_.c_str());
+  resolve_address_vtable_->resolve_async(c_ptr(), host_.c_str(), port_.c_str());
 }
 
 }  // namespace grpc_core

@@ -317,8 +317,8 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   if (start_fetch) {
     Ref().release();
     fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()),
-                     &pollent_, on_oauth2_token_fetcher_http_response,
-                     grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
+                 &pollent_, on_oauth2_token_fetcher_http_response,
+                 grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
   return false;
 }
@@ -375,10 +375,10 @@ class grpc_compute_engine_token_fetcher_credentials
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
  protected:
-  void fetch_oauth2(
-      grpc_credentials_metadata_request* metadata_req,
-      grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
-      grpc_millis deadline) override {
+  void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
+                    grpc_polling_entity* pollent,
+                    grpc_iomgr_cb_func response_cb,
+                    grpc_millis deadline) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_httpcli_request request;
@@ -554,10 +554,10 @@ class StsTokenFetcherCredentials
   }
 
  private:
-  void fetch_oauth2(
-      grpc_credentials_metadata_request* metadata_req,
-      grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
-      grpc_millis deadline) override {
+  void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
+                    grpc_polling_entity* pollent,
+                    grpc_iomgr_cb_func response_cb,
+                    grpc_millis deadline) override {
     char* body = nullptr;
     size_t body_length = 0;
     grpc_error_handle err = FillBody(&body, &body_length);

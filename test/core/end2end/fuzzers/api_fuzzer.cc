@@ -112,10 +112,6 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
 
 namespace {
 
-class FuzzerDNSResolver;
-
-FuzzerDNSResolver* g_dns_resolver;
-
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
  public:
   class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
@@ -160,10 +156,11 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
   // Gets the singleton instance, possibly creating it first
   static FuzzerDNSResolver* GetOrCreate() {
-    if (g_dns_resolver == nullptr) {
-      g_dns_resolver = new FuzzerDNSResolver();
+    static FuzzerDNSResolver* instance;
+    if (instance == nullptr) {
+      instance = new FuzzerDNSResolver();
     }
-    return g_dns_resolver;
+    return instance;
   }
 
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(

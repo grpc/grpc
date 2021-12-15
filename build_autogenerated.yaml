@@ -3979,18 +3979,6 @@ targets:
   - linux
   - posix
   - mac
-- name: resolve_address_using_ares_resolver_test
-  build: test
-  language: c
-  headers:
-  - test/core/util/fake_udp_and_tcp_server.h
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  - test/core/util/fake_udp_and_tcp_server.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=ares
 - name: resolve_address_using_native_resolver_posix_test
   build: test
   language: c
@@ -4005,18 +3993,6 @@ targets:
   - linux
   - posix
   - mac
-- name: resolve_address_using_native_resolver_test
-  build: test
-  language: c
-  headers:
-  - test/core/util/fake_udp_and_tcp_server.h
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  - test/core/util/fake_udp_and_tcp_server.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=native
 - name: secure_channel_create_test
   build: test
   language: c
@@ -7340,6 +7316,36 @@ targets:
   - linux
   - posix
   - mac
+- name: resolve_address_using_ares_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - absl/flags:flag
+  - grpc_test_util
+  - grpc++_test_config
+  args:
+  - --resolver=ares
+- name: resolve_address_using_native_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - absl/flags:flag
+  - grpc_test_util
+  - grpc++_test_config
+  args:
+  - --resolver=native
 - name: resource_quota_test
   gtest: true
   build: test

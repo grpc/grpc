@@ -3156,6 +3156,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/functional:bind_front",
     ],
     language = "c++",
     deps = [

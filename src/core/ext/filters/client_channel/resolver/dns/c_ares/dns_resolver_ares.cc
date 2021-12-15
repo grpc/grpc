@@ -482,10 +482,6 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   const char* scheme() const override { return "dns"; }
 };
 
-class AresDNSResolver;
-
-AresDNSResolver* g_ares_dns_resolver;
-
 class AresDNSResolver : public DNSResolver {
  public:
   class AresRequest : public DNSResolver::Request {
@@ -581,10 +577,11 @@ class AresDNSResolver : public DNSResolver {
 
   // gets the singleton instance, possibly creating it first
   static AresDNSResolver* GetOrCreate() {
-    if (g_ares_dns_resolver == nullptr) {
-      g_ares_dns_resolver = new AresDNSResolver();
+    static AresDNSResolver* instance;
+    if (instance == nullptr) {
+      instance = new AresDNSResolver();
     }
-    return g_ares_dns_resolver;
+    return instance;
   }
 
   OrphanablePtr<DNSResolver::Request> ResolveName(
@@ -598,6 +595,8 @@ class AresDNSResolver : public DNSResolver {
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
+    // TODO(apolcyn): change this to wrap the async version of the c-ares
+    // API with a promise, and remove the reference to the previous resolver.
     return default_resolver_->ResolveNameBlocking(name, default_port);
   }
 

@@ -21,6 +21,7 @@
 #include <climits>
 #include <cstring>
 
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -172,7 +173,7 @@ void NativeClientChannelDNSResolver::OnNextResolutionLocked(
 void NativeClientChannelDNSResolver::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
   work_serializer_->Run(
-      [this, &addresses_or]() { OnResolvedLocked(std::move(addresses_or)); },
+      [this, addresses_or]() { OnResolvedLocked(addresses_or); },
       DEBUG_LOCATION);
 }
 
@@ -187,9 +188,8 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(
   }
   if (addresses_or.ok()) {
     ServerAddressList addresses;
-    for (size_t i = 0; i < addresses_or->size(); ++i) {
-      addresses.emplace_back(&(*addresses_or)[i].addr, (*addresses_or)[i].len,
-                             nullptr /* args */);
+    for (auto& addr : *addresses_or) {
+      addresses.emplace_back(std::move(addr), nullptr /* args */);
     }
     Result result;
     result.addresses = std::move(addresses);
@@ -281,8 +281,7 @@ void NativeClientChannelDNSResolver::StartResolvingLocked() {
   resolving_ = true;
   dns_request_ = GetDNSResolver()->ResolveName(
       name_to_resolve_, kDefaultSecurePort, interested_parties_,
-      std::bind(&NativeClientChannelDNSResolver::OnResolved, this,
-                std::placeholders::_1));
+      absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this));
   dns_request_->Start();
   last_resolution_timestamp_ = ExecCtx::Get()->Now();
 }
