@@ -3547,19 +3547,6 @@ targets:
   - posix
   - mac
   uses_polling: false
-- name: format_request_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/format_request_test.cc
-  deps:
-  - grpc_test_util
 - name: frame_handler_test
   build: test
   language: c
@@ -5952,6 +5939,20 @@ targets:
   - absl/types:variant
   - gpr
   uses_polling: false
+- name: format_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/format_request_test.cc
+  deps:
+  - grpc_test_util
 - name: generic_end2end_test
   gtest: true
   build: test
