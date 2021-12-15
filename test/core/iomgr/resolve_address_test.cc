@@ -41,10 +41,6 @@
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/test_config.h"
 
-static gpr_timespec test_deadline(void) {
-  return grpc_timeout_seconds_to_deadline(100);
-}
-
 namespace {
 
 grpc_millis NSecDeadline(int seconds) {
@@ -52,18 +48,22 @@ grpc_millis NSecDeadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-class Args {
+class ResolveAddressTest : public ::testing::Test {
  public:
-  Args() {
+  ResolveAddressTest() {
+    grpc_init();
+    grpc_core::ExecCtx exec_ctx;
     gpr_event_init(&ev_);
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
     pollset_set_ = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set_, pollset_);
+    default_inject_config_ = grpc_ares_test_only_inject_config;
   }
 
-  ~Args() {
-    GPR_ASSERT(gpr_event_wait(&ev_, test_deadline()));
+  ~ResolveAddressTest() {
+    grpc_core::ExecCtx exec_ctx;
+    GPR_ASSERT(gpr_event_wait(&ev_, grpc_timeout_seconds_to_deadline(100)));
     grpc_pollset_set_del_pollset(pollset_set_, pollset_);
     grpc_pollset_set_destroy(pollset_set_);
     grpc_closure do_nothing_cb;
@@ -76,7 +76,13 @@ class Args {
     grpc_core::ExecCtx::Get()->Flush();
     grpc_pollset_destroy(pollset_);
     gpr_free(pollset_);
+    // reset this since it might have been altered
+    grpc_ares_test_only_inject_config = default_inject_config_;
+    grpc_shutdown();
   }
+
+ private:
+  static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
   void PollPollsetUntilRequestDone() {
     // Try to give enough time for c-ares to run through its retries
@@ -145,11 +151,6 @@ class Args {
     Finish();
   }
 
-  grpc_pollset_set* pollset_set() { return pollset_set_; }
-
- private:
-  static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
-
   void Finish() {
     grpc_core::MutexLockForGprMu lock(mu_);
     done_ = true;
@@ -161,89 +162,119 @@ class Args {
   bool done_ = false;      // guarded by mu
   grpc_pollset* pollset_;  // guarded by mu
   grpc_pollset_set* pollset_set_;
+  // the default value of grpc_ares_test_only_inject_config, which might
+  // be modified during a test
+  void (*default_inject_config_)(ares_channel channel) = nullptr;
 };
 
 }  // namespace
 
-static void test_localhost(void) {
+TEST_P(ResolveAddressTest, Localhost) {
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, args.pollset_set(),
-      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+      "localhost:1", nullptr, pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static void test_default_port(void) {
+TEST_P(ResolveAddressTest, DefaultPort) {
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost", "1", args.pollset_set(),
-      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+      "localhost", "1", pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static void test_localhost_result_has_ipv6_first(void) {
+TEST_P(ResolveAddressTest, LocalhostResultHasIPv6First) {
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, args.pollset_set(),
-      std::bind(&Args::MustSucceedWithIPv6First, &args, std::placeholders::_1));
+      "localhost:1", nullptr, pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv6First, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static void test_localhost_result_has_ipv4_first_when_ipv6_isnt_available(
-    void) {
+namespace {
+
+bool IPv6DisabledGetSourceAddr(address_sorting_source_addr_factory* /*factory*/,
+                               const address_sorting_address* dest_addr,
+                               address_sorting_address* source_addr) {
+  // Mock lack of IPv6. For IPv4, set the source addr to be the same
+  // as the destination; tests won't actually connect on the result anyways.
+  if (address_sorting_abstract_get_family(dest_addr) ==
+      ADDRESS_SORTING_AF_INET6) {
+    return false;
+  }
+  memcpy(source_addr->addr, &dest_addr->addr, dest_addr->len);
+  source_addr->len = dest_addr->len;
+  return true;
+}
+
+void DeleteSourceAddrFactory(address_sorting_source_addr_factory* factory) {
+  delete factory;
+}
+
+const address_sorting_source_addr_factory_vtable
+    kMockIpv6DisabledSourceAddrFactoryVtable = {
+        IPv6DisabledGetSourceAddr,
+        DeleteSourceAddrFactory,
+};
+
+}  // namespace
+
+TEST_P(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
+  // Mock the kernel source address selection. Note that source addr factory
+  // is reset to its default value during grpc initialization for each test.
+  address_sorting_source_addr_factory* factory =
+      new address_sorting_source_addr_factory();
+  factory->vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
+  address_sorting_override_source_addr_factory_for_testing(&factory);
+  // run the test
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, args.pollset_set(),
-      std::bind(&Args::MustSucceedWithIPv4First, &args, std::placeholders::_1));
+      "localhost:1", nullptr, pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv4First, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static void test_non_numeric_default_port(void) {
+TEST_P(ResolveAddressTest, NonNumericDefaultPort) {
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost", "http", args.pollset_set(),
-      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+      "localhost", "http", pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static void test_missing_default_port(void) {
+TEST_P(ResolveAddressTest, MissingDefaultPort) {
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost", nullptr, args.pollset_set(),
-      std::bind(&Args::MustFail, &args, std::placeholders::_1));
+      "localhost", nullptr, pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustFail, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static void test_ipv6_with_port(void) {
+TEST_P(ResolveAddressTest, IPv6WithPort) {
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "[2001:db8::1]:1", nullptr, args.pollset_set(),
-      std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+      "[2001:db8::1]:1", nullptr, pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static void test_ipv6_without_port(void) {
+TEST_P(ResolveAddressTest, IPv6WithoutPort) {
   const char* const kCases[] = {
       "2001:db8::1",
       "2001:db8::1.2.3.4",
@@ -252,17 +283,16 @@ static void test_ipv6_without_port(void) {
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
-    Args args;
     auto r = grpc_core::GetDNSResolver()->ResolveName(
-        kCases[i], "80", args.pollset_set(),
-        std::bind(&Args::MustSucceed, &args, std::placeholders::_1));
+        kCases[i], "80", pollset_set_,
+        absl::bind_front(&ResolveAddressTest::MustSucceed, this));
     r->Start();
     grpc_core::ExecCtx::Get()->Flush();
-    args.PollPollsetUntilRequestDone();
+    PollPollsetUntilRequestDone();
   }
 }
 
-static void test_invalid_ip_addresses(void) {
+TEST_P(ResolveAddressTest, InvalidIPAddresses) {
   const char* const kCases[] = {
       "293.283.1238.3:1",
       "[2001:db8::11111]:1",
@@ -270,50 +300,49 @@ static void test_invalid_ip_addresses(void) {
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
-    Args args;
     auto r = grpc_core::GetDNSResolver()->ResolveName(
-        kCases[i], nullptr, args.pollset_set(),
-        std::bind(&Args::MustFail, &args, std::placeholders::_1));
+        kCases[i], nullptr, pollset_set_,
+        absl::bind_front(&ResolveAddressTest::MustFail, this));
     r->Start();
     grpc_core::ExecCtx::Get()->Flush();
-    args.PollPollsetUntilRequestDone();
+    PollPollsetUntilRequestDone();
   }
 }
 
-static void test_unparseable_hostports(void) {
+TEST_P(ResolveAddressTest, UnparseableHostPorts) {
   const char* const kCases[] = {
       "[", "[::1", "[::1]bad", "[1.2.3.4]", "[localhost]", "[localhost]:1",
   };
   unsigned i;
   for (i = 0; i < sizeof(kCases) / sizeof(*kCases); i++) {
     grpc_core::ExecCtx exec_ctx;
-    Args args;
     auto r = grpc_core::GetDNSResolver()->ResolveName(
-        kCases[i], "1", args.pollset_set(),
-        std::bind(&Args::MustFail, &args, std::placeholders::_1));
+        kCases[i], "1", pollset_set_,
+        absl::bind_front(&ResolveAddressTest::MustFail, this));
     r->Start();
     grpc_core::ExecCtx::Get()->Flush();
-    args.PollPollsetUntilRequestDone();
+    PollPollsetUntilRequestDone();
   }
 }
 
 // Kick off a simple DNS resolution and then immediately cancel. This
 // test doesn't care what the result is, just that we don't crash etc.
-static void test_immediate_cancel(void) {
+TEST_P(ResolveAddressTest, ImmediateCancel) {
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", "1", args.pollset_set(),
-      std::bind(&Args::DontCare, &args, std::placeholders::_1));
+      "localhost:1", "1", pollset_set_,
+      absl::bind_front(&ResolveAddressTest::DontCare, this));
   r->Start();
   r.reset();  // cancel the resolution
   grpc_core::ExecCtx::Get()->Flush();
-  args.PollPollsetUntilRequestDone();
+  PollPollsetUntilRequestDone();
 }
 
-static int g_fake_non_responsive_dns_server_port;
+namespace {
 
-static void inject_non_responsive_dns_server(ares_channel channel) {
+int g_fake_non_responsive_dns_server_port;
+
+void InjectNonResponsiveDNSServer(ares_channel channel) {
   gpr_log(GPR_DEBUG,
           "Injecting broken nameserver list. Bad server address:|[::1]:%d|.",
           g_fake_non_responsive_dns_server_port);
@@ -329,63 +358,28 @@ static void inject_non_responsive_dns_server(ares_channel channel) {
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-static void test_cancel_with_non_responsive_dns_server(void) {
+}  // namespace
+
+TEST_P(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
   // Inject an unresponsive DNS server into the resolver's DNS server config
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   g_fake_non_responsive_dns_server_port = fake_dns_server.port();
-  void (*prev_test_only_inject_config)(ares_channel channel) =
-      grpc_ares_test_only_inject_config;
-  grpc_ares_test_only_inject_config = inject_non_responsive_dns_server;
+  grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the test
   grpc_core::ExecCtx exec_ctx;
-  Args args;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "foo.bar.com:1", "1", args.pollset_set(),
-      std::bind(&Args::MustFailExpectCancelledErrorMessage, &args,
-                std::placeholders::_1));
+      "foo.bar.com:1", "1", pollset_set_,
+      absl::bind_front(&ResolveAddressTest::MustFailExpectCancelledErrorMessage,
+                       this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
   r.reset();                           // cancel the resolution
   grpc_core::ExecCtx::Get()->Flush();  // let cancellation work finish
-  args.PollPollsetUntilRequestDone();
-  // reset altered global state
-  grpc_ares_test_only_inject_config = prev_test_only_inject_config;
+  PollPollsetUntilRequestDone();
 }
-
-typedef struct mock_ipv6_disabled_source_addr_factory {
-  address_sorting_source_addr_factory base;
-} mock_ipv6_disabled_source_addr_factory;
-
-static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
-    address_sorting_source_addr_factory* /*factory*/,
-    const address_sorting_address* dest_addr,
-    address_sorting_address* source_addr) {
-  // Mock lack of IPv6. For IPv4, set the source addr to be the same
-  // as the destination; tests won't actually connect on the result anyways.
-  if (address_sorting_abstract_get_family(dest_addr) ==
-      ADDRESS_SORTING_AF_INET6) {
-    return false;
-  }
-  memcpy(source_addr->addr, &dest_addr->addr, dest_addr->len);
-  source_addr->len = dest_addr->len;
-  return true;
-}
-
-void mock_ipv6_disabled_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* factory) {
-  mock_ipv6_disabled_source_addr_factory* f =
-      reinterpret_cast<mock_ipv6_disabled_source_addr_factory*>(factory);
-  gpr_free(f);
-}
-
-const address_sorting_source_addr_factory_vtable
-    kMockIpv6DisabledSourceAddrFactoryVtable = {
-        mock_ipv6_disabled_source_addr_factory_get_source_addr,
-        mock_ipv6_disabled_source_addr_factory_destroy,
-};
 
 int main(int argc, char** argv) {
   // First set the resolver type based off of --resolver
@@ -412,31 +406,13 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();
   }
+  gpr_cmdline_destroy(cl);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
+  const auto result = RUN_ALL_TESTS();
+  return result;
   // Run the test.
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
-  {
-    grpc_core::ExecCtx exec_ctx;
-    test_localhost();
-    test_default_port();
-    test_non_numeric_default_port();
-    test_missing_default_port();
-    test_ipv6_with_port();
-    test_ipv6_without_port();
-    test_invalid_ip_addresses();
-    test_unparseable_hostports();
-    test_immediate_cancel();
-    if (gpr_stricmp(resolver_type, "ares") == 0) {
-      // This behavior expectation is specific to c-ares.
-      test_localhost_result_has_ipv6_first();
-      // The native resolver doesn't support cancellation
-      // of I/O related work, so we can only test with c-ares.
-      test_cancel_with_non_responsive_dns_server();
-    }
-    grpc_core::Executor::ShutdownAll();
-  }
-  gpr_cmdline_destroy(cl);
-  grpc_shutdown();
   // The following test uses
   // "address_sorting_override_source_addr_factory_for_testing", which works
   // on a per-grpc-init basis, and so it's simplest to run this next test
