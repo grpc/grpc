@@ -23,16 +23,14 @@
 #include <limits.h>
 #include <string.h>
 
+#include <openssl/bn.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-
-extern "C" {
-#include <openssl/bn.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-}
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
