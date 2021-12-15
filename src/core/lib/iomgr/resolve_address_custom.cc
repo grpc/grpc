@@ -37,10 +37,6 @@
 #include "src/core/lib/iomgr/resolve_address_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 
-struct grpc_custom_resolver {
-  grpc_core::CustomDNSResolver::CustomDNSRequest* request;
-};
-
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
   if (addresses != nullptr) {
     gpr_free(addresses->addrs);
@@ -48,20 +44,22 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
   gpr_free(addresses);
 }
 
-void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
+void grpc_custom_resolve_callback(grpc_custom_resolver* c_resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  grpc_core::CustomDNSResolver* resolver =
+      grpc_core::CustomDNSResolver::FromC(c_resolver);
   if (error != GRPC_ERROR_NONE) {
-    resolver->request->ResolveCallback(grpc_error_to_absl_status(error));
+    resolver->ResolveCallback(grpc_error_to_absl_status(error));
   } else {
     std::vector<grpc_resolved_address> addresses;
     for (size_t i = 0; i < result->naddrs; i++) {
       addresses.push_back(result->addrs[i]);
     }
-    resolver->request->ResolveCallback(std::move(addresses));
+    resolver->ResolveCallback(std::move(addresses));
     grpc_resolved_addresses_destroy(result);
   }
   GRPC_ERROR_UNREF(error);
@@ -109,9 +107,8 @@ void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
     auto numeric_port_or = NamedPortToNumeric(port_);
     if (numeric_port_or.ok()) {
       port_ = *numeric_port_or;
-      grpc_custom_resolver* r = new grpc_custom_resolver();
-      r->request = this;
-      resolve_address_vtable_->resolve_async(r, host_.c_str(), port_.c_str());
+      resolve_address_vtable_->resolve_async(c_ptr(), host_.c_str(),
+                                             port_.c_str());
       // keep holding ref for active resolution
       return;
     }
@@ -184,9 +181,7 @@ void CustomDNSResolver::CustomDNSRequest::Start() {
   }
   // Call getaddrinfo
   Ref().release();  // ref held by resolution
-  grpc_custom_resolver* r = new grpc_custom_resolver();
-  r->request = this;
-  resolve_address_vtable_->resolve_async(r, host_.c_str(), port_.c_str());
+  resolve_address_vtable_->resolve_async(c_ptr(), host_.c_str(), port_.c_str());
 }
 
 }  // namespace grpc_core

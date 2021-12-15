@@ -37,10 +37,6 @@ struct grpc_resolved_addresses {
 // Destroy resolved addresses
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
 
-// TODO(apolcyn): as a part of converting this API to C++, this
-// type could be deleted, and callers of \a grpc_custom_resolve_callback
-// could instead just invoke
-// CustomDNSResolver::CustomDNSRequest::ResolveCallback directly.
 typedef struct grpc_custom_resolver grpc_custom_resolver;
 
 typedef struct grpc_custom_resolver_vtable {
@@ -50,6 +46,9 @@ typedef struct grpc_custom_resolver_vtable {
                         const char* port);
 } grpc_custom_resolver_vtable;
 
+// TODO(apolcyn): as a part of converting this API to C++,
+// callers of \a grpc_custom_resolve_callback could instead just invoke
+// CustomDNSResolver::CustomDNSRequest::ResolveCallback directly.
 void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error);
@@ -60,7 +59,8 @@ namespace grpc_core {
 
 class CustomDNSResolver : public DNSResolver {
  public:
-  class CustomDNSRequest : public DNSResolver::Request {
+  class CustomDNSRequest : public DNSResolver::Request,
+                           CppImplOf<CustomDNSRequest, grpc_custom_resolver> {
    public:
     CustomDNSRequest(
         absl::string_view name, absl::string_view default_port,
