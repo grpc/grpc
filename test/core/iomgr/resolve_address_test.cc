@@ -57,7 +57,7 @@ grpc_millis NSecDeadline(int seconds) {
 
 bool g_resolver_type_configured;
 
-class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
+class ResolveAddressTest : public ::testing::Test {
  public:
   ResolveAddressTest() {
     GPR_ASSERT(g_resolver_type_configured);
@@ -288,53 +288,79 @@ TEST_F(ResolveAddressTest, IPv6WithPort) {
   PollPollsetUntilRequestDone();
 }
 
-class IPv6WithoutPort : public ResolveAddressTest {};
-
-TEST_P(IPv6WithoutPort, IPv6WithoutPort) {
+void TestIPv6WithoutPort(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      GetParam(), "80", pollset_set(),
-      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
+      target, "80", test->pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, test));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  PollPollsetUntilRequestDone();
+  test->PollPollsetUntilRequestDone();
 }
 
-INSTANTIATE_TEST_SUITE_P(IPv6WithoutPort, IPv6WithoutPort,
-                         testing::Values("2001:db8::1", "2001:db8::1.2.3.4",
-                                         "[2001:db8::1]"));
+TEST_F(ResolveAddressTest, IPv6WithoutPortNoBrackets) {
+  TestIPv6WithoutPort(this, "2001:db8::1");
+}
 
-class InvalidIPAddresses : public ResolveAddressTest {};
+TEST_F(ResolveAddressTest, IPv6WithoutPortWithBrackets) {
+  TestIPv6WithoutPort(this, "[2001:db8::1]");
+}
 
-TEST_P(InvalidIPAddresses, InvalidIPAddresses) {
+TEST_F(ResolveAddressTest, IPv6WithoutPortV4MappedV6) {
+  TestIPv6WithoutPort(this, "2001:db8::1.2.3.4");
+}
+
+void TestInvalidIPAddress(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      GetParam(), nullptr, pollset_set(),
-      absl::bind_front(&ResolveAddressTest::MustFail, this));
+      target, nullptr, test->pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustFail, test));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  PollPollsetUntilRequestDone();
+  test->PollPollsetUntilRequestDone();
 }
 
-INSTANTIATE_TEST_SUITE_P(InvalidIPAddresses, InvalidIPAddresses,
-                         testing::Values("293.283.1238.3:1",
-                                         "[2001:db8::11111]:1"));
+TEST_F(ResolveAddressTest, InvalidIPv4Addresses) {
+  TestInvalidIPAddress(this, "293.283.1238.3:1");
+}
 
-class UnparseableHostPorts : public ResolveAddressTest {};
+TEST_F(ResolveAddressTest, InvalidIPv6Addresses) {
+  TestInvalidIPAddress(this, "[2001:db8::11111]:1");
+}
 
-TEST_P(UnparseableHostPorts, UnparseableHostPorts) {
+void TestUnparseableHostPort(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      GetParam(), "1", pollset_set(),
-      absl::bind_front(&ResolveAddressTest::MustFail, this));
+      target, "1", test->pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustFail, test));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  PollPollsetUntilRequestDone();
+  test->PollPollsetUntilRequestDone();
 }
 
-INSTANTIATE_TEST_SUITE_P(UnparseableHostPorts, UnparseableHostPorts,
-                         testing::Values("[", "[::1", "[::1]bad", "[1.2.3.4]",
-                                         "[localhost]", "[localhost]:1"));
+TEST_F(ResolveAddressTest, UnparseableHostPortsOnlyBracket) {
+  TestUnparseableHostPort(this, "[");
+}
+
+TEST_F(ResolveAddressTest, UnparseableHostPortsMissingRightBracket) {
+  TestUnparseableHostPort(this, "[::1");
+}
+
+TEST_F(ResolveAddressTest, UnparseableHostPortsBadPort) {
+  TestUnparseableHostPort(this, "[::1]bad");
+}
+
+TEST_F(ResolveAddressTest, UnparseableHostPortsBadIPv6) {
+  TestUnparseableHostPort(this, "[1.2.3.4]");
+}
+
+TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhost) {
+  TestUnparseableHostPort(this, "[localhost]");
+}
+
+TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhostWithPort) {
+  TestUnparseableHostPort(this, "[localhost]:1");
+}
 
 // Kick off a simple DNS resolution and then immediately cancel. This
 // test doesn't care what the result is, just that we don't crash etc.

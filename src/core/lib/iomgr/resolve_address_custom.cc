@@ -120,7 +120,7 @@ void CustomDNSResolver::Request::ResolveCallback(
 
 namespace {
 CustomDNSResolver* g_custom_dns_resolver;
-} // namespace
+}  // namespace
 
 // Creates the global custom resolver with the specified vtable.
 void CustomDNSResolver::Create(grpc_custom_resolver_vtable* vtable) {
@@ -129,14 +129,7 @@ void CustomDNSResolver::Create(grpc_custom_resolver_vtable* vtable) {
 }
 
 // Gets the singleton instance.
-CustomDNSResolver* CustomDNSResolver::Get() {
-  return g_custom_dns_resolver;
-}
-
-CustomDNSResolver* CustomDNSResolver::GetOrCreate() {
-  static CustomDNSResolver* instance = new CustomDNSResolver();
-  return instance;
-}
+CustomDNSResolver* CustomDNSResolver::Get() { return g_custom_dns_resolver; }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
 CustomDNSResolver::ResolveNameBlocking(absl::string_view name,

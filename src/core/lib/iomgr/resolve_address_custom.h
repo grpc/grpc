@@ -102,7 +102,8 @@ class CustomDNSResolver : public DNSResolver {
   // Gets the singleton instance.
   static CustomDNSResolver* Get();
 
-  CustomDNSResolver(const grpc_custom_resolver_vtable* vtable) : resolve_address_vtable_(vtable) {}
+  CustomDNSResolver(const grpc_custom_resolver_vtable* vtable)
+      : resolve_address_vtable_(vtable) {}
 
   OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
