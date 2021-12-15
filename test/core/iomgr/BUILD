@@ -176,8 +176,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/strings",
-        "absl/flags:flag",
-        "gtest",
     ],
     language = "C++",
     tags = ["no_windows"],
@@ -196,8 +194,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/strings",
-        "absl/flags:flag",
-        "gtest",
     ],
     language = "C++",
     tags = ["no_windows"],
@@ -214,6 +210,11 @@ grpc_cc_test(
     args = [
         "--resolver=ares",
     ],
+    external_deps = [
+        "absl/strings",
+        "absl/flags:flag",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -228,6 +229,11 @@ grpc_cc_test(
     srcs = ["resolve_address_test.cc"],
     args = [
         "--resolver=native",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/flags:flag",
+        "gtest",
     ],
     language = "C++",
     deps = [

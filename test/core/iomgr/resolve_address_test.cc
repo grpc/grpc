@@ -21,10 +21,12 @@
 #include <string.h>
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <address_sorting/address_sorting.h>
 
-#include "third_party/absl/flags/flag.h"
+#include "absl/flags/flag.h"
+#include "absl/functional/bind_front.h"
 #include "absl/strings/match.h"
 
 #include <grpc/grpc.h>

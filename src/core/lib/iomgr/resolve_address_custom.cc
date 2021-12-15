@@ -122,11 +122,10 @@ void CustomDNSResolver::CustomDNSRequest::ResolveCallback(
   Unref();
 }
 
-CustomDNSResolver* CustomDNSResolver::GetOrCreate(
-    grpc_custom_resolver_vtable* resolve_address_vtable) {
+CustomDNSResolver* CustomDNSResolver::GetOrCreate() {
   static CustomDNSResolver* instance;
   if (instance == nullptr) {
-    instance = new CustomDNSResolver(resolve_address_vtable);
+    instance = new CustomDNSResolver();
   }
   return instance;
 }
