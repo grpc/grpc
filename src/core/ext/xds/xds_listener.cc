@@ -1010,7 +1010,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
   DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
-  auto listener_data = absl::make_unique<ListenerData>();
+  auto listener_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       LdsResourceParse(context, resource, is_v2, &listener_data->resource);
   if (error != GRPC_ERROR_NONE) {

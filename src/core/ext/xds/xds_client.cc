@@ -37,7 +37,10 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_cluster.h"
+#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -75,11 +78,6 @@ Mutex* g_mu = nullptr;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
-
-const char* kLdsTypeUrl = "envoy.config.listener.v3.Listener";
-const char* kRdsTypeUrl = "envoy.config.route.v3.RouteConfiguration";
-const char* kCdsTypeUrl = "envoy.config.cluster.v3.Cluster";
-const char* kEdsTypeUrl = "envoy.config.endpoint.v3.ClusterLoadAssignment";
 
 }  // namespace
 
@@ -202,7 +200,8 @@ class XdsClient::ChannelState::AdsCallState
     explicit AdsResponseParser(AdsCallState* ads_call_state)
         : ads_call_state_(ads_call_state) {}
 
-    absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override;
+    absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     void ParseResource(const XdsEncodingContext& context, size_t idx,
                        absl::string_view type_url,
@@ -745,7 +744,7 @@ absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
             fields.version.c_str(), fields.nonce.c_str(), fields.num_resources);
   }
   result_.type =
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(fields.type_url);
+      ads_call_state_->xds_client()->GetResourceTypeLocked(fields.type_url);
   if (result_.type == nullptr) {
     return absl::InvalidArgumentError(
         absl::StrCat("unknown resource type ", fields.type_url));
@@ -888,7 +887,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       [watchers_list, value]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
             for (const auto& p : watchers_list) {
-              p.first->OnResourceChanged(value);
+              p.first->OnGenericResourceChanged(value);
             }
             delete value;
           },
@@ -1778,7 +1777,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_->certificate_providers())),
       api_(this, &grpc_xds_client_trace, bootstrap_->node(),
-           &bootstrap_->certificate_providers()) {
+           &bootstrap_->certificate_providers(), &symtab_) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1836,6 +1835,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   if (!resource_name.ok()) {
     {
       MutexLock lock(&mu_);
+      MaybeRegisterResourceTypeLocked(type);
       invalid_watchers_[w] = watcher;
     }
     grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -1851,6 +1851,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   }
   {
     MutexLock lock(&mu_);
+    MaybeRegisterResourceTypeLocked(type);
     // TODO(donnadionne): If we get a request for an authority that is not
     // configured in the bootstrap file, reject it.
     AuthorityState& authority_state =
@@ -1869,7 +1870,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       auto* value = type->CopyResource(resource_state.resource.get()).release();
       work_serializer_.Schedule(
           [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            watcher->OnResourceChanged(value);
+            watcher->OnGenericResourceChanged(value);
             delete value;
           },
           DEBUG_LOCATION);
@@ -1924,64 +1925,25 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   }
 }
 
-void XdsClient::WatchListenerData(
-    absl::string_view listener_name,
-    RefCountedPtr<ListenerWatcherInterface> watcher) {
-  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kLdsTypeUrl),
-                listener_name, std::move(watcher));
+void XdsClient::MaybeRegisterResourceTypeLocked(
+    const XdsResourceType* resource_type) {
+  auto it = resource_types_.find(resource_type->type_url());
+  if (it != resource_types_.end()) {
+    GPR_ASSERT(it->second == resource_type);
+    return;
+  }
+  resource_types_.emplace(resource_type->type_url(), resource_type);
+  v2_resource_types_.emplace(resource_type->v2_type_url(), resource_type);
+  resource_type->InitUpbSymtab(symtab_.ptr());
 }
 
-void XdsClient::CancelListenerDataWatch(absl::string_view listener_name,
-                                        ListenerWatcherInterface* watcher,
-                                        bool delay_unsubscription) {
-  CancelResourceWatch(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kLdsTypeUrl),
-      listener_name, watcher, delay_unsubscription);
-}
-
-void XdsClient::WatchRouteConfigData(
-    absl::string_view route_config_name,
-    RefCountedPtr<RouteConfigWatcherInterface> watcher) {
-  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kRdsTypeUrl),
-                route_config_name, std::move(watcher));
-}
-
-void XdsClient::CancelRouteConfigDataWatch(absl::string_view route_config_name,
-                                           RouteConfigWatcherInterface* watcher,
-                                           bool delay_unsubscription) {
-  CancelResourceWatch(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kRdsTypeUrl),
-      route_config_name, watcher, delay_unsubscription);
-}
-
-void XdsClient::WatchClusterData(
-    absl::string_view cluster_name,
-    RefCountedPtr<ClusterWatcherInterface> watcher) {
-  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kCdsTypeUrl),
-                cluster_name, std::move(watcher));
-}
-
-void XdsClient::CancelClusterDataWatch(absl::string_view cluster_name,
-                                       ClusterWatcherInterface* watcher,
-                                       bool delay_unsubscription) {
-  CancelResourceWatch(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kCdsTypeUrl),
-      cluster_name, watcher, delay_unsubscription);
-}
-
-void XdsClient::WatchEndpointData(
-    absl::string_view eds_service_name,
-    RefCountedPtr<EndpointWatcherInterface> watcher) {
-  WatchResource(XdsResourceTypeRegistry::GetOrCreate()->GetType(kEdsTypeUrl),
-                eds_service_name, std::move(watcher));
-}
-
-void XdsClient::CancelEndpointDataWatch(absl::string_view eds_service_name,
-                                        EndpointWatcherInterface* watcher,
-                                        bool delay_unsubscription) {
-  CancelResourceWatch(
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kEdsTypeUrl),
-      eds_service_name, watcher, delay_unsubscription);
+const XdsResourceType* XdsClient::GetResourceTypeLocked(
+    absl::string_view resource_type) {
+  auto it = resource_types_.find(resource_type);
+  if (it != resource_types_.end()) return it->second;
+  auto it2 = v2_resource_types_.find(resource_type);
+  if (it2 != v2_resource_types_.end()) return it2->second;
+  return nullptr;
 }
 
 absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
@@ -2050,9 +2012,8 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
         it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
-  auto resource_name = ParseXdsResourceName(
-      cluster_name,
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kCdsTypeUrl));
+  auto resource_name =
+      ParseXdsResourceName(cluster_name, XdsClusterResourceType::Get());
   GPR_ASSERT(resource_name.ok());
   auto a = authority_state_map_.find(resource_name->authority);
   if (a != authority_state_map_.end()) {
@@ -2114,9 +2075,8 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
         std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
-  auto resource_name = ParseXdsResourceName(
-      cluster_name,
-      XdsResourceTypeRegistry::GetOrCreate()->GetType(kCdsTypeUrl));
+  auto resource_name =
+      ParseXdsResourceName(cluster_name, XdsClusterResourceType::Get());
   GPR_ASSERT(resource_name.ok());
   auto a = authority_state_map_.find(resource_name->authority);
   if (a != authority_state_map_.end()) {
@@ -2285,23 +2245,9 @@ std::string XdsClient::DumpClientConfigBinary() {
 // accessors for global state
 //
 
-namespace {
-
-void InitResourceTypeRegistry() {
-  auto* registry = XdsResourceTypeRegistry::GetOrCreate();
-  registry->RegisterType(absl::make_unique<XdsListenerResourceType>());
-  registry->RegisterType(absl::make_unique<XdsRouteConfigResourceType>());
-  registry->RegisterType(absl::make_unique<XdsClusterResourceType>());
-  registry->RegisterType(absl::make_unique<XdsEndpointResourceType>());
-}
-
-}  // namespace
-
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
-  static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, InitResourceTypeRegistry);
 }
 
 // TODO(roth): Find a better way to clear the fallback config that does

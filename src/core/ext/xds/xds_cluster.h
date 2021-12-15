@@ -27,8 +27,9 @@
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
 
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 
 namespace grpc_core {
 
@@ -81,12 +82,9 @@ struct XdsClusterResource {
   std::string ToString() const;
 };
 
-class XdsClusterResourceType : public XdsResourceType {
+class XdsClusterResourceType
+    : public XdsResourceTypeImpl<XdsClusterResourceType, XdsClusterResource> {
  public:
-  struct ClusterData : public ResourceData {
-    XdsClusterResource resource;
-  };
-
   absl::string_view type_url() const override {
     return "envoy.config.cluster.v3.Cluster";
   }
@@ -97,20 +95,6 @@ class XdsClusterResourceType : public XdsResourceType {
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
-
-  bool ResourcesEqual(const ResourceData* r1,
-                      const ResourceData* r2) const override {
-    return static_cast<const ClusterData*>(r1)->resource ==
-           static_cast<const ClusterData*>(r2)->resource;
-  }
-
-  std::unique_ptr<ResourceData> CopyResource(
-      const ResourceData* resource) const override {
-    auto* resource_copy = new ClusterData();
-    resource_copy->resource =
-        static_cast<const ClusterData*>(resource)->resource;
-    return std::unique_ptr<ResourceData>(resource_copy);
-  }
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 

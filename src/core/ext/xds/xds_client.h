@@ -28,10 +28,7 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_endpoint.h"
-#include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_route_config.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -39,6 +36,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
@@ -48,76 +46,18 @@ extern TraceFlag grpc_xds_client_refcount_trace;
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
   // Resource watcher interface.  Implemented by callers.
+  // Note: Most callers will not use this API directly but rather via a
+  // resource-type-specific wrapper API provided by the relevant
+  // XdsResourceType implementation.
   class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
    public:
-    virtual void OnResourceChanged(
+    virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnResourceDoesNotExist()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-  };
-
-  // TODO(roth): Consider removing these resource-type-specific APIs in
-  // favor of some mechanism for automatic type-deduction for the generic
-  // API.
-
-  // Listener data watcher interface.  Implemented by callers.
-  class ListenerWatcherInterface : public ResourceWatcherInterface {
-   public:
-    virtual void OnListenerChanged(XdsListenerResource listener) = 0;
-
-   private:
-    void OnResourceChanged(
-        const XdsResourceType::ResourceData* resource) override {
-      OnListenerChanged(
-          static_cast<const XdsListenerResourceType::ListenerData*>(resource)
-              ->resource);
-    }
-  };
-
-  // RouteConfiguration data watcher interface.  Implemented by callers.
-  class RouteConfigWatcherInterface : public ResourceWatcherInterface {
-   public:
-    virtual void OnRouteConfigChanged(XdsRouteConfigResource route_config) = 0;
-
-   private:
-    void OnResourceChanged(
-        const XdsResourceType::ResourceData* resource) override {
-      OnRouteConfigChanged(
-          static_cast<const XdsRouteConfigResourceType::RouteConfigData*>(
-              resource)
-              ->resource);
-    }
-  };
-
-  // Cluster data watcher interface.  Implemented by callers.
-  class ClusterWatcherInterface : public ResourceWatcherInterface {
-   public:
-    virtual void OnClusterChanged(XdsClusterResource cluster_data) = 0;
-
-   private:
-    void OnResourceChanged(
-        const XdsResourceType::ResourceData* resource) override {
-      OnClusterChanged(
-          static_cast<const XdsClusterResourceType::ClusterData*>(resource)
-              ->resource);
-    }
-  };
-
-  // Endpoint data watcher interface.  Implemented by callers.
-  class EndpointWatcherInterface : public ResourceWatcherInterface {
-   public:
-    virtual void OnEndpointChanged(XdsEndpointResource update) = 0;
-
-   private:
-    void OnResourceChanged(
-        const XdsResourceType::ResourceData* resource) override {
-      OnEndpointChanged(
-          static_cast<const XdsEndpointResourceType::EndpointData*>(resource)
-              ->resource);
-    }
   };
 
   // Factory function to get or create the global XdsClient instance.
@@ -146,70 +86,30 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void Orphan() override;
 
   // Start and cancel watch for a resource.
+  //
   // The XdsClient takes ownership of the watcher, but the caller may
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
   // If the caller is going to start a new watch after cancelling the
   // old one, it should set delay_unsubscription to true.
+  //
+  // The resource type object must be a global singleton, since the first
+  // time the XdsClient sees a particular resource type object, it will
+  // store the pointer to that object as the authoritative implementation for
+  // its type URLs.  The resource type object must outlive the XdsClient object,
+  // and it is illegal to start a subsequent watch for the same type URLs using
+  // a different resource type object.
+  //
+  // Note: Most callers will not use this API directly but rather via a
+  // resource-type-specific wrapper API provided by the relevant
+  // XdsResourceType implementation.
   void WatchResource(const XdsResourceType* type, absl::string_view name,
                      RefCountedPtr<ResourceWatcherInterface> watcher);
   void CancelResourceWatch(const XdsResourceType* type,
                            absl::string_view listener_name,
                            ResourceWatcherInterface* watcher,
                            bool delay_unsubscription = false);
-
-  // Start and cancel listener data watch for a listener.
-  // The XdsClient takes ownership of the watcher, but the caller may
-  // keep a raw pointer to the watcher, which may be used only for
-  // cancellation.  (Because the caller does not own the watcher, the
-  // pointer must not be used for any other purpose.)
-  // If the caller is going to start a new watch after cancelling the
-  // old one, it should set delay_unsubscription to true.
-  void WatchListenerData(absl::string_view listener_name,
-                         RefCountedPtr<ListenerWatcherInterface> watcher);
-  void CancelListenerDataWatch(absl::string_view listener_name,
-                               ListenerWatcherInterface* watcher,
-                               bool delay_unsubscription = false);
-
-  // Start and cancel route config data watch for a listener.
-  // The XdsClient takes ownership of the watcher, but the caller may
-  // keep a raw pointer to the watcher, which may be used only for
-  // cancellation.  (Because the caller does not own the watcher, the
-  // pointer must not be used for any other purpose.)
-  // If the caller is going to start a new watch after cancelling the
-  // old one, it should set delay_unsubscription to true.
-  void WatchRouteConfigData(absl::string_view route_config_name,
-                            RefCountedPtr<RouteConfigWatcherInterface> watcher);
-  void CancelRouteConfigDataWatch(absl::string_view route_config_name,
-                                  RouteConfigWatcherInterface* watcher,
-                                  bool delay_unsubscription = false);
-
-  // Start and cancel cluster data watch for a cluster.
-  // The XdsClient takes ownership of the watcher, but the caller may
-  // keep a raw pointer to the watcher, which may be used only for
-  // cancellation.  (Because the caller does not own the watcher, the
-  // pointer must not be used for any other purpose.)
-  // If the caller is going to start a new watch after cancelling the
-  // old one, it should set delay_unsubscription to true.
-  void WatchClusterData(absl::string_view cluster_name,
-                        RefCountedPtr<ClusterWatcherInterface> watcher);
-  void CancelClusterDataWatch(absl::string_view cluster_name,
-                              ClusterWatcherInterface* watcher,
-                              bool delay_unsubscription = false);
-
-  // Start and cancel endpoint data watch for a cluster.
-  // The XdsClient takes ownership of the watcher, but the caller may
-  // keep a raw pointer to the watcher, which may be used only for
-  // cancellation.  (Because the caller does not own the watcher, the
-  // pointer must not be used for any other purpose.)
-  // If the caller is going to start a new watch after cancelling the
-  // old one, it should set delay_unsubscription to true.
-  void WatchEndpointData(absl::string_view eds_service_name,
-                         RefCountedPtr<EndpointWatcherInterface> watcher);
-  void CancelEndpointDataWatch(absl::string_view eds_service_name,
-                               EndpointWatcherInterface* watcher,
-                               bool delay_unsubscription = false);
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
@@ -350,6 +250,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   void NotifyOnErrorLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  // Gets the type for resource_type, or null if the type is unknown.
+  const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   static absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
@@ -372,6 +279,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   WorkSerializer work_serializer_;
 
   Mutex mu_;
+
+  // Stores resource type objects seen by type URL.
+  std::map<absl::string_view /*resource_type*/, const XdsResourceType*>
+      resource_types_ ABSL_GUARDED_BY(mu_);
+  std::map<absl::string_view /*v2_resource_type*/, const XdsResourceType*>
+      v2_resource_types_ ABSL_GUARDED_BY(mu_);
+  upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
 
   //  Map of existing xDS server channels.
   std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_

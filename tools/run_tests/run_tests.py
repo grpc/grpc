@@ -1358,11 +1358,14 @@ argp.add_argument('-f',
                   default=False,
                   action='store_const',
                   const=True)
-argp.add_argument('-t',
-                  '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True)
+argp.add_argument(
+    '-t',
+    '--travis',
+    default=False,
+    action='store_const',
+    const=True,
+    help='When set, indicates that the script is running on CI (= not locally).'
+)
 argp.add_argument('--newline_on_success',
                   default=False,
                   action='store_const',
@@ -1602,8 +1605,6 @@ if args.use_docker:
     env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
     if args.xml_report:
         env['XML_REPORT'] = args.xml_report
-    if not args.travis:
-        env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
     subprocess.check_call(
         'tools/run_tests/dockerize/build_docker_and_run_tests.sh',

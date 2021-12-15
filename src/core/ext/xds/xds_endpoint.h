@@ -27,8 +27,9 @@
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -110,12 +111,9 @@ struct XdsEndpointResource {
   std::string ToString() const;
 };
 
-class XdsEndpointResourceType : public XdsResourceType {
+class XdsEndpointResourceType
+    : public XdsResourceTypeImpl<XdsEndpointResourceType, XdsEndpointResource> {
  public:
-  struct EndpointData : public ResourceData {
-    XdsEndpointResource resource;
-  };
-
   absl::string_view type_url() const override {
     return "envoy.config.endpoint.v3.ClusterLoadAssignment";
   }
@@ -126,20 +124,6 @@ class XdsEndpointResourceType : public XdsResourceType {
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
-
-  bool ResourcesEqual(const ResourceData* r1,
-                      const ResourceData* r2) const override {
-    return static_cast<const EndpointData*>(r1)->resource ==
-           static_cast<const EndpointData*>(r2)->resource;
-  }
-
-  std::unique_ptr<ResourceData> CopyResource(
-      const ResourceData* resource) const override {
-    auto* resource_copy = new EndpointData();
-    resource_copy->resource =
-        static_cast<const EndpointData*>(resource)->resource;
-    return std::unique_ptr<ResourceData>(resource_copy);
-  }
 
   void InitUpbSymtab(upb_symtab* symtab) const override {
     envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
