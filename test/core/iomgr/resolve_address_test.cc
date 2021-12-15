@@ -101,7 +101,7 @@ class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
         }
         grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
         gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_, time_left);
-        GPR_ASSERT(time_left >= 0);
+        ASSERT_GE(time_left, 0);
         grpc_pollset_worker* worker = nullptr;
         GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(pollset_, &worker,
                                                             NSecDeadline(1)));
@@ -110,21 +110,21 @@ class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
   }
 
   void MustSucceed(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
-    GPR_ASSERT(result.ok());
-    GPR_ASSERT(!result->empty());
+    EXPECT_EQ(result.status(), absl::OkStatus());
+    EXPECT_FALSE(result->empty());
     Finish();
   }
 
   void MustFail(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
-    GPR_ASSERT(!result.ok());
+    EXPECT_NE(result.status(), absl::OkStatus());
     Finish();
   }
 
   void MustFailExpectCancelledErrorMessage(
       absl::StatusOr<std::vector<grpc_resolved_address>> result) {
-    GPR_ASSERT(!result.ok());
-    GPR_ASSERT(
-        absl::StrContains(result.status().ToString(), "DNS query cancelled"));
+    EXPECT_NE(result.status(), absl::OkStatus());
+    EXPECT_THAT(result.status().ToString(),
+                testing::HasSubstr("DNS query cancelled"));
     Finish();
   }
 
@@ -136,21 +136,19 @@ class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
   // This test assumes the environment has an ipv6 loopback
   void MustSucceedWithIPv6First(
       absl::StatusOr<std::vector<grpc_resolved_address>> result) {
-    GPR_ASSERT(result.ok());
-    GPR_ASSERT(!result->empty());
-    const struct sockaddr* first_address =
-        reinterpret_cast<const struct sockaddr*>((*result)[0].addr);
-    GPR_ASSERT(first_address->sa_family == AF_INET6);
+    EXPECT_EQ(result.status(), absl::OkStatus());
+    EXPECT_TRUE(!result->empty() &&
+                reinterpret_cast<const struct sockaddr*>((*result)[0].addr)
+                        ->sa_family == AF_INET6);
     Finish();
   }
 
   void MustSucceedWithIPv4First(
       absl::StatusOr<std::vector<grpc_resolved_address>> result) {
-    GPR_ASSERT(result.ok());
-    GPR_ASSERT(!result->empty());
-    const struct sockaddr* first_address =
-        reinterpret_cast<const struct sockaddr*>((*result)[0].addr);
-    GPR_ASSERT(first_address->sa_family == AF_INET);
+    EXPECT_EQ(result.status(), absl::OkStatus());
+    EXPECT_TRUE(!result->empty() &&
+                reinterpret_cast<const struct sockaddr*>((*result)[0].addr)
+                        ->sa_family == AF_INET);
     Finish();
   }
 
@@ -365,7 +363,7 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
+  ASSERT_EQ(ares_set_servers_ports(channel, dns_server_addrs), ARES_SUCCESS);
 }
 
 }  // namespace
