@@ -14,10 +14,13 @@
 
 @rem Avoid slow finalization after the script has exited.
 @rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
 IF "%cd%"=="T:\src" (
   call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
-  exit /b %errorlevel%
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
 )
+endlocal
 
 @rem TODO(jtattermusch): make this generate less output
 @rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
