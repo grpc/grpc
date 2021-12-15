@@ -64,6 +64,7 @@ licenses(["notice"])
 grpc_cc_test(
     name = "httpcli_test",
     srcs = ["httpcli_test.cc"],
+    external_deps = ["gtest"],
     data = [
         "python_wrapper.sh",
         "test_server.py",
@@ -84,6 +85,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "httpscli_test",
     srcs = ["httpscli_test.cc"],
+    external_deps = ["gtest"],
     data = [
         "python_wrapper.sh",
         "test_server.py",
@@ -117,7 +119,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "format_request_test",
     srcs = ["format_request_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
