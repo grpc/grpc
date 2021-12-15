@@ -691,17 +691,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   explicit XdsEnd2endTest(size_t num_backends,
                           int client_load_reporting_interval_seconds = 100,
                           int xds_resource_does_not_exist_timeout_ms = 0,
-                          bool use_xds_enabled_server = false,
-                          const std::string& lb_expected_authority = "")
+                          bool use_xds_enabled_server = false)
       : num_backends_(num_backends),
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         xds_resource_does_not_exist_timeout_ms_(
             xds_resource_does_not_exist_timeout_ms),
-        use_xds_enabled_server_(use_xds_enabled_server),
-        lb_expected_authority_(lb_expected_authority) {}
+        use_xds_enabled_server_(use_xds_enabled_server) {}
 
-  void SetUp() override {
+  void CreateClientsAndServers(BootstrapBuilder builder = BootstrapBuilder(),
+                               std::string lb_expected_authority = "") {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -770,24 +769,23 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
           xds_resource_does_not_exist_timeout_ms_));
     }
-    if (!lb_expected_authority_.empty()) {
-      if (lb_expected_authority_ == "localhost:%d") {
-        lb_expected_authority_ =
+    if (!lb_expected_authority.empty()) {
+      if (lb_expected_authority == "localhost:%d") {
+        lb_expected_authority =
             absl::StrFormat("localhost:%d", balancer_->port());
       }
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
-          const_cast<char*>(lb_expected_authority_.c_str())));
+          const_cast<char*>(lb_expected_authority.c_str())));
     }
     xds_channel_args_.num_args = xds_channel_args_to_add_.size();
     xds_channel_args_.args = xds_channel_args_to_add_.data();
     // Initialize XdsClient state.
-    bootstrap_builder_.SetDefaultServer(
-        absl::StrCat("localhost:", balancer_->port()));
+    builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
     if (GetParam().use_v2()) {
-      bootstrap_builder_.SetV2();
+      builder.SetV2();
     }
-    bootstrap_ = bootstrap_builder_.Build();
+    bootstrap_ = builder.Build();
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
@@ -812,6 +810,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Create channel and stub.
     ResetStub();
   }
+
+  void SetUp() { CreateClientsAndServers(); }
 
   void TearDown() override {
     ShutdownAllBackends();
@@ -1867,10 +1867,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return rpcs;
   }
 
-  void SetBootstrapBuilder(const BootstrapBuilder& bootstrap_builder) {
-    bootstrap_builder_ = bootstrap_builder;
-  }
-
   const size_t num_backends_;
   const int client_load_reporting_interval_seconds_;
   bool ipv6_only_ = false;
@@ -1892,8 +1888,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   RouteConfiguration default_server_route_config_;
   Cluster default_cluster_;
   bool use_xds_enabled_server_;
-  std::string lb_expected_authority_;
-  BootstrapBuilder bootstrap_builder_;
   int xds_drain_grace_time_ms_ = 10 * 60 * 1000;  // 10 mins
   bool bootstrap_contents_from_env_var_;
   std::string bootstrap_;
@@ -2510,15 +2504,14 @@ class XdsFederationTest : public XdsEnd2endTest {
  public:
   XdsFederationTest() : XdsEnd2endTest(4, 100, 0, false) {
     authority_balancer_ = CreateAndStartBalancer();
-    BootstrapBuilder builder;
-    builder.AddAuthority(
-        "xds.example.com",
-        absl::StrCat("localhost:", authority_balancer_->port()));
-    SetBootstrapBuilder(builder);
   }
 
   void SetUp() override {
-    XdsEnd2endTest::SetUp();
+    BootstrapBuilder builder = BootstrapBuilder();
+    builder.AddAuthority(
+        "xds.example.com",
+        absl::StrCat("localhost:", authority_balancer_->port()));
+    CreateClientsAndServers(builder);
     StartAllBackends();
   }
 
@@ -2601,10 +2594,10 @@ class SecureNamingSuccessTest : public XdsEnd2endTest {
       : XdsEnd2endTest(/*num_backends=*/4,
                        /*client_load_reporting_interval_seconds=*/100,
                        /*xds_resource_does_not_exist_timeout_ms=*/0,
-                       /*use_xds_enabled_server=*/false,
-                       /*lb_expected_authority=*/"localhost:%d") {}
+                       /*use_xds_enabled_server=*/false) {}
   void SetUp() override {
-    XdsEnd2endTest::SetUp();
+    CreateClientsAndServers(BootstrapBuilder(),
+                            /*lb_expected_authority=*/"localhost:%d");
     StartAllBackends();
   }
 };
@@ -2624,10 +2617,10 @@ class SecureNamingFailureTest : public XdsEnd2endTest {
       : XdsEnd2endTest(/*num_backends=*/4,
                        /*client_load_reporting_interval_seconds=*/100,
                        /*xds_resource_does_not_exist_timeout_ms=*/0,
-                       /*use_xds_enabled_server=*/false,
-                       /*lb_expected_authority=*/"incorrect_server_name") {}
+                       /*use_xds_enabled_server=*/false) {}
   void SetUp() override {
-    XdsEnd2endTest::SetUp();
+    CreateClientsAndServers(BootstrapBuilder(),
+                            /*lb_expected_authority=*/"incorrect_server_name");
     StartAllBackends();
   }
 };
