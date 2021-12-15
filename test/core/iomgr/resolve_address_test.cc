@@ -67,22 +67,24 @@ class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
     default_inject_config_ = grpc_ares_test_only_inject_config;
   }
 
-  ~ResolveAddressTest() {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_pollset_set_del_pollset(pollset_set_, pollset_);
-    grpc_pollset_set_destroy(pollset_set_);
-    grpc_closure do_nothing_cb;
-    GRPC_CLOSURE_INIT(&do_nothing_cb, DoNothing, nullptr,
-                      grpc_schedule_on_exec_ctx);
-    gpr_mu_lock(mu_);
-    grpc_pollset_shutdown(pollset_, &do_nothing_cb);
-    gpr_mu_unlock(mu_);
-    // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
-    grpc_core::ExecCtx::Get()->Flush();
-    grpc_pollset_destroy(pollset_);
-    gpr_free(pollset_);
-    // reset this since it might have been altered
-    grpc_ares_test_only_inject_config = default_inject_config_;
+  ~ResolveAddressTest() override {
+    {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_pollset_set_del_pollset(pollset_set_, pollset_);
+      grpc_pollset_set_destroy(pollset_set_);
+      grpc_closure do_nothing_cb;
+      GRPC_CLOSURE_INIT(&do_nothing_cb, DoNothing, nullptr,
+                        grpc_schedule_on_exec_ctx);
+      gpr_mu_lock(mu_);
+      grpc_pollset_shutdown(pollset_, &do_nothing_cb);
+      gpr_mu_unlock(mu_);
+      // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
+      grpc_core::ExecCtx::Get()->Flush();
+      grpc_pollset_destroy(pollset_);
+      gpr_free(pollset_);
+      // reset this since it might have been altered
+      grpc_ares_test_only_inject_config = default_inject_config_;
+    }
     grpc_shutdown();
   }
 
