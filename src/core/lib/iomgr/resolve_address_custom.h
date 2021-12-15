@@ -96,8 +96,13 @@ class CustomDNSResolver : public DNSResolver {
     const grpc_custom_resolver_vtable* resolve_address_vtable_;
   };
 
-  // Gets the singleton instance, creating it if it hasn't been already.
-  static CustomDNSResolver* GetOrCreate();
+  // Creates the global custom resolver with the specified vtable.
+  static void Create(grpc_custom_resolver_vtable* vtable);
+
+  // Gets the singleton instance.
+  static CustomDNSResolver* Get();
+
+  CustomDNSResolver(const grpc_custom_resolver_vtable* vtable) : resolve_address_vtable_(vtable) {}
 
   OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
@@ -111,14 +116,9 @@ class CustomDNSResolver : public DNSResolver {
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
 
-  // Configures user-defined DNS resolution methods
-  void set_vtable(const grpc_custom_resolver_vtable* vtable) {
-    resolve_address_vtable_ = const_cast<grpc_custom_resolver_vtable*>(vtable);
-  }
-
  private:
   // user-defined DNS methods
-  grpc_custom_resolver_vtable* resolve_address_vtable_ = nullptr;
+  const grpc_custom_resolver_vtable* resolve_address_vtable_;
 };
 
 }  // namespace grpc_core

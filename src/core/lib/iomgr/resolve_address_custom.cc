@@ -118,6 +118,21 @@ void CustomDNSResolver::Request::ResolveCallback(
   Unref();
 }
 
+namespace {
+CustomDNSResolver* g_custom_dns_resolver;
+} // namespace
+
+// Creates the global custom resolver with the specified vtable.
+void CustomDNSResolver::Create(grpc_custom_resolver_vtable* vtable) {
+  if (g_custom_dns_resolver != nullptr) return;
+  g_custom_dns_resolver = new CustomDNSResolver(vtable);
+}
+
+// Gets the singleton instance.
+CustomDNSResolver* CustomDNSResolver::Get() {
+  return g_custom_dns_resolver;
+}
+
 CustomDNSResolver* CustomDNSResolver::GetOrCreate() {
   static CustomDNSResolver* instance = new CustomDNSResolver();
   return instance;
