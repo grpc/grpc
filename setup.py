@@ -210,7 +210,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        [cxx, '-x', 'c++', '-std=c++11', '-', '-latomic'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)
