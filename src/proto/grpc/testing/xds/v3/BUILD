@@ -311,9 +311,14 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
-grpc_proto_library(
-    name = "expr_proto",
-    srcs = ["expr.proto"],
+cc_proto_library(
+    name = "expr_cc_proto",
+    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
+)
+
+cc_library(
+    name = "expr_lib",
+    deps = ["expr_cc_proto"],
 )
 
 grpc_proto_library(
@@ -324,7 +329,7 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "address_proto",
-        "expr_proto",
+        "expr_cc_proto",
         "extension_proto",
         "metadata_proto",
         "path_proto",

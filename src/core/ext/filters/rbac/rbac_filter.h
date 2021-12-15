@@ -51,7 +51,6 @@ class RbacFilter {
                                          grpc_error_handle error);
 
     grpc_call_context_element* call_context_;
-    Arena* arena_;
     // State for keeping track of recv_initial_metadata
     grpc_metadata_batch* recv_initial_metadata_ = nullptr;
     grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
