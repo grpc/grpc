@@ -411,7 +411,7 @@ class Server::AllocatingRequestMatcherRegistered
       RegisteredCallAllocation call_info = allocator_();
       auto status = server()->ValidateServerRequest(
           cq(), call_info.tag, call_info.optional_payload, registered_method_);
-      std::cout << status;
+      std::cout << status << std::endl;
       GPR_ASSERT(status == GRPC_CALL_OK);
       RequestedCall* rc =
           new RequestedCall(call_info.tag, call_info.cq, call_info.call,
