@@ -409,9 +409,10 @@ class Server::AllocatingRequestMatcherRegistered
                     CallData* calld) override {
     if (server()->ShutdownRefOnRequest()) {
       RegisteredCallAllocation call_info = allocator_();
-      GPR_ASSERT(server()->ValidateServerRequest(
-                     cq(), call_info.tag, call_info.optional_payload,
-                     registered_method_) == GRPC_CALL_OK);
+      auto status = server()->ValidateServerRequest(
+          cq(), call_info.tag, call_info.optional_payload, registered_method_);
+      std::cout << status;
+      GPR_ASSERT(status == GRPC_CALL_OK);
       RequestedCall* rc =
           new RequestedCall(call_info.tag, call_info.cq, call_info.call,
                             call_info.initial_metadata, registered_method_,
