@@ -79,7 +79,7 @@ void CallEchoRPC(const std::string& server_addr, bool revoked_client_certs,
   std::cout << "Sending test message" << std::endl;
   ClientContext context;
   Status s = stub->Echo(&context, request, &reply);
-  EXPECT_OK(s) << "s.error_message() = " << s.error_message();
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
 }
 
 class TestServerWrapper {
