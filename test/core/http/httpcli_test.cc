@@ -43,6 +43,11 @@ grpc_millis NSecondsTime(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
+int g_argc;
+char** g_argv;
+
+std::vector<std::string> g_subprocess_args;
+
 class HttpCliTest : public ::testing::Test {
  public:
   HttpCliTest() {
@@ -61,6 +66,56 @@ class HttpCliTest : public ::testing::Test {
           GRPC_CLOSURE_CREATE(DestroyPops, &pops, grpc_schedule_on_exec_ctx));
     }
     grpc_shutdown();
+  }
+
+  static void SetUpTestSuite() override {
+        char* me = g_argv[0];
+    char* lslash = strrchr(me, '/');
+    char* args[4];
+    int port = grpc_pick_unused_port_or_die();
+    int arg_shift = 0;
+    /* figure out where we are */
+    char* root;
+    if (lslash != nullptr) {
+      /* Hack for bazel target */
+      if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
+          strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
+                  sizeof("http") - 1) == 0) {
+        lslash = me + (lslash - me) - sizeof("http");
+      }
+      root = static_cast<char*>(
+          gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
+      memcpy(root, me, static_cast<size_t>(lslash - me));
+      memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
+    } else {
+      root = gpr_strdup(".");
+    }
+
+    GPR_ASSERT(g_argc <= 2);
+    if (g_argc == 2) {
+      args[0] = gpr_strdup(g_argv[1]);
+    } else {
+      arg_shift = 1;
+      gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
+      gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
+    }
+
+    /* start the server */
+    args[1 + arg_shift] = const_cast<char*>("--port");
+    gpr_asprintf(&args[2 + arg_shift], "%d", port);
+    g_server =
+        gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
+    GPR_ASSERT(server);
+    gpr_free(args[0]);
+    if (arg_shift) gpr_free(args[1]);
+    gpr_free(args[2 + arg_shift]);
+    gpr_free(root);
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
+  }
+
+  void TearDownTestSuite() override{
+    gpr_subprocess_destroy(g_server);
   }
 
   void RunAndKick(const std::function<void()>& f) {
@@ -318,49 +373,9 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  char* me = argv[0];
-  char* lslash = strrchr(me, '/');
-  char* args[4];
-  int port = grpc_pick_unused_port_or_die();
-  int arg_shift = 0;
-  // figure out where we are
-  char* root;
-  if (lslash != nullptr) {
-    // Hack for bazel target
-    if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
-        strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
-                sizeof("http") - 1) == 0) {
-      lslash = me + (lslash - me) - sizeof("http");
-    }
-    root = static_cast<char*>(
-        gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
-    memcpy(root, me, static_cast<size_t>(lslash - me));
-    memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
-  } else {
-    root = gpr_strdup(".");
-  }
-  GPR_ASSERT(argc <= 2);
-  if (argc == 2) {
-    args[0] = gpr_strdup(argv[1]);
-  } else {
-    arg_shift = 1;
-    gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
-    gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
-  }
-  // start the server
-  args[1 + arg_shift] = const_cast<char*>("--port");
-  gpr_asprintf(&args[2 + arg_shift], "%d", port);
-  gpr_subprocess* server =
-      gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
-  GPR_ASSERT(server);
-  gpr_free(args[0]);
-  if (arg_shift) gpr_free(args[1]);
-  gpr_free(args[2 + arg_shift]);
-  gpr_free(root);
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
+  // launch the test server later, so that --gtest_list_tests works
+  g_argc = argc;
+  g_argv = argv;
   // run tests
-  int result = RUN_ALL_TESTS();
-  gpr_subprocess_destroy(server);
-  return result;
+  return RUN_ALL_TESTS();
 }

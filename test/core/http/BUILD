@@ -78,6 +78,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
         "//test/core/util:fake_udp_and_tcp_server",
     ],
 )
