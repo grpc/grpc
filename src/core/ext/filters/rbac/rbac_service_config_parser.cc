@@ -104,7 +104,8 @@ absl::StatusOr<StringMatcher> ParseStringMatcher(
   bool ignore_case = false;
   ParseJsonObjectField(string_matcher_json, "ignoreCase", &ignore_case,
                        error_list, /*required=*/false);
-  if (ParseJsonObjectField(string_matcher_json, "exact", &match, error_list)) {
+  if (ParseJsonObjectField(string_matcher_json, "exact", &match, error_list,
+                           /*required=*/false)) {
     type = StringMatcher::Type::kExact;
   } else if (ParseJsonObjectField(string_matcher_json, "prefix", &match,
                                   error_list, /*required=*/false)) {
@@ -136,7 +137,13 @@ absl::StatusOr<StringMatcher> ParsePathMatcher(
   const Json::Object* string_matcher_json;
   if (ParseJsonObjectField(path_matcher_json, "path", &string_matcher_json,
                            error_list)) {
-    return ParseStringMatcher(*string_matcher_json, error_list);
+    std::vector<grpc_error_handle> sub_error_list;
+    auto matcher = ParseStringMatcher(*string_matcher_json, &sub_error_list);
+    if (!sub_error_list.empty()) {
+      error_list->push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("path", &sub_error_list));
+    }
+    return matcher;
   }
   return absl::InvalidArgumentError("No path found");
 }
@@ -283,6 +290,10 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
     } else {
       req_server_name_error_list.push_back(
           absl_status_to_grpc_error(matcher.status()));
+    }
+    if (!req_server_name_error_list.empty()) {
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "requestedServerName", &req_server_name_error_list));
     }
   } else {
     error_list->push_back(
@@ -455,9 +466,9 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
                          std::vector<grpc_error_handle>* error_list) {
   Rbac::Policy policy;
   const Json::Array* permissions_json_array;
+  std::vector<std::unique_ptr<Rbac::Permission>> permissions;
   if (ParseJsonObjectField(policy_json, "permissions", &permissions_json_array,
                            error_list)) {
-    std::vector<std::unique_ptr<Rbac::Permission>> permissions;
     for (size_t i = 0; i < permissions_json_array->size(); ++i) {
       const Json::Object* permission_json;
       if (!ExtractJsonType((*permissions_json_array)[i],
@@ -473,13 +484,11 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
             absl::StrFormat("permissions[%d]", i), &permission_error_list));
       }
     }
-    policy.permissions = Rbac::Permission(Rbac::Permission::RuleType::kOr,
-                                          std::move(permissions));
   }
   const Json::Array* principals_json_array;
+  std::vector<std::unique_ptr<Rbac::Principal>> principals;
   if (ParseJsonObjectField(policy_json, "principals", &principals_json_array,
                            error_list)) {
-    std::vector<std::unique_ptr<Rbac::Principal>> principals;
     for (size_t i = 0; i < principals_json_array->size(); ++i) {
       const Json::Object* principal_json;
       if (!ExtractJsonType((*principals_json_array)[i],
@@ -495,9 +504,11 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
             absl::StrFormat("principals[%d]", i), &principal_error_list));
       }
     }
-    policy.principals =
-        Rbac::Principal(Rbac::Principal::RuleType::kOr, std::move(principals));
   }
+  policy.permissions =
+      Rbac::Permission(Rbac::Permission::RuleType::kOr, std::move(permissions));
+  policy.principals =
+      Rbac::Principal(Rbac::Principal::RuleType::kOr, std::move(principals));
   return policy;
 }
 

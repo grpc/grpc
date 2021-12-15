@@ -481,6 +481,63 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->num_policies(), 1);
 }
 
+TEST(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      {}\n"
+      "    ],\n"
+      "    \"rbacPolicy\": [{\n"
+      "      \"rules\":{\n"
+      "        \"action\":1,\n"
+      "        \"policies\":{\n"
+      "          \"policy\":{\n"
+      "            \"permissions\":[\n"
+      "              {\"header\":{\"name\":\"name\", \"exactMatch\":1, \n"
+      "                \"invertMatch\":1}},\n"
+      "              {\"header\":{\"name\":\"name\", \"safeRegexMatch\":1}},\n"
+      "              {\"header\":{\"name\":\"name\", \"rangeMatch\":1}},\n"
+      "              {\"header\":{\"name\":\"name\", \"presentMatch\":1}},\n"
+      "              {\"header\":{\"name\":\"name\", \"prefixMatch\":1}},\n"
+      "              {\"header\":{\"name\":\"name\", \"suffixMatch\":1}},\n"
+      "              {\"header\":{\"name\":\"name\", \"containsMatch\":1}}\n"
+      "            ],\n"
+      "            \"principals\":[]\n"
+      "          }\n"
+      "        }\n"
+      "      }\n"
+      "    } ]\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
+  grpc_channel_args args = {1, &arg};
+  auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex(
+          "Rbac parser" CHILD_ERROR_TAG "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
+          "policies key:'policy'" CHILD_ERROR_TAG
+          "permissions\\[0\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
+          "field:invertMatch error:type should be BOOLEAN.*"
+          "field:exactMatch error:type should be STRING.*"
+          "permissions\\[1\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
+          "field:safeRegexMatch error:type should be OBJECT.*"
+          "permissions\\[2\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
+          "field:rangeMatch error:type should be OBJECT.*"
+          "permissions\\[3\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
+          "field:presentMatch error:type should be BOOLEAN.*"
+          "permissions\\[4\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
+          "field:prefixMatch error:type should be STRING.*"
+          "permissions\\[5\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
+          "field:suffixMatch error:type should be STRING.*"
+          "permissions\\[6\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
+          "field:containsMatch error:type should be STRING.*"));
+  GRPC_ERROR_UNREF(error);
+}
+
 TEST(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
   const char* test_json =
       "{\n"
@@ -523,6 +580,62 @@ TEST(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
   ASSERT_NE(parsed_rbac_config, nullptr);
   ASSERT_NE(parsed_rbac_config->authorization_engine(0), nullptr);
   EXPECT_EQ(parsed_rbac_config->authorization_engine(0)->num_policies(), 1);
+}
+
+TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      {}\n"
+      "    ],\n"
+      "    \"rbacPolicy\": [{\n"
+      "      \"rules\":{\n"
+      "        \"action\":1,\n"
+      "        \"policies\":{\n"
+      "          \"policy\":{\n"
+      "            \"permissions\":[\n"
+      "              {\"requestedServerName\":{\"exact\":1, \n"
+      "                \"ignoreCase\":1}},\n"
+      "              {\"requestedServerName\":{\"prefix\":1}},\n"
+      "              {\"requestedServerName\":{\"suffix\":1}},\n"
+      "              {\"requestedServerName\":{\"safeRegex\":1}},\n"
+      "              {\"requestedServerName\":{\"contains\":1}}\n"
+      "            ],\n"
+      "            \"principals\":[]\n"
+      "          }\n"
+      "        }\n"
+      "      }\n"
+      "    } ]\n"
+      "  } ]\n"
+      "}";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
+  grpc_channel_args args = {1, &arg};
+  auto svc_cfg = ServiceConfig::Create(&args, test_json, &error);
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
+                               "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
+                               "policies key:'policy'" CHILD_ERROR_TAG
+                               "permissions\\[0\\]" CHILD_ERROR_TAG
+                               "requestedServerName" CHILD_ERROR_TAG
+                               "field:ignoreCase error:type should be BOOLEAN.*"
+                               "field:exact error:type should be STRING.*"
+                               "permissions\\[1\\]" CHILD_ERROR_TAG
+                               "requestedServerName" CHILD_ERROR_TAG
+                               "field:prefix error:type should be STRING.*"
+                               "permissions\\[2\\]" CHILD_ERROR_TAG
+                               "requestedServerName" CHILD_ERROR_TAG
+                               "field:suffix error:type should be STRING.*"
+                               "permissions\\[3\\]" CHILD_ERROR_TAG
+                               "requestedServerName" CHILD_ERROR_TAG
+                               "field:safeRegex error:type should be OBJECT.*"
+                               "permissions\\[4\\]" CHILD_ERROR_TAG
+                               "requestedServerName" CHILD_ERROR_TAG
+                               "field:contains error:type should be STRING.*"));
+  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace

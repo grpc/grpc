@@ -7262,6 +7262,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: rbac_service_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: rbac_translator_test
   gtest: true
   build: test
