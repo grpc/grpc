@@ -117,6 +117,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "format_request_test",
     srcs = ["format_request_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",

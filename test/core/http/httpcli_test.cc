@@ -20,6 +20,9 @@
 
 #include <string.h>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,89 +36,112 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-static grpc_millis n_seconds_time(int seconds) {
+namespace {
+
+grpc_millis NSecondsTime(int seconds) {
   return grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-struct TestPollingArg {
-  TestPollingArg() {
+class HttpCliTest : public ::testing::Test {
+ public:
+  HttpCliTest() {
+    grpc_init();
     grpc_core::ExecCtx exec_ctx;
     grpc_pollset* pollset =
         static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(pollset, &mu);
-    pops = grpc_polling_entity_create_from_pollset(pollset);
+    grpc_pollset_init(pollset, &mu_);
+    pops_ = grpc_polling_entity_create_from_pollset(pollset);
+  }
+  ~HttpCliTest() override {
+    {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_pollset_shutdown(
+          grpc_polling_entity_pollset(&pops_),
+          GRPC_CLOSURE_CREATE(DestroyPops, &pops, grpc_schedule_on_exec_ctx));
+    }
+    grpc_shutdown();
   }
 
-  ~TestPollingArg() {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_pollset_shutdown(
-        grpc_polling_entity_pollset(&pops),
-        GRPC_CLOSURE_CREATE(DestroyPops, &pops, grpc_schedule_on_exec_ctx));
+  void RunAndKick(const std::function<void()>& f) {
+    grpc_core::MutexLockForGprMu lock(mu_);
+    f();
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_kick",
+        grpc_pollset_kick(
+            grpc_polling_entity_pollset(pops_), nullptr)));
   }
 
+  void PollUntil(const std::function<bool()>& predicate) {
+    gpr_mu_lock(mu_);
+    while (!predicate()) {
+      grpc_pollset_worker* worker = nullptr;
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(
+                                                &pops_),
+                                            &worker, NSecondsTime(1))));
+      gpr_mu_unlock(mu_);
+      gpr_mu_lock(mu_);
+    }
+    gpr_mu_unlock(mu_);
+  }
+
+  grpc_polling_entity* pops() { return pops_; }
+
+ private:
   static void DestroyPops(void* p, grpc_error_handle /*error*/) {
     grpc_polling_entity* pops = static_cast<grpc_polling_entity*>(p);
     grpc_pollset_destroy(grpc_polling_entity_pollset(pops));
     gpr_free(grpc_polling_entity_pollset(pops));
   }
 
-  gpr_mu* mu;
-  grpc_polling_entity pops;
+  gpr_mu* mu_;
+  grpc_polling_entity pops_;
 };
 
-struct TestArg {
-  TestArg(TestPollingArg* polling_arg) : polling_arg(polling_arg) {
-    grpc_core::ExecCtx exec_ctx;
-  }
+struct RequestArgs {
+  explicit RequestArgs(HttpCliTest* test) : test(test) {}
 
-  ~TestArg() {
+  ~RequestArgs() {
     grpc_core::ExecCtx exec_ctx;
     grpc_http_response_destroy(&response);
   }
 
-  TestPollingArg* polling_arg;
+  HttpCliTest* test;
   bool done = false;
   grpc_http_response response = {};
 };
 
-static void on_finish(void* arg, grpc_error_handle error) {
-  TestArg* test_arg = static_cast<TestArg*>(arg);
+void OnFinish(void* arg, grpc_error_handle error) {
+  RequestArgs* request_args = static_cast<RequestArgs*>(arg);
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_http_response response = test_arg->response;
+  grpc_http_response response = request_args->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
   GPR_ASSERT(response.status == 200);
   GPR_ASSERT(response.body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
-  grpc_core::MutexLockForGprMu lock(test_arg->polling_arg->mu);
-  test_arg->done = true;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "pollset_kick",
-      grpc_pollset_kick(
-          grpc_polling_entity_pollset(&test_arg->polling_arg->pops), nullptr)));
+  request_args->test->RunAndKick([request_args]() {
+    request_args->done = true;
+  });
 }
 
-static void on_finish_expect_cancelled(void* arg, grpc_error_handle error) {
-  TestArg* test_arg = static_cast<TestArg*>(arg);
-  grpc_http_response response = test_arg->response;
+void OnFinishExpectCancelled(void* arg, grpc_error_handle error) {
+  RequestArgs* request_args = static_cast<RequestArgs*>(arg);
+  grpc_http_response response = request_args->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  grpc_core::MutexLockForGprMu lock(test_arg->polling_arg->mu);
-  test_arg->done = true;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "pollset_kick",
-      grpc_pollset_kick(
-          grpc_polling_entity_pollset(&test_arg->polling_arg->pops), nullptr)));
+  request_args->test->RunAndKick([request_args]() {
+    request_args->done = true;
+  });
 }
 
-static void test_get(int port) {
-  TestPollingArg polling_arg;
-  TestArg test_arg(&polling_arg);
+TEST_F(HttpCliTest, Get) {
+  RequestArgs request_args(this);
   grpc_httpcli_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
@@ -132,28 +158,19 @@ static void test_get(int port) {
 
   grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
       grpc_core::HttpCliRequest::Get(
-          &test_arg.polling_arg->pops, grpc_core::ResourceQuota::Default(),
-          &req, n_seconds_time(15),
-          GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
-          &test_arg.response);
+          pops(), grpc_core::ResourceQuota::Default(),
+          &req, NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinish, &request_args, grpc_schedule_on_exec_ctx),
+          &request_args.response);
   httpcli_request->Start();
-  gpr_mu_lock(test_arg.polling_arg->mu);
-  while (!test_arg.done) {
-    grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(
-                                              &test_arg.polling_arg->pops),
-                                          &worker, n_seconds_time(1))));
-    gpr_mu_unlock(test_arg.polling_arg->mu);
-    gpr_mu_lock(test_arg.polling_arg->mu);
-  }
-  gpr_mu_unlock(test_arg.polling_arg->mu);
+  PollUntil([&request_args]() {
+    return request_args.done;
+  });
   gpr_free(host);
 }
 
-static void test_post(int port) {
-  TestPollingArg polling_arg;
-  TestArg test_arg(&polling_arg);
+TEST_F(HttpCliTest, Post) {
+  RequestArgs request_args(this);
   grpc_httpcli_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
@@ -170,22 +187,14 @@ static void test_post(int port) {
 
   grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
       grpc_core::HttpCliRequest::Post(
-          &test_arg.polling_arg->pops, grpc_core::ResourceQuota::Default(),
-          &req, "hello", 5, n_seconds_time(15),
-          GRPC_CLOSURE_CREATE(on_finish, &test_arg, grpc_schedule_on_exec_ctx),
-          &test_arg.response);
+          pops(), grpc_core::ResourceQuota::Default(),
+          &req, "hello", 5, NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinish, &request_args, grpc_schedule_on_exec_ctx),
+          &request_args.response);
   httpcli_request->Start();
-  gpr_mu_lock(test_arg.polling_arg->mu);
-  while (!test_arg.done) {
-    grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(
-                                              &test_arg.polling_arg->pops),
-                                          &worker, n_seconds_time(1))));
-    gpr_mu_unlock(test_arg.polling_arg->mu);
-    gpr_mu_lock(test_arg.polling_arg->mu);
-  }
-  gpr_mu_unlock(test_arg.polling_arg->mu);
+  PollUntil([&request_args]() {
+    return request_args.done;
+  });
   gpr_free(host);
 }
 
@@ -206,7 +215,7 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-static void test_cancel_get_during_dns_resolution() {
+TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
   // Inject an unresponsive DNS server into the resolver's DNS server config
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
@@ -219,10 +228,9 @@ static void test_cancel_get_during_dns_resolution() {
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
   std::vector<std::thread> threads;
-  TestPollingArg polling_arg;
-  for (int i = 0; i < 100; i++) {
-    threads.push_back(std::thread([&polling_arg]() {
-      TestArg test_arg(&polling_arg);
+    for (int i = 0; i < 100; i++) {
+    threads.push_back(std::thread([this]() {
+      RequestArgs request_args(this);
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
       gpr_log(GPR_INFO, "test_cancel_get_during_dns_resolution");
@@ -235,11 +243,11 @@ static void test_cancel_get_during_dns_resolution() {
 
       grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
           grpc_core::HttpCliRequest::Get(
-              &test_arg.polling_arg->pops, grpc_core::ResourceQuota::Default(),
-              &req, n_seconds_time(15),
-              GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg,
+              pops(), grpc_core::ResourceQuota::Default(),
+              &req, NSecondsTime(15),
+              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
-              &test_arg.response);
+              &request_args.response);
       httpcli_request->Start();
       std::thread cancel_thread([&httpcli_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
@@ -247,17 +255,9 @@ static void test_cancel_get_during_dns_resolution() {
         gpr_log(GPR_DEBUG, "now cancel http request using grpc_httpcli_cancel");
         httpcli_request.reset();
       });
-      gpr_mu_lock(test_arg.polling_arg->mu);
-      while (!test_arg.done) {
-        grpc_pollset_worker* worker = nullptr;
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(
-                                                  &test_arg.polling_arg->pops),
-                                              &worker, n_seconds_time(1))));
-        gpr_mu_unlock(test_arg.polling_arg->mu);
-        gpr_mu_lock(test_arg.polling_arg->mu);
-      }
-      gpr_mu_unlock(test_arg.polling_arg->mu);
+      PollUntil([&request_args]() {
+        return request_args.done;
+      });
       cancel_thread.join();
     }));
   }
@@ -267,18 +267,17 @@ static void test_cancel_get_during_dns_resolution() {
   grpc_ares_test_only_inject_config = prev_test_only_inject_config;
 }
 
-static void test_cancel_get_while_reading_response() {
+TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
   grpc_core::testing::FakeUdpAndTcpServer fake_http_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::vector<std::thread> threads;
-  TestPollingArg polling_arg;
-  for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 100; i++) {
     grpc_core::testing::FakeUdpAndTcpServer* fake_http_server_ptr =
         &fake_http_server;
-    threads.push_back(std::thread([&polling_arg, fake_http_server_ptr]() {
-      TestArg test_arg(&polling_arg);
+    threads.push_back(std::thread([this, fake_http_server_ptr]() {
+      RequestArgs request_args(this);
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
       gpr_log(GPR_INFO, "test_cancel_get_while_reading_response");
@@ -290,11 +289,11 @@ static void test_cancel_get_while_reading_response() {
 
       grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
           grpc_core::HttpCliRequest::Get(
-              &test_arg.polling_arg->pops, grpc_core::ResourceQuota::Default(),
-              &req, n_seconds_time(15),
-              GRPC_CLOSURE_CREATE(on_finish_expect_cancelled, &test_arg,
+              pops(), grpc_core::ResourceQuota::Default(),
+              &req, NSecondsTime(15),
+              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
-              &test_arg.response);
+              &request_args.response);
       httpcli_request->Start();
       exec_ctx.Flush();
       std::thread cancel_thread([&httpcli_request]() {
@@ -303,17 +302,9 @@ static void test_cancel_get_while_reading_response() {
         gpr_log(GPR_DEBUG, "now cancel http request using grpc_httpcli_cancel");
         httpcli_request.reset();
       });
-      gpr_mu_lock(test_arg.polling_arg->mu);
-      while (!test_arg.done) {
-        grpc_pollset_worker* worker = nullptr;
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(
-                                                  &test_arg.polling_arg->pops),
-                                              &worker, n_seconds_time(1))));
-        gpr_mu_unlock(test_arg.polling_arg->mu);
-        gpr_mu_lock(test_arg.polling_arg->mu);
-      }
-      gpr_mu_unlock(test_arg.polling_arg->mu);
+      PollUntil([&request_args]() {
+        return request_args.done;
+      });
       cancel_thread.join();
     }));
   }
@@ -322,12 +313,13 @@ static void test_cancel_get_while_reading_response() {
   }
 }
 
+} // namespace
+
 int main(int argc, char** argv) {
-  gpr_subprocess* server;
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
+  gpr_subprocess* server;
   {
-    grpc_closure destroyed;
     grpc_core::ExecCtx exec_ctx;
     char* me = argv[0];
     char* lslash = strrchr(me, '/');
@@ -375,12 +367,10 @@ int main(int argc, char** argv) {
                                  gpr_time_from_seconds(5, GPR_TIMESPAN)));
     // test_get(port);
     // test_post(port);
-    test_cancel_get_during_dns_resolution();
+    // test_cancel_get_during_dns_resolution();
     // test_cancel_get_while_reading_response();
   }
-  grpc_shutdown();
-
+  int result = RUN_ALL_TESTS();
   gpr_subprocess_destroy(server);
-
-  return 0;
+  return result;
 }
