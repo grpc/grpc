@@ -55,9 +55,12 @@ grpc_millis NSecDeadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
+bool g_resolver_type_configured;
+
 class ResolveAddressTest : public ::testing::TestWithParam<const char*> {
  public:
   ResolveAddressTest() {
+    GPR_ASSERT(g_resolver_type_configured);
     grpc_init();
     grpc_core::ExecCtx exec_ctx;
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
@@ -405,11 +408,13 @@ int main(int argc, char** argv) {
   }
   if (absl::GetFlag(FLAGS_resolver) == "native") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
+    g_resolver_type_configured = true;
   } else if (absl::GetFlag(FLAGS_resolver) == "ares") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+    g_resolver_type_configured = true;
   } else {
     gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
-    abort();
+    // crash later so that --gtest_list_tests can work
   }
   const auto result = RUN_ALL_TESTS();
   return result;
