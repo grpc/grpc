@@ -71,7 +71,6 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
     server_options.set_cert_request_type(
         GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
     server_creds_ = grpc::experimental::TlsServerCredentials(server_options);
-
     std::vector<experimental::IdentityKeyCertPair>
         channel_identity_key_cert_pairs = {
             {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
@@ -372,16 +371,9 @@ TEST_F(
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
       "    {"
-      "      \"name\": \"allow_echo\","
+      "      \"name\": \"allow_mtls\","
       "      \"source\": {"
-      "        \"principals\": ["
-      "          \"foo\""
-      "        ]"
-      "      },"
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/Echo\""
-      "        ]"
+      "        \"principals\": [\"*\"]"
       "      }"
       "    }"
       "  ]"
@@ -404,7 +396,7 @@ TEST_F(SdkAuthzEnd2EndTest,
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
       "    {"
-      "      \"name\": \"allow_authenticated\","
+      "      \"name\": \"allow_mtls\","
       "      \"source\": {"
       "        \"principals\": [\"*\"]"
       "      }"
