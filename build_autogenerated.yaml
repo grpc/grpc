@@ -7335,6 +7335,7 @@ targets:
   deps:
   - absl/flags:flag
   - grpc_test_util
+  - grpc++_test_config
   args:
   - --resolver=ares
 - name: resolve_address_using_native_resolver_test
@@ -7349,6 +7350,7 @@ targets:
   deps:
   - absl/flags:flag
   - grpc_test_util
+  - grpc++_test_config
   args:
   - --resolver=native
 - name: resource_quota_test

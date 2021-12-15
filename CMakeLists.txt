@@ -14182,6 +14182,7 @@ target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
   grpc_test_util
+  grpc++_test_config
 )
 
 
@@ -14219,6 +14220,7 @@ target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
   grpc_test_util
+  grpc++_test_config
 )
 
 
