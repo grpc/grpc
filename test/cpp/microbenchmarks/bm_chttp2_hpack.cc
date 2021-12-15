@@ -178,15 +178,16 @@ class SingleStaticElem {
   }
 };
 
+static void CrashOnAppendError(absl::string_view, const grpc_core::Slice&) {
+  abort();
+}
+
 class SingleInternedElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            grpc_slice_intern(grpc_slice_from_static_string("abc")),
-            grpc_slice_intern(grpc_slice_from_static_string("def"))))));
+    b->Append("abc", grpc_core::Slice::FromStaticString("def"),
+              CrashOnAppendError);
   }
 };
 
