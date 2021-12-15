@@ -577,10 +577,7 @@ class AresDNSResolver : public DNSResolver {
 
   // gets the singleton instance, possibly creating it first
   static AresDNSResolver* GetOrCreate() {
-    static AresDNSResolver* instance;
-    if (instance == nullptr) {
-      instance = new AresDNSResolver();
-    }
+    static AresDNSResolver* instance = new AresDNSResolver();
     return instance;
   }
 

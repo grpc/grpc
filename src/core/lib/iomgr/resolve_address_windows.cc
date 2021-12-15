@@ -90,10 +90,7 @@ class NativeDNSRequest : public DNSResolver::Request {
 }  // namespace
 
 NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
-  static NativeDNSResolver* instance;
-  if (instance == nullptr) {
-    instance = new NativeDNSResolver();
-  }
+  static NativeDNSResolver* instance = new NativeDNSResolver();
   return instance;
 }
 

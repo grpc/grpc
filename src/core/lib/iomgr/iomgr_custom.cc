@@ -20,8 +20,6 @@
 
 #include "src/core/lib/iomgr/iomgr_custom.h"
 
-#include "absl/functional/bind_front.h"
-
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -70,9 +68,9 @@ void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
   grpc_custom_timer_init(timer);
   grpc_custom_pollset_init(poller);
   grpc_custom_pollset_set_init();
+  grpc_core::CustomDNSResolver::Create(resolver);
   grpc_core::CustomDNSResolver* custom_dns_resolver =
-      grpc_core::CustomDNSResolver::GetOrCreate();
-  custom_dns_resolver->set_vtable(resolver);
+      grpc_core::CustomDNSResolver::Get();
   grpc_core::SetDNSResolver(custom_dns_resolver);
   grpc_set_iomgr_platform_vtable(&vtable);
 }
