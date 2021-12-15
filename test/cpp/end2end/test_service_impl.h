@@ -123,6 +123,7 @@ class TestMultipleServiceImpl : public RpcService {
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) {
+    std::cout << "server received request" << std::endl;
     if (request->has_param() &&
         request->param().server_notify_client_when_started()) {
       signaller_.SignalClientThatRpcStarted();
