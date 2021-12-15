@@ -188,9 +188,8 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(
   }
   if (addresses_or.ok()) {
     ServerAddressList addresses;
-    for (size_t i = 0; i < addresses_or->size(); ++i) {
-      addresses.emplace_back(&(*addresses_or)[i].addr, (*addresses_or)[i].len,
-                             nullptr /* args */);
+    for (auto& addr : *addresses_or) {
+      addresses.emplace_back(std::move(addr), nullptr /* args */);
     }
     Result result;
     result.addresses = std::move(addresses);
