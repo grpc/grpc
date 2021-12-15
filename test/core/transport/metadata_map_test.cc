@@ -58,7 +58,7 @@ class FakeEncoder {
  public:
   std::string output() { return output_; }
 
-  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+  void Encode(const Slice& key, const Slice& value) {
     output_ += absl::StrCat("UNKNOWN METADATUM: key=", key.as_string_view(),
                             " value=", value.as_string_view(), "\n");
   }

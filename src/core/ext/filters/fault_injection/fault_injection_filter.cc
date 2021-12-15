@@ -335,8 +335,9 @@ void CallData::DecideWhetherToInjectFaults(
           fi_policy_->abort_code_header, &buffer);
       if (value.has_value()) {
         maybe_copy_policy_func();
-        grpc_status_code_from_int(AsInt<int>(*value).value_or(GRPC_STATUS_UNKNOWN),
-                                  &copied_policy->abort_code);
+        grpc_status_code_from_int(
+            AsInt<int>(*value).value_or(GRPC_STATUS_UNKNOWN),
+            &copied_policy->abort_code);
       }
     }
     if (!fi_policy_->abort_percentage_header.empty()) {
