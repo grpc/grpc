@@ -127,11 +127,8 @@ void test_bind_server_to_addr(const char* host, bool secure) {
   grpc_completion_queue_destroy(cq);
 }
 
-static int external_dns_works(const char* host) {
-  if (grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80").ok()) {
-    return 1;
-  }
-  return 0;
+static bool external_dns_works(const char* host) {
+  return grpc_core::GetDNSResolver()->ResolveNameBlocking(host, "80").ok();
 }
 
 static void test_bind_server_to_addrs(const char** addrs, size_t n) {

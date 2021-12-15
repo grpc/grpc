@@ -81,8 +81,8 @@ class CustomDNSResolver : public DNSResolver {
     // that no I/O polling is required for the resolution to finish.
     void Orphan() override { Unref(); }
 
-    // Implementations of grpc_custom_resolver_vtables must invoke this method
-    // with the results of resolve_async.
+    // Continues async resolution with the results passed first in to
+    // grpc_custom_resolve_callback.
     void ResolveCallback(
         absl::StatusOr<std::vector<grpc_resolved_address>> result);
 
