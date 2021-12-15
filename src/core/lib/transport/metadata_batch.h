@@ -574,7 +574,7 @@ class RemoveHelper {
 template <typename Container>
 class GetStringValueHelper {
  public:
-  explicit GetStringValueHelper(Container* container,
+  explicit GetStringValueHelper(const Container* container,
                                 std::string* backing_store)
       : container_(container) {}
 
@@ -582,14 +582,21 @@ class GetStringValueHelper {
   GPR_ATTRIBUTE_NOINLINE
       absl::enable_if_t<std::is_same<Slice, typename Trait::ValueType>::value,
                         absl::optional<absl::string_view>>
-      Found(Trait trait) {}
+      Found(Trait trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return absl::nullopt;
+    return value->as_string_view();
+  }
 
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE
       absl::enable_if_t<!std::is_same<Slice, typename Trait::ValueType>::value,
                         absl::optional<absl::string_view>>
       Found(Trait trait) {
-    *backing_ = std::string(Trait::Encode(container_->Get(trait)));
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return absl::nullopt;
+    *backing_ = std::string(Trait::Encode(*value).as_string_view());
+    return *backing_;
   }
 
   GPR_ATTRIBUTE_NOINLINE absl::optional<absl::string_view> NotFound(
@@ -598,7 +605,7 @@ class GetStringValueHelper {
   }
 
  private:
-  Container* const container_;
+  const Container* const container_;
   std::string* backing_;
 };
 
@@ -762,7 +769,10 @@ class MetadataMap {
 
   // Retrieve some metadata by name
   absl::optional<absl::string_view> GetStringValue(absl::string_view name,
-                                                   std::string* buffer) const;
+                                                   std::string* buffer) const {
+    metadata_detail::GetStringValueHelper<MetadataMap> helper(this, buffer);
+    return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
+  }
 
   // Extract a piece of known metadata.
   // Returns nullopt if the metadata was not present, or the value if it was.
@@ -810,6 +820,7 @@ class MetadataMap {
 
  private:
   friend class metadata_detail::AppendHelper<MetadataMap>;
+  friend class metadata_detail::GetStringValueHelper<MetadataMap>;
   friend class metadata_detail::RemoveHelper<MetadataMap>;
   friend class ParsedMetadata<MetadataMap>;
 
@@ -910,6 +921,21 @@ class MetadataMap {
                                    [key](const std::pair<Slice, Slice>& p) {
                                      return p.first.as_string_view() == key;
                                    }));
+  }
+
+  absl::optional<absl::string_view> GetStringValueUnknown(
+      absl::string_view key, std::string* backing) const {
+    absl::optional<absl::string_view> out;
+    for (const auto& p : unknown_) {
+      if (p.first.as_string_view() == key) {
+        if (!out.has_value()) {
+          out = p.second.as_string_view();
+        } else {
+          out = *backing = absl::StrCat(*out, ", ", p.second.as_string_view());
+        }
+      }
+    }
+    return out;
   }
 
   // Table of known metadata types.
