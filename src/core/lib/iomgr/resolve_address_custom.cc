@@ -44,22 +44,22 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
   gpr_free(addresses);
 }
 
-void grpc_custom_resolve_callback(grpc_custom_resolver* c_resolver,
+void grpc_custom_resolve_callback(grpc_custom_resolver* c_request,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::CustomDNSResolver::CustomDNSRequest* resolver =
-      grpc_core::CustomDNSResolver::CustomDNSRequest::FromC(c_resolver);
+  grpc_core::CustomDNSResolver::CustomDNSRequest* request =
+      grpc_core::CustomDNSResolver::CustomDNSRequest::FromC(c_request);
   if (error != GRPC_ERROR_NONE) {
-    resolver->ResolveCallback(grpc_error_to_absl_status(error));
+    request->ResolveCallback(grpc_error_to_absl_status(error));
   } else {
     std::vector<grpc_resolved_address> addresses;
     for (size_t i = 0; i < result->naddrs; i++) {
       addresses.push_back(result->addrs[i]);
     }
-    resolver->ResolveCallback(std::move(addresses));
+    request->ResolveCallback(std::move(addresses));
     grpc_resolved_addresses_destroy(result);
   }
   GRPC_ERROR_UNREF(error);
