@@ -318,58 +318,48 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  gpr_subprocess* server;
-  {
-    grpc_core::ExecCtx exec_ctx;
-    char* me = argv[0];
-    char* lslash = strrchr(me, '/');
-    char* args[4];
-    int port = grpc_pick_unused_port_or_die();
-    int arg_shift = 0;
-    /* figure out where we are */
-    char* root;
-    // if (lslash != nullptr) {
-    //  /* Hack for bazel target */
-    //  if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
-    //      strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
-    //              sizeof("http") - 1) == 0) {
-    //    lslash = me + (lslash - me) - sizeof("http");
-    //  }
-    //  root = static_cast<char*>(
-    //      gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
-    //  memcpy(root, me, static_cast<size_t>(lslash - me));
-    //  memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
-    //} else {
-    root = gpr_strdup(".");
-    //}
-
-    GPR_ASSERT(argc <= 2);
-    if (argc == 2) {
-      args[0] = gpr_strdup(argv[1]);
-    } else {
-      arg_shift = 1;
-      gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
-      gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
+  char* me = argv[0];
+  char* lslash = strrchr(me, '/');
+  char* args[4];
+  int port = grpc_pick_unused_port_or_die();
+  int arg_shift = 0;
+  // figure out where we are
+  char* root;
+  if (lslash != nullptr) {
+    // Hack for bazel target
+    if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
+        strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
+                sizeof("http") - 1) == 0) {
+      lslash = me + (lslash - me) - sizeof("http");
     }
-
-    /* start the server */
-    args[1 + arg_shift] = const_cast<char*>("--port");
-    gpr_asprintf(&args[2 + arg_shift], "%d", port);
-    server =
-        gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
-    GPR_ASSERT(server);
-    gpr_free(args[0]);
-    if (arg_shift) gpr_free(args[1]);
-    gpr_free(args[2 + arg_shift]);
-    gpr_free(root);
-
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
-    // test_get(port);
-    // test_post(port);
-    // test_cancel_get_during_dns_resolution();
-    // test_cancel_get_while_reading_response();
+    root = static_cast<char*>(
+        gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
+    memcpy(root, me, static_cast<size_t>(lslash - me));
+    memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
+  } else {
+    root = gpr_strdup(".");
   }
+  GPR_ASSERT(argc <= 2);
+  if (argc == 2) {
+    args[0] = gpr_strdup(argv[1]);
+  } else {
+    arg_shift = 1;
+    gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
+    gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
+  }
+  // start the server
+  args[1 + arg_shift] = const_cast<char*>("--port");
+  gpr_asprintf(&args[2 + arg_shift], "%d", port);
+  gpr_subprocess* server =
+      gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
+  GPR_ASSERT(server);
+  gpr_free(args[0]);
+  if (arg_shift) gpr_free(args[1]);
+  gpr_free(args[2 + arg_shift]);
+  gpr_free(root);
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
+  // run tests
   int result = RUN_ALL_TESTS();
   gpr_subprocess_destroy(server);
   return result;
