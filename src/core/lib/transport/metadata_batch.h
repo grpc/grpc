@@ -440,6 +440,39 @@ struct GrpcLbClientStatsMetadata {
   }
 };
 
+// lb-cost-bin metadata
+struct LbCostBinMetadata {
+  static absl::string_view key() { return "lb-cost-bin"; }
+  struct ValueType {
+    double cost;
+    std::string name;
+  };
+  using MementoType = ValueType;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(const ValueType& x) {
+    auto slice =
+        MutableSlice::CreateUninitialized(sizeof(double) + x.name.length());
+    memcpy(slice.data(), &x.cost, sizeof(double));
+    memcpy(slice.data() + sizeof(double), x.name.data(), x.name.length());
+    return Slice(std::move(slice));
+  }
+  static std::string DisplayValue(MementoType x) {
+    return absl::StrCat(x.name, ":", x.cost);
+  }
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    if (value.length() < sizeof(double)) {
+      on_error("too short", value);
+      return {0, ""};
+    }
+    MementoType out;
+    memcpy(&out.cost, value.data(), sizeof(double));
+    out.name = std::string(
+        reinterpret_cast<const char*>(value.data()) + sizeof(double),
+        value.length() - sizeof(double));
+    return out;
+  }
+};
+
 namespace metadata_detail {
 
 // Helper type - maps a string name to a trait.
@@ -767,6 +800,8 @@ class MetadataMap {
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
+  void Remove(const char* key) { Remove(absl::string_view(key)); }
+
   // Retrieve some metadata by name
   absl::optional<absl::string_view> GetStringValue(absl::string_view name,
                                                    std::string* buffer) const {
@@ -1007,6 +1042,7 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
-    grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata>;
+    grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
+    grpc_core::LbCostBinMetadata>;
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

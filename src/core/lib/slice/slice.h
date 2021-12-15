@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
@@ -255,6 +257,7 @@ class MutableSlice : public slice_detail::BaseSlice,
   // Iterator access to the underlying bytes
   uint8_t* begin() { return mutable_data(); }
   uint8_t* end() { return mutable_data() + size(); }
+  uint8_t* data() { return mutable_data(); }
 
   // Array access
   uint8_t& operator[](size_t i) { return mutable_data()[i]; }

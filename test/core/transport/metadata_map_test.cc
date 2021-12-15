@@ -58,10 +58,9 @@ class FakeEncoder {
  public:
   std::string output() { return output_; }
 
-  void Encode(grpc_mdelem md) {
-    output_ +=
-        absl::StrCat("LEGACY CALL: key=", StringViewFromSlice(GRPC_MDKEY(md)),
-                     " value=", StringViewFromSlice(GRPC_MDVALUE(md)), "\n");
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    output_ += absl::StrCat("UNKNOWN METADATUM: key=", key.as_string_view(),
+                            " value=", value.as_string_view(), "\n");
   }
 
   void Encode(GrpcTimeoutMetadata, grpc_millis deadline) {
