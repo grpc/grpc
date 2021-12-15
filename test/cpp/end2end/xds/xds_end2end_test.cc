@@ -9844,13 +9844,11 @@ TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   }
@@ -9871,13 +9869,11 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   }
@@ -9898,13 +9894,11 @@ TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   }
@@ -9925,13 +9919,11 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
-        << "timed out waiting for NACK";
+    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   }
@@ -13216,6 +13208,9 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
                          &TestTypeName);
 
 // We are only testing the server here.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTest,
     ::testing::Values(
@@ -13239,6 +13234,9 @@ INSTANTIATE_TEST_SUITE_P(
     &TestTypeName);
 
 // We are only testing the server here.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
     ::testing::Values(
@@ -13256,6 +13254,9 @@ INSTANTIATE_TEST_SUITE_P(
     &TestTypeName);
 
 // We are only testing the server here.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithActionPermutations,
     ::testing::Values(

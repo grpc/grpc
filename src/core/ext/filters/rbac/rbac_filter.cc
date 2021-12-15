@@ -69,6 +69,8 @@ RbacFilter::CallData::CallData(grpc_call_element* elem,
 
 namespace {
 
+// TODO(yashykt): Remove these methods once we no longer need to remove the
+// ':method' header in the http_server_filter
 grpc_error_handle PrepareMetadataForAuthorization(grpc_metadata_batch* metadata,
                                                   uint32_t flags) {
   // The http-server filter removes the ':method' header from the metadata which
