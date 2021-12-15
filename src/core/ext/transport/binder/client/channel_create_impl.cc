@@ -75,6 +75,10 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
 
   gpr_once_init(&g_factory_once, FactoryInit);
 
+  args = grpc_core::CoreConfiguration::Get()
+             .channel_args_preconditioning()
+             .PreconditionChannelArgs(args);
+
   // Set channel factory argument
   grpc_arg channel_factory_arg =
       grpc_core::ClientChannelFactory::CreateChannelArg(g_factory);
@@ -90,6 +94,8 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
 
   // Clean up.
   grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(args);
+
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

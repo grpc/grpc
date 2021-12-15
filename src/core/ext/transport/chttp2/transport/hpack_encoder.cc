@@ -727,13 +727,35 @@ void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
 
 void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
                                      grpc_millis deadline) {
-  char timeout_str[GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
-  grpc_mdelem mdelem;
-  grpc_http2_encode_timeout(deadline - ExecCtx::Get()->Now(), timeout_str);
-  mdelem = grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TIMEOUT,
-                                   UnmanagedMemorySlice(timeout_str));
-  EncodeDynamic(mdelem);
-  GRPC_MDELEM_UNREF(mdelem);
+  Timeout timeout = Timeout::FromDuration(deadline - ExecCtx::Get()->Now());
+  for (auto it = compressor_->previous_timeouts_.begin();
+       it != compressor_->previous_timeouts_.end(); ++it) {
+    double ratio = timeout.RatioVersus(it->timeout);
+    // If the timeout we're sending is shorter than a previous timeout, but
+    // within 3% of it, we'll consider sending it.
+    if (ratio > -3 && ratio <= 0 &&
+        compressor_->table_.ConvertableToDynamicIndex(it->index)) {
+      EmitIndexed(compressor_->table_.DynamicIndex(it->index));
+      // Put this timeout to the front of the queue - forces common timeouts to
+      // be considered earlier.
+      std::swap(*it, *compressor_->previous_timeouts_.begin());
+      return;
+    }
+  }
+  // Clean out some expired timeouts.
+  while (!compressor_->previous_timeouts_.empty() &&
+         !compressor_->table_.ConvertableToDynamicIndex(
+             compressor_->previous_timeouts_.back().index)) {
+    compressor_->previous_timeouts_.pop_back();
+  }
+  Slice encoded = timeout.Encode();
+  uint32_t index = compressor_->table_.AllocateIndex(
+      GrpcTimeoutMetadata::key().length() + encoded.length() +
+      hpack_constants::kEntryOverhead);
+  compressor_->previous_timeouts_.push_back(PreviousTimeout{timeout, index});
+  EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      StaticSlice::FromStaticString(GrpcTimeoutMetadata::key()).c_slice(),
+      encoded.c_slice());
 }
 
 void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
