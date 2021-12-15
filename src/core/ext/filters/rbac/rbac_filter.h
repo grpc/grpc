@@ -53,10 +53,9 @@ class RbacFilter {
     grpc_call_context_element* call_context_;
     // State for keeping track of recv_initial_metadata
     grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+    uint32_t* recv_flags_ = nullptr;
     grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
     grpc_closure recv_initial_metadata_ready_;
-    // Payload for access to recv_initial_metadata fields
-    grpc_transport_stream_op_batch_payload* payload_ = nullptr;
   };
 
   RbacFilter(size_t index,

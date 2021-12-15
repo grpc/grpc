@@ -50,11 +50,11 @@ void RbacFilter::CallData::StartTransportStreamOpBatch(
   if (op->recv_initial_metadata) {
     calld->recv_initial_metadata_ =
         op->payload->recv_initial_metadata.recv_initial_metadata;
+    calld->recv_flags_ = op->payload->recv_initial_metadata.recv_flags;
     calld->original_recv_initial_metadata_ready_ =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->recv_initial_metadata_ready_;
-    calld->payload_ = op->payload;
   }
   // Chain to the next filter.
   grpc_call_next_op(elem, op);
@@ -105,23 +105,21 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
     if (method_params == nullptr) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
     } else {
-      auto* metadata =
-          calld->payload_->recv_initial_metadata.recv_initial_metadata;
-      error = PrepareMetadataForAuthorization(
-          metadata, *calld->payload_->recv_initial_metadata.recv_flags);
+      error = PrepareMetadataForAuthorization(calld->recv_initial_metadata_,
+                                              *calld->recv_flags_);
       if (error == GRPC_ERROR_NONE) {
         RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
         auto* authorization_engine =
             method_params->authorization_engine(chand->index_);
         if (authorization_engine
-                ->Evaluate(
-                    EvaluateArgs(metadata, &chand->per_channel_evaluate_args_))
+                ->Evaluate(EvaluateArgs(calld->recv_initial_metadata_,
+                                        &chand->per_channel_evaluate_args_))
                 .type == AuthorizationEngine::Decision::Type::kDeny) {
           error =
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
         }
       }
-      PruneMetadataAfterAuthorization(metadata);
+      PruneMetadataAfterAuthorization(calld->recv_initial_metadata_);
     }
     if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,

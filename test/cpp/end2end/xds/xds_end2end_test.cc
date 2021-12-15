@@ -9844,12 +9844,12 @@ TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
@@ -9871,12 +9871,12 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
@@ -9898,12 +9898,12 @@ TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
@@ -9925,12 +9925,12 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForRdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack(StatusCode::DEADLINE_EXCEEDED))
+    ASSERT_TRUE(WaitForLdsNack(StatusCode::UNAVAILABLE))
         << "timed out waiting for NACK";
     EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
@@ -9942,23 +9942,23 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
 using XdsRbacTestWithRouteOverrideAlwaysPresent = XdsRbacTest;
 
 TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent, EmptyRBACPerRouteOverride) {
-  if (GetParam().filter_config_setup() ==
-      TestType::FilterConfigSetup::kHTTPConnectionManagerOriginal) {
-    return;
-  }
   HttpConnectionManager http_connection_manager;
   Listener listener = default_server_listener_;
   RouteConfiguration route_config = default_server_route_config_;
   auto* filter = http_connection_manager.add_http_filters();
   filter->set_name("rbac");
-  // Create a top-level RBAC policy with an Allow action but empty matching
-  // rules which should result in RPCs being rejected if applied.
+  // Create a top-level RBAC policy with a DENY action for all RPCs
   RBAC rbac;
-  rbac.mutable_rules()->set_action(RBAC_Action_ALLOW);
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(RBAC_Action_DENY);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
   filter->mutable_typed_config()->PackFrom(rbac);
-  google::protobuf::Any filter_config;
   // Override with an Empty RBACPerRoute policy which should result in RBAC
   // being disabled and RPCs being allowed.
+  google::protobuf::Any filter_config;
   filter_config.PackFrom(RBACPerRoute());
   auto* config_map = route_config.mutable_virtual_hosts(0)
                          ->mutable_routes(0)
@@ -9981,28 +9981,25 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent, EmptyRBACPerRouteOverride) {
 // Test a non-empty top level RBAC with a non-empty RBACPerRouteOverride
 TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
        NonEmptyTopLevelRBACNonEmptyPerRouteOverride) {
-  if (GetParam().filter_config_setup() ==
-      TestType::FilterConfigSetup::kHTTPConnectionManagerOriginal) {
-    return;
-  }
   HttpConnectionManager http_connection_manager;
   Listener listener = default_server_listener_;
   RouteConfiguration route_config = default_server_route_config_;
   auto* filter = http_connection_manager.add_http_filters();
   filter->set_name("rbac");
-  // Create a top-level RBAC policy with an Allow action but empty matching
-  // rules which should result in RPCs being rejected if applied.
+  // Create a top-level RBAC policy with a DENY action for all RPCs
   RBAC rbac;
-  rbac.mutable_rules()->set_action(RBAC_Action_ALLOW);
-  filter->mutable_typed_config()->PackFrom(rbac);
-  google::protobuf::Any filter_config;
-  // Override with a non-empty RBACPerRoute policy which should allow the RPCs.
-  RBACPerRoute rbac_per_route;
-  auto* rules = rbac_per_route.mutable_rbac()->mutable_rules();
-  rules->set_action(RBAC_Action_ALLOW);
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(RBAC_Action_DENY);
   Policy policy;
   policy.add_permissions()->set_any(true);
   policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  filter->mutable_typed_config()->PackFrom(rbac);
+  // Override with a non-empty RBACPerRoute policy which allows all RPCs.
+  google::protobuf::Any filter_config;
+  RBACPerRoute rbac_per_route;
+  rules = rbac_per_route.mutable_rbac()->mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
   (*rules->mutable_policies())["policy"] = policy;
   filter_config.PackFrom(RBACPerRoute());
   auto* config_map = route_config.mutable_virtual_hosts(0)
@@ -13222,66 +13219,90 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerRdsTest,
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTest,
     ::testing::Values(
-        TestType().set_use_xds_credentials(),
-        TestType().set_use_xds_credentials().set_enable_rds_testing(),
-        TestType().set_use_xds_credentials().set_filter_config_setup(
-            TestType::FilterConfigSetup::kRouteOverride),
+        TestType().set_use_xds_credentials().set_bootstrap_source(
+            TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_use_xds_credentials()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
-                TestType::FilterConfigSetup::kRouteOverride)),
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
     &TestTypeName);
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
     ::testing::Values(
-        TestType().set_use_xds_credentials().set_filter_config_setup(
-            TestType::FilterConfigSetup::kRouteOverride),
+        TestType()
+            .set_use_xds_credentials()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
-                TestType::FilterConfigSetup::kRouteOverride)),
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
     &TestTypeName);
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithActionPermutations,
     ::testing::Values(
-        TestType().set_use_xds_credentials().set_rbac_action(RBAC_Action_ALLOW),
-        TestType().set_use_xds_credentials().set_rbac_action(RBAC_Action_DENY),
+        TestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
-            .set_rbac_action(RBAC_Action_ALLOW),
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
-            .set_rbac_action(RBAC_Action_DENY),
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
             .set_filter_config_setup(
                 TestType::FilterConfigSetup::kRouteOverride)
-            .set_rbac_action(RBAC_Action_ALLOW),
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
             .set_filter_config_setup(
                 TestType::FilterConfigSetup::kRouteOverride)
-            .set_rbac_action(RBAC_Action_DENY),
-        TestType()
-            .set_use_xds_credentials()
-            .set_enable_rds_testing()
-            .set_filter_config_setup(
-                TestType::FilterConfigSetup::kRouteOverride)
-            .set_rbac_action(RBAC_Action_ALLOW),
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
                 TestType::FilterConfigSetup::kRouteOverride)
-            .set_rbac_action(RBAC_Action_DENY)),
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
     &TestTypeName);
 
 // EDS could be tested with or without XdsResolver, but the tests would
