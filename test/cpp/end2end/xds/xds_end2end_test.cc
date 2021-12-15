@@ -561,6 +561,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       top_server_ = server;
       return *this;
     }
+    BootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
+        const std::string& client_default_listener_resource_name_template =
+            "") {
+      client_default_listener_resource_name_template_ =
+          client_default_listener_resource_name_template;
+      return *this;
+    }
     BootstrapBuilder& AddPlugin(const std::string& key, const std::string& name,
                                 const std::string& certificate_file = "",
                                 const std::string& private_key_file = "",
@@ -585,6 +592,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     std::string Build() {
       std::vector<std::string> fields;
       fields.push_back(MakeXdsServersText(top_server_));
+      if (!client_default_listener_resource_name_template_.empty()) {
+        fields.push_back(absl::StrCat(
+            "  \"client_default_listener_resource_name_template\": \"",
+            client_default_listener_resource_name_template_, "\""));
+      }
       fields.push_back(MakeNodeText());
       if (!server_listener_resource_name_template_.empty()) {
         fields.push_back(
@@ -700,6 +712,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     bool v2_ = false;
     std::string top_server_;
+    std::string client_default_listener_resource_name_template_;
     std::map<std::string /*key*/, PluginInfo> plugins_;
     std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
     std::string server_listener_resource_name_template_ =
@@ -812,8 +825,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       builder.SetV2();
     }
     bootstrap_ = builder.Build();
-    gpr_log(GPR_INFO, "donna the generated bootstrap is %s",
-            bootstrap_.c_str());
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
     } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
@@ -2535,12 +2546,10 @@ class XdsFederationTest : public XdsEnd2endTest {
   }
 
   void SetUp() override {
-    BootstrapBuilder builder = BootstrapBuilder();
-    builder.AddAuthority(
-        "xds.example.com",
-        absl::StrCat("localhost:", authority_balancer_->port()));
-    CreateClientsAndServers(builder);
-    StartAllBackends();
+    // Each test will use a slightly different bootstrapfile,
+    // so SetUp() is intentionally empty here and the real
+    // setup: calling of CreateClientAndServers(builder)
+    // is moved into each test.
   }
 
   void TearDown() override {
@@ -2551,13 +2560,79 @@ class XdsFederationTest : public XdsEnd2endTest {
   std::unique_ptr<BalancerServerThread> authority_balancer_;
 };
 
+// Tests federation basic with URL "server.example.com"
+// which has no authority.
+// The resource name used will be formed via the top level specified template:
+// "xdstp://xds.example.com/type.googleapis.com/"
+// "envoy.config.listener.v3.Listener/server.example.com?psm_project_id=1234"
+TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* kAuthority = "xds.example.com";
+  const char* kNewListenerTemplate =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/%s?psm_project_id=1234";
+  const char* kNewListenerName =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/server.example.com?psm_project_id=1234";
+  const char* kNewEdsServiceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "new_edsservice_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "new_cluster_name";
+  BootstrapBuilder builder = BootstrapBuilder();
+  builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
+  builder.AddAuthority(
+      kAuthority, absl::StrCat("localhost:", authority_balancer_->port()),
+      // Note we will not use the client_listener_resource_name_template field
+      // in the authority.
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
+      "client/%s?client_listener_resource_name_template_not_in_use");
+  CreateClientsAndServers(builder);
+  StartAllBackends();
+  // Eds for 2 balancers are set up.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  authority_balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsServiceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New Route
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  // New Listener
+  Listener listener = default_listener_;
+  listener.set_name(kNewListenerName);
+  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
+                                   new_route_config);
+  // RPCs sent using current stub (without
+  // authority) should go to backend 1 not backend 0; this is because we are
+  // following client_default_listener_resource_name_template which gives us an
+  // authority and a xds server to use within that authority. Note we do not use
+  // the client_listener_resource_name_template field.
+  WaitForAllBackends(1, 2);
+  // We should be reaching backend 1, not 0, as balanced by the authority xds
+  // server.
+  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+}
+
 // Tests federation basic with URL "xds.example.com/new-server.example.com"
-// and resource name
+// which specifies authority xds.example.com.
+// The resource name used will be formed via the default template:
 // "xdstp://xds.example.com/type.googleapis.com/"
 // "envoy.config.listener.v3.Listener/new-server.example.com"
-// Ensure resource name parsing and re-construction are all working internally.
-TEST_P(XdsFederationTest, FederationBasic) {
+TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* kAuthority = "xds.example.com";
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "new_server.example.com";
@@ -2567,8 +2642,86 @@ TEST_P(XdsFederationTest, FederationBasic) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  const char* kAuthority = "xds.example.com";
   const char* kNewTarget = "new_server.example.com";
+  BootstrapBuilder builder = BootstrapBuilder();
+  builder.AddAuthority(kAuthority,
+                       absl::StrCat("localhost:", authority_balancer_->port()));
+  CreateClientsAndServers(builder);
+  StartAllBackends();
+  // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
+  // and RPCs sent using the new stub go to backend 1.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  authority_balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsServiceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New Route
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  // New Listener
+  Listener listener = default_listener_;
+  listener.set_name(kNewListenerName);
+  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
+                                   new_route_config);
+  // Ensure update has reached and send 10 RPCs to the current stub.
+  WaitForAllBackends(0, 1);
+  backends_[0]->backend_service()->ResetCounters();
+  // Create second channel to new target uri and send 1 RPC .
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewTarget, kAuthority);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  grpc::Status status = stub2->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // We should be reaching backend 1, not 0, as balanced by the authority xds
+  // server.
+  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+}
+
+// Tests federation basic with URL "xds.example.com/new-server.example.com"
+// which specifies authority xds.example.com.
+// The resource name used will be formed via the authority specified template:
+// "xdstp://xds.example.com/type.googleapis.com/"
+// "envoy.config.listener.v3.Listener/grpc/client/new_server.example.com?psm_project_id=1234"
+TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* kAuthority = "xds.example.com";
+  const char* kNewListenerTemplate =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/%s?psm_project_id=1234";
+  const char* kNewListenerName =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/new_server.example.com?psm_project_id=1234";
+  const char* kNewEdsServiceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "new_edsservice_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "new_cluster_name";
+  const char* kNewTarget = "new_server.example.com";
+  BootstrapBuilder builder = BootstrapBuilder();
+  builder.AddAuthority(kAuthority,
+                       absl::StrCat("localhost:", authority_balancer_->port()),
+                       kNewListenerTemplate);
+  CreateClientsAndServers(builder);
+  StartAllBackends();
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -7893,12 +8046,11 @@ TEST_P(XdsSecurityTest, TestFallbackToTls) {
   g_fake1_cert_data_map = nullptr;
 }
 
-// TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
-//  UpdateAndVerifyXdsSecurityConfiguration("file_plugin", "", "file_plugin",
-//  "",
-//                                          {server_san_exact_},
-//                                          authenticated_identity_);
-//}
+TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
+  UpdateAndVerifyXdsSecurityConfiguration("file_plugin", "", "file_plugin", "",
+                                          {server_san_exact_},
+                                          authenticated_identity_);
+}
 
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
