@@ -63,7 +63,6 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* c_resolver,
     grpc_resolved_addresses_destroy(result);
   }
   GRPC_ERROR_UNREF(error);
-  delete resolver;
 }
 
 namespace grpc_core {
