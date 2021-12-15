@@ -69,6 +69,10 @@ def is_marked_as_keep_gce(suffix: str) -> bool:
     return suffix in KEEP_CONFIG["gce_framework"]["suffix"]
 
 
+def is_marked_as_keep_gke(suffix: str) -> bool:
+    return suffix in KEEP_CONFIG["gke_framework"]["suffix"]
+
+
 @functools.lru_cache()
 def get_expire_timestamp() -> str:
     return (datetime.datetime.now() - KEEP_PERIOD).isoformat()
@@ -208,6 +212,11 @@ def main(argv):
         result = re.search(f'{PSM_SECURITY_PREFIX}-health-check-(.*)',
                            resource['name'])
         if result is not None:
+            if is_marked_as_keep_gke(result.group(1)):
+                logging.info('Skipped [keep]: GKE resource suffix [%s] is marked as keep',
+                             result.group(1))
+                continue
+
             cleanup_td_for_gke(project, network, PSM_SECURITY_PREFIX,
                                result.group(1))
             # TODO: cleanup gke clients and servers, but those need k8s context.
