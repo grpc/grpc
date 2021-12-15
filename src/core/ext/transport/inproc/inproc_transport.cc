@@ -274,8 +274,8 @@ struct inproc_stream {
 
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial) {
-  std::string prefix = absl::StrCat("INPROC:", is_initial ? "HDR:" : "TRL:",
-                                    is_client ? "CLI:" : "SVR:");
+  std::string prefix = absl::StrCat(
+      "INPROC:", is_initial ? "HDR:" : "TRL:", is_client ? "CLI:" : "SVR:");
   md_batch->Log([&](absl::string_view key, absl::string_view value) {
     gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
   });
@@ -443,8 +443,10 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
       // If this is a server, provide initial metadata with a path and authority
       // since it expects that as well as no error yet
       grpc_metadata_batch fake_md(s->arena);
-      fake_md.Set(grpc_core::HttpPathMetadata(), grpc_core::Slice::FromStaticString("/"));
-      fake_md.Set(grpc_core::HttpAuthorityMetadata(), grpc_core::Slice::FromStaticString("inproc-fail"));
+      fake_md.Set(grpc_core::HttpPathMetadata(),
+                  grpc_core::Slice::FromStaticString("/"));
+      fake_md.Set(grpc_core::HttpAuthorityMetadata(),
+                  grpc_core::Slice::FromStaticString("inproc-fail"));
 
       (void)fill_in_metadata(
           s, &fake_md, 0,

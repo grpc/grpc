@@ -220,7 +220,7 @@ HPackTable::StaticMementos::StaticMementos() {
     memento[i] = grpc_metadata_batch::Parse(
         sm.key, Slice::FromStaticString(sm.value),
         strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
-        [](absl::string_view, const grpc_core::Slice&) {
+        [](absl::string_view, const Slice&) {
           abort();  // not expecting to see this
         });
   }
