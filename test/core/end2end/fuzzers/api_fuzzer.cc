@@ -156,10 +156,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
   // Gets the singleton instance, possibly creating it first
   static FuzzerDNSResolver* GetOrCreate() {
-    static FuzzerDNSResolver* instance;
-    if (instance == nullptr) {
-      instance = new FuzzerDNSResolver();
-    }
+    static FuzzerDNSResolver* instance = new FuzzerDNSResolver();
     return instance;
   }
 

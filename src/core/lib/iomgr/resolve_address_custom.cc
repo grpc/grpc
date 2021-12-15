@@ -119,10 +119,7 @@ void CustomDNSResolver::Request::ResolveCallback(
 }
 
 CustomDNSResolver* CustomDNSResolver::GetOrCreate() {
-  static CustomDNSResolver* instance;
-  if (instance == nullptr) {
-    instance = new CustomDNSResolver();
-  }
+  static CustomDNSResolver* instance = new CustomDNSResolver();
   return instance;
 }
 

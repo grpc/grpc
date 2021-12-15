@@ -98,10 +98,7 @@ class EventEngineDNSRequest : DNSRequest {
 }  // namespace
 
 DNSResolver* EventEngineDNSResolver::GetOrCreate() {
-  static EventEngineDNSResolver* instance;
-  if (instance == nullptr) {
-    instance = new EventEngineDNSResolver();
-  }
+  static EventEngineDNSResolver* instance = new EventEngineDNSResolver();
   return instance;
 }
 
