@@ -3963,20 +3963,6 @@ targets:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc_test_util
-- name: resolve_address_using_ares_resolver_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=ares
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: resolve_address_using_ares_resolver_test
   build: test
   language: c
@@ -3989,20 +3975,6 @@ targets:
   - grpc_test_util
   args:
   - --resolver=ares
-- name: resolve_address_using_native_resolver_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=native
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: resolve_address_using_native_resolver_test
   build: test
   language: c
@@ -7343,6 +7315,38 @@ targets:
   - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: resolve_address_using_ares_resolver_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  deps:
+  - absl/flags:flag
+  - grpc_test_util
+  args:
+  - --resolver=ares
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: resolve_address_using_native_resolver_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  deps:
+  - absl/flags:flag
+  - grpc_test_util
+  args:
+  - --resolver=native
   platforms:
   - linux
   - posix
