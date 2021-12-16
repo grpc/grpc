@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "hpack_constants.h"
+#include "hpack_encoder_table.h"
 
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this
@@ -757,6 +758,12 @@ void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
 }
 
 void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
+  if (slice.length() > HPackEncoderTable::MaxEntrySize()) {
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(
+        StaticSlice::FromStaticString(UserAgentMetadata::key()).c_slice(),
+        slice.c_slice());
+    return;
+  }
   if (!slice.is_equivalent(compressor_->user_agent_)) {
     compressor_->user_agent_ = slice.Ref();
     compressor_->user_agent_index_ = 0;
