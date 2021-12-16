@@ -281,6 +281,7 @@ void HttpCliRequest::NextAddress(grpc_error_handle error)
   auto* args = CoreConfiguration::Get()
                    .channel_args_preconditioning()
                    .PreconditionChannelArgs(&channel_args);
+  own_endpoint_ = false;
   grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, args, addr,
                           deadline_);
   grpc_channel_args_destroy(args);

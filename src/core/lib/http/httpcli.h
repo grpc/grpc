@@ -201,7 +201,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   grpc_closure connected_;
   grpc_endpoint* ep_ = nullptr;
   grpc_core::Mutex mu_;
-  bool own_endpoint_ ABSL_GUARDED_BY(mu_) = false;
+  bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_slice request_text_ ABSL_GUARDED_BY(mu_);
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
