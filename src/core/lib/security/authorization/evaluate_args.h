@@ -59,6 +59,7 @@ class EvaluateArgs {
   absl::string_view GetPath() const;
   absl::string_view GetHost() const;
   absl::string_view GetMethod() const;
+  absl::string_view GetAuthority() const;
   // Returns metadata value(s) for the specified key.
   // If the key is not present in the batch, returns absl::nullopt.
   // If the key is present exactly once in the batch, returns a string_view of

@@ -110,6 +110,16 @@ absl::string_view EvaluateArgs::GetMethod() const {
   return absl::string_view();
 }
 
+absl::string_view EvaluateArgs::GetAuthority() const {
+  if (metadata_ != nullptr) {
+    const auto* authority = metadata_->get_pointer(HttpAuthorityMetadata());
+    if (authority != nullptr) {
+      return authority->as_string_view();
+    }
+  }
+  return absl::string_view();
+}
+
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
     absl::string_view key, std::string* concatenated_value) const {
   if (metadata_ == nullptr) {
