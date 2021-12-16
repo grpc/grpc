@@ -160,7 +160,7 @@ std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
   grpc::ChannelArguments channel_args;
   grpc_socket_mutator* tcp_user_timeout_mutator =
       static_cast<grpc_socket_mutator*>(
-          gpr_malloc(sizeof(tcp_user_timeout_mutator)));
+          gpr_malloc(sizeof(*tcp_user_timeout_mutator)));
   grpc_socket_mutator_init(tcp_user_timeout_mutator,
                            &kTcpUserTimeoutMutatorVtable);
   channel_args.SetSocketMutator(tcp_user_timeout_mutator);
