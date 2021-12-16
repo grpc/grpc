@@ -1862,7 +1862,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
     s->unprocessed_incoming_frames_buffer_cached_length =
         s->unprocessed_incoming_frames_buffer.length;
     if (error == GRPC_ERROR_NONE && *s->recv_message != nullptr) {
-      GPR_ASSERT(s->recv_message->get()->length() != 1024);
       null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = nullptr;
