@@ -610,7 +610,10 @@ void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
 
 void HPackCompressor::Framer::Encode(ContentTypeMetadata,
                                      ContentTypeMetadata::ValueType value) {
-  GPR_ASSERT(value == ContentTypeMetadata::ValueType::kApplicationGrpc);
+  if (value != ContentTypeMetadata::ValueType::kApplicationGrpc) {
+    gpr_log(GPR_ERROR, "Not encoding bad content-type header");
+    return;
+  }
   EncodeAlwaysIndexed(
       &compressor_->content_type_index_, GRPC_MDSTR_CONTENT_TYPE,
       StaticSlice::FromStaticString("application/grpc").c_slice(),
