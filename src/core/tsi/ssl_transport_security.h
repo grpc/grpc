@@ -26,6 +26,7 @@
 #include <grpc/grpc_security_constants.h>
 
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 
 extern "C" {
 #include <openssl/x509.h>
@@ -81,9 +82,6 @@ void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
 
    Experimental SSL Key logging functionality to enable decryption of
    packet captures.  */
-
-typedef struct tsi_tls_session_key_logger tsi_tls_session_key_logger;
-
 static constexpr bool tsi_tls_session_key_logging_supported() {
 // Supported only for open-ssl versions >= 1.1.1
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
@@ -168,7 +166,7 @@ struct tsi_ssl_client_handshaker_options {
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
   /* tsi_ssl_key_logger is an instance used to log SSL keys to a file. */
-  tsi_tls_session_key_logger* key_logger;
+  tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger;
 
   /* skip server certificate verification. */
   bool skip_server_certificate_verification;
@@ -308,7 +306,7 @@ struct tsi_ssl_server_handshaker_options {
   tsi_tls_version min_tls_version;
   tsi_tls_version max_tls_version;
   /* tsi_ssl_key_logger is an instance used to log SSL keys to a file. */
-  tsi_tls_session_key_logger* key_logger;
+  tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* key_logger;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),

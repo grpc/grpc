@@ -28,8 +28,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-typedef ::tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger
-    TlsSessionKeyLogger;
+using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 
 static gpr_once g_cache_init = GPR_ONCE_INIT;
 static grpc_core::Mutex* g_tls_session_key_log_cache_mu = nullptr;
@@ -125,10 +124,6 @@ TlsSessionKeyLoggerCache::CreateTlsSessionKeyLogger(
   auto it = tls_session_key_logger_map_.find(tls_session_key_log_file_path);
   if (it == tls_session_key_logger_map_.end()) {
     // Create a new TlsSessionKeyLogger instance
-    // Sets Ref count of new_tls_session_key_log_file_writer to 1 to make sure
-    // the tls_session_key_logger_map_ is an owner. Relevant
-    // TlsSessionKeyLogger objects which share this TlsSessionKeyLogger
-    // instance also become owners.
     // The TlsSessionKeyLogger becomes an owner of the cache instance
     // which created it.
     auto new_tls_session_key_logger =

@@ -28,7 +28,7 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-typedef tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger TlsSessionKeyLogger;
+using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 
 namespace grpc_core {
 
