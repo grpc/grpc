@@ -137,11 +137,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
   void Start();
 
-  void Orphan() override {
-    //grpc_core::MutexLock lock(&mu_);
-    // TODO(apolcyn): implement cancellation
-    Unref();
-  }
+  void Orphan() override;
 
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -197,6 +193,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
   grpc_closure connected_;
   grpc_core::Mutex mu_;
+  bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_slice request_text_ ABSL_GUARDED_BY(mu_);
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);

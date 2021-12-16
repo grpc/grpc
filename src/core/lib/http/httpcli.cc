@@ -157,6 +157,15 @@ void HttpCliRequest::Start() {
   dns_request_->Start();
 }
 
+void HttpCliRequest::Orphan() {
+  {
+    grpc_core::MutexLock lock(&mu_);
+    cancelled_ = true;
+    dns_request_.reset(); // cancel potentially pending DNS resolution
+  }
+  Unref();
+}
+
 void HttpCliRequest::AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   if (overall_error_ == GRPC_ERROR_NONE) {
     overall_error_ =
@@ -271,6 +280,10 @@ void HttpCliRequest::OnResolved(
   dns_request_.reset();
   if (!addresses_or.ok()) {
     Finish(absl_status_to_grpc_error(addresses_or.status()));
+    return;
+  }
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("cancelled during DNS resolution"));
     return;
   }
   addresses_ = std::move(*addresses_or);
