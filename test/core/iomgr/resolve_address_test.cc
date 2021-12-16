@@ -180,7 +180,7 @@ class ResolveAddressTest : public ::testing::Test {
 TEST_F(ResolveAddressTest, Localhost) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, pollset_set(),
+      "localhost:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -203,7 +203,7 @@ TEST_F(ResolveAddressTest, LocalhostResultHasIPv6First) {
   }
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, pollset_set(),
+      "localhost:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv6First, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -251,7 +251,7 @@ TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
   // run the test
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, pollset_set(),
+      "localhost:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv4First, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -271,7 +271,7 @@ TEST_F(ResolveAddressTest, NonNumericDefaultPort) {
 TEST_F(ResolveAddressTest, MissingDefaultPort) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost", nullptr, pollset_set(),
+      "localhost", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustFail, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -281,7 +281,7 @@ TEST_F(ResolveAddressTest, MissingDefaultPort) {
 TEST_F(ResolveAddressTest, IPv6WithPort) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "[2001:db8::1]:1", nullptr, pollset_set(),
+      "[2001:db8::1]:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -313,7 +313,7 @@ TEST_F(ResolveAddressTest, IPv6WithoutPortV4MappedV6) {
 void TestInvalidIPAddress(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      target, nullptr, test->pollset_set(),
+      target, "", test->pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustFail, test));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
