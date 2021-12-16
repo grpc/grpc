@@ -71,7 +71,7 @@ class Fuzzer {
         // Remove some value to the back of a comparison, assert that both
         // vectors are equivalent.
         auto* c = Mutate(action.pop_back().vector());
-        if (c->chunked.size() > 0) {
+        if (!c->chunked.empty()) {
           c->chunked.PopBack();
           c->std.pop_back();
           c->AssertOk();

@@ -1125,7 +1125,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
-    src/core/ext/transport/chttp2/transport/hpack_utils.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
@@ -1506,7 +1505,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
     src/core/lib/security/credentials/credentials.cc \
-    src/core/lib/security/credentials/credentials_metadata.cc \
     src/core/lib/security/credentials/external/aws_external_account_credentials.cc \
     src/core/lib/security/credentials/external/aws_request_signer.cc \
     src/core/lib/security/credentials/external/external_account_credentials.cc \
@@ -1557,7 +1555,6 @@ LIBGRPC_SRC = \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
@@ -1583,7 +1580,6 @@ LIBGRPC_SRC = \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
@@ -1832,7 +1828,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
-    src/core/ext/transport/chttp2/transport/hpack_utils.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
@@ -1991,7 +1986,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/slice/static_slice.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
@@ -2017,7 +2011,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
@@ -2972,7 +2965,6 @@ src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc: $(OPENS
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/composite/composite_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials_metadata.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_external_account_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_request_signer.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/external_account_credentials.cc: $(OPENSSL_DEP)
