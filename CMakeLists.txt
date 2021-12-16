@@ -259,6 +259,8 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4267")
   # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
+  # Silences thousands of trucation warnings
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
