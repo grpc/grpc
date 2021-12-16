@@ -2431,7 +2431,8 @@ class ClientChannel::LoadBalancedCall::Metadata
   class Encoder {
    public:
     void Encode(const Slice& key, const Slice& value) {
-      out_.emplace_back(key.as_string_view(), value.as_string_view());
+      out_.emplace_back(std::string(key.as_string_view()),
+                        std::string(value.as_string_view()));
     }
 
     template <class Which>
