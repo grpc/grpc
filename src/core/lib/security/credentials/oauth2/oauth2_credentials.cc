@@ -210,7 +210,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   }
 
 end:
-  *token_value = absl::nullopt;
+  if (status != GRPC_CREDENTIALS_OK) *token_value = absl::nullopt;
   gpr_free(null_terminated_body);
   return status;
 }

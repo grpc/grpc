@@ -135,19 +135,22 @@ void HPackCompressor::Framer::EnsureSpace(size_t need_bytes) {
 }
 
 void HPackCompressor::Framer::Add(Slice slice) {
-  const size_t len = slice.length();
-  if (len == 0) return;
-  const size_t remaining = max_frame_size_ - CurrentFrameSize();
-  if (len <= remaining) {
-    stats_->header_bytes += len;
-    grpc_slice_buffer_add(output_, slice.TakeCSlice());
-  } else {
-    stats_->header_bytes += remaining;
-    grpc_slice_buffer_add(output_,
-                          slice.RefSubSlice(0, remaining).TakeCSlice());
-    FinishFrame(false);
-    prefix_ = BeginFrame();
-    Add(std::move(slice));
+  while (true) {
+    const size_t len = slice.length();
+    if (len == 0) return;
+    const size_t remaining = max_frame_size_ - CurrentFrameSize();
+    if (len <= remaining) {
+      stats_->header_bytes += len;
+      grpc_slice_buffer_add(output_, slice.TakeCSlice());
+      return;
+    } else {
+      stats_->header_bytes += remaining;
+      Slice tail = slice.Split(remaining);
+      grpc_slice_buffer_add(output_, slice.TakeCSlice());
+      slice = std::move(tail);
+      FinishFrame(false);
+      prefix_ = BeginFrame();
+    }
   }
 }
 

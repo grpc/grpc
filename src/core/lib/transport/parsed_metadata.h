@@ -265,9 +265,11 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       metadata_detail::DestroyTrivialMemento,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        map->Set(Which(),
-                 metadata_detail::FieldFromTrivial<typename Which::MementoType>(
-                     value));
+        map->Set(
+            Which(),
+            Which::MementoToValue(
+                metadata_detail::FieldFromTrivial<typename Which::MementoType>(
+                    value)));
       },
       // with_new_value
       WithNewValueSetTrivial<typename Which::MementoType, Which::ParseMemento>,

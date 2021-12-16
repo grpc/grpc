@@ -113,6 +113,8 @@ class BaseSlice {
 
   uint8_t* mutable_data() { return GRPC_SLICE_START_PTR(slice_); }
 
+  grpc_slice* c_slice_ptr() { return &slice_; }
+
  private:
   grpc_slice slice_;
 };
@@ -341,6 +343,12 @@ class Slice : public slice_detail::BaseSlice,
   // Return a sub slice of this one. Adds a reference to the underlying slice.
   Slice RefSubSlice(size_t pos, size_t n) const {
     return Slice(grpc_slice_sub(c_slice(), pos, pos + n));
+  }
+
+  // Split this slice, returning a new slice containing (split:end] and
+  // leaving this slice with [begin:split).
+  Slice Split(size_t split) {
+    return Slice(grpc_slice_split_tail(c_slice_ptr(), split));
   }
 
   Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }

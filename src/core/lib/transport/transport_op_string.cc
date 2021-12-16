@@ -42,7 +42,10 @@
 
 static void put_metadata_list(const grpc_metadata_batch& md,
                               std::vector<std::string>* out) {
-  md.Log([out](absl::string_view key, absl::string_view value) {
+  bool first = true;
+  md.Log([out, &first](absl::string_view key, absl::string_view value) {
+    if (!first) out->push_back(", ");
+    first = false;
     out->push_back(absl::StrCat(key, "=", value));
   });
 }
