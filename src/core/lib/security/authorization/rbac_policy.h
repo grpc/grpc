@@ -46,7 +46,6 @@ struct Rbac {
 
   // TODO(ashithasantosh): Support for destination_port_range.
   struct Permission {
-   public:
     enum class RuleType {
       kAnd,
       kOr,
@@ -91,29 +90,9 @@ struct Rbac {
     std::vector<std::unique_ptr<Permission>> permissions;
     // For kMetadata
     bool invert;
-
-   private:
-    // For kAnd/kOr RuleType.
-    Permission(Permission::RuleType type,
-               std::vector<std::unique_ptr<Permission>> permissions);
-    // For kNot RuleType.
-    Permission(Permission::RuleType type, Permission permission);
-    // For kAny RuleType.
-    explicit Permission(Permission::RuleType type);
-    // For kHeader RuleType.
-    Permission(Permission::RuleType type, HeaderMatcher header_matcher);
-    // For kPath/kReqServerName RuleType.
-    Permission(Permission::RuleType type, StringMatcher string_matcher);
-    // For kDestIp RuleType.
-    Permission(Permission::RuleType type, CidrRange ip);
-    // For kDestPort RuleType.
-    Permission(Permission::RuleType type, int port);
-    // For kMetadata RuleType.
-    Permission(Permission::RuleType type, bool invert);
   };
 
   struct Principal {
-   public:
     enum class RuleType {
       kAnd,
       kOr,
@@ -159,23 +138,6 @@ struct Rbac {
     std::vector<std::unique_ptr<Principal>> principals;
     // For kMetadata
     bool invert;
-
-   private:
-    // For kAnd/kOr RuleType.
-    Principal(Principal::RuleType type,
-              std::vector<std::unique_ptr<Principal>> principals);
-    // For kNot RuleType.
-    Principal(Principal::RuleType type, Principal principal);
-    // For kAny RuleType.
-    explicit Principal(Principal::RuleType type);
-    // For kPrincipalName/kPath RuleType.
-    Principal(Principal::RuleType type, StringMatcher string_matcher);
-    // For kSourceIp/kDirectRemoteIp/kRemoteIp RuleType.
-    Principal(Principal::RuleType type, CidrRange ip);
-    // For kHeader RuleType.
-    Principal(Principal::RuleType type, HeaderMatcher header_matcher);
-    // For kMetadata RuleType.
-    Principal(Principal::RuleType type, bool invert);
   };
 
   struct Policy {
