@@ -89,6 +89,7 @@ void grpc_free_port_using_server(int port) {
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
         &rsp);
+    httpcli_request->Start();
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (!pr.done) {
@@ -170,6 +171,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
         &pr->response);
+    pr->httpcli_request->Start();
     return;
   }
   GPR_ASSERT(response);
@@ -215,6 +217,7 @@ int grpc_pick_port_using_server(void) {
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
         &pr.response);
+    httpcli_request->Start();
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (pr.port == -1) {
