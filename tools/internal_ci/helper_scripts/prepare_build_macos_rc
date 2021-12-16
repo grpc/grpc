@@ -80,7 +80,6 @@ then
   for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
     echo "Installing ruby-${RUBY_VERSION}"
     time rvm install "ruby-${RUBY_VERSION}"
-    time gem install bundler -v 1.17.3 --no-document
     time gem install rake-compiler --no-document
   done;
   echo "Setting default ruby version."
