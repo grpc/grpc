@@ -199,6 +199,7 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     Result result;
     result.addresses = absl::UnavailableError(absl::StrCat(
         "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
+    result.args = grpc_channel_args_copy(channel_args_);
     result_handler_->ReportResult(std::move(result));
     // Set up for retry.
     // InvalidateNow to avoid getting stuck re-initializing this timer

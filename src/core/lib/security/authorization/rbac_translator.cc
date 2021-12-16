@@ -30,8 +30,9 @@ namespace {
 absl::string_view GetMatcherType(absl::string_view value,
                                  StringMatcher::Type* type) {
   if (value == "*") {
-    *type = StringMatcher::Type::kPrefix;
-    return "";
+    *type = StringMatcher::Type::kSafeRegex;
+    // Presence match checks for non empty strings.
+    return ".+";
   } else if (absl::StartsWith(value, "*")) {
     *type = StringMatcher::Type::kSuffix;
     return absl::StripPrefix(value, "*");

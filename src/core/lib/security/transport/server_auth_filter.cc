@@ -92,25 +92,45 @@ struct call_data {
   gpr_atm state = STATE_INIT;  // async_state
 };
 
+class ArrayEncoder {
+ public:
+  explicit ArrayEncoder(grpc_metadata_array* array) : array_(array) {}
+
+  void Encode(grpc_mdelem mdelem) {
+    Add(grpc_core::Slice(grpc_slice_ref_internal(GRPC_MDKEY(mdelem))),
+        grpc_core::Slice(grpc_slice_ref_internal(GRPC_MDVALUE(mdelem))));
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    Add(grpc_core::Slice(
+            grpc_core::StaticSlice::FromStaticString(Which::key())),
+        grpc_core::Slice(Which::Encode(value)));
+  }
+
+ private:
+  void Add(grpc_core::Slice key, grpc_core::Slice value) {
+    if (array_->count == array_->capacity) {
+      array_->capacity = std::max(array_->capacity + 8, array_->capacity * 2);
+      array_->metadata = static_cast<grpc_metadata*>(gpr_realloc(
+          array_->metadata, array_->capacity * sizeof(grpc_metadata)));
+    }
+    auto* usr_md = &array_->metadata[array_->count++];
+    usr_md->key = key.TakeCSlice();
+    usr_md->value = value.TakeCSlice();
+  }
+
+  grpc_metadata_array* array_;
+};
+
 }  // namespace
 
 static grpc_metadata_array metadata_batch_to_md_array(
     const grpc_metadata_batch* batch) {
   grpc_metadata_array result;
   grpc_metadata_array_init(&result);
-  batch->ForEach([&](grpc_mdelem md) {
-    grpc_metadata* usr_md = nullptr;
-    grpc_slice key = GRPC_MDKEY(md);
-    grpc_slice value = GRPC_MDVALUE(md);
-    if (result.count == result.capacity) {
-      result.capacity = std::max(result.capacity + 8, result.capacity * 2);
-      result.metadata = static_cast<grpc_metadata*>(gpr_realloc(
-          result.metadata, result.capacity * sizeof(grpc_metadata)));
-    }
-    usr_md = &result.metadata[result.count++];
-    usr_md->key = grpc_slice_ref_internal(key);
-    usr_md->value = grpc_slice_ref_internal(value);
-  });
+  ArrayEncoder encoder(&result);
+  batch->Encode(&encoder);
   return result;
 }
 

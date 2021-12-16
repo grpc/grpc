@@ -51,7 +51,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // XdsResourceType implementation.
   class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
    public:
-    virtual void OnResourceChanged(
+    virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnError(grpc_error_handle error)

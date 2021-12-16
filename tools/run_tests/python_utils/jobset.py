@@ -126,12 +126,13 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         return
     message.old_tag = tag
     message.old_msg = msg
+    if explanatory_text:
+        if isinstance(explanatory_text, bytes):
+            explanatory_text = explanatory_text.decode('utf8', errors='replace')
     while True:
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    if isinstance(explanatory_text, bytes):
-                        explanatory_text = explanatory_text.decode('utf8')
                     logging.info(explanatory_text)
                 logging.info('%s: %s', tag, msg)
             else:
@@ -359,7 +360,7 @@ class Job(object):
                 if measure_cpu_costs:
                     m = re.search(
                         r'real\s+([0-9.]+)\nuser\s+([0-9.]+)\nsys\s+([0-9.]+)',
-                        (stdout()).decode("utf8", errors="replace"))
+                        (stdout()).decode('utf8', errors='replace'))
                     real = float(m.group(1))
                     user = float(m.group(2))
                     sys = float(m.group(3))

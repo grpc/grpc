@@ -85,7 +85,7 @@ def _gen_py_aspect_impl(target, context):
 
     imports = []
     if out_dir.import_path:
-        imports.append("%s/%s/%s" % (context.workspace_name, context.label.package, out_dir.import_path))
+        imports.append("{}/{}".format(context.workspace_name, out_dir.import_path))
 
     py_info = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
     return PyProtoInfo(

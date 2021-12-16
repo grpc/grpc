@@ -96,7 +96,7 @@ class XdsServerConfigFetcher::ListenerWatcher
                   grpc_server_xds_status_notifier serving_status_notifier,
                   std::string listening_address);
 
-  void OnListenerChanged(XdsListenerResource listener) override;
+  void OnResourceChanged(XdsListenerResource listener) override;
 
   void OnError(grpc_error_handle error) override;
 
@@ -227,7 +227,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       : resource_name_(std::move(resource_name)),
         filter_chain_match_manager_(std::move(filter_chain_match_manager)) {}
 
-  void OnRouteConfigChanged(XdsRouteConfigResource route_config) override {
+  void OnResourceChanged(XdsRouteConfigResource route_config) override {
     filter_chain_match_manager_->OnRouteConfigChanged(resource_name_,
                                                       std::move(route_config));
   }
@@ -389,7 +389,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       RefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent)
       : parent_(std::move(parent)) {}
 
-  void OnRouteConfigChanged(XdsRouteConfigResource route_config) override {
+  void OnResourceChanged(XdsRouteConfigResource route_config) override {
     parent_->OnRouteConfigChanged(std::move(route_config));
   }
 
@@ -461,7 +461,7 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
       serving_status_notifier_(serving_status_notifier),
       listening_address_(std::move(listening_address)) {}
 
-void XdsServerConfigFetcher::ListenerWatcher::OnListenerChanged(
+void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     XdsListenerResource listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_server_config_fetcher_trace)) {
     gpr_log(GPR_INFO,
@@ -1097,19 +1097,19 @@ ServerConfigSelector::CallConfig XdsServerConfigFetcher::ListenerWatcher::
     FilterChainMatchManager::XdsServerConfigSelector::GetCallConfig(
         grpc_metadata_batch* metadata) {
   CallConfig call_config;
-  if (metadata->legacy_index()->named.path == nullptr) {
+  if (metadata->get_pointer(HttpPathMetadata()) == nullptr) {
     call_config.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No path found");
     return call_config;
   }
-  absl::string_view path = StringViewFromSlice(
-      GRPC_MDVALUE(metadata->legacy_index()->named.path->md));
-  if (metadata->legacy_index()->named.authority == nullptr) {
+  absl::string_view path =
+      metadata->get_pointer(HttpPathMetadata())->as_string_view();
+  if (metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
     call_config.error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("No authority found");
     return call_config;
   }
-  absl::string_view authority = StringViewFromSlice(
-      GRPC_MDVALUE(metadata->legacy_index()->named.authority->md));
+  absl::string_view authority =
+      metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
   auto vhost_index = XdsRouting::FindVirtualHostForDomain(
       VirtualHostListIterator(&virtual_hosts_), authority);
   if (!vhost_index.has_value()) {

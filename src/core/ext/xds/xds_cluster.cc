@@ -427,7 +427,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
-  auto cluster_data = absl::make_unique<ClusterData>();
+  auto cluster_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
   if (error != GRPC_ERROR_NONE) {
