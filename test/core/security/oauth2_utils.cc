@@ -31,13 +31,13 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 typedef struct {
-  gpr_mu* mu;
-  grpc_polling_entity pops;
-  bool is_done;
-  char* token;
+  gpr_mu* mu = nullptr;
+  grpc_polling_entity pops = {};
+  bool is_done = false;
+  char* token = nullptr;
 
   grpc_core::CredentialsMetadataArray md_array;
-  grpc_closure closure;
+  grpc_closure closure = {};
 } oauth2_request;
 
 static void on_oauth2_response(void* arg, grpc_error_handle error) {
@@ -68,7 +68,6 @@ static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
   oauth2_request request;
-  memset(&request, 0, sizeof(request));
   grpc_core::ExecCtx exec_ctx;
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};
