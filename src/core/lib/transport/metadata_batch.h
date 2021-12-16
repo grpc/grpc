@@ -623,7 +623,7 @@ class GetStringValueHelper {
   GPR_ATTRIBUTE_NOINLINE
       absl::enable_if_t<!std::is_same<Slice, typename Trait::ValueType>::value,
                         absl::optional<absl::string_view>>
-      Found(Trait trait) {
+      Found(Trait) {
     const auto* value = container_->get_pointer(Trait());
     if (value == nullptr) return absl::nullopt;
     *backing_ = std::string(Trait::Encode(*value).as_string_view());
