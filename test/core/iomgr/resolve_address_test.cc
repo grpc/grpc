@@ -428,6 +428,9 @@ int main(int argc, char** argv) {
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
+  gpr_cmdline_destroy(cl);
+  argc -= 1;
+  argv += 1;
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
@@ -444,7 +447,6 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
     // crash later so that --gtest_list_tests can work
   }
-  gpr_cmdline_destroy(cl);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   const auto result = RUN_ALL_TESTS();
