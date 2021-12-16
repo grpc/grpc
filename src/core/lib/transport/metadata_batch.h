@@ -431,10 +431,8 @@ struct GrpcLbClientStatsMetadata {
   using ValueType = GrpcLbClientStats*;
   using MementoType = ValueType;
   static ValueType MementoToValue(MementoType value) { return value; }
-  static Slice Encode(ValueType x) { abort(); }
-  static const char* DisplayValue(MementoType x) {
-    return "<internal-lb-stats>";
-  }
+  static Slice Encode(ValueType) { abort(); }
+  static const char* DisplayValue(MementoType) { return "<internal-lb-stats>"; }
   static MementoType ParseMemento(Slice, MetadataParseErrorFn) {
     return nullptr;
   }
@@ -608,14 +606,14 @@ template <typename Container>
 class GetStringValueHelper {
  public:
   explicit GetStringValueHelper(const Container* container,
-                                std::string* backing_store)
-      : container_(container) {}
+                                std::string* backing)
+      : container_(container), backing_(backing) {}
 
   template <typename Trait>
   GPR_ATTRIBUTE_NOINLINE
       absl::enable_if_t<std::is_same<Slice, typename Trait::ValueType>::value,
                         absl::optional<absl::string_view>>
-      Found(Trait trait) {
+      Found(Trait) {
     const auto* value = container_->get_pointer(Trait());
     if (value == nullptr) return absl::nullopt;
     return value->as_string_view();
