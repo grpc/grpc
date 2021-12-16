@@ -139,7 +139,7 @@ class HttpCliTest : public ::testing::Test {
     int num_args = 3 + arg_shift;
     gpr_log(GPR_INFO, "starting test server subprocess:");
     for (int i = 0; i < num_args; i++) {
-      gpr_log(GPR_INFO, "  test server subprocess argv[%d]: ", i, args[i]);
+      gpr_log(GPR_INFO, "  test server subprocess argv[%d]: %s", i, args[i]);
     }
     g_server =
         gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
