@@ -105,6 +105,9 @@ class ArrayEncoder {
            grpc_core::Slice(Which::Encode(value)));
   }
 
+  void Encode(grpc_core::HttpMethodMetadata,
+              const typename grpc_core::HttpMethodMetadata::ValueType&) {}
+
  private:
   void Append(grpc_core::Slice key, grpc_core::Slice value) {
     if (result_->count == result_->capacity) {
