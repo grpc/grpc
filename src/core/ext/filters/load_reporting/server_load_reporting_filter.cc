@@ -115,7 +115,8 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
     original_recv_initial_metadata_ready_ = op->recv_initial_metadata_ready();
     // Substitute the original closure for the wrapper closure.
     op->set_recv_initial_metadata_ready(&recv_initial_metadata_ready_);
-  } else if (op->send_trailing_metadata() != nullptr) {
+  }
+  if (op->send_trailing_metadata() != nullptr) {
     auto cost = op->send_trailing_metadata()->batch()->Take(
         grpc_core::LbCostBinMetadata());
     if (cost.has_value()) {
@@ -132,8 +133,8 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
            {::grpc::load_reporter::TagKeyMetricName(),
             {cost->name.data(), cost->name.length()}}});
     }
-    grpc_call_next_op(elem, op->op());
   }
+  grpc_call_next_op(elem, op->op());
 }
 
 std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
