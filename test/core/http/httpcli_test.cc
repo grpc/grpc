@@ -45,6 +45,8 @@ grpc_millis NSecondsTime(int seconds) {
 
 int g_argc;
 char** g_argv;
+int g_server_port;
+gpr_subprocess* g_server;
 
 std::vector<std::string> g_subprocess_args;
 
@@ -63,16 +65,16 @@ class HttpCliTest : public ::testing::Test {
       grpc_core::ExecCtx exec_ctx;
       grpc_pollset_shutdown(
           grpc_polling_entity_pollset(&pops_),
-          GRPC_CLOSURE_CREATE(DestroyPops, &pops, grpc_schedule_on_exec_ctx));
+          GRPC_CLOSURE_CREATE(DestroyPops, &pops_, grpc_schedule_on_exec_ctx));
     }
     grpc_shutdown();
   }
 
-  static void SetUpTestSuite() override {
+  static void SetUpTestSuite() {
         char* me = g_argv[0];
     char* lslash = strrchr(me, '/');
     char* args[4];
-    int port = grpc_pick_unused_port_or_die();
+    g_server_port = grpc_pick_unused_port_or_die();
     int arg_shift = 0;
     /* figure out where we are */
     char* root;
@@ -102,10 +104,10 @@ class HttpCliTest : public ::testing::Test {
 
     /* start the server */
     args[1 + arg_shift] = const_cast<char*>("--port");
-    gpr_asprintf(&args[2 + arg_shift], "%d", port);
+    gpr_asprintf(&args[2 + arg_shift], "%d", g_server_port);
     g_server =
         gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
-    GPR_ASSERT(server);
+    GPR_ASSERT(g_server);
     gpr_free(args[0]);
     if (arg_shift) gpr_free(args[1]);
     gpr_free(args[2 + arg_shift]);
@@ -114,7 +116,7 @@ class HttpCliTest : public ::testing::Test {
                                  gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
 
-  void TearDownTestSuite() override{
+  static void TearDownTestSuite() {
     gpr_subprocess_destroy(g_server);
   }
 
@@ -124,7 +126,7 @@ class HttpCliTest : public ::testing::Test {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_kick",
         grpc_pollset_kick(
-            grpc_polling_entity_pollset(pops_), nullptr)));
+            grpc_polling_entity_pollset(&pops_), nullptr)));
   }
 
   void PollUntil(const std::function<bool()>& predicate) {
@@ -141,7 +143,7 @@ class HttpCliTest : public ::testing::Test {
     gpr_mu_unlock(mu_);
   }
 
-  grpc_polling_entity* pops() { return pops_; }
+  grpc_polling_entity* pops() { return &pops_; }
 
  private:
   static void DestroyPops(void* p, grpc_error_handle /*error*/) {
@@ -203,7 +205,7 @@ TEST_F(HttpCliTest, Get) {
 
   gpr_log(GPR_INFO, "test_get");
 
-  gpr_asprintf(&host, "localhost:%d", port);
+  gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host);
 
   memset(&req, 0, sizeof(req));
@@ -232,7 +234,7 @@ TEST_F(HttpCliTest, Post) {
 
   gpr_log(GPR_INFO, "test_post");
 
-  gpr_asprintf(&host, "localhost:%d", port);
+  gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "posting to %s", host);
 
   memset(&req, 0, sizeof(req));
