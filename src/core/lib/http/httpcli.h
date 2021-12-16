@@ -138,65 +138,82 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   void Start();
 
   void Orphan() override {
+    //grpc_core::MutexLock lock(&mu_);
     // TODO(apolcyn): implement cancellation
     Unref();
   }
 
  private:
-  void Finish(grpc_error_handle error) {
+  void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
     Unref();
   }
 
-  void AppendError(grpc_error_handle error);
+  void AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void DoRead() {
+  void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true);
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {
     HttpCliRequest* req = static_cast<HttpCliRequest*>(user_data);
+    ExecCtx::Run(DEBUG_LOCATION, &req->continue_on_read_after_schedule_on_exec_ctx_, GRPC_ERROR_REF(error));
+  }
+
+  // Needed since OnRead may be called inline from grpc_endpoint_read
+  static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data, grpc_error_handle error) {
+    HttpCliRequest* req = static_cast<HttpCliRequest*>(user_data);
+    grpc_core::MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
 
-  void OnReadInternal(grpc_error_handle error);
+  void OnReadInternal(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void OnWritten() { DoRead(); }
+  void OnWritten() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { DoRead(); }
 
-  static void DoneWrite(void* arg, grpc_error_handle error);
+  static void DoneWrite(void* arg, grpc_error_handle error) {
+    HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
+    ExecCtx::Run(DEBUG_LOCATION, &req->continue_done_write_after_schedule_on_exec_ctx_, GRPC_ERROR_REF(error));
+  }
 
-  void StartWrite();
+  // Needed since DoneWrite may be called inline from grpc_endpoint_write
+  static void ContinueDoneWriteAfterScheduleOnExecCtx(void* arg, grpc_error_handle error);
+
+  void StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   static void OnHandshakeDone(void* arg, grpc_endpoint* ep);
 
   static void OnConnected(void* arg, grpc_error_handle error);
 
-  void NextAddress(grpc_error_handle error);
+  void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
-  grpc_slice request_text_;
-  grpc_http_parser parser_;
-  std::vector<grpc_resolved_address> addresses_;
-  size_t next_address_ = 0;
-  grpc_endpoint* ep_ = nullptr;
-  ResourceQuotaRefPtr resource_quota_;
-  std::string host_;
-  std::string ssl_host_override_;
-  grpc_millis deadline_;
-  int have_read_byte_ = 0;
   const grpc_httpcli_handshaker* handshaker_;
-  grpc_closure* on_done_;
-  grpc_pollset_set* pollset_set_;
-  grpc_iomgr_object iomgr_obj_;
-  grpc_slice_buffer incoming_;
-  grpc_slice_buffer outgoing_;
   grpc_closure on_read_;
+  grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
+  grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
   grpc_closure connected_;
-  grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
-  OrphanablePtr<DNSResolver::Request> dns_request_;
+  grpc_core::Mutex mu_;
+  grpc_slice request_text_ ABSL_GUARDED_BY(mu_);
+  grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
+  std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
+  size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
+  grpc_endpoint* ep_ ABSL_GUARDED_BY(mu_) = nullptr;
+  ResourceQuotaRefPtr resource_quota_ ABSL_GUARDED_BY(mu_);
+  std::string host_ ABSL_GUARDED_BY(mu_);
+  std::string ssl_host_override_ ABSL_GUARDED_BY(mu_);
+  grpc_millis deadline_ ABSL_GUARDED_BY(mu_);
+  int have_read_byte_ ABSL_GUARDED_BY(mu_) = 0;
+  grpc_closure* on_done_ ABSL_GUARDED_BY(mu_);
+  grpc_pollset_set* pollset_set_ ABSL_GUARDED_BY(mu_);
+  grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
+  grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
+  grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
+  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
+  OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

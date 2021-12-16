@@ -128,7 +128,9 @@ HttpCliRequest::HttpCliRequest(
   grpc_iomgr_register_object(&iomgr_obj_, name);
 
   GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&continue_on_read_after_schedule_on_exec_ctx_, ContinueOnReadAfterScheduleOnExecCtx, this, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_, ContinueDoneWriteAfterScheduleOnExecCtx, this, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
   dns_request_ = GetDNSResolver()->ResolveName(
@@ -150,11 +152,12 @@ HttpCliRequest::~HttpCliRequest() {
 }
 
 void HttpCliRequest::Start() {
+  grpc_core::MutexLock lock(&mu_);
   Ref().release(); // ref held by pending request
   dns_request_->Start();
 }
 
-void HttpCliRequest::AppendError(grpc_error_handle error) {
+void HttpCliRequest::AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   if (overall_error_ == GRPC_ERROR_NONE) {
     overall_error_ =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
@@ -166,7 +169,7 @@ void HttpCliRequest::AppendError(grpc_error_handle error) {
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
 }
 
-void HttpCliRequest::OnReadInternal(grpc_error_handle error) {
+void HttpCliRequest::OnReadInternal(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   size_t i;
 
   for (i = 0; i < incoming_.count; i++) {
@@ -190,8 +193,9 @@ void HttpCliRequest::OnReadInternal(grpc_error_handle error) {
   }
 }
 
-void HttpCliRequest::DoneWrite(void* arg, grpc_error_handle error) {
+void HttpCliRequest::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg, grpc_error_handle error) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
+  grpc_core::MutexLock lock(&req->mu_);
   if (error == GRPC_ERROR_NONE) {
     req->OnWritten();
   } else {
@@ -199,7 +203,7 @@ void HttpCliRequest::DoneWrite(void* arg, grpc_error_handle error) {
   }
 }
 
-void HttpCliRequest::StartWrite() {
+void HttpCliRequest::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   grpc_slice_ref_internal(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
@@ -207,32 +211,38 @@ void HttpCliRequest::StartWrite() {
 
 void HttpCliRequest::OnHandshakeDone(void* arg, grpc_endpoint* ep) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
-
+  grpc_core::MutexLock lock(&req->mu_);
   if (!ep) {
     req->NextAddress(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
     return;
   }
-
   req->ep_ = ep;
   req->StartWrite();
 }
 
 void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
-
-  if (!req->ep_) {
-    req->NextAddress(GRPC_ERROR_REF(error));
-    return;
+  grpc_endpoint* ep;
+  const char* host;
+  grpc_millis deadline;
+  {
+    grpc_core::MutexLock lock(&req->mu_);
+    if (!req->ep_) {
+      req->NextAddress(GRPC_ERROR_REF(error));
+      return;
+    }
+    ep = req->ep_;
+    host = req->ssl_host_override_.empty()
+        ? req->host_.c_str()
+        : req->ssl_host_override_.c_str();
+    deadline = req->deadline_;
   }
-  req->handshaker_->handshake(req, req->ep_,
-                              req->ssl_host_override_.empty()
-                                  ? req->host_.c_str()
-                                  : req->ssl_host_override_.c_str(),
-                              req->deadline_, OnHandshakeDone);
+  // release the lock since OnHandshakeDone may be called inline
+  req->handshaker_->handshake(req, ep, host, deadline, OnHandshakeDone);
 }
 
-void HttpCliRequest::NextAddress(grpc_error_handle error) {
+void HttpCliRequest::NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
   }
@@ -257,6 +267,7 @@ void HttpCliRequest::NextAddress(grpc_error_handle error) {
 
 void HttpCliRequest::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+  grpc_core::MutexLock lock(&mu_);
   dns_request_.reset();
   if (!addresses_or.ok()) {
     Finish(absl_status_to_grpc_error(addresses_or.status()));
