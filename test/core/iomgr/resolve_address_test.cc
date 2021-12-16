@@ -427,10 +427,13 @@ int main(int argc, char** argv) {
   // In case that there are more than one argument on the command line,
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
-  gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
+  gpr_cmdline_set_survive_failure(cl);
+  if (gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv)) {
+    // shift args since --resolver flag was present
+    argc -= 1;
+    argv += 1;
+  }
   gpr_cmdline_destroy(cl);
-  argc -= 1;
-  argv += 1;
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
