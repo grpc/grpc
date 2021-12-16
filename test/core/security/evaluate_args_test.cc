@@ -56,12 +56,6 @@ TEST_F(EvaluateArgsTest, GetMethodSuccess) {
   EXPECT_EQ(args.GetMethod(), "GET");
 }
 
-TEST_F(EvaluateArgsTest, GetAuthoritySuccess) {
-  util_.AddPairToMetadata(":authority", "localhost");
-  EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetAuthority(), "localhost");
-}
-
 TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
   util_.AddPairToMetadata("key123", "value123");
   EvaluateArgs args = util_.MakeEvaluateArgs();

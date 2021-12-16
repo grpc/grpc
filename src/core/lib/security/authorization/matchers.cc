@@ -130,23 +130,6 @@ bool NotAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 }
 
 bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
-  if (matcher_.name() == HttpMethodMetadata().key()) {
-    auto method = args.GetMethod();
-    return matcher_.Match(method.empty()
-                              ? absl::nullopt
-                              : absl::optional<absl::string_view>(method));
-  }
-  if (matcher_.name() == HttpAuthorityMetadata().key()) {
-    auto authority = args.GetAuthority();
-    return matcher_.Match(authority.empty()
-                              ? absl::nullopt
-                              : absl::optional<absl::string_view>(authority));
-  }
-  if (matcher_.name() == HttpPathMetadata().key()) {
-    auto path = args.GetPath();
-    return matcher_.Match(
-        path.empty() ? absl::nullopt : absl::optional<absl::string_view>(path));
-  }
   std::string concatenated_value;
   return matcher_.Match(
       args.GetHeaderValue(matcher_.name(), &concatenated_value));
