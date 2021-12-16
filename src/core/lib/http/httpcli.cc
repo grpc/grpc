@@ -162,6 +162,9 @@ void HttpCliRequest::Orphan() {
     grpc_core::MutexLock lock(&mu_);
     cancelled_ = true;
     dns_request_.reset(); // cancel potentially pending DNS resolution
+    if (own_endpoint_) {
+      grpc_endpoint_shutdown(ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
+    }
   }
   Unref();
 }
@@ -226,6 +229,7 @@ void HttpCliRequest::OnHandshakeDone(void* arg, grpc_endpoint* ep) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
     return;
   }
+  req->own_endpoint_ = true;
   req->ep_ = ep;
   req->StartWrite();
 }

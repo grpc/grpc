@@ -192,13 +192,14 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   grpc_closure done_write_;
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
   grpc_closure connected_;
+  grpc_endpoint* ep_ = nullptr;
   grpc_core::Mutex mu_;
+  bool own_endpoint_ ABSL_GUARDED_BY(mu_) = false;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_slice request_text_ ABSL_GUARDED_BY(mu_);
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
-  grpc_endpoint* ep_ ABSL_GUARDED_BY(mu_) = nullptr;
   ResourceQuotaRefPtr resource_quota_ ABSL_GUARDED_BY(mu_);
   std::string host_ ABSL_GUARDED_BY(mu_);
   std::string ssl_host_override_ ABSL_GUARDED_BY(mu_);
