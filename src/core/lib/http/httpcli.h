@@ -153,27 +153,34 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
   static void OnRead(void* user_data, grpc_error_handle error) {
     HttpCliRequest* req = static_cast<HttpCliRequest*>(user_data);
-    ExecCtx::Run(DEBUG_LOCATION, &req->continue_on_read_after_schedule_on_exec_ctx_, GRPC_ERROR_REF(error));
+    ExecCtx::Run(DEBUG_LOCATION,
+                 &req->continue_on_read_after_schedule_on_exec_ctx_,
+                 GRPC_ERROR_REF(error));
   }
 
   // Needed since OnRead may be called inline from grpc_endpoint_read
-  static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data, grpc_error_handle error) {
+  static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
+                                                   grpc_error_handle error) {
     HttpCliRequest* req = static_cast<HttpCliRequest*>(user_data);
     grpc_core::MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
 
-  void OnReadInternal(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void OnReadInternal(grpc_error_handle error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnWritten() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { DoRead(); }
 
   static void DoneWrite(void* arg, grpc_error_handle error) {
     HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
-    ExecCtx::Run(DEBUG_LOCATION, &req->continue_done_write_after_schedule_on_exec_ctx_, GRPC_ERROR_REF(error));
+    ExecCtx::Run(DEBUG_LOCATION,
+                 &req->continue_done_write_after_schedule_on_exec_ctx_,
+                 GRPC_ERROR_REF(error));
   }
 
   // Needed since DoneWrite may be called inline from grpc_endpoint_write
-  static void ContinueDoneWriteAfterScheduleOnExecCtx(void* arg, grpc_error_handle error);
+  static void ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
+                                                      grpc_error_handle error);
 
   void StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 

@@ -128,9 +128,13 @@ HttpCliRequest::HttpCliRequest(
   grpc_iomgr_register_object(&iomgr_obj_, name);
 
   GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&continue_on_read_after_schedule_on_exec_ctx_, ContinueOnReadAfterScheduleOnExecCtx, this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&continue_on_read_after_schedule_on_exec_ctx_,
+                    ContinueOnReadAfterScheduleOnExecCtx, this,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_, ContinueDoneWriteAfterScheduleOnExecCtx, this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
+                    ContinueDoneWriteAfterScheduleOnExecCtx, this,
+                    grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
   dns_request_ = GetDNSResolver()->ResolveName(
@@ -153,7 +157,7 @@ HttpCliRequest::~HttpCliRequest() {
 
 void HttpCliRequest::Start() {
   grpc_core::MutexLock lock(&mu_);
-  Ref().release(); // ref held by pending request
+  Ref().release();  // ref held by pending request
   dns_request_->Start();
 }
 
@@ -161,15 +165,17 @@ void HttpCliRequest::Orphan() {
   {
     grpc_core::MutexLock lock(&mu_);
     cancelled_ = true;
-    dns_request_.reset(); // cancel potentially pending DNS resolution
+    dns_request_.reset();  // cancel potentially pending DNS resolution
     if (own_endpoint_) {
-      grpc_endpoint_shutdown(ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
+      grpc_endpoint_shutdown(
+          ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
     }
   }
   Unref();
 }
 
-void HttpCliRequest::AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+void HttpCliRequest::AppendError(grpc_error_handle error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   if (overall_error_ == GRPC_ERROR_NONE) {
     overall_error_ =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
@@ -181,7 +187,8 @@ void HttpCliRequest::AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_R
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
 }
 
-void HttpCliRequest::OnReadInternal(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+void HttpCliRequest::OnReadInternal(grpc_error_handle error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   size_t i;
 
   for (i = 0; i < incoming_.count; i++) {
@@ -205,7 +212,8 @@ void HttpCliRequest::OnReadInternal(grpc_error_handle error) ABSL_EXCLUSIVE_LOCK
   }
 }
 
-void HttpCliRequest::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg, grpc_error_handle error) {
+void HttpCliRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
+    void* arg, grpc_error_handle error) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
   grpc_core::MutexLock lock(&req->mu_);
   if (error == GRPC_ERROR_NONE) {
@@ -246,16 +254,16 @@ void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
       return;
     }
     ep = req->ep_;
-    host = req->ssl_host_override_.empty()
-        ? req->host_.c_str()
-        : req->ssl_host_override_.c_str();
+    host = req->ssl_host_override_.empty() ? req->host_.c_str()
+                                           : req->ssl_host_override_.c_str();
     deadline = req->deadline_;
   }
   // release the lock since OnHandshakeDone may be called inline
   req->handshaker_->handshake(req, ep, host, deadline, OnHandshakeDone);
 }
 
-void HttpCliRequest::NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+void HttpCliRequest::NextAddress(grpc_error_handle error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
   }
@@ -287,7 +295,8 @@ void HttpCliRequest::OnResolved(
     return;
   }
   if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("cancelled during DNS resolution"));
+    Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "cancelled during DNS resolution"));
     return;
   }
   addresses_ = std::move(*addresses_or);
