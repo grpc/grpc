@@ -138,7 +138,7 @@ class ParsedMetadata {
   // Construct metadata from a string key, slice value pair.
   ParsedMetadata(Slice key, Slice value)
       : vtable_(ParsedMetadata::KeyValueVTable(key.as_string_view())),
-        transport_size_(value.size()) {
+        transport_size_(key.size() + value.size() + 32) {
     value_.pointer =
         new std::pair<Slice, Slice>(std::move(key), std::move(value));
   }
