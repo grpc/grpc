@@ -216,22 +216,9 @@ static void test_basic_headers() {
       false,
       false,
   };
-  verify(params, "000005 0104 deadbeef 40 0161 0161", 1, "a", "a");
-  verify(params, "000001 0104 deadbeef be", 1, "a", "a");
-  verify(params, "000001 0104 deadbeef be", 1, "a", "a");
-  verify(params, "000006 0104 deadbeef be 40 0162 0163", 2, "a", "a", "b", "c");
-  verify(params, "000002 0104 deadbeef bf be", 2, "a", "a", "b", "c");
-  verify(params, "000004 0104 deadbeef 7f 00 0164", 1, "a", "d");
-
-  /* flush out what's there to make a few values look very popular */
-  for (i = 0; i < 350; i++) {
-    verify(params, "000003 0104 deadbeef c0 bf be", 3, "a", "a", "b", "c", "a",
-           "d");
-  }
-
-  verify(params, "000006 0104 deadbeef c0 00 016b 0176", 2, "a", "a", "k", "v");
-  /* this could be 000004 0104 deadbeef 0f 30 0176 also */
-  verify(params, "000004 0104 deadbeef 0f 2f 0176", 1, "a", "v");
+  verify(params, "000005 0104 deadbeef 00 0161 0161", 1, "a", "a");
+  verify(params, "00000a 0104 deadbeef 00 0161 0161 00 0162 0163", 2, "a", "a",
+         "b", "c");
 }
 
 static void verify_continuation_headers(const char* key, const char* value,
@@ -275,51 +262,6 @@ static void encode_int_to_str(int i, char* p) {
   p[2] = 0;
 }
 
-static void test_decode_table_overflow() {
-  // Decrease the default table size to make decode table overflow easier.
-  g_compressor->SetMaxTableSize(1024);
-  int i;
-  char key[3], value[3];
-
-  verify_params params = {
-      false,
-      false,
-      false,
-  };
-
-  for (i = 0; i < 29; i++) {
-    encode_int_to_str(i, key);
-    encode_int_to_str(i + 1, value);
-    if (i == 0) {
-      // 3fe107 corresponds to the table size update.
-      std::string expect = absl::StrFormat(
-          "00000a 0104 deadbeef 3fe107 40 02%02x%02x 02%02x%02x", key[0],
-          key[1], value[0], value[1]);
-      verify(params, expect.c_str(), 1, key, value);
-    } else {
-      std::string expect =
-          absl::StrFormat("000008 0104 deadbeef %02x 40 02%02x%02x 02%02x%02x",
-                          0x80 + 61 + i, key[0], key[1], value[0], value[1]);
-      verify(params, expect.c_str(), 2, "aa", "ba", key, value);
-    }
-  }
-
-  /* if the above passes, then we must have just knocked this pair out of the
-     decoder stack, and so we'll be forced to re-encode it */
-  verify(params, "000007 0104 deadbeef 40 026161 026261", 1, "aa", "ba");
-}
-
-static void test_interned_key_indexed() {
-  int i;
-  verify_params params = {false, false, true};
-  verify(params, "000009 0104 deadbeef 40 0161 0162 0f2f 0163", 2, "a", "b",
-         "a", "c");
-  for (i = 0; i < 10; i++) {
-    verify(params, "000008 0104 deadbeef 0f2f 0162 0f2f 0163", 2, "a", "b", "a",
-           "c");
-  }
-}
-
 static void run_test(void (*test)(), const char* name) {
   gpr_log(GPR_INFO, "RUN TEST: %s", name);
   grpc_core::ExecCtx exec_ctx;
@@ -333,8 +275,6 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   TEST(test_basic_headers);
-  TEST(test_decode_table_overflow);
-  TEST(test_interned_key_indexed);
   TEST(test_continuation_headers);
   grpc_shutdown();
   return g_failure;
