@@ -24,7 +24,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/flags/flag.h"
 #include "absl/functional/bind_front.h"
 #include "absl/strings/match.h"
 
@@ -46,8 +45,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(std::string, resolver, "", "DNS resolver type (ares or native)");
-
 namespace {
 
 grpc_millis NSecDeadline(int seconds) {
@@ -55,6 +52,7 @@ grpc_millis NSecDeadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
+const char* g_resolver_type = "";
 bool g_resolver_type_configured;
 
 class ResolveAddressTest : public ::testing::Test {
@@ -198,7 +196,7 @@ TEST_F(ResolveAddressTest, DefaultPort) {
 }
 
 TEST_F(ResolveAddressTest, LocalhostResultHasIPv6First) {
-  if (absl::GetFlag(FLAGS_resolver) != "ares") {
+  if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
   grpc_core::ExecCtx exec_ctx;
@@ -239,7 +237,7 @@ const address_sorting_source_addr_factory_vtable
 }  // namespace
 
 TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
-  if (absl::GetFlag(FLAGS_resolver) != "ares") {
+  if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
   // Mock the kernel source address selection. Note that source addr factory
@@ -398,7 +396,7 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
 }  // namespace
 
 TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
-  if (absl::GetFlag(FLAGS_resolver) != "ares") {
+  if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "the native resolver doesn't support cancellation, so we "
                     "can only test this with c-ares";
   }
@@ -423,25 +421,32 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
 }
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
-  grpc::testing::InitTest(&argc, &argv, true);
+  gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
+  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
+                         &g_resolver_type);
+  // In case that there are more than one argument on the command line,
+  // --resolver will always be the first one, so only parse the first argument
+  // (other arguments may be unknown to cl)
+  gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
             resolver.get());
   }
-  if (absl::GetFlag(FLAGS_resolver) == "native") {
+  if (std::string(g_resolver_type) == "native") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
     g_resolver_type_configured = true;
-  } else if (absl::GetFlag(FLAGS_resolver) == "ares") {
+  } else if (std::string(g_resolver_type) == "ares") {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
     g_resolver_type_configured = true;
   } else {
     gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
     // crash later so that --gtest_list_tests can work
   }
+  gpr_cmdline_destroy(cl);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   const auto result = RUN_ALL_TESTS();
   return result;
 }
