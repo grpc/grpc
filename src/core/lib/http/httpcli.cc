@@ -166,7 +166,7 @@ void HttpCliRequest::Orphan() {
     grpc_core::MutexLock lock(&mu_);
     cancelled_ = true;
     dns_request_.reset();  // cancel potentially pending DNS resolution
-    if (own_endpoint_) {
+    if (own_endpoint_ && ep_ != nullptr) {
       grpc_endpoint_shutdown(
           ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
     }
@@ -232,12 +232,12 @@ void HttpCliRequest::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
 void HttpCliRequest::OnHandshakeDone(void* arg, grpc_endpoint* ep) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
   grpc_core::MutexLock lock(&req->mu_);
+  req->own_endpoint_ = true;
   if (!ep) {
     req->NextAddress(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
     return;
   }
-  req->own_endpoint_ = true;
   req->ep_ = ep;
   req->StartWrite();
 }
