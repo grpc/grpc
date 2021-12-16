@@ -149,7 +149,10 @@ HttpCliRequest::~HttpCliRequest() {
   grpc_pollset_set_destroy(pollset_set_);
 }
 
-void HttpCliRequest::Start() { dns_request_->Start(); }
+void HttpCliRequest::Start() {
+  Ref().release(); // ref held by pending request
+  dns_request_->Start();
+}
 
 void HttpCliRequest::AppendError(grpc_error_handle error) {
   if (overall_error_ == GRPC_ERROR_NONE) {

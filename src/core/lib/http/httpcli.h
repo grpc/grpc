@@ -145,7 +145,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
  private:
   void Finish(grpc_error_handle error) {
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
-    delete this;
+    Unref();
   }
 
   void AppendError(grpc_error_handle error);
