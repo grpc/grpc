@@ -2541,7 +2541,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsFederationTest : public XdsEnd2endTest {
  public:
-  XdsFederationTest() : XdsEnd2endTest(4, 100, 0, false) {
+  XdsFederationTest() : XdsEnd2endTest(4, 100, 0, true) {
     authority_balancer_ = CreateAndStartBalancer();
   }
 
@@ -2766,6 +2766,108 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   // server.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+}
+
+// Setting server_listener_resource_name_template to start with "xdstp:" and
+// look up xds server under an authority map.
+TEST_P(XdsFederationTest, FederationServer) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* kAuthority = "xds.example.com";
+  const char* kNewListenerTemplate =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/%s?psm_project_id=1234";
+  const char* kNewServerListenerTemplate =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "server/%s?psm_project_id=1234";
+  const char* kNewListenerName =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/server.example.com?psm_project_id=1234";
+  const char* kNewEdsServiceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "new_edsservice_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "new_cluster_name";
+  BootstrapBuilder builder = BootstrapBuilder();
+  builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
+  builder.SetServerListenerResourceNameTemplate(kNewServerListenerTemplate);
+  builder.AddAuthority(
+      kAuthority, absl::StrCat("localhost:", authority_balancer_->port()),
+      // Note we will not use the client_listener_resource_name_template field
+      // in the authority.
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
+      "client/%s?client_listener_resource_name_template_not_in_use");
+  CreateClientsAndServers(builder);
+  StartAllBackends();
+  // Eds for 2 balancers are set up.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  authority_balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsServiceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New Route
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  // New Listener
+  Listener listener = default_listener_;
+  listener.set_name(kNewListenerName);
+  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
+                                   new_route_config);
+  // New Server Listeners
+  Listener server_listener = default_server_listener_;
+  server_listener.set_name(absl::StrCat(
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
+      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port(),
+      "?psm_project_id=1234"));
+  server_listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  authority_balancer_->ads_service()->SetLdsResource(server_listener);
+  Listener server_listener1 = default_server_listener_;
+  server_listener1.set_name(absl::StrCat(
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
+      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[1]->port(),
+      "?psm_project_id=1234"));
+  server_listener1.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[1]->port());
+  authority_balancer_->ads_service()->SetLdsResource(server_listener1);
+  Listener server_listener2 = default_server_listener_;
+  server_listener2.set_name(absl::StrCat(
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
+      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[2]->port(),
+      "?psm_project_id=1234"));
+  server_listener2.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[2]->port());
+  authority_balancer_->ads_service()->SetLdsResource(server_listener2);
+  Listener server_listener3 = default_server_listener_;
+  server_listener3.set_name(absl::StrCat(
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
+      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[3]->port(),
+      "?psm_project_id=1234"));
+  server_listener3.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[3]->port());
+  authority_balancer_->ads_service()->SetLdsResource(server_listener3);
+  // RPCs sent using current stub (without
+  // authority) should go to backend 1 not backend 0; this is because we are
+  // following client_default_listener_resource_name_template which gives us an
+  // authority and a xds server to use within that authority. Note we do not use
+  // the client_listener_resource_name_template field.
+  // Furthermore, we enabled server xds and only balancer 1 has the server
+  // listener resources requested by the resources specified in
+  // server_listener_resource_name_template.
+  WaitForAllBackends(1, 2);
+  // We should be reaching backend 1, not 0, as balanced by the authority xds
+  // server.
+  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
