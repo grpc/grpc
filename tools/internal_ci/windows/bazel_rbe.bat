@@ -24,7 +24,11 @@ IF "%cd%"=="T:\src" (
 choco install bazel -y --version 4.2.1 --limit-output
 
 cd github/grpc
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
+set PATH=C:\tools\msys64\usr\bin;C:\Python37;%PATH%
+
+python --version
+
+python -m pip install --user google-api-python-client oauth2client six==1.16.0
 
 @rem Generate a random UUID and store in "bazel_invocation_ids" artifact file
 powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
@@ -36,8 +40,8 @@ set BAZEL_EXITCODE=%errorlevel%
 
 if not "%UPLOAD_TEST_RESULTS%"=="" (
   @rem Sleep to let ResultStore finish writing results before querying
-  timeout /t 60 /nobreak
-  python3 ./tools/run_tests/python_utils/upload_rbe_results.py
+  sleep 60
+  python ./tools/run_tests/python_utils/upload_rbe_results.py
 )
 
 exit /b %BAZEL_EXITCODE%
