@@ -112,8 +112,6 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_glb_trace(false, "glb");
 
-const char kGrpcLbLbTokenMetadataKey[] = "lb-token";
-
 const char kGrpcLbAddressAttributeKey[] = "grpclb";
 
 namespace {
@@ -664,7 +662,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       char* lb_token = static_cast<char*>(
           args.call_state->Alloc(subchannel_wrapper->lb_token().size() + 1));
       strcpy(lb_token, subchannel_wrapper->lb_token().c_str());
-      args.initial_metadata->Add(kGrpcLbLbTokenMetadataKey, lb_token);
+      args.initial_metadata->Add(LbTokenMetadata::key(), lb_token);
     }
     // Unwrap subchannel to pass up to the channel.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();

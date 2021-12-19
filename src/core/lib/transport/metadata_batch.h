@@ -438,6 +438,11 @@ struct GrpcLbClientStatsMetadata {
   }
 };
 
+// lb-token metadata
+struct LbTokenMetadata : public SimpleSliceBasedMetadata {
+  static absl::string_view key() { return "lb-token"; }
+};
+
 // lb-cost-bin metadata
 struct LbCostBinMetadata {
   static absl::string_view key() { return "lb-cost-bin"; }
@@ -1041,6 +1046,6 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
-    grpc_core::LbCostBinMetadata>;
+    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata>;
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

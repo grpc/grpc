@@ -36,11 +36,5 @@
 #define GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS \
   "grpc.internal.grpclb_subchannel_cache_interval_ms"
 
-namespace grpc_core {
-
-extern const char kGrpcLbLbTokenMetadataKey[];
-
-}  // namespace grpc_core
-
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H \
         */

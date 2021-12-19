@@ -236,14 +236,12 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
       calld->target_host_ = absl::AsciiStrToLower(authority->as_string_view());
     }
     std::string buffer;
-    auto lb_token = calld->recv_initial_metadata_->GetStringValue(
-        grpc_core::kGrpcLbLbTokenMetadataKey, &buffer);
+    auto lb_token =
+        calld->recv_initial_metadata_->Take(grpc_core::LbTokenMetadata());
     if (lb_token.has_value()) {
       if (calld->client_ip_and_lr_token_ == nullptr) {
         calld->StoreClientIpAndLrToken(lb_token->data(), lb_token->size());
       }
-      calld->recv_initial_metadata_->Remove(
-          grpc_core::kGrpcLbLbTokenMetadataKey);
     }
     // If the LB token was not found in the recv_initial_metadata, only the
     // client IP part will be recorded (with an empty LB token).
