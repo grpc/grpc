@@ -53,12 +53,10 @@ grpc_millis NSecDeadline(int seconds) {
 }
 
 const char* g_resolver_type = "";
-bool g_resolver_type_configured;
 
 class ResolveAddressTest : public ::testing::Test {
  public:
   ResolveAddressTest() {
-    GPR_ASSERT(g_resolver_type_configured);
     grpc_init();
     grpc_core::ExecCtx exec_ctx;
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
@@ -421,35 +419,17 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
 }
 
 int main(int argc, char** argv) {
-  gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
-  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
-                         &g_resolver_type);
-  // In case that there are more than one argument on the command line,
-  // --resolver will always be the first one, so only parse the first argument
-  // (other arguments may be unknown to cl)
-  gpr_cmdline_set_survive_failure(cl);
-  if (gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv)) {
-    // shift args since --resolver flag was present
-    argc -= 1;
-    argv += 1;
-  }
-  gpr_cmdline_destroy(cl);
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
-  }
-  if (std::string(g_resolver_type) == "native") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-    g_resolver_type_configured = true;
-  } else if (std::string(g_resolver_type) == "ares") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-    g_resolver_type_configured = true;
+  // Configure the DNS resolver (c-ares vs. native) based on the
+  // name of the binary. TODO(apolcyn): is there a way to pass command
+  // line flags to a gtest that it works in all of our test environments?
+  if (absl::StrContains(std::string(argv[0]), "using_native_resolver")) {
+    g_resolver_type = "native";
+  } else if (absl::StrContains(std::string(argv[0]), "using_ares_resolver")) {
+    g_resolver_type = "ares";
   } else {
-    gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
-    // crash later so that --gtest_list_tests can work
+    GPR_ASSERT(0);
   }
+  GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, g_resolver_type);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   const auto result = RUN_ALL_TESTS();
