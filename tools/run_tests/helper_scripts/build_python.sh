@@ -153,10 +153,10 @@ fi
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
 # on pip to upgrade itself because if pip is too old, it may not have the required
 # TLS version to run `pip install`.
-curl https://bootstrap.pypa.io/pip/get-pip.py | $VENV_PYTHON
-
-pip_install --upgrade setuptools==60.0.2
 pip_install --upgrade pip==21.3.1
+# curl https://bootstrap.pypa.io/pip/get-pip.py | $VENV_PYTHON
+
+pip_install --upgrade setuptools==59.7.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
