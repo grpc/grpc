@@ -28,6 +28,7 @@
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -114,9 +115,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
-  addr->sin_family = AF_INET;
+  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
