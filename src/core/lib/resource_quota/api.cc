@@ -42,7 +42,7 @@ const grpc_channel_args* EnsureResourceQuotaInChannelArgs(
   const grpc_arg* existing =
       grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA);
   if (existing != nullptr && existing->type == GRPC_ARG_POINTER &&
-      existing->value.pointer.p == nullptr) {
+      existing->value.pointer.p != nullptr) {
     return grpc_channel_args_copy(args);
   }
   // If there's no existing quota, add it to the default one - shared between

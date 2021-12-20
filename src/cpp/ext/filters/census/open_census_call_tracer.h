@@ -84,7 +84,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
  private:
   const grpc_call_context_element* call_context_;
   // Client method.
-  grpc_slice path_;
+  grpc_core::Slice path_;
   absl::string_view method_;
   CensusContext context_;
   grpc_core::Arena* arena_;

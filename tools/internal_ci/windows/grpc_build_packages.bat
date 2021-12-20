@@ -12,6 +12,16 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
+)
+endlocal
+
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
@@ -23,7 +33,5 @@ rem currently there are no build_packages tasks that need to be run on windows.
 rem The only build_packages task that ever needed to run on windows was C#, but we switched to
 rem building C# nugets on linux (as dotnet SDK on linux does a good job)
 rem TODO(jtattermusch): remove the infrastructure for running "build_packages" kokoro job on windows.
-
-bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
 
 exit /b %RUNTESTS_EXITCODE%

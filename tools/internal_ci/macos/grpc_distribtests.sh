@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -26,11 +29,4 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 mv ${KOKORO_GFILE_DIR}/github/grpc/artifacts input_artifacts || true
 ls -R input_artifacts || true
 
-tools/run_tests/task_runner.py -f distribtest macos || FAILED="true"
-
-tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+tools/run_tests/task_runner.py -f distribtest macos

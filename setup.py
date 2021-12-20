@@ -210,7 +210,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        [cxx, '-x', 'c++', '-std=c++11', '-', '-latomic'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)
@@ -312,8 +312,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'ws2_32',
+        'bcrypt',
         'dbghelp',
+        'ws2_32',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (

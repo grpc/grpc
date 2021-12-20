@@ -16,12 +16,8 @@
   
   FROM gcc:11
   
-  RUN apt-get update && apt-get install -y curl git golang time wget zip
-  <%include file="../../python_deps.include"/>
-  RUN pip install PyYAML==5.4.1
-  RUN apt-get install python-is-python2
-  <%include file="../../gcp_api_libraries.include"/>
-  <%include file="../../cxx_deps.include"/>
+  RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
+  <%include file="../../run_tests_python_deps.include"/>
   <%include file="../../cmake.include"/>
   <%include file="../../run_tests_addons.include"/>
   

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -594,7 +594,7 @@ class Php7Language(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_debian9_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_stretch_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -1083,6 +1083,13 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-core-tests',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
@@ -1351,11 +1358,14 @@ argp.add_argument('-f',
                   default=False,
                   action='store_const',
                   const=True)
-argp.add_argument('-t',
-                  '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True)
+argp.add_argument(
+    '-t',
+    '--travis',
+    default=False,
+    action='store_const',
+    const=True,
+    help='When set, indicates that the script is running on CI (= not locally).'
+)
 argp.add_argument('--newline_on_success',
                   default=False,
                   action='store_const',
@@ -1586,7 +1596,7 @@ if args.use_docker:
         dockerfile_dir = next(iter(dockerfile_dirs))
 
     child_argv = [arg for arg in sys.argv if not arg == '--use_docker']
-    run_tests_cmd = 'python tools/run_tests/run_tests.py %s' % ' '.join(
+    run_tests_cmd = 'python3 tools/run_tests/run_tests.py %s' % ' '.join(
         child_argv[1:])
 
     env = os.environ.copy()
@@ -1595,8 +1605,6 @@ if args.use_docker:
     env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
     if args.xml_report:
         env['XML_REPORT'] = args.xml_report
-    if not args.travis:
-        env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
     subprocess.check_call(
         'tools/run_tests/dockerize/build_docker_and_run_tests.sh',

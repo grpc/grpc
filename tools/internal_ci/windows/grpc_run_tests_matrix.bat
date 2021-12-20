@@ -12,6 +12,16 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
+)
+endlocal
+
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
@@ -27,7 +37,5 @@ python3 tools/run_tests/start_port_server.py
 
 python3 tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
 set RUNTESTS_EXITCODE=%errorlevel%
-
-bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
 
 exit /b %RUNTESTS_EXITCODE%

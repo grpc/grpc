@@ -184,7 +184,7 @@ RefCountedPtr<DynamicFilters::Call> DynamicFilters::CreateCall(
                            channel_stack_->call_stack_size;
   Call* call = static_cast<Call*>(args.arena->Alloc(allocation_size));
   new (call) Call(std::move(args), error);
-  return call;
+  return RefCountedPtr<DynamicFilters::Call>(call);
 }
 
 }  // namespace grpc_core

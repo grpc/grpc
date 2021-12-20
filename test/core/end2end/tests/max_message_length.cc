@@ -474,7 +474,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
 static grpc_metadata gzip_compression_override() {
   grpc_metadata gzip_compression_override;
-  gzip_compression_override.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+  gzip_compression_override.key =
+      grpc_slice_from_static_string("grpc-internal-encoding-request");
   gzip_compression_override.value = grpc_slice_from_static_string("gzip");
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));
