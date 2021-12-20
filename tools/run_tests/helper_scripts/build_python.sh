@@ -153,6 +153,7 @@ fi
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
 # on pip to upgrade itself because if pip is too old, it may not have the required
 # TLS version to run `pip install`.
+export SETUPTOOLS_USE_DISTUTILS=local
 pip_install --upgrade pip==21.3.1
 # curl https://bootstrap.pypa.io/pip/get-pip.py | $VENV_PYTHON
 
