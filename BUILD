@@ -1950,7 +1950,10 @@ grpc_cc_library(
         "src/core/lib/iomgr/port.h",
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
+        "src/core/lib/iomgr/resolve_address_impl.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
+        "src/core/lib/iomgr/resolve_address_posix.h",
+        "src/core/lib/iomgr/resolve_address_windows.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
@@ -2031,6 +2034,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/pollset.h",
         "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
+        "src/core/lib/iomgr/event_engine/resolver.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -3142,6 +3146,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/functional:bind_front",
     ],
     language = "c++",
     deps = [
