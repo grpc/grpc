@@ -155,6 +155,9 @@ fi
 # TLS version to run `pip install`.
 curl https://bootstrap.pypa.io/pip/get-pip.py | $VENV_PYTHON
 
+pip_install --upgrade setuptools==60.0.2
+pip_install --upgrade pip==21.3.1
+
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
@@ -185,8 +188,6 @@ case "$VENV" in
 esac
 
 
-pip_install --upgrade setuptools==44.1.1
-pip_install --upgrade pip==19.3.1
 pip_install --upgrade cython
 pip_install --upgrade six protobuf
 
