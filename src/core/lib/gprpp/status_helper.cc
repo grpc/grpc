@@ -230,7 +230,10 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
     if (sv.has_value()) {
-      return *reinterpret_cast<const absl::Time*>(sv->data());
+      // copy the content before casting to avoid misaligned address access
+      alignas(absl::Time) char buf[sizeof(const absl::Time)];
+      memcpy(buf, sv->data(), sizeof(const absl::Time));
+      return *reinterpret_cast<const absl::Time*>(buf);
     } else {
       std::string s = std::string(*p);
       return *reinterpret_cast<const absl::Time*>(s.c_str());

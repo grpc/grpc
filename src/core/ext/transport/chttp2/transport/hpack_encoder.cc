@@ -23,6 +23,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <cstdint>
+
 #include "hpack_constants.h"
 
 /* This is here for grpc_is_binary_header
@@ -791,6 +793,51 @@ void HPackCompressor::Framer::Encode(GrpcStatusMetadata,
   } else {
     EmitLitHdrWithNonBinaryStringKeyNotIdx(key, value);
   }
+}
+
+void HPackCompressor::Framer::Encode(GrpcEncodingMetadata,
+                                     grpc_compression_algorithm value) {
+  uint32_t* index = nullptr;
+  if (value < GRPC_COMPRESS_ALGORITHMS_COUNT) {
+    index = &compressor_->cached_grpc_encoding_[static_cast<uint32_t>(value)];
+    if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
+      EmitIndexed(compressor_->table_.DynamicIndex(*index));
+      return;
+    }
+  }
+  auto key = StaticSlice::FromStaticString(GrpcEncodingMetadata::key());
+  auto encoded_value = GrpcEncodingMetadata::Encode(value);
+  uint32_t transport_length =
+      key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
+  if (index != nullptr) {
+    *index = compressor_->table_.AllocateIndex(transport_length);
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(key.c_slice(),
+                                           encoded_value.c_slice());
+  } else {
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(key.c_slice(),
+                                           encoded_value.c_slice());
+  }
+}
+
+void HPackCompressor::Framer::Encode(GrpcAcceptEncodingMetadata,
+                                     CompressionAlgorithmSet value) {
+  if (compressor_->grpc_accept_encoding_index_ != 0 &&
+      value == compressor_->grpc_accept_encoding_ &&
+      compressor_->table_.ConvertableToDynamicIndex(
+          compressor_->grpc_accept_encoding_index_)) {
+    EmitIndexed(compressor_->table_.DynamicIndex(
+        compressor_->grpc_accept_encoding_index_));
+    return;
+  }
+  auto key = StaticSlice::FromStaticString(GrpcAcceptEncodingMetadata::key());
+  auto encoded_value = GrpcAcceptEncodingMetadata::Encode(value);
+  uint32_t transport_length =
+      key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
+  compressor_->grpc_accept_encoding_index_ =
+      compressor_->table_.AllocateIndex(transport_length);
+  compressor_->grpc_accept_encoding_ = value;
+  EmitLitHdrWithNonBinaryStringKeyIncIdx(key.c_slice(),
+                                         encoded_value.c_slice());
 }
 
 void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
