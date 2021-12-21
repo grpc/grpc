@@ -162,7 +162,7 @@ pip_install() {
 
 # Pin setuptools to < 60.0.0 to restore the distutil installation, see:
 # https://github.com/pypa/setuptools/pull/2896
-export SETUPTOOLS_USE_DISTUTILS=local
+export SETUPTOOLS_USE_DISTUTILS=stdlib
 pip_install --upgrade pip==21.3.1
 pip_install --upgrade setuptools==59.7.0
 

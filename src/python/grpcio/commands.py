@@ -15,6 +15,10 @@
 
 from __future__ import print_function
 
+# NOTE(https://github.com/grpc/grpc/issues/24028): allow setuptools to monkey
+# patch distutils
+import setuptools  # isort:skip
+
 import distutils
 import glob
 import os
@@ -27,7 +31,6 @@ import sys
 import sysconfig
 import traceback
 
-import setuptools
 from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import easy_install
