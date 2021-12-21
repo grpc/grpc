@@ -19,8 +19,12 @@ Typical usage examples:
 
     # Usually called by a script searching for prefix and suffix of leaked
     # resources.
-    python -m bin.cleanup --project=grpc-testing --network=default-vpc --resource_prefix="abc"
-"""
+    python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
+        --project=grpc-testing\
+        --network=default-vpc\
+        --kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec-v2-us-central1-a\
+        --resource_prefix="required but does not matter"\
+        --td_bootstrap_image="required but does not matter" --server_image="required but does not matter" --client_image="required but does not matter""""
 import datetime
 import functools
 import logging
@@ -208,7 +212,7 @@ def cleanup_client(project, network, k8s_api_manager, resource_prefix,
     logger.info('Cleanup client')
     client_runner.cleanup(
         force=True, force_namespace=True
-    )  # FIXME: is it OK to force delete namespace? Is namespace reused by tests?
+    )
 
 
 # cleanup_server creates a server runner, and calls its cleanup() method.
@@ -232,7 +236,7 @@ def cleanup_server(project, network, k8s_api_manager, resource_prefix,
     logger.info('Cleanup server')
     server_runner.cleanup(
         force=True, force_namespace=True
-    )  # FIXME: is it OK to force delete namespace? Is namespace reused by tests?
+    )
 
 
 def main(argv):
@@ -285,7 +289,6 @@ def main(argv):
                 continue
             cleanup_td_for_gke(project, network, PSM_SECURITY_PREFIX,
                                result.group(1))
-            # TODO: cleanup gke clients and servers, but those need k8s context.
             continue
 
         logging.info(
