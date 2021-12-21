@@ -160,12 +160,10 @@ pip_install() {
   /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
 }
 
-# See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
-# on pip to upgrade itself because if pip is too old, it may not have the required
-# TLS version to run `pip install`.
+# Pin setuptools to < 60.0.0 to restore the distutil installation, see:
+# https://github.com/pypa/setuptools/pull/2896
 export SETUPTOOLS_USE_DISTUTILS=local
 pip_install --upgrade pip==21.3.1
-# curl https://bootstrap.pypa.io/pip/get-pip.py | $VENV_PYTHON
 pip_install --upgrade setuptools==59.7.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
