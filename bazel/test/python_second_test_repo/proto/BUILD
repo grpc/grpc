@@ -1,5 +1,6 @@
-#!/bin/bash
-# Copyright 2019 gRPC authors.
+# gRPC Bazel BUILD file.
+#
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/bin/bash
+proto_library(
+    name = "my_proto",
+    srcs = ["my.proto"],
+    visibility = ["//visibility:public"],
+)
 
-while IFS= read -r line; do
-  echo "$(date) - $line"
-done
+genrule(
+    name = "make_my_proto",
+    outs = ["my.proto"],
+    cmd = """
+      echo -e "syntax = \\"proto3\\";\npackage somewhere_else;\nmessage MyMessage {};" > $@
+    """,
+)

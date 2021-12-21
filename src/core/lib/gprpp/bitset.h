@@ -146,6 +146,13 @@ class BitSet {
     return count;
   }
 
+  bool operator==(const BitSet& other) const {
+    for (size_t i = 0; i < kUnits; i++) {
+      if (units_[i] != other.units_[i]) return false;
+    }
+    return true;
+  }
+
  private:
   // Given a bit index, return which unit it's stored in.
   static constexpr size_t unit_for(size_t bit) { return bit / kUnitBits; }
