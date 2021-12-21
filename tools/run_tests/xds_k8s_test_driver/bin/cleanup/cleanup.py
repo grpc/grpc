@@ -333,8 +333,6 @@ def main(argv):
             result = re.search(f'{PSM_SECURITY_PREFIX}-server-(.*)',
                                ns.metadata.name)
             if result is not None:
-                print(ns.metadata.name, ns.metadata.creation_timestamp,
-                      result.group(1))
                 cleanup_server(project, network,
                                k8s_api_manager, PSM_SECURITY_PREFIX,
                                result.group(1), gcp_service_account)
@@ -343,8 +341,6 @@ def main(argv):
             result = re.search(f'{PSM_SECURITY_PREFIX}-client-(.*)',
                                ns.metadata.name)
             if result is not None:
-                print(ns.metadata.name, ns.metadata.creation_timestamp,
-                      result.group(1))
                 cleanup_client(project, network,
                                k8s_api_manager, PSM_SECURITY_PREFIX,
                                result.group(1), gcp_service_account)
@@ -355,14 +351,12 @@ def main(argv):
             result = re.search(f'{URL_MAP_TEST_PREFIX}-client-(.*)',
                                ns.metadata.name)
             if result is not None:
-                print(ns.metadata.name, ns.metadata.creation_timestamp,
-                      result.group(1))
                 cleanup_client(project, network,
                                k8s_api_manager, URL_MAP_TEST_PREFIX,
                                result.group(1), gcp_service_account)
                 continue
-        logging.info(
-            '----- Skipped [does not matching resource name templates]')
+            logging.info(
+                '----- Skipped [does not matching resource name templates]')
 
 
 if __name__ == '__main__':
