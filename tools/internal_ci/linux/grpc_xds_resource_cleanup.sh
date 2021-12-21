@@ -18,12 +18,14 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 pyenv local 3.6.1
-python3 -m pip install dataclasses absl-py
-
+python3 -m pip install dataclasses
 gcloud container clusters get-credentials interop-test-psm-sec-v2-us-central1-a --zone us-central1-a --project grpc-testing
+
+cd tools/run_tests/xds_k8s_test_driver
+python3 -m pip install -r requirements.txt
 # flag resource_prefix is required by the gke test framework, but doesn't
 # matter for the cleanup script.
-python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
+python3 -m bin.cleanup.cleanup\
     --project=grpc-testing\
     --network=default-vpc\
     --kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec-v2-us-central1-a\
