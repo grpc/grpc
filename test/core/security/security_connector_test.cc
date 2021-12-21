@@ -71,31 +71,6 @@ static int check_ssl_peer_equivalence(const tsi_peer* original,
   return 1;
 }
 
-static void test_unauthenticated_ssl_peer(void) {
-  tsi_peer peer;
-  tsi_peer rpeer;
-  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
-                 &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_SECURITY_LEVEL_PEER_PROPERTY,
-                 tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
-                 &peer.properties[1]) == TSI_OK);
-  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  GPR_ASSERT(ctx != nullptr);
-  GPR_ASSERT(!grpc_auth_context_peer_is_authenticated(ctx.get()));
-  GPR_ASSERT(check_transport_security_type(ctx.get()));
-
-  rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx.get());
-  GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
-
-  grpc_shallow_peer_destruct(&rpeer);
-  tsi_peer_destruct(&peer);
-  ctx.reset(DEBUG_LOCATION, "test");
-}
-
 static int check_property(const grpc_auth_context* ctx,
                           const char* expected_property_name,
                           const char* expected_property_value) {
