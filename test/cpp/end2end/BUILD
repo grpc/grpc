@@ -91,33 +91,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "crl_end2end_test",
-    srcs = ["crl_end2end_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    data = [
-        "//test/core/tsi/test_creds/crl_data:ab06acdd.r0",
-        "//test/core/tsi/test_creds/crl_data:ca.pem",
-        "//test/core/tsi/test_creds/crl_data:revoked.key",
-        "//test/core/tsi/test_creds/crl_data:revoked.pem",
-        "//test/core/tsi/test_creds/crl_data:valid.key",
-        "//test/core/tsi/test_creds/crl_data:valid.pem",
-    ],
-    tags = ["no_test_ios"],
-    deps = [
-        ":test_service_impl",
-        "//:grpc",
-        "//:grpc++",
-        "//:grpcpp_channelz",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "time_change_test",
     srcs = ["time_change_test.cc"],
     data = [
