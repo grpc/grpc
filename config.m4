@@ -431,7 +431,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/tmpfile_msys.cc \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
-    src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
