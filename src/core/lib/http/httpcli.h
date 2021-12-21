@@ -48,20 +48,6 @@ struct grpc_httpcli_handshaker {
 extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
 extern const grpc_httpcli_handshaker grpc_httpcli_ssl;
 
-/* A request */
-typedef struct grpc_httpcli_request {
-  /* The host name to connect to */
-  char* host;
-  /* The host to verify in the SSL handshake (or NULL) */
-  char* ssl_host_override;
-  /* The main part of the request
-     The following headers are supplied automatically and MUST NOT be set here:
-     Host, Connection, User-Agent */
-  grpc_http_request http;
-  /* handshaker to use ssl for the request */
-  const grpc_httpcli_handshaker* handshaker;
-} grpc_httpcli_request;
-
 /* Expose the parser response type as a httpcli response too */
 typedef struct grpc_http_response grpc_httpcli_response;
 
@@ -85,6 +71,24 @@ namespace grpc_core {
 // if it's in flight).
 class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
  public:
+  class HttpCliHandshaker : InternallyRefCounted<HttpCliHandshaker> {
+   public:
+    virtual ~HttpCliHandshaker() {}
+    virtual void Start() = 0;
+  }
+
+  class HttpCliPlaintextHandshaker : HttpCliHandshaker {
+   public:
+    void Start() override;
+    void Orphan() override;
+  };
+
+  class HttpCliSSLHandshaker : HttpCliHandshaker {
+   public:
+    void Start() override;
+    void Orphan() override;
+  };
+
   // Asynchronously perform a HTTP GET.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the get - work on this entity may be used to progress the get
@@ -97,7 +101,8 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   // results to
   static OrphanablePtr<HttpCliRequest> Get(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-      const grpc_httpcli_request* request, grpc_millis deadline,
+      const char* host, const char* ssl_override, const grpc_http_request* request, std::unique_ptr<HttpCliHandshaker> handshaker,
+      grpc_millis deadline,
       grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
@@ -118,7 +123,8 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCliRequest> Post(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-      const grpc_httpcli_request* request, const char* body_bytes,
+      const char* host, const char* ssl_override, const grpc_http_request* request, std::unique_ptr<HttpCliHandshaker> handshaker,
+      const char* body_bytes,
       size_t body_size, grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
