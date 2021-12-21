@@ -1493,6 +1493,7 @@ grpc_cc_library(
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     visibility = ["@grpc:public"],
     deps = [
+        "arena",
         "config",
         "gpr_base",
         "grpc_base",
