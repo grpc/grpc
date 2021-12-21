@@ -150,13 +150,22 @@ else
   VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 fi
 
+
+# On library/version/platforms combo that do not have a binary
+# published, we may end up building a dependency from source. In that
+# case, several of our build environment variables may disrupt the
+# third-party build process. This function pipes through only the
+# minimal environment necessary.
+pip_install() {
+  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
+}
+
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
 # on pip to upgrade itself because if pip is too old, it may not have the required
 # TLS version to run `pip install`.
 export SETUPTOOLS_USE_DISTUTILS=local
 pip_install --upgrade pip==21.3.1
 # curl https://bootstrap.pypa.io/pip/get-pip.py | $VENV_PYTHON
-
 pip_install --upgrade setuptools==59.7.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
@@ -167,15 +176,6 @@ pip_install_dir() {
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip install --no-deps .
   cd "$PWD"
-}
-
-# On library/version/platforms combo that do not have a binary
-# published, we may end up building a dependency from source. In that
-# case, several of our build environment variables may disrupt the
-# third-party build process. This function pipes through only the
-# minimal environment necessary.
-pip_install() {
-  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
 }
 
 case "$VENV" in
