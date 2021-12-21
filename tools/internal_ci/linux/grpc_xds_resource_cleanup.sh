@@ -27,5 +27,5 @@ python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
     --project=grpc-testing\
     --network=default-vpc\
     --kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec-v2-us-central1-a\
-    --resource_prefix='required but does not matter'\
-    --td_bootstrap_image='required but does not matter' --server_image='required but does not matter' --client_image='required but does not matter'
+    --resource_prefix='required-but-does-not-matter'\
+    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
