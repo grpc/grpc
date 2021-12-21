@@ -75,9 +75,9 @@ class InternalRequest {
     GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
     GPR_ASSERT(pollent);
-    grpc_polling_entity_add_to_pollset_set(pollent_, pollset_set_);
+    grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
     dns_request_ = GetDNSResolver()->ResolveName(
-        host_.c_str(), handshaker_->default_port, context_->pollset_set,
+        host_.c_str(), handshaker_->default_port, pollset_set_,
         absl::bind_front(&InternalRequest::OnResolved, this));
     dns_request_->Start();
   }
