@@ -98,7 +98,6 @@ if grpc_config == 'dbg'
   $CFLAGS << ' -O0 -ggdb3'
 end
 
-$LDFLAGS << ' -Wl,-wrap,memcpy' if linux
 $LDFLAGS << ' -static-libgcc -static-libstdc++' if linux
 $LDFLAGS << ' -static' if windows
 
