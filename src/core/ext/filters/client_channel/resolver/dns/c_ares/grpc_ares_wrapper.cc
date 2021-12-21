@@ -913,7 +913,7 @@ static bool inner_resolve_as_ip_literal_locked(
     return false;
   }
   if (port->empty()) {
-    if (default_port == nullptr) {
+    if (default_port == nullptr || strlen(default_port) == 0) {
       gpr_log(GPR_ERROR,
               "No port or default port for %s while attempting to resolve as "
               "ip literal.",
@@ -976,7 +976,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     return false;
   }
   if (port->empty()) {
-    if (default_port == nullptr) {
+    if (default_port == nullptr || strlen(default_port) == 0) {
       gpr_log(GPR_ERROR,
               "No port or default port for %s during manual localhost "
               "resolution check.",

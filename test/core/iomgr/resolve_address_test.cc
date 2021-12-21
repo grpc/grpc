@@ -24,7 +24,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/flags/flag.h"
 #include "absl/functional/bind_front.h"
 #include "absl/strings/match.h"
 
@@ -46,8 +45,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(std::string, resolver, "", "DNS resolver type (ares or native)");
-
 namespace {
 
 grpc_millis NSecDeadline(int seconds) {
@@ -55,12 +52,11 @@ grpc_millis NSecDeadline(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-bool g_resolver_type_configured;
+const char* g_resolver_type = "";
 
 class ResolveAddressTest : public ::testing::Test {
  public:
   ResolveAddressTest() {
-    GPR_ASSERT(g_resolver_type_configured);
     grpc_init();
     grpc_core::ExecCtx exec_ctx;
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
@@ -180,7 +176,7 @@ class ResolveAddressTest : public ::testing::Test {
 TEST_F(ResolveAddressTest, Localhost) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, pollset_set(),
+      "localhost:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -198,12 +194,12 @@ TEST_F(ResolveAddressTest, DefaultPort) {
 }
 
 TEST_F(ResolveAddressTest, LocalhostResultHasIPv6First) {
-  if (absl::GetFlag(FLAGS_resolver) != "ares") {
+  if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, pollset_set(),
+      "localhost:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv6First, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -239,7 +235,7 @@ const address_sorting_source_addr_factory_vtable
 }  // namespace
 
 TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
-  if (absl::GetFlag(FLAGS_resolver) != "ares") {
+  if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
   // Mock the kernel source address selection. Note that source addr factory
@@ -251,7 +247,7 @@ TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
   // run the test
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost:1", nullptr, pollset_set(),
+      "localhost:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv4First, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -271,7 +267,7 @@ TEST_F(ResolveAddressTest, NonNumericDefaultPort) {
 TEST_F(ResolveAddressTest, MissingDefaultPort) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "localhost", nullptr, pollset_set(),
+      "localhost", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustFail, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -281,7 +277,7 @@ TEST_F(ResolveAddressTest, MissingDefaultPort) {
 TEST_F(ResolveAddressTest, IPv6WithPort) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      "[2001:db8::1]:1", nullptr, pollset_set(),
+      "[2001:db8::1]:1", "", pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -313,7 +309,7 @@ TEST_F(ResolveAddressTest, IPv6WithoutPortV4MappedV6) {
 void TestInvalidIPAddress(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      target, nullptr, test->pollset_set(),
+      target, "", test->pollset_set(),
       absl::bind_front(&ResolveAddressTest::MustFail, test));
   r->Start();
   grpc_core::ExecCtx::Get()->Flush();
@@ -398,7 +394,7 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
 }  // namespace
 
 TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
-  if (absl::GetFlag(FLAGS_resolver) != "ares") {
+  if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "the native resolver doesn't support cancellation, so we "
                     "can only test this with c-ares";
   }
@@ -423,25 +419,19 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
 }
 
 int main(int argc, char** argv) {
+  // Configure the DNS resolver (c-ares vs. native) based on the
+  // name of the binary. TODO(apolcyn): is there a way to pass command
+  // line flags to a gtest that it works in all of our test environments?
+  if (absl::StrContains(std::string(argv[0]), "using_native_resolver")) {
+    g_resolver_type = "native";
+  } else if (absl::StrContains(std::string(argv[0]), "using_ares_resolver")) {
+    g_resolver_type = "ares";
+  } else {
+    GPR_ASSERT(0);
+  }
+  GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, g_resolver_type);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc::testing::InitTest(&argc, &argv, true);
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
-  }
-  if (absl::GetFlag(FLAGS_resolver) == "native") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-    g_resolver_type_configured = true;
-  } else if (absl::GetFlag(FLAGS_resolver) == "ares") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-    g_resolver_type_configured = true;
-  } else {
-    gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
-    // crash later so that --gtest_list_tests can work
-  }
   const auto result = RUN_ALL_TESTS();
   return result;
 }

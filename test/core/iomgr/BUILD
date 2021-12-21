@@ -207,12 +207,8 @@ grpc_cc_test(
 grpc_cc_test(
     name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
-    args = [
-        "--resolver=ares",
-    ],
     external_deps = [
         "absl/strings",
-        "absl/flags:flag",
         "gtest",
     ],
     language = "C++",
@@ -228,12 +224,8 @@ grpc_cc_test(
 grpc_cc_test(
     name = "resolve_address_using_native_resolver_test",
     srcs = ["resolve_address_test.cc"],
-    args = [
-        "--resolver=native",
-    ],
     external_deps = [
         "absl/strings",
-        "absl/flags:flag",
         "gtest",
     ],
     language = "C++",

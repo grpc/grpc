@@ -34,6 +34,7 @@
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -297,6 +298,56 @@ struct HttpMethodMetadata {
   }
 };
 
+// Base type for metadata pertaining to a single compression algorithm
+// (e.g., "grpc-encoding").
+struct CompressionAlgorithmBasedMetadata {
+  using ValueType = grpc_compression_algorithm;
+  using MementoType = ValueType;
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    auto algorithm = ParseCompressionAlgorithm(value.as_string_view());
+    if (!algorithm.has_value()) {
+      on_error("invalid value", value);
+      return GRPC_COMPRESS_NONE;
+    }
+    return *algorithm;
+  }
+  static ValueType MementoToValue(MementoType x) { return x; }
+  static StaticSlice Encode(ValueType x) {
+    GPR_ASSERT(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
+    return StaticSlice::FromStaticString(CompressionAlgorithmAsString(x));
+  }
+  static const char* DisplayValue(MementoType x) {
+    if (const char* p = CompressionAlgorithmAsString(x)) {
+      return p;
+    } else {
+      return "<discarded-invalid-value>";
+    }
+  }
+};
+
+// grpc-encoding metadata trait.
+struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
+  static absl::string_view key() { return "grpc-encoding"; }
+};
+
+// grpc-internal-encoding-request metadata trait.
+struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
+  static absl::string_view key() { return "grpc-internal-encoding-request"; }
+};
+
+// grpc-accept-encoding metadata trait.
+struct GrpcAcceptEncodingMetadata {
+  static absl::string_view key() { return "grpc-accept-encoding"; }
+  using ValueType = CompressionAlgorithmSet;
+  using MementoType = ValueType;
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn) {
+    return CompressionAlgorithmSet::FromString(value.as_string_view());
+  }
+  static ValueType MementoToValue(MementoType x) { return x; }
+  static Slice Encode(ValueType x) { return x.ToSlice(); }
+  static std::string DisplayValue(MementoType x) { return x.ToString(); }
+};
+
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;
@@ -533,7 +584,7 @@ MetadataValueAsSlice(const Slice& slice) {
 template <typename Which>
 absl::enable_if_t<!std::is_same<typename Which::ValueType, Slice>::value, Slice>
 MetadataValueAsSlice(typename Which::ValueType value) {
-  return Which::Encode(value);
+  return Slice(Which::Encode(value));
 }
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
@@ -769,7 +820,6 @@ class MetadataMap {
   size_t TransportSize() const;
 
   void Remove(grpc_linked_mdelem* storage);
-  void Remove(grpc_metadata_batch_callouts_index idx);
 
   absl::optional<grpc_slice> Remove(grpc_slice key);
 
@@ -780,13 +830,7 @@ class MetadataMap {
       absl::string_view target_key, std::string* concatenated_value) const;
 
   grpc_error_handle LinkHead(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
-  grpc_error_handle LinkHead(grpc_linked_mdelem* storage,
-                             grpc_metadata_batch_callouts_index idx)
-      GRPC_MUST_USE_RESULT;
   grpc_error_handle LinkTail(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
-  grpc_error_handle LinkTail(grpc_linked_mdelem* storage,
-                             grpc_metadata_batch_callouts_index idx)
-      GRPC_MUST_USE_RESULT;
 
   grpc_error_handle AddHead(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
   grpc_error_handle AddHead(grpc_linked_mdelem* storage,
@@ -808,8 +852,6 @@ class MetadataMap {
   grpc_millis deadline() const {
     return get(GrpcTimeoutMetadata()).value_or(GRPC_MILLIS_INF_FUTURE);
   };
-
-  const grpc_metadata_batch_callouts* legacy_index() const { return &idx_; }
 
  private:
   // Generate a strong type for metadata values per trait.
@@ -854,14 +896,6 @@ class MetadataMap {
    private:
     uint32_t size_ = 0;
   };
-
-  void AssertValidCallouts();
-  grpc_error_handle LinkCallout(grpc_linked_mdelem* storage,
-                                grpc_metadata_batch_callouts_index idx)
-      GRPC_MUST_USE_RESULT;
-  grpc_error_handle MaybeLinkCallout(grpc_linked_mdelem* storage)
-      GRPC_MUST_USE_RESULT;
-  void MaybeUnlinkCallout(grpc_linked_mdelem* storage);
 
   static void assert_valid_list(grpc_mdelem_list* list) {
 #ifndef NDEBUG
@@ -949,25 +983,9 @@ class MetadataMap {
   Table<Value<Traits>...> table_;
   /** Metadata elements in this batch */
   grpc_mdelem_list list_;
-  grpc_metadata_batch_callouts idx_;
   // Backing store for added metadata.
   ChunkedVector<grpc_linked_mdelem, 10> elem_storage_;
 };
-
-template <typename... Traits>
-void MetadataMap<Traits...>::AssertValidCallouts() {
-#ifndef NDEBUG
-  for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
-    grpc_slice key_interned = grpc_slice_intern(GRPC_MDKEY(l->md));
-    grpc_metadata_batch_callouts_index callout_idx =
-        GRPC_BATCH_INDEX_OF(key_interned);
-    if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
-      GPR_ASSERT(idx_.array[callout_idx] == l);
-    }
-    grpc_slice_unref_internal(key_interned);
-  }
-#endif
-}
 
 #ifndef NDEBUG
 template <typename... Traits>
@@ -979,16 +997,13 @@ void MetadataMap<Traits...>::AssertOk() {
 template <typename... Traits>
 MetadataMap<Traits...>::MetadataMap(Arena* arena) : elem_storage_(arena) {
   memset(&list_, 0, sizeof(list_));
-  memset(&idx_, 0, sizeof(idx_));
 }
 
 template <typename... Traits>
 MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept
     : table_(std::move(other.table_)) {
   list_ = other.list_;
-  idx_ = other.idx_;
   memset(&other.list_, 0, sizeof(list_));
-  memset(&other.idx_, 0, sizeof(idx_));
 }
 
 template <typename... Traits>
@@ -997,15 +1012,12 @@ MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(
   Clear();
   table_ = std::move(other.table_);
   list_ = other.list_;
-  idx_ = other.idx_;
   memset(&other.list_, 0, sizeof(list_));
-  memset(&other.idx_, 0, sizeof(idx_));
   return *this;
 }
 
 template <typename... Traits>
 MetadataMap<Traits...>::~MetadataMap() {
-  AssertValidCallouts();
   for (auto* l = list_.head; l; l = l->next) {
     GRPC_MDELEM_UNREF(l->md);
   }
@@ -1024,44 +1036,6 @@ absl::optional<grpc_slice> MetadataMap<Traits...>::Remove(grpc_slice key) {
 }
 
 template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::LinkCallout(
-    grpc_linked_mdelem* storage, grpc_metadata_batch_callouts_index idx) {
-  AssertValidCallouts();
-  GPR_DEBUG_ASSERT(idx >= 0 && idx < GRPC_BATCH_CALLOUTS_COUNT);
-  if (GPR_LIKELY(idx_.array[idx] == nullptr)) {
-    ++list_.default_count;
-    idx_.array[idx] = storage;
-    AssertValidCallouts();
-    return GRPC_ERROR_NONE;
-  }
-  AssertValidCallouts();
-  return error_with_md(storage->md);
-}
-
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::MaybeLinkCallout(
-    grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_callouts_index idx =
-      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
-  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
-    return GRPC_ERROR_NONE;
-  }
-  return LinkCallout(storage, idx);
-}
-
-template <typename... Traits>
-void MetadataMap<Traits...>::MaybeUnlinkCallout(grpc_linked_mdelem* storage) {
-  grpc_metadata_batch_callouts_index idx =
-      GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
-  if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
-    return;
-  }
-  --list_.default_count;
-  GPR_DEBUG_ASSERT(idx_.array[idx] != nullptr);
-  idx_.array[idx] = nullptr;
-}
-
-template <typename... Traits>
 grpc_error_handle MetadataMap<Traits...>::AddHead(grpc_linked_mdelem* storage,
                                                   grpc_mdelem elem_to_add) {
   GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
@@ -1072,32 +1046,7 @@ grpc_error_handle MetadataMap<Traits...>::AddHead(grpc_linked_mdelem* storage,
 template <typename... Traits>
 grpc_error_handle MetadataMap<Traits...>::LinkHead(
     grpc_linked_mdelem* storage) {
-  AssertValidCallouts();
-  grpc_error_handle err = MaybeLinkCallout(storage);
-  if (err != GRPC_ERROR_NONE) {
-    AssertValidCallouts();
-    return err;
-  }
   link_head(&list_, storage);
-  AssertValidCallouts();
-  return GRPC_ERROR_NONE;
-}
-
-// TODO(arjunroy): Need to revisit this and see what guarantees exist between
-// C-core and the internal-metadata subsystem. E.g. can we ensure a particular
-// metadata is never added twice, even in the presence of user supplied data?
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::LinkHead(
-    grpc_linked_mdelem* storage, grpc_metadata_batch_callouts_index idx) {
-  GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
-  AssertValidCallouts();
-  grpc_error_handle err = LinkCallout(storage, idx);
-  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-    AssertValidCallouts();
-    return err;
-  }
-  link_head(&list_, storage);
-  AssertValidCallouts();
   return GRPC_ERROR_NONE;
 }
 
@@ -1112,50 +1061,14 @@ grpc_error_handle MetadataMap<Traits...>::AddTail(grpc_linked_mdelem* storage,
 template <typename... Traits>
 grpc_error_handle MetadataMap<Traits...>::LinkTail(
     grpc_linked_mdelem* storage) {
-  AssertValidCallouts();
-  grpc_error_handle err = MaybeLinkCallout(storage);
-  if (err != GRPC_ERROR_NONE) {
-    AssertValidCallouts();
-    return err;
-  }
   link_tail(&list_, storage);
-  AssertValidCallouts();
-  return GRPC_ERROR_NONE;
-}
-
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::LinkTail(
-    grpc_linked_mdelem* storage, grpc_metadata_batch_callouts_index idx) {
-  GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
-  AssertValidCallouts();
-  grpc_error_handle err = LinkCallout(storage, idx);
-  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-    AssertValidCallouts();
-    return err;
-  }
-  link_tail(&list_, storage);
-  AssertValidCallouts();
   return GRPC_ERROR_NONE;
 }
 
 template <typename... Traits>
 void MetadataMap<Traits...>::Remove(grpc_linked_mdelem* storage) {
-  AssertValidCallouts();
-  MaybeUnlinkCallout(storage);
   unlink_storage(&list_, storage);
   GRPC_MDELEM_UNREF(storage->md);
-  AssertValidCallouts();
-}
-
-template <typename... Traits>
-void MetadataMap<Traits...>::Remove(grpc_metadata_batch_callouts_index idx) {
-  AssertValidCallouts();
-  if (idx_.array[idx] == nullptr) return;
-  --list_.default_count;
-  unlink_storage(&list_, idx_.array[idx]);
-  GRPC_MDELEM_UNREF(idx_.array[idx]->md);
-  idx_.array[idx] = nullptr;
-  AssertValidCallouts();
 }
 
 template <typename... Traits>
@@ -1182,22 +1095,14 @@ absl::optional<absl::string_view> MetadataMap<Traits...>::GetValue(
 template <typename... Traits>
 grpc_error_handle MetadataMap<Traits...>::Substitute(
     grpc_linked_mdelem* storage, grpc_mdelem new_mdelem) {
-  AssertValidCallouts();
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_mdelem old_mdelem = storage->md;
   if (!grpc_slice_eq(GRPC_MDKEY(new_mdelem), GRPC_MDKEY(old_mdelem))) {
-    MaybeUnlinkCallout(storage);
     storage->md = new_mdelem;
-    error = MaybeLinkCallout(storage);
-    if (error != GRPC_ERROR_NONE) {
-      unlink_storage(&list_, storage);
-      GRPC_MDELEM_UNREF(storage->md);
-    }
   } else {
     storage->md = new_mdelem;
   }
   GRPC_MDELEM_UNREF(old_mdelem);
-  AssertValidCallouts();
   return error;
 }
 
@@ -1219,17 +1124,14 @@ size_t MetadataMap<Traits...>::TransportSize() const {
 
 template <typename... Traits>
 bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
-  AssertValidCallouts();
   for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
     if (grpc_slice_eq(GRPC_MDKEY(l->md), key)) {
       auto new_mdelem = grpc_mdelem_from_slices(key, value);
       GRPC_MDELEM_UNREF(l->md);
       l->md = new_mdelem;
-      AssertValidCallouts();
       return true;
     }
   }
-  AssertValidCallouts();
   return false;
 }
 
@@ -1242,8 +1144,9 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::HttpSchemeMetadata,
     // Non-colon prefixed headers begin here
     grpc_core::ContentTypeMetadata, grpc_core::TeMetadata,
-    grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata,
-    grpc_core::GrpcPreviousRpcAttemptsMetadata,
+    grpc_core::GrpcEncodingMetadata, grpc_core::GrpcInternalEncodingRequest,
+    grpc_core::GrpcAcceptEncodingMetadata, grpc_core::GrpcStatusMetadata,
+    grpc_core::GrpcTimeoutMetadata, grpc_core::GrpcPreviousRpcAttemptsMetadata,
     grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata,
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
     grpc_core::XEndpointLoadMetricsBinMetadata,
@@ -1266,10 +1169,6 @@ inline size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {
 inline void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
                                        grpc_linked_mdelem* storage) {
   batch->Remove(storage);
-}
-inline void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
-                                       grpc_metadata_batch_callouts_index idx) {
-  batch->Remove(idx);
 }
 
 /** Substitute a new mdelem for an old value */
@@ -1305,12 +1204,6 @@ inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_head(
   return batch->LinkHead(storage);
 }
 
-inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_head(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
-  return batch->LinkHead(storage, idx);
-}
-
 /** Add \a storage to the end of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
@@ -1319,12 +1212,6 @@ inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_head(
 inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage) {
   return batch->LinkTail(storage);
-}
-
-inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_tail(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
-  return batch->LinkTail(storage, idx);
 }
 
 /** Add \a elem_to_add as the first element in \a batch, using
@@ -1339,22 +1226,6 @@ inline grpc_error_handle grpc_metadata_batch_add_head(
   return batch->AddHead(storage, elem_to_add);
 }
 
-// TODO(arjunroy, roth): Remove redundant methods.
-// add/link_head/tail are almost identical.
-inline grpc_error_handle GRPC_MUST_USE_RESULT grpc_metadata_batch_add_head(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
-  return grpc_metadata_batch_link_head(batch, storage, idx);
-}
-
-inline grpc_error_handle GRPC_MUST_USE_RESULT grpc_metadata_batch_add_head(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_mdelem elem_to_add, grpc_metadata_batch_callouts_index idx) {
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
-  storage->md = elem_to_add;
-  return grpc_metadata_batch_add_head(batch, storage, idx);
-}
-
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
@@ -1365,20 +1236,6 @@ inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_add_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) {
   return batch->AddTail(storage, elem_to_add);
-}
-
-inline grpc_error_handle GRPC_MUST_USE_RESULT grpc_metadata_batch_add_tail(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_metadata_batch_callouts_index idx) {
-  return grpc_metadata_batch_link_tail(batch, storage, idx);
-}
-
-inline grpc_error_handle GRPC_MUST_USE_RESULT grpc_metadata_batch_add_tail(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_mdelem elem_to_add, grpc_metadata_batch_callouts_index idx) {
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
-  storage->md = elem_to_add;
-  return grpc_metadata_batch_add_tail(batch, storage, idx);
 }
 
 typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(

@@ -190,7 +190,7 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(
   }
   if (addresses_or.ok()) {
     ServerAddressList addresses;
-    for (const auto& addr : *addresses_or) {
+    for (auto& addr : *addresses_or) {
       addresses.emplace_back(addr, nullptr /* args */);
     }
     Result result;

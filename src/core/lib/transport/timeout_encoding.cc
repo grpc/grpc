@@ -88,6 +88,7 @@ grpc_millis Timeout::AsDuration() const {
     case Unit::kHours:
       return value * 1000 * kSecondsPerHour;
   }
+  GPR_UNREACHABLE_CODE(return -1);
 }
 
 Slice Timeout::Encode() const {
