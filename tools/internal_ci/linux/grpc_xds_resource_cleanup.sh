@@ -18,7 +18,6 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 pyenv local 3.6.1
-python3 -m pip install dataclasses
 gcloud container clusters get-credentials interop-test-psm-sec-v2-us-central1-a --zone us-central1-a --project grpc-testing
 
 cd tools/run_tests/xds_k8s_test_driver
