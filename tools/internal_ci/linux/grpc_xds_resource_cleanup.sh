@@ -18,7 +18,7 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 pyenv local 3.6.1
-python3 -m pip install dataclasses
+python3 -m pip install dataclasses absl-py
 
 gcloud container clusters get-credentials interop-test-psm-sec-v2-us-central1-a --zone us-central1-a --project grpc-testing
 # flag resource_prefix is required by the gke test framework, but doesn't
