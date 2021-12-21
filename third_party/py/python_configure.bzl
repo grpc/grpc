@@ -245,8 +245,7 @@ def _get_python_include(repository_ctx, python_bin):
         error_msg = "Problem getting python include path for {}.".format(python_bin),
         error_details = (
             "Is the Python binary path set up right? " + "(See ./configure or " +
-            python_bin + ".) " + "Is distutils installed? " +
-            _HEADERS_HELP
+            python_bin + ".) " + _HEADERS_HELP
         ),
     )
     include_path = result.stdout.splitlines()[0]
