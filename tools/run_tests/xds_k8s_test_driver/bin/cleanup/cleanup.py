@@ -17,14 +17,13 @@ This is intended as a tool to delete leaked resources from old tests.
 
 Typical usage examples:
 
-    # Usually called by a script searching for prefix and suffix of leaked
-    # resources.
-    python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
-        --project=grpc-testing\
-        --network=default-vpc\
-        --kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec-v2-us-central1-a\
-        --resource_prefix="required but does not matter"\
-        --td_bootstrap_image="required but does not matter" --server_image="required but does not matter" --client_image="required but does not matter""""
+python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
+    --project=grpc-testing\
+    --network=default-vpc\
+    --kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec-v2-us-central1-a\
+    --resource_prefix='required-but-does-not-matter'\
+    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
+"""
 import datetime
 import functools
 import logging
@@ -210,9 +209,7 @@ def cleanup_client(project, network, k8s_api_manager, resource_prefix,
         **runner_kwargs)
 
     logger.info('Cleanup client')
-    client_runner.cleanup(
-        force=True, force_namespace=True
-    )
+    client_runner.cleanup(force=True, force_namespace=True)
 
 
 # cleanup_server creates a server runner, and calls its cleanup() method.
@@ -234,9 +231,7 @@ def cleanup_server(project, network, k8s_api_manager, resource_prefix,
         **runner_kwargs)
 
     logger.info('Cleanup server')
-    server_runner.cleanup(
-        force=True, force_namespace=True
-    )
+    server_runner.cleanup(force=True, force_namespace=True)
 
 
 def main(argv):
