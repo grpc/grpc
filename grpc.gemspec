@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'logging',            '~> 2.0'
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.1'
+  s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
   s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
@@ -755,6 +755,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_listener.h )
   s.files += %w( src/core/ext/xds/xds_resource_type.cc )
   s.files += %w( src/core/ext/xds/xds_resource_type.h )
+  s.files += %w( src/core/ext/xds/xds_resource_type_impl.h )
   s.files += %w( src/core/ext/xds/xds_route_config.cc )
   s.files += %w( src/core/ext/xds/xds_route_config.h )
   s.files += %w( src/core/ext/xds/xds_routing.cc )
@@ -792,20 +793,11 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/handshaker_registry.h )
   s.files += %w( src/core/lib/channel/status_util.cc )
   s.files += %w( src/core/lib/channel/status_util.h )
-  s.files += %w( src/core/lib/compression/algorithm_metadata.h )
   s.files += %w( src/core/lib/compression/compression.cc )
-  s.files += %w( src/core/lib/compression/compression_args.cc )
-  s.files += %w( src/core/lib/compression/compression_args.h )
   s.files += %w( src/core/lib/compression/compression_internal.cc )
   s.files += %w( src/core/lib/compression/compression_internal.h )
   s.files += %w( src/core/lib/compression/message_compress.cc )
   s.files += %w( src/core/lib/compression/message_compress.h )
-  s.files += %w( src/core/lib/compression/stream_compression.cc )
-  s.files += %w( src/core/lib/compression/stream_compression.h )
-  s.files += %w( src/core/lib/compression/stream_compression_gzip.cc )
-  s.files += %w( src/core/lib/compression/stream_compression_gzip.h )
-  s.files += %w( src/core/lib/compression/stream_compression_identity.cc )
-  s.files += %w( src/core/lib/compression/stream_compression_identity.h )
   s.files += %w( src/core/lib/config/core_configuration.cc )
   s.files += %w( src/core/lib/config/core_configuration.h )
   s.files += %w( src/core/lib/debug/stats.cc )
@@ -954,6 +946,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/event_engine/resolved_address_internal.cc )
   s.files += %w( src/core/lib/iomgr/event_engine/resolved_address_internal.h )
   s.files += %w( src/core/lib/iomgr/event_engine/resolver.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine/resolver.h )
   s.files += %w( src/core/lib/iomgr/event_engine/tcp.cc )
   s.files += %w( src/core/lib/iomgr/event_engine/timer.cc )
   s.files += %w( src/core/lib/iomgr/exec_ctx.cc )
@@ -1013,8 +1006,11 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/resolve_address.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_custom.cc )
   s.files += %w( src/core/lib/iomgr/resolve_address_custom.h )
+  s.files += %w( src/core/lib/iomgr/resolve_address_impl.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_posix.cc )
+  s.files += %w( src/core/lib/iomgr/resolve_address_posix.h )
   s.files += %w( src/core/lib/iomgr/resolve_address_windows.cc )
+  s.files += %w( src/core/lib/iomgr/resolve_address_windows.h )
   s.files += %w( src/core/lib/iomgr/sockaddr.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_posix.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_windows.h )

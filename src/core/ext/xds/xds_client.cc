@@ -887,7 +887,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       [watchers_list, value]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
             for (const auto& p : watchers_list) {
-              p.first->OnResourceChanged(value);
+              p.first->OnGenericResourceChanged(value);
             }
             delete value;
           },
@@ -1870,7 +1870,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       auto* value = type->CopyResource(resource_state.resource.get()).release();
       work_serializer_.Schedule(
           [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            watcher->OnResourceChanged(value);
+            watcher->OnGenericResourceChanged(value);
             delete value;
           },
           DEBUG_LOCATION);

@@ -294,30 +294,26 @@ BENCHMARK(BM_StreamCreateDestroy);
 class RepresentativeClientInitialMetadata {
  public:
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH, grpc_slice_intern(grpc_slice_from_static_string(
-                                 "/foo/bar/bm_chttp2_transport"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
+    b->Set(grpc_core::HttpPathMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "/foo/bar/bm_chttp2_transport")));
+    b->Set(grpc_core::HttpAuthorityMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+    b->Set(grpc_core::ContentTypeMetadata(),
+           grpc_core::ContentTypeMetadata::kApplicationGrpc);
+    b->Set(grpc_core::UserAgentMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)")));
   }
 };
 

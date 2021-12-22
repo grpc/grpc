@@ -35,6 +35,15 @@
 
 #include <string>
 
+#include <openssl/bio.h>
+#include <openssl/crypto.h> /* For OPENSSL_free */
+#include <openssl/engine.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/tls1.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 
@@ -44,17 +53,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
-
-extern "C" {
-#include <openssl/bio.h>
-#include <openssl/crypto.h> /* For OPENSSL_free */
-#include <openssl/engine.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#include <openssl/tls1.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
-}
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"

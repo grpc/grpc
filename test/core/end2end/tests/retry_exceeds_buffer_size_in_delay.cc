@@ -166,7 +166,8 @@ static void test_retry_exceeds_buffer_size_in_delay(
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  grpc_slice status_details1 = grpc_slice_from_static_string("message1");
+  grpc_slice status_details2 = grpc_slice_from_static_string("message2");
 
   // Client sends initial metadata and starts the recv ops.
   memset(ops, 0, sizeof(ops));
@@ -215,7 +216,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = &status_details1;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -269,7 +270,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = &status_details2;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -282,7 +283,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "message2"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
