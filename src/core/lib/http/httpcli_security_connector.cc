@@ -137,7 +137,7 @@ class grpc_httpcli_ssl_channel_security_connector final
 static grpc_core::RefCountedPtr<grpc_channel_security_connector>
 httpcli_ssl_channel_security_connector_create(
     const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
-    const char* secure_peer_name, grpc_channel_args* /*channel_args*/) {
+    const char* secure_peer_name) {
   if (secure_peer_name != nullptr && pem_root_certs == nullptr) {
     gpr_log(GPR_ERROR,
             "Cannot assert a secure peer name without a trust root.");
@@ -157,59 +157,57 @@ httpcli_ssl_channel_security_connector_create(
 
 /* handshaker */
 
-struct on_done_closure {
-  void (*func)(void* arg, grpc_endpoint* endpoint);
-  void* arg;
-  grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
-};
-static void on_handshake_done(void* arg, grpc_error_handle error) {
-  auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
-  on_done_closure* c = static_cast<on_done_closure*>(args->user_data);
+namespace grpc_core {
+
+static void HttpCliRequest::SSLHandshaker::InnerOnDone(void* arg, grpc_error_handle error) {
+  auto* args = static_cast<HandshakerArgs*>(arg);
+  auto* self = static_cast<HttpCliRequest::SSLHandshaker*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
             grpc_error_std_string(error).c_str());
-    c->func(c->arg, nullptr);
+    self->on_done_(nullptr);
   } else {
     grpc_channel_args_destroy(args->args);
     grpc_slice_buffer_destroy_internal(args->read_buffer);
     gpr_free(args->read_buffer);
-    c->func(c->arg, args->endpoint);
+    self->on_done_(args->endpoint);
   }
-  delete c;
+  self->Unref();
 }
 
-static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
-                          grpc_millis deadline,
-                          void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
-  auto* c = new on_done_closure();
+}
+
+void HttpCliRequest::SSLHandshaker::Start() {
   const char* pem_root_certs =
       grpc_core::DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =
       grpc_core::DefaultSslRootStore::GetRootStore();
   if (root_store == nullptr) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-    on_done(arg, nullptr);
-    gpr_free(c);
+    on_done_(nullptr);
     return;
   }
-  c->func = on_done;
-  c->arg = arg;
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       httpcli_ssl_channel_security_connector_create(
-          pem_root_certs, root_store, host,
-          static_cast<grpc_core::HandshakerArgs*>(arg)->args);
-
+          pem_root_certs, root_store, host_.c_str());
   GPR_ASSERT(sc != nullptr);
   grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
   grpc_channel_args args = {1, &channel_arg};
-  c->handshake_mgr = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
+  handshake_mgr_ = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
   grpc_core::CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       grpc_core::HANDSHAKER_CLIENT, &args,
-      /*interested_parties=*/nullptr, c->handshake_mgr.get());
-  c->handshake_mgr->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,
-                                /*acceptor=*/nullptr, on_handshake_done,
-                                /*user_data=*/c);
+      /*interested_parties=*/nullptr, handshake_mgr_.get());
+  Ref().release(); // ref held by pending handshake
+  handshake_mgr_->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,
+                                /*acceptor=*/nullptr, HttpCliRequest::SSLHandshaker::InnerOnDone,
+                                /*user_data=*/this);
   sc.reset(DEBUG_LOCATION, "httpcli");
 }
 
-const grpc_httpcli_handshaker grpc_httpcli_ssl = {"https", ssl_handshake};
+void HttpCliRequest::SSLHandshaker::Orphan() {
+  if (handshake_mgr_ != nullptr) {
+    handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("HttpCliRequest::SSLHandshaker::Orphan"));
+  }
+}
+
+} // namespace grpc_core

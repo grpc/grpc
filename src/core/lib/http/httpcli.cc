@@ -47,15 +47,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 
-static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
-                                const char* /*host*/, grpc_millis /*deadline*/,
-                                void (*on_done)(void* arg,
-                                                grpc_endpoint* endpoint)) {
-  on_done(arg, endpoint);
-}
-
-const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
-                                                        plaintext_handshake};
 
 namespace grpc_core {
 
@@ -67,9 +58,12 @@ grpc_httpcli_post_override g_post_override;
 }  // namespace
 
 OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(
-    grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-    const grpc_httpcli_request* request, grpc_millis deadline,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+      grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
+      const char* host, const char* ssl_override, const grpc_http_request* request,
+      std::unique_ptr<HttpCliRequest::HandshakerFactory> handshaker_factory,
+      grpc_millis deadline,
+      grpc_closure* on_done,
+      grpc_httpcli_response* response) {
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
     return nullptr;
   }
@@ -79,15 +73,17 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(
       grpc_httpcli_format_get_request(request), response,
       std::move(resource_quota), request->host, request->ssl_host_override,
       deadline,
-      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
+      std::move(handshaker_factory),
       on_done, pollent, name.c_str());
 }
 
 OrphanablePtr<HttpCliRequest> HttpCliRequest::Post(
-    grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-    const grpc_httpcli_request* request, const char* body_bytes,
-    size_t body_size, grpc_millis deadline, grpc_closure* on_done,
-    grpc_httpcli_response* response) {
+      grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
+      const char* host, const char* ssl_override, const grpc_http_request* request,
+      std::unique_ptr<HttpCliRequest::HandshakerFactory> handshaker_factory,
+      grpc_millis deadline,
+      grpc_closure* on_done,
+      grpc_httpcli_response* response) {
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
     return nullptr;
@@ -98,7 +94,7 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Post(
       grpc_httpcli_format_post_request(request, body_bytes, body_size),
       response, std::move(resource_quota), request->host,
       request->ssl_host_override, deadline,
-      request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
+      std::move(handshaker_factory),
       on_done, pollent, name.c_str());
 }
 
@@ -112,12 +108,11 @@ HttpCliRequest::HttpCliRequest(
     const grpc_slice& request_text, grpc_httpcli_response* response,
     ResourceQuotaRefPtr resource_quota, absl::string_view host,
     absl::string_view ssl_host_override, grpc_millis deadline,
-    const grpc_httpcli_handshaker* handshaker, grpc_closure* on_done,
+    std::unique_ptr<HandshakerFactory> handshaker_factory, grpc_closure* on_done,
     grpc_polling_entity* pollent, const char* name)
-    : request_text_(request_text),
+    : handshaker_factory_(std::move(handshaker_factory)),
       resource_quota_(std::move(resource_quota)),
       host_(host),
-      ssl_host_override_(ssl_host_override),
       deadline_(deadline),
       handshaker_(handshaker),
       on_done_(on_done),
@@ -138,8 +133,8 @@ HttpCliRequest::HttpCliRequest(
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
   dns_request_ = GetDNSResolver()->ResolveName(
-      host_.c_str(), handshaker_->default_port, pollset_set_,
-      std::bind(&HttpCliRequest::OnResolved, this, std::placeholders::_1));
+      host_.c_str(), handshaker_factory_->default_port(), pollset_set_,
+      absl::BindFront(&HttpCliRequest::OnResolved, this));
 }
 
 HttpCliRequest::~HttpCliRequest() {
@@ -170,6 +165,7 @@ void HttpCliRequest::Orphan() {
       grpc_endpoint_shutdown(
           ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
     }
+    handshaker_.reset();  // cancel potentially pending handshake
   }
   Unref();
 }
@@ -229,17 +225,16 @@ void HttpCliRequest::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
 }
 
-void HttpCliRequest::OnHandshakeDone(void* arg, grpc_endpoint* ep) {
-  HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
-  grpc_core::MutexLock lock(&req->mu_);
-  req->own_endpoint_ = true;
+void HttpCliRequest::OnHandshakeDone(grpc_endpoint* ep) {
+  grpc_core::MutexLock lock(mu_);
+  own_endpoint_ = true;
   if (!ep) {
-    req->NextAddress(
+    NextAddress(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
     return;
   }
-  req->ep_ = ep;
-  req->StartWrite();
+  ep_ = ep;
+  StartWrite();
 }
 
 void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
@@ -254,12 +249,10 @@ void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
       return;
     }
     ep = req->ep_;
-    host = req->ssl_host_override_.empty() ? req->host_.c_str()
-                                           : req->ssl_host_override_.c_str();
-    deadline = req->deadline_;
+    req->handshaker_ = req->handshaker_factory_->CreateHandshaker(req->ep_, req->ssl_host_override_.empty() ? req_->host_, req_->ssl_host_override_, req->deadline_,
+                                               absl::BindFront(&HttpCliRequest::OnHandshakeDone, req));
+    req->handshaker_->Start();
   }
-  // release the lock since OnHandshakeDone may be called inline
-  req->handshaker_->handshake(req, ep, host, deadline, OnHandshakeDone);
 }
 
 void HttpCliRequest::NextAddress(grpc_error_handle error)
