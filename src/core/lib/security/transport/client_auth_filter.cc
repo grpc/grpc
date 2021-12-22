@@ -34,7 +34,6 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -236,6 +235,21 @@ static void cancel_get_request_metadata(void* arg, grpc_error_handle error) {
   GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_get_request_metadata");
 }
 
+static grpc_security_level convert_security_level_string_to_enum(
+    const char* security_level) {
+  if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
+    return GRPC_INTEGRITY_ONLY;
+  } else if (strcmp(security_level, "TSI_PRIVACY_AND_INTEGRITY") == 0) {
+    return GRPC_PRIVACY_AND_INTEGRITY;
+  }
+  return GRPC_SECURITY_NONE;
+}
+
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level) {
+  return static_cast<int>(channel_level) >= static_cast<int>(call_cred_level);
+}
+
 static void send_security_metadata(grpc_call_element* elem,
                                    grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -291,7 +305,7 @@ static void send_security_metadata(grpc_call_element* elem,
   grpc_security_level call_cred_security_level =
       calld->creds->min_security_level();
   int is_security_level_ok = grpc_check_security_level(
-      grpc_tsi_security_level_string_to_enum(prop->value),
+      convert_security_level_string_to_enum(prop->value),
       call_cred_security_level);
   if (!is_security_level_ok) {
     grpc_transport_stream_op_batch_finish_with_failure(
