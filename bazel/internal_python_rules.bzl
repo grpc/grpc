@@ -23,7 +23,7 @@ def internal_py_grpc_test(name, **kwargs):
       **kwargs: Any additional arguments to add to the test.
     """
     native.py_test(
-        name = name + ".natvie",
+        name = name + ".native",
         python_version = "PY3",
         **kwargs
     )
