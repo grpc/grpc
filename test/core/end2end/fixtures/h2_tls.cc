@@ -22,6 +22,7 @@
 #include "absl/container/inlined_vector.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -109,13 +110,15 @@ static void SetCertificateProvider(
       grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
       grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
                                        identity_cert.c_str());
-      ffd->client_provider = grpc_tls_certificate_provider_static_data_create(
-          root_cert.c_str(), client_pairs);
+      ffd->client_provider = grpc_tls_certificate_provider_data_watcher_create();
+      GPR_ASSERT(grpc_tls_certificate_provider_data_watcher_set_root_cert(ffd->client_provider, root_cert.c_str(), nullptr) == GRPC_STATUS_OK);
+      GPR_ASSERT(grpc_tls_certificate_provider_data_watcher_set_key_cert_pairs(ffd->client_provider, client_pairs, nullptr) == GRPC_STATUS_OK);
       grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
       grpc_tls_identity_pairs_add_pair(server_pairs, private_key.c_str(),
                                        identity_cert.c_str());
-      ffd->server_provider = grpc_tls_certificate_provider_static_data_create(
-          root_cert.c_str(), server_pairs);
+      ffd->server_provider = grpc_tls_certificate_provider_data_watcher_create();
+      GPR_ASSERT(grpc_tls_certificate_provider_data_watcher_set_root_cert(ffd->server_provider, root_cert.c_str(), nullptr) == GRPC_STATUS_OK);
+      GPR_ASSERT(grpc_tls_certificate_provider_data_watcher_set_key_cert_pairs(ffd->server_provider, server_pairs, nullptr) == GRPC_STATUS_OK);
       grpc_slice_unref(root_slice);
       grpc_slice_unref(cert_slice);
       grpc_slice_unref(key_slice);

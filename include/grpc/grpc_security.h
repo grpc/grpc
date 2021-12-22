@@ -803,18 +803,52 @@ GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Creates a grpc_tls_certificate_provider that will load credential data from
- * static string during initialization. This provider will always return the
- * same cert data for all cert names.
- * root_certificate and pem_key_cert_pairs can be nullptr, indicating the
- * corresponding credential data is not needed.
- * This function will make a copy of |root_certificate|.
- * The ownership of |pem_key_cert_pairs| is transferred.
+ * Creates a grpc_tls_certificate_provider that loads credentials which will be
+ * used in TLS handshakes. The credentials can be updated via
+ * gprc_tls_certificate_provider_data_watcher_set_root_cert() and
+ * gprc_tls_certificate_provider_data_watcher_set_key_cert_pairs().
+ * The update is thread-safe.
  */
 GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
+grpc_tls_certificate_provider_data_watcher_create();
 
+/*
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the root certificate to |root_certificate|.
+ * - This function will make a copy of |root_certificate|.
+ * - |root_certificate| can be nullptr. In that case, the changes for the root
+ *   certificates shouldn't be watched.
+ * - If the certificate is invalid, a non-OK status will be returned, in which
+ *   case |error_details| will be set, and the caller is responsible for calling
+ *   gpr_free() on it.
+ * - |provider| must be created from
+ *   grpc_tls_certificate_provider_data_watcher_create(), otherwise the result
+ *   is undefined.
+ */
+GRPCAPI grpc_status_code
+grpc_tls_certificate_provider_data_watcher_set_root_cert(
+    grpc_tls_certificate_provider* provider, const char* root_certificate,
+    char** error_details);
+
+/*
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the identity key-cert pairs to |pem_key_cert_pairs|.
+ * - The ownership of |pem_key_cert_pairs| is transferred.
+ * - |pem_key_cert_pairs| can be nullptr. In that case, the changes for the
+ *   identity pairs shouldn't be watched.
+ * - If the certificate is invalid, a non-OK status will be returned, in which
+ *   case |error_details| will be set, and the caller is responsible for calling
+ *   gpr_free() on it.
+ * - |provider| must be created from
+ *   grpc_tls_certificate_provider_data_watcher_create(), otherwise the result
+ *   is undefined.
+ */
+GRPCAPI grpc_status_code
+grpc_tls_certificate_provider_data_watcher_set_key_cert_pairs(
+    grpc_tls_certificate_provider* provider,
+    grpc_tls_identity_pairs* pem_key_cert_pairs, char** error_details);
 /**
  * EXPERIMENTAL API - Subject to change
  *

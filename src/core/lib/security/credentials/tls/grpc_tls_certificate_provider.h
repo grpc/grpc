@@ -54,17 +54,23 @@ struct grpc_tls_certificate_provider
 
 namespace grpc_core {
 
-// A basic provider class that will get credentials from string during
-// initialization.
-class StaticDataCertificateProvider final
-    : public grpc_tls_certificate_provider {
+class DataWatcherCertificateProvider;
+
+// A helper class which is used by the provider that needs to watch credential
+// updates. It handles the logic to notify the distributor when seeing an
+// update.
+class CertificateProviderWatcherNotifier : public grpc_core::RefCounted<CertificateProviderWatcherNotifier> {
  public:
-  StaticDataCertificateProvider(std::string root_certificate,
-                                PemKeyCertPairList pem_key_cert_pairs);
+  CertificateProviderWatcherNotifier(DataWatcherCertificateProvider* provider);
 
-  ~StaticDataCertificateProvider() override;
+  ~CertificateProviderWatcherNotifier();
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  void SetRootCertificate(std::string root_certificate);
+  void SetKeyCertificatePairs(PemKeyCertPairList pem_key_cert_pairs);
+  void SetRootCertificateAndKeyCertificatePairs(
+      std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs);
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const {
     return distributor_;
   }
 
@@ -73,14 +79,46 @@ class StaticDataCertificateProvider final
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  std::string root_certificate_;
-  PemKeyCertPairList pem_key_cert_pairs_;
-  // Guards members below.
+
   Mutex mu_;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
-  std::map<std::string, WatcherInfo> watcher_info_;
+  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+
+  DataWatcherCertificateProvider* provider_ = nullptr;
+};
+
+// A basic provider class that callers can set its credentials by explicitly
+// through |SetRootCertificate| or |SetKeyCertificatePairs|.
+class DataWatcherCertificateProvider final
+    : public grpc_tls_certificate_provider {
+ public:
+  DataWatcherCertificateProvider();
+
+  // Sets the root_certificate and updates the distributor.
+  absl::Status SetRootCertificate(std::string root_certificate);
+
+  // Sets the key-cert pair list and updates the distributor.
+  absl::Status SetKeyCertificatePairs(PemKeyCertPairList pem_key_cert_pairs);
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+    return distributor_notifier_->distributor();
+  }
+
+  std::string root_certificate();
+
+  PemKeyCertPairList pem_key_cert_pairs();
+
+ private:
+  Mutex mu_;
+  // The most-recent credential data. It will be empty if the most recent read
+  // attempt failed.
+  std::string root_certificate_ ABSL_GUARDED_BY(mu_);
+  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
+
+  RefCountedPtr<CertificateProviderWatcherNotifier> distributor_notifier_;
 };
 
 // A provider class that will watch the credential changes on the file system.
@@ -140,6 +178,12 @@ class FileWatcherCertificateProvider final
 //  whether the key/cert pair matches.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain);
+
+//  Checks if the private key and the certificate chain for all pairs in the
+//  list match. Returns an OK status if matched, or |pair_list| is empty.
+//  Otherwise, an error status is returned.
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    const PemKeyCertPairList& pair_list);
 
 }  // namespace grpc_core
 
