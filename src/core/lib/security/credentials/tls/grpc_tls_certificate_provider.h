@@ -52,23 +52,36 @@ struct grpc_tls_certificate_provider
   distributor() const = 0;
 };
 
-namespace grpc_core {
+// Interface for all grpc_tls_certificate_provider implementation that needs to
+// cache the currently using credentials in memory.
+class CredentialCachingCertificateProvider
+    : public grpc_tls_certificate_provider {
+ public:
+  // Gets the cached root certificates.
+  virtual std::string root_certificate() = 0;
 
-class DataWatcherCertificateProvider;
+  // Gets the cached pem key-cert pair list.
+  virtual grpc_core::PemKeyCertPairList pem_key_cert_pairs() = 0;
+};
+
+namespace grpc_core {
 
 // A helper class which is used by the provider that needs to watch credential
 // updates. It handles the logic to notify the distributor when seeing an
 // update.
-class CertificateProviderWatcherNotifier : public grpc_core::RefCounted<CertificateProviderWatcherNotifier> {
+class CertificateProviderWatcherNotifier
+    : public grpc_core::RefCounted<CertificateProviderWatcherNotifier> {
  public:
-  CertificateProviderWatcherNotifier(DataWatcherCertificateProvider* provider);
+  CertificateProviderWatcherNotifier(
+      CredentialCachingCertificateProvider* provider);
 
   ~CertificateProviderWatcherNotifier();
 
   void SetRootCertificate(std::string root_certificate);
   void SetKeyCertificatePairs(PemKeyCertPairList pem_key_cert_pairs);
   void SetRootCertificateAndKeyCertificatePairs(
-      std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs);
+      absl::optional<std::string> root_certificate,
+      absl::optional<PemKeyCertPairList> pem_key_cert_pairs);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const {
     return distributor_;
@@ -80,20 +93,19 @@ class CertificateProviderWatcherNotifier : public grpc_core::RefCounted<Certific
     bool identity_being_watched = false;
   };
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-
   Mutex mu_;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
 
-  DataWatcherCertificateProvider* provider_ = nullptr;
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  CredentialCachingCertificateProvider* provider_ = nullptr;
 };
 
-// A basic provider class that callers can set its credentials by explicitly
-// through |SetRootCertificate| or |SetKeyCertificatePairs|.
+// A basic provider class that callers can set its credentials explicitly by
+// |SetRootCertificate| or |SetKeyCertificatePairs|.
 class DataWatcherCertificateProvider final
-    : public grpc_tls_certificate_provider {
+    : public CredentialCachingCertificateProvider {
  public:
   DataWatcherCertificateProvider();
 
@@ -107,9 +119,9 @@ class DataWatcherCertificateProvider final
     return distributor_notifier_->distributor();
   }
 
-  std::string root_certificate();
+  std::string root_certificate() override;
 
-  PemKeyCertPairList pem_key_cert_pairs();
+  PemKeyCertPairList pem_key_cert_pairs() override;
 
  private:
   Mutex mu_;
@@ -123,7 +135,7 @@ class DataWatcherCertificateProvider final
 
 // A provider class that will watch the credential changes on the file system.
 class FileWatcherCertificateProvider final
-    : public grpc_tls_certificate_provider {
+    : public CredentialCachingCertificateProvider {
  public:
   FileWatcherCertificateProvider(std::string private_key_path,
                                  std::string identity_certificate_path,
@@ -133,14 +145,14 @@ class FileWatcherCertificateProvider final
   ~FileWatcherCertificateProvider() override;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
-    return distributor_;
+    return distributor_notifier_->distributor();
   }
 
+  std::string root_certificate() override;
+
+  PemKeyCertPairList pem_key_cert_pairs() override;
+
  private:
-  struct WatcherInfo {
-    bool root_being_watched = false;
-    bool identity_being_watched = false;
-  };
   // Force an update from the file system regardless of the interval.
   void ForceUpdate();
   // Read the root certificates from files and update the distributor.
@@ -157,20 +169,16 @@ class FileWatcherCertificateProvider final
   std::string identity_certificate_path_;
   std::string root_cert_path_;
   unsigned int refresh_interval_sec_ = 0;
-
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   Thread refresh_thread_;
   gpr_event shutdown_event_;
 
-  // Guards members below.
   Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
-  // Stores each cert_name we get from the distributor callback and its watcher
-  // information.
-  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+
+  RefCountedPtr<CertificateProviderWatcherNotifier> distributor_notifier_;
 };
 
 //  Checks if the private key matches the certificate's public key.

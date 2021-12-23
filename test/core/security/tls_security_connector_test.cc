@@ -951,8 +951,7 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier.Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<DataWatcherCertificateProvider>();
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -981,8 +980,7 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier.Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<DataWatcherCertificateProvider>();
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -1015,8 +1013,7 @@ TEST_F(TlsSecurityConnectorTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier->Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<DataWatcherCertificateProvider>();
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -1047,8 +1044,7 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier->Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<DataWatcherCertificateProvider>();
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
