@@ -100,7 +100,7 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
       m->parent->channel_effects->allowed_read_bytes - m->bytes_read_so_far);
   GPR_ASSERT(readable_length > 0);
   grpc_slice_buffer_move_first(&m->read_buffer, readable_length,
-                              m->pending_read_op.slices);
+                               m->pending_read_op.slices);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb, error);
   if (m->parent->simulate_channel_actions) {
     m->bytes_read_so_far += readable_length;
