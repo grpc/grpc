@@ -79,7 +79,7 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(
 
 OrphanablePtr<HttpCliRequest> HttpCliRequest::Post(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-      const char* host, const char* ssl_override, const grpc_http_request* request,
+      const grpc_httpcli_request* request,
       std::unique_ptr<HttpCliRequest::HandshakerFactory> handshaker_factory,
       grpc_millis deadline,
       grpc_closure* on_done,

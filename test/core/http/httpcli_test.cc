@@ -246,7 +246,7 @@ TEST_F(HttpCliTest, Post) {
 
   grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
       grpc_core::HttpCliRequest::Post(
-          pops(), grpc_core::ResourceQuota::Default(), &req, "hello", 5,
+          pops(), grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHandshakerFactory>(), "hello", 5,
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),

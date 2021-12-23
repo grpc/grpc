@@ -294,8 +294,6 @@ void ExternalAccountCredentials::ExchangeToken(
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
   }
   request.http.hdrs = headers;
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::vector<std::string> body_parts;
   body_parts.push_back(
       absl::StrFormat("audience=%s", UrlEncode(options_.audience).c_str()));
@@ -328,7 +326,7 @@ void ExternalAccountCredentials::ExchangeToken(
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
   GPR_ASSERT(httpcli_request_ == nullptr);
   httpcli_request_ = HttpCliRequest::Post(
-      ctx_->pollent, ResourceQuota::Default(), &request, body.c_str(),
+      ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
@@ -406,8 +404,6 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   headers[1].key = gpr_strdup("Authorization");
   headers[1].value = gpr_strdup(str.c_str());
   request.http.hdrs = headers;
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("scope=%s", scope);
   grpc_http_response_destroy(&ctx_->response);
@@ -416,7 +412,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   // TODO(ctiller): Use the callers resource quota.
   GPR_ASSERT(httpcli_request_ == nullptr);
   httpcli_request_ = HttpCliRequest::Post(
-      ctx_->pollent, ResourceQuota::Default(), &request, body.c_str(),
+      ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);

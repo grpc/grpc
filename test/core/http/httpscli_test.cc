@@ -116,13 +116,12 @@ static void test_post(int port) {
   req.host = host;
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/post");
-  req.handshaker = &grpc_httpcli_ssl;
 
   grpc_http_response response;
   response = {};
   grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
       grpc_core::HttpCliRequest::Post(
-          &g_pops, grpc_core::ResourceQuota::Default(), &req, "hello", 5,
+          &g_pops, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHandshakerFactory>(), "hello", 5,
           n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
           &response);
