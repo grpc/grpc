@@ -36,19 +36,22 @@ netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 prim
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
-setlocal EnableDelayedExpansion
 @rem Only install C# dependencies if we are running C# tests
 If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
   @rem C# prerequisites: Install dotnet SDK
   powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
-  set PATH=!LOCALAPPDATA!\Microsoft\dotnet;!PATH!
-
-  @rem Disable some unwanted dotnet options
-  set NUGET_XMLDOC_MODE=skip
-  set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
-  set DOTNET_CLI_TELEMETRY_OPTOUT=true
 )
-endlocal
+
+@rem Add dotnet on path and disable some unwanted dotnet
+@rem option regardless of PREPARE_BUILD_INSTALL_DEPS_CSHARP value.
+@rem Always setting the env vars is fine since its instantaneous,
+@rem it can't fail and it avoids possible issues with
+@rem "setlocal" and "EnableDelayedExpansion" which would be required if
+@rem we wanted to do the same under the IF block.
+set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
+set NUGET_XMLDOC_MODE=skip
+set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
 @rem Only install Python interpreters if we are running Python tests
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
