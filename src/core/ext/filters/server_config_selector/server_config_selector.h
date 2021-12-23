@@ -56,6 +56,13 @@ class ServerConfigSelectorProvider
 
   ~ServerConfigSelectorProvider() override = default;
   // Only a single watcher is allowed at present
+  // Watch()/CancelWatch() should not be invoked while holding on to a lock to
+  // avoid lock inversion when OnServerConfigSelectorUpdate() is invoked. If
+  // there ever comes a need to perform Watch()/CancelWatch() while holding on
+  // to a mutex, all ServerConfigSelectorProvider implementations should be
+  // updated such that updates are invoked outside the locked region with a
+  // WorkSerializer. (As of this moment, only
+  // DynamicXdsServerConfigSelectorProvider needed to be updated.)
   virtual absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
   virtual void CancelWatch() = 0;

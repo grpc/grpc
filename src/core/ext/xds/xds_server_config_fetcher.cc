@@ -1172,10 +1172,6 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       http_filters_(std::move(http_filters)),
       resource_(std::move(initial_resource)) {
   GPR_ASSERT(!resource_name_.empty());
-  auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
-  route_config_watcher_ = route_config_watcher.get();
-  XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name_,
-                                         std::move(route_config_watcher));
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
@@ -1184,6 +1180,14 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         std::unique_ptr<
             ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
             watcher) {
+  // RouteConfigWatcher is being created in Watch() instead of the constructor
+  // to avoid a leak in the case where Watch()/CancelWatch() are never called,
+  // and RouteConfigWatcher is never destroyed leading to
+  // DynamicXdsServerConfigSelectorProvider never being destroyed.
+  auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
+  route_config_watcher_ = route_config_watcher.get();
+  XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name_,
+                                         std::move(route_config_watcher));
   absl::StatusOr<XdsRouteConfigResource> resource;
   {
     MutexLock lock(&mu_);
@@ -1214,6 +1218,10 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   if (watcher_ == nullptr) {
     return;
   }
+  // Currently server_config_selector_filter does not call into
+  // DynamicXdsServerConfigSelectorProvider while holding a lock, but if that
+  // ever changes, we would want to invoke the update outside the critical
+  // region with the use of a WorkSerializer.
   watcher_->OnServerConfigSelectorUpdate(
       XdsServerConfigSelector::Create(*resource_, http_filters_));
 }
