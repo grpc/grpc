@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/channel/handshaker.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
@@ -48,8 +49,6 @@ typedef struct grpc_httpcli_request {
      The following headers are supplied automatically and MUST NOT be set here:
      Host, Connection, User-Agent */
   grpc_http_request http;
-  /* handshaker to use ssl for the request */
-  const grpc_httpcli_handshaker* handshaker;
 } grpc_httpcli_request;
 
 /* Expose the parser response type as a httpcli response too */
@@ -77,36 +76,36 @@ namespace grpc_core {
 //                same content and combining them
 class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
  public:
-  class HandshakerFactory  {
+  class HttpCliHandshakerFactory  {
    public:
-    virtual ~HandshakerFactory() {}
-    virtual OrphanablePtr<Handshaker> CreateHandshaker(grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline, std::function<void(grpc_endpoint*)> on_done) const = 0;
+    virtual ~HttpCliHandshakerFactory() {}
+    virtual OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline, std::function<void(grpc_endpoint*)> on_done) const = 0;
     virtual const char* default_port() const = 0;
   };
 
-  class Handshaker : public InternallyRefCounted<Handshaker> {
+  class HttpCliHandshaker : public InternallyRefCounted<HttpCliHandshaker> {
    public:
 
-    virtual ~Handshaker() {}
+    virtual ~HttpCliHandshaker() {}
     // TODO(apolcyn): put mutex annotations on these
     virtual void Start() = 0;
     virtual void Orphan() = 0;
   };
 
-  class PlaintextHandshakerFactory : public HandshakerFactory {
+  class PlaintextHttpCliHandshakerFactory : public HttpCliHandshakerFactory {
    public:
-    OrphanablePtr<Handshaker> CreateHandshaker(grpc_endpoint* endpoint, absl::string_view /* host */, grpc_millis /* deadline */, std::function<void(grpc_endpoint*)> on_done) const override {
-      return MakeOrphanable<PlaintextHandshaker>(endpoint, std::move(on_done));
+    OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view /* host */, grpc_millis /* deadline */, std::function<void(grpc_endpoint*)> on_done) const override {
+      return MakeOrphanable<PlaintextHttpCliHandshaker>(endpoint, std::move(on_done));
     }
 
     const char* default_port() const override { return "http"; }
   };
 
-  class PlaintextHandshaker : public Handshaker {
+  class PlaintextHttpCliHandshaker : public HttpCliHandshaker {
    public:
-    PlaintextHandshaker(grpc_endpoint* endpoint,
+    PlaintextHttpCliHandshaker(grpc_endpoint* endpoint,
         std::function<void(grpc_endpoint*)> on_done) : endpoint_(endpoint), on_done_(std::move(on_done)) {
-      GRPC_CLOSURE_INIT(&invoke_on_done_, this, InvokeOnDone, grpc_schedule_on_exec_ctx);
+      GRPC_CLOSURE_INIT(&invoke_on_done_, InvokeOnDone, this, grpc_schedule_on_exec_ctx);
     }
 
     void Start() override {
@@ -116,12 +115,12 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
     void Orphan() override { Unref(); }
 
-    const char* default_port() const override { return "http" };
+    const char* default_port() const override { return "http"; }
 
    private:
     static void InvokeOnDone(void* arg, grpc_error_handle /* error */) {
-      auto* self = static_cast<PlaintextHandshaker*>(arg);
-      self->on_done_(endpoint_);
+      auto* self = static_cast<PlaintextHttpCliHandshaker*>(arg);
+      self->on_done_(self->endpoint_);
       self->Unref();
     }
 
@@ -130,25 +129,25 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
     std::function<void(grpc_endpoint*)> on_done_;
   };
 
-  class SSLHandshakerFactory : public HandshakerFactory {
+  class SSLHttpCliHandshakerFactory : public HttpCliHandshakerFactory {
    public:
-    OrphanablePtr<Handshaker> CreateHandshaker(grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline, std::function<void(grpc_endpoint*)> on_done) const override {
-      return MakeOrphanable<SSLHandshaker>(endpoint, host, deadline, std::move(on_done));
+    OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline, std::function<void(grpc_endpoint*)> on_done) const override {
+      return MakeOrphanable<SSLHttpCliHandshaker>(endpoint, host, deadline, std::move(on_done));
     }
 
     const char* default_port() const override { return "https"; }
   };
 
-  class SSLHandshaker : public Handshaker {
+  class SSLHttpCliHandshaker : public HttpCliHandshaker {
    public:
-    SSLHandshaker(absl::string_view host,
+    SSLHttpCliHandshaker(absl::string_view host,
         grpc_millis deadline,
-        std::function<void(grpc_endpoint*)> on_done) host_(host), deadline_(deadline), on_done_(std::move(on_done) {}
+        std::function<void(grpc_endpoint*)> on_done) : host_(host), deadline_(deadline), on_done_(std::move(on_done)) {}
 
     void Start(grpc_endpoint* endpoint) override;
     void Orphan() override;
    private:
-    static void InnerOnDone(void* arg, grpc_endpoint* endpoint) = 0;
+    static void InnerOnDone(void* arg, grpc_endpoint* endpoint);
 
     const std::string host_;
     const grpc_millis deadline_;
@@ -169,7 +168,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   static OrphanablePtr<HttpCliRequest> Get(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
       const grpc_httpcli_request* request,
-      std::unique_ptr<HandshakerFactory> handshaker_factory,
+      std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
       grpc_millis deadline,
       grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
@@ -191,8 +190,8 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCliRequest> Post(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-      const grpc_http_request* request
-      std::unique_ptr<HandshakerFactory> handshaker_factory,
+      const grpc_http_request* request,
+      std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
       const char* body_bytes,
       size_t body_size, grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
@@ -204,7 +203,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
                  grpc_httpcli_response* response,
                  ResourceQuotaRefPtr resource_quota, absl::string_view host,
                  absl::string_view ssl_host_override, grpc_millis deadline,
-                 std::unique_ptr<HandshakerFactory> handshaker_factory,
+                 std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
                  grpc_closure* on_done, grpc_polling_entity* pollent,
                  const char* name);
 
@@ -214,11 +213,11 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
   void Orphan() override;
 
-  std::unique_ptr<HandshakerFactory> HandshakerFactoryFromScheme(absl::string_view scheme) {
+  std::unique_ptr<HttpCliHandshakerFactory> HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
     if (scheme == "https") {
-      return absl::make_unique<SSLHandshakerFactory>();
+      return absl::make_unique<SSLHttpCliHandshakerFactory>();
     } else {
-      return absl::make_unique<PlaintextHandshakerFactory>();
+      return absl::make_unique<PlaintextHttpCliHandshakerFactory>();
     }
   }
 
@@ -276,7 +275,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
-  std::unique_ptr<HandshakerFactory> handshaker_factory_;
+  std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory_;
   grpc_closure on_read_;
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
