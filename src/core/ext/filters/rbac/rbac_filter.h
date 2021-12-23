@@ -53,9 +53,6 @@ class RbacFilter {
     grpc_call_context_element* call_context_;
     // State for keeping track of recv_initial_metadata
     grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-    // TODO(yashykt): Remove this field once we no longer need to remove the
-    // ':method' header in the http_server_filter
-    uint32_t* recv_flags_ = nullptr;
     grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
     grpc_closure recv_initial_metadata_ready_;
   };

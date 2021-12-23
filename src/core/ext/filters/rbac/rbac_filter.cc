@@ -50,7 +50,6 @@ void RbacFilter::CallData::StartTransportStreamOpBatch(
   if (op->recv_initial_metadata) {
     calld->recv_initial_metadata_ =
         op->payload->recv_initial_metadata.recv_initial_metadata;
-    calld->recv_flags_ = op->payload->recv_initial_metadata.recv_flags;
     calld->original_recv_initial_metadata_ready_ =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
@@ -67,32 +66,6 @@ RbacFilter::CallData::CallData(grpc_call_element* elem,
                     elem, grpc_schedule_on_exec_ctx);
 }
 
-namespace {
-
-// TODO(yashykt): Remove these methods once we no longer need to remove the
-// ':method' header in the http_server_filter
-grpc_error_handle PrepareMetadataForAuthorization(grpc_metadata_batch* metadata,
-                                                  uint32_t flags) {
-  // The http-server filter removes the ':method' header from the metadata which
-  // we need to add back here.
-  grpc_mdelem method;
-  if (flags & GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
-    method = GRPC_MDELEM_METHOD_GET;
-  } else if (flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
-    method = GRPC_MDELEM_METHOD_PUT;
-  } else {
-    method = GRPC_MDELEM_METHOD_POST;
-  }
-  return metadata->Append(method);
-}
-
-void PruneMetadataAfterAuthorization(grpc_metadata_batch* metadata) {
-  // Remove the previously added ':method' header
-  metadata->Remove(HttpMethodMetadata());
-}
-
-}  // namespace
-
 void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
                                                     grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
@@ -107,21 +80,16 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
     if (method_params == nullptr) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
     } else {
-      error = PrepareMetadataForAuthorization(calld->recv_initial_metadata_,
-                                              *calld->recv_flags_);
-      if (error == GRPC_ERROR_NONE) {
-        RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
-        auto* authorization_engine =
-            method_params->authorization_engine(chand->index_);
-        if (authorization_engine
-                ->Evaluate(EvaluateArgs(calld->recv_initial_metadata_,
-                                        &chand->per_channel_evaluate_args_))
-                .type == AuthorizationEngine::Decision::Type::kDeny) {
-          error =
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
-        }
+      RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
+      auto* authorization_engine =
+          method_params->authorization_engine(chand->index_);
+      if (authorization_engine
+              ->Evaluate(EvaluateArgs(calld->recv_initial_metadata_,
+                                      &chand->per_channel_evaluate_args_))
+              .type == AuthorizationEngine::Decision::Type::kDeny) {
+        error =
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
       }
-      PruneMetadataAfterAuthorization(calld->recv_initial_metadata_);
     }
     if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
