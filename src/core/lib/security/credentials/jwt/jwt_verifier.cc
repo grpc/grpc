@@ -698,7 +698,7 @@ static void on_openid_config_retrieved(void* user_data,
      extreme memory pressure. */
   GPR_ASSERT(ctx->httpcli_request == nullptr);
   ctx->httpcli_request = grpc_core::HttpCliRequest::Get(
-      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHandshakerFactory>(),
+      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHttpCliHandshakerFactory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
@@ -822,7 +822,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
      extreme memory pressure. */
   GPR_ASSERT(ctx->httpcli_request == nullptr);
   ctx->httpcli_request = grpc_core::HttpCliRequest::Get(
-      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHandshakerFactory>(),
+      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHttpCliHandshakerFactory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
   ctx->httpcli_request->Start();

@@ -159,9 +159,9 @@ httpcli_ssl_channel_security_connector_create(
 
 namespace grpc_core {
 
-static void HttpCliRequest::SSLHandshaker::InnerOnDone(void* arg, grpc_error_handle error) {
+static void HttpCliRequest::SSLHttpCliHandshaker::InnerOnDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
-  auto* self = static_cast<HttpCliRequest::SSLHandshaker*>(args->user_data);
+  auto* self = static_cast<HttpCliRequest::SSLHttpCliHandshaker*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
             grpc_error_std_string(error).c_str());
@@ -177,7 +177,7 @@ static void HttpCliRequest::SSLHandshaker::InnerOnDone(void* arg, grpc_error_han
 
 }
 
-void HttpCliRequest::SSLHandshaker::Start() {
+void HttpCliRequest::SSLHttpCliHandshaker::Start() {
   const char* pem_root_certs =
       grpc_core::DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =
@@ -199,14 +199,14 @@ void HttpCliRequest::SSLHandshaker::Start() {
       /*interested_parties=*/nullptr, handshake_mgr_.get());
   Ref().release(); // ref held by pending handshake
   handshake_mgr_->DoHandshake(tcp, /*channel_args=*/nullptr, deadline,
-                                /*acceptor=*/nullptr, HttpCliRequest::SSLHandshaker::InnerOnDone,
+                                /*acceptor=*/nullptr, HttpCliRequest::SSLHttpCliHandshaker::InnerOnDone,
                                 /*user_data=*/this);
   sc.reset(DEBUG_LOCATION, "httpcli");
 }
 
-void HttpCliRequest::SSLHandshaker::Orphan() {
+void HttpCliRequest::SSLHttpCliHandshaker::Orphan() {
   if (handshake_mgr_ != nullptr) {
-    handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("HttpCliRequest::SSLHandshaker::Orphan"));
+    handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("HttpCliRequest::SSLHttpCliHandshaker::Orphan"));
   }
 }
 

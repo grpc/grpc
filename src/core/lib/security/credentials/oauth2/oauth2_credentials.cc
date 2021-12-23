@@ -392,7 +392,7 @@ class grpc_compute_engine_token_fetcher_credentials
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
     httpcli_request_ = grpc_core::HttpCliRequest::Get(
-        pollent, grpc_core::ResourceQuota::Default(), &request, deadline, absl::make_unique<grpc_core::HTTPRequestContext::PlaintextHandshakerFactory>(),
+        pollent, grpc_core::ResourceQuota::Default(), &request, deadline, absl::make_unique<grpc_core::HTTPRequestContext::PlaintextHttpCliHandshakerFactory>(),
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
@@ -451,7 +451,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   httpcli_request_ = grpc_core::HttpCliRequest::Post(
-      pollent, grpc_core::ResourceQuota::Default(), &request, absl::make_unique<grpc_core::HttpCliRequest::SSLHandshakerFactory>(), body.c_str(),
+      pollent, grpc_core::ResourceQuota::Default(), &request, absl::make_unique<grpc_core::HttpCliRequest::SSLHttpCliHandshakerFactory>(), body.c_str(),
       body.size(), deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                         grpc_schedule_on_exec_ctx),
