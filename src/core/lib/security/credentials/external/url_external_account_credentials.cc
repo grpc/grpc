@@ -141,7 +141,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
   httpcli_request_ =
-      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HttpCliHandshakerFactoryFromScheme(url_.scheme()),
+      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request, HttpCliHandshakerFactoryFromScheme(url_.scheme()),
                           ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);

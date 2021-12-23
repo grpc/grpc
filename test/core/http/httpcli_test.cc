@@ -220,7 +220,7 @@ TEST_F(HttpCliTest, Get) {
 
   grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
       grpc_core::HttpCliRequest::Get(
-          pops(), grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHandshakerFactory>(), NSecondsTime(15),
+          pops(), grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(), NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
@@ -246,7 +246,7 @@ TEST_F(HttpCliTest, Post) {
 
   grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
       grpc_core::HttpCliRequest::Post(
-          pops(), grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHandshakerFactory>(), "hello", 5,
+          pops(), grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(), "hello", 5,
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
@@ -300,7 +300,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
 
       grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
           grpc_core::HttpCliRequest::Get(
-              pops(), grpc_core::ResourceQuota::Default(), &req,absl::make_unique<grpc_core::HttpCliRequest::PlaintextHandshakerFactory>(),
+              pops(), grpc_core::ResourceQuota::Default(), &req,absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
@@ -343,7 +343,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
 
       grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
           grpc_core::HttpCliRequest::Get(
-              pops(), grpc_core::ResourceQuota::Default(), &req,absl::make_unique<grpc_core::HttpCliRequest::PlaintextHandshakerFactory>(),
+              pops(), grpc_core::ResourceQuota::Default(), &req,absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),

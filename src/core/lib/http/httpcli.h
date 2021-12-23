@@ -211,14 +211,6 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
   void Orphan() override;
 
-  std::unique_ptr<HttpCliHandshakerFactory> HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
-    if (scheme == "https") {
-      return absl::make_unique<SSLHttpCliHandshakerFactory>();
-    } else {
-      return absl::make_unique<PlaintextHttpCliHandshakerFactory>();
-    }
-  }
-
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
@@ -301,6 +293,14 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
   OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
 };
+
+std::unique_ptr<HttpCliRequest::HttpCliHandshakerFactory> HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
+  if (scheme == "https") {
+    return absl::make_unique<HttpCliRequest::SSLHttpCliHandshakerFactory>();
+  } else {
+    return absl::make_unique<HttpCliRequest::PlaintextHttpCliHandshakerFactory>();
+  }
+}
 
 }  // namespace grpc_core
 
