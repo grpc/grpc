@@ -222,7 +222,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_credentials_options_watch_identity_key_cert_pairs);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_identity_cert_name);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_cert_request_type);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_set_crl_directory);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_verify_server_cert);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_check_call_host);
   printf("%lx", (unsigned long) grpc_xds_credentials_create);
