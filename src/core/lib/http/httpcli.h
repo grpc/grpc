@@ -55,11 +55,11 @@ typedef struct grpc_httpcli_request {
 typedef struct grpc_http_response grpc_httpcli_response;
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
+typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
                                          grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
-typedef int (*grpc_httpcli_post_override)(const grpc_http_request* request,
+typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
                                           const char* body_bytes,
                                           size_t body_size,
                                           grpc_millis deadline,
@@ -144,7 +144,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
     void Start() override;
     void Orphan() override;
    private:
-    static void InnerOnDone(void* arg, grpc_endpoint* endpoint);
+    static void InnerOnDone(void* arg, grpc_error_handle error);
 
     grpc_endpoint* endpoint_;
     const std::string host_;
@@ -188,7 +188,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCliRequest> Post(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-      const grpc_http_request* request,
+      const grpc_httpcli_request* request,
       std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
       const char* body_bytes,
       size_t body_size, grpc_millis deadline, grpc_closure* on_done,
@@ -274,6 +274,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
   std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory_;
+  OrphanablePtr<HttpCliHandshaker> handshaker_;
   grpc_closure on_read_;
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
@@ -289,6 +290,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
   ResourceQuotaRefPtr resource_quota_ ABSL_GUARDED_BY(mu_);
   const std::string host_;
+  const std::string ssl_host_override_;
   const grpc_millis deadline_;
   int have_read_byte_ ABSL_GUARDED_BY(mu_) = 0;
   grpc_closure* on_done_ ABSL_GUARDED_BY(mu_);

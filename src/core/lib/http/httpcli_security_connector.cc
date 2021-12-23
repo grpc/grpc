@@ -159,7 +159,7 @@ httpcli_ssl_channel_security_connector_create(
 
 namespace grpc_core {
 
-static void HttpCliRequest::SSLHttpCliHandshaker::InnerOnDone(void* arg, grpc_error_handle error) {
+void HttpCliRequest::SSLHttpCliHandshaker::InnerOnDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   auto* self = static_cast<HttpCliRequest::SSLHttpCliHandshaker*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {
@@ -173,8 +173,6 @@ static void HttpCliRequest::SSLHttpCliHandshaker::InnerOnDone(void* arg, grpc_er
     self->on_done_(args->endpoint);
   }
   self->Unref();
-}
-
 }
 
 void HttpCliRequest::SSLHttpCliHandshaker::Start() {

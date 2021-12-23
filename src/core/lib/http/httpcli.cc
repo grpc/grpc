@@ -81,6 +81,8 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Post(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
       const grpc_httpcli_request* request,
       std::unique_ptr<HttpCliRequest::HttpCliHandshakerFactory> handshaker_factory,
+      const char* body_bytes,
+      size_t body_size,
       grpc_millis deadline,
       grpc_closure* on_done,
       grpc_httpcli_response* response) {
@@ -114,7 +116,6 @@ HttpCliRequest::HttpCliRequest(
       resource_quota_(std::move(resource_quota)),
       host_(host),
       deadline_(deadline),
-      handshaker_(handshaker),
       on_done_(on_done),
       pollset_set_(grpc_pollset_set_create()) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
@@ -134,7 +135,7 @@ HttpCliRequest::HttpCliRequest(
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
   dns_request_ = GetDNSResolver()->ResolveName(
       host_.c_str(), handshaker_factory_->default_port(), pollset_set_,
-      absl::BindFront(&HttpCliRequest::OnResolved, this));
+      absl::bind_front(&HttpCliRequest::OnResolved, this));
 }
 
 HttpCliRequest::~HttpCliRequest() {
@@ -226,7 +227,7 @@ void HttpCliRequest::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
 }
 
 void HttpCliRequest::OnHandshakeDone(grpc_endpoint* ep) {
-  grpc_core::MutexLock lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   own_endpoint_ = true;
   if (!ep) {
     NextAddress(
@@ -249,8 +250,8 @@ void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
       return;
     }
     ep = req->ep_;
-    req->handshaker_ = req->handshaker_factory_->CreateHandshaker(req->ep_, req->ssl_host_override_.empty() ? req_->host_, req_->ssl_host_override_, req->deadline_,
-                                               absl::BindFront(&HttpCliRequest::OnHandshakeDone, req));
+    req->handshaker_ = req->handshaker_factory_->CreateHttpCliHandshaker(req->ep_, req->ssl_host_override_.empty() ? req->host_ : req->ssl_host_override_, req->deadline_,
+                                               absl::bind_front(&HttpCliRequest::OnHandshakeDone, req));
     req->handshaker_->Start();
   }
 }
