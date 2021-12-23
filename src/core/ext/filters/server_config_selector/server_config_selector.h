@@ -22,6 +22,7 @@
 #include "absl/status/statusor.h"
 
 #include "src/core/ext/service_config/service_config.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -45,7 +46,7 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
 // ServerConfigSelectorProvider allows for subscribers to watch for updates on
 // ServerConfigSelector. It is propagated via channel args.
 class ServerConfigSelectorProvider
-    : public RefCounted<ServerConfigSelectorProvider> {
+    : public DualRefCounted<ServerConfigSelectorProvider> {
  public:
   class ServerConfigSelectorWatcher {
    public:
@@ -56,13 +57,6 @@ class ServerConfigSelectorProvider
 
   ~ServerConfigSelectorProvider() override = default;
   // Only a single watcher is allowed at present
-  // Watch()/CancelWatch() should not be invoked while holding on to a lock to
-  // avoid lock inversion when OnServerConfigSelectorUpdate() is invoked. If
-  // there ever comes a need to perform Watch()/CancelWatch() while holding on
-  // to a mutex, all ServerConfigSelectorProvider implementations should be
-  // updated such that updates are invoked outside the locked region with a
-  // WorkSerializer. (As of this moment, only
-  // DynamicXdsServerConfigSelectorProvider needed to be updated.)
   virtual absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
   virtual void CancelWatch() = 0;

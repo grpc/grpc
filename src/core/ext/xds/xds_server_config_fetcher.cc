@@ -333,6 +333,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                                            http_filters_);
   }
 
+  void Orphan() override {}
+
   void CancelWatch() override { watcher_.reset(); }
 
  private:
@@ -354,6 +356,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       absl::StatusOr<XdsRouteConfigResource> initial_resource,
       std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
           http_filters);
+
+  void Orphan() override;
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
@@ -385,7 +389,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   explicit RouteConfigWatcher(
-      RefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent)
+      WeakRefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent)
       : parent_(std::move(parent)) {}
 
   void OnResourceChanged(XdsRouteConfigResource route_config) override {
@@ -397,7 +401,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   void OnResourceDoesNotExist() override { parent_->OnResourceDoesNotExist(); }
 
  private:
-  RefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent_;
+  WeakRefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent_;
 };
 
 //
@@ -627,6 +631,12 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         filter_chain_data->http_connection_manager.http_filters.end());
   }
   // Start watching on referenced RDS resources
+  struct WatcherToStart {
+    std::string resource_name;
+    RefCountedPtr<RouteConfigWatcher> watcher;
+  };
+  std::vector<WatcherToStart> watchers_to_start;
+  watchers_to_start.reserve(resource_names.size());
   {
     MutexLock lock(&mu_);
     for (const auto& resource_name : resource_names) {
@@ -635,13 +645,18 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           MakeRefCounted<RouteConfigWatcher>(resource_name, WeakRef());
       rds_map_.emplace(resource_name, RdsUpdateState{route_config_watcher.get(),
                                                      absl::nullopt});
-      XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name,
-                                             std::move(route_config_watcher));
+      watchers_to_start.push_back(
+          WatcherToStart{resource_name, std::move(route_config_watcher)});
     }
     if (rds_resources_yet_to_fetch_ != 0) {
       listener_watcher_ = std::move(listener_watcher);
       listener_watcher = nullptr;
     }
+  }
+  for (auto& watcher_to_start : watchers_to_start) {
+    XdsRouteConfigResourceType::StartWatch(xds_client_.get(),
+                                           watcher_to_start.resource_name,
+                                           std::move(watcher_to_start.watcher));
   }
   // Promote this filter chain match manager if all referenced resources are
   // fetched.
@@ -1172,6 +1187,20 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       http_filters_(std::move(http_filters)),
       resource_(std::move(initial_resource)) {
   GPR_ASSERT(!resource_name_.empty());
+  // RouteConfigWatcher is being created here instead of in Watch() to avoid
+  // deadlocks from invoking XdsRouteConfigResourceType::StartWatch whilst in a
+  // critical region.
+  auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(WeakRef());
+  route_config_watcher_ = route_config_watcher.get();
+  XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name_,
+                                         std::move(route_config_watcher));
+}
+
+void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
+    DynamicXdsServerConfigSelectorProvider::Orphan() {
+  XdsRouteConfigResourceType::CancelWatch(xds_client_.get(), resource_name_,
+                                          route_config_watcher_,
+                                          false /* delay_unsubscription */);
 }
 
 absl::StatusOr<RefCountedPtr<ServerConfigSelector>>
@@ -1180,14 +1209,6 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         std::unique_ptr<
             ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
             watcher) {
-  // RouteConfigWatcher is being created in Watch() instead of the constructor
-  // to avoid a leak in the case where Watch()/CancelWatch() are never called,
-  // and RouteConfigWatcher is never destroyed leading to
-  // DynamicXdsServerConfigSelectorProvider never being destroyed.
-  auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(Ref());
-  route_config_watcher_ = route_config_watcher.get();
-  XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name_,
-                                         std::move(route_config_watcher));
   absl::StatusOr<XdsRouteConfigResource> resource;
   {
     MutexLock lock(&mu_);
@@ -1203,9 +1224,6 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     DynamicXdsServerConfigSelectorProvider::CancelWatch() {
-  XdsRouteConfigResourceType::CancelWatch(xds_client_.get(), resource_name_,
-                                          route_config_watcher_,
-                                          false /* delay_unsubscription */);
   MutexLock lock(&mu_);
   watcher_.reset();
 }

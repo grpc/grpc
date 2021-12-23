@@ -36,7 +36,7 @@ class ChannelData {
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
     MutexLock lock(&mu_);
-    return config_selector_;
+    return config_selector_.value();
   }
 
  private:
@@ -60,8 +60,8 @@ class ChannelData {
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
   Mutex mu_;
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector_
-      ABSL_GUARDED_BY(mu_);
+  absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+      config_selector_ ABSL_GUARDED_BY(mu_);
 };
 
 class CallData {
@@ -127,8 +127,13 @@ ChannelData::ChannelData(
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       absl::make_unique<ServerConfigSelectorWatcher>(this);
-  config_selector_ = server_config_selector_provider_->Watch(
+  auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
+  MutexLock lock(&mu_);
+  // It's possible for the watcher to have already updated config_selector_
+  if (!config_selector_.has_value()) {
+    config_selector_ = std::move(config_selector);
+  }
 }
 
 ChannelData::~ChannelData() { server_config_selector_provider_->CancelWatch(); }
