@@ -218,9 +218,12 @@ TEST_F(HttpCliTest, Get) {
   req.host = host;
   req.http.path = const_cast<char*>("/get");
 
-  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
-      grpc_core::HttpCliRequest::Get(
-          pops(), grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(), NSecondsTime(15),
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+      grpc_core::HttpCli::Get(
+          pops(), grpc_core::ResourceQuota::Default(), &req,
+          absl::make_unique<
+              grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+          NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
@@ -244,10 +247,12 @@ TEST_F(HttpCliTest, Post) {
   req.host = host;
   req.http.path = const_cast<char*>("/post");
 
-  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
-      grpc_core::HttpCliRequest::Post(
-          pops(), grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(), "hello", 5,
-          NSecondsTime(15),
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+      grpc_core::HttpCli::Post(
+          pops(), grpc_core::ResourceQuota::Default(), &req,
+          absl::make_unique<
+              grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+          "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
@@ -298,9 +303,11 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
           const_cast<char*>("dont-care-since-wont-be-resolver.test.com:443");
       req.http.path = const_cast<char*>("/get");
 
-      grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
-          grpc_core::HttpCliRequest::Get(
-              pops(), grpc_core::ResourceQuota::Default(), &req,absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(),
+      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+          grpc_core::HttpCli::Get(
+              pops(), grpc_core::ResourceQuota::Default(), &req,
+              absl::make_unique<
+                  grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
@@ -341,9 +348,11 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       req.host = const_cast<char*>(fake_http_server_ptr->address());
       req.http.path = const_cast<char*>("/get");
 
-      grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
-          grpc_core::HttpCliRequest::Get(
-              pops(), grpc_core::ResourceQuota::Default(), &req,absl::make_unique<grpc_core::HttpCliRequest::PlaintextHttpCliHandshakerFactory>(),
+      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+          grpc_core::HttpCli::Get(
+              pops(), grpc_core::ResourceQuota::Default(), &req,
+              absl::make_unique<
+                  grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),

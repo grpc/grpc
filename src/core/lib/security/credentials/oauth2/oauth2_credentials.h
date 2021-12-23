@@ -124,7 +124,7 @@ class grpc_google_refresh_token_credentials final
  private:
   grpc_auth_refresh_token refresh_token_;
   grpc_closure http_post_cb_closure_;
-  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request_;
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request_;
 };
 
 // Access token credentials.

@@ -79,9 +79,10 @@ static void test_get(int port) {
 
   grpc_http_response response;
   response = {};
-  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
-      grpc_core::HttpCliRequest::Get(
-          &g_pops, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHttpCliHandshakerFactory>(),
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+      grpc_core::HttpCli::Get(
+          &g_pops, grpc_core::ResourceQuota::Default(), &req,
+          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
           n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
           &response);
@@ -119,10 +120,11 @@ static void test_post(int port) {
 
   grpc_http_response response;
   response = {};
-  grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
-      grpc_core::HttpCliRequest::Post(
-          &g_pops, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHttpCliHandshakerFactory>(), "hello", 5,
-          n_seconds_time(15),
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+      grpc_core::HttpCli::Post(
+          &g_pops, grpc_core::ResourceQuota::Default(), &req,
+          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+          "hello", 5, n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
           &response);
   httpcli_request->Start();
