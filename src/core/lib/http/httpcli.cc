@@ -108,7 +108,7 @@ HttpCliRequest::HttpCliRequest(
     const grpc_slice& request_text, grpc_httpcli_response* response,
     ResourceQuotaRefPtr resource_quota, absl::string_view host,
     absl::string_view ssl_host_override, grpc_millis deadline,
-    std::unique_ptr<HandshakerFactory> handshaker_factory, grpc_closure* on_done,
+    std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory, grpc_closure* on_done,
     grpc_polling_entity* pollent, const char* name)
     : handshaker_factory_(std::move(handshaker_factory)),
       resource_quota_(std::move(resource_quota)),

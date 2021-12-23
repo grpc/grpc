@@ -76,13 +76,6 @@ namespace grpc_core {
 //                same content and combining them
 class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
  public:
-  class HttpCliHandshakerFactory  {
-   public:
-    virtual ~HttpCliHandshakerFactory() {}
-    virtual OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline, std::function<void(grpc_endpoint*)> on_done) const = 0;
-    virtual const char* default_port() const = 0;
-  };
-
   class HttpCliHandshaker : public InternallyRefCounted<HttpCliHandshaker> {
    public:
 
@@ -90,6 +83,13 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
     // TODO(apolcyn): put mutex annotations on these
     virtual void Start() = 0;
     virtual void Orphan() = 0;
+  };
+
+  class HttpCliHandshakerFactory  {
+   public:
+    virtual ~HttpCliHandshakerFactory() {}
+    virtual OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline, std::function<void(grpc_endpoint*)> on_done) const = 0;
+    virtual const char* default_port() const = 0;
   };
 
   class PlaintextHttpCliHandshakerFactory : public HttpCliHandshakerFactory {
@@ -114,9 +114,6 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
     }
 
     void Orphan() override { Unref(); }
-
-    const char* default_port() const override { return "http"; }
-
    private:
     static void InvokeOnDone(void* arg, grpc_error_handle /* error */) {
       auto* self = static_cast<PlaintextHttpCliHandshaker*>(arg);
@@ -140,15 +137,16 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
   class SSLHttpCliHandshaker : public HttpCliHandshaker {
    public:
-    SSLHttpCliHandshaker(absl::string_view host,
+    SSLHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host,
         grpc_millis deadline,
         std::function<void(grpc_endpoint*)> on_done) : host_(host), deadline_(deadline), on_done_(std::move(on_done)) {}
 
-    void Start(grpc_endpoint* endpoint) override;
+    void Start() override;
     void Orphan() override;
    private:
     static void InnerOnDone(void* arg, grpc_endpoint* endpoint);
 
+    grpc_endpoint* endpoint_;
     const std::string host_;
     const grpc_millis deadline_;
     std::function<void(grpc_endpoint*)> on_done_;
