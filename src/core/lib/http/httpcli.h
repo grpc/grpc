@@ -214,6 +214,14 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
   void Orphan() override;
 
+  std::unique_ptr<HandshakerFactory> HandshakerFactoryFromScheme(absl::string_view scheme) {
+    if (scheme == "https") {
+      return absl::make_unique<SSLHandshakerFactory>();
+    } else {
+      return absl::make_unique<PlaintextHandshakerFactory>();
+    }
+  }
+
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
