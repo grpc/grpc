@@ -56,7 +56,7 @@ grpc_httpcli_post_override g_post_override;
 
 }  // namespace
 
-OrphanablePtr<HttpCli> HttpCliRequest::Get(
+OrphanablePtr<HttpCli> HttpCli::Get(
     grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
     const grpc_httpcli_request* request,
     std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
@@ -73,7 +73,7 @@ OrphanablePtr<HttpCli> HttpCliRequest::Get(
       deadline, std::move(handshaker_factory), on_done, pollent, name.c_str());
 }
 
-OrphanablePtr<HttpCli> HttpCliRequest::Post(
+OrphanablePtr<HttpCli> HttpCli::Post(
     grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
     const grpc_httpcli_request* request,
     std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
@@ -98,12 +98,13 @@ void HttpCli::SetOverride(grpc_httpcli_get_override get,
   g_post_override = post;
 }
 
-HttpCli::HttpCliRequest(
-    const grpc_slice& request_text, grpc_httpcli_response* response,
-    ResourceQuotaRefPtr resource_quota, absl::string_view host,
-    absl::string_view ssl_host_override, grpc_millis deadline,
-    std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
-    grpc_closure* on_done, grpc_polling_entity* pollent, const char* name)
+HttpCli::HttpCli(const grpc_slice& request_text,
+                 grpc_httpcli_response* response,
+                 ResourceQuotaRefPtr resource_quota, absl::string_view host,
+                 absl::string_view ssl_host_override, grpc_millis deadline,
+                 std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
+                 grpc_closure* on_done, grpc_polling_entity* pollent,
+                 const char* name)
     : request_text_(request_text),
       handshaker_factory_(std::move(handshaker_factory)),
       resource_quota_(std::move(resource_quota)),
@@ -132,7 +133,7 @@ HttpCli::HttpCliRequest(
       absl::bind_front(&HttpCli::OnResolved, this));
 }
 
-HttpCli::~HttpCliRequest() {
+HttpCli::~HttpCli() {
   gpr_log(GPR_DEBUG, "apolcyn HttpCli: %p dtor", this);
   grpc_http_parser_destroy(&parser_);
   if (ep_ != nullptr) {
@@ -212,7 +213,7 @@ void HttpCli::OnReadInternal(grpc_error_handle error)
 
 void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
                                                       grpc_error_handle error) {
-  HttpCli* req = static_cast<HttpCliRequest*>(arg);
+  HttpCli* req = static_cast<HttpCli*>(arg);
   grpc_core::MutexLock lock(&req->mu_);
   if (error == GRPC_ERROR_NONE) {
     req->OnWritten();
@@ -247,7 +248,7 @@ void HttpCli::OnHandshakeDone(grpc_endpoint* ep) {
 }
 
 void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
-  HttpCli* req = static_cast<HttpCliRequest*>(arg);
+  HttpCli* req = static_cast<HttpCli*>(arg);
   {
     gpr_log(GPR_DEBUG, "apolcyn request:%p OnConnected error: %s ep:%p", req,
             grpc_error_string(error), req->ep_);
@@ -269,7 +270,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
 
 void HttpCli::NextAddress(grpc_error_handle error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-  gpr_log(GPR_DEBUG, "apolcyn NextAddress request:%p error: %s",
+  gpr_log(GPR_DEBUG, "apolcyn NextAddress request:%p error: %s", this,
           grpc_error_string(error));
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);

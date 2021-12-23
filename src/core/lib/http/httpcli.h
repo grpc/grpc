@@ -73,7 +73,7 @@ namespace grpc_core {
 // if it's in flight).
 // TODO(ctiller): allow caching and capturing multiple requests for the
 //                same content and combining them
-class HttpCli : public InternallyRefCounted<HttpCliRequest> {
+class HttpCli : public InternallyRefCounted<HttpCli> {
  public:
   class HttpCliHandshaker : public InternallyRefCounted<HttpCliHandshaker> {
    public:
@@ -150,7 +150,10 @@ class HttpCli : public InternallyRefCounted<HttpCliRequest> {
     SSLHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host,
                          grpc_millis deadline,
                          std::function<void(grpc_endpoint*)> on_done)
-        : host_(host), deadline_(deadline), on_done_(std::move(on_done)) {}
+        : original_endpoint_(endpoint),
+          host_(host),
+          deadline_(deadline),
+          on_done_(std::move(on_done)) {}
 
     void Start() override;
     void Orphan() override;
@@ -158,7 +161,7 @@ class HttpCli : public InternallyRefCounted<HttpCliRequest> {
    private:
     static void InnerOnDone(void* arg, grpc_error_handle error);
 
-    grpc_endpoint* endpoint_;
+    grpc_endpoint* original_endpoint_;
     const std::string host_;
     const grpc_millis deadline_;
     std::function<void(grpc_endpoint*)> on_done_;
@@ -243,7 +246,7 @@ class HttpCli : public InternallyRefCounted<HttpCliRequest> {
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {
-    HttpCli* req = static_cast<HttpCliRequest*>(user_data);
+    HttpCli* req = static_cast<HttpCli*>(user_data);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_on_read_after_schedule_on_exec_ctx_,
                  GRPC_ERROR_REF(error));
@@ -252,7 +255,7 @@ class HttpCli : public InternallyRefCounted<HttpCliRequest> {
   // Needed since OnRead may be called inline from grpc_endpoint_read
   static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
                                                    grpc_error_handle error) {
-    HttpCli* req = static_cast<HttpCliRequest*>(user_data);
+    HttpCli* req = static_cast<HttpCli*>(user_data);
     grpc_core::MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
@@ -263,7 +266,7 @@ class HttpCli : public InternallyRefCounted<HttpCliRequest> {
   void OnWritten() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { DoRead(); }
 
   static void DoneWrite(void* arg, grpc_error_handle error) {
-    HttpCli* req = static_cast<HttpCliRequest*>(arg);
+    HttpCli* req = static_cast<HttpCli*>(arg);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_done_write_after_schedule_on_exec_ctx_,
                  GRPC_ERROR_REF(error));
@@ -284,6 +287,7 @@ class HttpCli : public InternallyRefCounted<HttpCliRequest> {
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
+  grpc_slice request_text_;
   std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory_;
   OrphanablePtr<HttpCliHandshaker> handshaker_;
   grpc_closure on_read_;
@@ -295,7 +299,6 @@ class HttpCli : public InternallyRefCounted<HttpCliRequest> {
   grpc_core::Mutex mu_;
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
-  grpc_slice request_text_ ABSL_GUARDED_BY(mu_);
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
