@@ -23,7 +23,7 @@ IF "%cd%"=="T:\src" (
 endlocal
 
 @rem Boringssl build no longer supports yasm
-choco uninstall yasm -y --limit-output || exit /b 1
+choco uninstall yasm -y --limit-output
 choco install nasm -y --limit-output || exit /b 1
 
 @rem enter repo root
