@@ -326,7 +326,7 @@ void ExternalAccountCredentials::ExchangeToken(
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
   GPR_ASSERT(httpcli_request_ == nullptr);
   httpcli_request_ = HttpCliRequest::Post(
-      ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
+      ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HttpCliHandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
@@ -412,7 +412,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   // TODO(ctiller): Use the callers resource quota.
   GPR_ASSERT(httpcli_request_ == nullptr);
   httpcli_request_ = HttpCliRequest::Post(
-      ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
+      ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HttpCliHandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);

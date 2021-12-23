@@ -198,7 +198,7 @@ void HttpCliRequest::SSLHttpCliHandshaker::Start() {
       grpc_core::HANDSHAKER_CLIENT, &args,
       /*interested_parties=*/nullptr, handshake_mgr_.get());
   Ref().release(); // ref held by pending handshake
-  handshake_mgr_->DoHandshake(endpoint_, /*channel_args=*/nullptr, deadline,
+  handshake_mgr_->DoHandshake(endpoint_, /*channel_args=*/nullptr, deadline_,
                                 /*acceptor=*/nullptr, HttpCliRequest::SSLHttpCliHandshaker::InnerOnDone,
                                 /*user_data=*/this);
   sc.reset(DEBUG_LOCATION, "httpcli");

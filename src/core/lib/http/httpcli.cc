@@ -60,7 +60,7 @@ grpc_httpcli_post_override g_post_override;
 OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
       const grpc_httpcli_request* request,
-      std::unique_ptr<HttpCliRequest::HandshakerFactory> handshaker_factory,
+      std::unique_ptr<HttpCliRequest::HttpCliHandshakerFactory> handshaker_factory,
       grpc_millis deadline,
       grpc_closure* on_done,
       grpc_httpcli_response* response) {
@@ -80,7 +80,7 @@ OrphanablePtr<HttpCliRequest> HttpCliRequest::Get(
 OrphanablePtr<HttpCliRequest> HttpCliRequest::Post(
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
       const grpc_httpcli_request* request,
-      std::unique_ptr<HttpCliRequest::HandshakerFactory> handshaker_factory,
+      std::unique_ptr<HttpCliRequest::HttpCliHandshakerFactory> handshaker_factory,
       grpc_millis deadline,
       grpc_closure* on_done,
       grpc_httpcli_response* response) {
