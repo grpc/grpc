@@ -578,7 +578,7 @@ class StsTokenFetcherCredentials
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
     httpcli_request_ = grpc_core::HttpCliRequest::Post(
-        pollent, ResourceQuota::Default(), &request, HttpCliHandshakerFactoryFromScheme(sts_url_.scheme()), body, body_length,
+        pollent, ResourceQuota::Default(), &request, HttpCliRequest::HttpCliHandshakerFactoryFromScheme(sts_url_.scheme()), body, body_length,
         deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
