@@ -112,9 +112,11 @@ HttpCliRequest::HttpCliRequest(
     absl::string_view ssl_host_override, grpc_millis deadline,
     std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory, grpc_closure* on_done,
     grpc_polling_entity* pollent, const char* name)
-    : handshaker_factory_(std::move(handshaker_factory)),
+    : request_text_(request_text),
+      handshaker_factory_(std::move(handshaker_factory)),
       resource_quota_(std::move(resource_quota)),
       host_(host),
+      ssl_host_override_(ssl_host_override),
       deadline_(deadline),
       on_done_(on_done),
       pollset_set_(grpc_pollset_set_create()) {
@@ -139,6 +141,7 @@ HttpCliRequest::HttpCliRequest(
 }
 
 HttpCliRequest::~HttpCliRequest() {
+  gpr_log(GPR_DEBUG, "apolcyn HttpCliRequest: %p dtor", this);
   grpc_http_parser_destroy(&parser_);
   if (ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
@@ -160,9 +163,11 @@ void HttpCliRequest::Start() {
 void HttpCliRequest::Orphan() {
   {
     grpc_core::MutexLock lock(&mu_);
+    gpr_log(GPR_DEBUG, "apolcyn request: %p orphan", this);
     cancelled_ = true;
     dns_request_.reset();  // cancel potentially pending DNS resolution
     if (own_endpoint_ && ep_ != nullptr) {
+      gpr_log(GPR_DEBUG, "apolcyn request: %p shutting down ep from orphan", this);
       grpc_endpoint_shutdown(
           ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
     }
@@ -203,6 +208,7 @@ void HttpCliRequest::OnReadInternal(grpc_error_handle error)
   if (error == GRPC_ERROR_NONE) {
     DoRead();
   } else if (!have_read_byte_) {
+    gpr_log(GPR_DEBUG, "apolcyn call NextAddress from OnReadInternal request:%p error: %s", this, grpc_error_string(error));
     NextAddress(GRPC_ERROR_REF(error));
   } else {
     Finish(grpc_http_parser_eof(&parser_));
@@ -216,6 +222,7 @@ void HttpCliRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
   if (error == GRPC_ERROR_NONE) {
     req->OnWritten();
   } else {
+    gpr_log(GPR_DEBUG, "apolcyn call NextAddress from ContinueDoneWriteAfterScheduleOnExecCtx request:%p error: %s", req, grpc_error_string(error));
     req->NextAddress(GRPC_ERROR_REF(error));
   }
 }
@@ -227,9 +234,11 @@ void HttpCliRequest::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
 }
 
 void HttpCliRequest::OnHandshakeDone(grpc_endpoint* ep) {
+  gpr_log(GPR_DEBUG, "apolcyn request:%p OnHandshakeDone ep:%p", this, ep);
   grpc_core::MutexLock lock(&mu_);
   own_endpoint_ = true;
   if (!ep) {
+    gpr_log(GPR_DEBUG, "apolcyn call NextAddress from OnHandshakeDone request:%p", this);
     NextAddress(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
     return;
@@ -240,16 +249,14 @@ void HttpCliRequest::OnHandshakeDone(grpc_endpoint* ep) {
 
 void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
   HttpCliRequest* req = static_cast<HttpCliRequest*>(arg);
-  grpc_endpoint* ep;
-  const char* host;
-  grpc_millis deadline;
   {
+    gpr_log(GPR_DEBUG, "apolcyn request:%p OnConnected error: %s ep:%p", req, grpc_error_string(error), req->ep_);
     grpc_core::MutexLock lock(&req->mu_);
     if (!req->ep_) {
+      gpr_log(GPR_DEBUG, "apolcyn call NextAddress from OnConnected request:%p error: %s", req, grpc_error_string(error));
       req->NextAddress(GRPC_ERROR_REF(error));
       return;
     }
-    ep = req->ep_;
     req->handshaker_ = req->handshaker_factory_->CreateHttpCliHandshaker(req->ep_, req->ssl_host_override_.empty() ? req->host_ : req->ssl_host_override_, req->deadline_,
                                                absl::bind_front(&HttpCliRequest::OnHandshakeDone, req));
     req->handshaker_->Start();
@@ -258,6 +265,7 @@ void HttpCliRequest::OnConnected(void* arg, grpc_error_handle error) {
 
 void HttpCliRequest::NextAddress(grpc_error_handle error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  gpr_log(GPR_DEBUG, "apolcyn NextAddress request:%p error: %s", grpc_error_string(error));
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
   }
@@ -276,6 +284,7 @@ void HttpCliRequest::NextAddress(grpc_error_handle error)
                    .channel_args_preconditioning()
                    .PreconditionChannelArgs(&channel_args);
   own_endpoint_ = false;
+  gpr_log(GPR_DEBUG, "apolcyn request: %p begin TCP connect", this);
   grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, args, addr,
                           deadline_);
   grpc_channel_args_destroy(args);

@@ -123,7 +123,7 @@ class HttpCliRequest : public InternallyRefCounted<HttpCliRequest> {
 
     grpc_endpoint* endpoint_;
     grpc_closure invoke_on_done_;
-    std::function<void(grpc_endpoint*)> on_done_;
+    const std::function<void(grpc_endpoint*)> on_done_;
   };
 
   class SSLHttpCliHandshakerFactory : public HttpCliHandshakerFactory {
