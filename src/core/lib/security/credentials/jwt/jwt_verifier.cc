@@ -685,7 +685,6 @@ static void on_openid_config_retrieved(void* user_data,
     goto error;
   }
   jwks_uri += 8;
-  req.handshaker = &grpc_httpcli_ssl;
   req.host = gpr_strdup(jwks_uri);
   req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
   if (req.http.path == nullptr) {
@@ -699,7 +698,7 @@ static void on_openid_config_retrieved(void* user_data,
      extreme memory pressure. */
   GPR_ASSERT(ctx->httpcli_request == nullptr);
   ctx->httpcli_request = grpc_core::HttpCliRequest::Get(
-      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
+      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHandshakerFactory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
@@ -764,7 +763,6 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   const char* iss;
   grpc_httpcli_request req;
   memset(&req, 0, sizeof(grpc_httpcli_request));
-  req.handshaker = &grpc_httpcli_ssl;
   http_response_index rsp_idx;
 
   GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
@@ -824,7 +822,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
      extreme memory pressure. */
   GPR_ASSERT(ctx->httpcli_request == nullptr);
   ctx->httpcli_request = grpc_core::HttpCliRequest::Get(
-      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
+      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::SSLHandshakerFactory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
   ctx->httpcli_request->Start();

@@ -164,13 +164,11 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
   httpcli_request_ =
-      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
+      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request, HTTPRequestContext::HandshakerFactoryFromScheme(uri->scheme()),
                           ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
@@ -212,14 +210,12 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
   httpcli_request_ =
-      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request,
+      HttpCliRequest::Get(ctx_->pollent, ResourceQuota::Default(), &request, HttpCliRequest::HandshakerFactoryFromScheme(uri->scheme()),
                           ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_request_->Start();
   grpc_http_request_destroy(&request.http);
@@ -273,8 +269,6 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);

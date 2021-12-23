@@ -392,7 +392,7 @@ class grpc_compute_engine_token_fetcher_credentials
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
     httpcli_request_ = grpc_core::HttpCliRequest::Get(
-        pollent, grpc_core::ResourceQuota::Default(), &request, deadline,
+        pollent, grpc_core::ResourceQuota::Default(), &request, deadline, absl::make_unique<grpc_core::HTTPRequestContext::PlaintextHandshakerFactory>(),
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);

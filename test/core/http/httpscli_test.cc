@@ -76,13 +76,12 @@ static void test_get(int port) {
   req.host = host;
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/get");
-  req.handshaker = &grpc_httpcli_ssl;
 
   grpc_http_response response;
   response = {};
   grpc_core::OrphanablePtr<grpc_core::HttpCliRequest> httpcli_request =
       grpc_core::HttpCliRequest::Get(
-          &g_pops, grpc_core::ResourceQuota::Default(), &req,
+          &g_pops, grpc_core::ResourceQuota::Default(), &req, absl::make_unique<grpc_core::HttpCliRequest::PlaintextHandshakerFactory>(),
           n_seconds_time(15),
           GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
           &response);
