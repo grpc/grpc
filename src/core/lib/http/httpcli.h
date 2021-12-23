@@ -208,9 +208,6 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
-  void SetOverride(grpc_httpcli_get_override get,
-                   grpc_httpcli_post_override post);
-
   HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
           ResourceQuotaRefPtr resource_quota, absl::string_view host,
           absl::string_view ssl_host_override, grpc_millis deadline,
@@ -223,6 +220,9 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   void Start();
 
   void Orphan() override;
+
+  static void SetOverride(grpc_httpcli_get_override get,
+                   grpc_httpcli_post_override post);
 
   static std::unique_ptr<HttpCli::HttpCliHandshakerFactory>
   HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {

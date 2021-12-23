@@ -696,7 +696,6 @@ static void on_openid_config_retrieved(void* user_data,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  GPR_ASSERT(ctx->httpcli_request == nullptr);
   ctx->httpcli_request = grpc_core::HttpCli::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
@@ -821,7 +820,6 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  GPR_ASSERT(ctx->httpcli_request == nullptr);
   ctx->httpcli_request = grpc_core::HttpCli::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),

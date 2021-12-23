@@ -54,6 +54,25 @@ namespace {
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
 
+class NoopHttpCliForTesting : public HttpCli {
+ public:
+  NoopHttpCliForTesting(grpc_httpcli_response* response,
+          ResourceQuotaRefPtr resource_quota, absl::string_view host,
+          absl::string_view ssl_host_override, grpc_millis deadline,
+          std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
+          grpc_closure* on_done, grpc_polling_entity* pollent,
+          const char* name) : HttpCli(grpc_empty_slice(), response, std::move(resource_quota), host, ssl_host_override, deadline, std::move(handshaker_factory), on_done, pollent, name) {}
+
+  void Start() {
+    gpr_log(GPR_INFO, "HttpCli::Start doing nothing because request was mocked for testing");
+  }
+
+  void Orphan() {
+    gpr_log(GPR_INFO, "HttpCli::Orphan doing nothing because request was mocked for testing");
+    Unref();
+  }
+};
+
 }  // namespace
 
 OrphanablePtr<HttpCli> HttpCli::Get(
@@ -63,12 +82,16 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
-    return nullptr;
+    return MakeOrphanable<NoopHttpCliForTesting>(
+      response,
+      std::move(resource_quota), request->host, request->ssl_host_override,
+      deadline, std::move(handshaker_factory), on_done, pollent, "mock");
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
   return MakeOrphanable<HttpCli>(
-      grpc_httpcli_format_get_request(request), response,
+      grpc_httpcli_format_get_request(request),
+      response,
       std::move(resource_quota), request->host, request->ssl_host_override,
       deadline, std::move(handshaker_factory), on_done, pollent, name.c_str());
 }
@@ -81,7 +104,10 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     grpc_closure* on_done, grpc_httpcli_response* response) {
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
-    return nullptr;
+    return MakeOrphanable<NoopHttpCliForTesting>(
+      response,
+      std::move(resource_quota), request->host, request->ssl_host_override,
+      deadline, std::move(handshaker_factory), on_done, pollent, "mock");
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
