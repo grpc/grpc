@@ -89,31 +89,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "crl_ssl_transport_security_test",
-    srcs = ["crl_ssl_transport_security_test.cc"],
-    data = [
-        "//test/core/tsi/test_creds/crl_data:ab06acdd.r0",
-        "//test/core/tsi/test_creds/crl_data:ca.pem",
-        "//test/core/tsi/test_creds/crl_data:revoked.key",
-        "//test/core/tsi/test_creds/crl_data:revoked.pem",
-        "//test/core/tsi/test_creds/crl_data:valid.key",
-        "//test/core/tsi/test_creds/crl_data:valid.pem",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        ":transport_security_test_lib",
-        "//:gpr",
-        "//:grpc",
-        "//:tsi",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.cc"],
     language = "C++",
