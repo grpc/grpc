@@ -795,20 +795,11 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/compression_args.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/compression_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_gzip.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_gzip.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_identity.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_identity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.cc" role="src" />
@@ -957,6 +948,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/tcp.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.cc" role="src" />
@@ -1016,8 +1008,11 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
