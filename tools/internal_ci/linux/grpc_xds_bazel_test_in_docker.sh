@@ -72,7 +72,7 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
     --test_case="all,circuit_breaking,timeout,fault_injection,csds" \
     --project_id=grpc-testing \
     --project_num=830293263384 \
-    --source_image=projects/grpc-testing/global/images/xds-test-server-4 \
+    --source_image=projects/grpc-testing/global/images/xds-test-server-5 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
