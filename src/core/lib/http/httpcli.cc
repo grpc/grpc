@@ -54,25 +54,6 @@ namespace {
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
 
-class NoopHttpCliForTesting : public HttpCli {
- public:
-  NoopHttpCliForTesting(grpc_httpcli_response* response,
-          ResourceQuotaRefPtr resource_quota, absl::string_view host,
-          absl::string_view ssl_host_override, grpc_millis deadline,
-          std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
-          grpc_closure* on_done, grpc_polling_entity* pollent,
-          const char* name) : HttpCli(grpc_empty_slice(), response, std::move(resource_quota), host, ssl_host_override, deadline, std::move(handshaker_factory), on_done, pollent, name) {}
-
-  void Start() {
-    gpr_log(GPR_INFO, "HttpCli::Start doing nothing because request was mocked for testing");
-  }
-
-  void Orphan() {
-    gpr_log(GPR_INFO, "HttpCli::Orphan doing nothing because request was mocked for testing");
-    Unref();
-  }
-};
-
 }  // namespace
 
 OrphanablePtr<HttpCli> HttpCli::Get(
@@ -81,19 +62,17 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
+  bool request_was_mocked = false;
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
-    return MakeOrphanable<NoopHttpCliForTesting>(
-      response,
-      std::move(resource_quota), request->host, request->ssl_host_override,
-      deadline, std::move(handshaker_factory), on_done, pollent, "mock");
+    request_was_mocked = true;
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
   return MakeOrphanable<HttpCli>(
-      grpc_httpcli_format_get_request(request),
-      response,
+      grpc_httpcli_format_get_request(request), response,
       std::move(resource_quota), request->host, request->ssl_host_override,
-      deadline, std::move(handshaker_factory), on_done, pollent, name.c_str());
+      deadline, std::move(handshaker_factory), on_done, pollent, name.c_str(),
+      request_was_mocked);
 }
 
 OrphanablePtr<HttpCli> HttpCli::Post(
@@ -102,12 +81,10 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response) {
+  bool request_was_mocked = false;
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
-    return MakeOrphanable<NoopHttpCliForTesting>(
-      response,
-      std::move(resource_quota), request->host, request->ssl_host_override,
-      deadline, std::move(handshaker_factory), on_done, pollent, "mock");
+    request_was_mocked = true;
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
@@ -115,7 +92,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
       grpc_httpcli_format_post_request(request, body_bytes, body_size),
       response, std::move(resource_quota), request->host,
       request->ssl_host_override, deadline, std::move(handshaker_factory),
-      on_done, pollent, name.c_str());
+      on_done, pollent, name.c_str(), request_was_mocked);
 }
 
 void HttpCli::SetOverride(grpc_httpcli_get_override get,
@@ -130,7 +107,7 @@ HttpCli::HttpCli(const grpc_slice& request_text,
                  absl::string_view ssl_host_override, grpc_millis deadline,
                  std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
                  grpc_closure* on_done, grpc_polling_entity* pollent,
-                 const char* name)
+                 const char* name, bool request_was_mocked)
     : request_text_(request_text),
       handshaker_factory_(std::move(handshaker_factory)),
       resource_quota_(std::move(resource_quota)),
@@ -138,7 +115,8 @@ HttpCli::HttpCli(const grpc_slice& request_text,
       ssl_host_override_(ssl_host_override),
       deadline_(deadline),
       on_done_(on_done),
-      pollset_set_(grpc_pollset_set_create()) {
+      pollset_set_(grpc_pollset_set_create()),
+      request_was_mocked_(request_was_mocked) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -175,6 +153,12 @@ HttpCli::~HttpCli() {
 
 void HttpCli::Start() {
   grpc_core::MutexLock lock(&mu_);
+  if (request_was_mocked_) {
+    gpr_log(
+        GPR_INFO,
+        "HttpCli::Start doing nothing because request was mocked for testing");
+    return;
+  }
   Ref().release();  // ref held by pending request
   dns_request_->Start();
 }

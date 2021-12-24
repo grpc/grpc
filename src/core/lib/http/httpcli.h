@@ -212,8 +212,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
           ResourceQuotaRefPtr resource_quota, absl::string_view host,
           absl::string_view ssl_host_override, grpc_millis deadline,
           std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
-          grpc_closure* on_done, grpc_polling_entity* pollent,
-          const char* name);
+          grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
+          bool request_was_mocked_);
 
   ~HttpCli();
 
@@ -222,7 +222,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   void Orphan() override;
 
   static void SetOverride(grpc_httpcli_get_override get,
-                   grpc_httpcli_post_override post);
+                          grpc_httpcli_post_override post);
 
   static std::unique_ptr<HttpCli::HttpCliHandshakerFactory>
   HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
@@ -314,6 +314,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
   OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
+  const bool request_was_mocked_;
 };
 
 }  // namespace grpc_core

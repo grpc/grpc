@@ -379,7 +379,7 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpCli::SetOverride(httpcli_get_google_keys_for_email,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -412,7 +412,7 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpCli::SetOverride(httpcli_get_custom_keys_for_email,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -444,7 +444,7 @@ static int httpcli_get_openid_config(const grpc_httpcli_request* request,
   GPR_ASSERT(strcmp(request->host, "accounts.google.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_core::HttpCli::SetOverride(httpcli_get_jwk_set,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
@@ -458,7 +458,7 @@ static void test_jwt_verifier_url_issuer_success(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpCli::SetOverride(httpcli_get_openid_config,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -497,7 +497,7 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpCli::SetOverride(httpcli_get_bad_json,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -520,7 +520,7 @@ static void test_jwt_verifier_bad_json_key(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpCli::SetOverride(httpcli_get_bad_json,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -571,7 +571,7 @@ static void test_jwt_verifier_bad_signature(void) {
   gpr_free(key_str);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_core::HttpCli::SetOverride(httpcli_get_openid_config,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
                                  nullptr);
   grpc_auth_json_key_destruct(&key);
@@ -605,7 +605,7 @@ static void test_jwt_verifier_bad_format(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_jwt_verifier* verifier = grpc_jwt_verifier_create(nullptr, 0);
   grpc_core::HttpCli::SetOverride(httpcli_get_should_not_be_called,
-                            httpcli_post_should_not_be_called);
+                                  httpcli_post_should_not_be_called);
   grpc_jwt_verifier_verify(verifier, nullptr, "bad jwt", expected_audience,
                            on_verification_bad_format,
                            const_cast<char*>(expected_user_data));
