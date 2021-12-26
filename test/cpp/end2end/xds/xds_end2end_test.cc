@@ -870,7 +870,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ResetStub();
   }
 
-  void SetUp() { CreateClientsAndServers(); }
+  void SetUp() override { CreateClientsAndServers(); }
 
   void TearDown() override {
     ShutdownAllBackends();
