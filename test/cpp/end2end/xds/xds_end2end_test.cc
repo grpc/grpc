@@ -3296,7 +3296,6 @@ TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
               ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
@@ -3313,7 +3312,6 @@ TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  SetNextResolutionForLbChannelAllBalancers();
   ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
   EXPECT_THAT(
       balancer_->ads_service()->lds_response_state().error_message,
