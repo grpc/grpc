@@ -2446,6 +2446,8 @@ class ClientChannel::LoadBalancedCall::Metadata
 
     void Encode(GrpcTimeoutMetadata, grpc_millis) {}
     void Encode(HttpPathMetadata, const Slice&) {}
+    void Encode(HttpMethodMetadata,
+                const typename HttpMethodMetadata::ValueType&) {}
 
     std::vector<std::pair<std::string, std::string>> Take() {
       return std::move(out_);

@@ -69,17 +69,6 @@ struct grpc_ares_request {
   grpc_error_handle error ABSL_GUARDED_BY(mu) = GRPC_ERROR_NONE;
 };
 
-/* Asynchronously resolve \a name. Use \a default_port if a port isn't
-   designated in \a name, otherwise use the port in \a name. grpc_ares_init()
-   must be called at least once before this function. \a on_done may be
-   called directly in this function without being scheduled with \a exec_ctx,
-   so it must not try to acquire locks that are being held by the caller. */
-extern void (*grpc_resolve_address_ares)(const char* name,
-                                         const char* default_port,
-                                         grpc_pollset_set* interested_parties,
-                                         grpc_closure* on_done,
-                                         grpc_resolved_addresses** addresses);
-
 /* Asynchronously resolve \a name. It will try to resolve grpclb SRV records in
   addition to the normal address records. For normal address records, it uses
   \a default_port if a port isn't designated in \a name, otherwise it uses the

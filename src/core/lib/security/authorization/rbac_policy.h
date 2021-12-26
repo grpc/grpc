@@ -80,7 +80,7 @@ struct Rbac {
 
     std::string ToString() const;
 
-    RuleType type;
+    RuleType type = RuleType::kAnd;
     HeaderMatcher header_matcher;
     StringMatcher string_matcher;
     CidrRange ip;
@@ -124,7 +124,7 @@ struct Rbac {
 
     std::string ToString() const;
 
-    RuleType type;
+    RuleType type = RuleType::kAnd;
     HeaderMatcher header_matcher;
     StringMatcher string_matcher;
     CidrRange ip;
