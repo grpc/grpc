@@ -60,6 +60,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
+
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.
 #ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX

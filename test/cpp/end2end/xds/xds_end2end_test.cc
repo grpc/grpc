@@ -582,16 +582,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return *this;
     }
     BootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
-        const std::string& client_default_listener_resource_name_template =
-            "") {
+        const std::string& client_default_listener_resource_name_template) {
       client_default_listener_resource_name_template_ =
           client_default_listener_resource_name_template;
       return *this;
     }
-    BootstrapBuilder& AddPlugin(const std::string& key, const std::string& name,
-                                const std::string& certificate_file = "",
-                                const std::string& private_key_file = "",
-                                const std::string& ca_certificate_file = "") {
+    BootstrapBuilder& AddCertificateProviderPlugin(
+        const std::string& key, const std::string& name,
+        const std::string& certificate_file = "",
+        const std::string& private_key_file = "",
+        const std::string& ca_certificate_file = "") {
       plugins_[key] = {
           name, {certificate_file, private_key_file, ca_certificate_file}};
       return *this;
@@ -2344,8 +2344,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   threshold->set_priority(RoutingPriority::DEFAULT);
   threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
   balancer_->ads_service()->SetCdsResource(cluster);
-  auto channel2 = CreateChannel(
-      /*failover_timeout=*/0, /*server_name=*/kServerName);
+  auto channel2 = CreateChannel();
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   // Send exactly max_concurrent_requests long RPCs, alternating between
   // the two channels.
@@ -2560,7 +2559,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 }
 
 class XdsFederationTest : public XdsEnd2endTest {
- public:
+ protected:
   XdsFederationTest() : XdsEnd2endTest(4, 100, 0, true) {
     authority_balancer_ = CreateAndStartBalancer();
   }
@@ -7295,10 +7294,11 @@ class XdsSecurityTest : public BasicTest {
  protected:
   void SetUp() override {
     BootstrapBuilder builder = BootstrapBuilder();
-    builder.AddPlugin("fake_plugin1", "fake1");
-    builder.AddPlugin("fake_plugin2", "fake2");
-    builder.AddPlugin("file_plugin", "file_watcher", kClientCertPath,
-                      kClientKeyPath, kCaCertPath);
+    builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
+    builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
+    builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
+                                         kClientCertPath, kClientKeyPath,
+                                         kCaCertPath);
     CreateClientsAndServers(builder);
     StartAllBackends();
     root_cert_ = ReadFile(kCaCertPath);
@@ -8435,10 +8435,11 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
 
   void SetUp() override {
     BootstrapBuilder builder = BootstrapBuilder();
-    builder.AddPlugin("fake_plugin1", "fake1");
-    builder.AddPlugin("fake_plugin2", "fake2");
-    builder.AddPlugin("file_plugin", "file_watcher", kClientCertPath,
-                      kClientKeyPath, kCaCertPath);
+    builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
+    builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
+    builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
+                                         kClientCertPath, kClientKeyPath,
+                                         kCaCertPath);
     CreateClientsAndServers(builder);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
