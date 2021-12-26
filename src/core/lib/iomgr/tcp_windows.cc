@@ -329,8 +329,6 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0) {
       error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
-    } else {
-      GPR_ASSERT(info->bytes_transferred == tcp->write_slices->length);
     }
   }
 
@@ -350,7 +348,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   WSABUF local_buffers[MAX_WSABUF_COUNT];
   WSABUF* allocated = NULL;
   WSABUF* buffers = local_buffers;
-  size_t len;
+  size_t len, async_buffers_offset = 0;
 
   if (grpc_tcp_trace.enabled()) {
     size_t i;
@@ -389,18 +387,39 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   /* First, let's try a synchronous, non-blocking write. */
   status = WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
                    &bytes_sent, 0, NULL, NULL);
-  info->wsa_error = status == 0 ? 0 : WSAGetLastError();
 
-  /* We would kind of expect to get a WSAEWOULDBLOCK here, especially on a busy
-     connection that has its send queue filled up. But if we don't, then we can
-     avoid doing an async write operation at all. */
-  if (info->wsa_error != WSAEWOULDBLOCK) {
-    grpc_error_handle error = status == 0
-                                  ? GRPC_ERROR_NONE
-                                  : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
-    if (allocated) gpr_free(allocated);
-    return;
+  if (status == 0) {
+    if (bytes_sent == tcp->write_slices->length) {
+      info->wsa_error = 0;
+      grpc_error_handle error = GRPC_ERROR_NONE;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
+      if (allocated) gpr_free(allocated);
+      return;
+    }
+
+    /* The data was not completely delivered, we should send the rest of
+       them by doing an async write operation. */
+    for (i = 0; i < tcp->write_slices->count; i++) {
+      if (buffers[i].len > bytes_sent) {
+        buffers[i].buf += bytes_sent;
+        buffers[i].len -= bytes_sent;
+        break;
+      }
+      bytes_sent -= buffers[i].len;
+      async_buffers_offset++;
+    }
+  } else {
+    info->wsa_error = WSAGetLastError();
+
+    /* We would kind of expect to get a WSAEWOULDBLOCK here, especially on a
+       busy connection that has its send queue filled up. But if we don't, then
+       we can avoid doing an async write operation at all. */
+    if (info->wsa_error != WSAEWOULDBLOCK) {
+      grpc_error_handle error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
+      if (allocated) gpr_free(allocated);
+      return;
+    }
   }
 
   TCP_REF(tcp, "write");
@@ -408,7 +427,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   /* If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
      operation, this time asynchronously. */
   memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
-  status = WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
+  status = WSASend(socket->socket, buffers + async_buffers_offset,
+                   (DWORD)(tcp->write_slices->count - async_buffers_offset),
                    &bytes_sent, 0, &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
 
