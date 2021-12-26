@@ -678,7 +678,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                               plugin_info.config.private_key_file));
           fields.push_back(
               absl::StrFormat("        \"ca_certificate_file\": \"%s\"",
-                              plugin_info.config.private_key_file));
+                              plugin_info.config.ca_certificate_file));
           fields.push_back("      }");
         } else {
           fields.push_back(absl::StrFormat("      \"plugin_name\": \"%s\"",
