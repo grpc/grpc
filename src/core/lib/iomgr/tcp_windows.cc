@@ -329,6 +329,8 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0) {
       error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
+    } else {
+      GPR_ASSERT(info->bytes_transferred <= tcp->write_slices->length);
     }
   }
 
