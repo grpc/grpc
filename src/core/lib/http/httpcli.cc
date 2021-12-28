@@ -51,8 +51,8 @@ namespace grpc_core {
 
 namespace {
 
-grpc_httpcli_verify_get_request g_test_only_verify_get_request;
-grpc_httpcli_verify_post_request g_test_only_verify_get_request;
+grpc_httpcli_validate_get_request g_test_only_validate_get_request;
+grpc_httpcli_validate_post_request g_test_only_validate_get_request;
 grpc_httpcli_generate_get_response g_test_only_generate_get_response;
 grpc_httpcli_generate_post_response g_test_only_generate_post_response;
 
@@ -65,10 +65,10 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
-  if (g_test_only_verify_get_request != nullptr) {
-    g_test_only_verify_get_request(request);
+  if (g_test_only_validate_get_request != nullptr) {
+    g_test_only_validate_get_request(request);
     test_only_generate_response = [response, on_done]() {
-      g_test_only_generate_get_response(response, on_done);
+      g_test_only_generate_get_response(on_done, response);
     };
   }
   std::string name =
@@ -87,10 +87,10 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     const char* body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
-  if (g_test_only_verify_post_request != nullptr) {
-    g_test_only_verify_post_request(request);
+  if (g_test_only_validate_post_request != nullptr) {
+    g_test_only_validate_post_request(request, body_bytes, body_size);
     test_only_generate_response = [response, on_done]() {
-      g_test_only_generate_post_response(response, on_done);
+      g_test_only_generate_post_response(on_done, response);
     };
   }
   std::string name =
@@ -102,13 +102,13 @@ OrphanablePtr<HttpCli> HttpCli::Post(
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
-void HttpCli::SetOverride(grpc_httpcli_verify_get_request verify_get,
-                          grpc_httpcli_verify_post_request verify_post,
+void HttpCli::SetOverride(grpc_httpcli_validate_get_request validate_get,
                           grpc_httpcli_generate_get_response generate_get,
+                          grpc_httpcli_validate_post_request validate_post,
                           grpc_httpcli_generate_post_response generate_post) {
-  g_test_only_verify_get_request = verify_get;
-  g_test_only_verify_post_request = verify_post;
+  g_test_only_validate_get_request = validate_get;
   g_test_only_generate_get_response = generate_get;
+  g_test_only_validate_post_request = validate_post;
   g_test_only_generate_post_response = generate_post;
 }
 
