@@ -59,7 +59,7 @@ touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
     --grpc_python_out=${TOOLS_DIR} \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto
 
-(cd src/ruby && bundle && rake compile)
+(cd src/ruby && bundle && bundle exec rake compile)
 
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
