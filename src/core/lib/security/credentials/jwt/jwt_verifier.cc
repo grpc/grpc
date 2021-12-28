@@ -668,6 +668,7 @@ static void on_openid_config_retrieved(void* user_data,
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];
   Json json = json_from_http(response);
   grpc_httpcli_request req;
+  memset(&req, 0, sizeof(grpc_httpcli_request));
   const char* jwks_uri;
   const Json* cur;
 
@@ -803,6 +804,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
         GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
+    gpr_log(GPR_ERROR, "apolcyn jwt verifier iss: %s", iss);
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
     path_prefix = strchr(req.host, '/');
     if (path_prefix == nullptr) {

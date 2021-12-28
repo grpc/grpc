@@ -47,6 +47,7 @@ static void fill_common_header(const grpc_httpcli_request* request,
   if (connection_close) buf->push_back("Connection: close\r\n");
   buf->push_back("User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n");
   /* user supplied headers */
+  gpr_log(GPR_ERROR, "apolcyn fill_common_header hdr_count: %ld", request->http.hdr_count);
   for (size_t i = 0; i < request->http.hdr_count; i++) {
     buf->push_back(request->http.hdrs[i].key);
     buf->push_back(": ");
