@@ -3,19 +3,17 @@
 
 `python_configure` depends on the following environment variables:
 
-  * `PYTHON2_BIN_PATH`: location of python binary.
-  * `PYTHON2_LIB_PATH`: Location of python libraries.
+  * `PYTHON3_BIN_PATH`: location of python binary.
+  * `PYTHON3_LIB_PATH`: Location of python libraries.
 """
 
 _BAZEL_SH = "BAZEL_SH"
-_PYTHON2_BIN_PATH = "PYTHON2_BIN_PATH"
-_PYTHON2_LIB_PATH = "PYTHON2_LIB_PATH"
 _PYTHON3_BIN_PATH = "PYTHON3_BIN_PATH"
 _PYTHON3_LIB_PATH = "PYTHON3_LIB_PATH"
 
 _HEADERS_HELP = (
-    "Are Python headers installed? Try installing python-dev or " +
-    "python3-dev on Debian-based systems. Try python-devel or python3-devel " +
+    "Are Python headers installed? Try installing " +
+    "python3-dev on Debian-based systems. Try python3-devel " +
     "on Redhat-based systems."
 )
 
@@ -346,14 +344,6 @@ def _python_autoconf_impl(repository_ctx):
     """Implementation of the python_autoconf repository rule."""
     _create_single_version_package(
         repository_ctx,
-        "_python2",
-        _PYTHON2_BIN_PATH,
-        "python2",
-        _PYTHON2_LIB_PATH,
-        True
-    )
-    _create_single_version_package(
-        repository_ctx,
         "_python3",
         _PYTHON3_BIN_PATH,
         "python3",
@@ -366,8 +356,6 @@ python_configure = repository_rule(
     implementation = _python_autoconf_impl,
     environ = [
         _BAZEL_SH,
-        _PYTHON2_BIN_PATH,
-        _PYTHON2_LIB_PATH,
         _PYTHON3_BIN_PATH,
         _PYTHON3_LIB_PATH,
     ],

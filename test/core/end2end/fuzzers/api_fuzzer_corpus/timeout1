@@ -1,0 +1,105 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "unix::::::::::::::::::::::::::;:::::;:::::::::::>:::::::::::::::::::::::9:::::\026I:::::::c::,::::\001::::::::::::::::"
+    channel_actions {
+      add_n_bytes_writable: 55
+      add_n_bytes_readable: 106652627894272
+    }
+  }
+}
+actions {
+  advance_time: 257
+}
+actions {
+  create_call {
+    propagation_mask: 83968879
+    method {
+      value: "u-bin"
+    }
+    host {
+      value: "\361\243\275\203\361\226\215\265\363\274\273\202\363\234\232\265\360\243\230\252\361\241\227\253\360\233\262\234\363\242\252\237\362\231\230\250\360\260\203\220\362\225\271\250\360\264\257\267\361\201\262\227\363\235\256\253\360\250\251\207\362\254\245\212\362\270\225\220\362\227\235\250\363\227\272\241\362\254\272\206\361\251\216\231\361\200\275\233\363\242\271\201\361\252\244\252\361\253\210\274\361\214\232\240\362\272\276\276\362\234\247\242\345\225\225"
+      intern: true
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+        metadata {
+          key {
+            value: "oo"
+          }
+          value {
+            value: "u-bin"
+            intern: true
+          }
+        }
+        metadata {
+          key {
+            value: "u-bio"
+          }
+          value {
+            value: "u-bin"
+          }
+        }
+        metadata {
+          key {
+            value: "u-biogrpc.lame_filter_error"
+            intern: true
+          }
+          value {
+            value: "u-bin"
+            intern: true
+          }
+        }
+        metadata {
+          key {
+            value: "u-bin"
+            intern: true
+          }
+          value {
+            value: "unix::pehttp,\014,,Sac,,t"
+          }
+        }
+      }
+    }
+    operations {
+      flags: 53
+    }
+    operations {
+      flags: 1886680168
+    }
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  advance_time: 9869440
+}
+actions {
+  create_server {
+  }
+}
+actions {
+}
+actions {
+  get_target {
+  }
+}
+actions {
+  enable_tracer: "u-bin"
+}
+actions {
+}
+actions {
+}
+actions {
+}

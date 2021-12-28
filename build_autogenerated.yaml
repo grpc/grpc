@@ -788,6 +788,7 @@ libs:
   - src/core/lib/iomgr/event_engine/pollset.h
   - src/core/lib/iomgr/event_engine/promise.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/event_engine/resolver.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/executor/mpmcqueue.h
@@ -814,6 +815,9 @@ libs:
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
+  - src/core/lib/iomgr/resolve_address_impl.h
+  - src/core/lib/iomgr/resolve_address_posix.h
+  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -1873,6 +1877,7 @@ libs:
   - src/core/lib/iomgr/event_engine/pollset.h
   - src/core/lib/iomgr/event_engine/promise.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/event_engine/resolver.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/executor/mpmcqueue.h
@@ -1899,6 +1904,9 @@ libs:
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_custom.h
+  - src/core/lib/iomgr/resolve_address_impl.h
+  - src/core/lib/iomgr/resolve_address_posix.h
+  - src/core/lib/iomgr/resolve_address_windows.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -3909,16 +3917,6 @@ targets:
   - linux
   - posix
   - mac
-- name: resolve_address_using_ares_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=ares
 - name: resolve_address_using_native_resolver_posix_test
   build: test
   language: c
@@ -3933,16 +3931,6 @@ targets:
   - linux
   - posix
   - mac
-- name: resolve_address_using_native_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=native
 - name: secure_channel_create_test
   build: test
   language: c
@@ -7313,6 +7301,30 @@ targets:
   - linux
   - posix
   - mac
+- name: resolve_address_using_ares_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_config
+- name: resolve_address_using_native_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_config
 - name: resource_quota_test
   gtest: true
   build: test
