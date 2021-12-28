@@ -22,7 +22,6 @@
 #include "absl/status/statusor.h"
 
 #include "src/core/ext/service_config/service_config.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -46,7 +45,7 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
 // ServerConfigSelectorProvider allows for subscribers to watch for updates on
 // ServerConfigSelector. It is propagated via channel args.
 class ServerConfigSelectorProvider
-    : public DualRefCounted<ServerConfigSelectorProvider> {
+    : public RefCounted<ServerConfigSelectorProvider> {
  public:
   class ServerConfigSelectorWatcher {
    public:
