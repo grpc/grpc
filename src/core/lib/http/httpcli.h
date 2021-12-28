@@ -54,16 +54,17 @@ typedef struct grpc_httpcli_request {
 typedef struct grpc_http_response grpc_httpcli_response;
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
-                                         grpc_millis deadline,
-                                         grpc_closure* on_complete,
-                                         grpc_httpcli_response* response);
-typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
-                                          const char* body_bytes,
-                                          size_t body_size,
-                                          grpc_millis deadline,
-                                          grpc_closure* on_complete,
-                                          grpc_httpcli_response* response);
+typedef void (*grpc_httpcli_verify_get_request)(const grpc_httpcli_request* request);
+typedef void (*grpc_httpcli_verify_post_request)(const grpc_httpcli_request* request);
+typedef void (*grpc_httpcli_generate_get_response)(grpc_closure* on_complete,
+                                                   grpc_httpcli_response* response);
+typedef void (*grpc_httpcli_generate_post_response)(grpc_closure* on_complete,
+                                                    grpc_httpcli_response* response);
+
+void grpc_httpcli_set_override(grpc_httpcli_verify_get_request verify_get,
+                               grpc_httpcli_verify_post_request verify_post,
+                               grpc_httpcli_generate_get_response generate_get,
+                               grpc_httpcli_generate_post_response generate_post,
 
 namespace grpc_core {
 
@@ -213,7 +214,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
           absl::string_view ssl_host_override, grpc_millis deadline,
           std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
           grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
-          bool request_was_mocked_);
+          absl::optional<std::function<void()>> test_only_generate_response);
 
   ~HttpCli();
 
@@ -314,7 +315,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
   OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
-  const bool request_was_mocked_;
+  const absl::optional<std::function<void()>> test_only_generate_response_;
 };
 
 }  // namespace grpc_core

@@ -51,8 +51,10 @@ namespace grpc_core {
 
 namespace {
 
-grpc_httpcli_get_override g_get_override;
-grpc_httpcli_post_override g_post_override;
+grpc_httpcli_verify_get_request g_test_only_verify_get_request;
+grpc_httpcli_verify_post_request g_test_only_verify_get_request;
+grpc_httpcli_generate_get_response g_test_only_generate_get_response;
+grpc_httpcli_generate_post_response g_test_only_generate_post_response;
 
 }  // namespace
 
@@ -62,9 +64,12 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
-  bool request_was_mocked = false;
-  if (g_get_override && g_get_override(request, deadline, on_done, response)) {
-    request_was_mocked = true;
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_test_only_verify_get_request != nullptr) {
+    g_test_only_verify_get_request(request);
+    test_only_generate_response = [response, on_done]() {
+      g_test_only_generate_get_response(response, on_done);
+    };
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
@@ -72,7 +77,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(
       grpc_httpcli_format_get_request(request), response,
       std::move(resource_quota), request->host, request->ssl_host_override,
       deadline, std::move(handshaker_factory), on_done, pollent, name.c_str(),
-      request_was_mocked);
+      std::move(test_only_generate_response));
 }
 
 OrphanablePtr<HttpCli> HttpCli::Post(
@@ -81,10 +86,12 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response) {
-  bool request_was_mocked = false;
-  if (g_post_override && g_post_override(request, body_bytes, body_size,
-                                         deadline, on_done, response)) {
-    request_was_mocked = true;
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_test_only_verify_post_request != nullptr) {
+    g_test_only_verify_post_request(request);
+    test_only_generate_response = [response, on_done]() {
+      g_test_only_generate_post_response(response, on_done);
+    };
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
@@ -92,13 +99,17 @@ OrphanablePtr<HttpCli> HttpCli::Post(
       grpc_httpcli_format_post_request(request, body_bytes, body_size),
       response, std::move(resource_quota), request->host,
       request->ssl_host_override, deadline, std::move(handshaker_factory),
-      on_done, pollent, name.c_str(), request_was_mocked);
+      on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
-void HttpCli::SetOverride(grpc_httpcli_get_override get,
-                          grpc_httpcli_post_override post) {
-  g_get_override = get;
-  g_post_override = post;
+void HttpCli::SetOverride(grpc_httpcli_verify_get_request verify_get,
+                          grpc_httpcli_verify_post_request verify_post,
+                          grpc_httpcli_generate_get_response generate_get,
+                          grpc_httpcli_generate_post_response generate_post) {
+  g_test_only_verify_get_request = verify_get;
+  g_test_only_verify_post_request = verify_post;
+  g_test_only_generate_get_response = generate_get;
+  g_test_only_generate_post_response = generate_post;
 }
 
 HttpCli::HttpCli(const grpc_slice& request_text,
@@ -107,7 +118,8 @@ HttpCli::HttpCli(const grpc_slice& request_text,
                  absl::string_view ssl_host_override, grpc_millis deadline,
                  std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
                  grpc_closure* on_done, grpc_polling_entity* pollent,
-                 const char* name, bool request_was_mocked)
+                 const char* name,
+                 absl::optional<std::function<void()>> test_only_generate_response) {
     : request_text_(request_text),
       handshaker_factory_(std::move(handshaker_factory)),
       resource_quota_(std::move(resource_quota)),
@@ -116,7 +128,8 @@ HttpCli::HttpCli(const grpc_slice& request_text,
       deadline_(deadline),
       on_done_(on_done),
       pollset_set_(grpc_pollset_set_create()),
-      request_was_mocked_(request_was_mocked) {
+      request_was_mocked_(request_was_mocked),
+      test_only_generate_response_(std::move(test_only_generate_response)) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -153,10 +166,8 @@ HttpCli::~HttpCli() {
 
 void HttpCli::Start() {
   grpc_core::MutexLock lock(&mu_);
-  if (request_was_mocked_) {
-    gpr_log(
-        GPR_INFO,
-        "HttpCli::Start doing nothing because request was mocked for testing");
+  if (test_only_generate_response_.has_value()) {
+    test_only_generate_response_();
     return;
   }
   Ref().release();  // ref held by pending request
