@@ -110,7 +110,7 @@ enum class StatusTimeProperty {
 /// Creates a status with given additional information
 absl::Status StatusCreate(
     absl::StatusCode code, absl::string_view msg, const DebugLocation& location,
-    std::vector<absl::Status> children) GRPC_MUST_USE_RESULT;
+    std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
 
 /// Sets the int property to the status
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);
