@@ -65,7 +65,6 @@ typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
                                           grpc_closure* on_complete,
                                           grpc_httpcli_response* response);
 
-
 namespace grpc_core {
 
 // Tracks an in-progress GET or POST request. Calling \a Start()

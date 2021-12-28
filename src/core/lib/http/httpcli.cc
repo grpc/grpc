@@ -85,8 +85,10 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     grpc_closure* on_done, grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
   if (g_post_override != nullptr) {
-    test_only_generate_response = [request, body_bytes, body_size, deadline, on_done, response]() {
-      g_post_override(request, body_bytes, body_size, deadline, on_done, response);
+    test_only_generate_response = [request, body_bytes, body_size, deadline,
+                                   on_done, response]() {
+      g_post_override(request, body_bytes, body_size, deadline, on_done,
+                      response);
     };
   }
   std::string name =
@@ -104,14 +106,13 @@ void HttpCli::SetOverride(grpc_httpcli_get_override get,
   g_post_override = post;
 }
 
-HttpCli::HttpCli(const grpc_slice& request_text,
-                 grpc_httpcli_response* response,
-                 ResourceQuotaRefPtr resource_quota, absl::string_view host,
-                 absl::string_view ssl_host_override, grpc_millis deadline,
-                 std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
-                 grpc_closure* on_done, grpc_polling_entity* pollent,
-                 const char* name,
-                 absl::optional<std::function<void()>> test_only_generate_response)
+HttpCli::HttpCli(
+    const grpc_slice& request_text, grpc_httpcli_response* response,
+    ResourceQuotaRefPtr resource_quota, absl::string_view host,
+    absl::string_view ssl_host_override, grpc_millis deadline,
+    std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
+    grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
+    absl::optional<std::function<void()>> test_only_generate_response)
     : request_text_(request_text),
       handshaker_factory_(std::move(handshaker_factory)),
       resource_quota_(std::move(resource_quota)),
