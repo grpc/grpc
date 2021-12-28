@@ -581,7 +581,7 @@ class StsTokenFetcherCredentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    httpcli_request_ = grpc_core::HttpCli::Post(
+    httpcli_request_ = HttpCli::Post(
         pollent, ResourceQuota::Default(), &request,
         HttpCli::HttpCliHandshakerFactoryFromScheme(sts_url_.scheme()), body,
         body_length, deadline,
@@ -644,7 +644,7 @@ class StsTokenFetcherCredentials
   UniquePtr<char> subject_token_type_;
   UniquePtr<char> actor_token_path_;
   UniquePtr<char> actor_token_type_;
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request_;
+  OrphanablePtr<HttpCli> httpcli_request_;
 };
 
 }  // namespace

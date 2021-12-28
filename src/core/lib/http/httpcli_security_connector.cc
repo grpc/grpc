@@ -178,23 +178,23 @@ void HttpCli::SSLHttpCliHandshaker::InnerOnDone(void* arg,
 
 void HttpCli::SSLHttpCliHandshaker::Start() {
   const char* pem_root_certs =
-      grpc_core::DefaultSslRootStore::GetPemRootCerts();
+      DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =
-      grpc_core::DefaultSslRootStore::GetRootStore();
+      DefaultSslRootStore::GetRootStore();
   if (root_store == nullptr) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
     on_done_(nullptr);
     return;
   }
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
+  RefCountedPtr<grpc_channel_security_connector> sc =
       httpcli_ssl_channel_security_connector_create(pem_root_certs, root_store,
                                                     host_.c_str());
   GPR_ASSERT(sc != nullptr);
   grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
   grpc_channel_args args = {1, &channel_arg};
-  handshake_mgr_ = grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-  grpc_core::CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      grpc_core::HANDSHAKER_CLIENT, &args,
+  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_CLIENT, &args,
       /*interested_parties=*/nullptr, handshake_mgr_.get());
   Ref().release();  // ref held by pending handshake
   handshake_mgr_->DoHandshake(

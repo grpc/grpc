@@ -157,7 +157,7 @@ HttpCli::~HttpCli() {
 }
 
 void HttpCli::Start() {
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   if (test_only_generate_response_.has_value()) {
     test_only_generate_response_.value()();
     return;
@@ -168,7 +168,7 @@ void HttpCli::Start() {
 
 void HttpCli::Orphan() {
   {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     gpr_log(GPR_DEBUG, "apolcyn request: %p orphan", this);
     cancelled_ = true;
     dns_request_.reset();  // cancel potentially pending DNS resolution
@@ -227,7 +227,7 @@ void HttpCli::OnReadInternal(grpc_error_handle error)
 void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
                                                       grpc_error_handle error) {
   HttpCli* req = static_cast<HttpCli*>(arg);
-  grpc_core::MutexLock lock(&req->mu_);
+  MutexLock lock(&req->mu_);
   if (error == GRPC_ERROR_NONE) {
     req->OnWritten();
   } else {
@@ -247,7 +247,7 @@ void HttpCli::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
 
 void HttpCli::OnHandshakeDone(grpc_endpoint* ep) {
   gpr_log(GPR_DEBUG, "apolcyn request:%p OnHandshakeDone ep:%p", this, ep);
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   own_endpoint_ = true;
   if (!ep) {
     gpr_log(GPR_DEBUG,
@@ -265,7 +265,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
   {
     gpr_log(GPR_DEBUG, "apolcyn request:%p OnConnected error: %s ep:%p", req,
             grpc_error_string(error), req->ep_);
-    grpc_core::MutexLock lock(&req->mu_);
+    MutexLock lock(&req->mu_);
     if (!req->ep_) {
       gpr_log(GPR_DEBUG,
               "apolcyn call NextAddress from OnConnected request:%p error: %s",
@@ -311,7 +311,7 @@ void HttpCli::NextAddress(grpc_error_handle error)
 
 void HttpCli::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   dns_request_.reset();
   if (!addresses_or.ok()) {
     Finish(absl_status_to_grpc_error(addresses_or.status()));

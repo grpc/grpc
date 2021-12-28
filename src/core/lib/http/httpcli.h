@@ -165,7 +165,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
     const std::string host_;
     const grpc_millis deadline_;
     std::function<void(grpc_endpoint*)> on_done_;
-    grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr_;
+    RefCountedPtr<HandshakeManager> handshake_mgr_;
   };
 
   // Asynchronously perform a HTTP GET.
@@ -256,7 +256,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
                                                    grpc_error_handle error) {
     HttpCli* req = static_cast<HttpCli*>(user_data);
-    grpc_core::MutexLock lock(&req->mu_);
+    MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
 
@@ -296,7 +296,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
   grpc_closure connected_;
   grpc_endpoint* ep_ = nullptr;
-  grpc_core::Mutex mu_;
+  Mutex mu_;
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
