@@ -561,6 +561,10 @@ void HPackCompressor::SliceIndex::EmitTo(const grpc_slice& key,
   It prev = values_.end();
   uint32_t transport_length =
       GRPC_SLICE_LENGTH(key) + value.length() + hpack_constants::kEntryOverhead;
+  if (transport_length > HPackEncoderTable::MaxEntrySize()) {
+    framer->EmitLitHdrWithNonBinaryStringKeyNotIdx(key, value.c_slice());
+    return;
+  }
   // Linear scan through previous values to see if we find the value.
   for (It it = values_.begin(); it != values_.end(); ++it) {
     if (value == it->value) {
