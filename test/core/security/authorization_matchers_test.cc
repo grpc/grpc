@@ -237,6 +237,66 @@ TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherFailedMatch) {
   EXPECT_FALSE(matcher.Matches(args));
 }
 
+TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherMethodSuccess) {
+  args_.AddPairToMetadata(":method", "GET");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  HeaderAuthorizationMatcher matcher(
+      HeaderMatcher::Create(/*name=*/":method", HeaderMatcher::Type::kExact,
+                            /*matcher=*/"GET")
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherMethodFail) {
+  args_.AddPairToMetadata(":method", "GET");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  HeaderAuthorizationMatcher matcher(
+      HeaderMatcher::Create(/*name=*/":method", HeaderMatcher::Type::kExact,
+                            /*matcher=*/"PUT")
+          .value());
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherAuthoritySuccess) {
+  args_.AddPairToMetadata(":authority", "localhost");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  HeaderAuthorizationMatcher matcher(
+      HeaderMatcher::Create(/*name=*/":authority", HeaderMatcher::Type::kExact,
+                            /*matcher=*/"localhost")
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherAuthorityFail) {
+  args_.AddPairToMetadata(":authority", "localhost");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  HeaderAuthorizationMatcher matcher(
+      HeaderMatcher::Create(/*name=*/":authority", HeaderMatcher::Type::kExact,
+                            /*matcher=*/"bad_authority")
+          .value());
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherPathSuccess) {
+  args_.AddPairToMetadata(":path", "/expected/path");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  HeaderAuthorizationMatcher matcher(
+      HeaderMatcher::Create(/*name=*/":path", HeaderMatcher::Type::kExact,
+                            /*matcher=*/"/expected/path")
+          .value());
+  EXPECT_TRUE(matcher.Matches(args));
+}
+
+TEST_F(AuthorizationMatchersTest, HeaderAuthorizationMatcherPathFail) {
+  args_.AddPairToMetadata(":path", "/expected/path");
+  EvaluateArgs args = args_.MakeEvaluateArgs();
+  HeaderAuthorizationMatcher matcher(
+      HeaderMatcher::Create(/*name=*/":path", HeaderMatcher::Type::kExact,
+                            /*matcher=*/"/unexpected/path")
+          .value());
+  EXPECT_FALSE(matcher.Matches(args));
+}
+
 TEST_F(AuthorizationMatchersTest,
        HeaderAuthorizationMatcherFailedMatchMultivaluedHeader) {
   args_.AddPairToMetadata("key123", "foo");

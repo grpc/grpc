@@ -55,6 +55,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -173,7 +174,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     grpc_closure on_close_;
     grpc_timer drain_grace_timer_;
     grpc_closure on_drain_grace_time_expiry_;
-    bool drain_grace_timer_expiry_callback_pending_ = false;
+    bool drain_grace_timer_expiry_callback_pending_ ABSL_GUARDED_BY(&mu_) =
+        false;
     bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
@@ -546,24 +548,27 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
   grpc_chttp2_transport* transport = nullptr;
   {
     MutexLock lock(&mu_);
-    transport = transport_;
+    if (transport_ != nullptr && !shutdown_) {
+      transport = transport_;
+      Ref().release();  // Ref held by OnDrainGraceTimeExpiry
+      GRPC_CLOSURE_INIT(&on_drain_grace_time_expiry_, OnDrainGraceTimeExpiry,
+                        this, nullptr);
+      grpc_timer_init(&drain_grace_timer_,
+                      ExecCtx::Get()->Now() +
+                          grpc_channel_args_find_integer(
+                              listener_->args_,
+                              GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
+                              {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
+                      &on_drain_grace_time_expiry_);
+      drain_grace_timer_expiry_callback_pending_ = true;
+      shutdown_ = true;
+    }
   }
   if (transport != nullptr) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->goaway_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Server is stopping to serve requests.");
     grpc_transport_perform_op(&transport->base, op);
-    Ref().release();  // Ref held by OnDrainGraceTimeExpiry
-    GRPC_CLOSURE_INIT(&on_drain_grace_time_expiry_, OnDrainGraceTimeExpiry,
-                      this, nullptr);
-    grpc_timer_init(&drain_grace_timer_,
-                    ExecCtx::Get()->Now() +
-                        grpc_channel_args_find_integer(
-                            listener_->args_,
-                            GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
-                            {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
-                    &on_drain_grace_time_expiry_);
-    drain_grace_timer_expiry_callback_pending_ = true;
   }
 }
 
@@ -597,6 +602,7 @@ void Chttp2ServerListener::ActiveConnection::OnClose(
         connection = std::move(it->second);
         self->listener_->connections_.erase(it);
       }
+      self->shutdown_ = true;
     }
     // Cancel the drain_grace_timer_ if needed.
     if (self->drain_grace_timer_expiry_callback_pending_) {
@@ -882,7 +888,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  grpc_resolved_addresses* resolved = nullptr;
+  absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
   absl::string_view parsed_addr_unprefixed{parsed_addr};
@@ -890,26 +896,26 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
-      error =
-          grpc_resolve_unix_domain_address(parsed_addr_unprefixed, &resolved);
+      resolved_or = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
     } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
                                    kUnixAbstractUriPrefix)) {
-      error = grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed,
-                                                        &resolved);
+      resolved_or =
+          grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
     } else {
-      error = grpc_blocking_resolve_address(parsed_addr.c_str(), "https",
-                                            &resolved);
+      resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
     }
-    if (error != GRPC_ERROR_NONE) return error;
+    if (!resolved_or.ok()) {
+      return absl_status_to_grpc_error(resolved_or.status());
+    }
     // Create a listener for each resolved address.
-    for (size_t i = 0; i < resolved->naddrs; i++) {
+    for (auto& addr : *resolved_or) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
-      if (*port_num != -1 && grpc_sockaddr_get_port(&resolved->addrs[i]) == 0) {
-        grpc_sockaddr_set_port(&resolved->addrs[i], *port_num);
+      if (*port_num != -1 && grpc_sockaddr_get_port(&addr) == 0) {
+        grpc_sockaddr_set_port(&addr, *port_num);
       }
       int port_temp = -1;
-      error = Chttp2ServerListener::Create(server, &resolved->addrs[i],
+      error = Chttp2ServerListener::Create(server, &addr,
                                            grpc_channel_args_copy(args),
                                            args_modifier, &port_temp);
       if (error != GRPC_ERROR_NONE) {
@@ -922,17 +928,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         }
       }
     }
-    if (error_list.size() == resolved->naddrs) {
+    if (error_list.size() == resolved_or->size()) {
       std::string msg =
           absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
-                          resolved->naddrs);
+                          resolved_or->size());
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
       std::string msg = absl::StrFormat(
           "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
           " resolved",
-          resolved->naddrs - error_list.size(), resolved->naddrs);
+          resolved_or->size() - error_list.size(), resolved_or->size());
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
       gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());
@@ -945,9 +951,6 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     GRPC_ERROR_UNREF(error);
   }
   grpc_channel_args_destroy(args);
-  if (resolved != nullptr) {
-    grpc_resolved_addresses_destroy(resolved);
-  }
   if (error != GRPC_ERROR_NONE) *port_num = 0;
   return error;
 }

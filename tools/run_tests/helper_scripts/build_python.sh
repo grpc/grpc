@@ -150,10 +150,21 @@ else
   VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 fi
 
-# See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
-# on pip to upgrade itself because if pip is too old, it may not have the required
-# TLS version to run `pip install`.
-curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | $VENV_PYTHON
+
+# On library/version/platforms combo that do not have a binary
+# published, we may end up building a dependency from source. In that
+# case, several of our build environment variables may disrupt the
+# third-party build process. This function pipes through only the
+# minimal environment necessary.
+pip_install() {
+  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
+}
+
+# Pin setuptools to < 60.0.0 to restore the distutil installation, see:
+# https://github.com/pypa/setuptools/pull/2896
+export SETUPTOOLS_USE_DISTUTILS=stdlib
+pip_install --upgrade pip==21.3.1
+pip_install --upgrade setuptools==59.6.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -163,15 +174,6 @@ pip_install_dir() {
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip install --no-deps .
   cd "$PWD"
-}
-
-# On library/version/platforms combo that do not have a binary
-# published, we may end up building a dependency from source. In that
-# case, several of our build environment variables may disrupt the
-# third-party build process. This function pipes through only the
-# minimal environment necessary.
-pip_install() {
-  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
 }
 
 case "$VENV" in
@@ -185,8 +187,6 @@ case "$VENV" in
 esac
 
 
-pip_install --upgrade setuptools==44.1.1
-pip_install --upgrade pip==19.3.1
 pip_install --upgrade cython
 pip_install --upgrade six protobuf
 
