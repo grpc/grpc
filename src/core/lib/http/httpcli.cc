@@ -217,7 +217,7 @@ void HttpCli::OnReadInternal(grpc_error_handle error)
   } else if (!have_read_byte_) {
     gpr_log(GPR_DEBUG,
             "apolcyn call NextAddress from OnReadInternal request:%p error: %s",
-            this, grpc_error_string(error));
+            this, grpc_error_std_string(error).c_str());
     NextAddress(GRPC_ERROR_REF(error));
   } else {
     Finish(grpc_http_parser_eof(&parser_));
@@ -234,7 +234,7 @@ void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
     gpr_log(GPR_DEBUG,
             "apolcyn call NextAddress from "
             "ContinueDoneWriteAfterScheduleOnExecCtx request:%p error: %s",
-            req, grpc_error_string(error));
+            req, grpc_error_std_string(error).c_str());
     req->NextAddress(GRPC_ERROR_REF(error));
   }
 }
@@ -264,12 +264,12 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
   HttpCli* req = static_cast<HttpCli*>(arg);
   {
     gpr_log(GPR_DEBUG, "apolcyn request:%p OnConnected error: %s ep:%p", req,
-            grpc_error_string(error), req->ep_);
+            grpc_error_std_string(error).c_str(), req->ep_);
     MutexLock lock(&req->mu_);
     if (!req->ep_) {
       gpr_log(GPR_DEBUG,
               "apolcyn call NextAddress from OnConnected request:%p error: %s",
-              req, grpc_error_string(error));
+              req, grpc_error_std_string(error).c_str());
       req->NextAddress(GRPC_ERROR_REF(error));
       return;
     }
@@ -284,7 +284,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
 void HttpCli::NextAddress(grpc_error_handle error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   gpr_log(GPR_DEBUG, "apolcyn NextAddress request:%p error: %s", this,
-          grpc_error_string(error));
+          grpc_error_std_string(error).c_str());
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
   }

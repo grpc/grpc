@@ -290,8 +290,10 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
+  int kNumThreads = 100;
   std::vector<std::thread> threads;
-  for (int i = 0; i < 100; i++) {
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
     threads.push_back(std::thread([this]() {
       RequestArgs request_args(this);
       grpc_httpcli_request req;
@@ -334,8 +336,10 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  int kNumThreads = 100;
   std::vector<std::thread> threads;
-  for (int i = 0; i < 100; i++) {
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
     grpc_core::testing::FakeUdpAndTcpServer* fake_http_server_ptr =
         &fake_http_server;
     threads.push_back(std::thread([this, fake_http_server_ptr]() {

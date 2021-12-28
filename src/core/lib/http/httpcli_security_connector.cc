@@ -177,8 +177,7 @@ void HttpCli::SSLHttpCliHandshaker::InnerOnDone(void* arg,
 }
 
 void HttpCli::SSLHttpCliHandshaker::Start() {
-  const char* pem_root_certs =
-      DefaultSslRootStore::GetPemRootCerts();
+  const char* pem_root_certs = DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =
       DefaultSslRootStore::GetRootStore();
   if (root_store == nullptr) {

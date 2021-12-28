@@ -77,10 +77,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
  public:
   class HttpCliHandshaker : public InternallyRefCounted<HttpCliHandshaker> {
    public:
-    virtual ~HttpCliHandshaker() {}
     // TODO(apolcyn): put mutex annotations on these
     virtual void Start() = 0;
-    virtual void Orphan() = 0;
   };
 
   class HttpCliHandshakerFactory {
@@ -215,7 +213,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
           grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response);
 
-  ~HttpCli();
+  ~HttpCli() override;
 
   void Start();
 
