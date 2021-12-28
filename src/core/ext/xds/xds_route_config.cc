@@ -538,7 +538,7 @@ grpc_error_handle ParseTypedPerFilterConfig(
     if (!filter_config.ok()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "filter config for type ", filter_type,
-          " failed to parse: ", filter_config.status().ToString()));
+          " failed to parse: ", StatusToString(filter_config.status())));
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
   }
@@ -968,7 +968,7 @@ XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
   DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_route_v3_RouteConfiguration_name(resource));
-  auto route_config_data = absl::make_unique<RouteConfigData>();
+  auto route_config_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error = XdsRouteConfigResource::Parse(
       context, resource, &route_config_data->resource);
   if (error != GRPC_ERROR_NONE) {

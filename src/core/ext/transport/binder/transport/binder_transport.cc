@@ -123,7 +123,13 @@ static void AssignMetadata(grpc_metadata_batch* mb,
                            const grpc_binder::Metadata& md) {
   mb->Clear();
   for (auto& p : md) {
-    mb->Append(p.first, grpc_core::Slice::FromCopiedString(p.second));
+    mb->Append(p.first, grpc_core::Slice::FromCopiedString(p.second),
+               [&](absl::string_view error, const grpc_core::Slice& value) {
+                 gpr_log(GPR_DEBUG, "Failed to parse metadata: %s",
+                         absl::StrCat("key=", p.first, " error=", error,
+                                      " value=", value.as_string_view())
+                             .c_str());
+               });
   }
 }
 
@@ -326,18 +332,18 @@ class MetadataEncoder {
     absl::string_view value = grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
     gpr_log(GPR_INFO, "send metadata key-value %s",
             absl::StrCat(key, " ", value).c_str());
-    if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
-      // TODO(b/192208403): Figure out if it is correct to simply drop '/'
-      // prefix and treat it as rpc method name
-      GPR_ASSERT(value[0] == '/');
-      std::string path = std::string(value).substr(1);
+    init_md_->emplace_back(std::string(key), std::string(value));
+  }
 
-      // Only client send method ref.
-      GPR_ASSERT(is_client_);
-      tx_->SetMethodRef(path);
-    } else {
-      init_md_->emplace_back(std::string(key), std::string(value));
-    }
+  void Encode(grpc_core::HttpPathMetadata, const grpc_core::Slice& value) {
+    // TODO(b/192208403): Figure out if it is correct to simply drop '/'
+    // prefix and treat it as rpc method name
+    GPR_ASSERT(value[0] == '/');
+    std::string path = std::string(value.as_string_view().substr(1));
+
+    // Only client send method ref.
+    GPR_ASSERT(is_client_);
+    tx_->SetMethodRef(path);
   }
 
   void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status) {

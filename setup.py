@@ -13,8 +13,8 @@
 # limitations under the License.
 """A setup module for the GRPC Python package."""
 
-# setuptools need to be imported before distutils. Otherwise it might lead to
-# undesirable behaviors or errors.
+# NOTE(https://github.com/grpc/grpc/issues/24028): allow setuptools to monkey
+# patch distutils
 import setuptools  # isort:skip
 
 # Monkey Patch the unix compiler to accept ASM
@@ -210,7 +210,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        [cxx, '-x', 'c++', '-std=c++11', '-', '-latomic'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)
@@ -261,7 +261,7 @@ if EXTRA_ENV_LINK_ARGS is None:
             ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
             ' -static -lshlwapi'.format(msvcr=msvcr))
     if "linux" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy -static-libgcc'
+        EXTRA_ENV_LINK_ARGS += ' -static-libgcc'
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)

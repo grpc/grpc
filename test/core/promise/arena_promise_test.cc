@@ -27,17 +27,19 @@ static auto* g_memory_allocator = new MemoryAllocator(
 
 TEST(ArenaPromiseTest, AllocatedWorks) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
+  promise_detail::Context<Arena> context(arena.get());
   int x = 42;
-  ArenaPromise<int> p(arena.get(), [x] { return Poll<int>(x); });
+  ArenaPromise<int> p([x] { return Poll<int>(x); });
   EXPECT_EQ(p(), Poll<int>(42));
-  p = ArenaPromise<int>(arena.get(), [] { return Poll<int>(43); });
+  p = ArenaPromise<int>([] { return Poll<int>(43); });
   EXPECT_EQ(p(), Poll<int>(43));
 }
 
 TEST(ArenaPromiseTest, DestructionWorks) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
+  promise_detail::Context<Arena> context(arena.get());
   auto x = std::make_shared<int>(42);
-  auto p = ArenaPromise<int>(arena.get(), [x] { return Poll<int>(*x); });
+  auto p = ArenaPromise<int>([x] { return Poll<int>(*x); });
   ArenaPromise<int> q(std::move(p));
   EXPECT_EQ(q(), Poll<int>(42));
 }

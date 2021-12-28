@@ -65,6 +65,8 @@ struct channel_data {
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
       : owning_call(args.call_stack), call_combiner(args.call_combiner) {
+    host.Init();
+    method.Init();
     channel_data* chand = static_cast<channel_data*>(elem->channel_data);
     GPR_ASSERT(args.context != nullptr);
     if (args.context[GRPC_CONTEXT_SECURITY].value == nullptr) {
@@ -89,16 +91,16 @@ struct call_data {
   void destroy() {
     grpc_credentials_mdelem_array_destroy(&md_array);
     creds.reset();
-    grpc_slice_unref_internal(host);
-    grpc_slice_unref_internal(method);
     grpc_auth_metadata_context_reset(&auth_md_context);
+    host.Destroy();
+    method.Destroy();
   }
 
   grpc_call_stack* owning_call;
   grpc_core::CallCombiner* call_combiner;
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;
-  grpc_slice host = grpc_empty_slice();
-  grpc_slice method = grpc_empty_slice();
+  grpc_core::ManualConstructor<grpc_core::Slice> host;
+  grpc_core::ManualConstructor<grpc_core::Slice> method;
   /* pollset{_set} bound to this call; if we need to make external
      network requests, they should be done under a pollset added to this
      pollset_set so that work can progress when this call wants work to progress
@@ -304,8 +306,9 @@ static void send_security_metadata(grpc_call_element* elem,
   }
 
   grpc_auth_metadata_context_build(
-      chand->security_connector->url_scheme(), calld->host, calld->method,
-      chand->auth_context.get(), &calld->auth_md_context);
+      chand->security_connector->url_scheme(), calld->host->c_slice(),
+      calld->method->c_slice(), chand->auth_context.get(),
+      &calld->auth_md_context);
 
   GPR_ASSERT(calld->pollent != nullptr);
   GRPC_CALL_STACK_REF(calld->owning_call, "get_request_metadata");
@@ -340,11 +343,11 @@ static void on_host_checked(void* arg, grpc_error_handle error) {
   } else {
     grpc_transport_stream_op_batch_finish_with_failure(
         batch,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                "Invalid host ", grpc_core::StringViewFromSlice(calld->host),
-                " set in :authority metadata.")),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                               "Invalid host ", calld->host->as_string_view(),
+                               " set in :authority metadata.")),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAUTHENTICATED),
         calld->call_combiner);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
@@ -372,18 +375,18 @@ static void client_auth_start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     grpc_metadata_batch* metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    if (metadata->legacy_index()->named.path != nullptr) {
-      calld->method = grpc_slice_ref_internal(
-          GRPC_MDVALUE(metadata->legacy_index()->named.path->md));
+    if (metadata->get_pointer(grpc_core::HttpPathMetadata()) != nullptr) {
+      *calld->method =
+          metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
     }
-    if (metadata->legacy_index()->named.authority != nullptr) {
-      calld->host = grpc_slice_ref_internal(
-          GRPC_MDVALUE(metadata->legacy_index()->named.authority->md));
+    if (metadata->get_pointer(grpc_core::HttpAuthorityMetadata()) != nullptr) {
+      *calld->host =
+          metadata->get_pointer(grpc_core::HttpAuthorityMetadata())->Ref();
       batch->handler_private.extra_arg = elem;
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
-      absl::string_view call_host(grpc_core::StringViewFromSlice(calld->host));
+      absl::string_view call_host = calld->host->as_string_view();
       grpc_error_handle error = GRPC_ERROR_NONE;
       if (chand->security_connector->check_call_host(
               call_host, chand->auth_context.get(),
