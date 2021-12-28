@@ -538,7 +538,7 @@ grpc_error_handle ParseTypedPerFilterConfig(
     if (!filter_config.ok()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "filter config for type ", filter_type,
-          " failed to parse: ", StatusToString(filter_config.status())));
+          " failed to parse: ", filter_config.status().ToString()));
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
   }
