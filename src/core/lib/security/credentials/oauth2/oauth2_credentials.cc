@@ -588,8 +588,8 @@ class StsTokenFetcherCredentials
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
-    gpr_free(body);
     httpcli_request_->Start();
+    gpr_free(body);
   }
 
   grpc_error_handle FillBody(char** body, size_t* body_length) {
