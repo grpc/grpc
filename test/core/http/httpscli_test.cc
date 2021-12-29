@@ -252,7 +252,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
 // during TCP connection establishment, to make sure there are no crashes/races
 // etc. This test doesn't actually verify that cancellation during TCP setup is
 // timely, though. For that, we would need to fake packet loss in the test.
-TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
+TEST_F(HttpsCliTest, CancelGetRacesWithConnectionFailure) {
   // Grab an unoccupied port but don't listen on it. The goal
   // here is just to have a server address that will reject
   // TCP connection setups.
