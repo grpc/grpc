@@ -16,60 +16,152 @@
  *
  */
 
+#include "src/core/lib/http/httpcli.h"
+
 #include <string.h>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
-#include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/http/httpcli.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
+#include "test/core/http/httpcli_test_util.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-static int g_done = 0;
-static gpr_mu* g_mu;
-static grpc_polling_entity g_pops;
+namespace {
 
-static grpc_millis n_seconds_time(int seconds) {
+grpc_millis NSecondsTime(int seconds) {
   return grpc_timespec_to_millis_round_up(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void on_finish(void* arg, grpc_error_handle error) {
+int g_argc;
+char** g_argv;
+int g_server_port;
+gpr_subprocess* g_server;
+
+std::vector<std::string> g_subprocess_args;
+
+class HttpsCliTest : public ::testing::Test {
+ public:
+  HttpsCliTest() {
+    grpc_init();
+    grpc_core::ExecCtx exec_ctx;
+    grpc_pollset* pollset =
+        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(pollset, &mu_);
+    pops_ = grpc_polling_entity_create_from_pollset(pollset);
+  }
+  ~HttpsCliTest() override {
+    {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_pollset_shutdown(
+          grpc_polling_entity_pollset(&pops_),
+          GRPC_CLOSURE_CREATE(DestroyPops, &pops_, grpc_schedule_on_exec_ctx));
+    }
+    grpc_shutdown();
+  }
+
+  void RunAndKick(const std::function<void()>& f) {
+    grpc_core::MutexLockForGprMu lock(mu_);
+    f();
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_kick",
+        grpc_pollset_kick(grpc_polling_entity_pollset(&pops_), nullptr)));
+  }
+
+  void PollUntil(const std::function<bool()>& predicate) {
+    gpr_mu_lock(mu_);
+    while (!predicate()) {
+      grpc_pollset_worker* worker = nullptr;
+      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+          "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&pops_),
+                                            &worker, NSecondsTime(1))));
+      gpr_mu_unlock(mu_);
+      gpr_mu_lock(mu_);
+    }
+    gpr_mu_unlock(mu_);
+  }
+
+  grpc_polling_entity* pops() { return &pops_; }
+
+ protected:
+  static void SetUpTestSuite() {
+    std::tuple<gpr_subprocess*, int> server_and_port = grpc_core::testing::StartHttpCliTestServer(g_argc, g_argv, true /* use_ssl */);
+    g_server = std::get<0>(server_and_port);
+    g_server_port = std::get<1>(server_and_port);
+  }
+
+  static void TearDownTestSuite() { gpr_subprocess_destroy(g_server); }
+
+ private:
+  static void DestroyPops(void* p, grpc_error_handle /*error*/) {
+    grpc_polling_entity* pops = static_cast<grpc_polling_entity*>(p);
+    grpc_pollset_destroy(grpc_polling_entity_pollset(pops));
+    gpr_free(grpc_polling_entity_pollset(pops));
+  }
+
+  gpr_mu* mu_;
+  grpc_polling_entity pops_;
+};
+
+struct RequestArgs {
+  explicit RequestArgs(HttpsCliTest* test) : test(test) {}
+
+  ~RequestArgs() {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_http_response_destroy(&response);
+  }
+
+  HttpsCliTest* test;
+  bool done = false;
+  grpc_http_response response = {};
+};
+
+void OnFinish(void* arg, grpc_error_handle error) {
+  RequestArgs* request_args = static_cast<RequestArgs*>(arg);
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  grpc_http_response* response = static_cast<grpc_http_response*>(arg);
-  GPR_ASSERT(response);
-  gpr_log(GPR_INFO, "response status=%d error=%s", response->status,
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_http_response response = request_args->response;
+  gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
-  GPR_ASSERT(response->status == 200);
-  GPR_ASSERT(response->body_length == strlen(expect));
-  GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
-  gpr_mu_lock(g_mu);
-  g_done = 1;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), nullptr)));
-  gpr_mu_unlock(g_mu);
+  GPR_ASSERT(response.status == 200);
+  GPR_ASSERT(response.body_length == strlen(expect));
+  GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
+  request_args->test->RunAndKick(
+      [request_args]() { request_args->done = true; });
 }
 
-static void test_get(int port) {
+void OnFinishExpectCancelled(void* arg, grpc_error_handle error) {
+  RequestArgs* request_args = static_cast<RequestArgs*>(arg);
+  grpc_http_response response = request_args->response;
+  gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
+          grpc_error_std_string(error).c_str());
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  request_args->test->RunAndKick(
+      [request_args]() { request_args->done = true; });
+}
+
+TEST_F(HttpsCliTest, Get) {
+  RequestArgs request_args(this);
   grpc_httpcli_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
 
-  g_done = 0;
   gpr_log(GPR_INFO, "test_get");
 
-  gpr_asprintf(&host, "localhost:%d", port);
+  gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host);
 
   memset(&req, 0, sizeof(req));
@@ -77,40 +169,29 @@ static void test_get(int port) {
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/get");
 
-  grpc_http_response response;
-  response = {};
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
       grpc_core::HttpCli::Get(
-          &g_pops, grpc_core::ResourceQuota::Default(), &req,
-          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
-          n_seconds_time(15),
-          GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
-          &response);
+          pops(), grpc_core::ResourceQuota::Default(), &req,
+          absl::make_unique<
+              grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+          NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinish, &request_args,
+                              grpc_schedule_on_exec_ctx),
+          &request_args.response);
   httpcli_request->Start();
-  gpr_mu_lock(g_mu);
-  while (!g_done) {
-    grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
-                                          &worker, n_seconds_time(1))));
-    gpr_mu_unlock(g_mu);
-    grpc_core::ExecCtx::Get()->Flush();
-    gpr_mu_lock(g_mu);
-  }
-  gpr_mu_unlock(g_mu);
+  PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
-  grpc_http_response_destroy(&response);
 }
 
-static void test_post(int port) {
+TEST_F(HttpsCliTest, Post) {
+  RequestArgs request_args(this);
   grpc_httpcli_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
 
-  g_done = 0;
   gpr_log(GPR_INFO, "test_post");
 
-  gpr_asprintf(&host, "localhost:%d", port);
+  gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "posting to %s", host);
 
   memset(&req, 0, sizeof(req));
@@ -118,111 +199,76 @@ static void test_post(int port) {
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/post");
 
-  grpc_http_response response;
-  response = {};
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
       grpc_core::HttpCli::Post(
-          &g_pops, grpc_core::ResourceQuota::Default(), &req,
-          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
-          "hello", 5, n_seconds_time(15),
-          GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
-          &response);
+          pops(), grpc_core::ResourceQuota::Default(), &req,
+          absl::make_unique<
+              grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+          "hello", 5, NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinish, &request_args,
+                              grpc_schedule_on_exec_ctx),
+          &request_args.response);
   httpcli_request->Start();
-  gpr_mu_lock(g_mu);
-  while (!g_done) {
-    grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
-                                          &worker, n_seconds_time(1))));
-    gpr_mu_unlock(g_mu);
-    grpc_core::ExecCtx::Get()->Flush();
-    gpr_mu_lock(g_mu);
-  }
-  gpr_mu_unlock(g_mu);
+  PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
-  grpc_http_response_destroy(&response);
 }
 
-static void destroy_pops(void* p, grpc_error_handle /*error*/) {
-  grpc_pollset_destroy(
-      grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p)));
+TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
+  grpc_core::testing::FakeUdpAndTcpServer fake_http_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  int kNumThreads = 100;
+  std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    grpc_core::testing::FakeUdpAndTcpServer* fake_http_server_ptr =
+        &fake_http_server;
+    threads.push_back(std::thread([this, fake_http_server_ptr]() {
+      RequestArgs request_args(this);
+      grpc_httpcli_request req;
+      grpc_core::ExecCtx exec_ctx;
+      gpr_log(GPR_INFO, "test_cancel_get_while_reading_response");
+
+      memset(&req, 0, sizeof(req));
+      req.host = const_cast<char*>(fake_http_server_ptr->address());
+      req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
+      req.http.path = const_cast<char*>("/get");
+
+      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+          grpc_core::HttpCli::Get(
+              pops(), grpc_core::ResourceQuota::Default(), &req,
+              absl::make_unique<
+                  grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+              NSecondsTime(15),
+              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
+                                  grpc_schedule_on_exec_ctx),
+              &request_args.response);
+      httpcli_request->Start();
+      exec_ctx.Flush();
+      std::thread cancel_thread([&httpcli_request]() {
+        gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+        grpc_core::ExecCtx exec_ctx;
+        gpr_log(GPR_DEBUG, "now cancel http request using grpc_httpcli_cancel");
+        httpcli_request.reset();
+      });
+      PollUntil([&request_args]() { return request_args.done; });
+      cancel_thread.join();
+    }));
+  }
+  for (auto& t : threads) {
+    t.join();
+  }
 }
+
+}  // namespace
 
 int main(int argc, char** argv) {
-  grpc_closure destroyed;
-  gpr_subprocess* server;
-  char* me = argv[0];
-  char* lslash = strrchr(me, '/');
-  char* args[5];
-  int port = grpc_pick_unused_port_or_die();
-  int arg_shift = 0;
-  /* figure out where we are */
-  char* root;
-  if (lslash != nullptr) {
-    /* Hack for bazel target */
-    if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
-        strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
-                sizeof("http") - 1) == 0) {
-      lslash = me + (lslash - me) - sizeof("http");
-    }
-    root = static_cast<char*>(
-        gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
-    memcpy(root, me, static_cast<size_t>(lslash - me));
-    memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
-  } else {
-    root = gpr_strdup(".");
-  }
-
-  GPR_ASSERT(argc <= 2);
-  if (argc == 2) {
-    args[0] = gpr_strdup(argv[1]);
-  } else {
-    arg_shift = 1;
-    gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
-    gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
-  }
-
-  /* Set the environment variable for the SSL certificate file */
-  char* pem_file;
-  gpr_asprintf(&pem_file, "%s/src/core/tsi/test_creds/ca.pem", root);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, pem_file);
-  gpr_free(pem_file);
-
-  /* start the server */
-  args[1 + arg_shift] = const_cast<char*>("--port");
-  gpr_asprintf(&args[2 + arg_shift], "%d", port);
-  args[3 + arg_shift] = const_cast<char*>("--ssl");
-  server = gpr_subprocess_create(4 + arg_shift, const_cast<const char**>(args));
-  GPR_ASSERT(server);
-  gpr_free(args[0]);
-  if (arg_shift) gpr_free(args[1]);
-  gpr_free(args[2 + arg_shift]);
-  gpr_free(root);
-
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(5, GPR_TIMESPAN)));
-
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  grpc_init();
-  grpc_pollset* pollset =
-      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(pollset, &g_mu);
-  g_pops = grpc_polling_entity_create_from_pollset(pollset);
-
-  test_get(port);
-  test_post(port);
-
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
-                      grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops), &destroyed);
-  }
-  grpc_shutdown();
-
-  gpr_free(grpc_polling_entity_pollset(&g_pops));
-
-  gpr_subprocess_destroy(server);
-
-  return 0;
+  // launch the test server later, so that --gtest_list_tests works
+  g_argc = argc;
+  g_argv = argv;
+  // run tests
+  return RUN_ALL_TESTS();
 }
