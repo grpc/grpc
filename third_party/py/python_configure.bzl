@@ -372,8 +372,7 @@ python_configure = repository_rule(
 )
 """Detects and configures the local Python.
 
-It is expected that the system have both a working Python 2 and python 3
-installation
+It expects the system have a working Python 3 installation.
 
 Add the following to your WORKSPACE FILE:
 
