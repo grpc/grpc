@@ -8299,7 +8299,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     gpr_log(GPR_INFO, "Sending RPC");
     int num_tries = 0;
     constexpr int kRetryCount = 100;
-    auto overall_deadline = absl::Now() + absl::Seconds(2);
+    auto overall_deadline = absl::Now() + absl::Seconds(5);
     for (; num_tries < kRetryCount || absl::Now() < overall_deadline;
          num_tries++) {
       auto channel = channel_creator();
@@ -10222,7 +10222,7 @@ TEST_P(XdsRbacTestWithActionPermutations, DestinationIpPermissionAnyPrincipal) {
   Policy policy;
   auto* range = policy.add_permissions()->mutable_destination_ip();
   range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  range->mutable_prefix_len()->set_value(ipv6_only_ ? 64 : 32);
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
   policy.add_principals()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
@@ -10237,7 +10237,7 @@ TEST_P(XdsRbacTestWithActionPermutations, DestinationIpPermissionAnyPrincipal) {
   policy.clear_permissions();
   range = policy.add_permissions()->mutable_destination_ip();
   range->set_address_prefix(ipv6_only_ ? "::2" : "127.0.0.2");
-  range->mutable_prefix_len()->set_value(ipv6_only_ ? 64 : 32);
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   SendRpc(
@@ -10542,7 +10542,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   Policy policy;
   auto* range = policy.add_principals()->mutable_direct_remote_ip();
   range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  range->mutable_prefix_len()->set_value(ipv6_only_ ? 64 : 32);
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
   policy.add_permissions()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
@@ -10557,7 +10557,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   policy.clear_principals();
   range = policy.add_principals()->mutable_direct_remote_ip();
   range->set_address_prefix(ipv6_only_ ? "::2" : "127.0.0.2");
-  range->mutable_prefix_len()->set_value(ipv6_only_ ? 64 : 32);
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
   SendRpc(
