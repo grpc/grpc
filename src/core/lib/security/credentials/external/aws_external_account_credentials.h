@@ -56,7 +56,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
                                   grpc_error_handle error);
 
   std::string audience_;
-  OrphanablePtr<HttpCli> httpcli_request_;
+  OrphanablePtr<HttpCli> httpcli_;
 
   // Fields of credential source
   std::string region_url_;

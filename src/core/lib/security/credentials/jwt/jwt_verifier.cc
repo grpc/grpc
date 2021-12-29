@@ -344,7 +344,7 @@ struct verifier_cb_ctx {
   void* user_data;
   grpc_jwt_verification_done_cb user_cb;
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request;
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli;
 };
 /* Takes ownership of the header, claims and signature. */
 static verifier_cb_ctx* verifier_cb_ctx_create(
@@ -697,13 +697,13 @@ static void on_openid_config_retrieved(void* user_data,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  ctx->httpcli_request = grpc_core::HttpCli::Get(
+  ctx->httpcli = grpc_core::HttpCli::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
-  ctx->httpcli_request->Start();
+  ctx->httpcli->Start();
   gpr_free(req.host);
   return;
 
@@ -821,12 +821,12 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  ctx->httpcli_request = grpc_core::HttpCli::Get(
+  ctx->httpcli = grpc_core::HttpCli::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
-  ctx->httpcli_request->Start();
+  ctx->httpcli->Start();
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

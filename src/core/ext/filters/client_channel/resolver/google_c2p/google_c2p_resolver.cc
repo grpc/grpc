@@ -61,7 +61,7 @@ class GoogleCloud2ProdResolver : public Resolver {
                         grpc_error_handle error) = 0;
 
     RefCountedPtr<GoogleCloud2ProdResolver> resolver_;
-    OrphanablePtr<HttpCli> httpcli_request_;
+    OrphanablePtr<HttpCli> httpcli_;
     grpc_httpcli_response response_;
     grpc_closure on_done_;
     std::atomic<bool> on_done_called_{false};
@@ -127,12 +127,12 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   // TODO(ctiller): share the quota from whomever instantiates this!
-  httpcli_request_ = HttpCli::Get(
+  httpcli_ = HttpCli::Get(
       pollent, ResourceQuota::Default(), &request,
       absl::make_unique<HttpCli::PlaintextHttpCliHandshakerFactory>(),
       ExecCtx::Get()->Now() + 10000,  // 10s timeout
       &on_done_, &response_);
-  httpcli_request_->Start();
+  httpcli_->Start();
 }
 
 GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {

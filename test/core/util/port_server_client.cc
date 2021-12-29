@@ -83,7 +83,7 @@ void grpc_free_port_using_server(int port) {
     gpr_asprintf(&path, "/drop/%d", port);
     req.http.path = path;
 
-    auto httpcli_request = grpc_core::HttpCli::Get(
+    auto httpcli = grpc_core::HttpCli::Get(
         &pr.pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
@@ -91,7 +91,7 @@ void grpc_free_port_using_server(int port) {
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
         &rsp);
-    httpcli_request->Start();
+    httpcli->Start();
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (!pr.done) {
@@ -129,7 +129,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   size_t i;
   int port = 0;
   portreq* pr = static_cast<portreq*>(arg);
-  pr->httpcli_request.reset();
+  pr->httpcli.reset();
   int failed = 0;
   grpc_httpcli_response* response = &pr->response;
 
@@ -167,7 +167,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     req.http.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
-    pr->httpcli_request = grpc_core::HttpCli::Get(
+    pr->httpcli = grpc_core::HttpCli::Get(
         &pr->pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
@@ -175,7 +175,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
         &pr->response);
-    pr->httpcli_request->Start();
+    pr->httpcli->Start();
     return;
   }
   GPR_ASSERT(response);
@@ -215,7 +215,7 @@ int grpc_pick_port_using_server(void) {
     req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     req.http.path = const_cast<char*>("/get");
 
-    auto httpcli_request = grpc_core::HttpCli::Get(
+    auto httpcli = grpc_core::HttpCli::Get(
         &pr.pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
@@ -223,7 +223,7 @@ int grpc_pick_port_using_server(void) {
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
         &pr.response);
-    httpcli_request->Start();
+    httpcli->Start();
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (pr.port == -1) {

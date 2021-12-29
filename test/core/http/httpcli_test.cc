@@ -164,7 +164,7 @@ TEST_F(HttpCliTest, Get) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.http.path = const_cast<char*>("/get");
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
           pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
@@ -173,7 +173,7 @@ TEST_F(HttpCliTest, Get) {
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
-  httpcli_request->Start();
+  httpcli->Start();
   PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
 }
@@ -188,7 +188,7 @@ TEST_F(HttpCliTest, Post) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.http.path = const_cast<char*>("/post");
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
           pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
@@ -197,7 +197,7 @@ TEST_F(HttpCliTest, Post) {
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
-  httpcli_request->Start();
+  httpcli->Start();
   PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
 }
@@ -245,7 +245,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
           const_cast<char*>("dont-care-since-wont-be-resolver.test.com:443");
       req.http.path = const_cast<char*>("/get");
 
-      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
               pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
@@ -254,11 +254,11 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
               &request_args.response);
-      httpcli_request->Start();
+      httpcli->Start();
       std::thread cancel_thread([&httpcli_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        httpcli_request.reset();
+        httpcli.reset();
       });
       PollUntil([&request_args]() { return request_args.done; });
       cancel_thread.join();
@@ -289,7 +289,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       req.host = const_cast<char*>(fake_http_server_ptr->address());
       req.http.path = const_cast<char*>("/get");
 
-      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
               pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
@@ -298,12 +298,12 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
               &request_args.response);
-      httpcli_request->Start();
+      httpcli->Start();
       exec_ctx.Flush();
       std::thread cancel_thread([&httpcli_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        httpcli_request.reset();
+        httpcli.reset();
       });
       PollUntil([&request_args]() { return request_args.done; });
       cancel_thread.join();

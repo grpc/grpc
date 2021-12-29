@@ -165,7 +165,7 @@ TEST_F(HttpsCliTest, Get) {
   req.host = host;
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/get");
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
           pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
@@ -173,7 +173,7 @@ TEST_F(HttpsCliTest, Get) {
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
-  httpcli_request->Start();
+  httpcli->Start();
   PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
 }
@@ -189,7 +189,7 @@ TEST_F(HttpsCliTest, Post) {
   req.host = host;
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/post");
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
           pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
@@ -197,7 +197,7 @@ TEST_F(HttpsCliTest, Post) {
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
-  httpcli_request->Start();
+  httpcli->Start();
   PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
 }
@@ -221,7 +221,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       req.host = const_cast<char*>(fake_http_server_ptr->address());
       req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
       req.http.path = const_cast<char*>("/get");
-      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
+      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
               pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
@@ -230,12 +230,12 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
               &request_args.response);
-      httpcli_request->Start();
+      httpcli->Start();
       exec_ctx.Flush();
-      std::thread cancel_thread([&httpcli_request]() {
+      std::thread cancel_thread([&httpcli]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        httpcli_request.reset();
+        httpcli.reset();
       });
       PollUntil([&request_args]() { return request_args.done; });
       cancel_thread.join();
