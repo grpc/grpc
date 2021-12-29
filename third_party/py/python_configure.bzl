@@ -199,8 +199,8 @@ def _get_python_lib(repository_ctx, python_bin, lib_path_key):
         "  python_paths = os.getenv('PYTHONPATH').split(':')\n" + "try:\n" +
         "  library_paths = site.getsitepackages()\n" +
         "except AttributeError:\n" +
-        " from distutils.sysconfig import get_python_lib\n" +
-        " library_paths = [get_python_lib()]\n" +
+        " import sysconfig\n" +
+        " library_paths = [sysconfig.get_path('purelib')]\n" +
         "all_paths = set(python_paths + library_paths)\n" + "paths = []\n" +
         "for path in all_paths:\n" + "  if os.path.isdir(path):\n" +
         "    paths.append(path)\n" + "if len(paths) >=1:\n" +
@@ -237,14 +237,13 @@ def _get_python_include(repository_ctx, python_bin):
             python_bin,
             "-c",
             "from __future__ import print_function;" +
-            "from distutils import sysconfig;" +
-            "print(sysconfig.get_python_inc())",
+            "import sysconfig;" +
+            "print(sysconfig.get_path('include'))",
         ],
         error_msg = "Problem getting python include path for {}.".format(python_bin),
         error_details = (
             "Is the Python binary path set up right? " + "(See ./configure or " +
-            python_bin + ".) " + "Is distutils installed? " +
-            _HEADERS_HELP
+            python_bin + ".) " + _HEADERS_HELP
         ),
     )
     include_path = result.stdout.splitlines()[0]
