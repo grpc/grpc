@@ -160,6 +160,7 @@ TEST_F(HttpCliTest, Get) {
   grpc_httpcli_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
+  gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host);
   memset(&req, 0, sizeof(req));
   req.host = host;
