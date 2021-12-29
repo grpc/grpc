@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/http")
@@ -63,9 +63,9 @@ licenses(["notice"])
 
 grpc_cc_library(
     name = "httpcli_test_util",
-    hdrs = ["httpcli_test_util.h"],
-    srcs = ["httpcli_test_util.cc"],
     testonly = True,
+    srcs = ["httpcli_test_util.cc"],
+    hdrs = ["httpcli_test_util.h"],
     deps = [
         "//:gpr",
         "//test/core/end2end:ssl_test_data",
