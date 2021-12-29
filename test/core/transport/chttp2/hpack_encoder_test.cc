@@ -252,14 +252,6 @@ static void test_continuation_headers() {
   verify_continuation_headers("key2", value2, true);
 }
 
-static void encode_int_to_str(int i, char* p) {
-  p[0] = static_cast<char>('a' + i % 26);
-  i /= 26;
-  GPR_ASSERT(i < 26);
-  p[1] = static_cast<char>('a' + i);
-  p[2] = 0;
-}
-
 static void run_test(void (*test)(), const char* name) {
   gpr_log(GPR_INFO, "RUN TEST: %s", name);
   grpc_core::ExecCtx exec_ctx;
