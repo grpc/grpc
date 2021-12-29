@@ -59,8 +59,6 @@ std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, char** argv,
   } else {
     root = gpr_strdup(".");
   }
-  gpr_log(GPR_INFO, "begin SetUpTestSuite 3");
-
   GPR_ASSERT(argc <= 2);
   if (argc == 2) {
     args.push_back(gpr_strdup(argv[1]));

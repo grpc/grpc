@@ -65,6 +65,9 @@ OrphanablePtr<HttpCli> HttpCli::Get(
   absl::optional<std::function<void()>> test_only_generate_response;
   if (g_get_override != nullptr) {
     test_only_generate_response = [request, deadline, on_done, response]() {
+      // Note that capturing request here assumes it will remain alive
+      // until after Start is called. This avoids making a copy as this
+      // code path is only used for test mocks.
       g_get_override(request, deadline, on_done, response);
     };
   }
