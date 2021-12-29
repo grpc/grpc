@@ -86,17 +86,17 @@ const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
 const char* kRlsHeaderKey = "X-Google-RLS-Data";
 
-const Timestamp kDefaultLookupServiceTimeout = 10000;
-const Timestamp kMaxMaxAge = 5 * 60 * GPR_MS_PER_SEC;
-const Timestamp kMinExpirationTime = 5 * GPR_MS_PER_SEC;
-const Timestamp kCacheBackoffInitial = 1 * GPR_MS_PER_SEC;
+const Duration kDefaultLookupServiceTimeout = Duration::Seconds(10);
+const Duration kMaxMaxAge = Duration::Minutes(5);
+const Duration kMinExpirationTime = Duration::Seconds(5);
+const Duration kCacheBackoffInitial = Duration::Seconds(1);
 const double kCacheBackoffMultiplier = 1.6;
 const double kCacheBackoffJitter = 0.2;
-const Timestamp kCacheBackoffMax = 120 * GPR_MS_PER_SEC;
-const Timestamp kDefaultThrottleWindowSize = 30 * GPR_MS_PER_SEC;
+const Duration kCacheBackoffMax = Duration::Minutes(2);
+const Duration kDefaultThrottleWindowSize = Duration::Seconds(30);
 const double kDefaultThrottleRatioForSuccesses = 2.0;
 const int kDefaultThrottlePaddings = 8;
-const Timestamp kCacheCleanupTimerInterval = 60 * GPR_MS_PER_SEC;
+const Duration kCacheCleanupTimerInterval = Duration::Minutes(1);
 const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
 // Parsed RLS LB policy configuration.
@@ -436,9 +436,10 @@ class RlsLb : public LoadBalancingPolicy {
       // Backoff states
       absl::Status status_ ABSL_GUARDED_BY(&RlsLb::mu_);
       std::unique_ptr<BackOff> backoff_state_ ABSL_GUARDED_BY(&RlsLb::mu_);
-      Timestamp backoff_time_ ABSL_GUARDED_BY(&RlsLb::mu_) = Timestamp_INF_PAST;
+      Timestamp backoff_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          Timestamp::InfPast();
       Timestamp backoff_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-          Timestamp_INF_PAST;
+          Timestamp::InfPast();
       OrphanablePtr<BackoffTimer> backoff_timer_;
 
       // RLS response states
@@ -446,8 +447,8 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_GUARDED_BY(&RlsLb::mu_);
       std::string header_data_ ABSL_GUARDED_BY(&RlsLb::mu_);
       Timestamp data_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-          Timestamp_INF_PAST;
-      Timestamp stale_time_ ABSL_GUARDED_BY(&RlsLb::mu_) = Timestamp_INF_PAST;
+          Timestamp::InfPast();
+      Timestamp stale_time_ ABSL_GUARDED_BY(&RlsLb::mu_) = Timestamp::InfPast();
 
       Timestamp min_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_);
       Cache::Iterator lru_iterator_ ABSL_GUARDED_BY(&RlsLb::mu_);
@@ -1194,7 +1195,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
 }
 
 void RlsLb::Cache::Entry::ResetBackoff() {
-  backoff_time_ = Timestamp_INF_PAST;
+  backoff_time_ = Timestamp::InfPast();
   backoff_timer_.reset();
 }
 
@@ -1244,8 +1245,8 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
   stale_time_ = now + lb_policy_->config_->stale_age();
   status_ = absl::OkStatus();
   backoff_state_.reset();
-  backoff_time_ = Timestamp_INF_PAST;
-  backoff_expiration_time_ = Timestamp_INF_PAST;
+  backoff_time_ = Timestamp::InfPast();
+  backoff_expiration_time_ = Timestamp::InfPast();
   // Check if we need to update this list of targets.
   bool targets_changed = [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
     if (child_policy_wrappers_.size() != response.targets.size()) return true;
@@ -1462,8 +1463,9 @@ RlsLb::RlsChannel::Throttle::Throttle(int window_size_seconds,
   GPR_DEBUG_ASSERT(window_size_seconds >= 0);
   GPR_DEBUG_ASSERT(ratio_for_successes >= 0);
   GPR_DEBUG_ASSERT(paddings >= 0);
-  window_size_ = window_size_seconds == 0 ? window_size_seconds * GPR_MS_PER_SEC
-                                          : kDefaultThrottleWindowSize;
+  window_size_ = window_size_seconds == 0
+                     ? Duration::Seconds(window_size_seconds)
+                     : kDefaultThrottleWindowSize;
   ratio_for_successes_ = ratio_for_successes == 0
                              ? kDefaultThrottleRatioForSuccesses
                              : ratio_for_successes;

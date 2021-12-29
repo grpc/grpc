@@ -66,16 +66,16 @@ class ClientChannelGlobalParsedConfig
 class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  ClientChannelMethodParsedConfig(Timestamp timeout,
+  ClientChannelMethodParsedConfig(Duration timeout,
                                   const absl::optional<bool>& wait_for_ready)
       : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
 
-  Timestamp timeout() const { return timeout_; }
+  Duration timeout() const { return timeout_; }
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
  private:
-  Timestamp timeout_;
+  Duration timeout_;
   absl::optional<bool> wait_for_ready_;
 };
 

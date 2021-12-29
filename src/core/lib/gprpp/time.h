@@ -25,12 +25,16 @@
 
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/time_precise.h"
+
 namespace grpc_core {
 
 class Timestamp {
  public:
-  constexpr Timestamp() : millis_(0) {}
+  constexpr Timestamp() = default;
   explicit Timestamp(gpr_timespec t);
+
+  static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
 
   static constexpr Timestamp FromMiillisecondsAfterProcessEpoch(
       int64_t millis) {
@@ -39,6 +43,10 @@ class Timestamp {
 
   static constexpr Timestamp InfFuture() {
     return Timestamp(std::numeric_limits<int64_t>::max());
+  }
+
+  static constexpr Timestamp InfPast() {
+    return Timestamp(std::numeric_limits<int64_t>::min());
   }
 
   constexpr bool operator==(Timestamp other) const {
@@ -69,12 +77,15 @@ class Timestamp {
  private:
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
-  int64_t millis_;
+  int64_t millis_ = 0;
 };
 
 class Duration {
  public:
   constexpr Duration() : millis_(0) {}
+
+  static Duration FromTimespec(gpr_timespec t);
+  static Duration FromSecondsAndNanoseconds(int64_t seconds, int32_t nanos);
 
   static constexpr Duration Zero() { return Duration(0); }
 
@@ -86,8 +97,14 @@ class Duration {
     return Duration(std::numeric_limits<int64_t>::max());
   }
 
+  static constexpr Duration Hours(int64_t hours) { return Minutes(hours * 60); }
+
+  static constexpr Duration Minutes(int64_t minutes) {
+    return Seconds(minutes * 60);
+  }
+
   static constexpr Duration Seconds(int64_t seconds) {
-    return Duration(seconds * GPR_MS_PER_SEC);
+    return Milliseconds(seconds * GPR_MS_PER_SEC);
   }
 
   static constexpr Duration Milliseconds(int64_t millis) {
@@ -179,6 +196,11 @@ inline Duration operator*(Duration lhs, double rhs) {
 }
 
 inline Duration operator*(double lhs, Duration rhs) { return rhs * lhs; }
+
+inline Duration Duration::FromSecondsAndNanoseconds(int64_t seconds,
+                                                    int32_t nanos) {
+  return Seconds(seconds) + NanosecondsRoundDown(nanos);
+}
 
 }  // namespace grpc_core
 

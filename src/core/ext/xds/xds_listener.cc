@@ -36,6 +36,7 @@
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
+#include "xds_common_types.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -280,7 +281,7 @@ grpc_error_handle HttpConnectionManagerParse(
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
       http_connection_manager->http_max_stream_duration =
-          Duration::Parse(duration);
+          ParseDuration(duration);
     }
   }
   // Parse filters.

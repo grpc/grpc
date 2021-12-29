@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/time.h>
 
@@ -29,7 +31,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 typedef struct grpc_timer {
-  grpc_core::Timestamp deadline;
+  int64_t deadline;
   // Uninitialized if not using heap, or INVALID_HEAP_INDEX if not in heap.
   uint32_t heap_index;
   bool pending;
@@ -46,6 +48,9 @@ typedef struct grpc_timer {
     grpc_event_engine::experimental::EventEngine::TaskHandle ee_task_handle;
   };
 } grpc_timer;
+
+static_assert(std::is_trivial<grpc_timer>::value,
+              "grpc_timer is expected to be a trivial type");
 
 typedef enum {
   GRPC_TIMERS_NOT_CHECKED,

@@ -2209,9 +2209,10 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     if (method_params != nullptr) {
       // If the deadline from the service config is shorter than the one
       // from the client API, reset the deadline timer.
-      if (chand->deadline_checking_enabled_ && method_params->timeout() != 0) {
+      if (chand->deadline_checking_enabled_ &&
+          method_params->timeout() != Duration::Zero()) {
         const Timestamp per_method_deadline =
-            grpc_cycle_counter_to_millis_round_up(call_start_time_) +
+            Timestamp::FromCycleCounterRoundUp(call_start_time_) +
             method_params->timeout();
         if (per_method_deadline < deadline_) {
           deadline_ = per_method_deadline;
@@ -2444,7 +2445,8 @@ class ClientChannel::LoadBalancedCall::Metadata
                         std::string(value_slice.as_string_view()));
     }
 
-    void Encode(GrpcTimeoutMetadata, grpc_millis) {}
+    void Encode(GrpcTimeoutMetadata,
+                const typename GrpcTimeoutMetadata::ValueType&) {}
     void Encode(HttpPathMetadata, const Slice&) {}
     void Encode(HttpMethodMetadata,
                 const typename HttpMethodMetadata::ValueType&) {}

@@ -45,13 +45,13 @@ class FileWatcherCertificateProviderFactory
 
     const std::string& root_cert_file() const { return root_cert_file_; }
 
-    Timestamp refresh_interval_ms() const { return refresh_interval_ms_; }
+    Duration refresh_interval_ms() const { return refresh_interval_; }
 
    private:
     std::string identity_cert_file_;
     std::string private_key_file_;
     std::string root_cert_file_;
-    Timestamp refresh_interval_ms_;
+    Duration refresh_interval_;
   };
 
   const char* name() const override;

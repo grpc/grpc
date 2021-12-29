@@ -213,7 +213,7 @@ struct grpc_call {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
 
-  grpc_millis send_deadline;
+  grpc_core::Timestamp send_deadline;
 
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sending_stream;
 

@@ -554,8 +554,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     envoy_config_endpoint_v3_ClusterStats_set_total_dropped_requests(
         cluster_stats, total_dropped_requests);
     // Set real load report interval.
-    gpr_timespec timespec =
-        grpc_millis_to_timespec(load_report.load_report_interval, GPR_TIMESPAN);
+    gpr_timespec timespec = load_report.load_report_interval.as_timespec();
     google_protobuf_Duration* load_report_interval =
         envoy_config_endpoint_v3_ClusterStats_mutable_load_report_interval(
             cluster_stats, arena.ptr());
@@ -566,10 +565,10 @@ grpc_slice XdsApi::CreateLrsRequest(
   return SerializeLrsRequest(context, request);
 }
 
-grpc_error_handle XdsApi::ParseLrsResponse(
-    const grpc_slice& encoded_response, bool* send_all_clusters,
-    std::set<std::string>* cluster_names,
-    grpc_millis* load_reporting_interval) {
+grpc_error_handle XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
+                                           bool* send_all_clusters,
+                                           std::set<std::string>* cluster_names,
+                                           Duration* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v3_LoadStatsResponse* decoded_response =
@@ -598,21 +597,19 @@ grpc_error_handle XdsApi::ParseLrsResponse(
   const google_protobuf_Duration* load_reporting_interval_duration =
       envoy_service_load_stats_v3_LoadStatsResponse_load_reporting_interval(
           decoded_response);
-  gpr_timespec timespec{
+  *load_reporting_interval = Duration::FromSecondsAndNanoseconds(
       google_protobuf_Duration_seconds(load_reporting_interval_duration),
-      google_protobuf_Duration_nanos(load_reporting_interval_duration),
-      GPR_TIMESPAN};
-  *load_reporting_interval = gpr_time_to_millis(timespec);
+      google_protobuf_Duration_nanos(load_reporting_interval_duration));
   return GRPC_ERROR_NONE;
 }
 
 namespace {
 
-google_protobuf_Timestamp* GrpcMillisToTimestamp(
-    const XdsEncodingContext& context, grpc_millis value) {
+google_protobuf_Timestamp* EncodeTimestamp(const XdsEncodingContext& context,
+                                           Timestamp value) {
   google_protobuf_Timestamp* timestamp =
       google_protobuf_Timestamp_new(context.arena);
-  gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_REALTIME);
+  gpr_timespec timespec = value.as_timespec(GPR_CLOCK_REALTIME);
   google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
   google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
   return timestamp;
@@ -656,7 +653,7 @@ std::string XdsApi::AssembleClientConfig(
         envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(
             entry, StdStringToUpbString(metadata.version));
         envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(
-            entry, GrpcMillisToTimestamp(context, metadata.update_time));
+            entry, EncodeTimestamp(context, metadata.update_time));
         auto* any_field =
             envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
                 entry, context.arena);
@@ -676,7 +673,7 @@ std::string XdsApi::AssembleClientConfig(
             StdStringToUpbString(metadata.failed_version));
         envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
             update_failure_state,
-            GrpcMillisToTimestamp(context, metadata.failed_update_time));
+            EncodeTimestamp(context, metadata.failed_update_time));
         envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
             entry, update_failure_state);
       }

@@ -124,7 +124,7 @@ void grpc_iocp_flush(void) {
   grpc_iocp_work_status work_status;
 
   do {
-    work_status = grpc_iocp_work(grpc_core::Timestamp_INF_PAST);
+    work_status = grpc_iocp_work(grpc_core::Timestamp::InfPast());
   } while (work_status == GRPC_IOCP_WORK_KICK ||
            grpc_core::ExecCtx::Get()->Flush());
 }

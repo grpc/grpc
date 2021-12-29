@@ -83,7 +83,7 @@ class HPackCompressor {
     void Encode(HttpPathMetadata, const Slice& value);
     void Encode(HttpAuthorityMetadata, const Slice& value);
     void Encode(HttpStatusMetadata, uint32_t status);
-    void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
+    void Encode(GrpcTimeoutMetadata, Timestamp deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
     void Encode(HttpSchemeMetadata, HttpSchemeMetadata::ValueType value);

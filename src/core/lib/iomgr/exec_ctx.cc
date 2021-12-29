@@ -101,7 +101,7 @@ gpr_timespec grpc_core::Timestamp_to_timespec(grpc_core::Timestamp millis,
   if (millis == grpc_core::Timestamp::InfFuture()) {
     return gpr_inf_future(clock_type);
   }
-  if (millis == grpc_core::Timestamp_INF_PAST) {
+  if (millis == grpc_core::Timestamp::InfPast()) {
     return gpr_inf_past(clock_type);
   }
 

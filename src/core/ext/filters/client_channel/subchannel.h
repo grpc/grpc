@@ -364,7 +364,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
   Timestamp next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
-  Timestamp min_connect_timeout_ms_ ABSL_GUARDED_BY(mu_);
+  Duration min_connect_timeout_ ABSL_GUARDED_BY(mu_);
   bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
 
   // Retry alarm.

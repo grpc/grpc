@@ -518,9 +518,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   // No pings allowed before receiving a header or data frame.
   ping_state.pings_before_data_required = 0;
   ping_state.is_delayed_ping_timer_set = false;
-  ping_state.last_ping_sent_time = grpc_core::Timestamp_INF_PAST;
+  ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
 
-  ping_recv_state.last_ping_recv_time = grpc_core::Timestamp_INF_PAST;
+  ping_recv_state.last_ping_recv_time = grpc_core::Timestamp::InfPast();
   ping_recv_state.ping_strikes = 0;
 
   init_keepalive_pings_if_enabled(this);
@@ -1746,7 +1746,7 @@ void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
 
 void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t) {
   if (!t->is_client) {
-    t->ping_recv_state.last_ping_recv_time = grpc_core::Timestamp_INF_PAST;
+    t->ping_recv_state.last_ping_recv_time = grpc_core::Timestamp::InfPast();
     t->ping_recv_state.ping_strikes = 0;
   }
   t->ping_state.pings_before_data_required =

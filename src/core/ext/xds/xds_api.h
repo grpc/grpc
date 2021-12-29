@@ -71,7 +71,7 @@ class XdsApi {
     std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
              XdsLocalityName::Less>
         locality_stats;
-    grpc_millis load_report_interval;
+    Duration load_report_interval;
   };
   using ClusterLoadReportMap = std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
@@ -102,7 +102,7 @@ class XdsApi {
     // The serialized bytes of the last successfully updated raw xDS resource.
     std::string serialized_proto;
     // The timestamp when the resource was last successfully updated.
-    grpc_millis update_time = 0;
+    Timestamp update_time;
     // The last successfully updated version of the resource.
     std::string version;
     // The rejected version string of the last failed update attempt.
@@ -110,7 +110,7 @@ class XdsApi {
     // Details about the last failed update attempt.
     std::string failed_details;
     // Timestamp of the last failed update attempt.
-    grpc_millis failed_update_time = 0;
+    Timestamp failed_update_time;
   };
   using ResourceMetadataMap =
       std::map<std::string /*resource_name*/, const ResourceMetadata*>;
@@ -164,7 +164,7 @@ class XdsApi {
   grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
                                      bool* send_all_clusters,
                                      std::set<std::string>* cluster_names,
-                                     grpc_millis* load_reporting_interval);
+                                     Duration* load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(

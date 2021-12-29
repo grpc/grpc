@@ -45,10 +45,10 @@ class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
 
 class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  RetryMethodConfig(int max_attempts, Timestamp initial_backoff,
-                    Timestamp max_backoff, float backoff_multiplier,
+  RetryMethodConfig(int max_attempts, Duration initial_backoff,
+                    Duration max_backoff, float backoff_multiplier,
                     StatusCodeSet retryable_status_codes,
-                    absl::optional<Timestamp> per_attempt_recv_timeout)
+                    absl::optional<Duration> per_attempt_recv_timeout)
       : max_attempts_(max_attempts),
         initial_backoff_(initial_backoff),
         max_backoff_(max_backoff),
@@ -57,23 +57,23 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
         per_attempt_recv_timeout_(per_attempt_recv_timeout) {}
 
   int max_attempts() const { return max_attempts_; }
-  Timestamp initial_backoff() const { return initial_backoff_; }
-  Timestamp max_backoff() const { return max_backoff_; }
+  Duration initial_backoff() const { return initial_backoff_; }
+  Duration max_backoff() const { return max_backoff_; }
   float backoff_multiplier() const { return backoff_multiplier_; }
   StatusCodeSet retryable_status_codes() const {
     return retryable_status_codes_;
   }
-  absl::optional<Timestamp> per_attempt_recv_timeout() const {
+  absl::optional<Duration> per_attempt_recv_timeout() const {
     return per_attempt_recv_timeout_;
   }
 
  private:
   int max_attempts_ = 0;
-  Timestamp initial_backoff_;
-  Timestamp max_backoff_;
+  Duration initial_backoff_;
+  Duration max_backoff_;
   float backoff_multiplier_ = 0;
   StatusCodeSet retryable_status_codes_;
-  absl::optional<Timestamp> per_attempt_recv_timeout_;
+  absl::optional<Duration> per_attempt_recv_timeout_;
 };
 
 class RetryServiceConfigParser : public ServiceConfigParser::Parser {

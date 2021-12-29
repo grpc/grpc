@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 
+#include <cstdint>
 #include <limits>
 
 #include "absl/strings/match.h"
@@ -78,34 +79,34 @@ grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
 namespace grpc_core {
 
 // grpc-timeout metadata trait.
-// ValueType is defined as grpc_millis - an absolute timestamp (i.e. a
+// ValueType is defined as Timestamp - an absolute timestamp (i.e. a
 // deadline!), that is converted to a duration by transports before being
 // sent.
 // TODO(ctiller): Move this elsewhere. During the transition we need to be able
 // to name this in MetadataMap, but ultimately once the transition is done we
 // should not need to.
 struct GrpcTimeoutMetadata {
-  using ValueType = grpc_millis;
-  using MementoType = grpc_millis;
+  using ValueType = Timestamp;
+  using MementoType = Duration;
   static absl::string_view key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
     auto timeout = ParseTimeout(value);
     if (!timeout.has_value()) {
       on_error("invalid value", value);
-      return GRPC_MILLIS_INF_FUTURE;
+      return Duration::Infinity();
     }
     return *timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
-    if (timeout == GRPC_MILLIS_INF_FUTURE) {
-      return GRPC_MILLIS_INF_FUTURE;
+    if (timeout == Duration::Infinity()) {
+      return Timestamp::InfFuture();
     }
     return ExecCtx::Get()->Now() + timeout;
   }
   static Slice Encode(ValueType x) {
     return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
   }
-  static MementoType DisplayValue(MementoType x) { return x; }
+  static int64_t DisplayValue(MementoType x) { return x.millis(); }
 };
 
 // TE metadata trait.
@@ -444,9 +445,21 @@ struct GrpcPreviousRpcAttemptsMetadata
 };
 
 // grpc-retry-pushback-ms metadata trait.
-struct GrpcRetryPushbackMsMetadata
-    : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
+struct GrpcRetryPushbackMsMetadata {
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
+  using ValueType = Duration;
+  using MementoType = Duration;
+  static ValueType MementoToValue(MementoType x) { return x; }
+  static Slice Encode(Duration x) { return Slice::FromInt64(x.millis()); }
+  static int64_t DisplayValue(Duration x) { return x.millis(); }
+  static Duration ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    int64_t out;
+    if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
+      on_error("not an integer", value);
+      return Duration::NegativeInfinity();
+    }
+    return Duration::Milliseconds(out);
+  }
 };
 
 // :status metadata trait.
@@ -849,8 +862,8 @@ class MetadataMap {
 
   // TODO(ctiller): the following explicit deadline handling methods are
   // deprecated in terms of the traits based APIs.
-  grpc_millis deadline() const {
-    return get(GrpcTimeoutMetadata()).value_or(GRPC_MILLIS_INF_FUTURE);
+  Timestamp deadline() const {
+    return get(GrpcTimeoutMetadata()).value_or(Timestamp::InfFuture());
   };
 
  private:

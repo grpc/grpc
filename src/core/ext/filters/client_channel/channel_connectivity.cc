@@ -95,7 +95,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       // watch, but we are hiding that fact from the application.
       if (IsLameChannel(channel)) {
         // Ref from object creation is held by timer callback.
-        StartTimer(grpc_timespec_to_millis_round_up(deadline));
+        StartTimer(Timestamp(deadline));
         return;
       }
       gpr_log(GPR_ERROR,
@@ -107,8 +107,8 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     // creation of this object).  One will be held by the timer callback,
     // the other by the watcher callback.
     Ref().release();
-    auto* watcher_timer_init_state = new WatcherTimerInitState(
-        this, grpc_timespec_to_millis_round_up(deadline));
+    auto* watcher_timer_init_state =
+        new WatcherTimerInitState(this, Timestamp(deadline));
     client_channel->AddExternalConnectivityWatcher(
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_,
         &on_complete_, watcher_timer_init_state->closure());

@@ -173,7 +173,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     }
   }
   // Parse timeout.
-  Timestamp timeout;
+  Duration timeout;
   ParseJsonObjectFieldAsDuration(json.object_value(), "timeout", &timeout,
                                  &error_list, false);
   // Return result.
