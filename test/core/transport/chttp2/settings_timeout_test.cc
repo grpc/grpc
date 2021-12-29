@@ -109,20 +109,21 @@ class Client {
 
   void Connect() {
     ExecCtx exec_ctx;
-    grpc_resolved_addresses* server_addresses = nullptr;
-    grpc_error_handle error =
-        grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
-    ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_std_string(error);
-    ASSERT_GE(server_addresses->naddrs, 1UL);
+    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+        GetDNSResolver()->ResolveNameBlocking(server_address_, "80");
+    ASSERT_EQ(absl::OkStatus(), addresses_or.status())
+        << addresses_or.status().ToString();
+    ASSERT_GE(addresses_or->size(), 1UL);
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    grpc_channel_args* args = EnsureResourceQuotaInChannelArgs(nullptr);
+    const grpc_channel_args* args = CoreConfiguration::Get()
+                                        .channel_args_preconditioning()
+                                        .PreconditionChannelArgs(nullptr);
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
-                            server_addresses->addrs,
-                            ExecCtx::Get()->Now() + 1000);
+                            addresses_or->data(), ExecCtx::Get()->Now() + 1000);
     grpc_channel_args_destroy(args);
     ASSERT_TRUE(PollUntilDone(
         &state,
@@ -130,7 +131,6 @@ class Client {
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
     grpc_pollset_set_destroy(pollset_set);
     grpc_endpoint_add_to_pollset(endpoint_, pollset_);
-    grpc_resolved_addresses_destroy(server_addresses);
   }
 
   // Reads until an error is returned.

@@ -27,6 +27,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -36,7 +37,6 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -651,10 +651,6 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
     : t(t),
       refcount(refcount),
       reffer(this),
-      stream_reservation(t->memory_owner.MakeReservation(
-          grpc_core::kResourceQuotaCallSize)),  // TODO(ctiller): sizeof(*this),
-                                                // or better, move allocation to
-                                                // memory quota.
       initial_metadata_buffer(arena),
       trailing_metadata_buffer(arena) {
   if (server_data) {
@@ -694,13 +690,6 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   grpc_slice_buffer_destroy_internal(&unprocessed_incoming_frames_buffer);
   grpc_slice_buffer_destroy_internal(&frame_storage);
-  if (stream_compression_method != GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
-    grpc_slice_buffer_destroy_internal(&compressed_data_buffer);
-  }
-  if (stream_decompression_method !=
-      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-    grpc_slice_buffer_destroy_internal(&decompressed_data_buffer);
-  }
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (GPR_UNLIKELY(included[i])) {
@@ -745,18 +734,6 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
   GPR_TIMER_SCOPE("destroy_stream", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
-  if (s->stream_compression_method !=
-          GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS &&
-      s->stream_compression_ctx != nullptr) {
-    grpc_stream_compression_context_destroy(s->stream_compression_ctx);
-    s->stream_compression_ctx = nullptr;
-  }
-  if (s->stream_decompression_method !=
-          GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS &&
-      s->stream_decompression_ctx != nullptr) {
-    grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
-    s->stream_decompression_ctx = nullptr;
-  }
 
   s->destroy_stream_arg = then_schedule_closure;
   t->combiner->Run(
@@ -1222,37 +1199,49 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         write_state_name(t->write_state));
   }
   if (error != GRPC_ERROR_NONE) {
-    if (closure->error_data.error == GRPC_ERROR_NONE) {
-      closure->error_data.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    grpc_error_handle cl_err =
+        grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
+#else
+    grpc_error_handle cl_err =
+        reinterpret_cast<grpc_error_handle>(closure->error_data.error);
+#endif
+    if (cl_err == GRPC_ERROR_NONE) {
+      cl_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error in HTTP transport completing operation");
-      closure->error_data.error =
-          grpc_error_set_str(closure->error_data.error,
-                             GRPC_ERROR_STR_TARGET_ADDRESS, t->peer_string);
+      cl_err = grpc_error_set_str(cl_err, GRPC_ERROR_STR_TARGET_ADDRESS,
+                                  t->peer_string);
     }
-    closure->error_data.error =
-        grpc_error_add_child(closure->error_data.error, error);
+    cl_err = grpc_error_add_child(cl_err, error);
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);
+#else
+    closure->error_data.error = reinterpret_cast<intptr_t>(cl_err);
+#endif
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       // Using GRPC_CLOSURE_SCHED instead of GRPC_CLOSURE_RUN to avoid running
       // closures earlier than when it is safe to do so.
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
-                              closure->error_data.error);
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+      grpc_error_handle run_error =
+          grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
+#else
+      grpc_error_handle run_error =
+          reinterpret_cast<grpc_error_handle>(closure->error_data.error);
+#endif
+      closure->error_data.error = 0;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, run_error);
     } else {
-      grpc_closure_list_append(&t->run_after_write, closure,
-                               closure->error_data.error);
+      grpc_closure_list_append(&t->run_after_write, closure);
     }
   }
 }
 
 static bool contains_non_ok_status(grpc_metadata_batch* batch) {
-  if (batch->legacy_index()->named.grpc_status != nullptr) {
-    return !grpc_mdelem_static_value_eq(
-        batch->legacy_index()->named.grpc_status->md,
-        GRPC_MDELEM_GRPC_STATUS_0);
-  }
-  return false;
+  return batch->get(grpc_core::GrpcStatusMetadata()).value_or(GRPC_STATUS_OK) !=
+         GRPC_STATUS_OK;
 }
 
 static void maybe_become_writable_due_to_send_msg(grpc_chttp2_transport* t,
@@ -1389,7 +1378,7 @@ static void perform_stream_op_locked(void* stream_op,
     // This batch has send ops. Use final_data as a barrier until enqueue time;
     // the initial counter is dropped at the end of this function.
     on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
-    on_complete->error_data.error = GRPC_ERROR_NONE;
+    on_complete->error_data.error = 0;
   }
 
   if (op->cancel_stream) {
@@ -1405,23 +1394,6 @@ static void perform_stream_op_locked(void* stream_op,
     GPR_ASSERT(s->send_initial_metadata_finished == nullptr);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
 
-    // Identify stream compression
-    if (op_payload->send_initial_metadata.send_initial_metadata->legacy_index()
-                ->named.content_encoding == nullptr ||
-        grpc_stream_compression_method_parse(
-            GRPC_MDVALUE(
-                op_payload->send_initial_metadata.send_initial_metadata
-                    ->legacy_index()
-                    ->named.content_encoding->md),
-            true, &s->stream_compression_method) == 0) {
-      s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
-    }
-    if (s->stream_compression_method !=
-        GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
-      s->uncompressed_data_size = 0;
-      s->stream_compression_ctx = nullptr;
-      grpc_slice_buffer_init(&s->compressed_data_buffer);
-    }
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
         op_payload->send_initial_metadata.send_initial_metadata;
@@ -1877,48 +1849,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
         if (s->unprocessed_incoming_frames_buffer.length == 0) {
           grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
                                  &s->frame_storage);
-          s->unprocessed_incoming_frames_decompressed = false;
         }
-        if (!s->unprocessed_incoming_frames_decompressed &&
-            s->stream_decompression_method !=
-                GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-          GPR_ASSERT(s->decompressed_data_buffer.length == 0);
-          bool end_of_context;
-          if (!s->stream_decompression_ctx) {
-            s->stream_decompression_ctx =
-                grpc_stream_compression_context_create(
-                    s->stream_decompression_method);
-          }
-          if (!grpc_stream_decompress(
-                  s->stream_decompression_ctx,
-                  &s->unprocessed_incoming_frames_buffer,
-                  &s->decompressed_data_buffer, nullptr,
-                  GRPC_HEADER_SIZE_IN_BYTES - s->decompressed_header_bytes,
-                  &end_of_context)) {
-            grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
-            grpc_slice_buffer_reset_and_unref_internal(
-                &s->unprocessed_incoming_frames_buffer);
-            error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Stream decompression error.");
-          } else {
-            s->decompressed_header_bytes += s->decompressed_data_buffer.length;
-            if (s->decompressed_header_bytes == GRPC_HEADER_SIZE_IN_BYTES) {
-              s->decompressed_header_bytes = 0;
-            }
-            error = grpc_deframe_unprocessed_incoming_frames(
-                &s->data_parser, s, &s->decompressed_data_buffer, nullptr,
-                s->recv_message);
-            if (end_of_context) {
-              grpc_stream_compression_context_destroy(
-                  s->stream_decompression_ctx);
-              s->stream_decompression_ctx = nullptr;
-            }
-          }
-        } else {
-          error = grpc_deframe_unprocessed_incoming_frames(
-              &s->data_parser, s, &s->unprocessed_incoming_frames_buffer,
-              nullptr, s->recv_message);
-        }
+        error = grpc_deframe_unprocessed_incoming_frames(
+            &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, nullptr,
+            s->recv_message);
         if (error != GRPC_ERROR_NONE) {
           s->seen_error = true;
           grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
@@ -1966,42 +1900,12 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         !s->seen_error && s->recv_trailing_metadata_finished != nullptr) {
       // Maybe some SYNC_FLUSH data is left in frame_storage. Consume them and
       // maybe decompress the next 5 bytes in the stream.
-      if (s->stream_decompression_method ==
-          GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-        grpc_slice_buffer_move_first(
-            &s->frame_storage,
-            std::min(s->frame_storage.length,
-                     size_t(GRPC_HEADER_SIZE_IN_BYTES)),
-            &s->unprocessed_incoming_frames_buffer);
-        if (s->unprocessed_incoming_frames_buffer.length > 0) {
-          s->unprocessed_incoming_frames_decompressed = true;
-          pending_data = true;
-        }
-      } else {
-        bool end_of_context;
-        if (!s->stream_decompression_ctx) {
-          s->stream_decompression_ctx = grpc_stream_compression_context_create(
-              s->stream_decompression_method);
-        }
-        if (!grpc_stream_decompress(
-                s->stream_decompression_ctx, &s->frame_storage,
-                &s->unprocessed_incoming_frames_buffer, nullptr,
-                GRPC_HEADER_SIZE_IN_BYTES, &end_of_context)) {
-          grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
-          grpc_slice_buffer_reset_and_unref_internal(
-              &s->unprocessed_incoming_frames_buffer);
-          s->seen_error = true;
-        } else {
-          if (s->unprocessed_incoming_frames_buffer.length > 0) {
-            s->unprocessed_incoming_frames_decompressed = true;
-            pending_data = true;
-          }
-          if (end_of_context) {
-            grpc_stream_compression_context_destroy(
-                s->stream_decompression_ctx);
-            s->stream_decompression_ctx = nullptr;
-          }
-        }
+      grpc_slice_buffer_move_first(
+          &s->frame_storage,
+          std::min(s->frame_storage.length, size_t(GRPC_HEADER_SIZE_IN_BYTES)),
+          &s->unprocessed_incoming_frames_buffer);
+      if (s->unprocessed_incoming_frames_buffer.length > 0) {
+        pending_data = true;
       }
     }
     if (s->read_closed && s->frame_storage.length == 0 && !pending_data &&
@@ -2098,17 +2002,11 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   //   about the metadata yet
   if (s->published_metadata[1] == GRPC_METADATA_NOT_PUBLISHED ||
       s->recv_trailing_metadata_finished != nullptr) {
-    char status_string[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(status, status_string);
-    GRPC_LOG_IF_ERROR("add_status",
-                      s->trailing_metadata_buffer.ReplaceOrAppend(
-                          GRPC_MDSTR_GRPC_STATUS,
-                          grpc_core::UnmanagedMemorySlice(status_string)));
+    s->trailing_metadata_buffer.Set(grpc_core::GrpcStatusMetadata(), status);
     if (!message.empty()) {
-      grpc_slice message_slice = grpc_slice_from_cpp_string(std::move(message));
-      GRPC_LOG_IF_ERROR("add_status_message",
-                        s->trailing_metadata_buffer.ReplaceOrAppend(
-                            GRPC_MDSTR_GRPC_MESSAGE, message_slice));
+      s->trailing_metadata_buffer.Set(
+          grpc_core::GrpcMessageMetadata(),
+          grpc_core::Slice::FromCopiedBuffer(message));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
@@ -2994,7 +2892,6 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
   if (s->frame_storage.length > 0) {
     grpc_slice_buffer_swap(&s->frame_storage,
                            &s->unprocessed_incoming_frames_buffer);
-    s->unprocessed_incoming_frames_decompressed = false;
     ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete, GRPC_ERROR_NONE);
   } else if (s->byte_stream_error != GRPC_ERROR_NONE) {
     ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
@@ -3040,45 +2937,10 @@ bool Chttp2IncomingByteStream::Next(size_t max_size_hint,
   }
 }
 
-void Chttp2IncomingByteStream::MaybeCreateStreamDecompressionCtx() {
-  GPR_DEBUG_ASSERT(stream_->stream_decompression_method !=
-                   GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS);
-  if (!stream_->stream_decompression_ctx) {
-    stream_->stream_decompression_ctx = grpc_stream_compression_context_create(
-        stream_->stream_decompression_method);
-  }
-}
-
 grpc_error_handle Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
   GPR_TIMER_SCOPE("incoming_byte_stream_pull", 0);
   grpc_error_handle error;
   if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
-    if (!stream_->unprocessed_incoming_frames_decompressed &&
-        stream_->stream_decompression_method !=
-            GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-      bool end_of_context;
-      MaybeCreateStreamDecompressionCtx();
-      if (!grpc_stream_decompress(stream_->stream_decompression_ctx,
-                                  &stream_->unprocessed_incoming_frames_buffer,
-                                  &stream_->decompressed_data_buffer, nullptr,
-                                  MAX_SIZE_T, &end_of_context)) {
-        error =
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
-        return error;
-      }
-      GPR_ASSERT(stream_->unprocessed_incoming_frames_buffer.length == 0);
-      grpc_slice_buffer_swap(&stream_->unprocessed_incoming_frames_buffer,
-                             &stream_->decompressed_data_buffer);
-      stream_->unprocessed_incoming_frames_decompressed = true;
-      if (end_of_context) {
-        grpc_stream_compression_context_destroy(
-            stream_->stream_decompression_ctx);
-        stream_->stream_decompression_ctx = nullptr;
-      }
-      if (stream_->unprocessed_incoming_frames_buffer.length == 0) {
-        *slice = grpc_empty_slice();
-      }
-    }
     error = grpc_deframe_unprocessed_incoming_frames(
         &stream_->data_parser, stream_,
         &stream_->unprocessed_incoming_frames_buffer, slice, nullptr);

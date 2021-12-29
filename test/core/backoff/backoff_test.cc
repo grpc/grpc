@@ -139,8 +139,6 @@ TEST(BackOffTest, JitterBackOff) {
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
 
-  backoff.SetRandomSeed(0);  // force consistent PRNG
-
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Timestamp next = backoff.NextAttemptTime();
   EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);

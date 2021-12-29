@@ -61,7 +61,7 @@ namespace Grpc.Core
         public class Builder
         {
             // to maintain legacy behavior, we need to detect duplicate keys and throw the same exception as before
-            readonly Dictionary<string, object> duplicateDetector = new Dictionary<string, object>();
+            readonly Dictionary<string, object?> duplicateDetector = new Dictionary<string, object?>();
             // for each AddMethod call, we store an action that will later register the method and handler with ServiceBinderBase
             readonly List<Action<ServiceBinderBase>> addMethodActions = new List<Action<ServiceBinderBase>>();
 

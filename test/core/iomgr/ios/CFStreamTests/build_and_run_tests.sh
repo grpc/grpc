@@ -16,57 +16,35 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -ev
-set -o pipefail
+set -ex
+set -o pipefail  # preserve xcodebuild exit code when piping output
 
 cd "$(dirname "$0")"
 
-echo "TIME:  $(date)"
+XCODEBUILD_FILTER_OUTPUT_SCRIPT="../../../../../src/objective-c/tests/xcodebuild_filter_output.sh"
 
-./build_tests.sh
+time ./build_tests.sh
 
-echo "TIME:  $(date)"
-
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
-xcodebuild \
+time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests \
     -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 
-echo "TIME:  $(date)"
-
-xcodebuild \
+time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests_Asan \
     -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 
-echo "TIME:  $(date)"
-
-xcodebuild \
+time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests_Tsan \
     -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 
-echo "TIME:  $(date)"
-
-xcodebuild \
+time xcodebuild \
     -workspace CFStreamTests.xcworkspace \
     -scheme CFStreamTests_Msan \
     -destination name="iPhone 8" \
-    test \
-    | grep -E -v "$XCODEBUILD_FILTER" \
-    | grep -E -v '^$' \
-    | grep -E -v "(GPBDictionary|GPBArray)" -
+    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"

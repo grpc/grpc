@@ -116,6 +116,10 @@ ABSL_FLAG(int32_t, iteration_interval, 10,
 ABSL_FLAG(std::string, additional_metadata, "",
           "Additional metadata to send in each request, as a "
           "semicolon-separated list of key:value pairs.");
+ABSL_FLAG(
+    bool, log_metadata_and_status, false,
+    "If set to 'true', will print received initial and trailing metadata, "
+    "grpc-status and error message to the console, in a stable format.");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -190,7 +194,14 @@ int main(int argc, char** argv) {
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   if (absl::GetFlag(FLAGS_additional_metadata).empty()) {
     channel_creation_func = [test_case]() {
-      return CreateChannelForTestCase(test_case);
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+          factories;
+      if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
+        factories.emplace_back(
+            new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
+      }
+      return CreateChannelForTestCase(test_case, std::move(factories));
     };
   } else {
     std::multimap<std::string, std::string> additional_metadata;
@@ -206,6 +217,10 @@ int main(int argc, char** argv) {
       factories.emplace_back(
           new grpc::testing::AdditionalMetadataInterceptorFactory(
               additional_metadata));
+      if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
+        factories.emplace_back(
+            new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
+      }
       return CreateChannelForTestCase(test_case, std::move(factories));
     };
   }

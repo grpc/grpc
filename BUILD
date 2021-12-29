@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "green"  # @unused
+g_stands_for = "great"  # @unused
 
-core_version = "20.0.0"  # @unused
+core_version = "21.0.0"  # @unused
 
-version = "1.43.0-dev"  # @unused
+version = "1.44.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -609,6 +609,7 @@ grpc_cc_library(
         "include/grpcpp/security/binder_credentials.h",
     ],
     deps = [
+        "config",
         "gpr",
         "gpr_base",
         "gpr_platform",
@@ -805,7 +806,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
-        "src/core/lib/gprpp/arena.cc",
         "src/core/lib/gprpp/examine_stack.cc",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
@@ -829,7 +829,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -851,6 +850,7 @@ grpc_cc_library(
         "absl/base",
         "absl/base:core_headers",
         "absl/memory",
+        "absl/random",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",
@@ -866,7 +866,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "debug_location",
-        "google_api_upb",
+        "google_rpc_status_upb",
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
@@ -886,6 +886,7 @@ grpc_cc_library(
     hdrs = ["src/core/lib/gprpp/chunked_vector.h"],
     external_deps = ["absl/utility"],
     deps = [
+        "arena",
         # TODO(ctiller): weaken this to just arena when that splits into its own target
         "gpr_base",
     ],
@@ -968,6 +969,7 @@ grpc_cc_library(
         "src/core/lib/config/core_configuration.h",
     ],
     deps = [
+        "channel_args_preconditioning",
         "channel_init",
         "gpr_base",
         "handshaker_registry",
@@ -1084,6 +1086,22 @@ grpc_cc_library(
         "gpr_platform",
         "poll",
         "promise_like",
+    ],
+)
+
+grpc_cc_library(
+    name = "arena_promise",
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/arena_promise.h",
+    ],
+    deps = [
+        "arena",
+        "gpr_base",
+        "poll",
     ],
 )
 
@@ -1483,6 +1501,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "arena",
+    srcs = [
+        "src/core/lib/resource_quota/arena.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/arena.h",
+    ],
+    deps = [
+        "context",
+        "gpr_base",
+        "memory_quota",
+    ],
+)
+
+grpc_cc_library(
     name = "thread_quota",
     srcs = [
         "src/core/lib/resource_quota/thread_quota.cc",
@@ -1674,12 +1707,46 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel_args",
+    srcs = [
+        "src/core/lib/channel/channel_args.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_args.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "channel_stack_type",
+        "gpr_base",
+        "gpr_codegen",
+        "grpc_codegen",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_args_preconditioning",
+    srcs = [
+        "src/core/lib/channel/channel_args_preconditioning.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_args_preconditioning.h",
+    ],
+    deps = [
+        "channel_args",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/address_utils/sockaddr_utils.cc",
         "src/core/lib/backoff/backoff.cc",
-        "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
         "src/core/lib/channel/channel_trace.cc",
@@ -1689,12 +1756,8 @@ grpc_cc_library(
         "src/core/lib/channel/handshaker.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
-        "src/core/lib/compression/compression_args.cc",
         "src/core/lib/compression/compression_internal.cc",
         "src/core/lib/compression/message_compress.cc",
-        "src/core/lib/compression/stream_compression.cc",
-        "src/core/lib/compression/stream_compression_gzip.cc",
-        "src/core/lib/compression/stream_compression_identity.cc",
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/channel_args_endpoint_config.cc",
@@ -1813,10 +1876,10 @@ grpc_cc_library(
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/metadata.cc",
         "src/core/lib/transport/metadata_batch.cc",
+        "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/static_metadata.cc",
         "src/core/lib/transport/status_conversion.cc",
-        "src/core/lib/transport/status_metadata.cc",
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
@@ -1841,7 +1904,6 @@ grpc_cc_library(
         "src/core/lib/address_utils/sockaddr_utils.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
-        "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_trace.h",
@@ -1851,14 +1913,9 @@ grpc_cc_library(
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/status_util.h",
-        "src/core/lib/compression/algorithm_metadata.h",
-        "src/core/lib/compression/compression_args.h",
         "src/core/lib/compression/compression_internal.h",
         "src/core/lib/resource_quota/api.h",
         "src/core/lib/compression/message_compress.h",
-        "src/core/lib/compression/stream_compression.h",
-        "src/core/lib/compression/stream_compression_gzip.h",
-        "src/core/lib/compression/stream_compression_identity.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
@@ -1902,7 +1959,10 @@ grpc_cc_library(
         "src/core/lib/iomgr/port.h",
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
+        "src/core/lib/iomgr/resolve_address_impl.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
+        "src/core/lib/iomgr/resolve_address_posix.h",
+        "src/core/lib/iomgr/resolve_address_windows.h",
         "src/core/lib/iomgr/sockaddr.h",
         "src/core/lib/iomgr/sockaddr_posix.h",
         "src/core/lib/iomgr/sockaddr_windows.h",
@@ -1953,7 +2013,6 @@ grpc_cc_library(
         "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
-        "src/core/lib/transport/status_metadata.h",
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
@@ -1974,6 +2033,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
+        "src/core/lib/channel/channel_args.h",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
     # integrated, or when it becomes obvious the glue code is unnecessary.
@@ -1983,6 +2043,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/pollset.h",
         "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
+        "src/core/lib/iomgr/event_engine/resolver.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -2000,8 +2061,10 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "arena",
         "avl",
         "bitset",
+        "channel_args",
         "channel_stack_type",
         "chunked_vector",
         "closure",
@@ -2454,7 +2517,6 @@ grpc_cc_library(
     deps = [
         "config",
         "error",
-        "google_api_upb",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -2497,7 +2559,6 @@ grpc_cc_library(
     deps = [
         "config",
         "error",
-        "google_api_upb",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -2559,8 +2620,14 @@ grpc_cc_library(
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
+        "src/core/ext/xds/xds_cluster.cc",
+        "src/core/ext/xds/xds_common_types.cc",
+        "src/core/ext/xds/xds_endpoint.cc",
         "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
+        "src/core/ext/xds/xds_listener.cc",
+        "src/core/ext/xds/xds_resource_type.cc",
+        "src/core/ext/xds/xds_route_config.cc",
         "src/core/ext/xds/xds_routing.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
@@ -2569,19 +2636,28 @@ grpc_cc_library(
         "src/core/ext/xds/certificate_provider_registry.h",
         "src/core/ext/xds/certificate_provider_store.h",
         "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
+        "src/core/ext/xds/upb_utils.h",
         "src/core/ext/xds/xds_api.h",
         "src/core/ext/xds/xds_bootstrap.h",
         "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
+        "src/core/ext/xds/xds_cluster.h",
+        "src/core/ext/xds/xds_common_types.h",
+        "src/core/ext/xds/xds_endpoint.h",
         "src/core/ext/xds/xds_http_fault_filter.h",
         "src/core/ext/xds/xds_http_filters.h",
+        "src/core/ext/xds/xds_listener.h",
+        "src/core/ext/xds/xds_resource_type.h",
+        "src/core/ext/xds/xds_resource_type_impl.h",
+        "src/core/ext/xds/xds_route_config.h",
         "src/core/ext/xds/xds_routing.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
+        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -2600,7 +2676,7 @@ grpc_cc_library(
         "envoy_core_upbdefs",
         "envoy_type_upb",
         "error",
-        "google_api_upb",
+        "google_rpc_status_upb",
         "gpr_base",
         "gpr_codegen",
         "grpc_base",
@@ -2654,6 +2730,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_server_config_selector",
@@ -3078,6 +3155,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/functional:bind_front",
     ],
     language = "c++",
     deps = [
@@ -3336,6 +3414,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "arena",
         "config",
         "error",
         "gpr_base",
@@ -3368,7 +3447,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "grpc_base",
     ],
 )
@@ -3482,7 +3560,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_ads_upb",
-        "google_api_upb",
         "gpr_base",
         "grpc_base",
         "grpc_mock_cel",
@@ -4434,7 +4511,9 @@ grpc_cc_library(
         "envoy_annotations_upb",
         "envoy_core_upb",
         "envoy_type_upb",
-        "google_api_upb",
+        "google_api_annotations_upb",
+        "google_api_expr_upb",
+        "google_rpc_status_upb",
         "proto_gen_validate_upb",
         "protobuf_any_upb",
         "protobuf_duration_upb",
@@ -4549,8 +4628,15 @@ grpc_cc_library(
         "envoy_annotations_upbdefs",
         "envoy_core_upbdefs",
         "envoy_type_upbdefs",
-        "google_api_upbdefs",
+        "google_api_annotations_upbdefs",
+        "google_rpc_status_upbdefs",
         "proto_gen_validate_upbdefs",
+        "protobuf_any_upbdefs",
+        "protobuf_duration_upbdefs",
+        "protobuf_empty_upbdefs",
+        "protobuf_struct_upbdefs",
+        "protobuf_timestamp_upbdefs",
+        "protobuf_wrappers_upbdefs",
         "udpa_annotations_upbdefs",
         "xds_core_upbdefs",
     ],
@@ -4573,7 +4659,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
     ],
 )
 
@@ -4597,7 +4682,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_annotations_upb",
-        "google_api_upbdefs",
     ],
 )
 
@@ -4642,7 +4726,6 @@ grpc_cc_library(
     deps = [
         "envoy_annotations_upb",
         "envoy_type_upb",
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_any_upb",
         "protobuf_duration_upb",
@@ -4699,8 +4782,8 @@ grpc_cc_library(
         "envoy_annotations_upbdefs",
         "envoy_core_upb",
         "envoy_type_upbdefs",
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
+        "protobuf_empty_upbdefs",
         "xds_core_upbdefs",
     ],
 )
@@ -4747,7 +4830,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_annotations_upb",
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_wrappers_upb",
         "udpa_annotations_upb",
@@ -4798,7 +4880,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_type_upb",
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
     ],
 )
@@ -4818,7 +4899,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "protobuf_duration_upb",
         "protobuf_timestamp_upb",
     ],
@@ -4841,8 +4921,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "proto_gen_validate_upb",
+        "protobuf_timestamp_upbdefs",
     ],
 )
 
@@ -4894,7 +4974,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "proto_gen_validate_upb",
     ],
 )
@@ -4924,7 +5003,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "udpa_annotations_upb",
     ],
 )
@@ -4991,7 +5069,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_any_upb",
         "udpa_annotations_upb",
@@ -5026,7 +5103,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
         "udpa_annotations_upbdefs",
         "xds_annotations_upbdefs",
@@ -5049,7 +5125,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "proto_gen_validate_upb",
         "protobuf_struct_upb",
     ],
@@ -5072,7 +5147,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
         "xds_type_upb",
     ],
@@ -5102,68 +5176,29 @@ WELL_KNOWN_PROTO_TARGETS = [
     deps = ["@com_google_protobuf//:" + target + "_proto"],
 ) for target in WELL_KNOWN_PROTO_TARGETS]
 
-# Once upb code-gen issue is resolved, remove this.
-grpc_cc_library(
-    name = "google_api_upb",
-    srcs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.c",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c",
-        "src/core/ext/upb-generated/google/api/http.upb.c",
-        "src/core/ext/upb-generated/google/rpc/status.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.h",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h",
-        "src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h",
-        "src/core/ext/upb-generated/google/api/http.upb.h",
-        "src/core/ext/upb-generated/google/rpc/status.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "protobuf_any_upb",
-        "protobuf_duration_upb",
-        "protobuf_empty_upb",
-        "protobuf_struct_upb",
-        "protobuf_timestamp_upb",
-        "protobuf_wrappers_upb",
-    ],
+grpc_upb_proto_library(
+    name = "google_api_annotations_upb",
+    deps = ["@com_google_googleapis//google/api:annotations_proto"],
 )
 
-grpc_cc_library(
-    name = "google_api_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/api/http.upbdefs.c",
-        "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/api/http.upbdefs.h",
-        "src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "google_api_upb",
-        "protobuf_any_upbdefs",
-        "protobuf_duration_upbdefs",
-        "protobuf_empty_upbdefs",
-        "protobuf_struct_upbdefs",
-        "protobuf_timestamp_upbdefs",
-        "protobuf_wrappers_upbdefs",
-    ],
+grpc_upb_proto_reflection_library(
+    name = "google_api_annotations_upbdefs",
+    deps = ["@com_google_googleapis//google/api:annotations_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "google_api_expr_upb",
+    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "google_rpc_status_upb",
+    deps = ["@com_google_googleapis//google/rpc:status_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "google_rpc_status_upbdefs",
+    deps = ["@com_google_googleapis//google/rpc:status_proto"],
 )
 
 grpc_upb_proto_library(
@@ -5190,7 +5225,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_api_upb",
         "protobuf_duration_upb",
     ],
 )

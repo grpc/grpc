@@ -106,8 +106,9 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_channel_args* args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
   grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, args,
                           &resolved_addr, grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);

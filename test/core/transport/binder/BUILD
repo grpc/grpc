@@ -92,6 +92,10 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = [
+        # To avoid `symbolizer buffer too small` warning of UBSAN
+        "noubsan",
+    ],
     uses_polling = False,
     deps = [
         ":mock_objects",

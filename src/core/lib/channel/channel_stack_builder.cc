@@ -69,9 +69,9 @@ void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder* b,
   b->target = gpr_strdup(target);
 }
 
-const char* grpc_channel_stack_builder_get_target(
+std::string grpc_channel_stack_builder_get_target(
     grpc_channel_stack_builder* b) {
-  return b->target;
+  return b->target == nullptr ? std::string("unknown") : std::string(b->target);
 }
 
 static grpc_channel_stack_builder_iterator* create_iterator_at_filter_node(

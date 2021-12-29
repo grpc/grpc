@@ -199,6 +199,7 @@ class FakeResolverResponseGeneratorWrapper {
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
           nullptr) {
     grpc_core::Resolver::Result result;
+    result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -211,13 +212,14 @@ class FakeResolverResponseGeneratorWrapper {
       if (attribute != nullptr) {
         attributes[attribute_key] = attribute->Copy();
       }
-      result.addresses.emplace_back(address.addr, address.len,
-                                    nullptr /* args */, std::move(attributes));
+      result.addresses->emplace_back(address.addr, address.len,
+                                     nullptr /* args */, std::move(attributes));
     }
     if (service_config_json != nullptr) {
+      grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfig::Create(
-          nullptr, service_config_json, &result.service_config_error);
-      GPR_ASSERT(result.service_config != nullptr);
+          nullptr, service_config_json, &error);
+      GPR_ASSERT(*result.service_config != nullptr);
     }
     return result;
   }

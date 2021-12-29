@@ -25,9 +25,10 @@ RUN apt-get -qq update && apt-get -qq install -y git
 
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-COPY --from=grpc-base /usr/local/bin/protoc /usr/local/bin/protoc
+COPY --from=grpc-base /github/grpc/cmake/build/third_party/protobuf/protoc \
+  /usr/local/bin/protoc
 
-COPY --from=grpc-base /github/grpc/bins/opt/grpc_php_plugin \
+COPY --from=grpc-base /github/grpc/cmake/build/grpc_php_plugin \
   /usr/local/bin/protoc-gen-grpc
 
 COPY --from=grpc-base \
