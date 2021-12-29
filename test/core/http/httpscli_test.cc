@@ -168,7 +168,7 @@ TEST_F(HttpsCliTest, Get) {
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
           pops(), grpc_core::ResourceQuota::Default(), &req,
-          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
@@ -192,7 +192,7 @@ TEST_F(HttpsCliTest, Post) {
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
           pops(), grpc_core::ResourceQuota::Default(), &req,
-          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
           "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
@@ -225,7 +225,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
           grpc_core::HttpCli::Get(
               pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
-                  grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+                  grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),

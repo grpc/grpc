@@ -75,44 +75,46 @@ namespace grpc_core {
 //                same content and combining them
 class HttpCli : public InternallyRefCounted<HttpCli> {
  public:
-  class HttpCliHandshaker : public InternallyRefCounted<HttpCliHandshaker> {
-   public:
-    // TODO(apolcyn): put mutex annotations on these
-    virtual void Start() = 0;
-  };
+  // An HttpCliHandshaker is used to perform a singe handshake. Calling Orphan
+  // on an HttpCliHandshaker cancels the pending handshake as quickly as
+  // possible.
+  // Note on synchronization: the on_done callback passed to factory functions
+  // is guaranteed to NOT be invoked inline, therefore it's safe to acquire
+  // locks in the on_done callback which were held while calling the factory
+  // method. Related: callers must typically synchronize on_done callbacks with
+  // their factory method invocations to ensure refs aren't dropped early.
+  class HttpCliHandshaker : public InternallyRefCounted<HttpCliHandshaker> {};
 
+  // An HttpCliHandshakerFactory is used to create and start the appropriate
+  // HttpCliHandshaker.
   class HttpCliHandshakerFactory {
    public:
     virtual ~HttpCliHandshakerFactory() {}
-    virtual OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(
+    virtual OrphanablePtr<HttpCliHandshaker> StartHttpCliHandshaker(
         grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline,
         std::function<void(grpc_endpoint*)> on_done) const = 0;
     virtual const char* default_port() const = 0;
   };
 
-  class PlaintextHttpCliHandshakerFactory : public HttpCliHandshakerFactory {
-   public:
-    OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(
-        grpc_endpoint* endpoint, absl::string_view /* host */,
-        grpc_millis /* deadline */,
-        std::function<void(grpc_endpoint*)> on_done) const override {
-      return MakeOrphanable<PlaintextHttpCliHandshaker>(endpoint,
-                                                        std::move(on_done));
-    }
-
-    const char* default_port() const override { return "http"; }
-  };
-
   class PlaintextHttpCliHandshaker : public HttpCliHandshaker {
    public:
+    class Factory : public HttpCliHandshakerFactory {
+     public:
+      OrphanablePtr<HttpCliHandshaker> StartHttpCliHandshaker(
+          grpc_endpoint* endpoint, absl::string_view /* host */,
+          grpc_millis /* deadline */,
+          std::function<void(grpc_endpoint*)> on_done) const override {
+        return MakeOrphanable<PlaintextHttpCliHandshaker>(endpoint,
+                                                          std::move(on_done));
+      }
+      const char* default_port() const override { return "http"; }
+    };
+
     PlaintextHttpCliHandshaker(grpc_endpoint* endpoint,
                                std::function<void(grpc_endpoint*)> on_done)
         : endpoint_(endpoint), on_done_(std::move(on_done)) {
       GRPC_CLOSURE_INIT(&invoke_on_done_, InvokeOnDone, this,
                         grpc_schedule_on_exec_ctx);
-    }
-
-    void Start() override {
       Ref().release();  // ref held by closure
       ExecCtx::Get()->Run(DEBUG_LOCATION, &invoke_on_done_, GRPC_ERROR_NONE);
     }
@@ -131,39 +133,41 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
     const std::function<void(grpc_endpoint*)> on_done_;
   };
 
-  class SSLHttpCliHandshakerFactory : public HttpCliHandshakerFactory {
-   public:
-    OrphanablePtr<HttpCliHandshaker> CreateHttpCliHandshaker(
-        grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline,
-        std::function<void(grpc_endpoint*)> on_done) const override {
-      return MakeOrphanable<SSLHttpCliHandshaker>(endpoint, host, deadline,
-                                                  std::move(on_done));
-    }
-
-    const char* default_port() const override { return "https"; }
-  };
-
   class SSLHttpCliHandshaker : public HttpCliHandshaker {
    public:
+    class Factory : public HttpCliHandshakerFactory {
+     public:
+      OrphanablePtr<HttpCliHandshaker> StartHttpCliHandshaker(
+          grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline,
+          std::function<void(grpc_endpoint*)> on_done) const override {
+        return MakeOrphanable<SSLHttpCliHandshaker>(endpoint, host, deadline,
+                                                    std::move(on_done));
+      }
+
+      const char* default_port() const override { return "https"; }
+    };
+
     SSLHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host,
                          grpc_millis deadline,
-                         std::function<void(grpc_endpoint*)> on_done)
-        : original_endpoint_(endpoint),
-          host_(host),
-          deadline_(deadline),
-          on_done_(std::move(on_done)) {}
+                         std::function<void(grpc_endpoint*)> on_done);
 
-    void Start() override;
     void Orphan() override;
 
    private:
     static void InnerOnDone(void* arg, grpc_error_handle error);
+
+    static void OnMissingPemRootCerts(void* arg, grpc_error_handle /*error*/) {
+      SSLHttpCliHandshaker* handshaker = static_cast<SSLHttpCliHandshaker*>(arg);
+      handshaker->on_done_(nullptr);
+      handshaker->Unref();
+    }
 
     grpc_endpoint* original_endpoint_;
     const std::string host_;
     const grpc_millis deadline_;
     std::function<void(grpc_endpoint*)> on_done_;
     RefCountedPtr<HandshakeManager> handshake_mgr_;
+    grpc_closure on_missing_pem_root_certs_;
   };
 
   // Asynchronously perform a HTTP GET.
@@ -225,9 +229,9 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   static std::unique_ptr<HttpCli::HttpCliHandshakerFactory>
   HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
     if (scheme == "https") {
-      return absl::make_unique<HttpCli::SSLHttpCliHandshakerFactory>();
+      return absl::make_unique<HttpCli::SSLHttpCliHandshaker::Factory>();
     } else {
-      return absl::make_unique<HttpCli::PlaintextHttpCliHandshakerFactory>();
+      return absl::make_unique<HttpCli::PlaintextHttpCliHandshaker::Factory>();
     }
   }
 
@@ -285,9 +289,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
-  grpc_slice request_text_;
+  const grpc_slice request_text_;
   std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory_;
-  OrphanablePtr<HttpCliHandshaker> handshaker_;
   grpc_closure on_read_;
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
@@ -295,6 +298,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_closure connected_;
   grpc_endpoint* ep_ = nullptr;
   Mutex mu_;
+  OrphanablePtr<HttpCliHandshaker> handshaker_ ABSL_GUARDED_BY(mu_);
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);

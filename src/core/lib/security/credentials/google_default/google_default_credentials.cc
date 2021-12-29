@@ -188,7 +188,7 @@ static int is_metadata_server_reachable() {
   auto httpcli = grpc_core::HttpCli::Get(
       &detector.pollent, grpc_core::ResourceQuota::Default(), &request,
       absl::make_unique<
-          grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+          grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),

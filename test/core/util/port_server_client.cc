@@ -86,7 +86,7 @@ void grpc_free_port_using_server(int port) {
     auto httpcli = grpc_core::HttpCli::Get(
         &pr.pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
-            grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+            grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
@@ -170,7 +170,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     pr->httpcli = grpc_core::HttpCli::Get(
         &pr->pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
-            grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+            grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
@@ -218,7 +218,7 @@ int grpc_pick_port_using_server(void) {
     auto httpcli = grpc_core::HttpCli::Get(
         &pr.pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
-            grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+            grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),

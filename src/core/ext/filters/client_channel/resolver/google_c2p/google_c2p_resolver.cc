@@ -129,7 +129,7 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   // TODO(ctiller): share the quota from whomever instantiates this!
   httpcli_ = HttpCli::Get(
       pollent, ResourceQuota::Default(), &request,
-      absl::make_unique<HttpCli::PlaintextHttpCliHandshakerFactory>(),
+      absl::make_unique<HttpCli::PlaintextHttpCliHandshaker::Factory>(),
       ExecCtx::Get()->Now() + 10000,  // 10s timeout
       &on_done_, &response_);
   httpcli_->Start();

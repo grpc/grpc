@@ -699,7 +699,7 @@ static void on_openid_config_retrieved(void* user_data,
      extreme memory pressure. */
   ctx->httpcli = grpc_core::HttpCli::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
-      absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+      absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
@@ -823,7 +823,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
      extreme memory pressure. */
   ctx->httpcli = grpc_core::HttpCli::Get(
       &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
-      absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+      absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
   ctx->httpcli->Start();

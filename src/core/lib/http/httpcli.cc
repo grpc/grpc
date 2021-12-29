@@ -268,14 +268,13 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
       req->NextAddress(GRPC_ERROR_REF(error));
       return;
     }
-    req->handshaker_ = req->handshaker_factory_->CreateHttpCliHandshaker(
+    req->handshaker_ = req->handshaker_factory_->StartHttpCliHandshaker(
         req->ep_,
         req->ssl_host_override_.empty() ? req->host_ : req->ssl_host_override_,
         req->deadline_, absl::bind_front(&HttpCli::OnHandshakeDone, req));
     req->own_endpoint_ = false;
     req->ep_ = nullptr;
     req->Ref().release();  // ref held by pending handshake
-    req->handshaker_->Start();
   }
 }
 

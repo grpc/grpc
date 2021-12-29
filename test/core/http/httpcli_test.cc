@@ -168,7 +168,7 @@ TEST_F(HttpCliTest, Get) {
       grpc_core::HttpCli::Get(
           pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
-              grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+              grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
@@ -192,7 +192,7 @@ TEST_F(HttpCliTest, Post) {
       grpc_core::HttpCli::Post(
           pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
-              grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+              grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
@@ -249,7 +249,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
           grpc_core::HttpCli::Get(
               pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
-                  grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+                  grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
@@ -293,7 +293,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
           grpc_core::HttpCli::Get(
               pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
-                  grpc_core::HttpCli::PlaintextHttpCliHandshakerFactory>(),
+                  grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
                                   grpc_schedule_on_exec_ctx),
