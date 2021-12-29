@@ -980,7 +980,7 @@ class MetadataMap {
         if (!out.has_value()) {
           out = p.second.as_string_view();
         } else {
-          out = *backing = absl::StrCat(*out, ", ", p.second.as_string_view());
+          out = *backing = absl::StrCat(*out, ",", p.second.as_string_view());
         }
       }
     }
