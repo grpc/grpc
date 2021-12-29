@@ -150,7 +150,7 @@ g_stands_for = "green"  # @unused
 
 core_version = "21.0.0"  # @unused
 
-version = "1.43.0"  # @unused
+version = "1.43.1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
