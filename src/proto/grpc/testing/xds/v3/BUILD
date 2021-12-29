@@ -113,6 +113,17 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "path_proto",
+    srcs = [
+        "path.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "string_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "listener_proto",
     srcs = [
         "listener.proto",
@@ -200,6 +211,7 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "config_source_proto",
+        "extension_proto",
         "protocol_proto",
         "route_proto",
     ],
@@ -288,6 +300,56 @@ grpc_proto_library(
         "fault_common_proto",
         "percent_proto",
         "route_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "metadata_proto",
+    srcs = [
+        "metadata.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "expr_proto",
+    srcs = [
+        "expr.proto",
+    ],
+    well_known_protos = True,
+)
+
+cc_library(
+    name = "expr_lib",
+    deps = ["expr_cc_proto"],
+)
+
+grpc_proto_library(
+    name = "rbac_proto",
+    srcs = [
+        "rbac.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "address_proto",
+        "expr_proto",
+        "extension_proto",
+        "metadata_proto",
+        "path_proto",
+        "range_proto",
+        "route_proto",
+        "string_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "http_filter_rbac_proto",
+    srcs = [
+        "http_filter_rbac.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "rbac_proto",
     ],
 )
 
