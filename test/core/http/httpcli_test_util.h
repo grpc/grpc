@@ -16,14 +16,16 @@
  *
  */
 
-#include <string.h>
+#include <grpc/support/port_platform.h>
+
+#include <tuple>
 
 #include "test/core/util/subprocess.h"
 
 namespace grpc_core {
 namespace testing {
 
-std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, const char** argc, bool use_ssl);
+std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, char** argv, bool use_ssl);
 
 } // namespace testing
 } // namespace grpc_core

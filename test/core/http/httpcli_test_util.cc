@@ -16,9 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "test/core/http/httpcli_test_util.h"
 
 #include <string.h>
+
+#include <tuple>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -33,7 +37,7 @@
 namespace grpc_core {
 namespace testing {
 
-std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, const char** argc, bool use_ssl) {
+std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, char** argv, bool /*use_ssl*/) {
     gpr_log(GPR_INFO, "begin SetUpTestSuite");
     char* me = argv[0];
     char* lslash = strrchr(me, '/');
