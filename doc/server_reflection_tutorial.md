@@ -187,3 +187,7 @@ descriptor database.
     google::protobuf::Message* request = dmf.GetPrototype(request_desc)->New();
     ```
 
+## Use Server Reflection in a C++ client
+
+See [Python Server Reflection](python/server_reflection.md).
+

@@ -56,10 +56,11 @@ class ReflectionServicerTest(unittest.TestCase):
     # DESCRIPTOR for each message. So, the equal comparison between protobuf
     # returned by stub and manually crafted protobuf will always fail.
     def _assert_sequence_of_proto_equal(self, x, y):
-        self.assertSequenceEqual(
-            tuple(proto.SerializeToString() for proto in x),
-            tuple(proto.SerializeToString() for proto in y),
-        )
+        # self.assertSequenceEqual(
+        #     tuple(proto.SerializeToString() for proto in x),
+        #     tuple(proto.SerializeToString() for proto in y),
+        # )
+        self.assertEqual(x, y)
 
     def setUp(self):
         self._server = test_common.test_server()

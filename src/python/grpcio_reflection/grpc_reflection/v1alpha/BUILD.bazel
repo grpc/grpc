@@ -29,6 +29,11 @@ py_grpc_library(
 )
 
 py_library(
+    name = "grpc_reflection_test",
+    srcs = ["proto_reflection_descriptor_database.py"],
+)
+
+py_library(
     name = "grpc_reflection",
     srcs = glob(["*.py"]),
     imports = ["../../"],
