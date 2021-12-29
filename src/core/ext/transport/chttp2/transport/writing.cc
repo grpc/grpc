@@ -189,7 +189,7 @@ namespace {
 
 class CountDefaultMetadataEncoder {
  public:
-  int count() const { return count_; }
+  size_t count() const { return count_; }
 
   void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
 
@@ -199,7 +199,7 @@ class CountDefaultMetadataEncoder {
   }
 
  private:
-  int count_ = 0;
+  size_t count_ = 0;
 };
 
 }  // namespace
