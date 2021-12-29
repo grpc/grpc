@@ -289,7 +289,7 @@ class CopySink {
 
   void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
     dst_->Append(key.as_string_view(), value.AsOwned(),
-                 [](absl::string_view error, const grpc_core::Slice& value) {});
+                 [](absl::string_view, const grpc_core::Slice&) {});
   }
 
   template <class T, class V>
