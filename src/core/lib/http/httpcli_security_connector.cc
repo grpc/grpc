@@ -176,20 +176,21 @@ void HttpCli::SSLHttpCliHandshaker::InnerOnDone(void* arg,
   self->Unref();
 }
 
-HttpCli::SSLHttpCliHandshaker::SSLHttpCliHandshaker(grpc_endpoint* endpoint, absl::string_view host,
-                         grpc_millis deadline,
-                         std::function<void(grpc_endpoint*)> on_done)
-        : original_endpoint_(endpoint),
-          host_(host),
-          deadline_(deadline),
-          on_done_(std::move(on_done)) {
-  GRPC_CLOSURE_INIT(&on_missing_pem_root_certs_, OnMissingPemRootCerts, this, grpc_schedule_on_exec_ctx);
+HttpCli::SSLHttpCliHandshaker::SSLHttpCliHandshaker(
+    grpc_endpoint* endpoint, absl::string_view host, grpc_millis deadline,
+    std::function<void(grpc_endpoint*)> on_done)
+    : original_endpoint_(endpoint),
+      host_(host),
+      deadline_(deadline),
+      on_done_(std::move(on_done)) {
+  GRPC_CLOSURE_INIT(&on_missing_pem_root_certs_, OnMissingPemRootCerts, this,
+                    grpc_schedule_on_exec_ctx);
   const char* pem_root_certs = DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =
       DefaultSslRootStore::GetRootStore();
   if (root_store == nullptr) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-    Ref().release(); // ref held by callback
+    Ref().release();  // ref held by callback
     ExecCtx::Run(DEBUG_LOCATION, &on_missing_pem_root_certs_, GRPC_ERROR_NONE);
     return;
   }

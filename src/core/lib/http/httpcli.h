@@ -157,7 +157,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
     static void InnerOnDone(void* arg, grpc_error_handle error);
 
     static void OnMissingPemRootCerts(void* arg, grpc_error_handle /*error*/) {
-      SSLHttpCliHandshaker* handshaker = static_cast<SSLHttpCliHandshaker*>(arg);
+      SSLHttpCliHandshaker* handshaker =
+          static_cast<SSLHttpCliHandshaker*>(arg);
       handshaker->on_done_(nullptr);
       handshaker->Unref();
     }
