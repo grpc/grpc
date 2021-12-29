@@ -392,22 +392,12 @@ class Call : public std::enable_shared_from_this<Call> {
   }
 
   template <typename M>
-  grpc_metadata_array ReadMetadata(const M& metadata, bool is_server,
-                                   bool& status) {
+  grpc_metadata_array ReadMetadata(const M& metadata) {
     grpc_metadata* m = AllocArray<grpc_metadata>(metadata.size());
     for (int i = 0; i < metadata.size(); ++i) {
-      // (b/209281496): On the server side, grpc-timeout metadata should not
-      // be passed.
-      if (is_server && metadata[i].key().value() == "grpc-timeout") {
-        free_pointers_.pop_back();
-        gpr_free(m);
-        status = false;
-        return grpc_metadata_array{0, 0, nullptr};
-      }
       m[i].key = ReadSlice(metadata[i].key());
       m[i].value = ReadSlice(metadata[i].value());
     }
-    status = true;
     return grpc_metadata_array{static_cast<size_t>(metadata.size()),
                                static_cast<size_t>(metadata.size()), m};
   }
@@ -425,18 +415,12 @@ class Call : public std::enable_shared_from_this<Call> {
         if (sent_initial_metadata_) {
           *batch_is_ok = false;
         } else {
-          bool status;
-          auto ary = ReadMetadata(batch_op.send_initial_metadata().metadata(),
-                                  type_ == CallType::SERVER, status);
-          if (!status) {
-            *batch_is_ok = false;
-          } else {
-            sent_initial_metadata_ = true;
-            op.op = GRPC_OP_SEND_INITIAL_METADATA;
-            *batch_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
-            op.data.send_initial_metadata.count = ary.count;
-            op.data.send_initial_metadata.metadata = ary.metadata;
-          }
+          sent_initial_metadata_ = true;
+          op.op = GRPC_OP_SEND_INITIAL_METADATA;
+          *batch_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
+          auto ary = ReadMetadata(batch_op.send_initial_metadata().metadata());
+          op.data.send_initial_metadata.count = ary.count;
+          op.data.send_initial_metadata.metadata = ary.metadata;
         }
         break;
       case api_fuzzer::BatchOp::kSendMessage:
@@ -462,25 +446,18 @@ class Call : public std::enable_shared_from_this<Call> {
         *batch_ops |= 1 << GRPC_OP_SEND_CLOSE_FROM_CLIENT;
         break;
       case api_fuzzer::BatchOp::kSendStatusFromServer: {
-        bool status;
-        auto ary = ReadMetadata(batch_op.send_status_from_server().metadata(),
-                                type_ == CallType::SERVER, status);
-        if (!status) {
-          *batch_is_ok = false;
-        } else {
-          op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-          *batch_ops |= 1 << GRPC_OP_SEND_STATUS_FROM_SERVER;
-          op.data.send_status_from_server.trailing_metadata_count = ary.count;
-          op.data.send_status_from_server.trailing_metadata = ary.metadata;
-          op.data.send_status_from_server.status =
-              static_cast<grpc_status_code>(
-                  batch_op.send_status_from_server().status_code());
-          op.data.send_status_from_server.status_details =
-              batch_op.send_status_from_server().has_status_details()
-                  ? NewCopy(ReadSlice(
-                        batch_op.send_status_from_server().status_details()))
-                  : nullptr;
-        }
+        op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+        *batch_ops |= 1 << GRPC_OP_SEND_STATUS_FROM_SERVER;
+        auto ary = ReadMetadata(batch_op.send_status_from_server().metadata());
+        op.data.send_status_from_server.trailing_metadata_count = ary.count;
+        op.data.send_status_from_server.trailing_metadata = ary.metadata;
+        op.data.send_status_from_server.status = static_cast<grpc_status_code>(
+            batch_op.send_status_from_server().status_code());
+        op.data.send_status_from_server.status_details =
+            batch_op.send_status_from_server().has_status_details()
+                ? NewCopy(ReadSlice(
+                      batch_op.send_status_from_server().status_details()))
+                : nullptr;
       } break;
       case api_fuzzer::BatchOp::kReceiveInitialMetadata:
         if (enqueued_recv_initial_metadata_) {

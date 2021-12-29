@@ -1445,6 +1445,13 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           call->send_initial_metadata.Set(grpc_core::GrpcTimeoutMetadata(),
                                           call->send_deadline);
         }
+
+        // On the server side, grpc-timeout metadata should not
+        // be passed.
+        if (!call->is_client) {
+          call->send_initial_metadata.Remove(grpc_core::GrpcTimeoutMetadata());
+        }
+
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &call->send_initial_metadata;
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
@@ -1560,6 +1567,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           }
         }
 
+        // On the server side, grpc-timeout metadata should not
+        // be passed.
+        call->send_trailing_metadata.Remove(grpc_core::GrpcTimeoutMetadata());
         call->status_error.set(status_error);
         GRPC_ERROR_UNREF(status_error);
 
