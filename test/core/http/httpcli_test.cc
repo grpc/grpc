@@ -31,6 +31,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
@@ -95,60 +96,9 @@ class HttpCliTest : public ::testing::Test {
 
  protected:
   static void SetUpTestSuite() {
-    gpr_log(GPR_INFO, "begin SetUpTestSuite");
-    char* me = g_argv[0];
-    char* lslash = strrchr(me, '/');
-    char* args[4];
-    gpr_log(GPR_INFO, "begin SetUpTestSuite 1");
-    g_server_port = grpc_pick_unused_port_or_die();
-    int arg_shift = 0;
-    /* figure out where we are */
-    gpr_log(GPR_INFO, "begin SetUpTestSuite 2");
-    char* root;
-    if (lslash != nullptr) {
-      /* Hack for bazel target */
-      if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
-          strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
-                  sizeof("http") - 1) == 0) {
-        lslash = me + (lslash - me) - sizeof("http");
-      }
-      root = static_cast<char*>(
-          gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
-      memcpy(root, me, static_cast<size_t>(lslash - me));
-      memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
-    } else {
-      root = gpr_strdup(".");
-    }
-    gpr_log(GPR_INFO, "begin SetUpTestSuite 3");
-
-    GPR_ASSERT(g_argc <= 2);
-    if (g_argc == 2) {
-      args[0] = gpr_strdup(g_argv[1]);
-    } else {
-      arg_shift = 1;
-      gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
-      gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
-    }
-    gpr_log(GPR_INFO, "begin SetUpTestSuite 4");
-
-    /* start the server */
-    args[1 + arg_shift] = const_cast<char*>("--port");
-    gpr_asprintf(&args[2 + arg_shift], "%d", g_server_port);
-    int num_args = 3 + arg_shift;
-    gpr_log(GPR_INFO, "starting test server subprocess:");
-    for (int i = 0; i < num_args; i++) {
-      gpr_log(GPR_INFO, "  test server subprocess argv[%d]: %s", i, args[i]);
-    }
-    g_server =
-        gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
-    GPR_ASSERT(g_server);
-    gpr_free(args[0]);
-    if (arg_shift) gpr_free(args[1]);
-    gpr_free(args[2 + arg_shift]);
-    gpr_free(root);
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
-    gpr_log(GPR_INFO, "begin SetUpTestSuite 5");
+    std::tuple<gpr_subprocess*, int> server_and_port = grpc_core::StartHttpCliTestServer(g_argc, g_argc, false /* use_ssl */);
+    g_server = server_and_port.first;
+    g_server_port = server_and_port.second;
   }
 
   static void TearDownTestSuite() { gpr_subprocess_destroy(g_server); }
