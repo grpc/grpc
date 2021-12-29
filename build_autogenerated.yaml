@@ -6287,9 +6287,11 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
   - test/core/http/httpcli_test.cc
+  - test/core/http/httpcli_test_util.cc
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - grpc++_test_util
@@ -6303,11 +6305,13 @@ targets:
   language: c++
   headers:
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/http/httpcli_test_util.h
   src:
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/httpcli_test_util.cc
   - test/core/http/httpscli_test.cc
   deps:
   - grpc_test_util
