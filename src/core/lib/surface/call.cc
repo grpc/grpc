@@ -1440,16 +1440,15 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
+
+        // On the server side, grpc-timeout metadata should not
+        // be passed. For the client, this may be set again below.
+        call->send_initial_metadata.Remove(grpc_core::GrpcTimeoutMetadata());
+
         /* TODO(ctiller): just make these the same variable? */
         if (call->is_client && call->send_deadline != GRPC_MILLIS_INF_FUTURE) {
           call->send_initial_metadata.Set(grpc_core::GrpcTimeoutMetadata(),
                                           call->send_deadline);
-        }
-
-        // On the server side, grpc-timeout metadata should not
-        // be passed.
-        if (!call->is_client) {
-          call->send_initial_metadata.Remove(grpc_core::GrpcTimeoutMetadata());
         }
 
         stream_op_payload->send_initial_metadata.send_initial_metadata =
