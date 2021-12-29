@@ -320,7 +320,8 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
   // here is just to have a server address that will reject
   // TCP connection setups.
   int fake_server_port = grpc_pick_unused_port_or_die();
-  std::string fake_server_address = absl::StrCat("[::1]:", std::to_string(fake_server_port));
+  std::string fake_server_address =
+      absl::StrCat("[::1]:", std::to_string(fake_server_port));
   int kNumThreads = 100;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);

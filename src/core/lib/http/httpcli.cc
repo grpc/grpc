@@ -179,8 +179,7 @@ void HttpCli::Orphan() {
       // TODO(apolcyn): fix this to cancel the TCP connection attempt when
       // an API to do so exists.
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "cancelled during TCP connection establishment", &overall_error_,
-          1));
+          "cancelled during TCP connection establishment", &overall_error_, 1));
     }
     handshaker_.reset();  // cancel potentially pending handshake
     if (own_endpoint_ && ep_ != nullptr) {
