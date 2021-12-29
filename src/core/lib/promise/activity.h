@@ -268,6 +268,8 @@ namespace promise_detail {
 template <typename Context>
 class ContextHolder {
  public:
+  using ContextType = Context;
+
   explicit ContextHolder(Context value) : value_(std::move(value)) {}
   Context* GetContext() { return &value_; }
 
@@ -278,6 +280,8 @@ class ContextHolder {
 template <typename Context>
 class ContextHolder<Context*> {
  public:
+  using ContextType = Context;
+
   explicit ContextHolder(Context* value) : value_(value) {}
   Context* GetContext() { return value_; }
 
@@ -288,6 +292,8 @@ class ContextHolder<Context*> {
 template <typename Context, typename Deleter>
 class ContextHolder<std::unique_ptr<Context, Deleter>> {
  public:
+  using ContextType = Context;
+
   explicit ContextHolder(std::unique_ptr<Context, Deleter> value)
       : value_(std::move(value)) {}
   Context* GetContext() { return value_.get(); }
@@ -297,18 +303,7 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
 };
 
 template <typename HeldContext>
-struct ContextTypeFromHeldImpl {
- private:
-  using Holder = ContextHolder<HeldContext>;
-  static Holder* holder();
-
- public:
-  using Type =
-      typename std::remove_reference<decltype(*holder()->GetContext())>::type;
-};
-
-template <typename HeldContext>
-using ContextTypeFromHeld = typename ContextTypeFromHeldImpl<HeldContext>::Type;
+using ContextTypeFromHeld = typename ContextHolder<HeldContext>::ContextType;
 
 template <typename... Contexts>
 class ActivityContexts : public ContextHolder<Contexts>... {
