@@ -61,6 +61,17 @@ grpc_fuzzer(
 
 licenses(["notice"])
 
+grpc_cc_library(
+    name = "httpcli_test_util",
+    hdrs = ["httpcli_test_util.h"],
+    srcs = ["httpcli_test_util.cc"],
+    deps = [
+        "//:gpr",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "httpcli_test",
     srcs = ["httpcli_test.cc"],
@@ -74,6 +85,7 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        ":httpcli_test_util",
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
@@ -97,6 +109,7 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        ":httpcli_test_util",
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
