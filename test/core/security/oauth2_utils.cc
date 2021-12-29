@@ -30,7 +30,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-typedef struct {
+typedef struct oauth2_request {
   gpr_mu* mu = nullptr;
   grpc_polling_entity pops = {};
   bool is_done = false;
