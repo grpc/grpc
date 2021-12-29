@@ -220,8 +220,8 @@ static void do_connect(void* arg, grpc_error_handle error) {
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr, true);
     *fc->ep = client;
-    start_scheduling_grpc_passthru_endpoint_channel_effects(
-        client, g_channel_actions, [&]() { g_channel_force_delete = true; });
+    start_scheduling_grpc_passthru_endpoint_channel_effects(client,
+                                                            g_channel_actions);
 
     grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(
