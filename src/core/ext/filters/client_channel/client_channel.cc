@@ -2406,6 +2406,14 @@ class ClientChannel::LoadBalancedCall::Metadata
   explicit Metadata(grpc_metadata_batch* batch) : batch_(batch) {}
 
   void Add(absl::string_view key, absl::string_view value) override {
+    // Gross, egregious hack to support legacy grpclb behavior.
+    if (key == GrpcLbClientStatsMetadata::key()) {
+      batch_->Set(
+          GrpcLbClientStatsMetadata(),
+          const_cast<GrpcLbClientStats*>(
+              reinterpret_cast<const GrpcLbClientStats*>(value.data())));
+      return;
+    }
     batch_->Append(key, Slice::FromCopiedString(value),
                    [key](absl::string_view error, const Slice& value) {
                      gpr_log(GPR_ERROR, "%s",
