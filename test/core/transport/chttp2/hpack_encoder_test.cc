@@ -209,8 +209,6 @@ static void verify(const verify_params params, const char* expected,
 }
 
 static void test_basic_headers() {
-  int i;
-
   verify_params params = {
       false,
       false,
