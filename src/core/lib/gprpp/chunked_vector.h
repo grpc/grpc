@@ -132,6 +132,11 @@ class ChunkedVector {
       }
       return *this;
     }
+    ForwardIterator& operator++(int) {
+      ForwardIterator tmp = *this;
+      ++*this;
+      return tmp;
+    }
     bool operator==(const ForwardIterator& other) const {
       return chunk_ == other.chunk_ && n_ == other.n_;
     }
@@ -162,6 +167,11 @@ class ChunkedVector {
         n_ = 0;
       }
       return *this;
+    }
+    ConstForwardIterator& operator++(int) {
+      ConstForwardIterator tmp = *this;
+      ++*this;
+      return tmp;
     }
     bool operator==(const ConstForwardIterator& other) const {
       return chunk_ == other.chunk_ && n_ == other.n_;
