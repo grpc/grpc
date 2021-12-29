@@ -231,7 +231,7 @@ void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
 void HttpCli::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   grpc_slice_ref_internal(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
-  Ref().release(); // ref held by pending write
+  Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
 }
 
@@ -260,7 +260,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
         req->ep_,
         req->ssl_host_override_.empty() ? req->host_ : req->ssl_host_override_,
         req->deadline_, absl::bind_front(&HttpCli::OnHandshakeDone, req));
-    req->Ref().release(); // ref held by pending handshake
+    req->Ref().release();  // ref held by pending handshake
     req->handshaker_->Start();
   }
 }
@@ -285,7 +285,7 @@ void HttpCli::NextAddress(grpc_error_handle error)
                    .channel_args_preconditioning()
                    .PreconditionChannelArgs(&channel_args);
   own_endpoint_ = false;
-  Ref().release(); // ref held by pending connect
+  Ref().release();  // ref held by pending connect
   grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, args, addr,
                           deadline_);
   grpc_channel_args_destroy(args);

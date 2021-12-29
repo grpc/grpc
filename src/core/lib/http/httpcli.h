@@ -239,7 +239,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   void AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    Ref().release(); // ref held by pending read
+    Ref().release();  // ref held by pending read
     grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true);
   }
 
