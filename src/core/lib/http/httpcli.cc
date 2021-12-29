@@ -144,7 +144,7 @@ HttpCli::HttpCli(
 
 HttpCli::~HttpCli() {
   grpc_http_parser_destroy(&parser_);
-  if (ep_ != nullptr) {
+  if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
   }
   grpc_slice_unref_internal(request_text_);
@@ -239,6 +239,11 @@ void HttpCli::OnHandshakeDone(grpc_endpoint* ep) {
   RefCountedPtr<HttpCli> unreffer(this);
   MutexLock lock(&mu_);
   own_endpoint_ = true;
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "cancelled during security handshake", &overall_error_, 1));
+    return;
+  }
   if (!ep) {
     NextAddress(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
@@ -252,6 +257,12 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
   RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(arg));
   {
     MutexLock lock(&req->mu_);
+    req->own_endpoint_ = true;
+    if (req->cancelled_) {
+      req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "cancelled during TCP connection establishment", &req->overall_error_, 1));
+      return;
+    }
     if (!req->ep_) {
       req->NextAddress(GRPC_ERROR_REF(error));
       return;
@@ -260,6 +271,8 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
         req->ep_,
         req->ssl_host_override_.empty() ? req->host_ : req->ssl_host_override_,
         req->deadline_, absl::bind_front(&HttpCli::OnHandshakeDone, req));
+    req->own_endpoint_ = false;
+    req->ep_ = nullptr;
     req->Ref().release();  // ref held by pending handshake
     req->handshaker_->Start();
   }

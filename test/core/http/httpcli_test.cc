@@ -158,16 +158,10 @@ TEST_F(HttpCliTest, Get) {
   grpc_httpcli_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
-
-  gpr_log(GPR_INFO, "test_get");
-
-  gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host);
-
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.http.path = const_cast<char*>("/get");
-
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
       grpc_core::HttpCli::Get(
           pops(), grpc_core::ResourceQuota::Default(), &req,
@@ -187,16 +181,11 @@ TEST_F(HttpCliTest, Post) {
   grpc_httpcli_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
-
-  gpr_log(GPR_INFO, "test_post");
-
   gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "posting to %s", host);
-
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.http.path = const_cast<char*>("/post");
-
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
       grpc_core::HttpCli::Post(
           pops(), grpc_core::ResourceQuota::Default(), &req,
@@ -248,7 +237,6 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
       RequestArgs request_args(this);
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
-      gpr_log(GPR_INFO, "test_cancel_get_during_dns_resolution");
 
       memset(&req, 0, sizeof(req));
       req.host =
@@ -268,7 +256,6 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
       std::thread cancel_thread([&httpcli_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        gpr_log(GPR_DEBUG, "now cancel http request using grpc_httpcli_cancel");
         httpcli_request.reset();
       });
       PollUntil([&request_args]() { return request_args.done; });
@@ -296,8 +283,6 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       RequestArgs request_args(this);
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
-      gpr_log(GPR_INFO, "test_cancel_get_while_reading_response");
-
       memset(&req, 0, sizeof(req));
       req.host = const_cast<char*>(fake_http_server_ptr->address());
       req.http.path = const_cast<char*>("/get");
@@ -316,7 +301,6 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       std::thread cancel_thread([&httpcli_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        gpr_log(GPR_DEBUG, "now cancel http request using grpc_httpcli_cancel");
         httpcli_request.reset();
       });
       PollUntil([&request_args]() { return request_args.done; });
