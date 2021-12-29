@@ -260,7 +260,8 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
     req->own_endpoint_ = true;
     if (req->cancelled_) {
       req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "cancelled during TCP connection establishment", &req->overall_error_, 1));
+          "cancelled during TCP connection establishment", &req->overall_error_,
+          1));
       return;
     }
     if (!req->ep_) {

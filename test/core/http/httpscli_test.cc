@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/http/httpcli.h"
-
 #include <string.h>
 
 #include <gmock/gmock.h>
@@ -30,6 +28,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
@@ -96,7 +95,9 @@ class HttpsCliTest : public ::testing::Test {
 
  protected:
   static void SetUpTestSuite() {
-    std::tuple<gpr_subprocess*, int> server_and_port = grpc_core::testing::StartHttpCliTestServer(g_argc, g_argv, true /* use_ssl */);
+    std::tuple<gpr_subprocess*, int> server_and_port =
+        grpc_core::testing::StartHttpCliTestServer(g_argc, g_argv,
+                                                   true /* use_ssl */);
     g_server = std::get<0>(server_and_port);
     g_server_port = std::get<1>(server_and_port);
   }
@@ -167,8 +168,7 @@ TEST_F(HttpsCliTest, Get) {
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
       grpc_core::HttpCli::Get(
           pops(), grpc_core::ResourceQuota::Default(), &req,
-          absl::make_unique<
-              grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
@@ -192,8 +192,7 @@ TEST_F(HttpsCliTest, Post) {
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request =
       grpc_core::HttpCli::Post(
           pops(), grpc_core::ResourceQuota::Default(), &req,
-          absl::make_unique<
-              grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
+          absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshakerFactory>(),
           "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_args,
                               grpc_schedule_on_exec_ctx),
