@@ -91,12 +91,6 @@ void grpc_tls_credentials_options_set_certificate_verifier(
   options->set_certificate_verifier(verifier->Ref());
 }
 
-void grpc_tls_credentials_options_set_crl_directory(
-    grpc_tls_credentials_options* options, const char* crl_directory) {
-  GPR_ASSERT(options != nullptr);
-  options->set_crl_directory(crl_directory);
-}
-
 void grpc_tls_credentials_options_set_check_call_host(
     grpc_tls_credentials_options* options, int check_call_host) {
   GPR_ASSERT(options != nullptr);

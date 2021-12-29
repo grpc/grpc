@@ -605,7 +605,6 @@ static void tsi_test_channel_destroy(tsi_test_channel* channel) {
 }
 
 void tsi_test_fixture_init(tsi_test_fixture* fixture) {
-  memset(fixture, 0, sizeof(tsi_test_fixture));
   fixture->config = tsi_test_frame_protector_config_create(
       true, true, true, true, true, true, true);
   fixture->handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;

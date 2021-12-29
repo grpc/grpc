@@ -68,7 +68,8 @@ mkdir -p "$(dirname $RUBY_3_0_0_TAR)"
 curl -L "https://ftp.ruby-lang.org/pub/ruby/3.0/$(basename $RUBY_3_0_0_TAR)" -o "$RUBY_3_0_0_TAR"
 ccache -c
 ruby --version | grep 'ruby 3.0.0'
-rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="$RUBY_3_0_0_TAR"
+tools/run_tests/helper_scripts/bundle_install_wrapper.sh
+bundle exec rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="$RUBY_3_0_0_TAR"
 echo "installed ruby 3.0.0 build targets"
 # Install ruby 2.7.0 for rake-compiler
 set +x
@@ -77,7 +78,8 @@ rvm use 2.7.0
 set -x
 ruby --version | grep 'ruby 2.7.0'
 ccache -c
-rake -f "$CROSS_RUBY" cross-ruby VERSION=2.7.0 HOST=x86_64-darwin11 MAKE="$MAKE"
+tools/run_tests/helper_scripts/bundle_install_wrapper.sh
+bundle exec rake -f "$CROSS_RUBY" cross-ruby VERSION=2.7.0 HOST=x86_64-darwin11 MAKE="$MAKE"
 echo "installed ruby 2.7.0 build targets"
 # Install ruby 2.4-2.6 for rake-compiler
 set +x
@@ -87,7 +89,8 @@ set -x
 ruby --version | grep 'ruby 2.5.0'
 for v in 2.6.0 2.5.0 2.4.0 ; do
   ccache -c
-  rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
+  tools/run_tests/helper_scripts/bundle_install_wrapper.sh
+  bundle exec rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
   echo "installed ruby $v build targets"
 done
 
