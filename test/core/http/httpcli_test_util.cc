@@ -80,7 +80,7 @@ std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, char** argv, b
       args.push_back(gpr_strdup("--ssl"));
       // Set the environment variable for the SSL certificate file
       char* pem_file;
-      gpr_asprintf(&pem_file, "%s/third_party/grpc/src/core/tsi/test_creds/ca.pem", root);
+      gpr_asprintf(&pem_file, "%s/src/core/tsi/test_creds/ca.pem", root);
       GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, pem_file);
       gpr_free(pem_file);
 

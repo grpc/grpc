@@ -208,6 +208,7 @@ void HttpCli::SSLHttpCliHandshaker::Orphan() {
     handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "HttpCli::SSLHttpCliHandshaker::Orphan"));
   }
+  Unref();
 }
 
 }  // namespace grpc_core
