@@ -114,12 +114,12 @@ HttpCli::HttpCli(
     grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response)
     : request_text_(request_text),
-      handshaker_factory_(std::move(handshaker_factory)),
-      resource_quota_(std::move(resource_quota)),
       host_(host),
       ssl_host_override_(ssl_host_override),
       deadline_(deadline),
+      handshaker_factory_(std::move(handshaker_factory)),
       on_done_(on_done),
+      resource_quota_(std::move(resource_quota)),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);

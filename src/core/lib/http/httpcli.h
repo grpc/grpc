@@ -290,6 +290,9 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
   const grpc_slice request_text_;
+  const std::string host_;
+  const std::string ssl_host_override_;
+  const grpc_millis deadline_;
   std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory_;
   grpc_closure on_read_;
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
@@ -297,6 +300,10 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
   grpc_closure connected_;
   grpc_endpoint* ep_ = nullptr;
+  grpc_closure* on_done_;
+  ResourceQuotaRefPtr resource_quota_;
+  grpc_pollset_set* pollset_set_;
+  const absl::optional<std::function<void()>> test_only_generate_response_;
   Mutex mu_;
   OrphanablePtr<HttpCliHandshaker> handshaker_ ABSL_GUARDED_BY(mu_);
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
@@ -304,19 +311,12 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
-  ResourceQuotaRefPtr resource_quota_ ABSL_GUARDED_BY(mu_);
-  const std::string host_;
-  const std::string ssl_host_override_;
-  const grpc_millis deadline_;
   int have_read_byte_ ABSL_GUARDED_BY(mu_) = 0;
-  grpc_closure* on_done_ ABSL_GUARDED_BY(mu_);
-  grpc_pollset_set* pollset_set_ ABSL_GUARDED_BY(mu_);
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
   OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
-  const absl::optional<std::function<void()>> test_only_generate_response_;
 };
 
 }  // namespace grpc_core
