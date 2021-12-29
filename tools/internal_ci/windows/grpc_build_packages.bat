@@ -25,17 +25,13 @@ endlocal
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-If Not "%RUN_TESTS_FLAGS%"=="%RUN_TESTS_FLAGS:python=%" (
-    set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-)
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-@rem TODO(https://github.com/grpc/grpc/issues/28011): Remove once Windows Kokoro workers'
-@rem   Python installs have been upgraded. Currently, removing this line will cause
-@rem   run_tests.py to fail to spawn test subprocesses.
-python3 tools/run_tests/start_port_server.py
-
-python3 tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
-set RUNTESTS_EXITCODE=%errorlevel%
+rem NOTHING TO DO HERE
+rem This script used to run "task_runner.py -f package windows", but
+rem currently there are no build_packages tasks that need to be run on windows.
+rem The only build_packages task that ever needed to run on windows was C#, but we switched to
+rem building C# nugets on linux (as dotnet SDK on linux does a good job)
+rem TODO(jtattermusch): remove the infrastructure for running "build_packages" kokoro job on windows.
 
 exit /b %RUNTESTS_EXITCODE%
