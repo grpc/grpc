@@ -234,12 +234,12 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
-    Unref();
   }
 
   void AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    Ref().release(); // ref held by pending read
     grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true);
   }
 
@@ -253,7 +253,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // Needed since OnRead may be called inline from grpc_endpoint_read
   static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
                                                    grpc_error_handle error) {
-    HttpCli* req = static_cast<HttpCli*>(user_data);
+    RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(user_data));
     MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
