@@ -248,6 +248,51 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
   }
 }
 
+// The point of this test is just to exercise the machinery around cancellation
+// during TCP connection establishment, to make sure there are no crashes/races
+// etc. This test doesn't actually verify that cancellation during TCP setup is
+// timely, though. For that, we would need to fake packet loss in the test.
+TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
+  // Grab an unoccupied port but don't listen on it. The goal
+  // here is just to have a server address that will reject
+  // TCP connection setups.
+  int fake_server_port = grpc_pick_unused_port_or_die();
+  std::string fake_server_address = absl::StrCat("[::1]:", std::to_string(fake_server_port));
+  int kNumThreads = 100;
+  std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    threads.push_back(std::thread([this, fake_server_address]() {
+      RequestArgs request_args(this);
+      grpc_httpcli_request req;
+      grpc_core::ExecCtx exec_ctx;
+      memset(&req, 0, sizeof(req));
+      req.host = const_cast<char*>(fake_server_address.c_str());
+      req.http.path = const_cast<char*>("/get");
+      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
+          grpc_core::HttpCli::Get(
+              pops(), grpc_core::ResourceQuota::Default(), &req,
+              absl::make_unique<
+                  grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+              NSecondsTime(15),
+              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
+                                  grpc_schedule_on_exec_ctx),
+              &request_args.response);
+      httpcli->Start();
+      exec_ctx.Flush();
+      std::thread cancel_thread([&httpcli]() {
+        grpc_core::ExecCtx exec_ctx;
+        httpcli.reset();
+      });
+      PollUntil([&request_args]() { return request_args.done; });
+      cancel_thread.join();
+    }));
+  }
+  for (auto& t : threads) {
+    t.join();
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
