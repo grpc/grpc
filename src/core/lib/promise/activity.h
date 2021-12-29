@@ -296,11 +296,33 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
   std::unique_ptr<Context, Deleter> value_;
 };
 
-template <typename... Contexts>
-class EnterContexts : public promise_detail::Context<Contexts>... {
+template <typename HeldContext>
+struct ContextTypeFromHeldImpl {
+ private:
+  using Holder = ContextHolder<HeldContext>;
+  static Holder* holder();
+
  public:
-  explicit EnterContexts(Contexts*... contexts)
-      : promise_detail::Context<Contexts>(contexts)... {}
+  using Type =
+      typename std::remove_reference<decltype(*holder()->GetContext())>::type;
+};
+
+template <typename HeldContext>
+using ContextTypeFromHeld = typename ContextTypeFromHeldImpl<HeldContext>::Type;
+
+template <typename... Contexts>
+class ActivityContexts : public ContextHolder<Contexts>... {
+ public:
+  explicit ActivityContexts(Contexts&&... contexts)
+      : ContextHolder<Contexts>(std::forward<Contexts>(contexts))... {}
+
+  class ScopedContext : public Context<ContextTypeFromHeld<Contexts>>... {
+   public:
+    explicit ScopedContext(ActivityContexts* contexts)
+        : Context<ContextTypeFromHeld<Contexts>>(
+              static_cast<ContextHolder<Contexts>*>(contexts)
+                  ->GetContext())... {}
+  };
 };
 
 // Implementation details for an Activity of an arbitrary type of promise.
@@ -315,15 +337,14 @@ class EnterContexts : public promise_detail::Context<Contexts>... {
 // invoked, and that a given activity will not be concurrently scheduled again
 // until its RunScheduledWakeup() has been invoked.
 template <class F, class WakeupScheduler, class OnDone, typename... Contexts>
-class PromiseActivity final
-    : public Activity,
-      private promise_detail::ContextHolder<Contexts>... {
+class PromiseActivity final : public Activity,
+                              private ActivityContexts<Contexts...> {
  public:
   using Factory = PromiseFactory<void, F>;
   PromiseActivity(F promise_factory, WakeupScheduler wakeup_scheduler,
-                  OnDone on_done, Contexts... contexts)
+                  OnDone on_done, Contexts&&... contexts)
       : Activity(),
-        ContextHolder<Contexts>(std::move(contexts))...,
+        ActivityContexts<Contexts...>(std::forward<Contexts>(contexts)...),
         wakeup_scheduler_(std::move(wakeup_scheduler)),
         on_done_(std::move(on_done)) {
     // Lock, construct an initial promise from the factory, and step it.
@@ -373,6 +394,8 @@ class PromiseActivity final
   }
 
  private:
+  using typename ActivityContexts<Contexts...>::ScopedContext;
+
   // Wakeup this activity. Arrange to poll the activity again at a convenient
   // time: this could be inline if it's deemed safe, or it could be by passing
   // the activity to an external threadpool to run. If the activity is already
@@ -424,30 +447,27 @@ class PromiseActivity final
   }
 
   // The main body of a step: set the current activity, and any contexts, and
-  // then run the main polling loop. Contained in a function by itself in order
-  // to keep the scoping rules a little easier in Step().
+  // then run the main polling loop. Contained in a function by itself in
+  // order to keep the scoping rules a little easier in Step().
   absl::optional<absl::Status> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ScopedActivity scoped_activity(this);
-    EnterContexts<typename std::remove_reference<decltype(
-        *static_cast<ContextHolder<Contexts>*>(this)->GetContext())>::type...>
-    contexts(static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
+    ScopedContext contexts(this);
     return StepLoop();
   }
 
-  // Similarly to RunStep, but additionally construct the promise from a promise
-  // factory before entering the main loop. Called once from the constructor.
+  // Similarly to RunStep, but additionally construct the promise from a
+  // promise factory before entering the main loop. Called once from the
+  // constructor.
   absl::optional<absl::Status> Start(Factory promise_factory)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ScopedActivity scoped_activity(this);
-    EnterContexts<typename std::remove_reference<decltype(
-        *static_cast<ContextHolder<Contexts>*>(this)->GetContext())>::type...>
-    contexts(static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
+    ScopedContext contexts(this);
     Construct(&promise_holder_.promise, promise_factory.Once());
     return StepLoop();
   }
 
-  // Until there are no wakeups from within and the promise is incomplete: poll
-  // the promise.
+  // Until there are no wakeups from within and the promise is incomplete:
+  // poll the promise.
   absl::optional<absl::Status> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     GPR_ASSERT(is_current());
     while (true) {
@@ -500,12 +520,12 @@ template <typename Factory, typename WakeupScheduler, typename OnDone,
           typename... Contexts>
 ActivityPtr MakeActivity(Factory promise_factory,
                          WakeupScheduler wakeup_scheduler, OnDone on_done,
-                         Contexts... contexts) {
+                         Contexts&&... contexts) {
   return ActivityPtr(
       new promise_detail::PromiseActivity<Factory, WakeupScheduler, OnDone,
                                           Contexts...>(
           std::move(promise_factory), std::move(wakeup_scheduler),
-          std::move(on_done), std::move(contexts)...));
+          std::move(on_done), std::forward<Contexts>(contexts)...));
 }
 
 }  // namespace grpc_core
