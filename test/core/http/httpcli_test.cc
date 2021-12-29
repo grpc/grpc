@@ -255,7 +255,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
                                   grpc_schedule_on_exec_ctx),
               &request_args.response);
       httpcli->Start();
-      std::thread cancel_thread([&httpcli_request]() {
+      std::thread cancel_thread([&httpcli]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
         httpcli.reset();

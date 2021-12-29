@@ -122,7 +122,7 @@ typedef struct portreq {
   int retries = 0;
   char* server = nullptr;
   grpc_httpcli_response response = {};
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_request;
+  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli;
 } portreq;
 
 static void got_port_from_server(void* arg, grpc_error_handle error) {
