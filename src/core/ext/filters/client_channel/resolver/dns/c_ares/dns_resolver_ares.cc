@@ -145,11 +145,11 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(ResolverArgs args)
               channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
               {1000 * 30, 0, INT_MAX}))),
       backoff_(BackOff::Options()
-                   .set_initial_backoff(grpc_core::Duration::Milliseconds(
+                   .set_initial_backoff(Duration::Milliseconds(
                        GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS))
                    .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
                    .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-                   .set_max_backoff(grpc_core::Duration::Milliseconds(
+                   .set_max_backoff(Duration::Milliseconds(
                        GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS))) {
   // Closure initialization.
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
