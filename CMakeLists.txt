@@ -531,6 +531,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/endpoint.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/expr.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/extension.proto
 )
 protobuf_generate_grpc_cpp(
@@ -543,6 +546,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/http_connection_manager.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/listener.proto
 )
 protobuf_generate_grpc_cpp(
@@ -552,7 +558,13 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/lrs.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/orca_load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/path.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/percent.proto
@@ -562,6 +574,9 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/rbac.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/regex.proto
@@ -825,9 +840,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx context_test)
   add_dependencies(buildtests_cxx core_configuration_test)
   add_dependencies(buildtests_cxx cpp_impl_of_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx crl_ssl_transport_security_test)
-  endif()
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
   add_dependencies(buildtests_cxx dual_ref_counted_test)
@@ -927,6 +939,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx qps_worker)
   add_dependencies(buildtests_cxx race_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
+  add_dependencies(buildtests_cxx rbac_service_config_parser_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
@@ -1221,10 +1234,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/compression/args_utils.cc
   test/core/end2end/cq_verifier.cc
@@ -1599,6 +1609,8 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/filters/rbac/rbac_filter.cc
+  src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/server_config_selector/server_config_selector.cc
   src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   src/core/ext/service_config/service_config.cc
@@ -1680,6 +1692,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
+  src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
@@ -1780,6 +1793,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/rbac/v3/rbac.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
@@ -1787,6 +1801,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
@@ -1818,6 +1833,11 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c
   src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
+  src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/checked.upbdefs.c
+  src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/eval.upbdefs.c
+  src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/explain.upbdefs.c
+  src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/syntax.upbdefs.c
+  src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/value.upbdefs.c
   src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
   src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
@@ -1855,6 +1875,7 @@ add_library(grpc
   src/core/ext/xds/xds_endpoint.cc
   src/core/ext/xds/xds_http_fault_filter.cc
   src/core/ext/xds/xds_http_filters.cc
+  src/core/ext/xds/xds_http_rbac_filter.cc
   src/core/ext/xds/xds_listener.cc
   src/core/ext/xds/xds_resource_type.cc
   src/core/ext/xds/xds_route_config.cc
@@ -1997,6 +2018,9 @@ add_library(grpc
   src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/sdk_server_authz_filter.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -6430,10 +6454,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(public_headers_must_be_c89
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/surface/public_headers_must_be_c89.c
 )
@@ -7903,9 +7924,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_matchers_test
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/authorization_matchers_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -7941,10 +7959,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_policy_provider_test
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   src/cpp/server/authorization_policy_provider.cc
   test/cpp/server/authorization_policy_provider_test.cc
@@ -8551,9 +8566,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(cel_authorization_engine_test
   src/core/lib/security/authorization/cel_authorization_engine.cc
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/cel_authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -9734,44 +9746,6 @@ target_link_libraries(cpp_impl_of_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(crl_ssl_transport_security_test
-    test/core/tsi/crl_ssl_transport_security_test.cc
-    test/core/tsi/transport_security_test_lib.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  )
-
-  target_include_directories(crl_ssl_transport_security_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(crl_ssl_transport_security_test
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -10959,9 +10933,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_authorization_engine_test
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/grpc_authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -10997,10 +10968,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_authorization_policy_provider_test
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/security/grpc_authorization_policy_provider_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14035,11 +14003,43 @@ target_link_libraries(raw_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(rbac_service_config_parser_test
+  test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(rbac_service_config_parser_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(rbac_service_config_parser_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(rbac_translator_test
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/security/rbac_translator_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14450,10 +14450,7 @@ add_executable(sdk_authz_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   src/cpp/server/authorization_policy_provider.cc
   test/cpp/end2end/sdk_authz_end2end_test.cc
@@ -17051,6 +17048,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/expr.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/extension.pb.h
@@ -17067,6 +17068,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
@@ -17079,6 +17084,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/metadata.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/path.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
@@ -17091,6 +17104,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rbac.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
