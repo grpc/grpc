@@ -57,9 +57,9 @@
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/naming/dns_test_util.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
@@ -580,14 +580,16 @@ void RunResolvesRelevantRecordsTest(
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           absl::GetFlag(FLAGS_inject_broken_nameserver_list).c_str());
-  std::unique_ptr<grpc::testing::FakeNonResponsiveDNSServer>
+  std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer>
       fake_non_responsive_dns_server;
   if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "True") {
-    g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
-    fake_non_responsive_dns_server =
-        absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
-
-            g_fake_non_responsive_dns_server_port);
+    fake_non_responsive_dns_server = absl::make_unique<
+        grpc_core::testing::FakeUdpAndTcpServer>(
+        grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+            kWaitForClientToSendFirstBytes,
+        grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+    g_fake_non_responsive_dns_server_port =
+        fake_non_responsive_dns_server->port();
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {

@@ -1544,7 +1544,7 @@ void GetCallStatus(grpc_millis deadline, grpc_metadata_batch* md_batch,
       *is_lb_drop = true;
     }
   } else {
-    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+    *status = *md_batch->get(GrpcStatusMetadata());
     *server_pushback_ms = md_batch->get(GrpcRetryPushbackMsMetadata());
   }
   GRPC_ERROR_UNREF(error);

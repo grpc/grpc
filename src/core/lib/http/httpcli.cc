@@ -24,6 +24,7 @@
 
 #include <string>
 
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
@@ -44,6 +45,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 namespace {
@@ -75,17 +77,14 @@ class InternalRequest {
     GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
     GPR_ASSERT(pollent);
     grpc_polling_entity_add_to_pollset_set(pollent_, context->pollset_set);
-    grpc_resolve_address(
+    dns_request_ = GetDNSResolver()->ResolveName(
         host_.c_str(), handshaker_->default_port, context_->pollset_set,
-        GRPC_CLOSURE_CREATE(OnResolved, this, grpc_schedule_on_exec_ctx),
-        &addresses_);
+        absl::bind_front(&InternalRequest::OnResolved, this));
+    dns_request_->Start();
   }
 
   ~InternalRequest() {
     grpc_http_parser_destroy(&parser_);
-    if (addresses_ != nullptr) {
-      grpc_resolved_addresses_destroy(addresses_);
-    }
     if (ep_ != nullptr) {
       grpc_endpoint_destroy(ep_);
     }
@@ -108,7 +107,7 @@ class InternalRequest {
       overall_error_ =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
     }
-    grpc_resolved_address* addr = &addresses_->addrs[next_address_ - 1];
+    const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
     std::string addr_text = grpc_sockaddr_to_uri(addr);
     overall_error_ = grpc_error_add_child(
         overall_error_,
@@ -193,16 +192,15 @@ class InternalRequest {
   }
 
   void NextAddress(grpc_error_handle error) {
-    grpc_resolved_address* addr;
     if (error != GRPC_ERROR_NONE) {
       AppendError(error);
     }
-    if (next_address_ == addresses_->naddrs) {
+    if (next_address_ == addresses_.size()) {
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Failed HTTP requests to all targets", &overall_error_, 1));
       return;
     }
-    addr = &addresses_->addrs[next_address_++];
+    const grpc_resolved_address* addr = &addresses_[next_address_++];
     GRPC_CLOSURE_INIT(&connected_, OnConnected, this,
                       grpc_schedule_on_exec_ctx);
     grpc_arg rq_arg = grpc_channel_arg_pointer_create(
@@ -217,19 +215,21 @@ class InternalRequest {
     grpc_channel_args_destroy(args);
   }
 
-  static void OnResolved(void* arg, grpc_error_handle error) {
-    InternalRequest* req = static_cast<InternalRequest*>(arg);
-    if (error != GRPC_ERROR_NONE) {
-      req->Finish(GRPC_ERROR_REF(error));
+  void OnResolved(
+      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+    dns_request_.reset();
+    if (!addresses_or.ok()) {
+      Finish(absl_status_to_grpc_error(addresses_or.status()));
       return;
     }
-    req->next_address_ = 0;
-    req->NextAddress(GRPC_ERROR_NONE);
+    addresses_ = std::move(*addresses_or);
+    next_address_ = 0;
+    NextAddress(GRPC_ERROR_NONE);
   }
 
   grpc_slice request_text_;
   grpc_http_parser parser_;
-  grpc_resolved_addresses* addresses_ = nullptr;
+  std::vector<grpc_resolved_address> addresses_;
   size_t next_address_ = 0;
   grpc_endpoint* ep_ = nullptr;
   ResourceQuotaRefPtr resource_quota_;
@@ -248,6 +248,7 @@ class InternalRequest {
   grpc_closure done_write_;
   grpc_closure connected_;
   grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
+  OrphanablePtr<DNSResolver::Request> dns_request_;
 };
 
 }  // namespace

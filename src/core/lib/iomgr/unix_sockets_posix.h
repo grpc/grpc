@@ -32,11 +32,11 @@
 
 void grpc_create_socketpair_if_unix(int sv[2]);
 
-grpc_error_handle grpc_resolve_unix_domain_address(
-    absl::string_view name, grpc_resolved_addresses** addresses);
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_domain_address(absl::string_view name);
 
-grpc_error_handle grpc_resolve_unix_abstract_domain_address(
-    absl::string_view name, grpc_resolved_addresses** addresses);
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_abstract_domain_address(absl::string_view name);
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr);
 

@@ -43,6 +43,13 @@ else
   docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"
 fi
 
+if [[ -t 0 ]]; then
+  DOCKER_TTY_ARGS="-it"
+else
+  # The input device on kokoro is not a TTY, so -it does not work.
+  DOCKER_TTY_ARGS=
+fi
+
 # Choose random name for docker container
 CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
 
@@ -61,6 +68,7 @@ docker run \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -w /var/local/git/grpc \
   --name="$CONTAINER_NAME" \
+  $DOCKER_TTY_ARGS \
   $EXTRA_DOCKER_ARGS \
   "$DOCKER_IMAGE_NAME" \
   /bin/bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"

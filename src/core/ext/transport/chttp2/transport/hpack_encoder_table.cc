@@ -22,7 +22,7 @@ namespace grpc_core {
 
 uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
   uint32_t new_index = tail_remote_index_ + table_elems_ + 1;
-  GPR_DEBUG_ASSERT(element_size < 65536);
+  GPR_DEBUG_ASSERT(element_size <= MaxEntrySize());
 
   if (element_size > max_table_size_) {
     while (table_size_ > 0) {

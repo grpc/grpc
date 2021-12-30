@@ -339,7 +339,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsEndpointResourceType::Decode(
   DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
-  auto endpoint_data = absl::make_unique<EndpointData>();
+  auto endpoint_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       EdsResourceParse(context, resource, is_v2, &endpoint_data->resource);
   if (error != GRPC_ERROR_NONE) {

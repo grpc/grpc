@@ -81,14 +81,13 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
 }
 
 absl::string_view EvaluateArgs::GetPath() const {
-  absl::string_view path;
-  if (metadata_ != nullptr &&
-      metadata_->legacy_index()->named.path != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.path;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    path = StringViewFromSlice(val);
+  if (metadata_ != nullptr) {
+    const auto* path = metadata_->get_pointer(HttpPathMetadata());
+    if (path != nullptr) {
+      return path->as_string_view();
+    }
   }
-  return path;
+  return absl::string_view();
 }
 
 absl::string_view EvaluateArgs::GetHost() const {
@@ -102,20 +101,40 @@ absl::string_view EvaluateArgs::GetHost() const {
 }
 
 absl::string_view EvaluateArgs::GetMethod() const {
-  absl::string_view method;
-  if (metadata_ != nullptr &&
-      metadata_->legacy_index()->named.method != nullptr) {
-    grpc_linked_mdelem* elem = metadata_->legacy_index()->named.method;
-    const grpc_slice& val = GRPC_MDVALUE(elem->md);
-    method = StringViewFromSlice(val);
+  if (metadata_ != nullptr) {
+    auto method_md = metadata_->get(HttpMethodMetadata());
+    if (method_md.has_value()) {
+      return HttpMethodMetadata::Encode(*method_md).as_string_view();
+    }
   }
-  return method;
+  return absl::string_view();
 }
 
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
     absl::string_view key, std::string* concatenated_value) const {
   if (metadata_ == nullptr) {
     return absl::nullopt;
+  }
+  // TODO(yashykt): Remove these special cases for known metadata after
+  // https://github.com/grpc/grpc/pull/28267 is merged
+  if (key == HttpMethodMetadata::key()) {
+    auto method = metadata_->get(HttpMethodMetadata());
+    return method.has_value()
+               ? absl::optional<absl::string_view>(
+                     HttpMethodMetadata::Encode(*method).as_string_view())
+               : absl::nullopt;
+  }
+  if (key == HttpAuthorityMetadata().key()) {
+    auto authority = metadata_->get_pointer(HttpAuthorityMetadata());
+    return authority != nullptr
+               ? absl::optional<absl::string_view>(authority->as_string_view())
+               : absl::nullopt;
+  }
+  if (key == HttpPathMetadata().key()) {
+    auto path = metadata_->get_pointer(HttpPathMetadata());
+    return path != nullptr
+               ? absl::optional<absl::string_view>(path->as_string_view())
+               : absl::nullopt;
   }
   return metadata_->GetValue(key, concatenated_value);
 }

@@ -2433,11 +2433,8 @@ class ClientChannel::LoadBalancedCall::Metadata
   class Encoder {
    public:
     void Encode(grpc_mdelem md) {
-      auto key = StringViewFromSlice(GRPC_MDKEY(md));
-      if (key != ":path") {
-        out_.emplace_back(std::string(key),
-                          std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
-      }
+      out_.emplace_back(std::string(StringViewFromSlice(GRPC_MDKEY(md))),
+                        std::string(StringViewFromSlice(GRPC_MDVALUE(md))));
     }
 
     template <class Which>
@@ -2448,6 +2445,9 @@ class ClientChannel::LoadBalancedCall::Metadata
     }
 
     void Encode(GrpcTimeoutMetadata, grpc_millis) {}
+    void Encode(HttpPathMetadata, const Slice&) {}
+    void Encode(HttpMethodMetadata,
+                const typename HttpMethodMetadata::ValueType&) {}
 
     std::vector<std::pair<std::string, std::string>> Take() {
       return std::move(out_);
