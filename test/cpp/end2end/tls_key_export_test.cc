@@ -107,8 +107,8 @@ std::string TestScenarioName(
   return info.param.AsString();
 }
 
-int CountOccurancesInFileContents(std::string file_contents,
-                                  std::string search_string) {
+int CountOccurrencesInFileContents(std::string file_contents,
+                                   std::string search_string) {
   int occurrences = 0;
   std::string::size_type pos = 0;
   while ((pos = file_contents.find(search_string, pos)) != std::string::npos) {
@@ -281,36 +281,36 @@ TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
 
     if (GetParam().share_tls_key_log_file() &&
         GetParam().enable_tls_key_logging()) {
-      EXPECT_EQ(CountOccurancesInFileContents(
+      EXPECT_EQ(CountOccurrencesInFileContents(
                     server_key_log, "CLIENT_HANDSHAKE_TRAFFIC_SECRET"),
                 GetParam().num_listening_ports());
-      EXPECT_EQ(CountOccurancesInFileContents(
+      EXPECT_EQ(CountOccurrencesInFileContents(
                     server_key_log, "SERVER_HANDSHAKE_TRAFFIC_SECRET"),
                 GetParam().num_listening_ports());
-      EXPECT_EQ(CountOccurancesInFileContents(server_key_log,
-                                              "CLIENT_TRAFFIC_SECRET_0"),
+      EXPECT_EQ(CountOccurrencesInFileContents(server_key_log,
+                                               "CLIENT_TRAFFIC_SECRET_0"),
                 GetParam().num_listening_ports());
-      EXPECT_EQ(CountOccurancesInFileContents(server_key_log,
-                                              "SERVER_TRAFFIC_SECRET_0"),
+      EXPECT_EQ(CountOccurrencesInFileContents(server_key_log,
+                                               "SERVER_TRAFFIC_SECRET_0"),
                 GetParam().num_listening_ports());
       EXPECT_EQ(
-          CountOccurancesInFileContents(server_key_log, "EXPORTER_SECRET"),
+          CountOccurrencesInFileContents(server_key_log, "EXPORTER_SECRET"),
           GetParam().num_listening_ports());
     } else if (GetParam().enable_tls_key_logging()) {
-      EXPECT_EQ(CountOccurancesInFileContents(
+      EXPECT_EQ(CountOccurrencesInFileContents(
                     server_key_log, "CLIENT_HANDSHAKE_TRAFFIC_SECRET"),
                 1);
-      EXPECT_EQ(CountOccurancesInFileContents(
+      EXPECT_EQ(CountOccurrencesInFileContents(
                     server_key_log, "SERVER_HANDSHAKE_TRAFFIC_SECRET"),
                 1);
-      EXPECT_EQ(CountOccurancesInFileContents(server_key_log,
-                                              "CLIENT_TRAFFIC_SECRET_0"),
+      EXPECT_EQ(CountOccurrencesInFileContents(server_key_log,
+                                               "CLIENT_TRAFFIC_SECRET_0"),
                 1);
-      EXPECT_EQ(CountOccurancesInFileContents(server_key_log,
-                                              "SERVER_TRAFFIC_SECRET_0"),
+      EXPECT_EQ(CountOccurrencesInFileContents(server_key_log,
+                                               "SERVER_TRAFFIC_SECRET_0"),
                 1);
       EXPECT_EQ(
-          CountOccurancesInFileContents(server_key_log, "EXPORTER_SECRET"), 1);
+          CountOccurrencesInFileContents(server_key_log, "EXPORTER_SECRET"), 1);
     }
 #else
     // If TLS Key logging is not available, the files should be empty.

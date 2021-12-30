@@ -55,11 +55,12 @@ class TlsSessionKeyLoggerCache {
   // A helper class which facilitates appending Tls session keys into a file.
   // The instance is bound to a file meaning only one instance of this object
   // can ever exist for a given file path.
-  class TlsSessionKeyLogger: public grpc_core::RefCounted<TlsSessionKeyLogger> {
+  class TlsSessionKeyLogger
+      : public grpc_core::RefCounted<TlsSessionKeyLogger> {
    public:
     // Instantiates a TlsSessionKeyLogger instance bound to a specific path.
     explicit TlsSessionKeyLogger(std::string tls_session_key_log_file_path,
-                                TlsSessionKeyLoggerCache* cache);
+                                 TlsSessionKeyLoggerCache* cache);
     ~TlsSessionKeyLogger() override;
 
     // Not copyable nor assignable.

@@ -1276,8 +1276,9 @@ GRPCAPI void grpc_authorization_policy_provider_release(
 
 /**
  * EXPERIMENTAL API - Subject to change.
- * Associates a session key logging config with a
- * grpc_tls_credentials_options object.
+ * Configures a grpc_tls_credentials_options object with tls session key
+ * logging capability. TLS channels using these credentials have tls session
+ * key logging enabled.
  * - options is the grpc_tls_credentials_options object
  * - path is a string pointing to the location where TLS session keys would be
  *   stored.
