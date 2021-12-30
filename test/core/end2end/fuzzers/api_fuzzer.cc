@@ -125,7 +125,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     void Start() override {
       Ref().release();  // ref held by timer callback
       grpc_timer_init(
-          &timer_, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+          &timer_,
+          grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
           GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
     }
 
@@ -189,7 +190,8 @@ grpc_ares_request* my_dns_lookup_ares(
   r->on_done = on_done;
   r->addresses = addresses;
   grpc_timer_init(
-      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+      &r->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return nullptr;
 }
@@ -254,7 +256,8 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      &fc->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+      &fc->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 

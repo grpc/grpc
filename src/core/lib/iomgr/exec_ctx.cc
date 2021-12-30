@@ -136,6 +136,8 @@ grpc_core::Timestamp grpc_cycle_counter_to_millis_round_up(
 */
 
 namespace grpc_core {
+gpr_timespec GetGrpcStartTime() { return g_start_time; }
+
 GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
 GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
 ApplicationCallbackExecCtx::callback_exec_ctx_;

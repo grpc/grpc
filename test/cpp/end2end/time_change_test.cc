@@ -123,7 +123,8 @@ TEST(TimespecTest, GprTimeSubNegativeNs) {
 TEST(TimespecTest, GrpcNegativeMillisToTimespec) {
   // -1500 milliseconds converts to timespec (-2 secs, 5 * 10^8 nsec)
   gpr_timespec ts =
-      grpc_core::Timestamp_to_timespec(-1500, GPR_CLOCK_MONOTONIC);
+      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(-1500)
+          .as_timespec(GPR_CLOCK_MONOTONIC);
   GPR_ASSERT(ts.tv_sec = -2);
   GPR_ASSERT(ts.tv_nsec = 5e8);
   GPR_ASSERT(ts.clock_type == GPR_CLOCK_MONOTONIC);

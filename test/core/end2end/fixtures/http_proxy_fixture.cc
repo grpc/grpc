@@ -532,7 +532,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
   const grpc_core::Timestamp deadline =
-      grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
+      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
   const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
@@ -593,10 +593,10 @@ static void thread_main(void* arg) {
     gpr_ref(&proxy->users);
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(proxy->mu);
-    GRPC_LOG_IF_ERROR(
-        "grpc_pollset_work",
-        grpc_pollset_work(proxy->pollset[0], &worker,
-                          grpc_core::ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
+    GRPC_LOG_IF_ERROR("grpc_pollset_work",
+                      grpc_pollset_work(proxy->pollset[0], &worker,
+                                        grpc_core::ExecCtx::Get()->Now() +
+                                            grpc_core::Duration::Seconds(1)));
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
   } while (!gpr_unref(&proxy->users));

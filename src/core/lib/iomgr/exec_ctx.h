@@ -23,6 +23,7 @@
 
 #include <limits>
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
@@ -360,6 +361,8 @@ class ApplicationCallbackExecCtx {
   grpc_completion_queue_functor* tail_{nullptr};
   static GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*) callback_exec_ctx_;
 };
+
+gpr_timespec GetGrpcStartTime();
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

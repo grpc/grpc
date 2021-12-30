@@ -936,7 +936,7 @@ grpc_cc_library(
 )
 
 # A library that vends only port_platform, so that libraries that don't need
-# anything else from gpr can still be portable!
+#anything else from gpr can still be portable !
 grpc_cc_library(
     name = "gpr_platform",
     language = "c++",
@@ -1632,6 +1632,9 @@ grpc_cc_library(
     name = "time",
     hdrs = [
         "src/core/lib/gprpp/time.h",
+    ],
+    srcs = [
+        "src/core/lib/gprpp/time.cc",
     ],
     deps = ["gpr"],
 )
