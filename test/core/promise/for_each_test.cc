@@ -22,7 +22,6 @@
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::Mock;
@@ -31,25 +30,22 @@ using testing::StrictMock;
 
 namespace grpc_core {
 
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-
 TEST(ForEachTest, SendThriceWithPipe) {
+  Pipe<int> pipe;
   int num_received = 0;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [&num_received] {
-        Pipe<int> pipe;
-        auto sender = std::make_shared<std::unique_ptr<PipeSender<int>>>(
-            absl::make_unique<PipeSender<int>>(std::move(pipe.sender)));
+      [&pipe, &num_received] {
         return Map(
             Join(
                 // Push 3 things into a pipe -- 1, 2, then 3 -- then close.
-                Seq((*sender)->Push(1), [sender] { return (*sender)->Push(2); },
-                    [sender] { return (*sender)->Push(3); },
-                    [sender] {
-                      sender->reset();
+                Seq(
+                    pipe.sender.Push(1),
+                    [&pipe] { return pipe.sender.Push(2); },
+                    [&pipe] { return pipe.sender.Push(3); },
+                    [&pipe] {
+                      auto drop = std::move(pipe.sender);
                       return absl::OkStatus();
                     }),
                 // Use a ForEach loop to read them out and verify all values are
@@ -63,8 +59,7 @@ TEST(ForEachTest, SendThriceWithPipe) {
             JustElem<1>());
       },
       NoWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, g_memory_allocator));
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 3);
 }

@@ -23,7 +23,10 @@
 #include <assert.h>
 #include <string.h>
 
+#include <cstdint>
+
 #include "hpack_constants.h"
+#include "hpack_encoder_table.h"
 
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this
@@ -558,6 +561,10 @@ void HPackCompressor::SliceIndex::EmitTo(const grpc_slice& key,
   It prev = values_.end();
   uint32_t transport_length =
       GRPC_SLICE_LENGTH(key) + value.length() + hpack_constants::kEntryOverhead;
+  if (transport_length > HPackEncoderTable::MaxEntrySize()) {
+    framer->EmitLitHdrWithNonBinaryStringKeyNotIdx(key, value.c_slice());
+    return;
+  }
   // Linear scan through previous values to see if we find the value.
   for (It it = values_.begin(); it != values_.end(); ++it) {
     if (value == it->value) {
@@ -608,7 +615,10 @@ void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
 
 void HPackCompressor::Framer::Encode(ContentTypeMetadata,
                                      ContentTypeMetadata::ValueType value) {
-  GPR_ASSERT(value == ContentTypeMetadata::ValueType::kApplicationGrpc);
+  if (value != ContentTypeMetadata::ValueType::kApplicationGrpc) {
+    gpr_log(GPR_ERROR, "Not encoding bad content-type header");
+    return;
+  }
   EncodeAlwaysIndexed(
       &compressor_->content_type_index_, GRPC_MDSTR_CONTENT_TYPE,
       StaticSlice::FromStaticString("application/grpc").c_slice(),
@@ -757,6 +767,12 @@ void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
 }
 
 void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
+  if (slice.length() > HPackEncoderTable::MaxEntrySize()) {
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(
+        StaticSlice::FromStaticString(UserAgentMetadata::key()).c_slice(),
+        slice.c_slice());
+    return;
+  }
   if (!slice.is_equivalent(compressor_->user_agent_)) {
     compressor_->user_agent_ = slice.Ref();
     compressor_->user_agent_index_ = 0;
@@ -791,6 +807,51 @@ void HPackCompressor::Framer::Encode(GrpcStatusMetadata,
   } else {
     EmitLitHdrWithNonBinaryStringKeyNotIdx(key, value);
   }
+}
+
+void HPackCompressor::Framer::Encode(GrpcEncodingMetadata,
+                                     grpc_compression_algorithm value) {
+  uint32_t* index = nullptr;
+  if (value < GRPC_COMPRESS_ALGORITHMS_COUNT) {
+    index = &compressor_->cached_grpc_encoding_[static_cast<uint32_t>(value)];
+    if (compressor_->table_.ConvertableToDynamicIndex(*index)) {
+      EmitIndexed(compressor_->table_.DynamicIndex(*index));
+      return;
+    }
+  }
+  auto key = StaticSlice::FromStaticString(GrpcEncodingMetadata::key());
+  auto encoded_value = GrpcEncodingMetadata::Encode(value);
+  uint32_t transport_length =
+      key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
+  if (index != nullptr) {
+    *index = compressor_->table_.AllocateIndex(transport_length);
+    EmitLitHdrWithNonBinaryStringKeyIncIdx(key.c_slice(),
+                                           encoded_value.c_slice());
+  } else {
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(key.c_slice(),
+                                           encoded_value.c_slice());
+  }
+}
+
+void HPackCompressor::Framer::Encode(GrpcAcceptEncodingMetadata,
+                                     CompressionAlgorithmSet value) {
+  if (compressor_->grpc_accept_encoding_index_ != 0 &&
+      value == compressor_->grpc_accept_encoding_ &&
+      compressor_->table_.ConvertableToDynamicIndex(
+          compressor_->grpc_accept_encoding_index_)) {
+    EmitIndexed(compressor_->table_.DynamicIndex(
+        compressor_->grpc_accept_encoding_index_));
+    return;
+  }
+  auto key = StaticSlice::FromStaticString(GrpcAcceptEncodingMetadata::key());
+  auto encoded_value = GrpcAcceptEncodingMetadata::Encode(value);
+  uint32_t transport_length =
+      key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
+  compressor_->grpc_accept_encoding_index_ =
+      compressor_->table_.AllocateIndex(transport_length);
+  compressor_->grpc_accept_encoding_ = value;
+  EmitLitHdrWithNonBinaryStringKeyIncIdx(key.c_slice(),
+                                         encoded_value.c_slice());
 }
 
 void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {

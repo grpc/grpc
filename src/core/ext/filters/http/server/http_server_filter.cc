@@ -120,7 +120,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
-  auto method = b->Take(grpc_core::HttpMethodMetadata());
+  auto method = b->get(grpc_core::HttpMethodMetadata());
   if (method.has_value()) {
     switch (*method) {
       case grpc_core::HttpMethodMetadata::kPost:

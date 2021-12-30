@@ -28,7 +28,7 @@ fi
 cd "$(dirname "$0")/../../.."
 
 rm -rf ./tmp
-rake compile
+bundle exec rake compile
 
 # build grpc_ruby_plugin
 mkdir -p cmake/build
