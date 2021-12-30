@@ -174,7 +174,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     grpc_closure on_close_;
     grpc_timer drain_grace_timer_;
     grpc_closure on_drain_grace_time_expiry_;
-    bool drain_grace_timer_expiry_callback_pending_ = false;
+    bool drain_grace_timer_expiry_callback_pending_ ABSL_GUARDED_BY(&mu_) =
+        false;
     bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
@@ -547,24 +548,27 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
   grpc_chttp2_transport* transport = nullptr;
   {
     MutexLock lock(&mu_);
-    transport = transport_;
+    if (transport_ != nullptr && !shutdown_) {
+      transport = transport_;
+      Ref().release();  // Ref held by OnDrainGraceTimeExpiry
+      GRPC_CLOSURE_INIT(&on_drain_grace_time_expiry_, OnDrainGraceTimeExpiry,
+                        this, nullptr);
+      grpc_timer_init(&drain_grace_timer_,
+                      ExecCtx::Get()->Now() +
+                          grpc_channel_args_find_integer(
+                              listener_->args_,
+                              GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
+                              {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
+                      &on_drain_grace_time_expiry_);
+      drain_grace_timer_expiry_callback_pending_ = true;
+      shutdown_ = true;
+    }
   }
   if (transport != nullptr) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->goaway_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Server is stopping to serve requests.");
     grpc_transport_perform_op(&transport->base, op);
-    Ref().release();  // Ref held by OnDrainGraceTimeExpiry
-    GRPC_CLOSURE_INIT(&on_drain_grace_time_expiry_, OnDrainGraceTimeExpiry,
-                      this, nullptr);
-    grpc_timer_init(&drain_grace_timer_,
-                    ExecCtx::Get()->Now() +
-                        Duration::Milliseconds(grpc_channel_args_find_integer(
-                            listener_->args_,
-                            GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
-                            {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX})),
-                    &on_drain_grace_time_expiry_);
-    drain_grace_timer_expiry_callback_pending_ = true;
   }
 }
 
@@ -598,6 +602,7 @@ void Chttp2ServerListener::ActiveConnection::OnClose(
         connection = std::move(it->second);
         self->listener_->connections_.erase(it);
       }
+      self->shutdown_ = true;
     }
     // Cancel the drain_grace_timer_ if needed.
     if (self->drain_grace_timer_expiry_callback_pending_) {

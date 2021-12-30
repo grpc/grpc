@@ -13,12 +13,12 @@
 @rem limitations under the License.
 
 @rem make sure msys binaries are preferred over cygwin binaries
-@rem set path to python3.7
+@rem set path to python 2.7
 @rem set path to CMake
-set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Program Files\CMake\bin;%PATH%
+set PATH=C:\tools\msys64\usr\bin;C:\Python37;C:\Python27;C:\Program Files\CMake\bin;%PATH%
 
-@rem create "python3" link that normally doesn't exist
 dir C:\Python37\
+
 mklink C:\Python37\python3.exe C:\Python37\python.exe
 
 python --version
@@ -36,19 +36,12 @@ netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 prim
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
-@rem Only install C# dependencies if we are running C# tests
-If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
-  @rem C# prerequisites: Install dotnet SDK
-  powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
-)
 
-@rem Add dotnet on path and disable some unwanted dotnet
-@rem option regardless of PREPARE_BUILD_INSTALL_DEPS_CSHARP value.
-@rem Always setting the env vars is fine since its instantaneous,
-@rem it can't fail and it avoids possible issues with
-@rem "setlocal" and "EnableDelayedExpansion" which would be required if
-@rem we wanted to do the same under the IF block.
+@rem C# prerequisites: Install dotnet SDK
+powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
 set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
+
+@rem Disable some unwanted dotnet options
 set NUGET_XMLDOC_MODE=skip
 set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
 set DOTNET_CLI_TELEMETRY_OPTOUT=true
@@ -58,7 +51,7 @@ If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
     powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
 )
 
-@rem Needed for uploading test results to bigquery
+@rem Needed for big_query_utils
 python -m pip install google-api-python-client || goto :error
 
 git submodule update --init || goto :error
