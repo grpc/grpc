@@ -2222,6 +2222,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
+    visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args",
         "gpr_platform",
@@ -2246,6 +2247,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
+    visibility = ["@grpc:client_channel"],
     deps = [
         "gpr_base",
         "grpc_service_config",
