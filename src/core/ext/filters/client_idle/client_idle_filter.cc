@@ -87,7 +87,7 @@ class ChannelData {
   grpc_channel_stack* channel_stack_;
   // Timeout after the last RPC finishes on the client channel at which the
   // channel goes back into IDLE state.
-  const Timestamp client_idle_timeout_;
+  const Duration client_idle_timeout_;
 
   // Member data used to track the state of channel.
   IdleFilterState idle_filter_state_{false};
@@ -149,9 +149,9 @@ ChannelData::ChannelData(grpc_channel_element* elem,
       client_idle_timeout_(GetClientIdleTimeout(args->channel_args)) {
   // If the idle filter is explicitly disabled in channel args, this ctor should
   // not get called.
-  GPR_ASSERT(client_idle_timeout_ != Timestamp::InfFuture());
+  GPR_ASSERT(client_idle_timeout_ != Duration::Infinity());
   GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %" PRId64 " ms",
-                       client_idle_timeout_);
+                       client_idle_timeout_.millis());
   // Initialize the idle timer without setting it.
   grpc_timer_init_unset(&idle_timer_);
   // Initialize the idle timer callback closure.
@@ -253,7 +253,7 @@ void RegisterClientIdleFilter(CoreConfiguration::Builder* builder) {
         const grpc_channel_args* channel_args =
             grpc_channel_stack_builder_get_channel_arguments(builder);
         if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            GetClientIdleTimeout(channel_args) != INT_MAX) {
+            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
           return grpc_channel_stack_builder_prepend_filter(
               builder, &grpc_client_idle_filter, nullptr, nullptr);
         } else {

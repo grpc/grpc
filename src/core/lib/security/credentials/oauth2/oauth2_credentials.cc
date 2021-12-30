@@ -136,7 +136,7 @@ grpc_oauth2_token_fetcher_credentials::
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_core::Timestamp* token_lifetime) {
+    grpc_core::Duration* token_lifetime) {
   char* null_terminated_body = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
   Json json;
@@ -203,7 +203,8 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
       goto end;
     }
     expires_in = it->second.string_value().c_str();
-    *token_lifetime = strtol(expires_in, nullptr, 10) * GPR_MS_PER_SEC;
+    *token_lifetime =
+        grpc_core::Duration::Seconds(strtol(expires_in, nullptr, 10));
     if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(*token_md);
     *token_md = grpc_mdelem_from_slices(
         grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
@@ -234,7 +235,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
 void grpc_oauth2_token_fetcher_credentials::on_http_response(
     grpc_credentials_metadata_request* r, grpc_error_handle error) {
   grpc_mdelem access_token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_credentials_status status =
       error == GRPC_ERROR_NONE
           ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -244,11 +245,10 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   gpr_mu_lock(&mu_);
   token_fetch_pending_ = false;
   access_token_md_ = GRPC_MDELEM_REF(access_token_md);
-  token_expiration_ =
-      status == GRPC_CREDENTIALS_OK
-          ? gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_millis(token_lifetime, GPR_TIMESPAN))
-          : gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  token_expiration_ = status == GRPC_CREDENTIALS_OK
+                          ? gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                         token_lifetime.as_timespec())
+                          : gpr_inf_past(GPR_CLOCK_MONOTONIC);
   grpc_oauth2_pending_get_request_metadata* pending_request = pending_requests_;
   pending_requests_ = nullptr;
   gpr_mu_unlock(&mu_);
@@ -280,8 +280,8 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error_handle* /*error*/) {
   // Check if we can use the cached token.
-  grpc_core::Timestamp refresh_threshold =
-      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
+  grpc_core::Duration refresh_threshold =
+      grpc_core::Duration::Seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS);
   grpc_mdelem cached_access_token_md = GRPC_MDNULL;
   gpr_mu_lock(&mu_);
   if (!GRPC_MDISNULL(access_token_md_) &&

@@ -145,11 +145,10 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
   return true;
 }
 
-Timestamp grpc_grpclb_duration_to_millis(
-    const google_protobuf_Duration* duration_pb) {
-  return static_cast<Timestamp>(
-      (google_protobuf_Duration_seconds(duration_pb) * GPR_MS_PER_SEC) +
-      (google_protobuf_Duration_nanos(duration_pb) / GPR_NS_PER_MS));
+Duration ParseDuration(const google_protobuf_Duration* duration_pb) {
+  return Duration::FromSecondsAndNanoseconds(
+      google_protobuf_Duration_seconds(duration_pb),
+      google_protobuf_Duration_nanos(duration_pb));
 }
 
 }  // namespace
@@ -176,7 +175,7 @@ bool GrpcLbResponseParse(const grpc_slice& serialized_response,
             initial_response);
     if (client_stats_report_interval != nullptr) {
       result->client_stats_report_interval =
-          grpc_grpclb_duration_to_millis(client_stats_report_interval);
+          ParseDuration(client_stats_report_interval);
     }
     return true;
   }

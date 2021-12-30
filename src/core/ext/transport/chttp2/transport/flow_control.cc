@@ -350,7 +350,7 @@ double TransportFlowControl::TargetLogBdp() {
 double TransportFlowControl::SmoothLogBdp(double value) {
   Timestamp now = ExecCtx::Get()->Now();
   double bdp_error = value - pid_controller_.last_control_value();
-  const double dt = static_cast<double>(now - last_pid_update_) * 1e-3;
+  const double dt = (now - last_pid_update_).seconds();
   last_pid_update_ = now;
   // Limit dt to 100ms
   const double kMaxDt = 0.1;

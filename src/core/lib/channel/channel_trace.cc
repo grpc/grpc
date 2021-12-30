@@ -70,8 +70,7 @@ ChannelTrace::ChannelTrace(size_t max_event_memory)
     return;  // tracing is disabled if max_event_memory_ == 0
   }
   gpr_mu_init(&tracer_mu_);
-  time_created_ =
-      Timestamp_to_timespec(ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
+  time_created_ = ExecCtx::Get()->Now().as_timespec(GPR_CLOCK_REALTIME);
 }
 
 ChannelTrace::~ChannelTrace() {

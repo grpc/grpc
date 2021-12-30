@@ -716,7 +716,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
           : grpc_channel_create_pollset_set_call(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
                 grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
-                GRPC_MILLIS_INF_FUTURE, nullptr);
+                grpc_core::Timestamp::InfFuture(), nullptr);
   grpc_slice_unref_internal(slice);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);

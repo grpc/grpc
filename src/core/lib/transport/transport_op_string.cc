@@ -58,7 +58,8 @@ class MetadataListEncoder {
 
   void Encode(grpc_core::GrpcTimeoutMetadata, grpc_core::Timestamp deadline) {
     MaybeAddComma();
-    out_->push_back(absl::StrFormat("deadline=%" PRId64, deadline));
+    out_->push_back(absl::StrFormat(
+        "deadline=%" PRId64, deadline.milliseconds_after_process_epoch()));
   }
 
   template <typename Which>

@@ -100,8 +100,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
           /* According to RFC1122, the interval of TCP Keep-Alive is default to
              no less than two hours. When there is no outstanding streams, we
              restrict the number of PINGS equivalent to TCP Keep-Alive. */
-          next_allowed_ping =
-              t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
+          next_allowed_ping = t->ping_recv_state.last_ping_recv_time +
+                              grpc_core::Duration::Hours(2);
         }
 
         if (next_allowed_ping > now) {

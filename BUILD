@@ -2088,6 +2088,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "table",
+        "time",
         "useful",
     ],
 )
@@ -2266,6 +2267,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "slice",
+        "time",
         "useful",
         "xds_orca_upb",
     ],

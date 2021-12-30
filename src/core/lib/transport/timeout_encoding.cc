@@ -39,7 +39,6 @@ int64_t DivideRoundingUp(int64_t dividend, int64_t divisor) {
 
 constexpr int64_t kSecondsPerMinute = 60;
 constexpr int64_t kMinutesPerHour = 60;
-constexpr int64_t kSecondsPerHour = kSecondsPerMinute * kMinutesPerHour;
 constexpr int64_t kMaxHours = 27000;
 
 bool IsAllSpace(const uint8_t* p, const uint8_t* end) {

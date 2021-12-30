@@ -82,7 +82,7 @@ struct grpc_jwt_verifier_email_domain_key_url_mapping {
 };
 /* Globals to control the verifier. Not thread-safe. */
 extern gpr_timespec grpc_jwt_verifier_clock_skew;
-extern grpc_core::Timestamp grpc_jwt_verifier_max_delay;
+extern grpc_core::Duration grpc_jwt_verifier_max_delay;
 
 /* The verifier can be created with some custom mappings to help with key
    discovery in the case where the issuer is an email address.

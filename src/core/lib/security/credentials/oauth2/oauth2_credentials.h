@@ -160,7 +160,7 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_core::Timestamp* token_lifetime);
+    grpc_core::Duration* token_lifetime);
 
 namespace grpc_core {
 // Exposed for testing only. This function validates the options, ensuring that

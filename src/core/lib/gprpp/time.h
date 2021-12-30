@@ -26,6 +26,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -36,10 +37,11 @@ class Timestamp {
 
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
 
-  static constexpr Timestamp FromMiillisecondsAfterProcessEpoch(
-      int64_t millis) {
+  static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);
   }
+
+  static constexpr Timestamp ProcessEpoch() { return Timestamp(0); }
 
   static constexpr Timestamp InfFuture() {
     return Timestamp(std::numeric_limits<int64_t>::max());
@@ -86,8 +88,12 @@ class Duration {
 
   static Duration FromTimespec(gpr_timespec t);
   static Duration FromSecondsAndNanoseconds(int64_t seconds, int32_t nanos);
+  static Duration FromSecondsAsDouble(double seconds);
 
   static constexpr Duration Zero() { return Duration(0); }
+
+  // Smallest representatable positive duration.
+  static constexpr Duration Epsilon() { return Duration(1); }
 
   static constexpr Duration NegativeInfinity() {
     return Duration(std::numeric_limits<int64_t>::min());
@@ -155,6 +161,7 @@ class Duration {
   }
 
   constexpr int64_t millis() const { return millis_; }
+  double seconds() const { return static_cast<double>(millis_) / 1000.0; }
 
   gpr_timespec as_timespec() const;
 
@@ -167,28 +174,29 @@ class Duration {
 };
 
 inline Duration operator+(Duration lhs, Duration rhs) {
-  return Duration::Milliseconds(lhs.millis() + rhs.millis());
+  return Duration::Milliseconds(SaturatingAdd(lhs.millis(), rhs.millis()));
 }
 
 inline Duration operator-(Duration lhs, Duration rhs) {
-  return Duration::Milliseconds(lhs.millis() - rhs.millis());
+  return Duration::Milliseconds(SaturatingAdd(lhs.millis(), -rhs.millis()));
 }
 
 inline Timestamp operator+(Timestamp lhs, Duration rhs) {
-  return Timestamp::FromMiillisecondsAfterProcessEpoch(
-      lhs.milliseconds_after_process_epoch() + rhs.millis());
+  return Timestamp::FromMillisecondsAfterProcessEpoch(
+      SaturatingAdd(lhs.milliseconds_after_process_epoch(), rhs.millis()));
 }
 
 inline Timestamp operator-(Timestamp lhs, Duration rhs) {
-  return Timestamp::FromMiillisecondsAfterProcessEpoch(
-      lhs.milliseconds_after_process_epoch() - rhs.millis());
+  return Timestamp::FromMillisecondsAfterProcessEpoch(
+      SaturatingAdd(lhs.milliseconds_after_process_epoch(), -rhs.millis()));
 }
 
 inline Timestamp operator+(Duration lhs, Timestamp rhs) { return rhs + lhs; }
 
 inline Duration operator-(Timestamp lhs, Timestamp rhs) {
-  return Duration::Milliseconds(lhs.milliseconds_after_process_epoch() -
-                                rhs.milliseconds_after_process_epoch());
+  return Duration::Milliseconds(
+      SaturatingAdd(lhs.milliseconds_after_process_epoch(),
+                    -rhs.milliseconds_after_process_epoch()));
 }
 
 inline Duration operator*(Duration lhs, double rhs) {
@@ -200,6 +208,10 @@ inline Duration operator*(double lhs, Duration rhs) { return rhs * lhs; }
 inline Duration Duration::FromSecondsAndNanoseconds(int64_t seconds,
                                                     int32_t nanos) {
   return Seconds(seconds) + NanosecondsRoundDown(nanos);
+}
+
+inline Duration Duration::FromSecondsAsDouble(double seconds) {
+  return Milliseconds(static_cast<int64_t>(seconds * 1000.0));
 }
 
 }  // namespace grpc_core

@@ -367,10 +367,11 @@ void CallData::DecideWhetherToInjectFaults(
                      fi_policy_->abort_percentage_numerator);
       }
       if (!fi_policy_->delay_header.empty() &&
-          (copied_policy == nullptr || copied_policy->delay == 0) &&
+          (copied_policy == nullptr ||
+           copied_policy->delay == Duration::Zero()) &&
           key == fi_policy_->delay_header) {
         maybe_copy_policy_func();
-        copied_policy->delay = static_cast<Timestamp>(
+        copied_policy->delay = Duration::Milliseconds(
             std::max(GetMetadatumValueInt64(md), int64_t(0)));
       }
       if (!fi_policy_->delay_percentage_header.empty() &&
@@ -384,7 +385,7 @@ void CallData::DecideWhetherToInjectFaults(
     if (copied_policy != nullptr) fi_policy_ = copied_policy;
   }
   // Roll the dice
-  delay_request_ = fi_policy_->delay != 0 &&
+  delay_request_ = fi_policy_->delay != Duration::Zero() &&
                    UnderFraction(fi_policy_->delay_percentage_numerator,
                                  fi_policy_->delay_percentage_denominator);
   abort_request_ = fi_policy_->abort_code != GRPC_STATUS_OK &&

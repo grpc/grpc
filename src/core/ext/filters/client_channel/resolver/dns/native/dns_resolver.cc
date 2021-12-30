@@ -90,9 +90,9 @@ class NativeClientChannelDNSResolver : public Resolver {
   grpc_timer next_resolution_timer_;
   grpc_closure on_next_resolution_;
   /// min time between DNS requests
-  Timestamp min_time_between_resolutions_;
+  Duration min_time_between_resolutions_;
   /// timestamp of last DNS request
-  Timestamp last_resolution_timestamp_ = -1;
+  absl::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
   /// tracks pending resolutions
@@ -106,16 +106,17 @@ NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
       work_serializer_(std::move(args.work_serializer)),
       result_handler_(std::move(args.result_handler)),
       interested_parties_(grpc_pollset_set_create()),
-      min_time_between_resolutions_(grpc_channel_args_find_integer(
-          channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
-          {1000 * 30, 0, INT_MAX})),
-      backoff_(
-          BackOff::Options()
-              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
-                                   1000)
-              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
-              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
+      min_time_between_resolutions_(
+          Duration::Milliseconds(grpc_channel_args_find_integer(
+              channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
+              {1000 * 30, 0, INT_MAX}))),
+      backoff_(BackOff::Options()
+                   .set_initial_backoff(Duration::Seconds(
+                       GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS))
+                   .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+                   .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+                   .set_max_backoff(Duration::Seconds(
+                       GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS))) {
   if (args.pollset_set != nullptr) {
     grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
@@ -216,15 +217,16 @@ void NativeClientChannelDNSResolver::OnResolvedLocked(
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
     Timestamp next_try = backoff_.NextAttemptTime();
-    Timestamp timeout = next_try - ExecCtx::Get()->Now();
+    Duration timeout = next_try - ExecCtx::Get()->Now();
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
     // new closure API is done, find a way to track this ref with the timer
     // callback as part of the type system.
     Ref(DEBUG_LOCATION, "next_resolution_timer").release();
-    if (timeout > 0) {
-      gpr_log(GPR_DEBUG, "retrying in %" PRId64 " milliseconds", timeout);
+    if (timeout > Duration::Zero()) {
+      gpr_log(GPR_DEBUG, "retrying in %" PRId64 " milliseconds",
+              timeout.millis());
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
@@ -240,22 +242,23 @@ void NativeClientChannelDNSResolver::MaybeStartResolvingLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
-  if (last_resolution_timestamp_ >= 0) {
+  if (last_resolution_timestamp_.has_value()) {
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
     const Timestamp earliest_next_resolution =
-        last_resolution_timestamp_ + min_time_between_resolutions_;
-    const Timestamp ms_until_next_resolution =
+        *last_resolution_timestamp_ + min_time_between_resolutions_;
+    const Duration time_until_next_resolution =
         earliest_next_resolution - ExecCtx::Get()->Now();
-    if (ms_until_next_resolution > 0) {
-      const Timestamp last_resolution_ago =
-          ExecCtx::Get()->Now() - last_resolution_timestamp_;
+    if (time_until_next_resolution > Duration::Zero()) {
+      const Duration last_resolution_ago =
+          ExecCtx::Get()->Now() - *last_resolution_timestamp_;
       gpr_log(GPR_DEBUG,
               "In cooldown from last resolution (from %" PRId64
               " ms ago). Will resolve again in %" PRId64 " ms",
-              last_resolution_ago, ms_until_next_resolution);
+              last_resolution_ago.millis(),
+              time_until_next_resolution.millis());
       have_next_resolution_timer_ = true;
       // TODO(roth): We currently deal with this ref manually.  Once the
       // new closure API is done, find a way to track this ref with the timer
@@ -265,7 +268,7 @@ void NativeClientChannelDNSResolver::MaybeStartResolvingLocked() {
                         NativeClientChannelDNSResolver::OnNextResolution, this,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&next_resolution_timer_,
-                      ExecCtx::Get()->Now() + ms_until_next_resolution,
+                      ExecCtx::Get()->Now() + time_until_next_resolution,
                       &on_next_resolution_);
       return;
     }

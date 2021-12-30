@@ -68,12 +68,12 @@ HealthCheckClient::HealthCheckClient(
       watcher_(std::move(watcher)),
       retry_backoff_(
           BackOff::Options()
-              .set_initial_backoff(
-                  HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
+              .set_initial_backoff(Duration::Seconds(
+                  HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS))
               .set_multiplier(HEALTH_CHECK_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(HEALTH_CHECK_RECONNECT_JITTER)
-              .set_max_backoff(HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS *
-                               1000)) {
+              .set_max_backoff(Duration::Seconds(
+                  HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS))) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "created HealthCheckClient %p", this);
   }
@@ -147,11 +147,11 @@ void HealthCheckClient::StartRetryTimerLocked() {
   Timestamp next_try = retry_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthCheckClient %p: health check call lost...", this);
-    Timestamp timeout = next_try - ExecCtx::Get()->Now();
-    if (timeout > 0) {
+    Duration timeout = next_try - ExecCtx::Get()->Now();
+    if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO,
               "HealthCheckClient %p: ... will retry in %" PRId64 "ms.", this,
-              timeout);
+              timeout.millis());
     } else {
       gpr_log(GPR_INFO, "HealthCheckClient %p: ... retrying immediately.",
               this);

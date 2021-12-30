@@ -100,7 +100,7 @@ class AresClientChannelDNSResolver : public Resolver {
   // timeout in milliseconds for active DNS queries
   int query_timeout_ms_;
   /// min interval between DNS requests
-  Timestamp min_time_between_resolutions_;
+  Duration min_time_between_resolutions_;
 
   /// closures used by the work_serializer
   grpc_closure on_next_resolution_;
@@ -113,7 +113,7 @@ class AresClientChannelDNSResolver : public Resolver {
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
   /// timestamp of last DNS request
-  Timestamp last_resolution_timestamp_ = -1;
+  absl::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving backend addresses
@@ -140,16 +140,17 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(ResolverArgs args)
       query_timeout_ms_(grpc_channel_args_find_integer(
           channel_args_, GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS,
           {GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, 0, INT_MAX})),
-      min_time_between_resolutions_(grpc_channel_args_find_integer(
-          channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
-          {1000 * 30, 0, INT_MAX})),
-      backoff_(
-          BackOff::Options()
-              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
-                                   1000)
-              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
-              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
+      min_time_between_resolutions_(
+          Duration::Milliseconds(grpc_channel_args_find_integer(
+              channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
+              {1000 * 30, 0, INT_MAX}))),
+      backoff_(BackOff::Options()
+                   .set_initial_backoff(grpc_core::Duration::Milliseconds(
+                       GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS))
+                   .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+                   .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+                   .set_max_backoff(grpc_core::Duration::Milliseconds(
+                       GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS))) {
   // Closure initialization.
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                     grpc_schedule_on_exec_ctx);
@@ -388,7 +389,7 @@ void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
     Timestamp next_try = backoff_.NextAttemptTime();
-    Timestamp timeout = next_try - ExecCtx::Get()->Now();
+    Duration timeout = next_try - ExecCtx::Get()->Now();
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
                          this, grpc_error_std_string(error).c_str());
     GPR_ASSERT(!have_next_resolution_timer_);
@@ -397,9 +398,9 @@ void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
     // new closure API is done, find a way to track this ref with the timer
     // callback as part of the type system.
     Ref(DEBUG_LOCATION, "retry-timer").release();
-    if (timeout > 0) {
+    if (timeout > Duration::Zero()) {
       GRPC_CARES_TRACE_LOG("resolver:%p retrying in %" PRId64 " milliseconds",
-                           this, timeout);
+                           this, timeout.millis());
     } else {
       GRPC_CARES_TRACE_LOG("resolver:%p retrying immediately", this);
     }
@@ -413,29 +414,30 @@ void AresClientChannelDNSResolver::MaybeStartResolvingLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
-  if (last_resolution_timestamp_ >= 0) {
+  if (last_resolution_timestamp_.has_value()) {
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
     const Timestamp earliest_next_resolution =
-        last_resolution_timestamp_ + min_time_between_resolutions_;
-    const Timestamp ms_until_next_resolution =
+        *last_resolution_timestamp_ + min_time_between_resolutions_;
+    const Duration time_until_next_resolution =
         earliest_next_resolution - ExecCtx::Get()->Now();
-    if (ms_until_next_resolution > 0) {
-      const Timestamp last_resolution_ago =
-          ExecCtx::Get()->Now() - last_resolution_timestamp_;
+    if (time_until_next_resolution > Duration::Zero()) {
+      const Duration last_resolution_ago =
+          ExecCtx::Get()->Now() - *last_resolution_timestamp_;
       GRPC_CARES_TRACE_LOG(
           "resolver:%p In cooldown from last resolution (from %" PRId64
           " ms ago). Will resolve again in %" PRId64 " ms",
-          this, last_resolution_ago, ms_until_next_resolution);
+          this, last_resolution_ago.millis(),
+          time_until_next_resolution.millis());
       have_next_resolution_timer_ = true;
       // TODO(roth): We currently deal with this ref manually.  Once the
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
       grpc_timer_init(&next_resolution_timer_,
-                      ExecCtx::Get()->Now() + ms_until_next_resolution,
+                      ExecCtx::Get()->Now() + time_until_next_resolution,
                       &on_next_resolution_);
       return;
     }

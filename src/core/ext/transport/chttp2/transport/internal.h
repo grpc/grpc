@@ -118,7 +118,7 @@ struct grpc_chttp2_ping_queue {
 struct grpc_chttp2_repeated_ping_policy {
   int max_pings_without_data;
   int max_ping_strikes;
-  grpc_core::Timestamp min_recv_ping_interval_without_data;
+  grpc_core::Duration min_recv_ping_interval_without_data;
 };
 struct grpc_chttp2_repeated_ping_state {
   grpc_core::Timestamp last_ping_sent_time;
@@ -477,9 +477,9 @@ struct grpc_chttp2_transport {
   /** watchdog to kill the transport when waiting for the keepalive ping */
   grpc_timer keepalive_watchdog_timer;
   /** time duration in between pings */
-  grpc_core::Timestamp keepalive_time;
+  grpc_core::Duration keepalive_time;
   /** grace period for a ping to complete before watchdog kicks in */
-  grpc_core::Timestamp keepalive_timeout;
+  grpc_core::Duration keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls = false;
   /** If start_keepalive_ping_locked has been called */

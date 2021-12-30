@@ -385,7 +385,8 @@ void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
 gpr_timespec grpc_jwt_verifier_clock_skew = {60, 0, GPR_TIMESPAN};
 
 /* Max delay defaults to one minute. */
-grpc_core::Timestamp grpc_jwt_verifier_max_delay = 60 * GPR_MS_PER_SEC;
+grpc_core::Duration grpc_jwt_verifier_max_delay =
+    grpc_core::Duration::Minutes(1);
 
 struct email_key_mapping {
   char* email_domain;

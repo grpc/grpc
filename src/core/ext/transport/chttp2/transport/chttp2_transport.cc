@@ -294,11 +294,11 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                strcmp(channel_args->args[i].key,
                       GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)) {
       t->ping_policy.min_recv_ping_interval_without_data =
-          grpc_channel_arg_get_integer(
+          grpc_core::Duration::Milliseconds(grpc_channel_arg_get_integer(
               &channel_args->args[i],
               grpc_integer_options{
                   g_default_min_recv_ping_interval_without_data_ms, 0,
-                  INT_MAX});
+                  INT_MAX}));
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)) {
       t->write_buffer_size = static_cast<uint32_t>(grpc_channel_arg_get_integer(
@@ -314,8 +314,9 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                                    ? g_default_client_keepalive_time_ms
                                    : g_default_server_keepalive_time_ms,
                                1, INT_MAX});
-      t->keepalive_time =
-          value == INT_MAX ? grpc_core::Timestamp::InfFuture() : value;
+      t->keepalive_time = value == INT_MAX
+                              ? grpc_core::Duration::Infinity()
+                              : grpc_core::Duration::Milliseconds(value);
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
       const int value = grpc_channel_arg_get_integer(
@@ -324,8 +325,9 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                                    ? g_default_client_keepalive_timeout_ms
                                    : g_default_server_keepalive_timeout_ms,
                                0, INT_MAX});
-      t->keepalive_timeout =
-          value == INT_MAX ? grpc_core::Timestamp::InfFuture() : value;
+      t->keepalive_timeout = value == INT_MAX
+                                 ? grpc_core::Duration::Infinity()
+                                 : grpc_core::Duration::Milliseconds(value);
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
       t->keepalive_permit_without_calls = static_cast<uint32_t>(
@@ -401,20 +403,24 @@ static bool read_channel_args(grpc_chttp2_transport* t,
 static void init_transport_keepalive_settings(grpc_chttp2_transport* t) {
   if (t->is_client) {
     t->keepalive_time = g_default_client_keepalive_time_ms == INT_MAX
-                            ? grpc_core::Timestamp::InfFuture()
-                            : g_default_client_keepalive_time_ms;
+                            ? grpc_core::Duration::Infinity()
+                            : grpc_core::Duration::Milliseconds(
+                                  g_default_client_keepalive_time_ms);
     t->keepalive_timeout = g_default_client_keepalive_timeout_ms == INT_MAX
-                               ? grpc_core::Timestamp::InfFuture()
-                               : g_default_client_keepalive_timeout_ms;
+                               ? grpc_core::Duration::Infinity()
+                               : grpc_core::Duration::Milliseconds(
+                                     g_default_client_keepalive_timeout_ms);
     t->keepalive_permit_without_calls =
         g_default_client_keepalive_permit_without_calls;
   } else {
     t->keepalive_time = g_default_server_keepalive_time_ms == INT_MAX
-                            ? grpc_core::Timestamp::InfFuture()
-                            : g_default_server_keepalive_time_ms;
+                            ? grpc_core::Duration::Infinity()
+                            : grpc_core::Duration::Milliseconds(
+                                  g_default_server_keepalive_time_ms);
     t->keepalive_timeout = g_default_server_keepalive_timeout_ms == INT_MAX
-                               ? grpc_core::Timestamp::InfFuture()
-                               : g_default_server_keepalive_timeout_ms;
+                               ? grpc_core::Duration::Infinity()
+                               : grpc_core::Duration::Milliseconds(
+                                     g_default_server_keepalive_timeout_ms);
     t->keepalive_permit_without_calls =
         g_default_server_keepalive_permit_without_calls;
   }
@@ -424,11 +430,12 @@ static void configure_transport_ping_policy(grpc_chttp2_transport* t) {
   t->ping_policy.max_pings_without_data = g_default_max_pings_without_data;
   t->ping_policy.max_ping_strikes = g_default_max_ping_strikes;
   t->ping_policy.min_recv_ping_interval_without_data =
-      g_default_min_recv_ping_interval_without_data_ms;
+      grpc_core::Duration::Milliseconds(
+          g_default_min_recv_ping_interval_without_data_ms);
 }
 
 static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
-  if (t->keepalive_time != grpc_core::Timestamp::InfFuture()) {
+  if (t->keepalive_time != grpc_core::Duration::Infinity()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
@@ -1082,17 +1089,14 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     gpr_log(GPR_ERROR,
             "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
             "data equal to \"too_many_pings\"");
-    double current_keepalive_time_ms = static_cast<double>(t->keepalive_time);
-    constexpr int max_keepalive_time_ms =
-        INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
+    constexpr auto max_keepalive_time = grpc_core::Duration::Milliseconds(
+        INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
     t->keepalive_time =
-        current_keepalive_time_ms > static_cast<double>(max_keepalive_time_ms)
-            ? grpc_core::Timestamp::InfFuture()
-            : static_cast<grpc_core::Timestamp>(
-                  current_keepalive_time_ms *
-                  KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
+        t->keepalive_time > max_keepalive_time
+            ? grpc_core::Duration::Infinity()
+            : t->keepalive_time * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
-                      absl::Cord(std::to_string(t->keepalive_time)));
+                      absl::Cord(std::to_string(t->keepalive_time.millis())));
   }
   // lie: use transient failure from the transport to indicate goaway has been
   // received.

@@ -1117,8 +1117,10 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     gpr_log(GPR_INFO,
             "PS:%p work hdl=%p worker=%p now=%" PRId64 " deadline=%" PRId64
             " kwp=%d pollable=%p",
-            pollset, worker_hdl, WORKER_PTR, grpc_core::ExecCtx::Get()->Now(),
-            deadline, pollset->kicked_without_poller, pollset->active_pollable);
+            pollset, worker_hdl, WORKER_PTR,
+            grpc_core::ExecCtx::Get()->Now().milliseconds_after_process_epoch(),
+            deadline.milliseconds_after_process_epoch(),
+            pollset->kicked_without_poller, pollset->active_pollable);
   }
   static const char* err_desc = "pollset_work";
   grpc_error_handle error = GRPC_ERROR_NONE;
