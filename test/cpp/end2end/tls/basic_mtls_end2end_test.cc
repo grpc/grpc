@@ -31,6 +31,7 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -65,7 +66,8 @@ struct SecurityPrimitives {
   enum VerifierType {
     EXTERNAL_SYNC_VERIFIER = 0,
     EXTERNAL_ASYNC_VERIFIER = 1,
-    HOSTNAME_VERIFIER = 2
+    HOSTNAME_VERIFIER = 2,
+    DEFAULT_VERIFIER = 3
   } verifier_type;
   enum TlsVersion { V_12 = 0, V_13 = 1 } tls_version;
 };
@@ -87,22 +89,46 @@ class EchoServer final : public EchoTestService::Service {
 
 class TestScenario {
  public:
-  TestScenario(int num_listening_ports, SecurityPrimitives::ProviderType provider_type)
+  TestScenario(int num_listening_ports,
+               SecurityPrimitives::ProviderType client_provider_type,
+               SecurityPrimitives::ProviderType server_provider_type, SecurityPrimitives::VerifierType client_verifier_type, SecurityPrimitives::VerifierType server_verifier_type)
       : num_listening_ports_(num_listening_ports),
-        provider_type_(provider_type) {}
+        client_provider_type_(client_provider_type),
+        server_provider_type_(server_provider_type), client_verifier_type_(client_verifier_type),
+        server_verifier_type_(server_verifier_type) {}
   std::string AsString() const {
     return absl::StrCat("TestScenario__num_listening_ports_",
-                        num_listening_ports_, "__provider_type_",
-                        (provider_type_));
+                        num_listening_ports_, "__client_provider_type_",
+                        client_provider_type_, "__server_provider_type_",
+                        server_provider_type_, "__client_verifier_type_",
+                        client_verifier_type_, "__server_verifier_type_",
+                        server_verifier_type_);
   }
 
   int num_listening_ports() const { return num_listening_ports_; }
 
-  SecurityPrimitives::ProviderType provider_type() const { return provider_type_; }
+  SecurityPrimitives::ProviderType client_provider_type() const {
+    return client_provider_type_;
+  }
+
+  SecurityPrimitives::ProviderType server_provider_type() const {
+    return server_provider_type_;
+  }
+
+  SecurityPrimitives::VerifierType client_verifier_type() const {
+    return client_verifier_type_;
+  }
+
+  SecurityPrimitives::VerifierType server_verifier_type() const {
+    return server_verifier_type_;
+  }
 
  private:
   int num_listening_ports_;
-  SecurityPrimitives::ProviderType provider_type_;
+  SecurityPrimitives::ProviderType client_provider_type_;
+  SecurityPrimitives::ProviderType server_provider_type_;
+  SecurityPrimitives::VerifierType client_verifier_type_;
+  SecurityPrimitives::VerifierType server_verifier_type_;
 };
 
 std::string TestScenarioName(
@@ -110,27 +136,83 @@ std::string TestScenarioName(
   return info.param.AsString();
 }
 
+namespace {
+
+// This helper function reads the contents specified by the filename as
+// std::string.
+std::string GetContentsFromFilePath(const char* filename) {
+  grpc_slice slice;
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(filename, 1, &slice)));
+  std::string contents = std::string(grpc_core::StringViewFromSlice(slice));
+  grpc_slice_unref(slice);
+  return contents;
+}
+
+}  // namespace
+
 class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
  protected:
   AdvancedTlsEnd2EndTest() = default;
 
   void SetUp() override {
+    // Sanity Checks.
+    GPR_ASSERT(GetParam().server_verifier_type() != SecurityPrimitives::HOSTNAME_VERIFIER);
     ::grpc::ServerBuilder builder;
     ::grpc::ChannelArguments args;
-    args.SetSslTargetNameOverride("foo.test.google.com.au");
+    // We will need to override the peer name on the certificate if using
+    // hostname verification, as we can't connect to that name in a test
+    // environment.
+    if (GetParam().client_verifier_type() == SecurityPrimitives::HOSTNAME_VERIFIER || GetParam().client_verifier_type() == SecurityPrimitives::DEFAULT_VERIFIER) {
+      args.SetSslTargetNameOverride("foo.test.google.com.au");
+    }
+    // Set up server certificate provider.
+    std::shared_ptr<experimental::CertificateProviderInterface>
+        server_certificate_provider;
+    switch (GetParam().server_provider_type()) {
+      case SecurityPrimitives::STATIC_PROVIDER: {
+        std::string root_certs = GetContentsFromFilePath(CA_CERT_PATH);
+        std::string server_key = GetContentsFromFilePath(SERVER_KEY_PATH);
+        std::string server_certs = GetContentsFromFilePath(SERVER_CERT_PATH);
+        experimental::IdentityKeyCertPair server_pair;
+        server_pair.private_key = server_key;
+        server_pair.certificate_chain = server_certs;
+        std::vector<experimental::IdentityKeyCertPair> server_pair_list;
+        server_pair_list.emplace_back(server_pair);
+        server_certificate_provider =
+            std::make_shared<experimental::StaticDataCertificateProvider>(
+                root_certs, server_pair_list);
+        break;
+      }
+      case SecurityPrimitives::FILE_PROVIDER: {
+        server_certificate_provider =
+            std::make_shared<FileWatcherCertificateProvider>(
+                SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+        break;
+      }
+    }
 
+    // Set up server certificate verifier.
+    std::shared_ptr<experimental::CertificateVerifier> server_certificate_verifier;
+    switch (GetParam().server_verifier_type()) {
+      case SecurityPrimitives::EXTERNAL_SYNC_VERIFIER: {
+        break;
+      }
+      case SecurityPrimitives::EXTERNAL_ASYNC_VERIFIER: {
+        break;
+      }
+      case SecurityPrimitives::HOSTNAME_VERIFIER: {
+        server_certificate_verifier = std::make_shared<experimental::HostNameCertificateVerifier>();
+        break;
+      }
+      default : {
+        break;
+      }
+    }
+    // Build the server and add listening ports.
     if (GetParam().num_listening_ports() > 0) {
       ports_.resize(GetParam().num_listening_ports(), 0);
     }
-
-    auto server_certificate_provider =
-        std::make_shared<FileWatcherCertificateProvider>(
-            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
-
-    auto channel_certificate_provider =
-        std::make_shared<FileWatcherCertificateProvider>(
-            CLIENT_KEY_PATH, CLIENT_CERT_PATH, CA_CERT_PATH, 1);
-
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       // Configure tls credential options for each port
       TlsServerCredentialsOptions server_creds_options(
@@ -139,23 +221,63 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
           GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
       server_creds_options.watch_identity_key_cert_pairs();
       server_creds_options.watch_root_certs();
-
+      if (GetParam().server_verifier_type() != SecurityPrimitives::DEFAULT_VERIFIER) {
+        server_creds_options.set_certificate_verifier(server_certificate_verifier);
+      }
       builder.AddListeningPort(
           "0.0.0.0:0",
           ::grpc::experimental::TlsServerCredentials(server_creds_options),
           &ports_[i]);
     }
-
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     ASSERT_NE(nullptr, server_);
-    server_thread_ =
-        std::thread(&AdvancedTlsEnd2EndTest::RunServerLoop, this);
-
+    server_thread_ = std::thread(&AdvancedTlsEnd2EndTest::RunServerLoop, this);
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       ASSERT_NE(0, ports_[i]);
       server_addresses_.push_back(absl::StrCat("localhost:", ports_[i]));
-
+      // Set up client certificate provider.
+      std::shared_ptr<experimental::CertificateProviderInterface>
+          channel_certificate_provider;
+      switch (GetParam().server_provider_type()) {
+        case SecurityPrimitives::STATIC_PROVIDER: {
+          std::string root_certs = GetContentsFromFilePath(CA_CERT_PATH);
+          std::string client_key = GetContentsFromFilePath(CLIENT_KEY_PATH);
+          std::string client_certs = GetContentsFromFilePath(CLIENT_CERT_PATH);
+          experimental::IdentityKeyCertPair client_pair;
+          client_pair.private_key = client_key;
+          client_pair.certificate_chain = client_certs;
+          std::vector<experimental::IdentityKeyCertPair> client_pair_list;
+          client_pair_list.emplace_back(client_pair);
+          channel_certificate_provider =
+              std::make_shared<experimental::StaticDataCertificateProvider>(
+                  root_certs, client_pair_list);
+          break;
+        }
+        case SecurityPrimitives::FILE_PROVIDER: {
+          channel_certificate_provider =
+              std::make_shared<FileWatcherCertificateProvider>(
+                  CLIENT_KEY_PATH, CLIENT_CERT_PATH, CA_CERT_PATH, 1);
+          break;
+        }
+      }
+      // Set up client certificate verifier.
+      std::shared_ptr<experimental::CertificateVerifier> client_certificate_verifier;
+      switch (GetParam().client_verifier_type()) {
+        case SecurityPrimitives::EXTERNAL_SYNC_VERIFIER: {
+          break;
+        }
+        case SecurityPrimitives::EXTERNAL_ASYNC_VERIFIER: {
+          break;
+        }
+        case SecurityPrimitives::HOSTNAME_VERIFIER: {
+          client_certificate_verifier = std::make_shared<experimental::HostNameCertificateVerifier>();
+          break;
+        }
+        default : {
+          break;
+        }
+      }
       // Configure tls credential options for each stub. Each stub connects to
       // a separate port on the server.
       TlsChannelCredentialsOptions channel_creds_options;
@@ -163,7 +285,9 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
           channel_certificate_provider);
       channel_creds_options.watch_identity_key_cert_pairs();
       channel_creds_options.watch_root_certs();
-
+      if (GetParam().client_verifier_type() != SecurityPrimitives::DEFAULT_VERIFIER) {
+        channel_creds_options.set_certificate_verifier(client_certificate_verifier);
+      }
       stubs_.push_back(EchoTestService::NewStub(::grpc::CreateCustomChannel(
           server_addresses_[i],
           ::grpc::experimental::TlsCredentials(channel_creds_options), args)));
@@ -173,15 +297,6 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   void TearDown() override {
     server_->Shutdown();
     server_thread_.join();
-
-    /*// Remove all created files.
-    for (int i = 0; i < GetParam().num_listening_ports(); i++) {
-      remove(tmp_stub_tls_key_log_file_[i].c_str());
-      remove(tmp_server_tls_key_log_file_by_port_[i].c_str());
-      if (GetParam().share_tls_key_log_file()) {
-        break;
-      }
-    }*/
   }
 
   void RunServerLoop() { server_->Wait(); }
@@ -214,10 +329,19 @@ TEST_P(AdvancedTlsEnd2EndTest, mTLSTests) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(TlsKeyLogging, AdvancedTlsEnd2EndTest,
-                         ::testing::ValuesIn({TestScenario(5, SecurityPrimitives::STATIC_PROVIDER),
-                                              TestScenario(5, SecurityPrimitives::FILE_PROVIDER)}),
-                         &TestScenarioName);
+INSTANTIATE_TEST_SUITE_P(
+    TlsKeyLogging, AdvancedTlsEnd2EndTest,
+    ::testing::ValuesIn({TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                                      SecurityPrimitives::STATIC_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
+                         TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
+                                      SecurityPrimitives::FILE_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
+                         TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                                      SecurityPrimitives::FILE_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
+                         TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
+                                      SecurityPrimitives::STATIC_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
+                         TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                                      SecurityPrimitives::STATIC_PROVIDER, SecurityPrimitives::HOSTNAME_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER)}),
+    &TestScenarioName);
 
 }  // namespace
 }  // namespace testing
