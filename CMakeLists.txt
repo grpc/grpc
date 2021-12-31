@@ -1907,6 +1907,7 @@ add_library(grpc
   src/core/lib/event_engine/event_engine_factory.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/sockaddr.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/httpcli_security_connector.cc
@@ -2555,6 +2556,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/event_engine_factory.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/sockaddr.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
@@ -6051,6 +6053,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   add_executable(memory_quota_stress_test
     src/core/lib/debug/trace.cc
     src/core/lib/event_engine/memory_allocator.cc
+    src/core/lib/gprpp/time.cc
     src/core/lib/iomgr/combiner.cc
     src/core/lib/iomgr/error.cc
     src/core/lib/iomgr/exec_ctx.cc
@@ -7782,6 +7785,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(arena_promise_test
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -8996,6 +9000,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(chunked_vector_test
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -10370,6 +10375,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -12764,6 +12770,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(memory_quota_test
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -14259,6 +14266,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(resource_quota_test
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc

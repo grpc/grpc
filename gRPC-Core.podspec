@@ -993,6 +993,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
+                      'src/core/lib/gprpp/time.cc',
                       'src/core/lib/gprpp/time.h',
                       'src/core/lib/gprpp/time_util.cc',
                       'src/core/lib/gprpp/time_util.h',

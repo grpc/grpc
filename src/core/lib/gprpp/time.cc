@@ -48,7 +48,7 @@ gpr_timespec StartTime() {
 }
 
 gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
-  // special-case infinities as grpc_core::Timestamp can be 32bit on some
+  // special-case infinities as Timestamp can be 32bit on some
   // platforms while gpr_time_from_millis always takes an int64_t.
   if (millis == std::numeric_limits<int64_t>::max()) {
     return gpr_inf_future(clock_type);
