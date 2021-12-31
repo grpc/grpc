@@ -12,19 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/time.h"
 
+#include <atomic>
+#include <cstdint>
 #include <limits>
 
 #include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
 namespace {
 
+std::atomic<int64_t> g_process_epoch_seconds;
+
+GPR_ATTRIBUTE_NOINLINE int64_t InitTime() {
+  int64_t process_epoch_seconds = gpr_now(GPR_CLOCK_MONOTONIC).tv_sec;
+  GPR_ASSERT(process_epoch_seconds != 0);
+  int64_t expected = 0;
+  if (!g_process_epoch_seconds.compare_exchange_strong(
+          expected, process_epoch_seconds, std::memory_order_relaxed,
+          std::memory_order_relaxed)) {
+    process_epoch_seconds = expected;
+  }
+  return process_epoch_seconds;
+}
+
 gpr_timespec StartTime() {
-  static gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  return start_time;
+  int64_t sec = g_process_epoch_seconds.load(std::memory_order_relaxed);
+  if (sec == 0) sec = InitTime();
+  return {sec, 0, GPR_CLOCK_MONOTONIC};
 }
 
 gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
