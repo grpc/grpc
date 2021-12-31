@@ -1630,13 +1630,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "time",
-    hdrs = [
-        "src/core/lib/gprpp/time.h",
-    ],
     srcs = [
         "src/core/lib/gprpp/time.cc",
     ],
-    deps = ["gpr"],
+    hdrs = [
+        "src/core/lib/gprpp/time.h",
+    ],
+    deps = [
+        "gpr",
+        "gpr_codegen",
+    ],
 )
 
 grpc_cc_library(

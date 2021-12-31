@@ -201,14 +201,6 @@ class ExecCtx {
     now_is_valid_ = true;
   }
 
-  static void TestOnlyGlobalInit(gpr_timespec new_val);
-
-  /** Global initialization for ExecCtx. Called by iomgr. */
-  static void GlobalInit(void);
-
-  /** Global shutdown for ExecCtx. Called by iomgr. */
-  static void GlobalShutdown(void) {}
-
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
 
@@ -362,7 +354,6 @@ class ApplicationCallbackExecCtx {
   static GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*) callback_exec_ctx_;
 };
 
-gpr_timespec GetGrpcStartTime();
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

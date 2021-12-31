@@ -60,102 +60,11 @@ static void exec_ctx_sched(grpc_closure* closure) {
   grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure);
 }
 
-static gpr_timespec g_start_time;
-static gpr_cycle_counter g_start_cycle;
-
-/*
-static grpc_core::Timestamp timespan_to_millis_round_down(gpr_timespec ts) {
-  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
-  if (x < 0) return grpc_core::Timestamp();
-  if (x > static_cast<double>(grpc_core::Timestamp::InfFuture())) {
-    return grpc_core::Timestamp::InfFuture();
-  }
-  return static_cast<grpc_core::Timestamp>(x);
-}
-
-static grpc_core::Timestamp timespec_to_millis_round_down(gpr_timespec ts) {
-  return timespan_to_millis_round_down(gpr_time_sub(ts, g_start_time));
-}
-
-static grpc_core::Timestamp timespan_to_millis_round_up(gpr_timespec ts) {
-  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
-             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
-             static_cast<double>(GPR_NS_PER_SEC - 1) /
-                 static_cast<double>(GPR_NS_PER_SEC);
-  if (x < 0) return 0;
-  if (x > static_cast<double>(grpc_core::Timestamp::InfFuture())) {
-    return grpc_core::Timestamp::InfFuture();
-  }
-  return static_cast<grpc_core::Timestamp>(x);
-}
-
-static grpc_core::Timestamp timespec_to_millis_round_up(gpr_timespec ts) {
-  return timespan_to_millis_round_up(gpr_time_sub(ts, g_start_time));
-}
-
-gpr_timespec grpc_core::Timestamp_to_timespec(grpc_core::Timestamp millis,
-                                              gpr_clock_type clock_type) {
-  // special-case infinities as grpc_core::Timestamp can be 32bit on some
-  // platforms while gpr_time_from_millis always takes an int64_t.
-  if (millis == grpc_core::Timestamp::InfFuture()) {
-    return gpr_inf_future(clock_type);
-  }
-  if (millis == grpc_core::Timestamp::InfPast()) {
-    return gpr_inf_past(clock_type);
-  }
-
-  if (clock_type == GPR_TIMESPAN) {
-    return gpr_time_from_millis(millis, GPR_TIMESPAN);
-  }
-  return gpr_time_add(gpr_convert_clock_type(g_start_time, clock_type),
-                      gpr_time_from_millis(millis, GPR_TIMESPAN));
-}
-
-grpc_core::Timestamp grpc_timespec_to_millis_round_down(gpr_timespec ts) {
-  return timespec_to_millis_round_down(
-      gpr_convert_clock_type(ts, g_start_time.clock_type));
-}
-
-grpc_core::Timestamp grpc_timespec_to_millis_round_up(gpr_timespec ts) {
-  return timespec_to_millis_round_up(
-      gpr_convert_clock_type(ts, g_start_time.clock_type));
-}
-
-grpc_core::Timestamp grpc_cycle_counter_to_millis_round_down(
-    gpr_cycle_counter cycles) {
-  return timespan_to_millis_round_down(
-      gpr_cycle_counter_sub(cycles, g_start_cycle));
-}
-
-grpc_core::Timestamp grpc_cycle_counter_to_millis_round_up(
-    gpr_cycle_counter cycles) {
-  return timespan_to_millis_round_up(
-      gpr_cycle_counter_sub(cycles, g_start_cycle));
-}
-*/
-
 namespace grpc_core {
-gpr_timespec GetGrpcStartTime() { return g_start_time; }
 
 GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
 GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
 ApplicationCallbackExecCtx::callback_exec_ctx_;
-
-// WARNING: for testing purposes only!
-void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
-  g_start_time = new_val;
-}
-
-void ExecCtx::GlobalInit(void) {
-  // gpr_now(GPR_CLOCK_MONOTONIC) incurs a syscall. We don't actually know the
-  // exact cycle the time was captured, so we use the average of cycles before
-  // and after the syscall as the starting cycle.
-  const gpr_cycle_counter cycle_before = gpr_get_cycle_counter();
-  g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  const gpr_cycle_counter cycle_after = gpr_get_cycle_counter();
-  g_start_cycle = (cycle_before + cycle_after) / 2;
-}
 
 bool ExecCtx::Flush() {
   bool did_something = false;

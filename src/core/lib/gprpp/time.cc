@@ -22,6 +22,11 @@ namespace grpc_core {
 
 namespace {
 
+gpr_timespec StartTime() {
+  static gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  return start_time;
+}
+
 gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
   // special-case infinities as grpc_core::Timestamp can be 32bit on some
   // platforms while gpr_time_from_millis always takes an int64_t.
@@ -35,11 +40,26 @@ gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
   if (clock_type == GPR_TIMESPAN) {
     return gpr_time_from_millis(millis, GPR_TIMESPAN);
   }
-  return gpr_time_add(gpr_convert_clock_type(GetGrpcStartTime(), clock_type),
+  return gpr_time_add(gpr_convert_clock_type(StartTime(), clock_type),
                       gpr_time_from_millis(millis, GPR_TIMESPAN));
 }
 
+int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
+             static_cast<double>(GPR_NS_PER_SEC - 1) /
+                 static_cast<double>(GPR_NS_PER_SEC);
+  if (x < 0) return 0;
+  if (x >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
+    return std::numeric_limits<int64_t>::max();
+  }
+  return static_cast<int64_t>(x);
+}
+
 }  // namespace
+
+Timestamp::Timestamp(gpr_timespec ts)
+    : millis_(TimespanToMillisRoundUp(gpr_time_sub(ts, StartTime()))) {}
 
 gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {
   return MillisecondsAsTimespec(millis_, clock_type);
