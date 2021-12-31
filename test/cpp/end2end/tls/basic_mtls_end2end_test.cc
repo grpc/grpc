@@ -36,6 +36,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
+#include "test/cpp/util/tls_test_utils.h"
 
 extern "C" {
 #include <openssl/ssl.h>
@@ -91,10 +92,13 @@ class TestScenario {
  public:
   TestScenario(int num_listening_ports,
                SecurityPrimitives::ProviderType client_provider_type,
-               SecurityPrimitives::ProviderType server_provider_type, SecurityPrimitives::VerifierType client_verifier_type, SecurityPrimitives::VerifierType server_verifier_type)
+               SecurityPrimitives::ProviderType server_provider_type,
+               SecurityPrimitives::VerifierType client_verifier_type,
+               SecurityPrimitives::VerifierType server_verifier_type)
       : num_listening_ports_(num_listening_ports),
         client_provider_type_(client_provider_type),
-        server_provider_type_(server_provider_type), client_verifier_type_(client_verifier_type),
+        server_provider_type_(server_provider_type),
+        client_verifier_type_(client_verifier_type),
         server_verifier_type_(server_verifier_type) {}
   std::string AsString() const {
     return absl::StrCat("TestScenario__num_listening_ports_",
@@ -157,13 +161,17 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
   void SetUp() override {
     // Sanity Checks.
-    GPR_ASSERT(GetParam().server_verifier_type() != SecurityPrimitives::HOSTNAME_VERIFIER);
+    GPR_ASSERT(GetParam().server_verifier_type() !=
+               SecurityPrimitives::HOSTNAME_VERIFIER);
     ::grpc::ServerBuilder builder;
     ::grpc::ChannelArguments args;
     // We will need to override the peer name on the certificate if using
     // hostname verification, as we can't connect to that name in a test
     // environment.
-    if (GetParam().client_verifier_type() == SecurityPrimitives::HOSTNAME_VERIFIER || GetParam().client_verifier_type() == SecurityPrimitives::DEFAULT_VERIFIER) {
+    if (GetParam().client_verifier_type() ==
+            SecurityPrimitives::HOSTNAME_VERIFIER ||
+        GetParam().client_verifier_type() ==
+            SecurityPrimitives::DEFAULT_VERIFIER) {
       args.SetSslTargetNameOverride("foo.test.google.com.au");
     }
     // Set up server certificate provider.
@@ -193,19 +201,27 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     }
 
     // Set up server certificate verifier.
-    std::shared_ptr<experimental::CertificateVerifier> server_certificate_verifier;
+    std::shared_ptr<experimental::CertificateVerifier>
+        server_certificate_verifier;
     switch (GetParam().server_verifier_type()) {
       case SecurityPrimitives::EXTERNAL_SYNC_VERIFIER: {
+        server_certificate_verifier =
+            experimental::ExternalCertificateVerifier::Create<
+                SyncCertificateVerifier>(true);
         break;
       }
       case SecurityPrimitives::EXTERNAL_ASYNC_VERIFIER: {
+        server_certificate_verifier =
+            experimental::ExternalCertificateVerifier::Create<
+                AsyncCertificateVerifier>(true);
         break;
       }
       case SecurityPrimitives::HOSTNAME_VERIFIER: {
-        server_certificate_verifier = std::make_shared<experimental::HostNameCertificateVerifier>();
+        server_certificate_verifier =
+            std::make_shared<experimental::HostNameCertificateVerifier>();
         break;
       }
-      default : {
+      default: {
         break;
       }
     }
@@ -221,8 +237,10 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
           GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
       server_creds_options.watch_identity_key_cert_pairs();
       server_creds_options.watch_root_certs();
-      if (GetParam().server_verifier_type() != SecurityPrimitives::DEFAULT_VERIFIER) {
-        server_creds_options.set_certificate_verifier(server_certificate_verifier);
+      if (GetParam().server_verifier_type() !=
+          SecurityPrimitives::DEFAULT_VERIFIER) {
+        server_creds_options.set_certificate_verifier(
+            server_certificate_verifier);
       }
       builder.AddListeningPort(
           "0.0.0.0:0",
@@ -262,19 +280,27 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
         }
       }
       // Set up client certificate verifier.
-      std::shared_ptr<experimental::CertificateVerifier> client_certificate_verifier;
+      std::shared_ptr<experimental::CertificateVerifier>
+          client_certificate_verifier;
       switch (GetParam().client_verifier_type()) {
         case SecurityPrimitives::EXTERNAL_SYNC_VERIFIER: {
+          client_certificate_verifier =
+              experimental::ExternalCertificateVerifier::Create<
+                  SyncCertificateVerifier>(true);
           break;
         }
         case SecurityPrimitives::EXTERNAL_ASYNC_VERIFIER: {
+          client_certificate_verifier =
+              experimental::ExternalCertificateVerifier::Create<
+                  AsyncCertificateVerifier>(true);
           break;
         }
         case SecurityPrimitives::HOSTNAME_VERIFIER: {
-          client_certificate_verifier = std::make_shared<experimental::HostNameCertificateVerifier>();
+          client_certificate_verifier =
+              std::make_shared<experimental::HostNameCertificateVerifier>();
           break;
         }
-        default : {
+        default: {
           break;
         }
       }
@@ -285,8 +311,16 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
           channel_certificate_provider);
       channel_creds_options.watch_identity_key_cert_pairs();
       channel_creds_options.watch_root_certs();
-      if (GetParam().client_verifier_type() != SecurityPrimitives::DEFAULT_VERIFIER) {
-        channel_creds_options.set_certificate_verifier(client_certificate_verifier);
+      if (GetParam().client_verifier_type() !=
+          SecurityPrimitives::DEFAULT_VERIFIER) {
+        channel_creds_options.set_certificate_verifier(
+            client_certificate_verifier);
+        // When using a customized external verifier, we need to disable the
+        // per-host check.
+        if (GetParam().client_verifier_type() !=
+            SecurityPrimitives::HOSTNAME_VERIFIER) {
+          channel_creds_options.set_check_call_host(false);
+        }
       }
       stubs_.push_back(EchoTestService::NewStub(::grpc::CreateCustomChannel(
           server_addresses_[i],
@@ -331,16 +365,53 @@ TEST_P(AdvancedTlsEnd2EndTest, mTLSTests) {
 
 INSTANTIATE_TEST_SUITE_P(
     TlsKeyLogging, AdvancedTlsEnd2EndTest,
-    ::testing::ValuesIn({TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
-                                      SecurityPrimitives::STATIC_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
-                         TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
-                                      SecurityPrimitives::FILE_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
-                         TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
-                                      SecurityPrimitives::FILE_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
-                         TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
-                                      SecurityPrimitives::STATIC_PROVIDER, SecurityPrimitives::DEFAULT_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER),
-                         TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
-                                      SecurityPrimitives::STATIC_PROVIDER, SecurityPrimitives::HOSTNAME_VERIFIER, SecurityPrimitives::DEFAULT_VERIFIER)}),
+    // We only choose a small subset of all the possible combination of these
+    // security primitives for testing, because as we add more primitives, the
+    // combination set would grow exponentially.
+    // The cases we test here are ones we think most users are likely to run
+    // into when building their own applications.
+    ::testing::ValuesIn({
+        TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::DEFAULT_VERIFIER,
+                     SecurityPrimitives::DEFAULT_VERIFIER),
+        TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::DEFAULT_VERIFIER,
+                     SecurityPrimitives::DEFAULT_VERIFIER),
+        TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::DEFAULT_VERIFIER,
+                     SecurityPrimitives::DEFAULT_VERIFIER),
+        TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::DEFAULT_VERIFIER,
+                     SecurityPrimitives::DEFAULT_VERIFIER),
+        TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::HOSTNAME_VERIFIER,
+                     SecurityPrimitives::DEFAULT_VERIFIER),
+        TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::DEFAULT_VERIFIER,
+                     SecurityPrimitives::EXTERNAL_SYNC_VERIFIER),
+        TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::EXTERNAL_SYNC_VERIFIER,
+                     SecurityPrimitives::DEFAULT_VERIFIER),
+        TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::EXTERNAL_SYNC_VERIFIER,
+                     SecurityPrimitives::EXTERNAL_SYNC_VERIFIER),
+        TestScenario(5, SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::STATIC_PROVIDER,
+                     SecurityPrimitives::EXTERNAL_ASYNC_VERIFIER,
+                     SecurityPrimitives::DEFAULT_VERIFIER),
+        TestScenario(5, SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::FILE_PROVIDER,
+                     SecurityPrimitives::EXTERNAL_ASYNC_VERIFIER,
+                     SecurityPrimitives::EXTERNAL_ASYNC_VERIFIER),
+    }),
     &TestScenarioName);
 
 }  // namespace
