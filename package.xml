@@ -892,6 +892,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />

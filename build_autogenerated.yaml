@@ -1366,6 +1366,7 @@ libs:
   - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -2168,6 +2169,7 @@ libs:
   - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -3793,6 +3795,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -4566,6 +4569,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -5062,6 +5066,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -5682,6 +5687,7 @@ targets:
   - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -6717,6 +6723,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -7431,6 +7438,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
