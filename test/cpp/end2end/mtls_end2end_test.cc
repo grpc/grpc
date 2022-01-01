@@ -42,10 +42,6 @@ extern "C" {
 #include <openssl/ssl.h>
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
-#define TLS_KEY_LOGGING_AVAILABLE
-#endif
-
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server0.key"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server0.pem"
@@ -57,21 +53,11 @@ extern "C" {
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
 using ::grpc::experimental::TlsServerCredentialsOptions;
+using ::grpc_core::testing::SecurityPrimitives;
 
 namespace grpc {
 namespace testing {
 namespace {
-
-struct SecurityPrimitives {
-  enum ProviderType { STATIC_PROVIDER = 0, FILE_PROVIDER = 1 } provider_type;
-  enum VerifierType {
-    EXTERNAL_SYNC_VERIFIER = 0,
-    EXTERNAL_ASYNC_VERIFIER = 1,
-    HOSTNAME_VERIFIER = 2,
-    DEFAULT_VERIFIER = 3
-  } verifier_type;
-  enum TlsVersion { V_12 = 0, V_13 = 1 } tls_version;
-};
 
 class EchoServer final : public EchoTestService::Service {
   ::grpc::Status Echo(::grpc::ServerContext* /*context*/,
@@ -160,9 +146,6 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   AdvancedTlsEnd2EndTest() = default;
 
   void SetUp() override {
-    // Sanity Checks.
-    GPR_ASSERT(GetParam().server_verifier_type() !=
-               SecurityPrimitives::HOSTNAME_VERIFIER);
     ::grpc::ServerBuilder builder;
     ::grpc::ChannelArguments args;
     // We will need to override the peer name on the certificate if using
@@ -175,6 +158,9 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
       args.SetSslTargetNameOverride("foo.test.google.com.au");
     }
     // Set up server certificate provider.
+    // Hostname verifier on the server side is not applicable.
+    GPR_ASSERT(GetParam().server_verifier_type() !=
+               SecurityPrimitives::HOSTNAME_VERIFIER);
     std::shared_ptr<experimental::CertificateProviderInterface>
         server_certificate_provider;
     switch (GetParam().server_provider_type()) {
@@ -199,7 +185,6 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
         break;
       }
     }
-
     // Set up server certificate verifier.
     std::shared_ptr<experimental::CertificateVerifier>
         server_certificate_verifier;
@@ -349,7 +334,6 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 };
 
 TEST_P(AdvancedTlsEnd2EndTest, mTLSTests) {
-  // Cover all valid statuses.
   for (int i = 0; i <= NUM_REQUESTS_PER_CHANNEL; ++i) {
     for (int j = 0; j < GetParam().num_listening_ports(); ++j) {
       EchoRequest request;

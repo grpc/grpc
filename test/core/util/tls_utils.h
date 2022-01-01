@@ -24,6 +24,17 @@ namespace grpc_core {
 
 namespace testing {
 
+struct SecurityPrimitives {
+  enum ProviderType { STATIC_PROVIDER = 0, FILE_PROVIDER = 1 } provider_type;
+  enum VerifierType {
+    EXTERNAL_SYNC_VERIFIER = 0,
+    EXTERNAL_ASYNC_VERIFIER = 1,
+    HOSTNAME_VERIFIER = 2,
+    DEFAULT_VERIFIER = 3
+  } verifier_type;
+  enum TlsVersion { V_12 = 0, V_13 = 1 } tls_version;
+};
+
 class TmpFile {
  public:
   // Create a temporary file with |data| written in.
