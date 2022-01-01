@@ -59,7 +59,7 @@ If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
 )
 
 @rem Needed for uploading test results to bigquery
-python -m pip install google-api-python-client || goto :error
+python -m pip install google-api-python-client oauth2client six==1.16.0 || goto :error
 
 git submodule update --init || goto :error
 
