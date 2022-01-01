@@ -853,6 +853,31 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "mtls_end2end_test",
+    srcs = ["mtls_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+        "//test/cpp/util:tls_test_utils",
+    ],
+)
+
+grpc_cc_test(
     name = "grpc_authz_end2end_test",
     srcs = ["grpc_authz_end2end_test.cc"],
     data = [
