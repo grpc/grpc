@@ -2579,11 +2579,8 @@ class XdsFederationTest : public XdsEnd2endTest {
   std::unique_ptr<BalancerServerThread> authority_balancer_;
 };
 
-// Tests federation basic with URL "server.example.com"
-// which has no authority.
-// The resource name used will be formed via the top level specified template:
-// "xdstp://xds.example.com/type.googleapis.com/"
-// "envoy.config.listener.v3.Listener/server.example.com?psm_project_id=1234"
+// Channel is created with URI "xds:server.example.com" which has no authoirty.
+// We use top level template.
 TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kAuthority = "xds.example.com";
@@ -2644,24 +2641,21 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
-// Tests federation basic with URL "xds.example.com/new-server.example.com"
-// which specifies authority xds.example.com.
-// The resource name used will be formed via the default template:
-// "xdstp://xds.example.com/type.googleapis.com/"
-// "envoy.config.listener.v3.Listener/new-server.example.com"
+// Channel is created with URI "xds://xds.example.com/server.example.com".
+// In bootstrap config, authority has no client listener template, so we use the
+// default.
 TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "new_server.example.com";
+      "server.example.com";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "new_edsservice_name";
+      "edsservice_name";
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "new_cluster_name";
-  const char* kNewTarget = "new_server.example.com";
+      "cluster_name";
   BootstrapBuilder builder = BootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
@@ -2693,9 +2687,9 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
                                    new_route_config);
   // Ensure update has reached and send 10 RPCs to the current stub.
   WaitForAllBackends(0, 1);
-  backends_[0]->backend_service()->ResetCounters();
   // Create second channel to new target uri and send 1 RPC .
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewTarget, kAuthority);
+  auto channel2 =
+      CreateChannel(/*failover_timeout=*/0, kServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2714,11 +2708,8 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
-// Tests federation basic with URL "xds.example.com/new-server.example.com"
-// which specifies authority xds.example.com.
-// The resource name used will be formed via the authority specified template:
-// "xdstp://xds.example.com/type.googleapis.com/"
-// "envoy.config.listener.v3.Listener/grpc/client/new_server.example.com?psm_project_id=1234"
+// Channel is created with URI "xds://xds.example.com/server.example.com".
+// Bootstrap entry for that authority specifies a client listener name template.
 TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kAuthority = "xds.example.com";
@@ -2727,14 +2718,13 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
       "client/%s?psm_project_id=1234";
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/new_server.example.com?psm_project_id=1234";
+      "client/server.example.com?psm_project_id=1234";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "new_edsservice_name";
+      "edsservice_name";
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "new_cluster_name";
-  const char* kNewTarget = "new_server.example.com";
+      "cluster_name";
   BootstrapBuilder builder = BootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
@@ -2767,9 +2757,9 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
                                    new_route_config);
   // Ensure update has reached and send 10 RPCs to the current stub.
   WaitForAllBackends(0, 1);
-  backends_[0]->backend_service()->ResetCounters();
   // Create second channel to new target uri and send 1 RPC .
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewTarget, kAuthority);
+  auto channel2 =
+      CreateChannel(/*failover_timeout=*/0, kServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
