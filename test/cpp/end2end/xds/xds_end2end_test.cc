@@ -2880,22 +2880,22 @@ TEST_P(XdsFederationTest, FederationServer) {
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
-class SecureNamingSuccessTest : public XdsEnd2endTest {
+class SecureNamingTest : public XdsEnd2endTest {
  public:
-  SecureNamingSuccessTest()
+  SecureNamingTest()
       : XdsEnd2endTest(/*num_backends=*/4,
                        /*client_load_reporting_interval_seconds=*/100,
                        /*xds_resource_does_not_exist_timeout_ms=*/0,
                        /*use_xds_enabled_server=*/false) {}
-  void SetUp() override {
-    CreateClientsAndServers(BootstrapBuilder(),
-                            /*lb_expected_authority=*/"localhost:%d");
-    StartAllBackends();
-  }
+
+  void SetUp() override {}
 };
 
 // Tests that secure naming check passes if target name is expected.
-TEST_P(SecureNamingSuccessTest, TargetNameIsExpected) {
+TEST_P(SecureNamingTest, TargetNameIsExpected) {
+  CreateClientsAndServers(BootstrapBuilder(),
+                          /*lb_expected_authority=*/"localhost:%d");
+  StartAllBackends();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
@@ -2903,23 +2903,12 @@ TEST_P(SecureNamingSuccessTest, TargetNameIsExpected) {
   CheckRpcSendOk();
 }
 
-class SecureNamingFailureTest : public XdsEnd2endTest {
- public:
-  SecureNamingFailureTest()
-      : XdsEnd2endTest(/*num_backends=*/4,
-                       /*client_load_reporting_interval_seconds=*/100,
-                       /*xds_resource_does_not_exist_timeout_ms=*/0,
-                       /*use_xds_enabled_server=*/false) {}
-  void SetUp() override {
-    CreateClientsAndServers(BootstrapBuilder(),
-                            /*lb_expected_authority=*/"incorrect_server_name");
-    StartAllBackends();
-  }
-};
-
 // Tests that secure naming check fails if target name is unexpected.
-TEST_P(SecureNamingFailureTest, TargetNameIsUnexpected) {
+TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+  CreateClientsAndServers(BootstrapBuilder(),
+                          /*lb_expected_authority=*/"incorrect_server_name");
+  StartAllBackends();
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
@@ -13358,9 +13347,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 // Don't run with load reporting or v2 or RDS, since they are irrelevant to
 // the tests.
-INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingSuccessTest,
-                         ::testing::Values(TestType()), &TestTypeName);
-INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingFailureTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
                          ::testing::Values(TestType()), &TestTypeName);
 
 // LDS depends on XdsResolver.
