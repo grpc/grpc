@@ -2579,8 +2579,9 @@ class XdsFederationTest : public XdsEnd2endTest {
   std::unique_ptr<BalancerServerThread> authority_balancer_;
 };
 
-// Channel is created with URI "xds:server.example.com" which has no authoirty.
-// We use top level template.
+// Channel is created with URI "xds:server.example.com".
+// Bootstrap config default client listener template uses new-style name with
+// authority "xds.example.com".
 TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kAuthority = "xds.example.com";
@@ -2590,6 +2591,9 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "client/server.example.com?psm_project_id=1234";
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "new_edsservice_name";
@@ -2620,6 +2624,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   authority_balancer_->ads_service()->SetCdsResource(new_cluster);
   // New Route
   RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
   new_route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -2650,6 +2655,9 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "server.example.com";
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "edsservice_name";
@@ -2676,6 +2684,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   authority_balancer_->ads_service()->SetCdsResource(new_cluster);
   // New Route
   RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
   new_route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -2719,6 +2728,9 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "client/server.example.com?psm_project_id=1234";
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "edsservice_name";
@@ -2746,6 +2758,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   authority_balancer_->ads_service()->SetCdsResource(new_cluster);
   // New Route
   RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
   new_route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -2792,6 +2805,9 @@ TEST_P(XdsFederationTest, FederationServer) {
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "client/server.example.com?psm_project_id=1234";
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "new_edsservice_name";
@@ -2823,6 +2839,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   authority_balancer_->ads_service()->SetCdsResource(new_cluster);
   // New Route
   RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
   new_route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
       ->mutable_route()
@@ -13389,15 +13406,19 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
                          &TestTypeName);
 
 // We are only testing the server here.
+// Run with bootstrap from env var so that we use one XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerSecurityTest,
     ::testing::Values(TestType()
                           .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
                           .set_use_xds_credentials()),
     &TestTypeName);
+
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsEnabledServerStatusNotificationTest,
     ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
+
+// Run with bootstrap from env var so that we use one XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerFilterChainMatchTest,
     ::testing::Values(TestType()
@@ -13406,6 +13427,7 @@ INSTANTIATE_TEST_SUITE_P(
     &TestTypeName);
 
 // Test xDS-enabled server with and without RDS.
+// Run with bootstrap from env var so that we use one XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerRdsTest,
     ::testing::Values(TestType()
@@ -13557,7 +13579,10 @@ INSTANTIATE_TEST_SUITE_P(
         TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-            .set_enable_load_reporting()),
+            .set_enable_load_reporting(),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_enable_rds_testing()),
     &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(
