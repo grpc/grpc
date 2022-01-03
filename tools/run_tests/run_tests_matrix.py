@@ -323,16 +323,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # C and C++ with the c-ares DNS resolver on Linux
-    test_jobs += _generate_jobs(languages=['c', 'c++'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args,
-                                extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
     # C and C++ with no-exceptions on Linux
     test_jobs += _generate_jobs(languages=['c', 'c++'],
                                 configs=['noexcept'],
