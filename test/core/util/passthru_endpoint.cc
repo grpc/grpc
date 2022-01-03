@@ -81,7 +81,9 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->pending_read_op.cb,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
-    grpc_slice_buffer_reset_and_unref(&m->read_buffer);
+    // Move any pending data into pending_read_op.slices so that it may be
+    // free'ed by the executing callback.
+    grpc_slice_buffer_move_into(&m->read_buffer, m->pending_read_op.slices);
     m->pending_read_op.is_armed = false;
     return;
   }
@@ -235,6 +237,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     GPR_ASSERT(max_writable >= static_cast<uint64_t>(split_length));
     max_writable -= split_length;
   }
+
   if (immediate_bytes_read > 0) {
     GPR_ASSERT(!other->pending_read_op.is_armed);
     if (m->parent->simulate_channel_actions) {
@@ -264,17 +267,24 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown"));
   } else {
     GPR_ASSERT(!m->pending_write_op.is_armed);
-    m->pending_write_op.is_armed = true;
-    m->pending_write_op.cb = cb;
-    m->pending_write_op.ep = ep;
     // Copy slices into m->pending_write_op.slices
     m->pending_write_op.slices = &m->write_buffer;
     GPR_ASSERT(m->pending_write_op.slices->count == 0);
     for (int i = 0; i < static_cast<int>(slices->count); i++) {
-      grpc_slice_buffer_add_indexed(m->pending_write_op.slices,
-                                    grpc_slice_copy(slices->slices[i]));
+      if (GPR_SLICE_LENGTH(slices->slices[i]) > 0) {
+        grpc_slice_buffer_add_indexed(m->pending_write_op.slices,
+                                      grpc_slice_copy(slices->slices[i]));
+      }
     }
-    do_pending_write_op_locked(m, GRPC_ERROR_NONE);
+    if (m->pending_write_op.slices->count > 0) {
+      m->pending_write_op.is_armed = true;
+      m->pending_write_op.cb = cb;
+      m->pending_write_op.ep = ep;
+      do_pending_write_op_locked(m, GRPC_ERROR_NONE);
+    } else {
+      // There is nothing to write. Schedule callback to be run right away.
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+    }
   }
   gpr_mu_unlock(&m->parent->mu);
 }

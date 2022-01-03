@@ -514,11 +514,6 @@ class TrafficDirectorManager:
         self.target_proxy = None
         self.target_proxy_is_http = False
 
-    # create alternate target proxy pointing to alternate url_map with the same
-    # host name in host rule. The port is fixed because they point to the same backend service.
-    # Therefore we have to choose a non-`0.0.0.0` ip because ip:port needs to be unique.
-    # We also have to set validate_for_proxyless=false because requires `0.0.0.0` ip.
-    # See https://github.com/grpc/grpc-java/issues/8009
     def create_alternative_target_proxy(self):
         name = self.make_resource_name(self.ALTERNATIVE_TARGET_PROXY_NAME)
         if self.backend_service_protocol is BackendServiceProtocol.GRPC:
@@ -526,7 +521,7 @@ class TrafficDirectorManager:
                 'Creating alternative target GRPC proxy "%s" to URL map %s',
                 name, self.alternative_url_map.name)
             self.alternative_target_proxy = self.compute.create_target_grpc_proxy(
-                name, self.alternative_url_map, validate_for_proxyless=False)
+                name, self.alternative_url_map, False)
         else:
             raise TypeError('Unexpected backend service protocol')
 

@@ -219,7 +219,6 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         self,
         name: str,
         url_map: GcpResource,
-        *,
         validate_for_proxyless: bool = True,
     ) -> GcpResource:
         return self._insert_resource(

@@ -1129,8 +1129,11 @@ class HPackParser::Parser {
     auto value_slice = value->Take<TakeValueType>();
     const auto transport_size = key_string.size() + value_slice.size() +
                                 hpack_constants::kEntryOverhead;
-    return grpc_metadata_batch::Parse(key->string_view(),
-                                      std::move(value_slice), transport_size);
+    return grpc_metadata_batch::Parse(
+        key->string_view(), std::move(value_slice), transport_size,
+        [key_string](absl::string_view error, const Slice& value) {
+          ReportMetadataParseError(key_string, error, value.as_string_view());
+        });
   }
 
   // Parse an index encoded key and a string encoded value
@@ -1143,7 +1146,11 @@ class HPackParser::Parser {
     }
     auto value = ParseValueString(elem->is_binary_header());
     if (GPR_UNLIKELY(!value.has_value())) return {};
-    return elem->WithNewValue(value->Take<TakeValueType>());
+    return elem->WithNewValue(value->Take<TakeValueType>(),
+                              [=](absl::string_view error, const Slice& value) {
+                                ReportMetadataParseError(
+                                    elem->key(), error, value.as_string_view());
+                              });
   }
 
   // Parse a varint index encoded key and a string encoded value
@@ -1219,6 +1226,7 @@ class HPackParser::Parser {
             " vs. %" PRIu32
             "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
             *frame_length_, metadata_size_limit_);
+    if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
     return input_->MaybeSetErrorAndReturn(
         [] {
           return grpc_error_set_int(
@@ -1227,6 +1235,14 @@ class HPackParser::Parser {
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
         },
         false);
+  }
+
+  static void ReportMetadataParseError(absl::string_view key,
+                                       absl::string_view error,
+                                       absl::string_view value) {
+    gpr_log(
+        GPR_ERROR, "Error parsing metadata: %s",
+        absl::StrCat("error=", error, " key=", key, " value=", value).c_str());
   }
 
   Input* const input_;
@@ -1355,25 +1371,6 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
 }
 
-static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
-                                        grpc_chttp2_stream* s,
-                                        grpc_metadata_batch* initial_metadata) {
-  if (initial_metadata->legacy_index()->named.content_encoding == nullptr ||
-      grpc_stream_compression_method_parse(
-          GRPC_MDVALUE(
-              initial_metadata->legacy_index()->named.content_encoding->md),
-          false, &s->stream_decompression_method) == 0) {
-    s->stream_decompression_method =
-        GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
-  }
-
-  if (s->stream_decompression_method !=
-      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-    s->stream_decompression_ctx = nullptr;
-    grpc_slice_buffer_init(&s->decompressed_data_buffer);
-  }
-}
-
 grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   grpc_chttp2_transport* t,
                                                   grpc_chttp2_stream* s,
@@ -1396,11 +1393,6 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
         if (s->header_frames_received == 2) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
-        }
-        /* Process stream compression md element if it exists */
-        if (s->header_frames_received ==
-            0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->initial_metadata_buffer);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

@@ -49,14 +49,14 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('04_create_default_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
 
-        with self.subTest('05_start_test_servers'):
-            test_servers: List[_XdsTestServer] = self.startTestServers()
+        with self.subTest('05_start_test_server'):
+            test_server: _XdsTestServer = self.startTestServers()[0]
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
 
         with self.subTest('07_start_test_client'):
-            test_client: _XdsTestClient = self.startTestClient(test_servers[0])
+            test_client: _XdsTestClient = self.startTestClient(test_server)
 
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(test_client)
@@ -68,10 +68,15 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_alternative_url_map(self.server_xds_host,
                                                self.server_xds_port)
 
+        # Create alternate target proxy pointing to alternate url_map with the same
+        # host name in host rule. The port is fixed because they point to the same backend service.
+        # Therefore we have to choose a non-`0.0.0.0` ip because ip:port needs to be unique.
+        # We also have to set validate_for_proxyless=false because requires `0.0.0.0` ip.
+        # See https://github.com/grpc/grpc-java/issues/8009
         with self.subTest('11_create_alternate_target_proxy'):
             self.td.create_alternative_target_proxy()
 
-        # create a second suite of map+tp+fr with the same host name in host rule.
+        # Create a second suite of map+tp+fr with the same host name in host rule.
         # We set fr ip_address to be different from `0.0.0.0` and then set
         # validate_for_proxyless=false because ip:port needs to be unique.
         with self.subTest('12_create_alternate_forwarding_rule'):
@@ -99,27 +104,30 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 logger=logger,
                 log_level=logging.INFO)
             try:
-                retryer(self.verify_route_traffic_continues,
-                        version=previous_route_config_version,
-                        test_client=test_client)
+                retryer(
+                    self.verify_route_traffic_continues,
+                    previous_route_config_version=previous_route_config_version,
+                    test_client=test_client)
             except retryers.RetryError as retry_error:
                 logger.info(
                     'Retry exhausted. TD routing config propagation failed after timeout %ds.',
                     xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
                 raise retry_error
 
-    def verify_route_traffic_continues(self, **kwargs):
-        test_client = kwargs['test_client']
-        previous_route_config_version = kwargs['version']
+    def verify_route_traffic_continues(self, *, test_client: _XdsTestClient,
+                                       previous_route_config_version: str):
         self.assertSuccessfulRpcs(test_client)
-        if previous_route_config_version == 0:
+        route_config_version = self.getRouteConfigVersion(test_client)
+        if previous_route_config_version == route_config_version:
             logger.info('Routing config not propagated yet. Retrying.')
             raise TdPropagationRetryableError(
                 "CSDS not get updated routing config corresponding"
                 " to the second set of url maps")
         else:
             self.assertSuccessfulRpcs(test_client)
-            logger.info('Success.')
+            logger.info(
+                '[SUCCESS] Confirmed successful RPC with the updated routing config, version=%s',
+                route_config_version)
 
 
 class TdPropagationRetryableError(Exception):

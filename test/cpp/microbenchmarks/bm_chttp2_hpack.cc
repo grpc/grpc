@@ -25,11 +25,13 @@
 
 #include <benchmark/benchmark.h>
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -38,6 +40,10 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
@@ -69,7 +75,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
 
@@ -111,7 +117,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   Fixture::Prepare(&b);
 
@@ -167,9 +173,9 @@ class SingleStaticElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE)));
+    b->Set(grpc_core::GrpcAcceptEncodingMetadata(),
+           grpc_core::CompressionAlgorithmSet(
+               {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE}));
   }
 };
 
@@ -257,30 +263,26 @@ class RepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH,
-            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
+    b->Set(
+        grpc_core::HttpPathMetadata(),
+        grpc_core::Slice(grpc_core::StaticSlice::FromStaticString("/foo/bar")));
+    b->Set(grpc_core::HttpAuthorityMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+    b->Set(grpc_core::ContentTypeMetadata(),
+           grpc_core::ContentTypeMetadata::kApplicationGrpc);
+    b->Set(grpc_core::UserAgentMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)")));
   }
 };
 
@@ -291,48 +293,40 @@ class MoreRepresentativeClientInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH, grpc_slice_intern(grpc_slice_from_static_string(
-                                 "/grpc.test.FooService/BarMethod"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_GRPC_TRACE_BIN,
-            grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
-                                          "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                                          "\x10\x11\x12\x13\x14\x15\x16\x17\x18"
-                                          "\x19\x1a\x1b\x1c\x1d\x1e\x1f"
-                                          "\x20\x21\x22\x23\x24\x25\x26\x27\x28"
-                                          "\x29\x2a\x2b\x2c\x2d\x2e\x2f"
-                                          "\x30")))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_GRPC_TAGS_BIN,
-            grpc_slice_from_static_string("\x00\x01\x02\x03\x04\x05\x06\x07\x08"
-                                          "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-                                          "\x10\x11\x12\x13")))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
+    b->Set(grpc_core::HttpPathMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "/grpc.test.FooService/BarMethod")));
+    b->Set(grpc_core::HttpAuthorityMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
+    b->Set(grpc_core::GrpcTraceBinMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
+               "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+               "\x10\x11\x12\x13\x14\x15\x16\x17\x18"
+               "\x19\x1a\x1b\x1c\x1d\x1e\x1f"
+               "\x20\x21\x22\x23\x24\x25\x26\x27\x28"
+               "\x29\x2a\x2b\x2c\x2d\x2e\x2f"
+               "\x30")));
+    b->Set(grpc_core::GrpcTagsBinMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
+               "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+               "\x10\x11\x12\x13")));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+    b->Set(grpc_core::ContentTypeMetadata(),
+           grpc_core::ContentTypeMetadata::kApplicationGrpc);
+    b->Set(grpc_core::UserAgentMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)")));
   }
 };
 
@@ -340,13 +334,13 @@ class RepresentativeServerInitialMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_STATUS_200)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::HttpStatusMetadata(), 200);
+    b->Set(grpc_core::ContentTypeMetadata(),
+           grpc_core::ContentTypeMetadata::kApplicationGrpc);
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
   }
 };
 
@@ -354,8 +348,7 @@ class RepresentativeServerTrailingMetadata {
  public:
   static constexpr bool kEnableTrueBinary = true;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_GRPC_STATUS_0)));
+    b->Set(grpc_core::GrpcStatusMetadata(), GRPC_STATUS_OK);
   }
 };
 
@@ -468,12 +461,12 @@ BENCHMARK(BM_HpackParserInitDestroy);
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_core::ExecCtx exec_ctx;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
-  auto* arena = grpc_core::Arena::Create(kArenaSize);
+  auto* arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
@@ -481,20 +474,22 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
                grpc_core::HPackParser::Priority::None,
                grpc_core::HPackParser::LogInfo{
                    1, grpc_core::HPackParser::LogInfo::kHeaders, false});
-  for (auto slice : init_slices) {
-    GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
-  }
+  auto parse_vec = [&p](const std::vector<grpc_slice>& slices) {
+    for (size_t i = 0; i < slices.size(); ++i) {
+      auto error = p.Parse(slices[i], i == slices.size() - 1);
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
+    }
+  };
+  parse_vec(init_slices);
   while (state.KeepRunning()) {
     b->Clear();
-    for (auto slice : benchmark_slices) {
-      GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice, false));
-    }
+    parse_vec(benchmark_slices);
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
       b.Destroy();
       arena->Destroy();
-      arena = grpc_core::Arena::Create(kArenaSize);
+      arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
@@ -513,6 +508,57 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
 }
 
 namespace hpack_parser_fixtures {
+
+template <class EncoderFixture>
+class FromEncoderFixture {
+ public:
+  static std::vector<grpc_slice> GetInitSlices() { return Generate(0); }
+  static std::vector<grpc_slice> GetBenchmarkSlices() { return Generate(1); }
+
+ private:
+  static std::vector<grpc_slice> Generate(int iteration) {
+    grpc_core::ExecCtx exec_ctx;
+
+    auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+    grpc_metadata_batch b(arena.get());
+    EncoderFixture::Prepare(&b);
+
+    grpc_core::HPackCompressor c;
+    grpc_transport_one_way_stats stats;
+    std::vector<grpc_slice> out;
+    stats = {};
+    bool done = false;
+    int i = 0;
+    while (!done) {
+      grpc_slice_buffer outbuf;
+      grpc_slice_buffer_init(&outbuf);
+      c.EncodeHeaders(
+          grpc_core::HPackCompressor::EncodeHeaderOptions{
+              static_cast<uint32_t>(i),
+              false,
+              EncoderFixture::kEnableTrueBinary,
+              1024 * 1024,
+              &stats,
+          },
+          b, &outbuf);
+      if (i == iteration) {
+        for (size_t s = 0; s < outbuf.count; s++) {
+          out.push_back(grpc_slice_ref_internal(outbuf.slices[s]));
+        }
+        done = true;
+      }
+      grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+      grpc_core::ExecCtx::Get()->Flush();
+      grpc_slice_buffer_destroy_internal(&outbuf);
+      i++;
+    }
+    // Remove the HTTP header.
+    GPR_ASSERT(!out.empty());
+    GPR_ASSERT(GRPC_SLICE_LENGTH(out[0]) > 9);
+    out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
+    return out;
+  }
+};
 
 class EmptyBatch {
  public:
@@ -549,7 +595,7 @@ class KeyIndexedSingleStaticElem {
         {0x40, 0x07, ':', 's', 't', 'a', 't', 'u', 's', 0x03, '2', '0', '0'})};
   }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
-    return {MakeSlice({0x7e, 0x03, 'd', 'e', 'f'})};
+    return {MakeSlice({0x7e, 0x03, '4', '0', '4'})};
   }
 };
 
@@ -671,135 +717,14 @@ class NonIndexedBinaryElem<100, false> {
   }
 };
 
-class RepresentativeClientInitialMetadata {
- public:
-  static std::vector<grpc_slice> GetInitSlices() {
-    return {grpc_slice_from_static_string(
-        // generated with:
-        // ```
-        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
-        // < test/core/bad_client/tests/simple_request.headers
-        // ```
-        "@\x05:path\x08/foo/bar"
-        "@\x07:scheme\x04http"
-        "@\x07:method\x04POST"
-        "@\x0a:authority\x09localhost"
-        "@\x0c"
-        "content-type\x10"
-        "application/grpc"
-        "@\x14grpc-accept-encoding\x15identity,deflate,gzip"
-        "@\x02te\x08trailers"
-        "@\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)")};
-  }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
-    // generated with:
-    // ```
-    // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
-    // --hex < test/core/bad_client/tests/simple_request.headers
-    // ```
-    return {MakeSlice({0xc5, 0xc4, 0xc3, 0xc2, 0xc1, 0xc0, 0xbf, 0xbe})};
-  }
-};
-
-// This fixture reflects how initial metadata are sent by a production client,
-// with non-indexed :path and binary headers. The metadata here are the same as
-// the corresponding encoder benchmark above.
-class MoreRepresentativeClientInitialMetadata {
- public:
-  static std::vector<grpc_slice> GetInitSlices() {
-    return {MakeSlice(
-        {0x40, 0x07, ':',  's',  'c',  'h',  'e',  'm',  'e',  0x04, 'h',  't',
-         't',  'p',  0x40, 0x07, ':',  'm',  'e',  't',  'h',  'o',  'd',  0x04,
-         'P',  'O',  'S',  'T',  0x40, 0x05, ':',  'p',  'a',  't',  'h',  0x1f,
-         '/',  'g',  'r',  'p',  'c',  '.',  't',  'e',  's',  't',  '.',  'F',
-         'o',  'o',  'S',  'e',  'r',  'v',  'i',  'c',  'e',  '/',  'B',  'a',
-         'r',  'M',  'e',  't',  'h',  'o',  'd',  0x40, 0x0a, ':',  'a',  'u',
-         't',  'h',  'o',  'r',  'i',  't',  'y',  0x09, 'l',  'o',  'c',  'a',
-         'l',  'h',  'o',  's',  't',  0x40, 0x0e, 'g',  'r',  'p',  'c',  '-',
-         't',  'r',  'a',  'c',  'e',  '-',  'b',  'i',  'n',  0x31, 0x00, 0x01,
-         0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
-         0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,
-         0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
-         0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x40,
-         0x0d, 'g',  'r',  'p',  'c',  '-',  't',  'a',  'g',  's',  '-',  'b',
-         'i',  'n',  0x14, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-         0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x40,
-         0x0c, 'c',  'o',  'n',  't',  'e',  'n',  't',  '-',  't',  'y',  'p',
-         'e',  0x10, 'a',  'p',  'p',  'l',  'i',  'c',  'a',  't',  'i',  'o',
-         'n',  '/',  'g',  'r',  'p',  'c',  0x40, 0x14, 'g',  'r',  'p',  'c',
-         '-',  'a',  'c',  'c',  'e',  'p',  't',  '-',  'e',  'n',  'c',  'o',
-         'd',  'i',  'n',  'g',  0x15, 'i',  'd',  'e',  'n',  't',  'i',  't',
-         'y',  ',',  'd',  'e',  'f',  'l',  'a',  't',  'e',  ',',  'g',  'z',
-         'i',  'p',  0x40, 0x02, 't',  'e',  0x08, 't',  'r',  'a',  'i',  'l',
-         'e',  'r',  's',  0x40, 0x0a, 'u',  's',  'e',  'r',  '-',  'a',  'g',
-         'e',  'n',  't',  0x22, 'b',  'a',  'd',  '-',  'c',  'l',  'i',  'e',
-         'n',  't',  ' ',  'g',  'r',  'p',  'c',  '-',  'c',  '/',  '0',  '.',
-         '1',  '2',  '.',  '0',  '.',  '0',  ' ',  '(',  'l',  'i',  'n',  'u',
-         'x',  ')'})};
-  }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
-    return {MakeSlice({
-        0xc7, 0xc6, 0xc5, 0xc4, 0x7f, 0x04, 0x31, 0x00, 0x01, 0x02, 0x03, 0x04,
-        0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
-        0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
-        0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-        0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30,
-    })};
-  }
-};
-
-class RepresentativeServerInitialMetadata {
- public:
-  static std::vector<grpc_slice> GetInitSlices() {
-    return {grpc_slice_from_static_string(
-        // generated with:
-        // ```
-        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
-        // <
-        // test/cpp/microbenchmarks/representative_server_initial_metadata.headers
-        // ```
-        "@\x07:status\x03"
-        "200"
-        "@\x0c"
-        "content-type\x10"
-        "application/grpc"
-        "@\x14grpc-accept-encoding\x15identity,deflate,gzip")};
-  }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
-    // generated with:
-    // ```
-    // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
-    // --hex <
-    // test/cpp/microbenchmarks/representative_server_initial_metadata.headers
-    // ```
-    return {MakeSlice({0xc0, 0xbf, 0xbe})};
-  }
-};
-
-class RepresentativeServerTrailingMetadata {
- public:
-  static std::vector<grpc_slice> GetInitSlices() {
-    return {grpc_slice_from_static_string(
-        // generated with:
-        // ```
-        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
-        // <
-        // test/cpp/microbenchmarks/representative_server_trailing_metadata.headers
-        // ```
-        "@\x0bgrpc-status\x01"
-        "0"
-        "@\x0cgrpc-message\x00")};
-  }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
-    // generated with:
-    // ```
-    // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
-    // --hex <
-    // test/cpp/microbenchmarks/representative_server_trailing_metadata.headers
-    // ```
-    return {MakeSlice({0xbf, 0xbe})};
-  }
-};
+using RepresentativeClientInitialMetadata = FromEncoderFixture<
+    hpack_encoder_fixtures::RepresentativeClientInitialMetadata>;
+using RepresentativeServerInitialMetadata = FromEncoderFixture<
+    hpack_encoder_fixtures::RepresentativeServerInitialMetadata>;
+using RepresentativeServerTrailingMetadata = FromEncoderFixture<
+    hpack_encoder_fixtures::RepresentativeServerTrailingMetadata>;
+using MoreRepresentativeClientInitialMetadata = FromEncoderFixture<
+    hpack_encoder_fixtures::MoreRepresentativeClientInitialMetadata>;
 
 // Send the same deadline repeatedly
 class SameDeadline {

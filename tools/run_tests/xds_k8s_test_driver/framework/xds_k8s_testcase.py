@@ -138,8 +138,11 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
 
-        self.config_scope = xds_flags.CONFIG_SCOPE.value + "-" + framework.helpers.rand.random_resource_suffix(
-        )
+        if xds_flags.CONFIG_SCOPE.value is not None:
+            self.config_scope = xds_flags.CONFIG_SCOPE.value + "-" + framework.helpers.rand.random_resource_suffix(
+            )
+        else:
+            self.config_scope = None
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
@@ -348,13 +351,13 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         self.assertSameElements(want, seen)
 
     @staticmethod
-    def getRouteConfigVersion(test_client: XdsTestClient) -> str:
+    def getRouteConfigVersion(test_client: XdsTestClient) -> Optional[str]:
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
         route_config_version = None
         for xds_config in config.xds_config:
             if xds_config.WhichOneof('per_xds_config') == "route_config":
                 route_config = xds_config.route_config
-                logger.info('route config found: %s',
+                logger.info('Route config found: %s',
                             json_format.MessageToJson(route_config, indent=2))
                 route_config_version = route_config.dynamic_route_configs[
                     0].version_info
