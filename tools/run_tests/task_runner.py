@@ -35,7 +35,7 @@ _TARGETS += package_targets.targets()
 def _create_build_map():
     """Maps task names and labels to list of tasks to be built."""
     target_build_map = dict([(target.name, [target]) for target in _TARGETS])
-    if len(_TARGETS) > len(target_build_map.keys()):
+    if len(_TARGETS) > len(list(target_build_map.keys())):
         raise Exception('Target names need to be unique')
 
     label_build_map = {}
@@ -47,7 +47,7 @@ def _create_build_map():
             else:
                 label_build_map[label] = [target]
 
-    if set(target_build_map.keys()).intersection(label_build_map.keys()):
+    if set(target_build_map.keys()).intersection(list(label_build_map.keys())):
         raise Exception('Target names need to be distinct from label names')
     return dict(list(target_build_map.items()) + list(label_build_map.items()))
 
@@ -68,11 +68,6 @@ argp.add_argument('-f',
                   default=[],
                   help='Filter targets to build with AND semantics.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument('-t',
-                  '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True)
 argp.add_argument('-x',
                   '--xml_report',
                   default='report_taskrunner_sponge_log.xml',

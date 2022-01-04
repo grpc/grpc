@@ -21,13 +21,10 @@ cc_library(
         "-ldl",
         "-llog",
         "-lm",
-        "-lbinder_ndk",
         "-Wl,--no-undefined",
     ],
     deps = [
-        # Temporarily directly depend on these targets before we expose a public API
-        "//src/core/ext/transport/binder/client:grpc_transport_binder_client",
-        "//src/core/ext/transport/binder/security_policy:untrusted_security_policy",
+        "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
     ],
     alwayslink = True,

@@ -25,6 +25,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/memory.h"
+
 typedef struct filter_node {
   struct filter_node* next;
   struct filter_node* prev;
@@ -40,8 +42,6 @@ struct grpc_channel_stack_builder {
   // various set/get-able parameters
   grpc_channel_args* args;
   grpc_transport* transport;
-  grpc_resource_user* resource_user;
-  size_t preallocated_bytes;
   char* target;
   const char* name;
 };
@@ -53,15 +53,13 @@ struct grpc_channel_stack_builder_iterator {
 
 grpc_channel_stack_builder* grpc_channel_stack_builder_create(void) {
   grpc_channel_stack_builder* b =
-      static_cast<grpc_channel_stack_builder*>(gpr_zalloc(sizeof(*b)));
-
+      grpc_core::Zalloc<grpc_channel_stack_builder>();
   b->begin.filter = nullptr;
   b->end.filter = nullptr;
   b->begin.next = &b->end;
   b->begin.prev = &b->end;
   b->end.next = &b->begin;
   b->end.prev = &b->begin;
-
   return b;
 }
 
@@ -71,9 +69,9 @@ void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder* b,
   b->target = gpr_strdup(target);
 }
 
-const char* grpc_channel_stack_builder_get_target(
+std::string grpc_channel_stack_builder_get_target(
     grpc_channel_stack_builder* b) {
-  return b->target;
+  return b->target == nullptr ? std::string("unknown") : std::string(b->target);
 }
 
 static grpc_channel_stack_builder_iterator* create_iterator_at_filter_node(

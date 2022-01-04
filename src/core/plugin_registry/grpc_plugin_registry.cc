@@ -49,17 +49,23 @@ void grpc_resolver_sockaddr_init(void);
 void grpc_resolver_sockaddr_shutdown(void);
 void grpc_message_size_filter_init(void);
 void grpc_message_size_filter_shutdown(void);
-void grpc_workaround_cronet_compression_filter_init(void);
-void grpc_workaround_cronet_compression_filter_shutdown(void);
 namespace grpc_core {
 void FaultInjectionFilterInit(void);
 void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
+#ifndef GRPC_NO_RLS
+void RlsLbPluginInit();
+void RlsLbPluginShutdown();
+#endif  // !GRPC_NO_RLS
+void ServiceConfigParserInit(void);
+void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
 
 #ifndef GRPC_NO_XDS
 namespace grpc_core {
+void RbacFilterInit(void);
+void RbacFilterShutdown(void);
 void XdsClientGlobalInit();
 void XdsClientGlobalShutdown();
 }  // namespace grpc_core
@@ -85,13 +91,24 @@ void GoogleCloud2ProdResolverShutdown();
 }  // namespace grpc_core
 #endif
 
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+void grpc_resolver_binder_init(void);
+void grpc_resolver_binder_shutdown(void);
+#endif
+
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_chttp2_plugin_init, grpc_chttp2_plugin_shutdown);
+  grpc_register_plugin(grpc_core::ServiceConfigParserInit,
+                       grpc_core::ServiceConfigParserShutdown);
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_inproc_plugin_init, grpc_inproc_plugin_shutdown);
   grpc_register_plugin(grpc_resolver_fake_init, grpc_resolver_fake_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
+#ifndef GRPC_NO_RLS
+  grpc_register_plugin(grpc_core::RlsLbPluginInit,
+                       grpc_core::RlsLbPluginShutdown);
+#endif  // !GRPC_NO_RLS
   grpc_register_plugin(grpc_lb_policy_priority_init,
                        grpc_lb_policy_priority_shutdown);
   grpc_register_plugin(grpc_lb_policy_weighted_target_init,
@@ -112,9 +129,9 @@ void grpc_register_built_in_plugins(void) {
                        grpc_message_size_filter_shutdown);
   grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
                        grpc_core::FaultInjectionFilterShutdown);
-  grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
-                       grpc_workaround_cronet_compression_filter_shutdown);
 #ifndef GRPC_NO_XDS
+  // rbac_filter is being guarded with GRPC_NO_XDS to avoid a dependency on the re2 library by default
+  grpc_register_plugin(grpc_core::RbacFilterInit, grpc_core::RbacFilterShutdown);
   grpc_register_plugin(grpc_core::XdsClientGlobalInit,
                        grpc_core::XdsClientGlobalShutdown);
   grpc_register_plugin(grpc_certificate_provider_registry_init,
@@ -131,6 +148,11 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_resolver_xds_init, grpc_resolver_xds_shutdown);
   grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
                        grpc_core::GoogleCloud2ProdResolverShutdown);
+#endif
+
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+  grpc_register_plugin(grpc_resolver_binder_init,
+                       grpc_resolver_binder_shutdown);
 #endif
 }
 
@@ -151,8 +173,11 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
-extern void RegisterWorkaroundCronetCompressionFilter(
+extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
+#ifndef GRPC_NO_XDS
+extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
+#endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -164,8 +189,11 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterMaxAgeFilter(builder);
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
-  RegisterWorkaroundCronetCompressionFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
+  RegisterResourceQuota(builder);
+#ifndef GRPC_NO_XDS
+  RegisterXdsChannelStackModifier(builder);
+#endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

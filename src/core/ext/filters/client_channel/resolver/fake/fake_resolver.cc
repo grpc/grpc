@@ -142,23 +142,23 @@ void FakeResolver::MaybeSendResultLocked() {
   if (!started_ || shutdown_) return;
   if (return_failure_) {
     // TODO(roth): Change resolver result generator to be able to inject
-    // the error to be returned.
-    result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver transient failure"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    // the error to be returned and to be able to independently set errors
+    // for addresses and service config.
+    Result result;
+    result.addresses = absl::UnavailableError("Resolver transient failure");
+    result.service_config = result.addresses.status();
+    result.args = grpc_channel_args_copy(channel_args_);
+    result_handler_->ReportResult(std::move(result));
     return_failure_ = false;
   } else if (has_next_result_) {
     Result result;
     result.addresses = std::move(next_result_.addresses);
     result.service_config = std::move(next_result_.service_config);
-    // TODO(roth): Use std::move() once grpc_error is converted to C++.
-    result.service_config_error = next_result_.service_config_error;
-    next_result_.service_config_error = GRPC_ERROR_NONE;
     // When both next_results_ and channel_args_ contain an arg with the same
     // name, only the one in next_results_ will be kept since next_results_ is
     // before channel_args_.
     result.args = grpc_channel_args_union(next_result_.args, channel_args_);
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
     has_next_result_ = false;
   }
 }

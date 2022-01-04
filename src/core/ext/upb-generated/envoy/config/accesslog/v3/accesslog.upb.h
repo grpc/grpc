@@ -946,6 +946,8 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_accesslog_v3_ExtensionFilter
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_accesslog_v3_accesslog_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -15,26 +15,20 @@
 FROM php:7.2-stretch
 
 RUN apt-get -qq update && apt-get -qq install -y \
-  autoconf automake curl git libtool \
+  autoconf automake cmake curl git libtool \
   pkg-config unzip zlib1g-dev
 
 ARG MAKEFLAGS=-j8
 
 
-WORKDIR /tmp
-
-RUN curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/\
-protoc-3.8.0-linux-x86_64.zip -o /tmp/protoc.zip && \
-  unzip -qq protoc.zip && \
-  cp /tmp/bin/protoc /usr/local/bin/protoc
-
-
 WORKDIR /github/grpc
 
 RUN git clone https://github.com/grpc/grpc . && \
-  git submodule update --init && \
-  cd third_party/protobuf && git submodule update --init
+  git submodule update --init --recursive
 
-RUN make grpc_php_plugin
+WORKDIR /github/grpc/cmake/build
+
+RUN cmake ../.. && \
+  make protoc grpc_php_plugin
 
 RUN pecl install grpc

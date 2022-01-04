@@ -26,13 +26,13 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -51,7 +51,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // Strong and weak refs.
@@ -189,8 +188,8 @@ RefCountedPtr<SubchannelCall> SubchannelCall::Ref() {
   return RefCountedPtr<SubchannelCall>(this);
 }
 
-RefCountedPtr<SubchannelCall> SubchannelCall::Ref(
-    const grpc_core::DebugLocation& location, const char* reason) {
+RefCountedPtr<SubchannelCall> SubchannelCall::Ref(const DebugLocation& location,
+                                                  const char* reason) {
   IncrementRefCount(location, reason);
   return RefCountedPtr<SubchannelCall>(this);
 }
@@ -253,12 +252,7 @@ void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
-    if (md_batch->legacy_index()->named.grpc_status != nullptr) {
-      *status = grpc_get_status_code_from_metadata(
-          md_batch->legacy_index()->named.grpc_status->md);
-    } else {
-      *status = GRPC_STATUS_UNKNOWN;
-    }
+    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -288,8 +282,8 @@ void SubchannelCall::IncrementRefCount() {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
 }
 
-void SubchannelCall::IncrementRefCount(
-    const grpc_core::DebugLocation& /*location*/, const char* reason) {
+void SubchannelCall::IncrementRefCount(const DebugLocation& /*location*/,
+                                       const char* reason) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
@@ -910,7 +904,7 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
     c->retry_immediately_ = false;
     error = GRPC_ERROR_NONE;
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO,

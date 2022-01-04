@@ -15,11 +15,16 @@
 #include <vector>
 
 #include "src/core/lib/gprpp/chunked_vector.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/gprpp/chunked_vector_fuzzer.pb.h"
 
 bool squelch = true;
 bool leak_check = true;
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static constexpr size_t kChunkSize = 17;
 using IntHdl = std::shared_ptr<int>;
@@ -47,11 +52,8 @@ struct Comparison {
 
 class Fuzzer {
  public:
-  Fuzzer() : arena_(Arena::Create(128)) {}
-  ~Fuzzer() {
-    vectors_.clear();
-    arena_->Destroy();
-  }
+  Fuzzer() = default;
+  ~Fuzzer() = default;
 
   void Act(const chunked_vector_fuzzer::Action& action) {
     switch (action.action_type_case()) {
@@ -81,7 +83,8 @@ class Fuzzer {
         auto it_from = vectors_.find(action.copy().from());
         if (it_from == vectors_.end()) {
           it_from =
-              vectors_.emplace(action.copy().from(), Comparison(arena_)).first;
+              vectors_.emplace(action.copy().from(), Comparison(arena_.get()))
+                  .first;
         }
         auto it_to = vectors_.find(action.copy().to());
         if (it_to == vectors_.end()) {
@@ -98,7 +101,8 @@ class Fuzzer {
         auto it_from = vectors_.find(action.move().from());
         if (it_from == vectors_.end()) {
           it_from =
-              vectors_.emplace(action.move().from(), Comparison(arena_)).first;
+              vectors_.emplace(action.move().from(), Comparison(arena_.get()))
+                  .first;
         }
         auto it_to = vectors_.find(action.move().to());
         if (it_to == vectors_.end()) {
@@ -137,10 +141,10 @@ class Fuzzer {
     if (it != vectors_.end()) {
       return &it->second;
     }
-    return &vectors_.emplace(index, Comparison(arena_)).first->second;
+    return &vectors_.emplace(index, Comparison(arena_.get())).first->second;
   }
 
-  Arena* arena_;
+  ScopedArenaPtr arena_ = MakeScopedArena(128, g_memory_allocator);
   std::map<int, Comparison> vectors_;
 };
 }  // namespace grpc_core

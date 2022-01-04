@@ -1,28 +1,17 @@
 #=================
 # PHP7 dependencies
 
-# Install Git and basic packages.
+# PHP specific dependencies
 RUN apt-get update && apt-get install -y ${'\\'}
-  autoconf ${'\\'}
-  automake ${'\\'}
-  build-essential ${'\\'}
-  ccache ${'\\'}
-  curl ${'\\'}
-  git ${'\\'}
   libbison-dev ${'\\'}
   libcurl4-openssl-dev ${'\\'}
   libgmp-dev ${'\\'}
   libgmp3-dev ${'\\'}
   libssl-dev ${'\\'}
-  libtool ${'\\'}
   libxml2-dev ${'\\'}
-  pkg-config ${'\\'}
   re2c ${'\\'}
-  time ${'\\'}
-  unzip ${'\\'}
-  wget ${'\\'}
-  zip ${'\\'}
-  zlib1g-dev && apt-get clean
+  zlib1g-dev ${'\\'}
+  && apt-get clean
 
 # Compile PHP7 from source
 RUN git clone https://github.com/php/php-src /var/local/git/php-src

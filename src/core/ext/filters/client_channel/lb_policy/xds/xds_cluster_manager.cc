@@ -122,7 +122,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     void Orphan() override;
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
-                      const ServerAddressList& addresses,
+                      const absl::StatusOr<ServerAddressList>& addresses,
                       const grpc_channel_args* args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -441,7 +441,8 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 
 void XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const ServerAddressList& addresses, const grpc_channel_args* args) {
+    const absl::StatusOr<ServerAddressList>& addresses,
+    const grpc_channel_args* args) {
   if (xds_cluster_manager_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
@@ -494,7 +495,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
     void* arg, grpc_error_handle error) {
   ClusterChild* self = static_cast<ClusterChild*>(arg);
-  GRPC_ERROR_REF(error);  // Ref owned by the lambda
+  (void)GRPC_ERROR_REF(error);  // Ref owned by the lambda
   self->xds_cluster_manager_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
       DEBUG_LOCATION);

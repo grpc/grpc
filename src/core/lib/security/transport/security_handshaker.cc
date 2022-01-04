@@ -440,7 +440,7 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     void* arg, grpc_error_handle error) {
   SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
-  grpc_core::ExecCtx::Run(
+  ExecCtx::Run(
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&h->on_handshake_data_received_from_peer_,
                         &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn,
@@ -473,7 +473,7 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(
 void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
     void* arg, grpc_error_handle error) {
   SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
-  grpc_core::ExecCtx::Run(
+  ExecCtx::Run(
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&h->on_handshake_data_sent_to_peer_,
                         &SecurityHandshaker::OnHandshakeDataSentToPeerFn, h,

@@ -8,10 +8,10 @@
 
 #include "upb/def.h"
 #include "google/api/annotations.upbdefs.h"
+#include "google/api/annotations.upb.h"
 
 extern upb_def_init google_api_http_proto_upbdefinit;
 extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-
 static const char descriptor[296] = {'\n', '\034', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '.', 
 'p', 'r', 'o', 't', 'o', '\022', '\n', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'a', 'p', 'i', '\032', '\025', 'g', 'o', 'o', 'g', 'l', 'e', 
 '/', 'a', 'p', 'i', '/', 'h', 't', 't', 'p', '.', 'p', 'r', 'o', 't', 'o', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 
@@ -34,7 +34,7 @@ static upb_def_init *deps[3] = {
 
 upb_def_init google_api_annotations_proto_upbdefinit = {
   deps,
-  NULL,
+  &google_api_annotations_proto_upb_file_layout,
   "google/api/annotations.proto",
   UPB_STRVIEW_INIT(descriptor, 296)
 };

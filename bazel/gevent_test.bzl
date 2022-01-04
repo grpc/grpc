@@ -11,6 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""
+Houses py_grpc_gevent_test.
+"""
+
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 _GRPC_LIB = "//src/python/grpcio/grpc:grpcio"
@@ -24,6 +29,16 @@ def py_grpc_gevent_test(
         deps = None,
         data = None,
         **kwargs):
+    """Runs a Python test with gevent monkeypatched in.
+
+    Args:
+      name: The name of the test.
+      srcs: The source files.
+      main: The main file of the test.
+      deps: The dependencies of the test.
+      data: The data dependencies of the test.
+      **kwargs: Any other test arguments.
+    """
     if main == None:
         if len(srcs) != 1:
             fail("When main is not provided, srcs must be of size 1.")

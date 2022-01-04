@@ -32,7 +32,7 @@ def create_docker_jobspec(name,
     environ['RUN_COMMAND'] = shell_command
 
     docker_args = []
-    for k, v in environ.items():
+    for k, v in list(environ.items()):
         docker_args += ['-e', '%s=%s' % (k, v)]
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,
@@ -88,14 +88,22 @@ class CSharpPackage:
         return []
 
     def build_jobspec(self):
+        environ = {
+            'GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET':
+                os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET')
+        }
         if self.unity:
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/test/csharp_buster_x64',
-                'src/csharp/build_unitypackage.sh')
+                self.name,
+                'tools/dockerfile/test/csharp_buster_x64',
+                'src/csharp/build_unitypackage.sh',
+                environ=environ)
         else:
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/test/csharp_buster_x64',
-                'src/csharp/build_nuget.sh')
+                self.name,
+                'tools/dockerfile/test/csharp_buster_x64',
+                'src/csharp/build_nuget.sh',
+                environ=environ)
 
     def __str__(self):
         return self.name

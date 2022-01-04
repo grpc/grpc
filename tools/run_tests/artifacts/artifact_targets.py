@@ -38,7 +38,7 @@ def create_docker_jobspec(name,
     environ['ARTIFACTS_OUT'] = 'artifacts/%s' % name
 
     docker_args = []
-    for k, v in environ.items():
+    for k, v in list(environ.items()):
         docker_args += ['-e', '%s=%s' % (k, v)]
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,
@@ -99,11 +99,13 @@ _ARCH_FLAG_MAP = {'x86': '-m32', 'x64': '-m64'}
 class PythonArtifact:
     """Builds Python artifacts."""
 
-    def __init__(self, platform, arch, py_version):
+    def __init__(self, platform, arch, py_version, presubmit=False):
         self.name = 'python_%s_%s_%s' % (platform, arch, py_version)
         self.platform = platform
         self.arch = arch
         self.labels = ['artifact', 'python', platform, arch, py_version]
+        if presubmit:
+            self.labels.append('presubmit')
         self.py_version = py_version
         if 'manylinux' in platform:
             self.labels.append('linux')
@@ -191,11 +193,13 @@ class PythonArtifact:
 class RubyArtifact:
     """Builds ruby native gem."""
 
-    def __init__(self, platform, arch):
+    def __init__(self, platform, arch, presubmit=False):
         self.name = 'ruby_native_gem_%s_%s' % (platform, arch)
         self.platform = platform
         self.arch = arch
         self.labels = ['artifact', 'ruby', platform, arch]
+        if presubmit:
+            self.labels.append('presubmit')
 
     def pre_build_jobspecs(self):
         return []
@@ -212,7 +216,7 @@ class RubyArtifact:
 class CSharpExtArtifact:
     """Builds C# native extension library"""
 
-    def __init__(self, platform, arch, arch_abi=None):
+    def __init__(self, platform, arch, arch_abi=None, presubmit=False):
         self.name = 'csharp_ext_%s_%s' % (platform, arch)
         self.platform = platform
         self.arch = arch
@@ -221,6 +225,8 @@ class CSharpExtArtifact:
         if arch_abi:
             self.name += '_%s' % arch_abi
             self.labels.append(arch_abi)
+        if presubmit:
+            self.labels.append('presubmit')
 
     def pre_build_jobspecs(self):
         return []
@@ -270,11 +276,13 @@ class CSharpExtArtifact:
 class PHPArtifact:
     """Builds PHP PECL package"""
 
-    def __init__(self, platform, arch):
+    def __init__(self, platform, arch, presubmit=False):
         self.name = 'php_pecl_package_{0}_{1}'.format(platform, arch)
         self.platform = platform
         self.arch = arch
         self.labels = ['artifact', 'php', platform, arch]
+        if presubmit:
+            self.labels.append('presubmit')
 
     def pre_build_jobspecs(self):
         return []
@@ -294,11 +302,13 @@ class PHPArtifact:
 class ProtocArtifact:
     """Builds protoc and protoc-plugin artifacts"""
 
-    def __init__(self, platform, arch):
+    def __init__(self, platform, arch, presubmit=False):
         self.name = 'protoc_%s_%s' % (platform, arch)
         self.platform = platform
         self.arch = arch
         self.labels = ['artifact', 'protoc', platform, arch]
+        if presubmit:
+            self.labels.append('presubmit')
 
     def pre_build_jobspecs(self):
         return []
@@ -343,66 +353,73 @@ class ProtocArtifact:
 def targets():
     """Gets list of supported targets"""
     return [
-        ProtocArtifact('linux', 'x64'),
-        ProtocArtifact('linux', 'x86'),
-        ProtocArtifact('linux', 'aarch64'),
-        ProtocArtifact('macos', 'x64'),
-        ProtocArtifact('windows', 'x64'),
-        ProtocArtifact('windows', 'x86'),
-        CSharpExtArtifact('linux', 'x64'),
-        CSharpExtArtifact('linux', 'aarch64'),
-        CSharpExtArtifact('macos', 'x64'),
-        CSharpExtArtifact('windows', 'x64'),
-        CSharpExtArtifact('windows', 'x86'),
-        CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
-        CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
-        CSharpExtArtifact('linux', 'android', arch_abi='x86'),
-        CSharpExtArtifact('macos', 'ios'),
-        PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m'),
+        ProtocArtifact('linux', 'x64', presubmit=True),
+        ProtocArtifact('linux', 'x86', presubmit=True),
+        ProtocArtifact('linux', 'aarch64', presubmit=True),
+        ProtocArtifact('macos', 'x64', presubmit=True),
+        ProtocArtifact('windows', 'x64', presubmit=True),
+        ProtocArtifact('windows', 'x86', presubmit=True),
+        CSharpExtArtifact('linux', 'x64', presubmit=True),
+        CSharpExtArtifact('linux', 'aarch64', presubmit=True),
+        CSharpExtArtifact('macos', 'x64', presubmit=True),
+        CSharpExtArtifact('windows', 'x64', presubmit=True),
+        CSharpExtArtifact('windows', 'x86', presubmit=True),
+        CSharpExtArtifact('linux',
+                          'android',
+                          arch_abi='arm64-v8a',
+                          presubmit=True),
+        CSharpExtArtifact('linux',
+                          'android',
+                          arch_abi='armeabi-v7a',
+                          presubmit=True),
+        CSharpExtArtifact('linux', 'android', arch_abi='x86', presubmit=True),
+        CSharpExtArtifact('macos', 'ios', presubmit=True),
+        PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x64', 'cp39-cp39'),
-        PythonArtifact('manylinux2014', 'x64', 'cp310-cp310'),
-        PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m'),
+        PythonArtifact('manylinux2014', 'x64', 'cp310-cp310', presubmit=True),
+        PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m', presubmit=True),
         PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux2014', 'x86', 'cp310-cp310'),
+        PythonArtifact('manylinux2014', 'x86', 'cp310-cp310', presubmit=True),
         PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m', presubmit=True),
         PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x64', 'cp39-cp39'),
         PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
-        PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m', presubmit=True),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m',
+                       presubmit=True),
         PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
-        PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38', presubmit=True),
         PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp310-cp310'),
-        PythonArtifact('linux_extra', 'armv7', 'cp36-cp36m'),
+        PythonArtifact('linux_extra', 'armv7', 'cp36-cp36m', presubmit=True),
         PythonArtifact('linux_extra', 'armv7', 'cp37-cp37m'),
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
-        PythonArtifact('linux_extra', 'armv7', 'cp310-cp310'),
-        PythonArtifact('macos', 'x64', 'python3.6'),
+        PythonArtifact('linux_extra', 'armv7', 'cp310-cp310', presubmit=True),
+        PythonArtifact('macos', 'x64', 'python3.6', presubmit=True),
         PythonArtifact('macos', 'x64', 'python3.7'),
         PythonArtifact('macos', 'x64', 'python3.8'),
         PythonArtifact('macos', 'x64', 'python3.9'),
-        PythonArtifact('macos', 'x64', 'python3.10'),
-        PythonArtifact('windows', 'x86', 'Python36_32bit'),
+        PythonArtifact('macos', 'x64', 'python3.10', presubmit=True),
+        PythonArtifact('windows', 'x86', 'Python36_32bit', presubmit=True),
         PythonArtifact('windows', 'x86', 'Python37_32bit'),
         PythonArtifact('windows', 'x86', 'Python38_32bit'),
         PythonArtifact('windows', 'x86', 'Python39_32bit'),
-        PythonArtifact('windows', 'x86', 'Python310_32bit'),
-        PythonArtifact('windows', 'x64', 'Python36'),
+        PythonArtifact('windows', 'x86', 'Python310_32bit', presubmit=True),
+        PythonArtifact('windows', 'x64', 'Python36', presubmit=True),
         PythonArtifact('windows', 'x64', 'Python37'),
         PythonArtifact('windows', 'x64', 'Python38'),
         PythonArtifact('windows', 'x64', 'Python39'),
-        PythonArtifact('windows', 'x64', 'Python310'),
-        RubyArtifact('linux', 'x64'),
-        RubyArtifact('macos', 'x64'),
-        PHPArtifact('linux', 'x64'),
-        PHPArtifact('macos', 'x64')
+        PythonArtifact('windows', 'x64', 'Python310', presubmit=True),
+        RubyArtifact('linux', 'x64', presubmit=True),
+        RubyArtifact('macos', 'x64', presubmit=True),
+        PHPArtifact('linux', 'x64', presubmit=True),
+        PHPArtifact('macos', 'x64', presubmit=True)
     ]

@@ -31,20 +31,8 @@ bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_init();
-  grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
-  absl::optional<grpc_slice> output;
-  output =
-      grpc_core::PercentDecodeSlice(input, grpc_core::PercentEncodingType::URL);
-  if (output.has_value()) {
-    grpc_slice_unref(*output);
-  }
-  output = grpc_core::PercentDecodeSlice(
-      input, grpc_core::PercentEncodingType::Compatible);
-  if (output.has_value()) {
-    grpc_slice_unref(*output);
-  }
-  grpc_slice_unref(grpc_core::PermissivePercentDecodeSlice(input));
-  grpc_slice_unref(input);
+  grpc_core::PermissivePercentDecodeSlice(
+      grpc_core::Slice::FromCopiedBuffer((const char*)data, size));
   grpc_shutdown();
   return 0;
 }

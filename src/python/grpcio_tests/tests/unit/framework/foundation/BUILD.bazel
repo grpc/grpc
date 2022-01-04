@@ -13,18 +13,17 @@
 # limitations under the License.
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:python_rules.bzl", "py2and3_test")
-
 py_library(
     name = "stream_testing",
     srcs = ["stream_testing.py"],
 )
 
-py2and3_test(
+py_test(
     name = "logging_pool_test",
     size = "small",
     srcs = ["_logging_pool_test.py"],
     main = "_logging_pool_test.py",
+    python_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
     ],

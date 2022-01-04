@@ -13,30 +13,42 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const google_security_meshca_v1_MeshCertificateRequest_submsgs[1] = {
-  &google_protobuf_Duration_msginit,
+static const upb_msglayout_sub google_security_meshca_v1_MeshCertificateRequest_submsgs[1] = {
+  {.submsg = &google_protobuf_Duration_msginit},
 };
 
 static const upb_msglayout_field google_security_meshca_v1_MeshCertificateRequest__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(20, 40), 1, 0, 11, _UPB_MODE_SCALAR},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(20, 40), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout google_security_meshca_v1_MeshCertificateRequest_msginit = {
   &google_security_meshca_v1_MeshCertificateRequest_submsgs[0],
   &google_security_meshca_v1_MeshCertificateRequest__fields[0],
-  UPB_SIZE(24, 48), 3, false, 3, 255,
+  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 3, 255,
 };
 
 static const upb_msglayout_field google_security_meshca_v1_MeshCertificateResponse__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_ARRAY},
+  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout google_security_meshca_v1_MeshCertificateResponse_msginit = {
   NULL,
   &google_security_meshca_v1_MeshCertificateResponse__fields[0],
-  UPB_SIZE(8, 8), 1, false, 1, 255,
+  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+};
+
+static const upb_msglayout *messages_layout[2] = {
+  &google_security_meshca_v1_MeshCertificateRequest_msginit,
+  &google_security_meshca_v1_MeshCertificateResponse_msginit,
+};
+
+const upb_msglayout_file third_party_istio_security_proto_providers_google_meshca_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  2,
+  0,
 };
 
 #include "upb/port_undef.inc"

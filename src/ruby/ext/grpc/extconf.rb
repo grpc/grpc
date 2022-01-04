@@ -17,6 +17,9 @@ require 'mkmf'
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
 bsd = RUBY_PLATFORM =~ /bsd/
+darwin = RUBY_PLATFORM =~ /darwin/
+linux = RUBY_PLATFORM =~ /linux/
+cross_compiling = ENV['RCD_HOST_RUBY_VERSION'] # set by rake-compiler-dock in build containers
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
@@ -37,17 +40,17 @@ if ENV['LD'].nil? || ENV['LD'].size == 0
     ENV['LD'] = ENV['CC']
 end
 
-if RUBY_PLATFORM =~ /darwin/
+if darwin && !cross_compiling
   ENV['AR'] = 'libtool'
   ENV['ARFLAGS'] = '-o'
- end
+end
 
 ENV['EMBED_OPENSSL'] = 'true'
 ENV['EMBED_ZLIB'] = 'true'
 ENV['EMBED_CARES'] = 'true'
 
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-if RUBY_PLATFORM =~ /darwin/
+if darwin && !cross_compiling
   if RUBY_PLATFORM =~ /arm64/
     ENV['ARCH_FLAGS'] = '-arch arm64'
   else
@@ -57,7 +60,7 @@ end
 
 ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\"" '
-ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.42.0.dev\"" '
+ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.44.0.dev\"" '
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -67,16 +70,23 @@ unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
   nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
+  nproc_override = ENV['GRPC_RUBY_BUILD_PROCS']
+  unless nproc_override.nil? or nproc_override.size == 0
+    nproc = nproc_override
+    puts "Overriding make parallelism to #{nproc}"
+  end
   make = bsd ? 'gmake' : 'make'
-  system("#{make} -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q=")
+  cmd = "#{make} -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q="
+  puts "Building grpc native library: #{cmd}"
+  system(cmd)
   exit 1 unless $? == 0
 end
 
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', 'ext-export')
-$LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if RUBY_PLATFORM =~ /linux/
-$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if RUBY_PLATFORM =~ /darwin/
+$LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
+$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if darwin
 
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
@@ -88,8 +98,8 @@ if grpc_config == 'dbg'
   $CFLAGS << ' -O0 -ggdb3'
 end
 
-$LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
-$LDFLAGS << ' -static-libgcc -static-libstdc++' if RUBY_PLATFORM =~ /linux/
+$LDFLAGS << ' -Wl,-wrap,memcpy' if linux
+$LDFLAGS << ' -static-libgcc -static-libstdc++' if linux
 $LDFLAGS << ' -static' if windows
 
 $CFLAGS << ' -std=c99 '
@@ -102,7 +112,7 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool = 'strip -x' if RUBY_PLATFORM =~ /darwin/
+strip_tool += ' -x' if darwin
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|

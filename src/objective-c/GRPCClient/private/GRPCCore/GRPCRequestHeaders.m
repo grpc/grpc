@@ -22,11 +22,18 @@
 
 #import "NSDictionary+GRPC.h"
 
+static void CheckIsNilOrString(NSString *name, id value) {
+  if (value && ![value isKindOfClass:[NSString class]]) {
+    [NSException raise:NSInvalidArgumentException format:@"%@ must be an NSString", name];
+  }
+}
+
 // Used by the setter.
-static void CheckIsNonNilASCII(NSString *name, NSString *value) {
+static void CheckIsNonNilASCIIString(NSString *name, id value) {
   if (!value) {
     [NSException raise:NSInvalidArgumentException format:@"%@ cannot be nil", name];
   }
+  CheckIsNilOrString(name, value);
   if (![value canBeConvertedToEncoding:NSASCIIStringEncoding]) {
     [NSException raise:NSInvalidArgumentException
                 format:@"%@ %@ contains non-ASCII characters", name, value];
@@ -49,7 +56,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
                          @"instead got %@",
                          key, value];
     }
-    CheckIsNonNilASCII(@"Text header value", (NSString *)value);
+    CheckIsNonNilASCIIString(@"Text header value", value);
   }
 }
 
@@ -100,20 +107,24 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   }
 }
 
-- (id)objectForKey:(NSString *)key {
-  return _delegate[key.lowercaseString];
+- (id)objectForKey:(id)key {
+  CheckIsNilOrString(@"Header name", key);
+  NSString *stringKey = [(NSString *)key lowercaseString];
+  return _delegate[stringKey];
 }
 
-- (void)setObject:(id)obj forKey:(NSString *)key {
-  CheckIsNonNilASCII(@"Header name", key);
-  key = key.lowercaseString;
-  CheckKeyValuePairIsValid(key, obj);
-  _delegate[key] = obj;
+- (void)setObject:(id)obj forKey:(id<NSCopying>)key {
+  CheckIsNonNilASCIIString(@"Header name", key);
+  NSString *stringKey = [(NSString *)key lowercaseString];
+  CheckKeyValuePairIsValid(stringKey, obj);
+  _delegate[stringKey] = obj;
 }
 
-- (void)removeObjectForKey:(NSString *)key {
+- (void)removeObjectForKey:(id)key {
+  CheckIsNilOrString(@"Header name", key);
+  NSString *stringKey = [(NSString *)key lowercaseString];
   [self checkCallIsNotStarted];
-  [_delegate removeObjectForKey:key.lowercaseString];
+  [_delegate removeObjectForKey:stringKey];
 }
 
 - (NSUInteger)count {

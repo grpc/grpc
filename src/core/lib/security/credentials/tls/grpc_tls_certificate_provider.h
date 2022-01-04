@@ -59,9 +59,8 @@ namespace grpc_core {
 class StaticDataCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
-  StaticDataCertificateProvider(
-      std::string root_certificate,
-      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+  StaticDataCertificateProvider(std::string root_certificate,
+                                PemKeyCertPairList pem_key_cert_pairs);
 
   ~StaticDataCertificateProvider() override;
 
@@ -76,9 +75,9 @@ class StaticDataCertificateProvider final
   };
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
+  PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
-  grpc_core::Mutex mu_;
+  Mutex mu_;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
@@ -122,15 +121,15 @@ class FileWatcherCertificateProvider final
   unsigned int refresh_interval_sec_ = 0;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  grpc_core::Thread refresh_thread_;
+  Thread refresh_thread_;
   gpr_event shutdown_event_;
 
   // Guards members below.
-  grpc_core::Mutex mu_;
+  Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
+  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);

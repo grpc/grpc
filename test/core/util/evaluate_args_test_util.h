@@ -33,14 +33,12 @@ class EvaluateArgsTestUtil {
   ~EvaluateArgsTestUtil() { delete channel_args_; }
 
   void AddPairToMetadata(const char* key, const char* value) {
-    metadata_storage_.emplace_back();
-    auto& storage = metadata_storage_.back();
-    ASSERT_EQ(grpc_metadata_batch_add_tail(
-                  &metadata_, &storage,
-                  grpc_mdelem_from_slices(
-                      grpc_slice_intern(grpc_slice_from_static_string(key)),
-                      grpc_slice_intern(grpc_slice_from_static_string(value)))),
-              GRPC_ERROR_NONE);
+    metadata_.Append(
+        key, Slice(grpc_slice_intern(grpc_slice_from_static_string(value))),
+        [](absl::string_view, const Slice&) {
+          // We should never ever see an error here.
+          abort();
+        });
   }
 
   void SetLocalEndpoint(absl::string_view local_uri) {
@@ -62,8 +60,11 @@ class EvaluateArgsTestUtil {
   }
 
  private:
-  std::list<grpc_linked_mdelem> metadata_storage_;
-  grpc_metadata_batch metadata_;
+  MemoryAllocator allocator_ =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "EvaluateArgsTestUtil");
+  ScopedArenaPtr arena_ = MakeScopedArena(1024, &allocator_);
+  grpc_metadata_batch metadata_{arena_.get()};
   MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
   grpc_auth_context auth_context_{nullptr};
   EvaluateArgs::PerChannelArgs* channel_args_ = nullptr;

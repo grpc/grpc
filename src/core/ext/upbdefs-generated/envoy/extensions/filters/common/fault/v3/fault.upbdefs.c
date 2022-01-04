@@ -8,26 +8,13 @@
 
 #include "upb/def.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upbdefs.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 
 extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
 extern upb_def_init google_protobuf_duration_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultDelay_msginit;
-extern const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit;
-extern const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit;
-extern const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit;
-extern const upb_msglayout envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit;
-
-static const upb_msglayout *layouts[5] = {
-  &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit,
-  &envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit,
-  &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit,
-  &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_msginit,
-  &envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit,
-};
-
 static const char descriptor[1354] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
 's', '/', 'c', 'o', 'm', 'm', 'o', 'n', '/', 'f', 'a', 'u', 'l', 't', '/', 'v', '3', '/', 'f', 'a', 'u', 'l', 't', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '(', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'f', 'i', 
@@ -96,7 +83,7 @@ static upb_def_init *deps[6] = {
 
 upb_def_init envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_extensions_filters_common_fault_v3_fault_proto_upb_file_layout,
   "envoy/extensions/filters/common/fault/v3/fault.proto",
   UPB_STRVIEW_INIT(descriptor, 1354)
 };

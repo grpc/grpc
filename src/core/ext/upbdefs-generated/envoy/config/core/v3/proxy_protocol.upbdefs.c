@@ -8,14 +8,9 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/proxy_protocol.upbdefs.h"
+#include "envoy/config/core/v3/proxy_protocol.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_ProxyProtocolConfig_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_config_core_v3_ProxyProtocolConfig_msginit,
-};
-
 static const char descriptor[299] = {'\n', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'p', 'r', 
 'o', 'x', 'y', '_', 'p', 'r', 'o', 't', 'o', 'c', 'o', 'l', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', 
 '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 
@@ -37,7 +32,7 @@ static upb_def_init *deps[2] = {
 
 upb_def_init envoy_config_core_v3_proxy_protocol_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_proxy_protocol_proto_upb_file_layout,
   "envoy/config/core/v3/proxy_protocol.proto",
   UPB_STRVIEW_INIT(descriptor, 299)
 };

@@ -35,29 +35,35 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/transport/error_utils.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-grpc_error_handle grpc_resolve_unix_domain_address(
-    const char* name, grpc_resolved_addresses** addresses) {
-  *addresses = static_cast<grpc_resolved_addresses*>(
-      gpr_malloc(sizeof(grpc_resolved_addresses)));
-  (*addresses)->naddrs = 1;
-  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
-      gpr_malloc(sizeof(grpc_resolved_address)));
-  return grpc_core::UnixSockaddrPopulate(name, (*addresses)->addrs);
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_domain_address(absl::string_view name) {
+  grpc_resolved_address addr;
+  grpc_error_handle error = grpc_core::UnixSockaddrPopulate(name, &addr);
+  if (error == GRPC_ERROR_NONE) {
+    return std::vector<grpc_resolved_address>({addr});
+  }
+  auto result = grpc_error_to_absl_status(error);
+  GRPC_ERROR_UNREF(error);
+  return result;
 }
 
-grpc_error_handle grpc_resolve_unix_abstract_domain_address(
-    const absl::string_view name, grpc_resolved_addresses** addresses) {
-  *addresses = static_cast<grpc_resolved_addresses*>(
-      gpr_malloc(sizeof(grpc_resolved_addresses)));
-  (*addresses)->naddrs = 1;
-  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
-      gpr_malloc(sizeof(grpc_resolved_address)));
-  return grpc_core::UnixAbstractSockaddrPopulate(name, (*addresses)->addrs);
+absl::StatusOr<std::vector<grpc_resolved_address>>
+grpc_resolve_unix_abstract_domain_address(const absl::string_view name) {
+  grpc_resolved_address addr;
+  grpc_error_handle error =
+      grpc_core::UnixAbstractSockaddrPopulate(name, &addr);
+  if (error == GRPC_ERROR_NONE) {
+    return std::vector<grpc_resolved_address>({addr});
+  }
+  auto result = grpc_error_to_absl_status(error);
+  GRPC_ERROR_UNREF(error);
+  return result;
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {

@@ -3,7 +3,7 @@
     <Authors>The gRPC Authors</Authors>
     <Copyright>Copyright 2015 The gRPC Authors</Copyright>
     <Description>gRPC C# Authentication Library</Description>
-    <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
+    <PackageIcon>packageIcon.png</PackageIcon>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC RPC HTTP/2 Auth OAuth2</PackageTags>
@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
+  <ItemGroup>
+    <None Include="../packageIcon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\Grpc.Core.Api\Version.cs" />

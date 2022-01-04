@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <gtest/gtest.h>
+#include <openssl/crypto.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -36,10 +37,6 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-extern "C" {
-#include <openssl/crypto.h>
-}
 
 static std::string test_server1_key_id;
 

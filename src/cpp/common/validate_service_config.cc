@@ -19,7 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/support/validate_service_config.h>
 
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/ext/service_config/service_config.h"
 
 namespace grpc {
 namespace experimental {

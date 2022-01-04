@@ -34,7 +34,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
@@ -138,11 +137,11 @@ struct read_state {
   grpc_slice_buffer read_slice_buffer;
 
   /* vars for trailing metadata */
-  grpc_chttp2_incoming_metadata_buffer trailing_metadata;
+  grpc_metadata_batch trailing_metadata;
   bool trailing_metadata_valid = false;
 
   /* vars for initial metadata */
-  grpc_chttp2_incoming_metadata_buffer initial_metadata;
+  grpc_metadata_batch initial_metadata;
 };
 
 struct write_state {
@@ -405,14 +404,12 @@ static void execute_from_storage(stream_obj* s) {
 
 static void convert_cronet_array_to_metadata(
     const bidirectional_stream_header_array* header_array,
-    grpc_chttp2_incoming_metadata_buffer* mds) {
+    grpc_metadata_batch* mds) {
   for (size_t i = 0; i < header_array->count; i++) {
     CRONET_LOG(GPR_DEBUG, "header key=%s, value=%s",
                header_array->headers[i].key, header_array->headers[i].value);
-    grpc_slice key = grpc_slice_intern(
-        grpc_slice_from_static_string(header_array->headers[i].key));
     grpc_slice value;
-    if (grpc_is_refcounted_slice_binary_header(key)) {
+    if (absl::EndsWith(header_array->headers[i].key, "-bin")) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
       value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
           value, grpc_chttp2_base64_infer_length_after_decode(value)));
@@ -420,9 +417,14 @@ static void convert_cronet_array_to_metadata(
       value = grpc_slice_intern(
           grpc_slice_from_static_string(header_array->headers[i].value));
     }
-    GRPC_LOG_IF_ERROR("convert_cronet_array_to_metadata",
-                      grpc_chttp2_incoming_metadata_buffer_add(
-                          mds, grpc_mdelem_from_slices(key, value)));
+    mds->Append(header_array->headers[i].key, grpc_core::Slice(value),
+                [&](absl::string_view error, const grpc_core::Slice& value) {
+                  gpr_log(GPR_DEBUG, "Failed to parse metadata: %s",
+                          absl::StrCat("key=", header_array->headers[i].key,
+                                       " error=", error,
+                                       " value=", value.as_string_view())
+                              .c_str());
+                });
   }
 }
 
@@ -697,29 +699,70 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
   }
 }
 
-/*
- Convert metadata in a format that Cronet can consume
-*/
-static void convert_metadata_to_cronet_headers(
-    grpc_metadata_batch* metadata, const char* host, std::string* pp_url,
-    bidirectional_stream_header** pp_headers, size_t* p_num_headers,
-    const char** method) {
-  /* Get number of header fields */
-  size_t num_headers_available = metadata->count();
-  /* Allocate enough memory. It is freed in the on_stream_ready callback
-   */
-  bidirectional_stream_header* headers =
-      static_cast<bidirectional_stream_header*>(gpr_malloc(
-          sizeof(bidirectional_stream_header) * num_headers_available));
-  *pp_headers = headers;
+namespace {
+class CronetMetadataEncoder {
+ public:
+  explicit CronetMetadataEncoder(bidirectional_stream_header** pp_headers,
+                                 size_t* p_count, const char* host,
+                                 size_t capacity, const char** method,
+                                 std::string* url)
+      : host_(host),
+        capacity_(capacity),
+        count_(*p_count),
+        headers_(*pp_headers),
+        method_(method),
+        url_(url) {
+    count_ = 0;
+    headers_ = static_cast<bidirectional_stream_header*>(
+        gpr_malloc(sizeof(bidirectional_stream_header) * capacity_));
+  }
 
-  /* Walk the linked list again, this time copying the header fields.
-    s->num_headers can be less than num_headers_available, as some headers
-    are not used for cronet.
-    TODO (makdharma): Eliminate need to traverse the LL second time for perf.
-   */
-  size_t num_headers = 0;
-  metadata->ForEach([&](grpc_mdelem mdelem) {
+  CronetMetadataEncoder(const CronetMetadataEncoder&) = delete;
+  CronetMetadataEncoder& operator=(const CronetMetadataEncoder&) = delete;
+
+  template <class T, class V>
+  void Encode(T, const V& value) {
+    auto value_slice = T::Encode(value);
+    auto key_slice =
+        grpc_core::ExternallyManagedSlice(T::key().data(), T::key().length());
+    auto mdelem = grpc_mdelem_from_slices(key_slice, value_slice.TakeCSlice());
+    Encode(mdelem);
+    GRPC_MDELEM_UNREF(mdelem);
+  }
+
+  void Encode(grpc_core::HttpSchemeMetadata,
+              grpc_core::HttpSchemeMetadata::ValueType) {
+    /* Cronet populates these fields on its own */
+  }
+  void Encode(grpc_core::HttpAuthorityMetadata,
+              const grpc_core::HttpAuthorityMetadata::ValueType&) {
+    /* Cronet populates these fields on its own */
+  }
+
+  void Encode(grpc_core::HttpMethodMetadata,
+              grpc_core::HttpMethodMetadata::ValueType method) {
+    switch (method) {
+      case grpc_core::HttpMethodMetadata::kPost:
+        *method_ = "POST";
+        break;
+      case grpc_core::HttpMethodMetadata::kPut:
+        *method_ = "PUT";
+        break;
+      case grpc_core::HttpMethodMetadata::kGet:
+        *method_ = "GET";
+        break;
+      case grpc_core::HttpMethodMetadata::kInvalid:
+        abort();
+    }
+  }
+
+  void Encode(grpc_core::HttpPathMetadata,
+              const grpc_core::HttpPathMetadata::ValueType& path) {
+    /* Create URL by appending :path value to the hostname */
+    *url_ = absl::StrCat("https://", host_, path.as_string_view());
+  }
+
+  void Encode(grpc_mdelem mdelem) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
     char* value;
     if (grpc_is_binary_header_internal(GRPC_MDKEY(mdelem))) {
@@ -729,50 +772,33 @@ static void convert_metadata_to_cronet_headers(
     } else {
       value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
     }
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
-        grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem),
-                                      GRPC_MDSTR_AUTHORITY)) {
-      /* Cronet populates these fields on its own */
-      gpr_free(key);
-      gpr_free(value);
-      return;
-    }
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_METHOD)) {
-      if (grpc_slice_eq_static_interned(GRPC_MDVALUE(mdelem), GRPC_MDSTR_PUT)) {
-        *method = "PUT";
-      } else {
-        /* POST method in default*/
-        *method = "POST";
-      }
-      gpr_free(key);
-      gpr_free(value);
-      return;
-    }
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
-      /* Create URL by appending :path value to the hostname */
-      *pp_url = absl::StrCat("https://", host, value);
-      gpr_free(key);
-      gpr_free(value);
-      return;
-    }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
-    headers[num_headers].key = key;
-    headers[num_headers].value = value;
-    num_headers++;
-  });
-  if (metadata->deadline() != GRPC_MILLIS_INF_FUTURE) {
-    char* key = grpc_slice_to_c_string(GRPC_MDSTR_GRPC_TIMEOUT);
-    char* value =
-        static_cast<char*>(gpr_malloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
-    grpc_http2_encode_timeout(
-        metadata->deadline() - grpc_core::ExecCtx::Get()->Now(), value);
-    headers[num_headers].key = key;
-    headers[num_headers].value = value;
-
-    num_headers++;
+    GPR_ASSERT(count_ < capacity_);
+    headers_[count_].key = key;
+    headers_[count_].value = value;
+    ++count_;
   }
 
-  *p_num_headers = num_headers;
+ private:
+  const char* host_;
+  size_t capacity_;
+  size_t& count_;
+  bidirectional_stream_header*& headers_;
+  const char** method_;
+  std::string* url_;
+};
+}  // namespace
+
+/*
+ Convert metadata in a format that Cronet can consume
+*/
+static void convert_metadata_to_cronet_headers(
+    grpc_metadata_batch* metadata, const char* host, std::string* pp_url,
+    bidirectional_stream_header** pp_headers, size_t* p_num_headers,
+    const char** method) {
+  CronetMetadataEncoder encoder(pp_headers, p_num_headers, host,
+                                metadata->count(), method, pp_url);
+  metadata->Encode(&encoder);
 }
 
 static void parse_grpc_header(const uint8_t* data, int* length,
@@ -788,13 +814,7 @@ static void parse_grpc_header(const uint8_t* data, int* length,
 }
 
 static bool header_has_authority(const grpc_metadata_batch* b) {
-  bool found = false;
-  b->ForEach([&](grpc_mdelem elem) {
-    if (grpc_slice_eq_static_interned(GRPC_MDKEY(elem), GRPC_MDSTR_AUTHORITY)) {
-      found = true;
-    }
-  });
-  return found;
+  return b->get_pointer(grpc_core::HttpAuthorityMetadata()) != nullptr;
 }
 
 /*
@@ -1152,9 +1172,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
           GRPC_ERROR_NONE);
     } else {
-      grpc_chttp2_incoming_metadata_buffer_publish(
-          &oas->s->state.rs.initial_metadata,
-          stream_op->payload->recv_initial_metadata.recv_initial_metadata);
+      *stream_op->payload->recv_initial_metadata.recv_initial_metadata =
+          std::move(oas->s->state.rs.initial_metadata);
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
@@ -1308,9 +1327,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       error =
           make_error_with_desc(grpc_error_code, stream_state->net_error, desc);
     } else if (oas->s->state.rs.trailing_metadata_valid) {
-      grpc_chttp2_incoming_metadata_buffer_publish(
-          &oas->s->state.rs.trailing_metadata,
-          stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
+      *stream_op->payload->recv_trailing_metadata.recv_trailing_metadata =
+          std::move(oas->s->state.rs.trailing_metadata);
       stream_state->rs.trailing_metadata_valid = false;
     }
     grpc_core::ExecCtx::Run(

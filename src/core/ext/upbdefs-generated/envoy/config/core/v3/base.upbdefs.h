@@ -81,6 +81,11 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_RuntimeFeatureFlag_getmsgdef(u
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.RuntimeFeatureFlag");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_core_v3_QueryParameter_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.QueryParameter");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_HeaderValue_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_base_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.HeaderValue");

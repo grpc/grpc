@@ -34,6 +34,9 @@ def well_known_proto_libs():
         "@com_google_protobuf//:wrappers_proto",
     ]
 
+def is_well_known(label):
+    return label in well_known_proto_libs()
+
 def get_proto_root(workspace_root):
     """Gets the root protobuf directory.
 
@@ -73,9 +76,10 @@ def proto_path_to_generated_filename(proto_path, fmt_str):
     return fmt_str.format(_strip_proto_extension(proto_path))
 
 def get_include_directory(source_file):
-    """Returns the include directory path for the source_file. I.e. all of the
-    include statements within the given source_file are calculated relative to
-    the directory returned by this method.
+    """Returns the include directory path for the source_file.
+
+    All of the include statements within the given source_file are calculated
+    relative to the directory returned by this method.
 
     The returned directory path can be used as the "--proto_path=" argument
     value.
@@ -141,15 +145,49 @@ def get_plugin_args(
         ),
     ]
 
-def _get_staged_proto_file(context, source_file):
-    if source_file.dirname == context.label.package or \
+def _make_prefix(label):
+    """Returns the directory prefix for a label.
+
+    @repo//foo/bar:sub/dir/file.proto  =>  'external/repo/foo/bar/'
+    //foo/bar:sub/dir/file.proto       =>  'foo/bar/'
+    //:sub/dir/file.proto              =>  ''
+
+    That is, the prefix can be removed from a file's full path to
+    obtain the file's relative location within the package's effective
+    directory."""
+
+    wsr = label.workspace_root
+    pkg = label.package
+
+    if not wsr and not pkg:
+        return ""
+    elif not wsr:
+        return pkg + "/"
+    elif not pkg:
+        return wsr + "/"
+    else:
+        return wsr + "/" + pkg + "/"
+
+def get_staged_proto_file(label, context, source_file):
+    """Copies a proto file to the appropriate location if necessary.
+
+    Args:
+      label: The label of the rule using the .proto file.
+      context: The ctx object for the rule or aspect.
+      source_file: The original .proto file.
+
+    Returns:
+      The original proto file OR a new file in the staged location.
+    """
+    if source_file.dirname == label.package or \
        is_in_virtual_imports(source_file):
         # Current target and source_file are in same package
         return source_file
     else:
         # Current target and source_file are in different packages (most
         # probably even in different repositories)
-        copied_proto = context.actions.declare_file(source_file.basename)
+        prefix = _make_prefix(source_file.owner)
+        copied_proto = context.actions.declare_file(source_file.path[len(prefix):])
         context.actions.run_shell(
             inputs = [source_file],
             outputs = [copied_proto],
@@ -170,7 +208,7 @@ def protos_from_context(context):
     protos = []
     for src in context.attr.deps:
         for file in src[ProtoInfo].direct_sources:
-            protos.append(_get_staged_proto_file(context, file))
+            protos.append(get_staged_proto_file(context.label, context, file))
     return protos
 
 def includes_from_deps(deps):
@@ -182,7 +220,15 @@ def includes_from_deps(deps):
     ]
 
 def get_proto_arguments(protos, genfiles_dir_path):
-    """Get the protoc arguments specifying which protos to compile."""
+    """Get the protoc arguments specifying which protos to compile.
+
+    Args:
+      protos: The protob files to supply.
+      genfiles_dir_path: The path to the genfiles directory.
+
+    Returns:
+      The arguments to supply to protoc.
+    """
     arguments = []
     for proto in protos:
         strip_prefix_len = 0
@@ -198,15 +244,30 @@ def get_proto_arguments(protos, genfiles_dir_path):
     return arguments
 
 def declare_out_files(protos, context, generated_file_format):
-    """Declares and returns the files to be generated."""
+    """Declares and returns the files to be generated.
+
+    Args:
+      protos: A list of files. The protos to declare.
+      context: The context object.
+      generated_file_format: A format string. Will be passed to
+        proto_path_to_generated_filename to generate the filename of each
+        generated file.
+
+    Returns:
+      A list of file providers.
+    """
 
     out_file_paths = []
     for proto in protos:
         if not is_in_virtual_imports(proto):
-            out_file_paths.append(proto.basename)
+            prefix = _make_prefix(proto.owner)
+            full_prefix = context.genfiles_dir.path + "/" + prefix
+            if proto.path.startswith(full_prefix):
+                out_file_paths.append(proto.path[len(full_prefix):])
+            elif proto.path.startswith(prefix):
+                out_file_paths.append(proto.path[len(prefix):])
         else:
-            path = proto.path[proto.path.index(_VIRTUAL_IMPORTS) + 1:]
-            out_file_paths.append(path)
+            out_file_paths.append(proto.path[proto.path.index(_VIRTUAL_IMPORTS) + 1:])
 
     return [
         context.actions.declare_file(
@@ -219,8 +280,9 @@ def declare_out_files(protos, context, generated_file_format):
     ]
 
 def get_out_dir(protos, context):
-    """ Returns the calculated value for --<lang>_out= protoc argument based on
-    the input source proto files and current context.
+    """Returns the value to supply to the --<lang>_out= protoc flag.
+
+    The result is based on the input source proto files and current context.
 
     Args:
         protos: A list of protos to be used as source files in protoc command
@@ -237,11 +299,11 @@ def get_out_dir(protos, context):
     if at_least_one_virtual:
         out_dir = get_include_directory(protos[0])
         ws_root = protos[0].owner.workspace_root
-        if ws_root and out_dir.find(ws_root) >= 0:
-            out_dir = "".join(out_dir.rsplit(ws_root, 1))
+        prefix = "/" + _make_prefix(protos[0].owner) + _VIRTUAL_IMPORTS[1:]
+
         return struct(
             path = out_dir,
-            import_path = out_dir[out_dir.find(_VIRTUAL_IMPORTS) + 1:],
+            import_path = out_dir[out_dir.find(prefix) + 1:],
         )
 
     out_dir = context.genfiles_dir.path
@@ -251,10 +313,11 @@ def get_out_dir(protos, context):
     return struct(path = out_dir, import_path = None)
 
 def is_in_virtual_imports(source_file, virtual_folder = _VIRTUAL_IMPORTS):
-    """Determines if source_file is virtual (is placed in _virtual_imports
-    subdirectory). The output of all proto_library targets which use
-    import_prefix  and/or strip_import_prefix arguments is placed under
-    _virtual_imports directory.
+    """Determines if source_file is virtual.
+
+    A file is virtual if placed in the _virtual_imports subdirectory. The
+    output of all proto_library targets which use import_prefix and/or
+    strip_import_prefix arguments is placed under _virtual_imports directory.
 
     Args:
         source_file: A proto file.

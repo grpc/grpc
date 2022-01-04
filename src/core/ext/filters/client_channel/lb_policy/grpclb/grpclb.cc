@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 /// Implementation of the gRPC LB policy.
 ///
@@ -109,9 +107,7 @@
 #define GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_GRPCLB_RECONNECT_JITTER 0.2
 #define GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS 10000
-
-#define GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN "grpc.grpclb_address_lb_token"
-#define GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS "grpc.grpclb_address_client_stats"
+#define GRPC_GRPCLB_DEFAULT_SUBCHANNEL_DELETION_DELAY_MS 10000
 
 namespace grpc_core {
 
@@ -234,16 +230,24 @@ class GrpcLb : public LoadBalancingPolicy {
   class SubchannelWrapper : public DelegatingSubchannel {
    public:
     SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel,
-                      std::string lb_token,
+                      RefCountedPtr<GrpcLb> lb_policy, std::string lb_token,
                       RefCountedPtr<GrpcLbClientStats> client_stats)
         : DelegatingSubchannel(std::move(subchannel)),
+          lb_policy_(std::move(lb_policy)),
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
+
+    ~SubchannelWrapper() override {
+      if (!lb_policy_->shutting_down_) {
+        lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
+      }
+    }
 
     const std::string& lb_token() const { return lb_token_; }
     GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
 
    private:
+    RefCountedPtr<GrpcLb> lb_policy_;
     std::string lb_token_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
@@ -397,10 +401,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  void ProcessAddressesAndChannelArgsLocked(const ServerAddressList& addresses,
-                                            const grpc_channel_args& args);
-  static ServerAddressList AddNullLbTokenToAddresses(
-      const ServerAddressList& addresses);
+  void UpdateBalancerChannelLocked(const grpc_channel_args& args);
 
   void CancelBalancerChannelConnectivityWatchLocked();
 
@@ -421,6 +422,13 @@ class GrpcLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const grpc_channel_args* args);
   void CreateOrUpdateChildPolicyLocked();
+
+  // Subchannel caching.
+  void CacheDeletedSubchannelLocked(
+      RefCountedPtr<SubchannelInterface> subchannel);
+  void StartSubchannelCacheTimerLocked();
+  static void OnSubchannelCacheTimer(void* arg, grpc_error_handle error);
+  void OnSubchannelCacheTimerLocked(grpc_error_handle error);
 
   // Who the client is trying to communicate with.
   std::string server_name_;
@@ -448,7 +456,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // contains a non-NULL lb_call_.
   OrphanablePtr<BalancerCallState> lb_calld_;
   // Timeout in milliseconds for the LB call. 0 means no deadline.
-  int lb_call_timeout_ms_ = 0;
+  const int lb_call_timeout_ms_ = 0;
   // Balancer call retry state.
   BackOff lb_call_backoff_;
   bool retry_timer_callback_pending_ = false;
@@ -462,11 +470,14 @@ class GrpcLb : public LoadBalancingPolicy {
   // Whether we're in fallback mode.
   bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  ServerAddressList fallback_backend_addresses_;
+  absl::StatusOr<ServerAddressList> fallback_backend_addresses_;
+  // The last resolution note from our parent.
+  // To be passed to child policy when fallback_backend_addresses_ is empty.
+  std::string resolution_note_;
   // State for fallback-at-startup checks.
   // Timeout after startup after which we will go into fallback mode if
   // we have not received a serverlist from the balancer.
-  int fallback_at_startup_timeout_ = 0;
+  const int fallback_at_startup_timeout_ = 0;
   bool fallback_at_startup_checks_pending_ = false;
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
@@ -475,6 +486,15 @@ class GrpcLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
   // Child policy in state READY.
   bool child_policy_ready_ = false;
+
+  // Deleted subchannel caching.
+  const grpc_millis subchannel_cache_interval_ms_;
+  std::map<grpc_millis /*deletion time*/,
+           std::vector<RefCountedPtr<SubchannelInterface>>>
+      cached_subchannels_;
+  grpc_timer subchannel_cache_timer_;
+  grpc_closure on_subchannel_cache_timer_;
+  bool subchannel_cache_timer_pending_ = false;
 };
 
 //
@@ -675,7 +695,8 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
   return MakeRefCounted<SubchannelWrapper>(
       parent_->channel_control_helper()->CreateSubchannel(std::move(address),
                                                           args),
-      std::move(lb_token), std::move(client_stats));
+      parent_->Ref(DEBUG_LOCATION, "SubchannelWrapper"), std::move(lb_token),
+      std::move(client_stats));
 }
 
 void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
@@ -908,7 +929,7 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(
     void* arg, grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->MaybeSendClientLoadReportLocked(error); },
       DEBUG_LOCATION);
@@ -987,7 +1008,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
 void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
                                                      grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); },
       DEBUG_LOCATION);
@@ -1190,7 +1211,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
 void GrpcLb::BalancerCallState::OnBalancerStatusReceived(
     void* arg, grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  GRPC_ERROR_REF(error);  // owned by lambda
+  (void)GRPC_ERROR_REF(error);  // owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); },
       DEBUG_LOCATION);
@@ -1301,8 +1322,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
   absl::InlinedVector<grpc_arg, 3> args_to_add = {
       // The fake resolver response generator, which we use to inject
       // address updates into the LB channel.
-      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-          response_generator),
+      FakeResolverResponseGenerator::MakeChannelArg(response_generator),
       // A channel arg indicating the target is a grpclb load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
@@ -1322,9 +1342,21 @@ grpc_channel_args* BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
+std::string GetServerNameFromChannelArgs(const grpc_channel_args* args) {
+  const char* server_uri =
+      grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
+  GPR_ASSERT(server_uri != nullptr);
+  absl::StatusOr<URI> uri = URI::Parse(server_uri);
+  GPR_ASSERT(uri.ok() && !uri->path().empty());
+  return std::string(absl::StripPrefix(uri->path(), "/"));
+}
+
 GrpcLb::GrpcLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
+      server_name_(GetServerNameFromChannelArgs(args.args)),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
+      lb_call_timeout_ms_(grpc_channel_args_find_integer(
+          args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS, {0, 0, INT_MAX})),
       lb_call_backoff_(
           BackOff::Options()
               .set_initial_backoff(GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS *
@@ -1332,31 +1364,25 @@ GrpcLb::GrpcLb(Args args)
               .set_multiplier(GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_GRPCLB_RECONNECT_JITTER)
               .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
-                               1000)) {
-  // Closure Initialization
-  GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimer, this,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &GrpcLb::OnBalancerCallRetryTimer, this,
-                    grpc_schedule_on_exec_ctx);
-  // Record server name.
-  const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
-  const char* server_uri = grpc_channel_arg_get_string(arg);
-  GPR_ASSERT(server_uri != nullptr);
-  absl::StatusOr<URI> uri = URI::Parse(server_uri);
-  GPR_ASSERT(uri.ok() && !uri->path().empty());
-  server_name_ = std::string(absl::StripPrefix(uri->path(), "/"));
+                               1000)),
+      fallback_at_startup_timeout_(grpc_channel_args_find_integer(
+          args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS,
+          {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX})),
+      subchannel_cache_interval_ms_(grpc_channel_args_find_integer(
+          args.args, GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
+          {GRPC_GRPCLB_DEFAULT_SUBCHANNEL_DELETION_DELAY_MS, 0, INT_MAX})) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
             this, server_name_.c_str());
   }
-  // Record LB call timeout.
-  arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS);
-  lb_call_timeout_ms_ = grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
-  // Record fallback-at-startup timeout.
-  arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
-  fallback_at_startup_timeout_ = grpc_channel_arg_get_integer(
-      arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
+  // Closure Initialization
+  GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimer, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &GrpcLb::OnBalancerCallRetryTimer, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_subchannel_cache_timer_, &OnSubchannelCacheTimer, this,
+                    nullptr);
 }
 
 GrpcLb::~GrpcLb() { grpc_channel_args_destroy(args_); }
@@ -1364,6 +1390,11 @@ GrpcLb::~GrpcLb() { grpc_channel_args_destroy(args_); }
 void GrpcLb::ShutdownLocked() {
   shutting_down_ = true;
   lb_calld_.reset();
+  if (subchannel_cache_timer_pending_) {
+    subchannel_cache_timer_pending_ = false;
+    grpc_timer_cancel(&subchannel_cache_timer_);
+  }
+  cached_subchannels_.clear();
   if (retry_timer_callback_pending_) {
     grpc_timer_cancel(&lb_call_retry_timer_);
   }
@@ -1410,8 +1441,20 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
-  ProcessAddressesAndChannelArgsLocked(args.addresses, *args.args);
-  // Update the existing child policy.
+  // Update fallback address list.
+  fallback_backend_addresses_ = std::move(args.addresses);
+  if (fallback_backend_addresses_.ok()) {
+    // Add null LB token attributes.
+    for (ServerAddress& address : *fallback_backend_addresses_) {
+      address = address.WithAttribute(
+          kGrpcLbAddressAttributeKey,
+          absl::make_unique<TokenAndClientStatsAttribute>("", nullptr));
+    }
+  }
+  resolution_note_ = std::move(args.resolution_note);
+  // Update balancer channel.
+  UpdateBalancerChannelLocked(*args.args);
+  // Update the existing child policy, if any.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks
   // and the balancer call.
@@ -1440,21 +1483,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 // helpers for UpdateLocked()
 //
 
-ServerAddressList GrpcLb::AddNullLbTokenToAddresses(
-    const ServerAddressList& addresses) {
-  ServerAddressList addresses_out;
-  for (const ServerAddress& address : addresses) {
-    addresses_out.emplace_back(address.WithAttribute(
-        kGrpcLbAddressAttributeKey,
-        absl::make_unique<TokenAndClientStatsAttribute>("", nullptr)));
-  }
-  return addresses_out;
-}
-
-void GrpcLb::ProcessAddressesAndChannelArgsLocked(
-    const ServerAddressList& addresses, const grpc_channel_args& args) {
-  // Update fallback address list.
-  fallback_backend_addresses_ = AddNullLbTokenToAddresses(addresses);
+void GrpcLb::UpdateBalancerChannelLocked(const grpc_channel_args& args) {
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   static const char* args_to_remove[] = {GRPC_ARG_LB_POLICY_NAME};
@@ -1540,7 +1569,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
 
 void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error_handle error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
       [grpclb_policy, error]() {
         grpclb_policy->OnBalancerCallRetryTimerLocked(error);
@@ -1584,7 +1613,7 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
 
 void GrpcLb::OnFallbackTimer(void* arg, grpc_error_handle error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
       [grpclb_policy, error]() { grpclb_policy->OnFallbackTimerLocked(error); },
       DEBUG_LOCATION);
@@ -1656,9 +1685,14 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // If CreateOrUpdateChildPolicyLocked() is invoked when we haven't
     // received any serverlist from the balancer, we use the fallback backends
     // returned by the resolver. Note that the fallback backend list may be
-    // empty, in which case the new round_robin policy will keep the requested
-    // picks pending.
+    // empty, in which case the new child policy will fail the picks.
     update_args.addresses = fallback_backend_addresses_;
+    if (fallback_backend_addresses_.ok() &&
+        fallback_backend_addresses_->empty()) {
+      update_args.resolution_note = absl::StrCat(
+          "grpclb in fallback mode without any balancer addresses: ",
+          resolution_note_);
+    }
   } else {
     update_args.addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
@@ -1678,6 +1712,57 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
             child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
+}
+
+//
+// subchannel caching
+//
+
+void GrpcLb::CacheDeletedSubchannelLocked(
+    RefCountedPtr<SubchannelInterface> subchannel) {
+  grpc_millis deletion_time =
+      ExecCtx::Get()->Now() + subchannel_cache_interval_ms_;
+  cached_subchannels_[deletion_time].push_back(std::move(subchannel));
+  if (!subchannel_cache_timer_pending_) {
+    Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer").release();
+    subchannel_cache_timer_pending_ = true;
+    StartSubchannelCacheTimerLocked();
+  }
+}
+
+void GrpcLb::StartSubchannelCacheTimerLocked() {
+  GPR_ASSERT(!cached_subchannels_.empty());
+  grpc_timer_init(&subchannel_cache_timer_, cached_subchannels_.begin()->first,
+                  &on_subchannel_cache_timer_);
+}
+
+void GrpcLb::OnSubchannelCacheTimer(void* arg, grpc_error_handle error) {
+  auto* self = static_cast<GrpcLb*>(arg);
+  (void)GRPC_ERROR_REF(error);
+  self->work_serializer()->Run(
+      [self, error]() { self->GrpcLb::OnSubchannelCacheTimerLocked(error); },
+      DEBUG_LOCATION);
+}
+
+void GrpcLb::OnSubchannelCacheTimerLocked(grpc_error_handle error) {
+  if (subchannel_cache_timer_pending_ && error == GRPC_ERROR_NONE) {
+    auto it = cached_subchannels_.begin();
+    if (it != cached_subchannels_.end()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
+        gpr_log(GPR_INFO,
+                "[grpclb %p] removing %" PRIuPTR " subchannels from cache",
+                this, it->second.size());
+      }
+      cached_subchannels_.erase(it);
+    }
+    if (!cached_subchannels_.empty()) {
+      StartSubchannelCacheTimerLocked();
+      return;
+    }
+    subchannel_cache_timer_pending_ = false;
+  }
+  Unref(DEBUG_LOCATION, "OnSubchannelCacheTimer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //

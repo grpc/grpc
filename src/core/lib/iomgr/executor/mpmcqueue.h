@@ -74,15 +74,10 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   int count() const override { return count_.load(std::memory_order_relaxed); }
 
   struct Node {
-    Node* next;  // Linking
-    Node* prev;
-    void* content;             // Points to actual element
+    Node* next = nullptr;  // Linking
+    Node* prev = nullptr;
+    void* content = nullptr;   // Points to actual element
     gpr_timespec insert_time;  // Time for stats
-
-    Node() {
-      next = prev = nullptr;
-      content = nullptr;
-    }
   };
 
   // For test purpose only. Returns number of nodes allocated in queue.

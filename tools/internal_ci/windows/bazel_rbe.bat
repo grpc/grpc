@@ -12,12 +12,23 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem TODO(jtattermusch): make this generate less output
-@rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
-choco install bazel -y --version 4.2.1 --limit-output
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
+)
+endlocal
 
 cd github/grpc
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
+
+call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
+
+@rem TODO(jtattermusch): make this generate less output
+@rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
+choco install bazel -y --version 4.2.1 --limit-output || exit /b 1
 
 @rem Generate a random UUID and store in "bazel_invocation_ids" artifact file
 powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
@@ -29,8 +40,8 @@ set BAZEL_EXITCODE=%errorlevel%
 
 if not "%UPLOAD_TEST_RESULTS%"=="" (
   @rem Sleep to let ResultStore finish writing results before querying
-  timeout /t 60 /nobreak
-  python ./tools/run_tests/python_utils/upload_rbe_results.py
+  sleep 60
+  python3 tools/run_tests/python_utils/upload_rbe_results.py || exit /b 1
 )
 
 exit /b %BAZEL_EXITCODE%

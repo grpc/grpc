@@ -1545,6 +1545,8 @@ UPB_INLINE void envoy_config_bootstrap_v3_CustomInlineHeader_set_inline_header_t
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
+extern const upb_msglayout_file envoy_config_bootstrap_v3_bootstrap_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
