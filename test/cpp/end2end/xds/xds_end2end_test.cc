@@ -589,11 +589,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     BootstrapBuilder& AddCertificateProviderPlugin(
         const std::string& key, const std::string& name,
-        const std::string& certificate_file = "",
-        const std::string& private_key_file = "",
-        const std::string& ca_certificate_file = "") {
-      plugins_[key] = {
-          name, {certificate_file, private_key_file, ca_certificate_file}};
+        const std::string& plugin_config = "") {
+      plugins_[key] = {name, plugin_config};
       return *this;
     }
     BootstrapBuilder& AddAuthority(
@@ -636,6 +633,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     };
     struct PluginInfo {
       std::string name;
+      std::string plugin_config;
       PluginConfig config;
     };
     struct AuthorityInfo {
@@ -686,20 +684,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         const PluginInfo& plugin_info = p.second;
         std::vector<std::string> fields;
         fields.push_back(absl::StrFormat("    \"%s\": {", key));
-        if (!plugin_info.config.certificate_file.empty()) {
+        if (!plugin_info.plugin_config.empty()) {
           fields.push_back(absl::StrFormat("      \"plugin_name\": \"%s\",",
                                            plugin_info.name));
-          fields.push_back("      \"config\": {");
-          fields.push_back(
-              absl::StrFormat("        \"certificate_file\": \"%s\",",
-                              plugin_info.config.certificate_file));
-          fields.push_back(
-              absl::StrFormat("        \"private_key_file\": \"%s\",",
-                              plugin_info.config.private_key_file));
-          fields.push_back(
-              absl::StrFormat("        \"ca_certificate_file\": \"%s\"",
-                              plugin_info.config.ca_certificate_file));
-          fields.push_back("      }");
+          fields.push_back(absl::StrCat(
+              "      \"config\": {\n", plugin_info.plugin_config, "\n      }"));
         } else {
           fields.push_back(absl::StrFormat("      \"plugin_name\": \"%s\"",
                                            plugin_info.name));
@@ -7293,9 +7282,15 @@ class XdsSecurityTest : public BasicTest {
     BootstrapBuilder builder = BootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
+    std::vector<std::string> fields;
+    fields.push_back(absl::StrFormat("        \"certificate_file\": \"%s\",",
+                                     kClientCertPath));
+    fields.push_back(absl::StrFormat("        \"private_key_file\": \"%s\",",
+                                     kClientKeyPath));
+    fields.push_back(absl::StrFormat("        \"ca_certificate_file\": \"%s\"",
+                                     kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
-                                         kClientCertPath, kClientKeyPath,
-                                         kCaCertPath);
+                                         absl::StrJoin(fields, "\n"));
     CreateClientsAndServers(builder);
     StartAllBackends();
     root_cert_ = ReadFile(kCaCertPath);
@@ -8434,9 +8429,15 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     BootstrapBuilder builder = BootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
+    std::vector<std::string> fields;
+    fields.push_back(absl::StrFormat("        \"certificate_file\": \"%s\",",
+                                     kClientCertPath));
+    fields.push_back(absl::StrFormat("        \"private_key_file\": \"%s\",",
+                                     kClientKeyPath));
+    fields.push_back(absl::StrFormat("        \"ca_certificate_file\": \"%s\"",
+                                     kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
-                                         kClientCertPath, kClientKeyPath,
-                                         kCaCertPath);
+                                         absl::StrJoin(fields, "\n"));
     CreateClientsAndServers(builder);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
