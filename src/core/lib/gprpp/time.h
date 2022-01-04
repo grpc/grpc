@@ -181,7 +181,7 @@ class Duration {
 };
 
 static_assert(std::is_trivially_copyable<Duration>::value,
-              "Duration is not trivial");
+              "Duration is not trivially copyable");
 
 inline Duration operator+(Duration lhs, Duration rhs) {
   return Duration::Milliseconds(SaturatingAdd(lhs.millis(), rhs.millis()));
