@@ -7251,14 +7251,14 @@ class XdsSecurityTest : public BasicTest {
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;
-    fields.push_back(absl::StrFormat("        \"certificate_file\": \"%s\",",
+    fields.push_back(absl::StrFormat("        \"certificate_file\": \"%s\"",
                                      kClientCertPath));
-    fields.push_back(absl::StrFormat("        \"private_key_file\": \"%s\",",
+    fields.push_back(absl::StrFormat("        \"private_key_file\": \"%s\"",
                                      kClientKeyPath));
     fields.push_back(absl::StrFormat("        \"ca_certificate_file\": \"%s\"",
                                      kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
-                                         absl::StrJoin(fields, "\n"));
+                                         absl::StrJoin(fields, ",\n"));
     CreateClientsAndServers(builder);
     StartAllBackends();
     root_cert_ = ReadFile(kCaCertPath);
@@ -8398,14 +8398,14 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;
-    fields.push_back(absl::StrFormat("        \"certificate_file\": \"%s\",",
+    fields.push_back(absl::StrFormat("        \"certificate_file\": \"%s\"",
                                      kClientCertPath));
-    fields.push_back(absl::StrFormat("        \"private_key_file\": \"%s\",",
+    fields.push_back(absl::StrFormat("        \"private_key_file\": \"%s\"",
                                      kClientKeyPath));
     fields.push_back(absl::StrFormat("        \"ca_certificate_file\": \"%s\"",
                                      kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
-                                         absl::StrJoin(fields, "\n"));
+                                         absl::StrJoin(fields, ",\n"));
     CreateClientsAndServers(builder);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
