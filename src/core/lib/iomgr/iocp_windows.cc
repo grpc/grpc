@@ -50,9 +50,9 @@ static DWORD deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   }
   grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
   if (deadline < now) return 0;
-  grpc_core::Timestamp timeout = deadline - now;
-  if (timeout > std::numeric_limits<DWORD>::max()) return INFINITE;
-  return static_cast<DWORD>(deadline - now);
+  grpc_core::Duration timeout = deadline - now;
+  if (timeout.millis() > std::numeric_limits<DWORD>::max()) return INFINITE;
+  return static_cast<DWORD>(timeout.millis());
 }
 
 grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
