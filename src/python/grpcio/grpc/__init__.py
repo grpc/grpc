@@ -20,6 +20,7 @@ import logging
 import sys
 
 from grpc import _compression
+from grpc import experimental
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
