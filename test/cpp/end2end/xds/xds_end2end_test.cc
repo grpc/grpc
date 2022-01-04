@@ -2600,10 +2600,9 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
       "client/%s?client_listener_resource_name_template_not_in_use");
   CreateClientsAndServers(builder);
   StartAllBackends();
-  // Eds for 2 balancers are set up.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  // Eds for the new authority balancer.
+  EdsResourceArgs args =
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 2)}});
   authority_balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, kNewEdsServiceName));
   // New cluster
@@ -2624,15 +2623,11 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   listener.set_name(kNewListenerName);
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
-  // RPCs sent using current stub (without
-  // authority) should go to backend 1 not backend 0; this is because we are
+  // RPCs sent using current stub (without authority) should be
   // following client_default_listener_resource_name_template which gives us an
   // authority and a xds server to use within that authority. Note we do not use
   // the client_listener_resource_name_template field.
-  WaitForAllBackends(1, 2);
-  // We should be reaching backend 1, not 0, as balanced by the authority xds
-  // server.
-  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
+  WaitForAllBackends(0, 2);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
@@ -2815,10 +2810,9 @@ TEST_P(XdsFederationTest, FederationServer) {
       "client/%s?client_listener_resource_name_template_not_in_use");
   CreateClientsAndServers(builder);
   StartAllBackends();
-  // Eds for 2 balancers are set up.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  // Eds for new authority balancer.
+  EdsResourceArgs args =
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 2)}});
   authority_balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, kNewEdsServiceName));
   // New cluster
@@ -2850,17 +2844,14 @@ TEST_P(XdsFederationTest, FederationServer) {
     authority_balancer_->ads_service()->SetLdsResource(server_listener);
   }
   // RPCs sent using current stub (without
-  // authority) should go to backend 1 not backend 0; this is because we are
+  // authority) should be
   // following client_default_listener_resource_name_template which gives us an
   // authority and a xds server to use within that authority. Note we do not use
   // the client_listener_resource_name_template field.
   // Furthermore, we enabled server xds and only balancer 1 has the server
   // listener resources requested by the resources specified in
   // server_listener_resource_name_template.
-  WaitForAllBackends(1, 2);
-  // We should be reaching backend 1, not 0, as balanced by the authority xds
-  // server.
-  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
+  WaitForAllBackends(0, 2);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
