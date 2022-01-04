@@ -2550,7 +2550,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsFederationTest : public XdsEnd2endTest {
  protected:
-  XdsFederationTest() : XdsEnd2endTest(4, 100, 0, true) {
+  XdsFederationTest() : XdsEnd2endTest(2, 100, 0, true) {
     authority_balancer_ = CreateAndStartBalancer();
   }
 
@@ -2840,38 +2840,15 @@ TEST_P(XdsFederationTest, FederationServer) {
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
   // New Server Listeners
-  Listener server_listener = default_server_listener_;
-  server_listener.set_name(absl::StrCat(
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port(),
-      "?psm_project_id=1234"));
-  server_listener.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[0]->port());
-  authority_balancer_->ads_service()->SetLdsResource(server_listener);
-  Listener server_listener1 = default_server_listener_;
-  server_listener1.set_name(absl::StrCat(
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[1]->port(),
-      "?psm_project_id=1234"));
-  server_listener1.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[1]->port());
-  authority_balancer_->ads_service()->SetLdsResource(server_listener1);
-  Listener server_listener2 = default_server_listener_;
-  server_listener2.set_name(absl::StrCat(
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[2]->port(),
-      "?psm_project_id=1234"));
-  server_listener2.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[2]->port());
-  authority_balancer_->ads_service()->SetLdsResource(server_listener2);
-  Listener server_listener3 = default_server_listener_;
-  server_listener3.set_name(absl::StrCat(
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-      ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[3]->port(),
-      "?psm_project_id=1234"));
-  server_listener3.mutable_address()->mutable_socket_address()->set_port_value(
-      backends_[3]->port());
-  authority_balancer_->ads_service()->SetLdsResource(server_listener3);
+  for (int port : GetBackendPorts()) {
+    Listener server_listener = default_server_listener_;
+    server_listener.set_name(absl::StrCat(
+        "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port, "?psm_project_id=1234"));
+    server_listener.mutable_address()->mutable_socket_address()->set_port_value(
+        port);
+    authority_balancer_->ads_service()->SetLdsResource(server_listener);
+  }
   // RPCs sent using current stub (without
   // authority) should go to backend 1 not backend 0; this is because we are
   // following client_default_listener_resource_name_template which gives us an
