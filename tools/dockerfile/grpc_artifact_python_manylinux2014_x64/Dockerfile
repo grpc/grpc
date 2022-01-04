@@ -29,3 +29,11 @@ RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
 RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
+
+RUN yum update -y && yum install -y ccache
+
+# /usr/lib64/ccache is the first entry in PATH
+RUN ln -s /usr/bin/ccache /usr/lib64/ccache/gcc
+RUN ln -s /usr/bin/ccache /usr/lib64/ccache/g++
+RUN ln -s /usr/bin/ccache /usr/lib64/ccache/cc
+RUN ln -s /usr/bin/ccache /usr/lib64/ccache/c++
