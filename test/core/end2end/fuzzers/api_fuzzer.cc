@@ -276,7 +276,7 @@ grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
 
 class Validator {
  public:
-  explicit Validator(std::function<void(bool)> impl) : impl_(impl) {}
+  explicit Validator(std::function<void(bool)> impl) : impl_(std::move(impl)) {}
 
   virtual ~Validator() {}
   void Run(bool success) {

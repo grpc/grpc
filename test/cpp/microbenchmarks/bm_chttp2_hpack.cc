@@ -31,6 +31,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -77,7 +78,8 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
 
   auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
-  b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
+  b.Set(grpc_core::GrpcTimeoutMetadata(),
+        saved_now + grpc_core::Duration::Seconds(30));
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;

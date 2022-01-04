@@ -35,6 +35,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -83,8 +84,7 @@ void args_finish(args_struct* args) {
 }
 
 static grpc_core::Timestamp n_sec_deadline(int seconds) {
-  return grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void actually_poll(void* argsp) {
@@ -97,10 +97,11 @@ static void actually_poll(void* argsp) {
       if (args->done) {
         break;
       }
-      grpc_core::Timestamp time_left =
+      grpc_core::Duration time_left =
           deadline - grpc_core::ExecCtx::Get()->Now();
-      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
-      GPR_ASSERT(time_left >= 0);
+      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
+              time_left.millis());
+      GPR_ASSERT(time_left >= grpc_core::Duration::Zero());
       grpc_pollset_worker* worker = nullptr;
       GRPC_LOG_IF_ERROR(
           "pollset_work",

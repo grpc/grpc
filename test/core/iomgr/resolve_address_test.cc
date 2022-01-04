@@ -38,6 +38,7 @@
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/cmdline.h"
@@ -47,9 +48,8 @@
 
 namespace {
 
-grpc_millis NSecDeadline(int seconds) {
-  return grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+grpc_core::Timestamp NSecDeadline(int seconds) {
+  return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 const char* g_resolver_type = "";
@@ -90,7 +90,7 @@ class ResolveAddressTest : public ::testing::Test {
   void PollPollsetUntilRequestDone() {
     // Try to give enough time for c-ares to run through its retries
     // a few times if needed.
-    grpc_millis deadline = NSecDeadline(90);
+    grpc_core::Timestamp deadline = NSecDeadline(90);
     while (true) {
       grpc_core::ExecCtx exec_ctx;
       {
@@ -98,9 +98,11 @@ class ResolveAddressTest : public ::testing::Test {
         if (done_) {
           break;
         }
-        grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-        gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_, time_left);
-        ASSERT_GE(time_left, 0);
+        grpc_core::Duration time_left =
+            deadline - grpc_core::ExecCtx::Get()->Now();
+        gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_,
+                time_left.millis());
+        ASSERT_GE(time_left, grpc_core::Duration::Zero());
         grpc_pollset_worker* worker = nullptr;
         GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(pollset_, &worker,
                                                             NSecDeadline(1)));

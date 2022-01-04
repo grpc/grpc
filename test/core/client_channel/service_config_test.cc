@@ -30,6 +30,7 @@
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -650,7 +651,7 @@ TEST_F(ClientChannelParserTest, ValidTimeout) {
   EXPECT_EQ(
       (static_cast<internal::ClientChannelMethodParsedConfig*>(parsed_config))
           ->timeout(),
-      5000);
+      Duration::Seconds(5));
 }
 
 TEST_F(ClientChannelParserTest, InvalidTimeout) {
@@ -877,8 +878,8 @@ TEST_F(RetryParserTest, ValidRetryPolicy) {
       static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 3);
-  EXPECT_EQ(parsed_config->initial_backoff(), 1000);
-  EXPECT_EQ(parsed_config->max_backoff(), 120000);
+  EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
+  EXPECT_EQ(parsed_config->max_backoff(), Duration::Minutes(2));
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
   EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), absl::nullopt);
   EXPECT_TRUE(
@@ -1262,10 +1263,10 @@ TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
       static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
-  EXPECT_EQ(parsed_config->initial_backoff(), 1000);
-  EXPECT_EQ(parsed_config->max_backoff(), 120000);
+  EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
+  EXPECT_EQ(parsed_config->max_backoff(), Duration::Minutes(2));
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
-  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), 1000);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), Duration::Seconds(1));
   EXPECT_TRUE(
       parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
 }
@@ -1298,8 +1299,8 @@ TEST_F(RetryParserTest,
       static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
-  EXPECT_EQ(parsed_config->initial_backoff(), 1000);
-  EXPECT_EQ(parsed_config->max_backoff(), 120000);
+  EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
+  EXPECT_EQ(parsed_config->max_backoff(), Duration::Minutes(2));
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
   EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), absl::nullopt);
   EXPECT_TRUE(
@@ -1336,10 +1337,10 @@ TEST_F(RetryParserTest,
       static_cast<internal::RetryMethodConfig*>(((*vector_ptr)[0]).get());
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->max_attempts(), 2);
-  EXPECT_EQ(parsed_config->initial_backoff(), 1000);
-  EXPECT_EQ(parsed_config->max_backoff(), 120000);
+  EXPECT_EQ(parsed_config->initial_backoff(), Duration::Seconds(1));
+  EXPECT_EQ(parsed_config->max_backoff(), Duration::Minutes(2));
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
-  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), 1000);
+  EXPECT_EQ(parsed_config->per_attempt_recv_timeout(), Duration::Seconds(1));
   EXPECT_TRUE(parsed_config->retryable_status_codes().Empty());
 }
 

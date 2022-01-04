@@ -43,6 +43,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
@@ -353,12 +354,12 @@ static void test_add_abunch_to_md_array(void) {
 static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_httpcli_response response =
       http_response(200, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) == GRPC_CREDENTIALS_OK);
-  GPR_ASSERT(token_lifetime == 3599 * GPR_MS_PER_SEC);
+  GPR_ASSERT(token_lifetime == grpc_core::Duration::Seconds(3599));
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(token_md), "authorization") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(token_md),
                                 "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_") ==
@@ -370,7 +371,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
 static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_httpcli_response response =
       http_response(401, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -382,7 +383,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
 static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_httpcli_response response = http_response(200, "");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_md, &token_lifetime) ==
@@ -393,7 +394,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
 static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -408,7 +409,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_httpcli_response response = http_response(200,
                                                  "{"
                                                  " \"expires_in\":3599, "
@@ -422,7 +423,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
 static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
@@ -438,7 +439,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
     void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_mdelem token_md = GRPC_MDNULL;
-  grpc_core::Timestamp token_lifetime;
+  grpc_core::Duration token_lifetime;
   grpc_httpcli_response response =
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","

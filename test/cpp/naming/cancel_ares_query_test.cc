@@ -124,11 +124,9 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(args->pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
-                              gpr_inf_future(GPR_CLOCK_REALTIME))));
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(args->pollset, &worker,
+                                        grpc_core::Timestamp::InfFuture()));
     gpr_mu_unlock(args->mu);
   }
 }

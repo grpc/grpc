@@ -42,10 +42,13 @@ TEST(MetadataMapTest, SimpleOps) {
   MetadataMap<GrpcTimeoutMetadata> map(arena.get());
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
-  map.Set(GrpcTimeoutMetadata(), 1234);
+  map.Set(GrpcTimeoutMetadata(),
+          Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   EXPECT_NE(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
-  EXPECT_EQ(*map.get_pointer(GrpcTimeoutMetadata()), 1234);
-  EXPECT_EQ(map.get(GrpcTimeoutMetadata()), 1234);
+  EXPECT_EQ(*map.get_pointer(GrpcTimeoutMetadata()),
+            Timestamp::FromMillisecondsAfterProcessEpoch(1234));
+  EXPECT_EQ(map.get(GrpcTimeoutMetadata()),
+            Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   map.Remove(GrpcTimeoutMetadata());
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
@@ -65,7 +68,8 @@ class FakeEncoder {
   }
 
   void Encode(GrpcTimeoutMetadata, Timestamp deadline) {
-    output_ += absl::StrCat("grpc-timeout: deadline=", deadline, "\n");
+    output_ += absl::StrCat("grpc-timeout: deadline=",
+                            deadline.milliseconds_after_process_epoch(), "\n");
   }
 
  private:
@@ -84,7 +88,8 @@ TEST(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   MetadataMap<GrpcTimeoutMetadata> map(arena.get());
-  map.Set(GrpcTimeoutMetadata(), 1234);
+  map.Set(GrpcTimeoutMetadata(),
+          Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "grpc-timeout: deadline=1234\n");
 }

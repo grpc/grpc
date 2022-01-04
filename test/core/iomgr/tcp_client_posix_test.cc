@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -47,7 +48,7 @@ static int g_connections_complete = 0;
 static grpc_endpoint* g_connecting = nullptr;
 
 static grpc_core::Timestamp test_deadline(void) {
-  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+  return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(10));
 }
 
 static void finish_connection() {
@@ -127,9 +128,9 @@ void test_succeeds(void) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(g_pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
-                              grpc_timeout_seconds_to_deadline(5)))));
+        grpc_pollset_work(
+            g_pollset, &worker,
+            grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
@@ -170,7 +171,7 @@ void test_fails(void) {
       case GRPC_TIMERS_FIRED:
         break;
       case GRPC_TIMERS_NOT_CHECKED:
-        polling_deadline = 0;
+        polling_deadline = grpc_core::Timestamp::ProcessEpoch();
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -214,7 +215,7 @@ void test_fails_bad_addr_no_leak(void) {
       case GRPC_TIMERS_FIRED:
         break;
       case GRPC_TIMERS_NOT_CHECKED:
-        polling_deadline = 0;
+        polling_deadline = grpc_core::Timestamp::ProcessEpoch();
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
