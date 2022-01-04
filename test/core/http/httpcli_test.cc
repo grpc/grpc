@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
@@ -37,8 +38,7 @@ static gpr_mu* g_mu;
 static grpc_polling_entity g_pops;
 
 static grpc_core::Timestamp n_seconds_time(int seconds) {
-  return grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void on_finish(void* arg, grpc_error_handle error) {

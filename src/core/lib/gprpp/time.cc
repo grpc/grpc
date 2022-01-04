@@ -120,4 +120,9 @@ std::string Duration::ToString() const {
   return std::to_string(millis_) + "ms";
 }
 
+void TestOnlySetProcessEpoch(gpr_timespec epoch) {
+  g_process_epoch_seconds.store(
+      gpr_convert_clock_type(epoch, GPR_CLOCK_MONOTONIC).tv_sec);
+}
+
 }  // namespace grpc_core

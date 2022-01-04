@@ -30,6 +30,8 @@
 
 namespace grpc_core {
 
+class Duration;
+
 class Timestamp {
  public:
   constexpr Timestamp() = default;
@@ -69,6 +71,7 @@ class Timestamp {
   constexpr bool operator>=(Timestamp other) const {
     return millis_ >= other.millis_;
   }
+  Timestamp& operator+=(Duration duration);
 
   bool is_zero() const { return millis_ == 0; }
 
@@ -213,6 +216,12 @@ inline Duration Duration::FromSecondsAndNanoseconds(int64_t seconds,
 inline Duration Duration::FromSecondsAsDouble(double seconds) {
   return Milliseconds(static_cast<int64_t>(seconds * 1000.0));
 }
+
+inline Timestamp& Timestamp::operator+=(Duration duration) {
+  return *this = (*this + duration);
+}
+
+void TestOnlySetProcessEpoch(gpr_timespec epoch);
 
 }  // namespace grpc_core
 

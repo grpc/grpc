@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -204,7 +205,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   struct read_socket_state state;
   size_t written_bytes;
   grpc_core::Timestamp deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
+      grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
@@ -262,7 +263,7 @@ static void large_read_test(size_t slice_size) {
   struct read_socket_state state;
   ssize_t written_bytes;
   grpc_core::Timestamp deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
+      grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
@@ -369,9 +370,9 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
     gpr_mu_lock(g_mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
-        grpc_pollset_work(g_pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
-                              grpc_timeout_milliseconds_to_deadline(10)))));
+        grpc_pollset_work(
+            g_pollset, &worker,
+            grpc_core::Timestamp(grpc_timeout_milliseconds_to_deadline(10)))));
     gpr_mu_unlock(g_mu);
 
     do {
@@ -419,7 +420,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   grpc_slice_buffer outgoing;
   grpc_closure write_done_closure;
   grpc_core::Timestamp deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
+      grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
 
   if (collect_timestamps && !grpc_event_engine_can_track_errors()) {
@@ -506,7 +507,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   size_t written_bytes;
   int fd;
   grpc_core::Timestamp deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
+      grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
   grpc_closure fd_released_cb;
   int fd_released_done = 0;
