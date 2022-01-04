@@ -829,9 +829,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           xds_resource_does_not_exist_timeout_ms_));
     }
     if (!lb_expected_authority.empty()) {
-      if (lb_expected_authority == "localhost:%d") {
+      constexpr char authority_const[] = "localhost:%d";
+      if (lb_expected_authority == authority_const) {
         lb_expected_authority =
-            absl::StrFormat("localhost:%d", balancer_->port());
+            absl::StrFormat(authority_const, balancer_->port());
       }
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
