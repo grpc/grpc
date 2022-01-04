@@ -40,13 +40,13 @@ namespace metadata_detail {
 template <typename Which>
 struct HasSimpleMemento {
   static constexpr bool value =
-      std::is_trivial<typename Which::MementoType>::value &&
-      sizeof(typename Which::MementoType) <= sizeof(uint64_t);
+      std::is_trivially_copyable<typename Which::MementoType>::value &&
+      sizeof(typename Which::MementoType) <= sizeof(grpc_slice);
 };
 
 // Storage type for a single metadata entry.
 union Buffer {
-  uint64_t trivial;
+  uint8_t trivial[sizeof(grpc_slice)];
   void* pointer;
   grpc_slice slice;
   grpc_mdelem mdelem;
@@ -74,7 +74,11 @@ GPR_ATTRIBUTE_NOINLINE std::string MakeDebugStringPipeline(
 // Extract a trivial field value from a Buffer - for MakeDebugStringPipeline.
 template <typename Field>
 Field FieldFromTrivial(const Buffer& value) {
-  return static_cast<Field>(value.trivial);
+  static_assert(std::is_trivially_copyable<Field>::value,
+                "Field must be trivially copyable");
+  Field field;
+  memcpy(&field, value.trivial, sizeof(Field));
+  return field;
 }
 
 // Extract a pointer field value from a Buffer - for MakeDebugStringPipeline.
@@ -113,7 +117,7 @@ class ParsedMetadata {
       uint32_t transport_size)
       : vtable_(ParsedMetadata::template TrivialTraitVTable<Which>()),
         transport_size_(transport_size) {
-    value_.trivial = static_cast<uint64_t>(value);
+    memcpy(value_.trivial, &value, sizeof(value));
   }
   template <typename Which>
   ParsedMetadata(
@@ -229,8 +233,10 @@ class ParsedMetadata {
   template <typename T, T (*ParseMemento)(Slice, MetadataParseErrorFn)>
   GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetTrivial(
       Slice* slice, MetadataParseErrorFn on_error, ParsedMetadata* result) {
-    result->value_.trivial =
-        static_cast<uint64_t>(ParseMemento(std::move(*slice), on_error));
+    static_assert(std::is_trivially_copyable<T>(),
+                  "T must be trivially copyable");
+    T memento = ParseMemento(std::move(*slice), on_error);
+    memcpy(result->value_.trivial, &memento, sizeof(memento));
   }
 
   const VTable* vtable_;
@@ -269,9 +275,11 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
       metadata_detail::DestroyTrivialMemento,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        map->Set(Which(),
-                 Which::MementoToValue(
-                     static_cast<typename Which::MementoType>(value.trivial)));
+        map->Set(
+            Which(),
+            Which::MementoToValue(
+                metadata_detail::FieldFromTrivial<typename Which::MementoType>(
+                    value)));
         return GRPC_ERROR_NONE;
       },
       // with_new_value

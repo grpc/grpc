@@ -32,11 +32,14 @@ namespace grpc_core {
 
 class Duration;
 
+// Timestamp represents a discrete point in time.
 class Timestamp {
  public:
   constexpr Timestamp() = default;
+  // Constructs a Timestamp from a gpr_timespec.
   explicit Timestamp(gpr_timespec t);
 
+  // Construct a Timestamp from a gpr_cycle_counter.
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
@@ -85,6 +88,7 @@ class Timestamp {
   int64_t millis_ = 0;
 };
 
+// Duration represents a span of time.
 class Duration {
  public:
   constexpr Duration() : millis_(0) {}
@@ -175,6 +179,9 @@ class Duration {
 
   int64_t millis_;
 };
+
+static_assert(std::is_trivially_copyable<Duration>::value,
+              "Duration is not trivial");
 
 inline Duration operator+(Duration lhs, Duration rhs) {
   return Duration::Milliseconds(SaturatingAdd(lhs.millis(), rhs.millis()));
