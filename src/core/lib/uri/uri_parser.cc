@@ -48,6 +48,8 @@ bool ShouldEscape(unsigned char c) {
     case '_':
     case '.':
     case '~':
+    case '/':
+    case ':':
       return false;
   }
   return true;
@@ -73,9 +75,9 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
 
 std::string URI::PercentEncode(absl::string_view str) {
   std::string out;
-  for (unsigned char c : str) {
+  for (const char c : str) {
     if (ShouldEscape(c)) {
-      std::string hex = absl::BytesToHexString(absl::StrCat(c));
+      std::string hex = absl::BytesToHexString(absl::string_view(&c, 1));
       GPR_ASSERT(hex.size() == 2);
       out.push_back('%');
       out.append(hex);
