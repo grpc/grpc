@@ -24,6 +24,8 @@ cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
 cd -
 
+mkdir -p .ccache
+
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
@@ -66,6 +68,7 @@ docker run \
   -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
   -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
+  -v "$git_root/.ccache:/root/.ccache" \
   -w /var/local/git/grpc \
   --name="$CONTAINER_NAME" \
   $DOCKER_TTY_ARGS \
