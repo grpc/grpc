@@ -8308,6 +8308,11 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       context.set_wait_for_ready(true);
       context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
       EchoRequest request;
+      // TODO(yashykt): Skipping the cancelled check on the server since the
+      // server's graceful shutdown isn't as per spec and the check isn't
+      // necessary for what we want to test here anyway.
+      // https://github.com/grpc/grpc/issues/24237
+      request.mutable_param()->set_skip_cancelled_check(true);
       request.set_message(kRequestMessage);
       EchoResponse response;
       Status status = stub->Echo(&context, request, &response);
