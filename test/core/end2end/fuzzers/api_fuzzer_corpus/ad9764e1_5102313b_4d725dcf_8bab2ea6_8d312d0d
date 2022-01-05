@@ -1,0 +1,114 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+    channel_args {
+      i: 4539628424389459968
+    }
+    channel_actions {
+      add_n_bytes_writable: 67244
+      add_n_bytes_readable: 54
+    }
+    channel_actions {
+      add_n_bytes_readable: 128441
+    }
+    channel_actions {
+      add_n_bytes_writable: 730271869691887616
+      add_n_bytes_readable: 1247
+      wait_ms: 15616
+    }
+    channel_actions {
+      add_n_bytes_writable: 238966431591038716
+      add_n_bytes_readable: 15616
+    }
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "bob"
+    }
+    host {
+      value: "bob"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      send_message {
+      }
+    }
+    operations {
+      send_close_from_client {
+      }
+    }
+    operations {
+      receive_initial_mdtadata {
+      }
+    }
+    operations {
+      receive_message {
+      }
+    }
+    operations {
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  advance_time: 1000
+}
+actions {
+  advance_time: 10000000
+}
+actions {
+  enable_tracer: "grpc.internal.channelz_channel_node"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      send_message {
+      }
+    }
+    operations {
+      send_status_from_server {
+        status_code: 10000000
+      }
+    }
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+actions {
+}
+actions {
+}
