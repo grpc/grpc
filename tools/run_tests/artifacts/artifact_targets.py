@@ -387,6 +387,15 @@ def _reorder_targets_for_build_speed(targets):
     return list(
         sorted(targets,
                key=lambda target: 0 if target.name.startswith('ruby_') else 1))
+    # sort targets, but using their name reversed. In order to get the maximum gain
+    # from python extension caching (ccache), we want to first build one python version
+    # for each base docker images, so that subsequent builds in the same docker image
+    # get high cache hit rate.
+    # TODO: explain more..
+    #return list(
+    #    sorted(targets,
+    #           key=lambda target: '0_%s' % target.name[::-1]
+    #           if target.name.startswith('python_') else '1_%s' % target.name))
 
 
 def targets():
@@ -460,5 +469,9 @@ def targets():
         RubyArtifact('linux', 'x64', presubmit=True),
         RubyArtifact('macos', 'x64', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
+<<<<<<< HEAD
         PHPArtifact('macos', 'x64', presubmit=True)
+=======
+        PHPArtifact('macos', 'x64', presubmit=True),
+>>>>>>> f08fb4e3ba (ugly hack for more ccache hits)
     ])
