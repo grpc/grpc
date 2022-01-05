@@ -88,7 +88,6 @@ for label in args.build:
 
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
-targets = sorted(set(targets), key=lambda target: target.name)
 
 print('Will build these targets:')
 for target in targets:
