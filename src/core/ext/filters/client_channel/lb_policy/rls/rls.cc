@@ -1465,8 +1465,8 @@ RlsLb::RlsChannel::Throttle::Throttle(int window_size_seconds,
   GPR_DEBUG_ASSERT(window_size_seconds >= 0);
   GPR_DEBUG_ASSERT(ratio_for_successes >= 0);
   GPR_DEBUG_ASSERT(paddings >= 0);
-  window_size_ = window_size_seconds == 0 ? window_size_seconds * GPR_MS_PER_SEC
-                                          : kDefaultThrottleWindowSize;
+  window_size_ = window_size_seconds == 0 ? kDefaultThrottleWindowSize
+                                          : window_size_seconds * GPR_MS_PER_SEC;
   ratio_for_successes_ = ratio_for_successes == 0
                              ? kDefaultThrottleRatioForSuccesses
                              : ratio_for_successes;
