@@ -368,10 +368,11 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
 
     def assertRouteConfigUpdateTrafficHandoff(
             self, test_client: XdsTestClient,
-            previous_route_config_version: str, retry_wait, timeout):
+            previous_route_config_version: str, retry_wait_second: int,
+            timeout_second: int):
         retryer = retryers.constant_retryer(
-            wait_fixed=datetime.timedelta(seconds=retry_wait),
-            timeout=datetime.timedelta(seconds=timeout),
+            wait_fixed=datetime.timedelta(seconds=retry_wait_second),
+            timeout=datetime.timedelta(seconds=timeout_second),
             retry_on_exceptions=(TdPropagationRetryableError,),
             logger=logger,
             log_level=logging.INFO)
