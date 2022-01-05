@@ -78,6 +78,13 @@ argp.add_argument('--dry_run',
                   action='store_const',
                   const=True,
                   help='Only print what would be run.')
+argp.add_argument(
+    '--inner_jobs',
+    default=None,
+    type=int,
+    help=
+    'Number of parallel jobs to use by each target. Passed as build_jobspec(inner_jobs=N) to each target.'
+)
 
 args = argp.parse_args()
 
@@ -112,7 +119,7 @@ if prebuild_jobs:
 
 build_jobs = []
 for target in targets:
-    build_jobs.append(target.build_jobspec())
+    build_jobs.append(target.build_jobspec(inner_jobs=args.inner_jobs))
 if not build_jobs:
     print('Nothing to build.')
     sys.exit(1)
