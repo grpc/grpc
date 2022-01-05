@@ -67,12 +67,6 @@ RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
 
 
-# Python2's python.h still needs to be present in order for the bazel build
-# to work.
-# TODO(jtattermusch): remove once https://github.com/grpc/grpc/issues/28026
-# is fixed.
-RUN apt-get update && apt-get install -y python-all-dev python-setuptools
-
 #========================
 # Bazel installation
 
