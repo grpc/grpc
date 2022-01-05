@@ -215,7 +215,9 @@ grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
     slice = grpc_core::UnmanagedMemorySlice(
         length, grpc_core::UnmanagedMemorySlice::ForceHeapAllocation());
   }
-  memcpy(GRPC_SLICE_START_PTR(slice), source, length);
+  if (length > 0) {
+    memcpy(GRPC_SLICE_START_PTR(slice), source, length);
+  }
   return slice;
 }
 

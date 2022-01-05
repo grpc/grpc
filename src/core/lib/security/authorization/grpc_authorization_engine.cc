@@ -29,6 +29,17 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
   }
 }
 
+GrpcAuthorizationEngine::GrpcAuthorizationEngine(
+    GrpcAuthorizationEngine&& other) noexcept
+    : action_(other.action_), policies_(std::move(other.policies_)) {}
+
+GrpcAuthorizationEngine& GrpcAuthorizationEngine::operator=(
+    GrpcAuthorizationEngine&& other) noexcept {
+  action_ = other.action_;
+  policies_ = std::move(other.policies_);
+  return *this;
+}
+
 AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
     const EvaluateArgs& args) const {
   Decision decision;

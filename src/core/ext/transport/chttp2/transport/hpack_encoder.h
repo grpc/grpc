@@ -90,6 +90,8 @@ class HPackCompressor {
     void Encode(HttpMethodMetadata, HttpMethodMetadata::ValueType method);
     void Encode(UserAgentMetadata, const Slice& slice);
     void Encode(GrpcStatusMetadata, grpc_status_code status);
+    void Encode(GrpcEncodingMetadata, grpc_compression_algorithm value);
+    void Encode(GrpcAcceptEncodingMetadata, CompressionAlgorithmSet value);
     void Encode(GrpcTagsBinMetadata, const Slice& slice);
     void Encode(GrpcTraceBinMetadata, const Slice& slice);
     void Encode(GrpcMessageMetadata, const Slice& slice) {
@@ -305,6 +307,12 @@ class HPackCompressor {
   uint32_t user_agent_index_ = 0;
   // Cached grpc-status values
   uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};
+  // Cached grpc-encoding values
+  uint32_t cached_grpc_encoding_[GRPC_COMPRESS_ALGORITHMS_COUNT] = {};
+  // Cached grpc-accept-encoding value
+  uint32_t grpc_accept_encoding_index_ = 0;
+  // The grpc-accept-encoding string referred to by grpc_accept_encoding_index_
+  CompressionAlgorithmSet grpc_accept_encoding_;
   // Index of something that was sent with grpc-tags-bin
   uint32_t grpc_tags_bin_index_ = 0;
   // Index of something that was sent with grpc-trace-bin
