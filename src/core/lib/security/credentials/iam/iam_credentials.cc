@@ -30,8 +30,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/api_trace.h"
 
-grpc_google_iam_credentials::~grpc_google_iam_credentials() = default;
-
 bool grpc_google_iam_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
     grpc_core::CredentialsMetadataArray* md_array,
