@@ -30,7 +30,7 @@ rvm install ruby-2.5.7
 rvm --default use ruby-2.5.7
 set -ex
 
-tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 12 || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 4 --inner_jobs 8 || FAILED="true"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
