@@ -449,16 +449,21 @@ class TrafficDirectorManager:
         self.compute.delete_url_map(name)
         self.url_map = None
 
-    def create_alternative_url_map(self, src_host: str,
-                                   src_port: int) -> GcpResource:
+    def create_alternative_url_map(
+            self,
+            src_host: str,
+            src_port: int,
+            backend_service: Optional[GcpResource] = None) -> GcpResource:
         name = self.make_resource_name(self.ALTERNATIVE_URL_MAP_NAME)
         src_address = f'{src_host}:{src_port}'
         matcher_name = self.make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
+        if backend_service is None:
+            backend_service = self.alternative_backend_service
         logger.info('Creating alternative URL map "%s": %s -> %s', name,
-                    src_address, self.backend_service.name)
+                    src_address, backend_service.name)
         resource = self.compute.create_url_map_with_content(
             self._generate_url_map_body(name, matcher_name, [src_address],
-                                        self.backend_service))
+                                        backend_service))
         self.alternative_url_map = resource
         return resource
 

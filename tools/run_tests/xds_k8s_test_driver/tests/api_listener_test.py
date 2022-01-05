@@ -11,15 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import datetime
 import logging
-from typing import List, Optional
 
 from absl import flags
 from absl.testing import absltest
 
 from framework import xds_k8s_testcase
-from framework.helpers import retryers
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -66,7 +63,8 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('10_create_alternate_url_map'):
             self.td.create_alternative_url_map(self.server_xds_host,
-                                               self.server_xds_port)
+                                               self.server_xds_port,
+                                               self.td.backend_service)
 
         # Create alternate target proxy pointing to alternate url_map with the same
         # host name in host rule. The port is fixed because they point to the same backend service.
@@ -94,44 +92,10 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.delete_url_map()
 
         with self.subTest('15_test_server_continues_to_receive_rpcs'):
-
-            retryer = retryers.constant_retryer(
-                wait_fixed=datetime.timedelta(
-                    seconds=_TD_CONFIG_RETRY_WAIT_SEC),
-                timeout=datetime.timedelta(
-                    seconds=xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC),
-                retry_on_exceptions=(TdPropagationRetryableError,),
-                logger=logger,
-                log_level=logging.INFO)
-            try:
-                retryer(
-                    self.verify_route_traffic_continues,
-                    previous_route_config_version=previous_route_config_version,
-                    test_client=test_client)
-            except retryers.RetryError as retry_error:
-                logger.info(
-                    'Retry exhausted. TD routing config propagation failed after timeout %ds.',
-                    xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
-                raise retry_error
-
-    def verify_route_traffic_continues(self, *, test_client: _XdsTestClient,
-                                       previous_route_config_version: str):
-        self.assertSuccessfulRpcs(test_client)
-        route_config_version = self.getRouteConfigVersion(test_client)
-        if previous_route_config_version == route_config_version:
-            logger.info('Routing config not propagated yet. Retrying.')
-            raise TdPropagationRetryableError(
-                "CSDS not get updated routing config corresponding"
-                " to the second set of url maps")
-        else:
-            self.assertSuccessfulRpcs(test_client)
-            logger.info(
-                '[SUCCESS] Confirmed successful RPC with the updated routing config, version=%s',
-                route_config_version)
-
-
-class TdPropagationRetryableError(Exception):
-    pass
+            self.assertRouteConfigUpdateTrafficHandoff(
+                test_client, previous_route_config_version,
+                _TD_CONFIG_RETRY_WAIT_SEC,
+                xds_k8s_testcase._TD_CONFIG_MAX_WAIT_SEC)
 
 
 if __name__ == '__main__':
