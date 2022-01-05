@@ -96,7 +96,7 @@ Rbac::Permission Rbac::Permission::MakeNotPermission(Permission permission) {
   not_permission.type = Permission::RuleType::kNot;
   not_permission.permissions.push_back(
       absl::make_unique<Rbac::Permission>(std::move(permission)));
-  return permission;
+  return not_permission;
 }
 
 Rbac::Permission Rbac::Permission::MakeAnyPermission() {
