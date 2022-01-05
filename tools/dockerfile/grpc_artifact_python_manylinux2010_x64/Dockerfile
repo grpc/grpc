@@ -31,3 +31,10 @@ RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
+
+# Use ccache for gcc and g++ invocations
+RUN yum update -y && yum install -y ccache
+RUN mkdir -p /ccache/bin
+RUN ln -s /usr/bin/ccache /ccache/bin/gcc
+RUN ln -s /usr/bin/ccache /ccache/bin/g++
+ENV PATH "/ccache/bin:$PATH"

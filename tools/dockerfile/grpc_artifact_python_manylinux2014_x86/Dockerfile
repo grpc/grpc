@@ -29,3 +29,22 @@ RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
 RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
+
+# Use ccache for gcc and g++ invocations
+# Install ccache from source since current version of centos doesn't have x86 package for ccache.
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+    && tar -zxf ccache.tar.gz \
+    && rm -f ccache.tar.gz \
+    && cd ccache-4.5.1 \
+    && mkdir -p build \
+    && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
+    && make -j4 \
+    && make install \
+    && cd ../.. \
+    && rm -rf ccache-4.5.1
+
+RUN mkdir -p /ccache/bin
+RUN ln -s /usr/local/bin/ccache /ccache/bin/gcc
+RUN ln -s /usr/local/bin/ccache /ccache/bin/g++
+ENV PATH "/ccache/bin:$PATH"
