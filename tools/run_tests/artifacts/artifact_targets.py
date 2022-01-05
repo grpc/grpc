@@ -330,8 +330,14 @@ class ProtocArtifact:
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs when building protoc
+            environ['GRPC_PROTOC_BUILD_COMPILER_JOBS'] = str(inner_jobs)
+
         if self.platform != 'windows':
-            environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
+            environ['CXXFLAGS'] = ''
+            environ['LDFLAGS'] = ''
             if self.platform == 'linux':
                 dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
                     self.arch)
@@ -356,10 +362,11 @@ class ProtocArtifact:
                     use_workspace=True)
         else:
             generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
+            environ['generator'] = generator
             return create_jobspec(
                 self.name,
                 ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
-                environ={'generator': generator},
+                environ=environ,
                 use_workspace=True)
 
     def __str__(self):
