@@ -361,6 +361,7 @@ describe GRPC::ActiveCall do
       expect(server_call.metadata_sent).to eq(false)
       blk = proc { server_call.send_status(OK) }
       expect { blk.call }.to_not raise_error
+      expect(server_call.metadata_sent).to eq(true)
     end
 
     it 'sends the status in one batch' do
