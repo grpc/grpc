@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+licenses(["notice"])
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests linux c++ dbg --inner_jobs 16 -j 1 --internal_ci --max_time=3600"
-}
+grpc_package(name = "test/core/ext/filters/rbac")
+
+grpc_cc_test(
+    name = "rbac_service_config_parser_test",
+    srcs = ["rbac_service_config_parser_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:grpc_rbac_filter",
+        "//test/core/util:grpc_test_util",
+    ],
+)
