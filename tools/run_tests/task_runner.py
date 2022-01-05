@@ -89,7 +89,7 @@ for label in args.build:
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
 
-print('Will build these targets:')
+print('Will build %d targets:' % len(targets))
 for target in targets:
     print('  %s, labels %s' % (target.name, target.labels))
 print()
