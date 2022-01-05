@@ -40,4 +40,4 @@ RUN ln -s /usr/bin/ccache /ccache/bin/${CROSS_TRIPLE}-g++
 ENV PATH "/ccache/bin:$PATH"
 # TODO: add explainer
 ENV CC ${CROSS_TRIPLE}-gcc
-ENV CPP ${CROSS_TRIPLE}-cpp
+ENV CXX ${CROSS_TRIPLE}-g++

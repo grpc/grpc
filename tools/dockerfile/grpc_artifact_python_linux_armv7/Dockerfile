@@ -32,11 +32,11 @@ ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
 
 # Use ccache for gcc and g++ invocations
-RUN apt update -y && apt install -y ccache
+RUN apt update && apt install -y ccache
 RUN mkdir -p /ccache/bin
 RUN ln -s /usr/bin/ccache /ccache/bin/${CROSS_TRIPLE}-gcc
 RUN ln -s /usr/bin/ccache /ccache/bin/${CROSS_TRIPLE}-g++
 ENV PATH "/ccache/bin:$PATH"
 # TODO: add explainer
 ENV CC ${CROSS_TRIPLE}-gcc
-ENV CPP ${CROSS_TRIPLE}-cpp
+ENV CXX ${CROSS_TRIPLE}-g++
