@@ -9836,7 +9836,9 @@ TEST_P(XdsRbacTest, LogAction) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
+using XdsRbacNackTest = XdsRbacTest;
+
+TEST_P(XdsRbacNackTest, NacksSchemePrincipalHeader) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -9861,7 +9863,7 @@ TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
   }
 }
 
-TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
+TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPrincipalHeaders) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -9886,7 +9888,7 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
   }
 }
 
-TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
+TEST_P(XdsRbacNackTest, NacksSchemePermissionHeader) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -9911,7 +9913,7 @@ TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
   }
 }
 
-TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
+TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPermissionHeaders) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -13234,6 +13236,30 @@ INSTANTIATE_TEST_SUITE_P(
             .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
+    &TestTypeName);
+
+// We are only testing the server here.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+// Note that we are simply using the default fake credentials instead of xds
+// credentials for NACK tests to avoid a mismatch between the client and the
+// server's security settings when using the WaitForNack() infrastructure.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacNackTest,
+    ::testing::Values(
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType().set_enable_rds_testing().set_bootstrap_source(
+            TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType()
             .set_enable_rds_testing()
             .set_filter_config_setup(
                 TestType::FilterConfigSetup::kRouteOverride)
