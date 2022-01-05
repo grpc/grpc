@@ -118,8 +118,14 @@ class PythonArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         environ = {}
+
+        if inner_jobs is not None:
+            # set number of parallel jobs when building native extension
+            # building the native extension is the most time-consuming part of the build
+            environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
+
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
             environ['PYTHON'] = '/opt/python/{}/bin/python3'.format(
@@ -204,7 +210,7 @@ class RubyArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
         return create_jobspec(
@@ -231,7 +237,7 @@ class CSharpExtArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         if self.arch == 'android':
             return create_docker_jobspec(
                 self.name,
@@ -287,7 +293,7 @@ class PHPArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -313,7 +319,7 @@ class ProtocArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         if self.platform != 'windows':
             environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
             if self.platform == 'linux':

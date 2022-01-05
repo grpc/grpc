@@ -108,7 +108,7 @@ class CSharpDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -170,7 +170,7 @@ class PythonDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         if not self.platform == 'linux':
             raise Exception("Not supported yet.")
 
@@ -220,7 +220,7 @@ class RubyDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         arch_to_gem_arch = {
             'x64': 'x86_64',
             'x86': 'x86',
@@ -260,7 +260,7 @@ class PHP7DistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -314,7 +314,7 @@ class CppDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
