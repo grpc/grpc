@@ -704,8 +704,6 @@ grpc_call_credentials* grpc_sts_credentials_create(
 // Oauth2 Access Token credentials.
 //
 
-grpc_access_token_credentials::~grpc_access_token_credentials() = default;
-
 bool grpc_access_token_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
     grpc_core::CredentialsMetadataArray* md_array,

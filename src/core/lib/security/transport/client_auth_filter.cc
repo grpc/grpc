@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -146,6 +147,15 @@ void grpc_auth_metadata_context_reset(
   }
 }
 
+static void add_error(grpc_error_handle* combined, grpc_error_handle error) {
+  if (error == GRPC_ERROR_NONE) return;
+  if (*combined == GRPC_ERROR_NONE) {
+    *combined = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Client auth metadata plugin error");
+  }
+  *combined = grpc_error_add_child(*combined, error);
+}
+
 static void on_credentials_metadata(void* arg, grpc_error_handle input_error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
@@ -160,14 +170,14 @@ static void on_credentials_metadata(void* arg, grpc_error_handle input_error) {
     grpc_metadata_batch* mdb =
         batch->payload->send_initial_metadata.send_initial_metadata;
     for (const auto& md : *calld->md_array) {
-      mdb->Append(md.first.as_string_view(), md.second.Ref(),
-                  [&](absl::string_view error, const grpc_core::Slice& value) {
-                    gpr_log(GPR_INFO, "%s",
-                            absl::StrCat("on_credentials_metadata: ", error,
-                                         ": ", md.first.as_string_view(), ": ",
-                                         value.as_string_view())
-                                .c_str());
-                  });
+      mdb->Append(
+          md.first.as_string_view(), md.second.Ref(),
+          [&](absl::string_view error_message, const grpc_core::Slice& value) {
+            add_error(&error, GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                  "on_credentials_metadata: ", error_message,
+                                  ": ", md.first.as_string_view(), ": ",
+                                  value.as_string_view())));
+          });
     }
     grpc_call_next_op(elem, batch);
   } else {
