@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -48,7 +51,7 @@ if [ "$UPLOAD_TEST_RESULTS" != "" ]
 then
   # Sleep to let ResultStore finish writing results before querying
   sleep 60
-  PYTHONHTTPSVERIFY=0 python ./tools/run_tests/python_utils/upload_rbe_results.py
+  PYTHONHTTPSVERIFY=0 python3 ./tools/run_tests/python_utils/upload_rbe_results.py
 fi
 
 if [ "$FAILED" != "" ]

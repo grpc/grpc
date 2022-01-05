@@ -27,6 +27,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
+#include "src/core/ext/transport/binder/utils/ndk_binder.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/server.h"
@@ -34,8 +35,6 @@
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
 #include <jni.h>
 
 extern "C" {
@@ -45,14 +44,14 @@ extern "C" {
 JNIEXPORT jobject JNICALL
 Java_io_grpc_binder_cpp_GrpcCppServerBuilder_GetEndpointBinderInternal__Ljava_lang_String_2(
     JNIEnv* jni_env, jobject, jstring conn_id_jstring) {
-  AIBinder* ai_binder = nullptr;
+  grpc_binder::ndk_util::AIBinder* ai_binder = nullptr;
 
   {
     // This block is the scope of conn_id c-string
     jboolean isCopy;
     const char* conn_id = jni_env->GetStringUTFChars(conn_id_jstring, &isCopy);
-    ai_binder =
-        static_cast<AIBinder*>(grpc_get_endpoint_binder(std::string(conn_id)));
+    ai_binder = static_cast<grpc_binder::ndk_util::AIBinder*>(
+        grpc_get_endpoint_binder(std::string(conn_id)));
     if (ai_binder == nullptr) {
       gpr_log(GPR_ERROR, "Cannot find endpoint binder with connection id = %s",
               conn_id);
@@ -66,7 +65,7 @@ Java_io_grpc_binder_cpp_GrpcCppServerBuilder_GetEndpointBinderInternal__Ljava_la
     return nullptr;
   }
 
-  return AIBinder_toJavaBinder(jni_env, ai_binder);
+  return grpc_binder::ndk_util::AIBinder_toJavaBinder(jni_env, ai_binder);
 }
 }
 
@@ -174,13 +173,13 @@ class BinderServerListener : public Server::ListenerInterface {
  private:
   absl::Status OnSetupTransport(transaction_code_t code,
                                 grpc_binder::ReadableParcel* parcel, int uid) {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     if (grpc_binder::BinderTransportTxCode(code) !=
         grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }
 
-    gpr_log(GPR_ERROR, "calling uid = %d", uid);
+    gpr_log(GPR_INFO, "BinderServerListener calling uid = %d", uid);
     if (!security_policy_->IsAuthorized(uid)) {
       // TODO(mingcl): For now we just ignore this unauthorized
       // SETUP_TRANSPORT transaction and ghost the client. Check if we should
@@ -196,8 +195,10 @@ class BinderServerListener : public Server::ListenerInterface {
     if (!status.ok()) {
       return status;
     }
-    gpr_log(GPR_INFO, "version = %d", version);
-    // TODO(waynetu): Check supported version.
+    gpr_log(GPR_INFO, "BinderTransport client protocol version = %d", version);
+    // TODO(mingcl): Make sure we only give client a version that is not newer
+    // than the version they specify. For now, we always tell client that we
+    // only support version=1.
     std::unique_ptr<grpc_binder::Binder> client_binder{};
     status = parcel->ReadBinder(&client_binder);
     if (!status.ok()) {
@@ -213,8 +214,8 @@ class BinderServerListener : public Server::ListenerInterface {
         std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
     grpc_channel_args* args = grpc_channel_args_copy(server_->channel_args());
-    grpc_error_handle error = server_->SetupTransport(server_transport, nullptr,
-                                                      args, nullptr, nullptr);
+    grpc_error_handle error =
+        server_->SetupTransport(server_transport, nullptr, args, nullptr);
     grpc_channel_args_destroy(args);
     return grpc_error_to_absl_status(error);
   }
@@ -239,11 +240,10 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
     return false;
   }
   std::string conn_id = addr.substr(kBinderUriScheme.size());
-  grpc_core::Server* core_server = server->core_server.get();
+  Server* core_server = Server::FromC(server);
   core_server->AddListener(
-      grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(
-          new grpc_core::BinderServerListener(
-              core_server, conn_id, std::move(factory), security_policy)));
+      OrphanablePtr<Server::ListenerInterface>(new BinderServerListener(
+          core_server, conn_id, std::move(factory), security_policy)));
   return true;
 }
 

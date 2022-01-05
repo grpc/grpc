@@ -21,8 +21,7 @@
 FROM dockcross/manylinux2010-x86
 
 # Install essential packages.
-RUN yum -y install golang strace
-
+RUN yum -y install strace && yum clean all
 
 ##################
 # Ruby dependencies
@@ -30,7 +29,8 @@ RUN yum -y install golang strace
 # Install rvm
 RUN curl -sSL https://rvm.io/mpapis.asc | gpg --import -
 RUN curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
-RUN \curl -sSL https://get.rvm.io | bash -s stable
+# Use "--insecure" to avoid cert expiration error
+RUN curl -sSL --insecure https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.6
 RUN /bin/bash -l -c "rvm install ruby-2.6 --32"
@@ -39,9 +39,6 @@ RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.6' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler"
-
-# Clean yum
-RUN yum clean all
 
 # Create default work directory.
 RUN mkdir /var/local/jenkins

@@ -24,13 +24,15 @@
 
 #include <netinet/in.h>
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "test/core/util/resource_user_util.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/test_config.h"
 
 static const int kConnectTimeout = 5;
@@ -113,9 +115,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
-  addr->sin_family = AF_INET;
+  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -126,8 +126,11 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   /* connect to it */
   XCTAssertEqual(getsockname(svr_fd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len), 0);
   init_event_closure(&done, &connected);
-  grpc_tcp_client_connect(&done, &ep_, grpc_slice_allocator_create_unlimited(), nullptr, nullptr,
-                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  const grpc_channel_args *args =
+      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
+          nullptr);
+  grpc_tcp_client_connect(&done, &ep_, nullptr, args, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_channel_args_destroy(args);
 
   /* await the connection */
   do {

@@ -24,14 +24,17 @@
 
 #include <string>
 
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
@@ -40,7 +43,9 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 namespace {
@@ -49,13 +54,13 @@ class InternalRequest {
  public:
   InternalRequest(const grpc_slice& request_text,
                   grpc_httpcli_response* response,
-                  grpc_resource_quota* resource_quota, absl::string_view host,
+                  ResourceQuotaRefPtr resource_quota, absl::string_view host,
                   absl::string_view ssl_host_override, grpc_millis deadline,
                   const grpc_httpcli_handshaker* handshaker,
                   grpc_closure* on_done, grpc_httpcli_context* context,
                   grpc_polling_entity* pollent, const char* name)
       : request_text_(request_text),
-        resource_quota_(resource_quota),
+        resource_quota_(std::move(resource_quota)),
         host_(host),
         ssl_host_override_(ssl_host_override),
         deadline_(deadline),
@@ -72,17 +77,14 @@ class InternalRequest {
     GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
     GPR_ASSERT(pollent);
     grpc_polling_entity_add_to_pollset_set(pollent_, context->pollset_set);
-    grpc_resolve_address(
+    dns_request_ = GetDNSResolver()->ResolveName(
         host_.c_str(), handshaker_->default_port, context_->pollset_set,
-        GRPC_CLOSURE_CREATE(OnResolved, this, grpc_schedule_on_exec_ctx),
-        &addresses_);
+        absl::bind_front(&InternalRequest::OnResolved, this));
+    dns_request_->Start();
   }
 
   ~InternalRequest() {
     grpc_http_parser_destroy(&parser_);
-    if (addresses_ != nullptr) {
-      grpc_resolved_addresses_destroy(addresses_);
-    }
     if (ep_ != nullptr) {
       grpc_endpoint_destroy(ep_);
     }
@@ -91,13 +93,12 @@ class InternalRequest {
     grpc_slice_buffer_destroy_internal(&incoming_);
     grpc_slice_buffer_destroy_internal(&outgoing_);
     GRPC_ERROR_UNREF(overall_error_);
-    grpc_resource_quota_unref_internal(resource_quota_);
   }
 
  private:
   void Finish(grpc_error_handle error) {
     grpc_polling_entity_del_from_pollset_set(pollent_, context_->pollset_set);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
+    ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
     delete this;
   }
 
@@ -106,7 +107,7 @@ class InternalRequest {
       overall_error_ =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
     }
-    grpc_resolved_address* addr = &addresses_->addrs[next_address_ - 1];
+    const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
     std::string addr_text = grpc_sockaddr_to_uri(addr);
     overall_error_ = grpc_error_add_child(
         overall_error_,
@@ -191,40 +192,47 @@ class InternalRequest {
   }
 
   void NextAddress(grpc_error_handle error) {
-    grpc_resolved_address* addr;
     if (error != GRPC_ERROR_NONE) {
       AppendError(error);
     }
-    if (next_address_ == addresses_->naddrs) {
+    if (next_address_ == addresses_.size()) {
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Failed HTTP requests to all targets", &overall_error_, 1));
       return;
     }
-    addr = &addresses_->addrs[next_address_++];
+    const grpc_resolved_address* addr = &addresses_[next_address_++];
     GRPC_CLOSURE_INIT(&connected_, OnConnected, this,
                       grpc_schedule_on_exec_ctx);
-    grpc_tcp_client_connect(&connected_, &ep_,
-                            grpc_slice_allocator_create(
-                                resource_quota_, grpc_sockaddr_to_uri(addr)),
-                            context_->pollset_set, nullptr, addr, deadline_);
+    grpc_arg rq_arg = grpc_channel_arg_pointer_create(
+        const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), resource_quota_->c_ptr(),
+        grpc_resource_quota_arg_vtable());
+    grpc_channel_args channel_args{1, &rq_arg};
+    auto* args = CoreConfiguration::Get()
+                     .channel_args_preconditioning()
+                     .PreconditionChannelArgs(&channel_args);
+    grpc_tcp_client_connect(&connected_, &ep_, context_->pollset_set, args,
+                            addr, deadline_);
+    grpc_channel_args_destroy(args);
   }
 
-  static void OnResolved(void* arg, grpc_error_handle error) {
-    InternalRequest* req = static_cast<InternalRequest*>(arg);
-    if (error != GRPC_ERROR_NONE) {
-      req->Finish(GRPC_ERROR_REF(error));
+  void OnResolved(
+      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+    dns_request_.reset();
+    if (!addresses_or.ok()) {
+      Finish(absl_status_to_grpc_error(addresses_or.status()));
       return;
     }
-    req->next_address_ = 0;
-    req->NextAddress(GRPC_ERROR_NONE);
+    addresses_ = std::move(*addresses_or);
+    next_address_ = 0;
+    NextAddress(GRPC_ERROR_NONE);
   }
 
   grpc_slice request_text_;
   grpc_http_parser parser_;
-  grpc_resolved_addresses* addresses_ = nullptr;
+  std::vector<grpc_resolved_address> addresses_;
   size_t next_address_ = 0;
   grpc_endpoint* ep_ = nullptr;
-  grpc_resource_quota* resource_quota_;
+  ResourceQuotaRefPtr resource_quota_;
   std::string host_;
   std::string ssl_host_override_;
   grpc_millis deadline_;
@@ -240,6 +248,7 @@ class InternalRequest {
   grpc_closure done_write_;
   grpc_closure connected_;
   grpc_error_handle overall_error_ = GRPC_ERROR_NONE;
+  OrphanablePtr<DNSResolver::Request> dns_request_;
 };
 
 }  // namespace
@@ -266,16 +275,14 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context) {
   grpc_pollset_set_destroy(context->pollset_set);
 }
 
-static void internal_request_begin(grpc_httpcli_context* context,
-                                   grpc_polling_entity* pollent,
-                                   grpc_resource_quota* resource_quota,
-                                   const grpc_httpcli_request* request,
-                                   grpc_millis deadline, grpc_closure* on_done,
-                                   grpc_httpcli_response* response,
-                                   const char* name,
-                                   const grpc_slice& request_text) {
+static void internal_request_begin(
+    grpc_httpcli_context* context, grpc_polling_entity* pollent,
+    grpc_core::ResourceQuotaRefPtr resource_quota,
+    const grpc_httpcli_request* request, grpc_millis deadline,
+    grpc_closure* on_done, grpc_httpcli_response* response, const char* name,
+    const grpc_slice& request_text) {
   new grpc_core::InternalRequest(
-      request_text, response, resource_quota, request->host,
+      request_text, response, std::move(resource_quota), request->host,
       request->ssl_host_override, deadline,
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
       on_done, context, pollent, name);
@@ -283,37 +290,35 @@ static void internal_request_begin(grpc_httpcli_context* context,
 
 void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_polling_entity* pollent,
-                      grpc_resource_quota* resource_quota,
+                      grpc_core::ResourceQuotaRefPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response) {
   if (g_get_override && g_get_override(request, deadline, on_done, response)) {
-    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(context, pollent, resource_quota, request, deadline,
-                         on_done, response, name.c_str(),
+  internal_request_begin(context, pollent, std::move(resource_quota), request,
+                         deadline, on_done, response, name.c_str(),
                          grpc_httpcli_format_get_request(request));
 }
 
 void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_polling_entity* pollent,
-                       grpc_resource_quota* resource_quota,
+                       grpc_core::ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
                        grpc_millis deadline, grpc_closure* on_done,
                        grpc_httpcli_response* response) {
   if (g_post_override && g_post_override(request, body_bytes, body_size,
                                          deadline, on_done, response)) {
-    grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      context, pollent, resource_quota, request, deadline, on_done, response,
-      name.c_str(),
+      context, pollent, std::move(resource_quota), request, deadline, on_done,
+      response, name.c_str(),
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
 }
 

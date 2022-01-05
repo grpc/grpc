@@ -55,26 +55,26 @@ TEST(MemoryRequestTest, MinMax) {
 // MemoryQuotaTest
 //
 
-TEST(MemoryQuotaTest, NoOp) { MemoryQuota(); }
+TEST(MemoryQuotaTest, NoOp) { MemoryQuota("foo"); }
 
 TEST(MemoryQuotaTest, CreateAllocatorNoOp) {
-  MemoryQuota memory_quota;
-  auto memory_allocator = memory_quota.CreateMemoryAllocator();
+  MemoryQuota memory_quota("foo");
+  auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
 }
 
 TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
-  MemoryQuota memory_quota;
-  auto memory_allocator = memory_quota.CreateMemoryAllocator();
+  MemoryQuota memory_quota("foo");
+  auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   auto object = memory_allocator.MakeUnique<Sized<4096>>();
 }
 
 TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   ExecCtx exec_ctx;
 
-  MemoryQuota memory_quota;
+  MemoryQuota memory_quota("foo");
   memory_quota.SetSize(4096);
-  auto memory_allocator = memory_quota.CreateMemoryOwner();
-  auto object = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
+  auto memory_allocator = memory_quota.CreateMemoryOwner("bar");
+  auto object = memory_allocator.MakeUnique<Sized<2048>>();
 
   auto checker1 = CallChecker::Make();
   memory_allocator.PostReclaimer(
@@ -84,7 +84,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
         EXPECT_TRUE(sweep.has_value());
         object.reset();
       });
-  auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
+  auto object2 = memory_allocator.MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 
@@ -96,7 +96,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
         EXPECT_TRUE(sweep.has_value());
         object2.reset();
       });
-  auto object3 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
+  auto object3 = memory_allocator.MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object2.get(), nullptr);
 }
@@ -104,16 +104,16 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
 TEST(MemoryQuotaTest, BasicRebind) {
   ExecCtx exec_ctx;
 
-  MemoryQuota memory_quota;
+  MemoryQuota memory_quota("foo");
   memory_quota.SetSize(4096);
-  MemoryQuota memory_quota2;
+  MemoryQuota memory_quota2("foo2");
   memory_quota2.SetSize(4096);
 
-  auto memory_allocator = memory_quota2.CreateMemoryOwner();
-  auto object = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
+  auto memory_allocator = memory_quota2.CreateMemoryOwner("bar");
+  auto object = memory_allocator.MakeUnique<Sized<2048>>();
 
   memory_allocator.Rebind(&memory_quota);
-  auto memory_allocator2 = memory_quota2.CreateMemoryOwner();
+  auto memory_allocator2 = memory_quota2.CreateMemoryOwner("bar2");
 
   auto checker1 = CallChecker::Make();
   memory_allocator2.PostReclaimer(
@@ -138,14 +138,14 @@ TEST(MemoryQuotaTest, BasicRebind) {
         object.reset();
       });
 
-  auto object2 = memory_allocator.allocator()->MakeUnique<Sized<2048>>();
+  auto object2 = memory_allocator.MakeUnique<Sized<2048>>();
   exec_ctx.Flush();
   EXPECT_EQ(object.get(), nullptr);
 }
 
 TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
-  MemoryQuota memory_quota;
-  auto memory_allocator = memory_quota.CreateMemoryAllocator();
+  MemoryQuota memory_quota("foo");
+  auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   size_t total = 0;
   for (int i = 0; i < 10000; i++) {
     auto n = memory_allocator.Reserve(MemoryRequest(100, 40000));
@@ -156,8 +156,8 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
 }
 
 TEST(MemoryQuotaTest, MakeSlice) {
-  MemoryQuota memory_quota;
-  auto memory_allocator = memory_quota.CreateMemoryAllocator();
+  MemoryQuota memory_quota("foo");
+  auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   std::vector<grpc_slice> slices;
   for (int i = 1; i < 1000; i++) {
     int min = i;
@@ -170,8 +170,8 @@ TEST(MemoryQuotaTest, MakeSlice) {
 }
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
-  MemoryQuota memory_quota;
-  auto memory_allocator = memory_quota.CreateMemoryAllocator();
+  MemoryQuota memory_quota("foo");
+  auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   Vector<int> vec(&memory_allocator);
   for (int i = 0; i < 100000; i++) {
     vec.push_back(i);

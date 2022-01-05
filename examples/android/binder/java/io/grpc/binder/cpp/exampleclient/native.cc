@@ -24,6 +24,13 @@
 extern "C" JNIEXPORT jstring JNICALL
 Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
     JNIEnv* env, jobject /*this*/, jobject application) {
+  if (grpc::experimental::InitializeBinderChannelJavaClass(env)) {
+    __android_log_print(ANDROID_LOG_INFO, "DemoClient",
+                        "InitializeBinderChannelJavaClass succeed");
+  } else {
+    __android_log_print(ANDROID_LOG_INFO, "DemoClient",
+                        "InitializeBinderChannelJavaClass failed");
+  }
   static bool first = true;
   static std::shared_ptr<grpc::Channel> channel;
   if (first) {
@@ -34,7 +41,7 @@ Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
         "io.grpc.binder.cpp.exampleserver.ExportedEndpointService",
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
-    return env->NewStringUTF("Clicked 1 time");
+    return env->NewStringUTF("Clicked 1 time, channel created");
   } else {
     auto stub = helloworld::Greeter::NewStub(channel);
     grpc::ClientContext context;

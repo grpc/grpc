@@ -21,7 +21,6 @@ cc_library(
         "-ldl",
         "-llog",
         "-lm",
-        "-lbinder_ndk",
         "-Wl,--no-undefined",
     ],
     deps = [

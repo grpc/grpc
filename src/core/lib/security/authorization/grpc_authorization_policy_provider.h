@@ -77,7 +77,7 @@ class FileWatcherAuthorizationPolicyProvider
   void Orphan() override;
 
   AuthorizationEngines engines() override {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return {allow_engine_, deny_engine_};
   }
 
@@ -92,7 +92,7 @@ class FileWatcherAuthorizationPolicyProvider
   std::unique_ptr<Thread> refresh_thread_;
   gpr_event shutdown_event_;
 
-  grpc_core::Mutex mu_;
+  Mutex mu_;
   // Engines created using authz_policy_.
   RefCountedPtr<AuthorizationEngine> allow_engine_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<AuthorizationEngine> deny_engine_ ABSL_GUARDED_BY(mu_);

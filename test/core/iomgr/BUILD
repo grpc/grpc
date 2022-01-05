@@ -174,6 +174,9 @@ grpc_cc_test(
     args = [
         "--resolver=ares",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -189,6 +192,9 @@ grpc_cc_test(
     args = [
         "--resolver=native",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -201,39 +207,34 @@ grpc_cc_test(
 grpc_cc_test(
     name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
-    args = [
-        "--resolver=ares",
+    external_deps = [
+        "absl/strings",
+        "gtest",
     ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
 grpc_cc_test(
     name = "resolve_address_using_native_resolver_test",
     srcs = ["resolve_address_test.cc"],
-    args = [
-        "--resolver=native",
+    external_deps = [
+        "absl/strings",
+        "gtest",
     ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "resource_quota_test",
-    srcs = ["resource_quota_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 

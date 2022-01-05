@@ -1,4 +1,3 @@
-#!/usr/bin/env python2.7
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -116,6 +115,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.38.0', ReleaseInfo()),
             ('v1.39.0', ReleaseInfo()),
             ('v1.41.1', ReleaseInfo()),
+            ('v1.42.0', ReleaseInfo()),
         ]),
     'go':
         OrderedDict([
@@ -194,6 +194,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.39.1', ReleaseInfo(runtimes=['go1.16'])),
             ('v1.40.0', ReleaseInfo(runtimes=['go1.16'])),
             ('v1.41.0', ReleaseInfo(runtimes=['go1.16'])),
+            ('v1.42.0', ReleaseInfo(runtimes=['go1.16'])),
         ]),
     'java':
         OrderedDict([
@@ -268,7 +269,10 @@ LANG_RELEASE_MATRIX = {
             ('v1.38.1', ReleaseInfo()),
             ('v1.39.0', ReleaseInfo()),
             ('v1.40.1', ReleaseInfo()),
+            ('v1.40.2', ReleaseInfo()),
             ('v1.41.0', ReleaseInfo()),
+            ('v1.41.1', ReleaseInfo()),
+            ('v1.42.1', ReleaseInfo()),
         ]),
     'python':
         OrderedDict(
@@ -388,6 +392,7 @@ LANG_RELEASE_MATRIX = {
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__v1.18.0')),
                 ('v1.41.1', ReleaseInfo(runtimes=['python'])),
+                ('v1.42.0', ReleaseInfo(runtimes=['python'])),
             ]),
     'node':
         OrderedDict([
@@ -457,6 +462,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.38.0', ReleaseInfo()),
             ('v1.39.0', ReleaseInfo()),
             ('v1.41.1', ReleaseInfo()),
+            ('v1.42.0', ReleaseInfo()),
         ]),
     'php':
         OrderedDict([
@@ -499,6 +505,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.38.0', ReleaseInfo()),
             ('v1.39.0', ReleaseInfo()),
             ('v1.41.1', ReleaseInfo()),
+            ('v1.42.0', ReleaseInfo()),
         ]),
     'csharp':
         OrderedDict([
@@ -546,5 +553,6 @@ LANG_RELEASE_MATRIX = {
             ('v1.38.1', ReleaseInfo()),
             ('v1.39.1', ReleaseInfo()),
             ('v1.41.1', ReleaseInfo()),
+            ('v1.42.0', ReleaseInfo()),
         ]),
 }

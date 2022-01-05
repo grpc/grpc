@@ -334,6 +334,8 @@ UPB_INLINE char *envoy_type_metadata_v3_MetadataKind_Host_serialize(const envoy_
 
 
 
+extern const upb_msglayout_file envoy_type_metadata_v3_metadata_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

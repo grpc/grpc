@@ -40,8 +40,7 @@ class RefCountedPtr {
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  RefCountedPtr(Y* value) : value_(value) {}
+  explicit RefCountedPtr(Y* value) : value_(value) {}
 
   // Move ctors.
   RefCountedPtr(RefCountedPtr&& other) noexcept {
@@ -191,8 +190,7 @@ class WeakRefCountedPtr {
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  WeakRefCountedPtr(Y* value) {
+  explicit WeakRefCountedPtr(Y* value) {
     value_ = value;
   }
 

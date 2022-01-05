@@ -61,6 +61,8 @@ UPB_INLINE void google_protobuf_Timestamp_set_nanos(google_protobuf_Timestamp *m
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
 }
 
+extern const upb_msglayout_file google_protobuf_timestamp_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

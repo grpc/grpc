@@ -69,7 +69,7 @@ class NewSliceRefcount {
 
  private:
   grpc_slice_refcount base_;
-  RefCount refs_;
+  std::atomic<size_t> refs_{1};
   void (*user_destroy_)(void*);
   void* user_data_;
 };
@@ -130,7 +130,7 @@ class NewWithLenSliceRefcount {
 
  private:
   grpc_slice_refcount base_;
-  RefCount refs_;
+  std::atomic<size_t> refs_{1};
   void* user_data_;
   size_t user_length_;
   void (*user_destroy_)(void*, size_t);
@@ -139,7 +139,7 @@ class NewWithLenSliceRefcount {
 /** grpc_slice_from_moved_(string|buffer) ref count .*/
 class MovedStringSliceRefCount {
  public:
-  explicit MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
+  explicit MovedStringSliceRefCount(UniquePtr<char>&& str)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         str_(std::move(str)) {}
@@ -152,8 +152,8 @@ class MovedStringSliceRefCount {
   }
 
   grpc_slice_refcount base_;
-  grpc_core::RefCount refs_;
-  grpc_core::UniquePtr<char> str_;
+  std::atomic<size_t> refs_{1};
+  UniquePtr<char> str_;
 };
 
 // grpc_slice_from_cpp_string() ref count.
@@ -172,7 +172,7 @@ class MovedCppStringSliceRefCount {
   }
 
   grpc_slice_refcount base_;
-  grpc_core::RefCount refs_;
+  std::atomic<size_t> refs_{1};
   std::string str_;
 };
 
@@ -215,7 +215,9 @@ grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
     slice = grpc_core::UnmanagedMemorySlice(
         length, grpc_core::UnmanagedMemorySlice::ForceHeapAllocation());
   }
-  memcpy(GRPC_SLICE_START_PTR(slice), source, length);
+  if (length > 0) {
+    memcpy(GRPC_SLICE_START_PTR(slice), source, length);
+  }
   return slice;
 }
 
@@ -281,7 +283,7 @@ class MallocRefCount {
 
  private:
   grpc_slice_refcount base_;
-  grpc_core::RefCount refs_;
+  std::atomic<size_t> refs_{1};
 };
 
 }  // namespace

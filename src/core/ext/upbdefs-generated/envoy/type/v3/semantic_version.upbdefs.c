@@ -8,15 +8,10 @@
 
 #include "upb/def.h"
 #include "envoy/type/v3/semantic_version.upbdefs.h"
+#include "envoy/type/v3/semantic_version.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_type_v3_SemanticVersion_msginit;
-
-static const upb_msglayout *layouts[1] = {
-  &envoy_type_v3_SemanticVersion_msginit,
-};
-
 static const char descriptor[337] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'v', '3', '/', 's', 'e', 'm', 'a', 'n', 't', 'i', 'c', '_', 
 'v', 'e', 'r', 's', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\r', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', 
 '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 
@@ -41,7 +36,7 @@ static upb_def_init *deps[3] = {
 
 upb_def_init envoy_type_v3_semantic_version_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_type_v3_semantic_version_proto_upb_file_layout,
   "envoy/type/v3/semantic_version.proto",
   UPB_STRVIEW_INIT(descriptor, 337)
 };

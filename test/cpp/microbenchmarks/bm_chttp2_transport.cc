@@ -34,13 +34,16 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
@@ -134,8 +137,11 @@ class Fixture {
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client,
-                                      grpc_resource_user_create_unlimited());
+    const grpc_channel_args* final_args = grpc_core::CoreConfiguration::Get()
+                                              .channel_args_preconditioning()
+                                              .PreconditionChannelArgs(&c_args);
+    t_ = grpc_create_chttp2_transport(final_args, ep_, client);
+    grpc_channel_args_destroy(final_args);
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }
@@ -194,7 +200,7 @@ class Stream {
   explicit Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
-    arena_ = grpc_core::Arena::Create(4096);
+    arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
   }
 
   ~Stream() {
@@ -210,7 +216,7 @@ class Stream {
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
       arena_->Destroy();
-      arena_ = grpc_core::Arena::Create(4096);
+      arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
@@ -288,30 +294,26 @@ BENCHMARK(BM_StreamCreateDestroy);
 class RepresentativeClientInitialMetadata {
  public:
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_SCHEME_HTTP)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("addmd", b->Append(GRPC_MDELEM_METHOD_POST)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH, grpc_slice_intern(grpc_slice_from_static_string(
-                                 "/foo/bar/bm_chttp2_transport"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_AUTHORITY,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "foo.test.google.fr:1234"))))));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
+    b->Set(grpc_core::HttpPathMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "/foo/bar/bm_chttp2_transport")));
+    b->Set(grpc_core::HttpAuthorityMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     GRPC_MDSTR_USER_AGENT,
-                     grpc_slice_intern(grpc_slice_from_static_string(
-                         "grpc-c/3.0.0-dev (linux; chttp2; green)"))))));
+    b->Set(grpc_core::ContentTypeMetadata(),
+           grpc_core::ContentTypeMetadata::kApplicationGrpc);
+    b->Set(grpc_core::UserAgentMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)")));
   }
 };
 
@@ -331,7 +333,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   Metadata::Prepare(&b);
 
@@ -428,7 +430,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   grpc_slice send_slice = grpc_slice_malloc_large(state.range(0));
   memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   RepresentativeClientInitialMetadata::Prepare(&b);
 
@@ -562,7 +564,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  auto arena = grpc_core::MakeScopedArena(1024);
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   RepresentativeClientInitialMetadata::Prepare(&b);
 

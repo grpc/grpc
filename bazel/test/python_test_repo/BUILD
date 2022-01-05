@@ -29,9 +29,16 @@ proto_library(
     name = "helloworld_proto",
     srcs = ["helloworld.proto"],
     deps = [
+        ":hello_dep_proto",
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
+)
+
+# Test that .proto files can be located in strict subdiretories of the package.
+proto_library(
+    name = "hello_dep_proto",
+    srcs = ["subdir/hello_dep.proto"],
 )
 
 py_proto_library(
@@ -79,6 +86,7 @@ proto_library(
     import_prefix = "google/cloud",
     strip_import_prefix = "",
     deps = [
+        ":hello_dep_proto",
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],

@@ -8,20 +8,11 @@
 
 #include "upb/def.h"
 #include "envoy/config/route/v3/scoped_route.upbdefs.h"
+#include "envoy/config/route/v3/scoped_route.upb.h"
 
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_route_v3_ScopedRouteConfiguration_msginit;
-extern const upb_msglayout envoy_config_route_v3_ScopedRouteConfiguration_Key_msginit;
-extern const upb_msglayout envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &envoy_config_route_v3_ScopedRouteConfiguration_msginit,
-  &envoy_config_route_v3_ScopedRouteConfiguration_Key_msginit,
-  &envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_msginit,
-};
-
 static const char descriptor[789] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/', 's', 
 'c', 'o', 'p', 'e', 'd', '_', 'r', 'o', 'u', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 
 'c', 'o', 'n', 'f', 'i', 'g', '.', 'r', 'o', 'u', 't', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 
@@ -65,7 +56,7 @@ static upb_def_init *deps[4] = {
 
 upb_def_init envoy_config_route_v3_scoped_route_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_route_v3_scoped_route_proto_upb_file_layout,
   "envoy/config/route/v3/scoped_route.proto",
   UPB_STRVIEW_INIT(descriptor, 789)
 };

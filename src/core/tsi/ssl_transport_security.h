@@ -21,20 +21,19 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <openssl/x509.h>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security_constants.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 
-extern "C" {
-#include <openssl/x509.h>
-}
-
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
 #define TSI_X509_CERTIFICATE_TYPE "X509"
 
 /* This property is of type TSI_PEER_PROPERTY_STRING.  */
+#define TSI_X509_SUBJECT_PEER_PROPERTY "x509_subject"
 #define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"

@@ -75,6 +75,8 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventSe
   return sub;
 }
 
+extern const upb_msglayout_file envoy_config_core_v3_event_service_config_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

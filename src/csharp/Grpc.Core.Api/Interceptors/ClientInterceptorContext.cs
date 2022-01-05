@@ -37,7 +37,7 @@ namespace Grpc.Core.Interceptors
         /// <param name="method">A <see cref="Grpc.Core.Method{TRequest, TResponse}"/> object representing the method to be invoked.</param>
         /// <param name="host">The host to dispatch the current call to.</param>
         /// <param name="options">A <see cref="Grpc.Core.CallOptions"/> instance containing the call options of the current call.</param>
-        public ClientInterceptorContext(Method<TRequest, TResponse> method, string host, CallOptions options)
+        public ClientInterceptorContext(Method<TRequest, TResponse> method, string? host, CallOptions options)
         {
             Method = method;
             Host = host;
@@ -53,7 +53,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Gets the host that the currect invocation will be dispatched to.
         /// </summary>
-        public string Host { get; }
+        public string? Host { get; }
 
         /// <summary>
         /// Gets the <see cref="Grpc.Core.CallOptions"/> structure representing the

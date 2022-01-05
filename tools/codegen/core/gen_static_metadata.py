@@ -35,34 +35,8 @@ import perfection
 
 CONFIG = [
     # metadata strings
-    'host',
     'grpc-timeout',
-    'grpc-internal-encoding-request',
-    'grpc-internal-stream-encoding-request',
-    'grpc-payload-bin',
-    ':path',
-    'grpc-encoding',
-    'grpc-accept-encoding',
-    'user-agent',
-    ':authority',
-    'grpc-message',
-    'grpc-status',
-    'grpc-server-stats-bin',
-    'grpc-tags-bin',
-    'grpc-trace-bin',
-    'grpc-previous-rpc-attempts',
-    'grpc-retry-pushback-ms',
-    '1',
-    '2',
-    '3',
-    '4',
     '',
-    'x-endpoint-load-metrics-bin',
-    # channel arg keys
-    'grpc.wait_for_ready',
-    'grpc.timeout',
-    'grpc.max_request_message_bytes',
-    'grpc.max_response_message_bytes',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',
@@ -70,10 +44,6 @@ CONFIG = [
     '/grpc.health.v1.Health/Watch',
     '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
     '/envoy.service.discovery.v3.AggregatedDiscoveryService/StreamAggregatedResources',
-    # compression algorithm names
-    'deflate',
-    'gzip',
-    'stream/gzip',
     # te: trailers strings
     'te',
     'trailers',
@@ -141,58 +111,7 @@ CONFIG = [
     ('via', ''),
     ('www-authenticate', ''),
     # end hpack static elements
-    ('grpc-status', '0'),
-    ('grpc-status', '1'),
-    ('grpc-status', '2'),
-    ('grpc-encoding', 'identity'),
-    ('grpc-encoding', 'gzip'),
-    ('grpc-encoding', 'deflate'),
-    ('content-type', 'application/grpc'),
-    (':scheme', 'grpc'),
-    (':method', 'PUT'),
-    ('accept-encoding', ''),
-    ('content-encoding', 'identity'),
-    ('content-encoding', 'gzip'),
     ('lb-cost-bin', ''),
-]
-
-# All entries here are ignored when counting non-default initial metadata that
-# prevents the chttp2 server from sending a Trailers-Only response.
-METADATA_BATCH_CALLOUTS = [
-    ':path',
-    ':method',
-    ':status',
-    ':authority',
-    ':scheme',
-    'grpc-message',
-    'grpc-status',
-    'grpc-payload-bin',
-    'grpc-encoding',
-    'grpc-accept-encoding',
-    'grpc-server-stats-bin',
-    'grpc-tags-bin',
-    'grpc-trace-bin',
-    'content-type',
-    'content-encoding',
-    'accept-encoding',
-    'grpc-internal-encoding-request',
-    'grpc-internal-stream-encoding-request',
-    'user-agent',
-    'host',
-    'grpc-previous-rpc-attempts',
-    'grpc-retry-pushback-ms',
-    'x-endpoint-load-metrics-bin',
-]
-
-COMPRESSION_ALGORITHMS = [
-    'identity',
-    'deflate',
-    'gzip',
-]
-
-STREAM_COMPRESSION_ALGORITHMS = [
-    'identity',
-    'gzip',
 ]
 
 
@@ -261,11 +180,6 @@ def put_banner(files, banner):
 all_strs = list()
 all_elems = list()
 static_userdata = {}
-# put metadata batch callouts first, to make the check of if a static metadata
-# string is a callout trivial
-for elem in METADATA_BATCH_CALLOUTS:
-    if elem not in all_strs:
-        all_strs.append(elem)
 for elem in CONFIG:
     if isinstance(elem, tuple):
         if elem[0] not in all_strs:
@@ -277,30 +191,6 @@ for elem in CONFIG:
     else:
         if elem not in all_strs:
             all_strs.append(elem)
-compression_elems = []
-for mask in range(1, 1 << len(COMPRESSION_ALGORITHMS)):
-    val = ','.join(COMPRESSION_ALGORITHMS[alg]
-                   for alg in range(0, len(COMPRESSION_ALGORITHMS))
-                   if (1 << alg) & mask)
-    elem = ('grpc-accept-encoding', val)
-    if val not in all_strs:
-        all_strs.append(val)
-    if elem not in all_elems:
-        all_elems.append(elem)
-    compression_elems.append(elem)
-    static_userdata[elem] = 1 + (mask | 1)
-stream_compression_elems = []
-for mask in range(1, 1 << len(STREAM_COMPRESSION_ALGORITHMS)):
-    val = ','.join(STREAM_COMPRESSION_ALGORITHMS[alg]
-                   for alg in range(0, len(STREAM_COMPRESSION_ALGORITHMS))
-                   if (1 << alg) & mask)
-    elem = ('accept-encoding', val)
-    if val not in all_strs:
-        all_strs.append(val)
-    if elem not in all_elems:
-        all_elems.append(elem)
-    stream_compression_elems.append(elem)
-    static_userdata[elem] = 1 + (mask | 1)
 
 # output configuration
 args = sys.argv[1:]
@@ -430,13 +320,13 @@ for i, elem in enumerate(all_strs):
 
 def slice_def_for_ctx(i):
     return (
-        'grpc_core::StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
+        'StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
     ) % (i, len(all_strs[i]), id2strofs[i])
 
 
 def slice_def(i):
     return (
-        'grpc_core::StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
+        'StaticMetadataSlice(&g_static_metadata_slice_refcounts[%d].base, %d, g_static_metadata_bytes+%d)'
     ) % (i, len(all_strs[i]), id2strofs[i])
 
 
@@ -446,13 +336,10 @@ def str_idx(s):
             return i
 
 
-# validate configuration
-for elem in METADATA_BATCH_CALLOUTS:
-    assert elem in all_strs
 static_slice_dest_assert = (
     'static_assert(std::is_trivially_destructible' +
     '<grpc_core::StaticMetadataSlice>::value, '
-    '"grpc_core::StaticMetadataSlice must be trivially destructible.");')
+    '"StaticMetadataSlice must be trivially destructible.");')
 print(static_slice_dest_assert, file=STR_H)
 print('#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs), file=STR_H)
 for i, elem in enumerate(all_strs):
@@ -475,7 +362,7 @@ extern const uint8_t g_static_metadata_bytes[];
 }
 ''',
       file=STR_H)
-print('grpc_slice_refcount grpc_core::StaticSliceRefcount::kStaticSubRefcount;',
+print('grpc_slice_refcount StaticSliceRefcount::kStaticSubRefcount;',
       file=STR_C)
 print('''
 StaticSliceRefcount
@@ -539,7 +426,7 @@ print('', file=STR_H)
 print('', file=STR_C)
 print('#define GRPC_STATIC_METADATA_INDEX(static_slice) \\', file=STR_H)
 print(
-    '(reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount)->index)',
+    '(reinterpret_cast<::grpc_core::StaticSliceRefcount*>((static_slice).refcount)->index)',
     file=STR_H)
 print('', file=STR_H)
 
@@ -668,75 +555,6 @@ print(
     file=MD_C)
 print('}', file=MD_C)
 print('', file=MD_C)
-
-print('typedef enum {', file=MD_H)
-for elem in METADATA_BATCH_CALLOUTS:
-    print('  %s,' % mangle(elem, 'batch').upper(), file=MD_H)
-print('  GRPC_BATCH_CALLOUTS_COUNT', file=MD_H)
-print('} grpc_metadata_batch_callouts_index;', file=MD_H)
-print('', file=MD_H)
-print('typedef union {', file=MD_H)
-print('  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];',
-      file=MD_H)
-print('  struct {', file=MD_H)
-for elem in METADATA_BATCH_CALLOUTS:
-    print('  struct grpc_linked_mdelem *%s;' % mangle(elem, '').lower(),
-          file=MD_H)
-print('  } named;', file=MD_H)
-print('} grpc_metadata_batch_callouts;', file=MD_H)
-print('', file=MD_H)
-
-batch_idx_of_hdr = '#define GRPC_BATCH_INDEX_OF(slice) \\'
-static_slice = 'GRPC_IS_STATIC_METADATA_STRING((slice))'
-slice_to_slice_ref = '(slice).refcount'
-static_slice_ref_type = 'grpc_core::StaticSliceRefcount*'
-slice_ref_as_static = ('reinterpret_cast<' + static_slice_ref_type + '>(' +
-                       slice_to_slice_ref + ')')
-slice_ref_idx = slice_ref_as_static + '->index'
-batch_idx_type = 'grpc_metadata_batch_callouts_index'
-slice_ref_idx_to_batch_idx = ('static_cast<' + batch_idx_type + '>(' +
-                              slice_ref_idx + ')')
-batch_invalid_idx = 'GRPC_BATCH_CALLOUTS_COUNT'
-batch_invalid_u32 = 'static_cast<uint32_t>(' + batch_invalid_idx + ')'
-# Assemble GRPC_BATCH_INDEX_OF(slice) macro as a join for ease of reading.
-batch_idx_of_pieces = [
-    batch_idx_of_hdr, '\n', '(', static_slice, '&&', slice_ref_idx, '<=',
-    batch_invalid_u32, '?', slice_ref_idx_to_batch_idx, ':', batch_invalid_idx,
-    ')'
-]
-print(''.join(batch_idx_of_pieces), file=MD_H)
-print('', file=MD_H)
-
-print('extern const uint8_t grpc_static_accept_encoding_metadata[%d];' %
-      (1 << len(COMPRESSION_ALGORITHMS)),
-      file=MD_H)
-print('const uint8_t grpc_static_accept_encoding_metadata[%d] = {' %
-      (1 << len(COMPRESSION_ALGORITHMS)),
-      file=MD_C)
-print('0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems),
-      file=MD_C)
-print('};', file=MD_C)
-print('', file=MD_C)
-
-print(
-    '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_core::g_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]].data(), GRPC_MDELEM_STORAGE_STATIC))',
-    file=MD_H)
-print('', file=MD_H)
-
-print('extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' %
-      (1 << len(STREAM_COMPRESSION_ALGORITHMS)),
-      file=MD_H)
-print('const uint8_t grpc_static_accept_stream_encoding_metadata[%d] = {' %
-      (1 << len(STREAM_COMPRESSION_ALGORITHMS)),
-      file=MD_C)
-print('0,%s' %
-      ','.join('%d' % md_idx(elem) for elem in stream_compression_elems),
-      file=MD_C)
-print('};', file=MD_C)
-
-print(
-    '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_core::g_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]].data(), GRPC_MDELEM_STORAGE_STATIC))',
-    file=MD_H)
 
 print('#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */', file=MD_H)
 print('#endif /* GRPC_CORE_LIB_SLICE_STATIC_SLICE_H */', file=STR_H)

@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/protocol.upbdefs.h"
+#include "envoy/config/core/v3/protocol.upb.h"
 
 extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
 extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
@@ -18,38 +19,6 @@ extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_TcpProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_QuicProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_AlternateProtocolsCacheOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_HttpProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_msginit;
-extern const upb_msglayout envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit;
-extern const upb_msglayout envoy_config_core_v3_KeepaliveSettings_msginit;
-extern const upb_msglayout envoy_config_core_v3_Http2ProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_msginit;
-extern const upb_msglayout envoy_config_core_v3_GrpcProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_Http3ProtocolOptions_msginit;
-extern const upb_msglayout envoy_config_core_v3_SchemeHeaderTransformation_msginit;
-
-static const upb_msglayout *layouts[14] = {
-  &envoy_config_core_v3_TcpProtocolOptions_msginit,
-  &envoy_config_core_v3_QuicProtocolOptions_msginit,
-  &envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit,
-  &envoy_config_core_v3_AlternateProtocolsCacheOptions_msginit,
-  &envoy_config_core_v3_HttpProtocolOptions_msginit,
-  &envoy_config_core_v3_Http1ProtocolOptions_msginit,
-  &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_msginit,
-  &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_msginit,
-  &envoy_config_core_v3_KeepaliveSettings_msginit,
-  &envoy_config_core_v3_Http2ProtocolOptions_msginit,
-  &envoy_config_core_v3_Http2ProtocolOptions_SettingsParameter_msginit,
-  &envoy_config_core_v3_GrpcProtocolOptions_msginit,
-  &envoy_config_core_v3_Http3ProtocolOptions_msginit,
-  &envoy_config_core_v3_SchemeHeaderTransformation_msginit,
-};
-
 static const char descriptor[5660] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'p', 'r', 
 'o', 't', 'o', 'c', 'o', 'l', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 
 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '$', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 
@@ -294,7 +263,7 @@ static upb_def_init *deps[10] = {
 
 upb_def_init envoy_config_core_v3_protocol_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_protocol_proto_upb_file_layout,
   "envoy/config/core/v3/protocol.proto",
   UPB_STRVIEW_INIT(descriptor, 5660)
 };

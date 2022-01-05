@@ -28,8 +28,6 @@ RUN apt-get update && apt-get install -y \
       pkg-config \
       unzip && apt-get clean
 
-RUN apt-get update && apt-get install -y golang && apt-get clean
-
 RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
