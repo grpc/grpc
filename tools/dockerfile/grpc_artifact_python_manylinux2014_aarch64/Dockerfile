@@ -31,3 +31,13 @@ RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
 # see https://github.com/dockcross/dockcross/blob/4349cb4999401cbf22a90f46f5052d29be240e50/manylinux2014-aarch64/Dockerfile.in#L23
 ENV STRIP=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-strip \
     OBJCOPY=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-objcopy
+
+# Use ccache for gcc and g++ invocations
+RUN yum update -y && yum install -y ccache
+RUN mkdir -p /ccache/bin
+RUN ln -s /usr/bin/ccache /ccache/bin/${CROSS_TRIPLE}-gcc
+RUN ln -s /usr/bin/ccache /ccache/bin/${CROSS_TRIPLE}-g++
+ENV PATH "/ccache/bin:$PATH"
+# TODO: add explainer
+ENV CC ${CROSS_TRIPLE}-gcc
+ENV CPP ${CROSS_TRIPLE}-cpp

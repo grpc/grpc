@@ -26,8 +26,17 @@ RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.6.13" "3.6.13" /opt
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.7.10" "3.7.10" /opt/python/cp37-cp37m
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.8.8" "3.8.8" /opt/python/cp38-cp38
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.2" "3.9.2" /opt/python/cp39-cp39
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.2" "3.9.2" /opt/python/cp39-cp39
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.0" "3.10.0rc1" /opt/python/cp310-cp310
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
+
+# Use ccache for gcc and g++ invocations
+RUN apt update -y && apt install -y ccache
+RUN mkdir -p /ccache/bin
+RUN ln -s /usr/bin/ccache /ccache/bin/${CROSS_TRIPLE}-gcc
+RUN ln -s /usr/bin/ccache /ccache/bin/${CROSS_TRIPLE}-g++
+ENV PATH "/ccache/bin:$PATH"
+# TODO: add explainer
+ENV CC ${CROSS_TRIPLE}-gcc
+ENV CPP ${CROSS_TRIPLE}-cpp
