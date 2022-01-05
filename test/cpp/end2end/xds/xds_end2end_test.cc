@@ -626,15 +626,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
 
    private:
-    struct PluginConfig {
-      std::string certificate_file;
-      std::string private_key_file;
-      std::string ca_certificate_file;
-    };
     struct PluginInfo {
       std::string name;
       std::string plugin_config;
-      PluginConfig config;
     };
     struct AuthorityInfo {
       std::string server;
@@ -2602,7 +2596,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   StartAllBackends();
   // Eds for the new authority balancer.
   EdsResourceArgs args =
-      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 2)}});
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   authority_balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, kNewEdsServiceName));
   // New cluster
@@ -2623,11 +2617,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   listener.set_name(kNewListenerName);
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
-  // RPCs sent using current stub (without authority) should be
-  // following client_default_listener_resource_name_template which gives us an
-  // authority and a xds server to use within that authority. Note we do not use
-  // the client_listener_resource_name_template field.
-  WaitForAllBackends(0, 2);
+  WaitForAllBackends();
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
@@ -2812,7 +2802,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   StartAllBackends();
   // Eds for new authority balancer.
   EdsResourceArgs args =
-      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 2)}});
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   authority_balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, kNewEdsServiceName));
   // New cluster
@@ -2843,15 +2833,7 @@ TEST_P(XdsFederationTest, FederationServer) {
         port);
     authority_balancer_->ads_service()->SetLdsResource(server_listener);
   }
-  // RPCs sent using current stub (without
-  // authority) should be
-  // following client_default_listener_resource_name_template which gives us an
-  // authority and a xds server to use within that authority. Note we do not use
-  // the client_listener_resource_name_template field.
-  // Furthermore, we enabled server xds and only balancer 1 has the server
-  // listener resources requested by the resources specified in
-  // server_listener_resource_name_template.
-  WaitForAllBackends(0, 2);
+  WaitForAllBackends();
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
