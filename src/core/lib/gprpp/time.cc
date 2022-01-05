@@ -98,7 +98,8 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
 }  // namespace
 
 Timestamp::Timestamp(gpr_timespec ts)
-    : millis_(TimespanToMillisRoundUp(gpr_time_sub(ts, StartTime()))) {}
+    : millis_(TimespanToMillisRoundUp(gpr_time_sub(
+          gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime()))) {}
 
 Timestamp Timestamp::FromCycleCounterRoundUp(gpr_cycle_counter c) {
   return Timestamp(gpr_cycle_counter_sub(c, StartCycleCounter()));
