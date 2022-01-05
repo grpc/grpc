@@ -73,6 +73,11 @@ argp.add_argument('-x',
                   default='report_taskrunner_sponge_log.xml',
                   type=str,
                   help='Filename for the JUnit-compatible XML report')
+argp.add_argument('--dry_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Only print what would be run.')
 
 args = argp.parse_args()
 
@@ -84,6 +89,15 @@ for label in args.build:
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
 targets = sorted(set(targets), key=lambda target: target.name)
+
+print('Will build these targets:')
+for target in targets:
+    print('  %s, labels %s' % (target.name, target.labels))
+print()
+
+if args.dry_run:
+    print('--dry_run was used, exiting')
+    sys.exit(1)
 
 # Execute pre-build phase
 prebuild_jobs = []
