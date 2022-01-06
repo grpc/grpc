@@ -89,7 +89,7 @@ struct Rbac {
     // element.
     std::vector<std::unique_ptr<Permission>> permissions;
     // For kMetadata
-    bool invert;
+    bool invert = false;
   };
 
   struct Principal {
@@ -137,7 +137,7 @@ struct Rbac {
     // element.
     std::vector<std::unique_ptr<Principal>> principals;
     // For kMetadata
-    bool invert;
+    bool invert = false;
   };
 
   struct Policy {
