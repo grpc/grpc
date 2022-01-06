@@ -5861,7 +5861,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -5880,7 +5879,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
@@ -6934,7 +6932,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6953,7 +6950,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/pipe_test.cc
   deps:
   - absl/status:statusor
