@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H
+#ifndef GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
+#define GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,13 +25,18 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/uri/uri_parser.h"
 
+typedef struct grpc_pollset_set grpc_pollset_set;
+
 namespace grpc_core {
+
+// TODO(yashkt): Move WorkSerializer to its own Bazel target, depend on that
+// target from this one, and remove this forward declaration.
+class WorkSerializer;
 
 struct ResolverArgs {
   /// The parsed URI to resolve.
@@ -72,4 +77,4 @@ class ResolverFactory {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FACTORY_H */
+#endif /* GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H */

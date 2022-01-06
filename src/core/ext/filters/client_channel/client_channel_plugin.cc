@@ -32,11 +32,11 @@
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 
 void grpc_client_channel_init(void) {
   grpc_core::internal::ClientChannelServiceConfigParser::Register();
