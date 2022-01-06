@@ -629,28 +629,35 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        tests_json = []
-        for tests_json_file_name in self._TEST_SPECS_FILE[
-                self.args.iomgr_platform]:
-            with open(tests_json_file_name) as tests_json_file:
-                tests_json.extend(json.load(tests_json_file))
-        environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-        # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
-        # designed for non-native IO manager. It has a side-effect that
-        # overrides threading settings in C-Core.
-        if args.iomgr_platform != 'native':
-            environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
-        return [
-            self.config.job_spec(
-                config.run,
-                timeout_seconds=8 * 60,
-                environ=dict(GRPC_PYTHON_TESTRUNNER_FILTER=str(suite_name),
-                             **environment),
-                shortname='%s.%s.%s' %
-                (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
-                 suite_name),
-            ) for suite_name in tests_json for config in self.pythons
-        ]
+        all_tests_json = dict()
+        for flavor in self._TEST_SPECS_FILE.keys():
+            tests_json = []
+            for tests_json_file_name in self._TEST_SPECS_FILE[flavor]:
+                with open(tests_json_file_name) as tests_json_file:
+                    tests_json.extend(json.load(tests_json_file))
+            all_tests_json[flavor] = tests_json
+
+        tests = []
+        for config in self.pythons:
+            for flavor in self._TEST_SPECS_FILE.keys():
+                for suite_name in all_tests_json[flavor]:
+                    environ = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+                    environ['GRPC_PYTHON_TESTRUNNER_FILTER'] = str(suite_name)
+                    # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
+                    # designed for non-native IO manager. It has a side-effect that
+                    # overrides threading settings in C-Core.
+                    if flavor != 'native':
+                        environ['GRPC_ENABLE_FORK_SUPPORT'] = '0'
+                    tests.append(
+                        self.config.job_spec(
+                            config.run,
+                            timeout_seconds=8 * 60,
+                            environ=environ,
+                            shortname='%s.%s.%s' %
+                            (config.name, self._TEST_FOLDER[flavor],
+                             suite_name),
+                        ))
+        return tests
 
     def pre_build_steps(self):
         return []
