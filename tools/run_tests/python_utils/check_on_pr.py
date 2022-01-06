@@ -130,6 +130,12 @@ def check_on_pr(name, summary, success=True):
     if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
         print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
         return
+    MAX_SUMMARY_LEN = 65400
+    if len(summary) > MAX_SUMMARY_LEN:
+        # Drop some hints to the log should someone come looking for what really happened!
+        print('Clipping too long summary')
+        print(summary)
+        summary = summary[:MAX_SUMMARY_LEN] + '\n\n\n... CLIPPED (too long)'
     completion_time = str(
         datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
     resp = _call('/repos/%s/check-runs' % _GITHUB_REPO,

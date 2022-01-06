@@ -47,7 +47,7 @@ class URI {
   static absl::StatusOr<URI> Parse(absl::string_view uri_text);
   // Explicit construction by individual URI components
   URI(std::string scheme, std::string authority, std::string path,
-      std::vector<QueryParam> query_parameter_pairs, std::string fragment_);
+      std::vector<QueryParam> query_parameter_pairs, std::string fragment);
   URI() = default;
   // Copy construction and assignment
   URI(const URI& other);
@@ -56,6 +56,7 @@ class URI {
   URI(URI&&) = default;
   URI& operator=(URI&&) = default;
 
+  static std::string PercentEncode(absl::string_view str);
   static std::string PercentDecode(absl::string_view str);
 
   const std::string& scheme() const { return scheme_; }

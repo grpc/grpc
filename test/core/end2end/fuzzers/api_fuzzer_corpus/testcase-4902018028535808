@@ -1,0 +1,35 @@
+actions {
+  create_channel {
+    target: "unix:"
+    channel_actions {
+      add_n_bytes_writable: 42932895744
+      add_n_bytes_readable: 34359738368
+    }
+  }
+}
+actions {
+  create_call {
+    propagation_mask: 9869440
+    method {
+      value: "v"
+      intern: true
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+        metadata {
+          key {
+            value: "content-type"
+          }
+          value {
+            value: "u-bin"
+          }
+        }
+      }
+    }
+  }
+}
