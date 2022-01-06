@@ -130,6 +130,19 @@ class Fuzzer {
         from->std.swap(to->std);
         from->AssertOk();
       } break;
+      case chunked_vector_fuzzer::Action::kRemoveIf: {
+        // Apply std::remove_if to a vector, assert that underlying vectors
+        // remain equivalent.
+        auto cond = [&](const IntHdl& hdl) {
+          return *hdl == action.remove_if().value();
+        };
+        auto* c = Mutate(action.remove_if().vector());
+        c->chunked.SetEnd(
+            std::remove_if(c->chunked.begin(), c->chunked.end(), cond));
+        c->std.erase(std::remove_if(c->std.begin(), c->std.end(), cond),
+                     c->std.end());
+        c->AssertOk();
+      }
       case chunked_vector_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
     }
