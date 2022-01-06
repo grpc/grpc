@@ -144,14 +144,23 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   }
 
   // Get the latest response state for each resource type.
-  ResponseState GetResponseState(const std::string& type_url) {
+  ResponseState GetResponseState(const std::string& type_url,
+                                 const std::string& resource_name) {
     grpc_core::MutexLock lock(&ads_mu_);
-    return resource_type_response_state_[type_url];
+    return resource_type_response_state_[type_url][resource_name];
   }
-  ResponseState lds_response_state() { return GetResponseState(kLdsTypeUrl); }
-  ResponseState rds_response_state() { return GetResponseState(kRdsTypeUrl); }
-  ResponseState cds_response_state() { return GetResponseState(kCdsTypeUrl); }
-  ResponseState eds_response_state() { return GetResponseState(kEdsTypeUrl); }
+  ResponseState lds_response_state() {
+    return GetResponseState(kLdsTypeUrl, "");
+  }
+  ResponseState rds_response_state(const std::string& resource_name) {
+    return GetResponseState(kRdsTypeUrl, resource_name);
+  }
+  ResponseState cds_response_state() {
+    return GetResponseState(kCdsTypeUrl, "");
+  }
+  ResponseState eds_response_state(const std::string& resource_name) {
+    return GetResponseState(kEdsTypeUrl, resource_name);
+  }
 
   // Starts the service.
   void Start();
@@ -187,6 +196,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   struct SentState {
     int nonce = 0;
     int resource_type_version = 0;
+    std::map<int /* nonce */, std::set<std::string> /* resource names */>
+        resources_sent_map;
   };
 
   // A struct representing the current state for an individual resource.
@@ -387,27 +398,38 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       } else {
         int client_nonce;
         GPR_ASSERT(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
-        // Ignore requests with stale nonces.
-        if (client_nonce < sent_state->nonce) return;
         // Check for ACK or NACK.
         auto it = parent_->resource_type_response_state_.find(v3_resource_type);
         if (it != parent_->resource_type_response_state_.end()) {
-          if (!request.has_error_detail()) {
-            it->second.state = ResponseState::ACKED;
-            it->second.error_message.clear();
-            gpr_log(GPR_INFO,
-                    "ADS[%p]: client ACKed resource_type=%s version=%s", this,
-                    request.type_url().c_str(), request.version_info().c_str());
+          auto update_response_state = [&](const std::string& resource_name) {
+            auto& response_state = it->second[resource_name];
+            if (!request.has_error_detail()) {
+              response_state.state = ResponseState::ACKED;
+              response_state.error_message.clear();
+              gpr_log(GPR_INFO,
+                      "ADS[%p]: client ACKed resource_type=%s version=%s", this,
+                      request.type_url().c_str(),
+                      request.version_info().c_str());
+            } else {
+              response_state.state = ResponseState::NACKED;
+              EXPECT_EQ(request.error_detail().code(),
+                        GRPC_STATUS_INVALID_ARGUMENT);
+              response_state.error_message = request.error_detail().message();
+              gpr_log(GPR_INFO,
+                      "ADS[%p]: client NACKed resource_type=%s version=%s: %s",
+                      this, request.type_url().c_str(),
+                      request.version_info().c_str(),
+                      response_state.error_message.c_str());
+            }
+          };
+          if (v3_resource_type == kLdsTypeUrl ||
+              v3_resource_type == kCdsTypeUrl) {
+            update_response_state("");
           } else {
-            it->second.state = ResponseState::NACKED;
-            EXPECT_EQ(request.error_detail().code(),
-                      GRPC_STATUS_INVALID_ARGUMENT);
-            it->second.error_message = request.error_detail().message();
-            gpr_log(GPR_INFO,
-                    "ADS[%p]: client NACKed resource_type=%s version=%s: %s",
-                    this, request.type_url().c_str(),
-                    request.version_info().c_str(),
-                    it->second.error_message.c_str());
+            for (const std::string& resource_name :
+                 sent_state->resources_sent_map[client_nonce]) {
+              update_response_state(resource_name);
+            }
           }
         }
       }
@@ -536,14 +558,28 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         SentState* sent_state, DiscoveryResponse* response)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
       NoopMutexLock mu(parent_->ads_mu_);
-      auto& response_state =
-          parent_->resource_type_response_state_[resource_type];
-      if (response_state.state == ResponseState::NOT_SENT) {
-        response_state.state = ResponseState::SENT;
+      auto update_response_state =
+          [&](const std::string resource_name)
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->ads_mu_) {
+                auto& response_state =
+                    parent_->resource_type_response_state_[resource_type]
+                                                          [resource_name];
+                if (response_state.state == ResponseState::NOT_SENT) {
+                  response_state.state = ResponseState::SENT;
+                }
+              };
+      if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
+        update_response_state("");
+      } else {
+        for (const std::string& resource_name : resources_added_to_response) {
+          update_response_state(resource_name);
+        }
       }
       response->set_type_url(is_v2_ ? v2_resource_type : resource_type);
       response->set_version_info(std::to_string(version));
       response->set_nonce(std::to_string(++sent_state->nonce));
+      sent_state->resources_sent_map[sent_state->nonce] =
+          resources_added_to_response;
       if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl) {
         // For LDS and CDS we must send back all subscribed resources
         // (even the unchanged ones)
@@ -643,7 +679,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
   bool ads_done_ ABSL_GUARDED_BY(ads_mu_) = false;
-  std::map<std::string /* type_url */, ResponseState>
+  std::map<std::string /* type_url */,
+           std::map<std::string /* resource_name */, ResponseState>>
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
       ABSL_GUARDED_BY(ads_mu_);
