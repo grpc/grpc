@@ -29,7 +29,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 source tools/internal_ci/helper_scripts/prepare_qemu_rc
 
 # Build all python linux artifacts (this step actually builds all the binary wheels and source archives)
-tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 4 --inner_jobs 8 -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts

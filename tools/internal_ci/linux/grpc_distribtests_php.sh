@@ -24,7 +24,7 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # Build all PHP linux artifacts
-tools/run_tests/task_runner.py -f artifact linux php ${TASK_RUNNER_EXTRA_FILTERS} -j 4 -x build_artifacts/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux php ${TASK_RUNNER_EXTRA_FILTERS} -j 4 --inner_jobs 8 -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts
