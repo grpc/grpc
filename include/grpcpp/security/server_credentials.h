@@ -58,11 +58,6 @@ struct SslServerCredentialsOptions {
   /// \a REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
   /// will be enforced.
   grpc_ssl_client_certificate_request_type client_certificate_request;
-
-  // If set, gRPC will read all hashed x.509 CRL files in the directory and
-  // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
-  // version > 1.1.
-  std::string crl_directory;
 };
 
 /// Builds Xds ServerCredentials given fallback credentials
