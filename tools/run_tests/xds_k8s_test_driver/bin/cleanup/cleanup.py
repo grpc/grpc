@@ -235,6 +235,11 @@ def cleanup_server(project, network, k8s_api_manager, resource_prefix,
 
 
 td_resource_rules = [
+    # itmes in each tuple, in order
+    # - regex to match
+    # - prefix of the resource (only used by gke resources)
+    # - function to check of the resource should be kept
+    # - function to delete the resource
     (r'test-hc(.*)', '', is_marked_as_keep_gce, remove_relative_resources_run_xds_tests),
     (f'{PSM_SECURITY_PREFIX}-health-check-(.*)', PSM_SECURITY_PREFIX, is_marked_as_keep_gke, cleanup_td_for_gke),
     (r'test-template(.*)', '', is_marked_as_keep_gce, remove_relative_resources_run_xds_tests),
@@ -260,7 +265,36 @@ def delete_leaked_td_resources(dry_run, project, network, resources):
         if not matched:
             logging.info('----- Skipped [does not matching resource name templates]')
 
+k8s_resource_rules = [
+    # items in each tuple, in order
+    # - regex to match
+    # - prefix of the resources
+    # - function to delete the resource
+    (f'{PSM_SECURITY_PREFIX}-server-(.*)', PSM_SECURITY_PREFIX, cleanup_server),
+    (f'{PSM_SECURITY_PREFIX}-client-(.*)', PSM_SECURITY_PREFIX, cleanup_client),
+    (f'{URL_MAP_TEST_PREFIX}-client-(.*)', URL_MAP_TEST_PREFIX, cleanup_client),
+]
+def delete_k8s_resources(dry_run, project, network, k8s_api_manager, gcp_service_account, namespaces):
+    for ns in namespaces:
+        logger.info('-----')
+        logger.info('----- Cleaning up k8s namespaces %s', ns.metadata.name)
+        if ns.metadata.creation_timestamp <= utc.localize(
+                get_expire_timestamp()):
+            if dry_run:
+                # Skip deletion for dry-runs
+                logging.info('----- Skipped [Dry Run]: %s', ns.metadata.name)
+                continue
 
+            matched = False
+            for (regex, resource_prefix, remove) in k8s_resource_rules:
+                result = re.search(regex, ns.metadata.name)
+                if result is not None:
+                    matched = True
+                    remove(project, network, k8s_api_manager, resource_prefix, result.group(1), gcp_service_account)
+                    break
+            if not matched:
+                logging.info(
+                '----- Skipped [does not matching resource name templates]')
 
 def main(argv):
     if len(argv) > 1:
@@ -295,43 +329,7 @@ def main(argv):
     # client/servers from the gke framework.
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
     nss = k8s_api_manager.core.list_namespace()
-    for ns in nss.items:
-        logger.info('-----')
-        logger.info('----- Cleaning up k8s namespaces %s', ns.metadata.name)
-        if ns.metadata.creation_timestamp <= utc.localize(
-                get_expire_timestamp()):
-            if dry_run:
-                # Skip deletion for dry-runs
-                logging.info('----- Skipped [Dry Run]: %s', ns.metadata.name)
-                continue
-
-            result = re.search(f'{PSM_SECURITY_PREFIX}-server-(.*)',
-                               ns.metadata.name)
-            if result is not None:
-                cleanup_server(project, network,
-                               k8s_api_manager, PSM_SECURITY_PREFIX,
-                               result.group(1), gcp_service_account)
-                continue
-
-            result = re.search(f'{PSM_SECURITY_PREFIX}-client-(.*)',
-                               ns.metadata.name)
-            if result is not None:
-                cleanup_client(project, network,
-                               k8s_api_manager, PSM_SECURITY_PREFIX,
-                               result.group(1), gcp_service_account)
-                continue
-
-            # Special handling for url-map test clients. url-map test servers
-            # are shared, so there's no need to delete them.
-            result = re.search(f'{URL_MAP_TEST_PREFIX}-client-(.*)',
-                               ns.metadata.name)
-            if result is not None:
-                cleanup_client(project, network,
-                               k8s_api_manager, URL_MAP_TEST_PREFIX,
-                               result.group(1), gcp_service_account)
-                continue
-            logging.info(
-                '----- Skipped [does not matching resource name templates]')
+    delete_k8s_resources(dry_run, project, network, k8s_api_manager, gcp_service_account, nss.items)
 
 
 if __name__ == '__main__':
