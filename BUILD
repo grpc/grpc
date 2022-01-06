@@ -1375,6 +1375,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "arena",
         "gpr_platform",
         "intra_activity_waiter",
     ],
