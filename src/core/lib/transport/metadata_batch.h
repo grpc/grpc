@@ -927,9 +927,25 @@ class MetadataMap {
   //  auto value = m.get(T());
   //  m.Remove(T());
   template <typename Which>
-  absl::optional<typename Which::ValueType> Take(Which which) {
+  absl::enable_if_t<Which::kRepeatable == false,
+                    absl::optional<typename Which::ValueType>>
+  Take(Which which) {
     if (auto* p = get_pointer(which)) {
       absl::optional<typename Which::ValueType> value(std::move(*p));
+      Remove(which);
+      return value;
+    }
+    return {};
+  }
+
+  // Extract repeated known metadata.
+  // Returns an empty vector if the metadata was not present.
+  template <typename Which>
+  absl::enable_if_t<Which::kRepeatable == true,
+                    typename metadata_detail::Value<Which>::StorageType>
+  Take(Which which) {
+    if (auto* p = get_pointer(which)) {
+      typename Value<Which>::StorageType value = std::move(*p);
       Remove(which);
       return value;
     }

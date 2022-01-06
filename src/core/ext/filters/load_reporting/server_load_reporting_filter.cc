@@ -117,13 +117,13 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
     op->set_recv_initial_metadata_ready(&recv_initial_metadata_ready_);
   }
   if (op->send_trailing_metadata() != nullptr) {
-    auto cost = op->send_trailing_metadata()->batch()->Take(
+    const auto& costs = op->send_trailing_metadata()->batch()->Take(
         grpc_core::LbCostBinMetadata());
-    if (cost.has_value()) {
+    for (const auto& cost : costs) {
       ServerLoadReportingChannelData* chand =
           reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
       opencensus::stats::Record(
-          {{::grpc::load_reporter::MeasureOtherCallMetric(), cost->cost}},
+          {{::grpc::load_reporter::MeasureOtherCallMetric(), cost.cost}},
           {{::grpc::load_reporter::TagKeyToken(),
             {client_ip_and_lr_token_, client_ip_and_lr_token_len_}},
            {::grpc::load_reporter::TagKeyHost(),
@@ -131,7 +131,7 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
            {::grpc::load_reporter::TagKeyUserId(),
             {chand->peer_identity(), chand->peer_identity_len()}},
            {::grpc::load_reporter::TagKeyMetricName(),
-            {cost->name.data(), cost->name.length()}}});
+            {cost.name.data(), cost.name.length()}}});
     }
   }
   grpc_call_next_op(elem, op->op());
