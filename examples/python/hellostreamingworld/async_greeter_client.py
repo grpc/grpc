@@ -17,7 +17,6 @@ import asyncio
 import logging
 
 import grpc
-
 import hellostreamingworld_pb2
 import hellostreamingworld_pb2_grpc
 
@@ -28,13 +27,13 @@ async def run() -> None:
 
         # Read from an async generator
         async for response in stub.sayHello(
-            hellostreamingworld_pb2.HelloRequest(name="you")
-        ):
+            hellostreamingworld_pb2.HelloRequest(name="you")):
             print("Greeter client received from async generator: " +
                   response.message)
 
         # Direct read from the stub
-        hello_stream = stub.sayHello(hellostreamingworld_pb2.HelloRequest(name="you"))
+        hello_stream = stub.sayHello(
+            hellostreamingworld_pb2.HelloRequest(name="you"))
         while True:
             response = await hello_stream.read()
             if response == grpc.aio.EOF:
