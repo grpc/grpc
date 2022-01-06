@@ -120,7 +120,7 @@ def exec_gcloud(project: str, *cmds: List[str]) -> Json:
     return None
 
 
-def remove_relative_resources_run_xds_tests(project: str, suffix: str):
+def remove_relative_resources_run_xds_tests(project: str, network: str, prefix: str, suffix: str):
     """Removing GCP resources created by run_xds_tests.py."""
     logging.info('----- Removing run_xds_tests.py resources with suffix [%s]',
                  suffix)
@@ -234,6 +234,34 @@ def cleanup_server(project, network, k8s_api_manager, resource_prefix,
     server_runner.cleanup(force=True, force_namespace=True)
 
 
+td_resource_rules = [
+    (r'test-hc(.*)', '', is_marked_as_keep_gce, remove_relative_resources_run_xds_tests),
+    (f'{PSM_SECURITY_PREFIX}-health-check-(.*)', PSM_SECURITY_PREFIX, is_marked_as_keep_gke, cleanup_td_for_gke),
+    (r'test-template(.*)', '', is_marked_as_keep_gce, remove_relative_resources_run_xds_tests),
+]
+def delete_leaked_td_resources(dry_run, project, network, resources):
+    for resource in resources:
+        logger.info('-----')
+        logger.info('----- Cleaning up resource %s', resource['name'])
+        if dry_run:
+            # Skip deletion for dry-runs
+            logging.info('----- Skipped [Dry Run]: %s', resource['name'])
+            continue
+        matched = False
+        for (regex, resource_prefix, keep, remove) in td_resource_rules:
+            result = re.search(regex, resource['name'])
+            if result is not None:
+                matched = True
+                if keep(result.group(1)):
+                    logging.info('Skipped [keep]:')
+                    break # break inner loop, continue outer loop
+                remove(project, network, resource_prefix, result.group(1))
+            break
+        if not matched:
+            logging.info('----- Skipped [does not matching resource name templates]')
+
+
+
 def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
@@ -254,67 +282,14 @@ def main(argv):
     # forwarding-rule.
     leakedHealthChecks = exec_gcloud(project, 'compute', 'health-checks',
                                      'list')
-    for resource in leakedHealthChecks:
-        logger.info('-----')
-        logger.info('----- Cleaning up health check %s', resource['name'])
-        if dry_run:
-            # Skip deletion for dry-runs
-            logging.info('----- Skipped [Dry Run]: %s', resource['name'])
-            continue
-
-        # Cleanup resources from the gce framewok.
-        result = re.search(r'test-hc(.*)', resource['name'])
-        if result is not None:
-            if is_marked_as_keep_gce(result.group(1)):
-                logging.info(
-                    'Skipped [keep]: GCE resource suffix [%s] is marked as keep',
-                    result.group(1))
-                continue
-            remove_relative_resources_run_xds_tests(project, result.group(1))
-            continue
-
-        # Cleanup resources from the gke framework.
-        result = re.search(f'{PSM_SECURITY_PREFIX}-health-check-(.*)',
-                           resource['name'])
-        if result is not None:
-            if is_marked_as_keep_gke(result.group(1)):
-                logging.info(
-                    'Skipped [keep]: GKE resource suffix [%s] is marked as keep',
-                    result.group(1))
-                continue
-            cleanup_td_for_gke(project, network, PSM_SECURITY_PREFIX,
-                               result.group(1))
-            continue
-
-        logging.info(
-            '----- Skipped [does not matching resource name templates]')
+    delete_leaked_td_resources(dry_run, project, network, leakedHealthChecks)
 
     # Delete leaked instance templates, those usually mean there are leaked VMs
     # from the gce framework. Also note that this is only needed for the gce
     # resources.
     leakedInstanceTemplates = exec_gcloud(project, 'compute',
                                           'instance-templates', 'list')
-    for resource in leakedInstanceTemplates:
-        logger.info('-----')
-        logger.info('----- Cleaning up instance template %s', resource['name'])
-        if dry_run:
-            # Skip deletion for dry-runs
-            logging.info('----- Skipped [Dry Run]: %s', resource['name'])
-            continue
-
-        # Cleanup resources from the gce framewok.
-        result = re.search(r'test-template(.*)', resource['name'])
-        if result is not None:
-            if is_marked_as_keep_gce(result.group(1)):
-                logging.info(
-                    'Skipped [keep]: GCE resource suffix [%s] is marked as keep',
-                    result.group(1))
-                continue
-            remove_relative_resources_run_xds_tests(project, result.group(1))
-            continue
-
-        logging.info(
-            '----- Skipped [does not matching resource name templates]')
+    delete_leaked_td_resources(dry_run, project, network, leakedInstanceTemplates)
 
     # Delete leaked k8s namespaces, those usually mean there are leaked testing
     # client/servers from the gke framework.
