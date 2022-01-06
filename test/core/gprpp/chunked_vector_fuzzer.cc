@@ -142,7 +142,7 @@ class Fuzzer {
         c->std.erase(std::remove_if(c->std.begin(), c->std.end(), cond),
                      c->std.end());
         c->AssertOk();
-      }
+      } break;
       case chunked_vector_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
     }
