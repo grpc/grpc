@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
+#ifndef GRPC_CORE_LIB_RESOLVER_RESOLVER_H
+#define GRPC_CORE_LIB_RESOLVER_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -23,12 +23,10 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/service_config/service_config.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 
@@ -134,4 +132,4 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
+#endif  // GRPC_CORE_LIB_RESOLVER_RESOLVER_H

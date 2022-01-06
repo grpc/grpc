@@ -60,6 +60,7 @@ struct grpc_tls_credentials_options
   const std::string& root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
   const std::string& identity_cert_name() { return identity_cert_name_; }
+  const std::string& crl_directory() { return crl_directory_; }
 
   // Setters for member fields.
   void set_cert_request_type(
@@ -112,6 +113,11 @@ struct grpc_tls_credentials_options
     identity_cert_name_ = std::move(identity_cert_name);
   }
 
+  // gRPC will enforce CRLs on all handshakes from all hashed CRL files inside
+  // of the crl_directory. If not set, an empty string will be used, which will
+  // not enable CRL checking. Only supported for OpenSSL version > 1.1.
+  void set_crl_directory(std::string path) { crl_directory_ = std::move(path); }
+
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
@@ -125,6 +131,7 @@ struct grpc_tls_credentials_options
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
+  std::string crl_directory_;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H
