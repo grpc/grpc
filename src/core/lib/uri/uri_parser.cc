@@ -37,12 +37,12 @@ namespace grpc_core {
 
 namespace {
 
-// Returns true for any character not allowed in a URI path, as defined in:
+// Returns true for any character in pchar, as defined in:
 // https://datatracker.ietf.org/doc/html/rfc3986#section-3.3
-bool ShouldEscape(unsigned char c) {
+bool IsPChar(char c) {
   if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
       (c >= '0' && c <= '9')) {
-    return false;
+    return true;
   }
   switch (c) {
     case '-':
@@ -62,20 +62,22 @@ bool ShouldEscape(unsigned char c) {
     case '=':
     case ':':
     case '@':
-    case '/':
-      return false;
+      return true;
   }
-  return true;
+  return false;
 }
+
+// Returns true for any character allowed in a URI path, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-3.3
+bool IsPathChar(char c) { return IsPChar(c) || c == '/'; }
 
 // Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
 // See https://tools.ietf.org/html/rfc3986#section-3.4
-bool IsPCharString(absl::string_view str) {
-  return (str.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                "abcdefghijklmnopqrstuvwxyz"
-                                "0123456789"
-                                "?/:@\\-._~!$&'()*+,;=%") ==
-          absl::string_view::npos);
+bool IsQueryOrFragmentString(absl::string_view str) {
+  for (char c : str) {
+    if (!IsPathChar(c) && c != '?' && c != '%') return false;
+  }
+  return true;
 }
 
 absl::Status MakeInvalidURIStatus(absl::string_view part_name,
@@ -87,10 +89,10 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
 
 }  // namespace
 
-std::string URI::PercentEncode(absl::string_view str) {
+std::string URI::PercentEncodePath(absl::string_view str) {
   std::string out;
   for (const char c : str) {
-    if (ShouldEscape(c)) {
+    if (!IsPathChar(c)) {
       std::string hex = absl::BytesToHexString(absl::string_view(&c, 1));
       GPR_ASSERT(hex.size() == 2);
       out.push_back('%');
@@ -173,7 +175,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
     if (tmp_query.empty()) {
       return MakeInvalidURIStatus("query", uri_text, "Invalid query string.");
     }
-    if (!IsPCharString(tmp_query)) {
+    if (!IsQueryOrFragmentString(tmp_query)) {
       return MakeInvalidURIStatus("query string", uri_text,
                                   "Query string contains invalid characters.");
     }
@@ -189,7 +191,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string fragment;
   if (!remaining.empty() && remaining[0] == '#') {
     remaining.remove_prefix(1);
-    if (!IsPCharString(remaining)) {
+    if (!IsQueryOrFragmentString(remaining)) {
       return MakeInvalidURIStatus("fragment", uri_text,
                                   "Fragment contains invalid characters.");
     }
