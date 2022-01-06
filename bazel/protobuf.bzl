@@ -145,6 +145,29 @@ def get_plugin_args(
         ),
     ]
 
+def _make_prefix(label):
+    """Returns the directory prefix for a label.
+
+    @repo//foo/bar:sub/dir/file.proto  =>  'external/repo/foo/bar/'
+    //foo/bar:sub/dir/file.proto       =>  'foo/bar/'
+    //:sub/dir/file.proto              =>  ''
+
+    That is, the prefix can be removed from a file's full path to
+    obtain the file's relative location within the package's effective
+    directory."""
+
+    wsr = label.workspace_root
+    pkg = label.package
+
+    if not wsr and not pkg:
+        return ""
+    elif not wsr:
+        return pkg + "/"
+    elif not pkg:
+        return wsr + "/"
+    else:
+        return wsr + "/" + pkg + "/"
+
 def get_staged_proto_file(label, context, source_file):
     """Copies a proto file to the appropriate location if necessary.
 
@@ -163,7 +186,8 @@ def get_staged_proto_file(label, context, source_file):
     else:
         # Current target and source_file are in different packages (most
         # probably even in different repositories)
-        copied_proto = context.actions.declare_file(source_file.basename)
+        prefix = _make_prefix(source_file.owner)
+        copied_proto = context.actions.declare_file(source_file.path[len(prefix):])
         context.actions.run_shell(
             inputs = [source_file],
             outputs = [copied_proto],
@@ -236,10 +260,14 @@ def declare_out_files(protos, context, generated_file_format):
     out_file_paths = []
     for proto in protos:
         if not is_in_virtual_imports(proto):
-            out_file_paths.append(proto.basename)
+            prefix = _make_prefix(proto.owner)
+            full_prefix = context.genfiles_dir.path + "/" + prefix
+            if proto.path.startswith(full_prefix):
+                out_file_paths.append(proto.path[len(full_prefix):])
+            elif proto.path.startswith(prefix):
+                out_file_paths.append(proto.path[len(prefix):])
         else:
-            path = proto.path[proto.path.index(_VIRTUAL_IMPORTS) + 1:]
-            out_file_paths.append(path)
+            out_file_paths.append(proto.path[proto.path.index(_VIRTUAL_IMPORTS) + 1:])
 
     return [
         context.actions.declare_file(
@@ -271,11 +299,11 @@ def get_out_dir(protos, context):
     if at_least_one_virtual:
         out_dir = get_include_directory(protos[0])
         ws_root = protos[0].owner.workspace_root
-        if ws_root and out_dir.find(ws_root) >= 0:
-            out_dir = "".join(out_dir.rsplit(ws_root, 1))
+        prefix = "/" + _make_prefix(protos[0].owner) + _VIRTUAL_IMPORTS[1:]
+
         return struct(
             path = out_dir,
-            import_path = out_dir[out_dir.find(_VIRTUAL_IMPORTS) + 1:],
+            import_path = out_dir[out_dir.find(prefix) + 1:],
         )
 
     out_dir = context.genfiles_dir.path

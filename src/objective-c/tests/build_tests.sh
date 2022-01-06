@@ -16,13 +16,14 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -ev
+set -ex
 
 # CocoaPods requires the terminal to be using UTF-8 encoding.
 export LANG=en_US.UTF-8
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
+# Check that required tools are available.
 hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
 hash xcodebuild 2>/dev/null || {
     echo >&2 "XCode command-line tools need to be installed."
@@ -34,8 +35,7 @@ rm -Rf Pods Podfile.lock Tests.xcworkspace
 rm -f RemoteTestClient/*.{h,m}
 pod cache clean --all
 
-echo "TIME:  $(date)"
-pod install --verbose | ./verbose_time.sh
+time pod install --verbose
 
 # verify pod header installation
 if [ -d "./Pods/Headers/Public/gRPC-Core/grpc/impl/codegen" ]

@@ -51,7 +51,6 @@ class CensusServerCallData : public CallData {
         recv_message_count_(0),
         sent_message_count_(0) {
     memset(&census_bin_, 0, sizeof(grpc_linked_mdelem));
-    memset(&path_, 0, sizeof(grpc_slice));
     memset(&on_done_recv_initial_metadata_, 0, sizeof(grpc_closure));
     memset(&on_done_recv_message_, 0, sizeof(grpc_closure));
   }
@@ -75,7 +74,7 @@ class CensusServerCallData : public CallData {
   // server method
   absl::string_view method_;
   std::string qualified_method_;
-  grpc_slice path_;
+  grpc_core::Slice path_;
   // Pointer to the grpc_call element
   grpc_call* gc_;
   // Authorization context for the call.

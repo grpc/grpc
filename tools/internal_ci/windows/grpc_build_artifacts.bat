@@ -14,18 +14,22 @@
 
 @rem Avoid slow finalization after the script has exited.
 @rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
 IF "%cd%"=="T:\src" (
   call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
-  exit /b %errorlevel%
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
 )
+endlocal
 
 @rem Boringssl build no longer supports yasm
 choco uninstall yasm -y --limit-output
-choco install nasm -y --limit-output
+choco install nasm -y --limit-output || exit /b 1
 
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
+set PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 

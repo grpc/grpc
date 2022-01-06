@@ -3,19 +3,17 @@
 
 `python_configure` depends on the following environment variables:
 
-  * `PYTHON2_BIN_PATH`: location of python binary.
-  * `PYTHON2_LIB_PATH`: Location of python libraries.
+  * `PYTHON3_BIN_PATH`: location of python binary.
+  * `PYTHON3_LIB_PATH`: Location of python libraries.
 """
 
 _BAZEL_SH = "BAZEL_SH"
-_PYTHON2_BIN_PATH = "PYTHON2_BIN_PATH"
-_PYTHON2_LIB_PATH = "PYTHON2_LIB_PATH"
 _PYTHON3_BIN_PATH = "PYTHON3_BIN_PATH"
 _PYTHON3_LIB_PATH = "PYTHON3_LIB_PATH"
 
 _HEADERS_HELP = (
-    "Are Python headers installed? Try installing python-dev or " +
-    "python3-dev on Debian-based systems. Try python-devel or python3-devel " +
+    "Are Python headers installed? Try installing " +
+    "python3-dev on Debian-based systems. Try python3-devel " +
     "on Redhat-based systems."
 )
 
@@ -201,8 +199,8 @@ def _get_python_lib(repository_ctx, python_bin, lib_path_key):
         "  python_paths = os.getenv('PYTHONPATH').split(':')\n" + "try:\n" +
         "  library_paths = site.getsitepackages()\n" +
         "except AttributeError:\n" +
-        " from distutils.sysconfig import get_python_lib\n" +
-        " library_paths = [get_python_lib()]\n" +
+        " import sysconfig\n" +
+        " library_paths = [sysconfig.get_path('purelib')]\n" +
         "all_paths = set(python_paths + library_paths)\n" + "paths = []\n" +
         "for path in all_paths:\n" + "  if os.path.isdir(path):\n" +
         "    paths.append(path)\n" + "if len(paths) >=1:\n" +
@@ -239,14 +237,13 @@ def _get_python_include(repository_ctx, python_bin):
             python_bin,
             "-c",
             "from __future__ import print_function;" +
-            "from distutils import sysconfig;" +
-            "print(sysconfig.get_python_inc())",
+            "import sysconfig;" +
+            "print(sysconfig.get_path('include'))",
         ],
         error_msg = "Problem getting python include path for {}.".format(python_bin),
         error_details = (
             "Is the Python binary path set up right? " + "(See ./configure or " +
-            python_bin + ".) " + "Is distutils installed? " +
-            _HEADERS_HELP
+            python_bin + ".) " + _HEADERS_HELP
         ),
     )
     include_path = result.stdout.splitlines()[0]
@@ -346,14 +343,6 @@ def _python_autoconf_impl(repository_ctx):
     """Implementation of the python_autoconf repository rule."""
     _create_single_version_package(
         repository_ctx,
-        "_python2",
-        _PYTHON2_BIN_PATH,
-        "python2",
-        _PYTHON2_LIB_PATH,
-        True
-    )
-    _create_single_version_package(
-        repository_ctx,
         "_python3",
         _PYTHON3_BIN_PATH,
         "python3",
@@ -366,8 +355,6 @@ python_configure = repository_rule(
     implementation = _python_autoconf_impl,
     environ = [
         _BAZEL_SH,
-        _PYTHON2_BIN_PATH,
-        _PYTHON2_LIB_PATH,
         _PYTHON3_BIN_PATH,
         _PYTHON3_LIB_PATH,
     ],
@@ -384,8 +371,7 @@ python_configure = repository_rule(
 )
 """Detects and configures the local Python.
 
-It is expected that the system have both a working Python 2 and python 3
-installation
+It expects the system have a working Python 3 installation.
 
 Add the following to your WORKSPACE FILE:
 

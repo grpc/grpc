@@ -41,6 +41,13 @@ else
   docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"
 fi
 
+if [[ -t 0 ]]; then
+  DOCKER_TTY_ARGS="-it"
+else
+  # The input device on kokoro is not a TTY, so -it does not work.
+  DOCKER_TTY_ARGS=
+fi
+
 # Choose random name for docker container
 CONTAINER_NAME="run_tests_$(uuidgen)"
 
@@ -49,7 +56,7 @@ docker_instance_git_root=/var/local/jenkins/grpc
 
 # Run tests inside docker
 DOCKER_EXIT_CODE=0
-# TODO: silence complaint about $TTY_FLAG expansion in some other way
+# TODO: silence complaint about $DOCKER_TTY_ARGS expansion in some other way
 # shellcheck disable=SC2086,SC2154
 docker run \
   --cap-add SYS_PTRACE \
@@ -66,8 +73,7 @@ docker run \
   -e "KOKORO_BUILD_NUMBER=$KOKORO_BUILD_NUMBER" \
   -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
   -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
-  -i \
-  $TTY_FLAG \
+  $DOCKER_TTY_ARGS \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
   -v ~/.config/gcloud:/root/.config/gcloud \
   -v "$git_root:$docker_instance_git_root" \

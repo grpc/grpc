@@ -887,7 +887,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       [watchers_list, value]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
             for (const auto& p : watchers_list) {
-              p.first->OnResourceChanged(value);
+              p.first->OnGenericResourceChanged(value);
             }
             delete value;
           },
@@ -1831,15 +1831,13 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                               absl::string_view name,
                               RefCountedPtr<ResourceWatcherInterface> watcher) {
   ResourceWatcherInterface* w = watcher.get();
-  auto resource_name = ParseXdsResourceName(name, type);
-  if (!resource_name.ok()) {
+  // Lambda for handling failure cases.
+  auto fail = [&](grpc_error_handle error) mutable {
     {
       MutexLock lock(&mu_);
       MaybeRegisterResourceTypeLocked(type);
       invalid_watchers_[w] = watcher;
     }
-    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrFormat("Unable to parse resource name %s", name));
     work_serializer_.Run(
         // TODO(yashykt): When we move to C++14, capture watcher using
         // std::move()
@@ -1847,8 +1845,29 @@ void XdsClient::WatchResource(const XdsResourceType* type,
           watcher->OnError(error);
         },
         DEBUG_LOCATION);
+  };
+  auto resource_name = ParseXdsResourceName(name, type);
+  if (!resource_name.ok()) {
+    fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+        "Unable to parse resource name for listener %s", name)));
     return;
   }
+  // Find server to use.
+  const XdsBootstrap::XdsServer* xds_server = nullptr;
+  absl::string_view authority_name = resource_name->authority;
+  if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
+    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+    if (authority == nullptr) {
+      fail(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("authority \"", authority_name,
+                       "\" not present in bootstrap config")));
+      return;
+    }
+    if (!authority->xds_servers.empty()) {
+      xds_server = &authority->xds_servers[0];
+    }
+  }
+  if (xds_server == nullptr) xds_server = &bootstrap_->server();
   {
     MutexLock lock(&mu_);
     MaybeRegisterResourceTypeLocked(type);
@@ -1870,7 +1889,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       auto* value = type->CopyResource(resource_state.resource.get()).release();
       work_serializer_.Schedule(
           [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            watcher->OnResourceChanged(value);
+            watcher->OnGenericResourceChanged(value);
             delete value;
           },
           DEBUG_LOCATION);
@@ -1879,7 +1898,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     // needed.
     if (authority_state.channel_state == nullptr) {
       authority_state.channel_state =
-          GetOrCreateChannelStateLocked(bootstrap_->server());
+          GetOrCreateChannelStateLocked(*xds_server);
     }
     authority_state.channel_state->SubscribeLocked(type, *resource_name);
   }
@@ -1957,8 +1976,8 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
   auto uri = URI::Parse(name);
   if (!uri.ok()) return uri.status();
   // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
+  std::pair<absl::string_view, absl::string_view> path_parts = absl::StrSplit(
+      absl::StripPrefix(uri->path(), "/"), absl::MaxSplits('/', 1));
   if (!type->IsType(path_parts.first, nullptr)) {
     return absl::InvalidArgumentError(
         "xdstp URI path must indicate valid xDS resource type");
@@ -1969,7 +1988,7 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
   return XdsResourceName{
       absl::StrCat("xdstp:", uri->authority()),
       absl::StrCat(
-          path_parts.second, (query_parameters.empty() ? "?" : ""),
+          path_parts.second, (!query_parameters.empty() ? "?" : ""),
           absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
 }
 
