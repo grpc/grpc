@@ -120,7 +120,8 @@ def exec_gcloud(project: str, *cmds: List[str]) -> Json:
     return None
 
 
-def remove_relative_resources_run_xds_tests(project: str, network: str, prefix: str, suffix: str):
+def remove_relative_resources_run_xds_tests(project: str, network: str,
+                                            prefix: str, suffix: str):
     """Removing GCP resources created by run_xds_tests.py."""
     logging.info('----- Removing run_xds_tests.py resources with suffix [%s]',
                  suffix)
@@ -240,10 +241,15 @@ td_resource_rules = [
     # - prefix of the resource (only used by gke resources)
     # - function to check of the resource should be kept
     # - function to delete the resource
-    (r'test-hc(.*)', '', is_marked_as_keep_gce, remove_relative_resources_run_xds_tests),
-    (f'{PSM_SECURITY_PREFIX}-health-check-(.*)', PSM_SECURITY_PREFIX, is_marked_as_keep_gke, cleanup_td_for_gke),
-    (r'test-template(.*)', '', is_marked_as_keep_gce, remove_relative_resources_run_xds_tests),
+    (r'test-hc(.*)', '', is_marked_as_keep_gce,
+     remove_relative_resources_run_xds_tests),
+    (f'{PSM_SECURITY_PREFIX}-health-check-(.*)', PSM_SECURITY_PREFIX,
+     is_marked_as_keep_gke, cleanup_td_for_gke),
+    (r'test-template(.*)', '', is_marked_as_keep_gce,
+     remove_relative_resources_run_xds_tests),
 ]
+
+
 def delete_leaked_td_resources(dry_run, project, network, resources):
     for resource in resources:
         logger.info('-----')
@@ -259,11 +265,13 @@ def delete_leaked_td_resources(dry_run, project, network, resources):
                 matched = True
                 if keep(result.group(1)):
                     logging.info('Skipped [keep]:')
-                    break # break inner loop, continue outer loop
+                    break  # break inner loop, continue outer loop
                 remove(project, network, resource_prefix, result.group(1))
             break
         if not matched:
-            logging.info('----- Skipped [does not matching resource name templates]')
+            logging.info(
+                '----- Skipped [does not matching resource name templates]')
+
 
 k8s_resource_rules = [
     # items in each tuple, in order
@@ -272,9 +280,14 @@ k8s_resource_rules = [
     # - function to delete the resource
     (f'{PSM_SECURITY_PREFIX}-server-(.*)', PSM_SECURITY_PREFIX, cleanup_server),
     (f'{PSM_SECURITY_PREFIX}-client-(.*)', PSM_SECURITY_PREFIX, cleanup_client),
+    # Special handling for url-map test clients. url-map test servers are
+    # shared, so there's no need to delete them.
     (f'{URL_MAP_TEST_PREFIX}-client-(.*)', URL_MAP_TEST_PREFIX, cleanup_client),
 ]
-def delete_k8s_resources(dry_run, project, network, k8s_api_manager, gcp_service_account, namespaces):
+
+
+def delete_k8s_resources(dry_run, project, network, k8s_api_manager,
+                         gcp_service_account, namespaces):
     for ns in namespaces:
         logger.info('-----')
         logger.info('----- Cleaning up k8s namespaces %s', ns.metadata.name)
@@ -290,11 +303,13 @@ def delete_k8s_resources(dry_run, project, network, k8s_api_manager, gcp_service
                 result = re.search(regex, ns.metadata.name)
                 if result is not None:
                     matched = True
-                    remove(project, network, k8s_api_manager, resource_prefix, result.group(1), gcp_service_account)
+                    remove(project, network, k8s_api_manager, resource_prefix,
+                           result.group(1), gcp_service_account)
                     break
             if not matched:
                 logging.info(
-                '----- Skipped [does not matching resource name templates]')
+                    '----- Skipped [does not matching resource name templates]')
+
 
 def main(argv):
     if len(argv) > 1:
@@ -323,13 +338,15 @@ def main(argv):
     # resources.
     leakedInstanceTemplates = exec_gcloud(project, 'compute',
                                           'instance-templates', 'list')
-    delete_leaked_td_resources(dry_run, project, network, leakedInstanceTemplates)
+    delete_leaked_td_resources(dry_run, project, network,
+                               leakedInstanceTemplates)
 
     # Delete leaked k8s namespaces, those usually mean there are leaked testing
     # client/servers from the gke framework.
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
     nss = k8s_api_manager.core.list_namespace()
-    delete_k8s_resources(dry_run, project, network, k8s_api_manager, gcp_service_account, nss.items)
+    delete_k8s_resources(dry_run, project, network, k8s_api_manager,
+                         gcp_service_account, nss.items)
 
 
 if __name__ == '__main__':
