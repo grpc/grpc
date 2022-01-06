@@ -22,6 +22,7 @@
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
@@ -29,12 +30,15 @@ using testing::StrictMock;
 
 namespace grpc_core {
 
+static auto* g_memory_allocator = new MemoryAllocator(
+    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+
 TEST(PipeTest, CanSendAndReceive) {
-  Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [&pipe] {
+      [] {
+        Pipe<int> pipe;
         return Seq(
             // Concurrently: send 42 into the pipe, and receive from the pipe.
             Join(pipe.sender.Push(42), pipe.receiver.Next()),
@@ -46,15 +50,16 @@ TEST(PipeTest, CanSendAndReceive) {
             });
       },
       NoWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, g_memory_allocator));
 }
 
 TEST(PipeTest, CanReceiveAndSend) {
-  Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [&pipe] {
+      [] {
+        Pipe<int> pipe;
         return Seq(
             // Concurrently: receive from the pipe, and send 42 into the pipe.
             Join(pipe.receiver.Next(), pipe.sender.Push(42)),
@@ -66,28 +71,29 @@ TEST(PipeTest, CanReceiveAndSend) {
             });
       },
       NoWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, g_memory_allocator));
 }
 
 TEST(PipeTest, CanSeeClosedOnSend) {
-  Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto sender = std::move(pipe.sender);
-  auto receiver =
-      absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver));
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  // Push 42 onto the pipe - this will the pipe's one-deep send buffer.
-  EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
   MakeActivity(
-      [&sender, &receiver] {
+      [] {
+        Pipe<int> pipe;
+        auto sender = std::move(pipe.sender);
+        // Push 42 onto the pipe - this will the pipe's one-deep send buffer.
+        EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
+        auto receiver = std::make_shared<std::unique_ptr<PipeReceiver<int>>>(
+            absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver)));
         return Seq(
             // Concurrently:
             // - push 43 into the sender, which will stall because the buffer is
             //   full
             // - and close the receiver, which will fail the pending send.
             Join(sender.Push(43),
-                 [&receiver] {
-                   receiver.reset();
+                 [receiver] {
+                   receiver->reset();
                    return absl::OkStatus();
                  }),
             // Verify both that the send failed and that we executed the close.
@@ -97,17 +103,19 @@ TEST(PipeTest, CanSeeClosedOnSend) {
             });
       },
       NoWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, g_memory_allocator));
 }
 
 TEST(PipeTest, CanSeeClosedOnReceive) {
-  Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto sender = absl::make_unique<PipeSender<int>>(std::move(pipe.sender));
-  auto receiver = std::move(pipe.receiver);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [&sender, &receiver] {
+      [] {
+        Pipe<int> pipe;
+        auto sender = std::make_shared<std::unique_ptr<PipeSender<int>>>(
+            absl::make_unique<PipeSender<int>>(std::move(pipe.sender)));
+        auto receiver = std::move(pipe.receiver);
         return Seq(
             // Concurrently:
             // - wait for a received value (will stall forever since we push
@@ -115,8 +123,8 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
             // - close the sender, which will signal the receiver to return an
             //   end-of-stream.
             Join(receiver.Next(),
-                 [&sender] {
-                   sender.reset();
+                 [sender] {
+                   sender->reset();
                    return absl::OkStatus();
                  }),
             // Verify we received end-of-stream and closed the sender.
@@ -127,49 +135,8 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
             });
       },
       NoWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-}
-
-TEST(PipeTest, CanFilter) {
-  Pipe<int> pipe;
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  MakeActivity(
-      [&pipe] {
-        // Setup some filters here, carefully getting ordering correct by doing
-        // so outside of the Join() since C++ does not define execution order
-        // between arguments.
-        // TODO(ctiller): A future change to Pipe will specify an ordering
-        // between filters added to sender and receiver, at which point these
-        // should move back.
-        auto doubler = pipe.receiver.Filter(
-            [](int p) { return absl::StatusOr<int>(p * 2); });
-        auto adder = pipe.sender.Filter(
-            [](int p) { return absl::StatusOr<int>(p + 1); });
-        return Seq(
-            // Concurrently:
-            // - push 42 into the pipe
-            // - wait for a value to be received, and filter it by doubling it
-            // - wait for a value to be received, and filter it by adding one to
-            //   it
-            // - wait for a value to be received and close the pipe.
-            Join(pipe.sender.Push(42), std::move(doubler), std::move(adder),
-                 Seq(pipe.receiver.Next(),
-                     [&pipe](absl::optional<int> i) {
-                       auto x = std::move(pipe.receiver);
-                       return i;
-                     })),
-            // Verify all of the above happened correctly.
-            [](std::tuple<bool, absl::Status, absl::Status, absl::optional<int>>
-                   result) {
-              EXPECT_EQ(result, std::make_tuple(true, absl::OkStatus(),
-                                                absl::OkStatus(),
-                                                absl::optional<int>(85)));
-              return absl::OkStatus();
-            });
-      },
-      NoWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, g_memory_allocator));
 }
 
 }  // namespace grpc_core
