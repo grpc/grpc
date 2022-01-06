@@ -10284,9 +10284,7 @@ TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
   auto* rules = rbac.mutable_rules();
   rules->set_action(GetParam().rbac_action());
   Policy policy;
-  policy.add_permissions()->mutable_requested_server_name()->set_exact("");
   policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
   policy.add_permissions()->mutable_requested_server_name()->set_exact(
       "server_name");
   (*rules->mutable_policies())["policy"] = policy;
@@ -10299,16 +10297,13 @@ TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): Uncomment once requested_server_name is properly supported
-  // by the RBAC engine
-  //  policy.clear_permissions();
-  //  policy.add_permissions()->mutable_requested_server_name()->set_exact("");
-  //  (*rules->mutable_policies())["policy"] = policy;
-  //  SetServerRbacPolicy(rbac); backends_[0]->Start();
-  // SendRpc(
-  //     [this]() { return CreateInsecureChannel(); }, {}, {},
-  //     /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
-  //     grpc::StatusCode::PERMISSION_DENIED);
+  policy.clear_permissions();
+  policy.add_permissions()->mutable_requested_server_name()->set_exact("");
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, NotRulePermissionAnyPrincipal) {
