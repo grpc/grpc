@@ -1742,9 +1742,7 @@ static void test_google_default_creds_call_creds_specified(void) {
 
 struct fake_call_creds : public grpc_call_credentials {
  public:
-  explicit fake_call_creds() : grpc_call_credentials("fake") {}
-
-  ~fake_call_creds() override = default;
+  fake_call_creds() : grpc_call_credentials("fake") {}
 
   bool get_request_metadata(grpc_polling_entity* /*pollent*/,
                             grpc_auth_metadata_context /*context*/,

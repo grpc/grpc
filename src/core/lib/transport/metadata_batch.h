@@ -898,12 +898,23 @@ class MetadataMap {
 
     template <typename Which>
     void Encode(Which, const typename Which::ValueType& value) {
-      size_ += Which::key().length() + Which::Encode(value).length() + 32;
+      Add(Which(), value);
+    }
+
+    void Encode(ContentTypeMetadata,
+                const typename ContentTypeMetadata::ValueType& value) {
+      if (value == ContentTypeMetadata::kInvalid) return;
+      Add(ContentTypeMetadata(), value);
     }
 
     size_t size() const { return size_; }
 
    private:
+    template <typename Which>
+    void Add(Which, const typename Which::ValueType& value) {
+      size_ += Which::key().length() + Which::Encode(value).length() + 32;
+    }
+
     uint32_t size_ = 0;
   };
 
@@ -969,7 +980,7 @@ class MetadataMap {
         if (!out.has_value()) {
           out = p.second.as_string_view();
         } else {
-          out = *backing = absl::StrCat(*out, ", ", p.second.as_string_view());
+          out = *backing = absl::StrCat(*out, ",", p.second.as_string_view());
         }
       }
     }

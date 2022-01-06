@@ -1,0 +1,400 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+    channel_actions {
+      add_n_bytes_writable: 1320
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      wait_ms: 20
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 532
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 1000
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 532
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 16400
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 2338333577814474752
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 34359738388
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 20
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 1000
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      wait_ms: 1000
+    }
+  }
+}
+actions {
+  create_call {
+    propagation_mask: 536870912
+    method {
+      value: "/voo"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      receive_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 16960
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "hello wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwxwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwworld"
+        }
+      }
+    }
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+    operations {
+      send_message {
+        message {
+          value: "hello wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb00\\000\\000\\000\\000\\000\"\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n    }\n    channel_args {\n      str:\337\"\"\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n      key: \"\\022\"\n      str: \"\"\n    }\n    channel_args {\n      resource_quota {\n      }\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n    }\n    channel_args {\n      key: \"xds_clustes {\\n  create_server {\\n    r_resolver_e\"\n      str: \"http\"\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n    }\n    channel_args {\n    }\n    channel_args {\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n      str: \"\"\n    }\n    channel_args {\n      str: \"\"\n    }\n  }\n}\nactions {\n  create_channel {\n    channel_args {\n      key: \"http\"\n      str: \"\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031\\031wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwworld"
+        }
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_close_from_client {
+      }
+    }
+    operations {
+      receive_status_on_client {
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "hello"
+        }
+      }
+    }
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_status_from_server {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+

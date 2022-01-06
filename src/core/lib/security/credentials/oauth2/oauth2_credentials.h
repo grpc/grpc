@@ -134,7 +134,6 @@ class grpc_google_refresh_token_credentials final
 class grpc_access_token_credentials final : public grpc_call_credentials {
  public:
   explicit grpc_access_token_credentials(const char* access_token);
-  ~grpc_access_token_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,

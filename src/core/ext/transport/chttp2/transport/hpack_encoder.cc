@@ -26,6 +26,7 @@
 #include <cstdint>
 
 #include "hpack_constants.h"
+#include "hpack_encoder_table.h"
 
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this
@@ -342,6 +343,11 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   It prev = values_.end();
   uint32_t transport_length =
       key.length() + value.length() + hpack_constants::kEntryOverhead;
+  if (transport_length > HPackEncoderTable::MaxEntrySize()) {
+    framer->EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(key),
+                                                   value.Ref());
+    return;
+  }
   // Linear scan through previous values to see if we find the value.
   for (It it = values_.begin(); it != values_.end(); ++it) {
     if (value == it->value) {
@@ -403,7 +409,10 @@ void HPackCompressor::Framer::Encode(TeMetadata, TeMetadata::ValueType value) {
 
 void HPackCompressor::Framer::Encode(ContentTypeMetadata,
                                      ContentTypeMetadata::ValueType value) {
-  GPR_ASSERT(value == ContentTypeMetadata::ValueType::kApplicationGrpc);
+  if (value != ContentTypeMetadata::ValueType::kApplicationGrpc) {
+    gpr_log(GPR_ERROR, "Not encoding bad content-type header");
+    return;
+  }
   EncodeAlwaysIndexed(&compressor_->content_type_index_, "content-type",
                       Slice::FromStaticString("application/grpc"),
                       12 /* content-type */ + 16 /* application/grpc */ +
@@ -547,6 +556,11 @@ void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
 }
 
 void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
+  if (slice.length() > HPackEncoderTable::MaxEntrySize()) {
+    EmitLitHdrWithNonBinaryStringKeyNotIdx(
+        Slice::FromStaticString(UserAgentMetadata::key()), slice.Ref());
+    return;
+  }
   if (!slice.is_equivalent(compressor_->user_agent_)) {
     compressor_->user_agent_ = slice.Ref();
     compressor_->user_agent_index_ = 0;

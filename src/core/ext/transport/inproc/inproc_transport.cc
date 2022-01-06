@@ -276,7 +276,7 @@ void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial) {
   std::string prefix = absl::StrCat(
       "INPROC:", is_initial ? "HDR:" : "TRL:", is_client ? "CLI:" : "SVR:");
-  md_batch->Log([&](absl::string_view key, absl::string_view value) {
+  md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
     gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
   });
 }
@@ -289,7 +289,7 @@ class CopySink {
 
   void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
     dst_->Append(key.as_string_view(), value.AsOwned(),
-                 [](absl::string_view error, const grpc_core::Slice& value) {});
+                 [](absl::string_view, const grpc_core::Slice&) {});
   }
 
   template <class T, class V>

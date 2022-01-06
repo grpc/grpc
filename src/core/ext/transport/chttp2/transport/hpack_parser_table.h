@@ -70,10 +70,7 @@ class HPackTable {
     StaticMementos();
     Memento memento[hpack_constants::kLastStaticEntry];
   };
-  static const StaticMementos& GetStaticMementos() {
-    static const StaticMementos static_mementos;
-    return static_mementos;
-  }
+  static const StaticMementos& GetStaticMementos() GPR_ATTRIBUTE_NOINLINE;
 
   enum { kInlineEntries = hpack_constants::kInitialTableEntries };
   using EntriesVec = absl::InlinedVector<Memento, kInlineEntries>;

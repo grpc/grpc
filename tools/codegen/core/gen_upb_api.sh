@@ -86,6 +86,7 @@ proto_files=( \
   "envoy/extensions/clusters/aggregate/v3/cluster.proto" \
   "envoy/extensions/filters/common/fault/v3/fault.proto" \
   "envoy/extensions/filters/http/fault/v3/fault.proto" \
+  "envoy/extensions/filters/http/rbac/v3/rbac.proto" \
   "envoy/extensions/filters/http/router/v3/router.proto" \
   "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto" \
   "envoy/extensions/transport_sockets/tls/v3/cert.proto" \

@@ -110,8 +110,9 @@ static grpc_error_handle process_plugin_result(
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal metadata");
     } else {
       for (size_t i = 0; i < num_md; ++i) {
-        r->md_array->emplace_back(grpc_core::Slice(md[i].key),
-                                  grpc_core::Slice(md[i].value));
+        r->md_array->emplace_back(
+            grpc_core::Slice(grpc_slice_ref_internal(md[i].key)),
+            grpc_core::Slice(grpc_slice_ref_internal(md[i].value)));
       }
     }
   }

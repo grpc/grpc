@@ -212,17 +212,27 @@ const StaticTableEntry kStaticTable[hpack_constants::kLastStaticEntry] = {
     {"via", ""},
     {"www-authenticate", ""},
 };
+
+GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
+  auto sm = kStaticTable[i];
+  return grpc_metadata_batch::Parse(
+      sm.key, Slice::FromStaticString(sm.value),
+      strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
+      [](absl::string_view, const Slice&) {
+        abort();  // not expecting to see this
+      });
+}
+
 }  // namespace
+
+const HPackTable::StaticMementos& HPackTable::GetStaticMementos() {
+  static const StaticMementos static_mementos;
+  return static_mementos;
+}
 
 HPackTable::StaticMementos::StaticMementos() {
   for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
-    auto sm = kStaticTable[i];
-    memento[i] = grpc_metadata_batch::Parse(
-        sm.key, Slice::FromStaticString(sm.value),
-        strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
-        [](absl::string_view, const Slice&) {
-          abort();  // not expecting to see this
-        });
+    memento[i] = MakeMemento(i);
   }
 }
 

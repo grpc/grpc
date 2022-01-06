@@ -209,8 +209,6 @@ static void verify(const verify_params params, const char* expected,
 }
 
 static void test_basic_headers() {
-  int i;
-
   verify_params params = {
       false,
       false,
@@ -252,14 +250,6 @@ static void test_continuation_headers() {
   memset(value2, 'b', 400);
   value2[399] = 0;  // null terminator
   verify_continuation_headers("key2", value2, true);
-}
-
-static void encode_int_to_str(int i, char* p) {
-  p[0] = static_cast<char>('a' + i % 26);
-  i /= 26;
-  GPR_ASSERT(i < 26);
-  p[1] = static_cast<char>('a' + i);
-  p[2] = 0;
 }
 
 static void run_test(void (*test)(), const char* name) {

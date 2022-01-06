@@ -240,7 +240,8 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
         calld->recv_initial_metadata_->Take(grpc_core::LbTokenMetadata());
     if (lb_token.has_value()) {
       if (calld->client_ip_and_lr_token_ == nullptr) {
-        calld->StoreClientIpAndLrToken(lb_token->data(), lb_token->size());
+        calld->StoreClientIpAndLrToken(
+            reinterpret_cast<const char*>(lb_token->data()), lb_token->size());
       }
     }
     // If the LB token was not found in the recv_initial_metadata, only the
