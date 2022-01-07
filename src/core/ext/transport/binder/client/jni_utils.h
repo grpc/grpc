@@ -31,9 +31,6 @@ namespace grpc_binder {
 // JNI_OnLoad) so subsequent BinderTransport code can find Java class
 jclass FindNativeConnectionHelper(JNIEnv* env);
 
-jclass FindNativeConnectionHelper(
-    JNIEnv* env, std::function<void*(std::string)> class_finder);
-
 // Calls Java method NativeConnectionHelper.tryEstablishConnection
 void TryEstablishConnection(JNIEnv* env, jobject application,
                             absl::string_view pkg, absl::string_view cls,
