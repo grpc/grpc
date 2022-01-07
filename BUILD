@@ -1569,13 +1569,11 @@ grpc_cc_library(
     name = "slice_refcount",
     srcs = [
         "src/core/lib/slice/slice_refcount.cc",
-        "src/core/lib/slice/static_slice.cc",
     ],
     hdrs = [
         "src/core/lib/slice/slice_refcount.h",
         "src/core/lib/slice/slice_refcount_base.h",
         "src/core/lib/slice/slice_utils.h",
-        "src/core/lib/slice/static_slice.h",
     ],
     public_hdrs = [
         "include/grpc/slice.h",
@@ -1912,11 +1910,8 @@ grpc_cc_library(
         "src/core/lib/transport/byte_stream.cc",
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
-        "src/core/lib/transport/metadata.cc",
-        "src/core/lib/transport/metadata_batch.cc",
         "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/pid_controller.cc",
-        "src/core/lib/transport/static_metadata.cc",
         "src/core/lib/transport/status_conversion.cc",
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
@@ -2041,11 +2036,9 @@ grpc_cc_library(
         "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
-        "src/core/lib/transport/metadata.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/pid_controller.h",
-        "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
@@ -4046,34 +4039,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "popularity_count",
-    hdrs = [
-        "src/core/ext/transport/chttp2/transport/popularity_count.h",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "hpack_constants",
     hdrs = [
         "src/core/ext/transport/chttp2/transport/hpack_constants.h",
-    ],
-    language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "hpack_encoder_index",
-    hdrs = [
-        "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h",
-    ],
-    external_deps = [
-        "absl/types:optional",
     ],
     language = "c++",
     deps = [
@@ -4117,7 +4085,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.cc",
-        "src/core/ext/transport/chttp2/transport/hpack_utils.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
@@ -4142,7 +4109,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.h",
-        "src/core/ext/transport/chttp2/transport/hpack_utils.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
@@ -4165,10 +4131,8 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "hpack_constants",
-        "hpack_encoder_index",
         "hpack_encoder_table",
         "memory_quota",
-        "popularity_count",
         "resource_quota_trace",
         "slice",
         "slice_refcount",

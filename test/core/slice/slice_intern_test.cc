@@ -28,7 +28,6 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
@@ -59,43 +58,10 @@ static void test_slice_interning(void) {
   grpc_shutdown();
 }
 
-static void test_static_slice_interning(void) {
-  LOG_TEST_NAME("test_static_slice_interning");
-
-  // grpc_init/grpc_shutdown deliberately omitted: they should not be necessary
-  // to intern a static slice
-
-  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    GPR_ASSERT(grpc_slice_is_equivalent(
-        grpc_core::g_static_metadata_slice_table[i],
-        grpc_slice_intern(grpc_core::g_static_metadata_slice_table[i])));
-  }
-}
-
-static void test_static_slice_copy_interning(void) {
-  LOG_TEST_NAME("test_static_slice_copy_interning");
-
-  grpc_init();
-
-  for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_slice copy =
-        grpc_slice_dup(grpc_core::g_static_metadata_slice_table[i]);
-    GPR_ASSERT(grpc_core::g_static_metadata_slice_table[i].refcount !=
-               copy.refcount);
-    GPR_ASSERT(grpc_core::g_static_metadata_slice_table[i].refcount ==
-               grpc_slice_intern(copy).refcount);
-    grpc_slice_unref(copy);
-  }
-
-  grpc_shutdown();
-}
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_slice_interning();
-  test_static_slice_interning();
-  test_static_slice_copy_interning();
   grpc_shutdown();
   return 0;
 }

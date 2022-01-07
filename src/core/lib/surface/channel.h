@@ -29,7 +29,6 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata.h"
 
 /// Creates a grpc_channel.
 grpc_channel* grpc_channel_create(const char* target,
