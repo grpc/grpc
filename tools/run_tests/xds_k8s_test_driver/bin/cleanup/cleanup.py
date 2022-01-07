@@ -309,6 +309,8 @@ def delete_k8s_resources(dry_run, project, network, k8s_api_manager,
             if not matched:
                 logging.info(
                     '----- Skipped [does not matching resource name templates]')
+        else:
+            logging.info('----- Skipped [resource is within expiry date]')
 
 
 def main(argv):
