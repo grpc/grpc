@@ -22,7 +22,6 @@ message EmplaceBack {
 
 message PopBack {
     int32 vector = 1;
-    int32 value = 2;
 }
 
 message Copy {
@@ -34,6 +33,11 @@ message ClearVector {
     int32 vector = 1;
 }
 
+message RemoveIf {
+    int32 vector = 1;
+    int32 value = 2;
+}
+
 message Action {
     oneof action_type {
         EmplaceBack emplace_back = 1;
@@ -42,6 +46,7 @@ message Action {
         Copy move = 4;
         ClearVector clear = 5;
         Copy swap = 6;
+        RemoveIf remove_if = 7;
     }
 }
 

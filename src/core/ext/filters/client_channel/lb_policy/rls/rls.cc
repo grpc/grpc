@@ -70,7 +70,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 

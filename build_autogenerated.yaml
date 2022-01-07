@@ -481,15 +481,12 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
-  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -935,7 +932,6 @@ libs:
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -955,11 +951,9 @@ libs:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
-  - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -1094,7 +1088,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
-  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -1490,7 +1483,6 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
-  - src/core/lib/security/credentials/credentials_metadata.cc
   - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
   - src/core/lib/security/credentials/external/aws_request_signer.cc
   - src/core/lib/security/credentials/external/external_account_credentials.cc
@@ -1543,7 +1535,6 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -1569,11 +1560,8 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/metadata.cc
-  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
-  - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -1828,15 +1816,12 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
-  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -2002,7 +1987,6 @@ libs:
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -2022,11 +2006,9 @@ libs:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
-  - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2121,7 +2103,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
-  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -2285,7 +2266,6 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -2311,11 +2291,8 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/metadata.cc
-  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
-  - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -3788,7 +3765,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -3803,7 +3779,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
   - absl/status:statusor
@@ -3822,14 +3797,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: metadata_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/metadata_test.cc
-  deps:
-  - grpc_test_util
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -4080,13 +4047,11 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
   - gpr
@@ -4560,7 +4525,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -4578,7 +4542,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/arena_promise_test.cc
   deps:
   - absl/status:statusor
@@ -5055,7 +5018,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -5073,7 +5035,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/status:statusor
@@ -5690,7 +5651,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/iomgr/combiner.cc
@@ -5702,7 +5662,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - absl/status:statusor
@@ -5902,7 +5861,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -5921,7 +5879,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
@@ -6233,16 +6190,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: hpack_encoder_index_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
-  src:
-  - test/core/transport/chttp2/hpack_encoder_index_test.cc
-  deps:
-  - absl/types:optional
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6679,7 +6626,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6695,7 +6641,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
   - absl/status:statusor
@@ -6987,7 +6932,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7006,7 +6950,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/pipe_test.cc
   deps:
   - absl/status:statusor
@@ -7024,15 +6967,6 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: popularity_count_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
-  src:
-  - test/core/transport/chttp2/popularity_count_test.cc
-  deps: []
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -7351,7 +7285,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -7368,7 +7301,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
   - absl/status:statusor
@@ -7688,15 +7620,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: static_metadata_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/static_metadata_test.cc
-  deps:
-  - grpc_test_util
 - name: stats_test
   gtest: true
   build: test
@@ -7799,14 +7722,12 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/slice/slice_test.cc
   - test/core/util/build.cc
   deps:

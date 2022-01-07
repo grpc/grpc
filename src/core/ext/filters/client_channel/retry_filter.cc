@@ -39,9 +39,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 //
@@ -418,7 +416,6 @@ class RetryFilter::CallData {
     // BatchData.batch.payload points to this.
     grpc_transport_stream_op_batch_payload batch_payload_;
     // For send_initial_metadata.
-    grpc_linked_mdelem retry_attempts_metadata_;
     grpc_metadata_batch send_initial_metadata_{calld_->arena_};
     // For send_message.
     // TODO(roth): Restructure this to eliminate use of ManualConstructor.
@@ -1889,8 +1886,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   //
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
-  grpc_metadata_batch_copy(&calld->send_initial_metadata_,
-                           &call_attempt_->send_initial_metadata_);
+  call_attempt_->send_initial_metadata_ = calld->send_initial_metadata_.Copy();
   if (GPR_UNLIKELY(calld->num_attempts_completed_ > 0)) {
     call_attempt_->send_initial_metadata_.Set(GrpcPreviousRpcAttemptsMetadata(),
                                               calld->num_attempts_completed_);
@@ -1933,8 +1929,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   // We need to make a copy of the metadata batch for each attempt, since
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
-  grpc_metadata_batch_copy(&calld->send_trailing_metadata_,
-                           &call_attempt_->send_trailing_metadata_);
+  call_attempt_->send_trailing_metadata_ =
+      calld->send_trailing_metadata_.Copy();
   call_attempt_->started_send_trailing_metadata_ = true;
   batch_.send_trailing_metadata = true;
   batch_.payload->send_trailing_metadata.send_trailing_metadata =
@@ -2249,7 +2245,7 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     seen_send_initial_metadata_ = true;
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    grpc_metadata_batch_copy(send_initial_metadata, &send_initial_metadata_);
+    send_initial_metadata_ = send_initial_metadata->Copy();
     send_initial_metadata_flags_ =
         batch->payload->send_initial_metadata.send_initial_metadata_flags;
     peer_string_ = batch->payload->send_initial_metadata.peer_string;
@@ -2265,7 +2261,7 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     seen_send_trailing_metadata_ = true;
     grpc_metadata_batch* send_trailing_metadata =
         batch->payload->send_trailing_metadata.send_trailing_metadata;
-    grpc_metadata_batch_copy(send_trailing_metadata, &send_trailing_metadata_);
+    send_trailing_metadata_ = send_trailing_metadata->Copy();
   }
 }
 

@@ -183,10 +183,9 @@ MATCHER_P(GrpcErrorMessageContains, msg, "") {
 namespace {
 class MetadataEncoder {
  public:
-  void Encode(grpc_mdelem elem) {
-    metadata_.emplace_back(
-        std::string(grpc_core::StringViewFromSlice(GRPC_MDKEY(elem))),
-        std::string(grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem))));
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    metadata_.emplace_back(std::string(key.as_string_view()),
+                           std::string(value.as_string_view()));
   }
 
   template <typename Which>

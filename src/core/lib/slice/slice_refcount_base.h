@@ -85,7 +85,6 @@
 struct grpc_slice_refcount {
  public:
   enum class Type {
-    STATIC,    // Refcount for a static metadata slice.
     INTERNED,  // Refcount for an interned slice.
     NOP,       // No-Op
     REGULAR    // Refcount for non-static-metadata, non-interned slices.
@@ -162,20 +161,5 @@ struct grpc_slice_refcount {
   DestroyerFn dest_fn_ = nullptr;
   void* destroy_fn_arg_ = nullptr;
 };
-
-namespace grpc_core {
-
-struct StaticSliceRefcount {
-  static grpc_slice_refcount kStaticSubRefcount;
-
-  explicit StaticSliceRefcount(uint32_t index)
-      : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
-        index(index) {}
-
-  grpc_slice_refcount base;
-  const uint32_t index;
-};
-
-}  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_BASE_H
