@@ -78,15 +78,6 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 /// Returns true when the initialization is successful.
 bool InitializeBinderChannelJavaClass(void* jni_env_void);
 
-/// EXPERIMENTAL Alternative version of `InitializeBinderChannelJavaClass(void*
-/// jni_env_void)`. This version used a user-specified function to find the
-/// required internal Java class. When a class is found, the `class_finder`
-/// function should return a local reference to the class (jclass type). The
-/// returned jclass will then be used to create global reference for gRPC to use
-/// it later. After that, gRPC will DeleteLocalRef the returned local reference.
-bool InitializeBinderChannelJavaClass(
-    void* jni_env_void, std::function<void*(std::string)> class_finder);
-
 }  // namespace experimental
 }  // namespace grpc
 
