@@ -1233,7 +1233,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/composite/composite_credentials.h',
                       'src/core/lib/security/credentials/credentials.cc',
                       'src/core/lib/security/credentials/credentials.h',
-                      'src/core/lib/security/credentials/credentials_metadata.cc',
                       'src/core/lib/security/credentials/external/aws_external_account_credentials.cc',
                       'src/core/lib/security/credentials/external/aws_external_account_credentials.h',
                       'src/core/lib/security/credentials/external/aws_request_signer.cc',

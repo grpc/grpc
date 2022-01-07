@@ -3618,7 +3618,6 @@ grpc_cc_library(
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
         "src/core/lib/security/credentials/credentials.cc",
-        "src/core/lib/security/credentials/credentials_metadata.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/security_connector/security_connector.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
