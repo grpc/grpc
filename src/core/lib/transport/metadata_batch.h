@@ -724,7 +724,7 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
   }
   Value(const Value&) = delete;
   Value& operator=(const Value&) = delete;
-  Value(Value&&) noexcept = default;
+  Value(Value&& other) noexcept : value(std::move(other.value)) {}
   Value& operator=(Value&& other) noexcept {
     value = std::move(other.value);
     return *this;
