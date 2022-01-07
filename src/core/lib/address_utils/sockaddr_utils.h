@@ -23,7 +23,9 @@
 
 #include <string>
 
-#include "src/core/lib/iomgr/resolved_address.h"
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/iomgr/resolve_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
    ::ffff:0.0.0.0/96 range, or false otherwise.
@@ -66,6 +68,11 @@ int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
 std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
                                     bool normalize) GRPC_MUST_USE_RESULT;
 
+// Newer form of grpc_string_to_sockaddr which returns an error instead of
+// crashing if \a addr is not IPv6/IPv6
+grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                          const char* addr, int port);
+
 /* Returns the URI string corresponding to \a addr */
 std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 
@@ -91,5 +98,13 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
 bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
                                 const grpc_resolved_address* subnet_address,
                                 uint32_t mask_bits);
+
+namespace grpc_event_engine {
+namespace experimental {
+
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H */

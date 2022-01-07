@@ -18,12 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 
 #include <string.h>
 
-#include <vector>
-
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 

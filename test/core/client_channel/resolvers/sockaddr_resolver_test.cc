@@ -23,9 +23,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/work_serializer.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;

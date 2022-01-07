@@ -21,8 +21,8 @@
 
 #include "absl/status/statusor.h"
 
+#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {

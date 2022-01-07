@@ -18,7 +18,6 @@
 
 #include <grpc/grpc_security_constants.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 namespace grpc_core {

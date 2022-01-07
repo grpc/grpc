@@ -23,10 +23,10 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/work_serializer.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;

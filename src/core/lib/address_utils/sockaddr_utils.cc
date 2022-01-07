@@ -29,42 +29,16 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
-
-#ifdef GRPC_HAVE_UNIX_SOCKET
-static std::string grpc_sockaddr_to_uri_unix_if_possible(
-    const grpc_resolved_address* resolved_addr) {
-  const grpc_sockaddr* addr =
-      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-  if (addr->sa_family != AF_UNIX) {
-    return "";
-  }
-  const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
-  if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
-    return absl::StrCat(
-        "unix-abstract:",
-        absl::string_view(
-            unix_addr->sun_path + 1,
-            resolved_addr->len - sizeof(unix_addr->sun_family) - 1));
-  }
-  return absl::StrCat("unix:", unix_addr->sun_path);
-}
-#else
-static std::string grpc_sockaddr_to_uri_unix_if_possible(
-    const grpc_resolved_address* /* addr */) {
-  return "";
-}
-#endif
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};
@@ -226,6 +200,25 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   return out;
 }
 
+grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                          const char* addr, int port) {
+  memset(out, 0, sizeof(grpc_resolved_address));
+  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
+  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
+  if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
+    addr6->sin6_family = GRPC_AF_INET6;
+    out->len = sizeof(grpc_sockaddr_in6);
+  } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
+    addr4->sin_family = GRPC_AF_INET;
+    out->len = sizeof(grpc_sockaddr_in);
+  } else {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Failed to parse address:", addr));
+  }
+  grpc_sockaddr_set_port(out, port);
+  return GRPC_ERROR_NONE;
+}
+
 std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   if (resolved_addr->len == 0) return "";
   grpc_resolved_address addr_normalized;
@@ -276,11 +269,10 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
     case GRPC_AF_INET6:
       return grpc_ntohs(
           (reinterpret_cast<const grpc_sockaddr_in6*>(addr))->sin6_port);
-#ifdef GRPC_HAVE_UNIX_SOCKET
-    case AF_UNIX:
-      return 1;
-#endif
     default:
+      if (grpc_is_unix_socket(resolved_addr)) {
+        return 1;
+      }
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
               addr->sa_family);
       return 0;
@@ -407,3 +399,14 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
   }
   return false;
 }
+
+namespace grpc_event_engine {
+namespace experimental {
+
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr) {
+  auto gra = CreateGRPCResolvedAddress(addr);
+  return grpc_sockaddr_to_uri(&gra);
+}
+
+}  // namespace experimental
+}  // namespace grpc_event_engine

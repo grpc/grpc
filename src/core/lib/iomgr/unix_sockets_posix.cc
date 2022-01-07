@@ -93,4 +93,22 @@ void grpc_unlink_if_unix_domain_socket(
   }
 }
 
+std::string grpc_sockaddr_to_uri_unix_if_possible(
+    const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (addr->sa_family != AF_UNIX) {
+    return "";
+  }
+  const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
+  if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
+    return absl::StrCat(
+        "unix-abstract:",
+        absl::string_view(
+            unix_addr->sun_path + 1,
+            resolved_addr->len - sizeof(unix_addr->sun_family) - 1));
+  }
+  return absl::StrCat("unix:", unix_addr->sun_path);
+}
+
 #endif
