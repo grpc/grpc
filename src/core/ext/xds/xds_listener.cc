@@ -38,6 +38,7 @@
 #include "upb/upb.hpp"
 #include "xds_common_types.h"
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/sockaddr.h"

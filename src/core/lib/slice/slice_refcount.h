@@ -17,17 +17,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/slice/slice_refcount_base.h"
-#include "src/core/lib/slice/static_slice.h"
-
-// Interned slices have specific fast-path operations for hashing. To inline
-// these operations, we need to forward declare them here.
-extern uint32_t grpc_static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
 
 namespace grpc_core {
 
+extern uint32_t g_hash_seed;
 extern grpc_slice_refcount kNoopRefcount;
 
 // TODO(ctiller): when this is removed, remove the std::atomic* in
@@ -73,11 +72,6 @@ inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
   GPR_DEBUG_ASSERT(a.refcount != nullptr);
   GPR_DEBUG_ASSERT(a.refcount == this);
   switch (ref_type_) {
-    case Type::STATIC:
-      GPR_DEBUG_ASSERT(
-          (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
-          (a.refcount == b.refcount));
-      ABSL_FALLTHROUGH_INTENDED;
     case Type::INTERNED:
       return a.refcount == b.refcount;
     case Type::NOP:
@@ -94,9 +88,6 @@ inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
   GPR_DEBUG_ASSERT(slice.refcount != nullptr);
   GPR_DEBUG_ASSERT(slice.refcount == this);
   switch (ref_type_) {
-    case Type::STATIC:
-      return ::grpc_static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(
-          slice)];
     case Type::INTERNED:
       return reinterpret_cast<grpc_core::InternedSliceRefcount*>(slice.refcount)
           ->hash;

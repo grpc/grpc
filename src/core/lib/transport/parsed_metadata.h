@@ -26,7 +26,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -49,7 +48,6 @@ union Buffer {
   uint8_t trivial[sizeof(grpc_slice)];
   void* pointer;
   grpc_slice slice;
-  grpc_mdelem mdelem;
 };
 
 // Given a key and a value, concatenate together to make a debug string.
@@ -139,13 +137,12 @@ class ParsedMetadata {
         transport_size_(transport_size) {
     value_.slice = value.TakeCSlice();
   }
-  // Takes ownership of elem
-  explicit ParsedMetadata(grpc_mdelem elem)
-      : vtable_(grpc_is_binary_header_internal(GRPC_MDKEY(elem))
-                    ? MdelemVtable<true>()
-                    : MdelemVtable<false>()),
-        transport_size_(GRPC_MDELEM_LENGTH(elem)) {
-    value_.mdelem = elem;
+  // Construct metadata from a string key, slice value pair.
+  ParsedMetadata(Slice key, Slice value)
+      : vtable_(ParsedMetadata::KeyValueVTable(key.as_string_view())),
+        transport_size_(key.size() + value.size() + 32) {
+    value_.pointer =
+        new std::pair<Slice, Slice>(std::move(key), std::move(value));
   }
   ParsedMetadata() : vtable_(EmptyVTable()), transport_size_(0) {}
   ~ParsedMetadata() { vtable_->destroy(value_); }
@@ -168,9 +165,8 @@ class ParsedMetadata {
   }
 
   // Set this parsed value on a container.
-  GRPC_MUST_USE_RESULT grpc_error_handle
-  SetOnContainer(MetadataContainer* container) const {
-    return vtable_->set(value_, container);
+  void SetOnContainer(MetadataContainer* container) const {
+    vtable_->set(value_, container);
   }
 
   // Is this a binary header or not?
@@ -203,8 +199,7 @@ class ParsedMetadata {
   struct VTable {
     const bool is_binary_header;
     void (*const destroy)(const Buffer& value);
-    grpc_error_handle (*const set)(const Buffer& value,
-                                   MetadataContainer* container);
+    void (*const set)(const Buffer& value, MetadataContainer* container);
     // result is a bitwise copy of the originating ParsedMetadata.
     void (*const with_new_value)(Slice* new_value,
                                  MetadataParseErrorFn on_error,
@@ -214,14 +209,13 @@ class ParsedMetadata {
   };
 
   static const VTable* EmptyVTable();
+  static const VTable* KeyValueVTable(absl::string_view key);
   template <typename Which>
   static const VTable* TrivialTraitVTable();
   template <typename Which>
   static const VTable* NonTrivialTraitVTable();
   template <typename Which>
   static const VTable* SliceTraitVTable();
-  template <bool kIsBinaryHeader>
-  static const VTable* MdelemVtable();
 
   template <Slice (*ParseMemento)(Slice, MetadataParseErrorFn)>
   GPR_ATTRIBUTE_NOINLINE static void WithNewValueSetSlice(
@@ -254,7 +248,7 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
       // destroy
       metadata_detail::DestroyTrivialMemento,
       // set
-      [](const Buffer&, MetadataContainer*) { return GRPC_ERROR_NONE; },
+      [](const Buffer&, MetadataContainer*) {},
       // with_new_value
       [](Slice*, MetadataParseErrorFn, ParsedMetadata*) {},
       // debug_string
@@ -280,7 +274,6 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
             Which::MementoToValue(
                 metadata_detail::FieldFromTrivial<typename Which::MementoType>(
                     value)));
-        return GRPC_ERROR_NONE;
       },
       // with_new_value
       WithNewValueSetTrivial<typename Which::MementoType, Which::ParseMemento>,
@@ -311,7 +304,6 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
       [](const Buffer& value, MetadataContainer* map) {
         auto* p = static_cast<typename Which::MementoType*>(value.pointer);
         map->Set(Which(), Which::MementoToValue(*p));
-        return GRPC_ERROR_NONE;
       },
       // with_new_value
       [](Slice* value, MetadataParseErrorFn on_error, ParsedMetadata* result) {
@@ -343,7 +335,6 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       [](const Buffer& value, MetadataContainer* map) {
         map->Set(Which(), Which::MementoToValue(
                               metadata_detail::SliceFromBuffer(value)));
-        return GRPC_ERROR_NONE;
       },
       // with_new_value
       WithNewValueSetSlice<Which::ParseMemento>,
@@ -360,42 +351,37 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
 }
 
 template <typename MetadataContainer>
-template <bool kIsBinaryHeader>
 const typename ParsedMetadata<MetadataContainer>::VTable*
-ParsedMetadata<MetadataContainer>::MdelemVtable() {
-  static const VTable vtable = {
-      kIsBinaryHeader,
-      // destroy
-      [](const Buffer& value) { GRPC_MDELEM_UNREF(value.mdelem); },
-      // set
-      [](const Buffer& value, MetadataContainer* map) {
-        auto md = GRPC_MDELEM_REF(value.mdelem);
-        auto err = map->Append(md);
-        // If an error occurs, md is not consumed and we need to.
-        // This is an awful API, but that's why we're replacing it.
-        if (err != GRPC_ERROR_NONE) {
-          GRPC_MDELEM_UNREF(md);
-        }
-        return err;
-      },
-      // with_new_value
-      [](Slice* value_slice, MetadataParseErrorFn, ParsedMetadata* result) {
-        result->value_.mdelem = grpc_mdelem_from_slices(
-            static_cast<const ManagedMemorySlice&>(
-                grpc_slice_ref_internal(GRPC_MDKEY(result->value_.mdelem))),
-            value_slice->TakeCSlice());
-      },
-      // debug_string
-      [](const Buffer& value) {
-        return metadata_detail::MakeDebugString(
-            StringViewFromSlice(GRPC_MDKEY(value.mdelem)),
-            StringViewFromSlice(GRPC_MDVALUE(value.mdelem)));
-      },
-      // key
-      [](const Buffer& value) {
-        return StringViewFromSlice(GRPC_MDKEY(value.mdelem));
-      }};
-  return &vtable;
+ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
+  using KV = std::pair<Slice, Slice>;
+  static const auto destroy = [](const Buffer& value) {
+    delete static_cast<KV*>(value.pointer);
+  };
+  static const auto set = [](const Buffer& value, MetadataContainer* map) {
+    auto* p = static_cast<KV*>(value.pointer);
+    map->AppendUnknown(p->first.as_string_view(), p->second.Ref());
+  };
+  static const auto with_new_value = [](Slice* value, MetadataParseErrorFn,
+                                        ParsedMetadata* result) {
+    auto* p = new KV{
+        static_cast<KV*>(result->value_.pointer)->first.Ref(),
+        std::move(*value),
+    };
+    result->value_.pointer = p;
+  };
+  static const auto debug_string = [](const Buffer& value) {
+    auto* p = static_cast<KV*>(value.pointer);
+    return absl::StrCat(p->first.as_string_view(), ": ",
+                        p->second.as_string_view());
+  };
+  static const auto key_fn = [](const Buffer& value) {
+    return static_cast<KV*>(value.pointer)->first.as_string_view();
+  };
+  static const VTable vtable[2] = {
+      {false, destroy, set, with_new_value, debug_string, key_fn},
+      {true, destroy, set, with_new_value, debug_string, key_fn},
+  };
+  return &vtable[absl::EndsWith(key, "-bin")];
 }
 
 }  // namespace grpc_core

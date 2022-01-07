@@ -114,8 +114,11 @@ inline int64_t SaturatingAdd(int64_t a, int64_t b) {
   } else if (b < INT64_MIN - a) {
     return INT64_MIN;
   }
-
   return a + b;
+}
+
+inline uint32_t MixHash32(uint32_t a, uint32_t b) {
+  return RotateLeft(a, 2u) ^ b;
 }
 
 }  // namespace grpc_core

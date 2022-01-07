@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -75,7 +74,7 @@ class SubchannelCall {
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
-    grpc_slice path;
+    Slice path;
     gpr_cycle_counter start_time;
     Timestamp deadline;
     Arena* arena;

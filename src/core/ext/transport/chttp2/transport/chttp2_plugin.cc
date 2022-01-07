@@ -21,7 +21,6 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/transport/metadata.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(
     grpc_experimental_disable_flow_control, false,

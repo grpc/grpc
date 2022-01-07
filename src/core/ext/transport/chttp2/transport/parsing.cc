@@ -31,7 +31,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -303,11 +302,6 @@ static grpc_error_handle skip_parser(void* /*parser*/,
                                      grpc_chttp2_stream* /*s*/,
                                      const grpc_slice& /*slice*/,
                                      int /*is_last*/) {
-  return GRPC_ERROR_NONE;
-}
-
-grpc_error_handle skip_header(grpc_mdelem md) {
-  GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }
 

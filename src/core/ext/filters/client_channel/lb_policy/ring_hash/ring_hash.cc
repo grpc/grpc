@@ -37,7 +37,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
 

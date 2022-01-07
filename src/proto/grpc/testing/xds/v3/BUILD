@@ -319,11 +319,6 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
-cc_library(
-    name = "expr_lib",
-    deps = ["expr_cc_proto"],
-)
-
 grpc_proto_library(
     name = "rbac_proto",
     srcs = [

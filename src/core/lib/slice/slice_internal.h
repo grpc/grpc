@@ -56,8 +56,7 @@ void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
 bool grpc_slice_is_interned(const grpc_slice& slice);
 inline bool grpc_slice_is_interned(const grpc_slice& slice) {
   return (slice.refcount &&
-          (slice.refcount->GetType() == grpc_slice_refcount::Type::INTERNED ||
-           slice.refcount->GetType() == grpc_slice_refcount::Type::STATIC));
+          (slice.refcount->GetType() == grpc_slice_refcount::Type::INTERNED));
 }
 
 inline bool grpc_slice_static_interned_equal(const grpc_slice& a,

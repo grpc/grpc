@@ -46,12 +46,6 @@
   } while (0)
 
 namespace {
-grpc_slice g_empty_slice;
-grpc_slice g_fake_path_key;
-grpc_slice g_fake_path_value;
-grpc_slice g_fake_auth_key;
-grpc_slice g_fake_auth_value;
-
 struct inproc_stream;
 bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error);
 void maybe_process_ops_locked(inproc_stream* s, grpc_error_handle error);
@@ -281,13 +275,10 @@ struct inproc_stream {
 
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial) {
-  md_batch->ForEach([=](grpc_mdelem md) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    gpr_log(GPR_INFO, "INPROC:%s:%s: %s: %s", is_initial ? "HDR" : "TRL",
-            is_client ? "CLI" : "SVR", key, value);
-    gpr_free(key);
-    gpr_free(value);
+  std::string prefix = absl::StrCat(
+      "INPROC:", is_initial ? "HDR:" : "TRL:", is_client ? "CLI:" : "SVR:");
+  md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
+    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
   });
 }
 
@@ -297,19 +288,9 @@ class CopySink {
  public:
   explicit CopySink(grpc_metadata_batch* dst) : dst_(dst) {}
 
-  void Encode(grpc_mdelem md) {
-    // Differently to grpc_metadata_batch_copy, we always copy slices here so
-    // that we don't need to deal with the plethora of edge cases in that world.
-    // TODO(ctiller): revisit this when deleting mdelem.
-    md = grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(md)),
-                                 grpc_slice_copy(GRPC_MDVALUE(md)));
-    // Error unused in non-debug builds.
-    grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
-    // The only way that Append() can fail is if
-    // there's a duplicate entry for a callout.  However, that can't be
-    // the case here, because we would not have been allowed to create
-    // a source batch that had that kind of conflict.
-    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    dst_->Append(key.as_string_view(), value.AsOwned(),
+                 [](absl::string_view, const grpc_core::Slice&) {});
   }
 
   template <class T, class V>
@@ -463,14 +444,10 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
       // If this is a server, provide initial metadata with a path and authority
       // since it expects that as well as no error yet
       grpc_metadata_batch fake_md(s->arena);
-      grpc_linked_mdelem* path_md =
-          static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*path_md)));
-      path_md->md = grpc_mdelem_from_slices(g_fake_path_key, g_fake_path_value);
-      GPR_ASSERT(fake_md.LinkTail(path_md) == GRPC_ERROR_NONE);
-      grpc_linked_mdelem* auth_md =
-          static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*auth_md)));
-      auth_md->md = grpc_mdelem_from_slices(g_fake_auth_key, g_fake_auth_value);
-      GPR_ASSERT(fake_md.LinkTail(auth_md) == GRPC_ERROR_NONE);
+      fake_md.Set(grpc_core::HttpPathMetadata(),
+                  grpc_core::Slice::FromStaticString("/"));
+      fake_md.Set(grpc_core::HttpAuthorityMetadata(),
+                  grpc_core::Slice::FromStaticString("inproc-fail"));
 
       (void)fill_in_metadata(
           s, &fake_md, 0,
@@ -1261,26 +1238,6 @@ void inproc_transports_create(grpc_transport** server_transport,
 }
 }  // namespace
 
-/*******************************************************************************
- * GLOBAL INIT AND DESTROY
- */
-void grpc_inproc_transport_init(void) {
-  grpc_core::ExecCtx exec_ctx;
-  g_empty_slice = grpc_core::ExternallyManagedSlice();
-
-  grpc_slice key_tmp = grpc_slice_from_static_string(":path");
-  g_fake_path_key = grpc_slice_intern(key_tmp);
-  grpc_slice_unref_internal(key_tmp);
-
-  g_fake_path_value = grpc_slice_from_static_string("/");
-
-  grpc_slice auth_tmp = grpc_slice_from_static_string(":authority");
-  g_fake_auth_key = grpc_slice_intern(auth_tmp);
-  grpc_slice_unref_internal(auth_tmp);
-
-  g_fake_auth_value = grpc_slice_from_static_string("inproc-fail");
-}
-
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          const grpc_channel_args* args,
                                          void* /*reserved*/) {
@@ -1358,13 +1315,4 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   // Now finish scheduled operations
 
   return channel;
-}
-
-void grpc_inproc_transport_shutdown(void) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice_unref_internal(g_empty_slice);
-  grpc_slice_unref_internal(g_fake_path_key);
-  grpc_slice_unref_internal(g_fake_path_value);
-  grpc_slice_unref_internal(g_fake_auth_key);
-  grpc_slice_unref_internal(g_fake_auth_value);
 }

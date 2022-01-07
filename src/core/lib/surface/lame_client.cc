@@ -35,7 +35,6 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 #define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 
