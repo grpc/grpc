@@ -39,7 +39,9 @@ class URI {
       return key == other.key && value == other.value;
     }
     bool operator<(const QueryParam& other) const {
-      return key.compare(other.key) < 0 && value.compare(other.value) < 0;
+      int c = key.compare(other.key);
+      if (c != 0) return c < 0;
+      return value < other.value;
     }
   };
 
