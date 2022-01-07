@@ -3818,6 +3818,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "tsi_ssl_types",
+        "uri_parser",
     ],
 )
 
