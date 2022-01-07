@@ -23,6 +23,7 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 
 #ifndef GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
 #define GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
@@ -60,8 +61,8 @@ class XdsResourceType {
   // whose resource field is set to a non-OK status.
   // Otherwise, returns a DecodeResult with a valid resource.
   virtual absl::StatusOr<DecodeResult> Decode(
-      const XdsEncodingContext& context, absl::string_view serialized_resource,
-      bool is_v2) const = 0;
+      const XdsBootstrap::XdsServer& server, const XdsEncodingContext& context,
+      absl::string_view serialized_resource, bool is_v2) const = 0;
 
   // Returns true if r1 and r2 are equal.
   // Must be invoked only on resources returned by this object's Decode()

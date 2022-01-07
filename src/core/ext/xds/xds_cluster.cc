@@ -70,9 +70,9 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(absl::StrFormat("common_tls_context=%s",
                                        common_tls_context.ToString()));
   }
-  if (lrs_load_reporting_server_name.has_value()) {
+  if (lrs_load_reporting_server.has_value()) {
     contents.push_back(absl::StrFormat("lrs_load_reporting_server_name=%s",
-                                       lrs_load_reporting_server_name.value()));
+                                       lrs_load_reporting_server->server_uri));
   }
   contents.push_back(absl::StrCat("lb_policy=", lb_policy));
   if (lb_policy == "RING_HASH") {
@@ -217,7 +217,7 @@ bool XdsAggregateAndLogicalDnsClusterEnabled() {
 }
 
 grpc_error_handle CdsResourceParse(
-    const XdsEncodingContext& context,
+    const XdsBootstrap::XdsServer& server, const XdsEncodingContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/,
     XdsClusterResource* cds_update) {
   std::vector<grpc_error_handle> errors;
@@ -368,7 +368,7 @@ grpc_error_handle CdsResourceParse(
       errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           ": LRS ConfigSource is not self."));
     }
-    cds_update->lrs_load_reporting_server_name.emplace("");
+    cds_update->lrs_load_reporting_server.emplace(server);
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
   // Thresholds messages, where each message specifies the parameters for a
@@ -414,8 +414,8 @@ void MaybeLogCluster(const XdsEncodingContext& context,
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
-    const XdsEncodingContext& context, absl::string_view serialized_resource,
-    bool is_v2) const {
+    const XdsBootstrap::XdsServer& server, const XdsEncodingContext& context,
+    absl::string_view serialized_resource, bool is_v2) const {
   // Parse serialized proto.
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
@@ -428,8 +428,8 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   result.name =
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
   auto cluster_data = absl::make_unique<ResourceDataSubclass>();
-  grpc_error_handle error =
-      CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
+  grpc_error_handle error = CdsResourceParse(server, context, resource, is_v2,
+                                             &cluster_data->resource);
   if (error != GRPC_ERROR_NONE) {
     std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);

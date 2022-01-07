@@ -201,7 +201,8 @@ class XdsRouteConfigResourceType
     return "envoy.api.v2.RouteConfiguration";
   }
 
-  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
+  absl::StatusOr<DecodeResult> Decode(const XdsBootstrap::XdsServer& server,
+                                      const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool /*is_v2*/) const override;
 

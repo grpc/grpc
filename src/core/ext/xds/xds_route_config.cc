@@ -953,7 +953,8 @@ void MaybeLogRouteConfiguration(
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult>
-XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
+XdsRouteConfigResourceType::Decode(const XdsBootstrap::XdsServer& server,
+                                   const XdsEncodingContext& context,
                                    absl::string_view serialized_resource,
                                    bool /*is_v2*/) const {
   // Parse serialized proto.

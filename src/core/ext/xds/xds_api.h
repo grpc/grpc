@@ -61,7 +61,8 @@ class XdsApi {
     virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
 
     // Called to parse each individual resource in the ADS response.
-    virtual void ParseResource(const XdsEncodingContext& context, size_t idx,
+    virtual void ParseResource(const XdsBootstrap::XdsServer& server,
+                               const XdsEncodingContext& context, size_t idx,
                                absl::string_view type_url,
                                absl::string_view serialized_resource) = 0;
   };
