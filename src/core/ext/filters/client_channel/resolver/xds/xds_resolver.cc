@@ -82,10 +82,8 @@ class XdsResolver : public Resolver {
         data_plane_authority_(GetDataPlaneAuthority(*args.args, uri_)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_resolver %p] created for URI scheme %s path %s authority "
-              "%s data plane authority %s",
-              this, args.uri.scheme().c_str(), args.uri.path().c_str(),
-              args.uri.authority().c_str(), data_plane_authority_.c_str());
+              "[xds_resolver %p] created for URI %s; data plane authority is %s",
+              this, uri_.ToString().c_str(), data_plane_authority_.c_str());
     }
   }
 

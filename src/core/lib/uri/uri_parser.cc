@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -37,18 +35,10 @@ namespace grpc_core {
 
 namespace {
 
-// Returns true for any character in pchar, as defined in:
-// https://datatracker.ietf.org/doc/html/rfc3986#section-3.3
-bool IsPChar(char c) {
-  if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
-      (c >= '0' && c <= '9')) {
-    return true;
-  }
+// Returns true for any sub-delim character, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-2.2
+bool IsSubDelimChar(char c) {
   switch (c) {
-    case '-':
-    case '_':
-    case '.':
-    case '~':
     case '!':
     case '$':
     case '&':
@@ -60,6 +50,59 @@ bool IsPChar(char c) {
     case ',':
     case ';':
     case '=':
+      return true;
+  }
+  return false;
+}
+
+// Returns true for any unreserved character, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-2.3
+bool IsUnreservedChar(char c) {
+  if (absl::ascii_isalnum(c)) return true;
+  switch (c) {
+    case '-':
+    case '.':
+    case '_':
+    case '~':
+      return true;
+  }
+  return false;
+}
+
+// Returns true for any character in scheme, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-3.1
+bool IsSchemeChar(char c) {
+  if (absl::ascii_isalnum(c)) return true;
+  switch (c) {
+    case '+':
+    case '-':
+    case '.':
+      return true;
+  }
+  return false;
+}
+
+// Returns true for any character in authority, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-3.2
+bool IsAuthorityChar(char c) {
+  if (IsUnreservedChar(c)) return true;
+  if (IsSubDelimChar(c)) return true;
+  switch (c) {
+    case ':':
+    case '[':
+    case ']':
+    case '@':
+      return true;
+  }
+  return false;
+}
+
+// Returns true for any character in pchar, as defined in:
+// https://datatracker.ietf.org/doc/html/rfc3986#section-3.3
+bool IsPChar(char c) {
+  if (IsUnreservedChar(c)) return true;
+  if (IsSubDelimChar(c)) return true;
+  switch (c) {
     case ':':
     case '@':
       return true;
@@ -71,11 +114,39 @@ bool IsPChar(char c) {
 // https://datatracker.ietf.org/doc/html/rfc3986#section-3.3
 bool IsPathChar(char c) { return IsPChar(c) || c == '/'; }
 
-// Checks if this string is made up of pchars, '/', '?', and '%' exclusively.
+// Returns true for any character allowed in a URI query or fragment,
+// as defined in:
+// See https://tools.ietf.org/html/rfc3986#section-3.4
+bool IsQueryOrFragmentChar(char c) { return IsPChar(c) || c == '/' || c == '?'; }
+
+// Same as IsQueryOrFragmentChar(), but excludes '&' and '='.
+bool IsQueryKeyOrValueChar(char c) {
+  return c != '&' && c != '=' && IsQueryOrFragmentChar(c);
+}
+
+// Returns a copy of str, percent-encoding any character for which
+// is_allowed_char() returns false.
+std::string PercentEncode(absl::string_view str,
+                          std::function<bool(char)> is_allowed_char) {
+  std::string out;
+  for (char c : str) {
+    if (!is_allowed_char(c)) {
+      std::string hex = absl::BytesToHexString(absl::string_view(&c, 1));
+      GPR_ASSERT(hex.size() == 2);
+      out.push_back('%');
+      out.append(hex);
+    } else {
+      out.push_back(c);
+    }
+  }
+  return out;
+}
+
+// Checks if this string is made up of query/fragment chars and '%' exclusively.
 // See https://tools.ietf.org/html/rfc3986#section-3.4
 bool IsQueryOrFragmentString(absl::string_view str) {
   for (char c : str) {
-    if (!IsPathChar(c) && c != '?' && c != '%') return false;
+    if (!IsQueryOrFragmentChar(c) && c != '%') return false;
   }
   return true;
 }
@@ -90,18 +161,7 @@ absl::Status MakeInvalidURIStatus(absl::string_view part_name,
 }  // namespace
 
 std::string URI::PercentEncodePath(absl::string_view str) {
-  std::string out;
-  for (const char c : str) {
-    if (!IsPathChar(c)) {
-      std::string hex = absl::BytesToHexString(absl::string_view(&c, 1));
-      GPR_ASSERT(hex.size() == 2);
-      out.push_back('%');
-      out.append(hex);
-    } else {
-      out.push_back(c);
-    }
-  }
-  return out;
+  return PercentEncode(str, IsPathChar);
 }
 
 // Similar to `grpc_permissive_percent_decode_slice`, this %-decodes all valid
@@ -201,6 +261,17 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
              std::move(query_param_pairs), std::move(fragment));
 }
 
+absl::StatusOr<URI> URI::Create(
+    std::string scheme, std::string authority, std::string path,
+    std::vector<QueryParam> query_parameter_pairs, std::string fragment) {
+  if (!authority.empty() && !path.empty() && path[0] != '/') {
+    return absl::InvalidArgumentError(
+        "if authority is present, path must start with a '/'");
+  }
+  return URI(std::move(scheme), std::move(authority), std::move(path),
+             std::move(query_parameter_pairs), std::move(fragment));
+}
+
 URI::URI(std::string scheme, std::string authority, std::string path,
          std::vector<QueryParam> query_parameter_pairs, std::string fragment)
     : scheme_(std::move(scheme)),
@@ -238,4 +309,39 @@ URI& URI::operator=(const URI& other) {
   }
   return *this;
 }
+
+namespace {
+
+// A pair formatter for use with absl::StrJoin() for formatting query params.
+struct QueryParameterFormatter {
+  void operator()(std::string* out, const URI::QueryParam& query_param) const {
+    out->append(absl::StrCat(
+        PercentEncode(query_param.key, IsQueryKeyOrValueChar), "=",
+        PercentEncode(query_param.value, IsQueryKeyOrValueChar)));
+  }
+};
+
+}  // namespace
+
+std::string URI::ToString() const {
+  std::vector<std::string> parts = {PercentEncode(scheme_, IsSchemeChar), ":"};
+  if (!authority_.empty()) {
+    parts.emplace_back("//");
+    parts.emplace_back(PercentEncode(authority_, IsAuthorityChar));
+  }
+  if (!path_.empty()) {
+    parts.emplace_back(PercentEncode(path_, IsPathChar));
+  }
+  if (!query_parameter_pairs_.empty()) {
+    parts.push_back("?");
+    parts.push_back(
+        absl::StrJoin(query_parameter_pairs_, "&", QueryParameterFormatter()));
+  }
+  if (!fragment_.empty()) {
+    parts.push_back("#");
+    parts.push_back(PercentEncode(fragment_, IsQueryOrFragmentChar));
+  }
+  return absl::StrJoin(parts, "");
+}
+
 }  // namespace grpc_core
