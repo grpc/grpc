@@ -81,9 +81,10 @@ class XdsResolver : public Resolver {
         uri_(std::move(args.uri)),
         data_plane_authority_(GetDataPlaneAuthority(*args.args, uri_)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-      gpr_log(GPR_INFO,
-              "[xds_resolver %p] created for URI %s; data plane authority is %s",
-              this, uri_.ToString().c_str(), data_plane_authority_.c_str());
+      gpr_log(
+          GPR_INFO,
+          "[xds_resolver %p] created for URI %s; data plane authority is %s",
+          this, uri_.ToString().c_str(), data_plane_authority_.c_str());
     }
   }
 
@@ -736,7 +737,8 @@ void XdsResolver::StartLocked() {
                                    "/envoy.config.listener.v3.Listener/%s");
     }
     lds_resource_name_ = absl::StrReplaceAll(
-        name_template, {{"%s", URI::PercentEncodePath(resource_name_fragment)}});
+        name_template,
+        {{"%s", URI::PercentEncodePath(resource_name_fragment)}});
   } else {
     // target_uri.authority not set
     absl::string_view name_template =

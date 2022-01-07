@@ -113,8 +113,7 @@ TEST_F(URIParserTest,
   ASSERT_THAT(uri->query_parameter_map(), ElementsAre(Pair("a", "3")));
   // Order matters for query parameter pairs
   ASSERT_THAT(uri->query_parameter_pairs(),
-              ElementsAre(URI::QueryParam{"a", "2"},
-                          URI::QueryParam{"a", "1"},
+              ElementsAre(URI::QueryParam{"a", "2"}, URI::QueryParam{"a", "1"},
                           URI::QueryParam{"a", "3"}));
 }
 
@@ -173,7 +172,8 @@ TEST_F(URIParserTest, IPV6StringsAreParsedCorrectly) {
                "[fe80::90%eth1.sky1]:6010", {}, {}, "");
 }
 
-TEST_F(URIParserTest, PreviouslyReservedCharactersInUnrelatedURIPartsAreIgnored) {
+TEST_F(URIParserTest,
+       PreviouslyReservedCharactersInUnrelatedURIPartsAreIgnored) {
   // The '?' and '/' characters are not reserved delimiter characters in the
   // fragment. See http://go/rfc/3986#section-3.5
   TestSucceeds("http://foo?bar#lol?", "http", "foo", "", {{"bar", ""}},
@@ -216,20 +216,19 @@ TEST_F(URIParserTest, InvalidURIsResultInFailureStatuses) {
 }
 
 TEST(URITest, PercentEncodePath) {
-  EXPECT_EQ(
-      URI::PercentEncodePath(
-          // These chars are allowed.
-          "abcdefghijklmnopqrstuvwxyz"
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-          "0123456789"
-          "/:@-._~!$&'()*+,;="
-          // These chars will be escaped.
-          "\\?%#[]^"),
-      "abcdefghijklmnopqrstuvwxyz"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "0123456789"
-      "/:@-._~!$&'()*+,;="
-      "%5c%3f%25%23%5b%5d%5e");
+  EXPECT_EQ(URI::PercentEncodePath(
+                // These chars are allowed.
+                "abcdefghijklmnopqrstuvwxyz"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "0123456789"
+                "/:@-._~!$&'()*+,;="
+                // These chars will be escaped.
+                "\\?%#[]^"),
+            "abcdefghijklmnopqrstuvwxyz"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "0123456789"
+            "/:@-._~!$&'()*+,;="
+            "%5c%3f%25%23%5b%5d%5e");
 }
 
 TEST(URITest, Basic) {
@@ -285,47 +284,47 @@ TEST(URITest, QueryParams) {
   EXPECT_EQ(uri->scheme(), "http");
   EXPECT_EQ(uri->authority(), "server.example.com");
   EXPECT_EQ(uri->path(), "/path/to/file.html");
-  EXPECT_THAT(uri->query_parameter_pairs(), testing::ElementsAre(
-      testing::AllOf(
-          testing::Field(&URI::QueryParam::key, "key"),
-          testing::Field(&URI::QueryParam::value, "value")),
-      testing::AllOf(
-          testing::Field(&URI::QueryParam::key, "key2"),
-          testing::Field(&URI::QueryParam::value, "value2"))));
-  EXPECT_THAT(uri->query_parameter_map(), testing::ElementsAre(
-      testing::Pair("key", "value"),
-      testing::Pair("key2", "value2")));
+  EXPECT_THAT(
+      uri->query_parameter_pairs(),
+      testing::ElementsAre(
+          testing::AllOf(testing::Field(&URI::QueryParam::key, "key"),
+                         testing::Field(&URI::QueryParam::value, "value")),
+          testing::AllOf(testing::Field(&URI::QueryParam::key, "key2"),
+                         testing::Field(&URI::QueryParam::value, "value2"))));
+  EXPECT_THAT(uri->query_parameter_map(),
+              testing::ElementsAre(testing::Pair("key", "value"),
+                                   testing::Pair("key2", "value2")));
   EXPECT_EQ(uri->fragment(), "");
   EXPECT_EQ("http://server.example.com/path/to/file.html?key=value&key2=value2",
             uri->ToString());
 }
 
 TEST(URITest, DuplicateQueryParams) {
-  auto uri = URI::Create("http", "server.example.com", "/path/to/file.html",
-                         {{"key", "value"}, {"key2", "value2"},
-                          {"key", "other_value"}},
-                         "");
+  auto uri = URI::Create(
+      "http", "server.example.com", "/path/to/file.html",
+      {{"key", "value"}, {"key2", "value2"}, {"key", "other_value"}}, "");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(), "http");
   EXPECT_EQ(uri->authority(), "server.example.com");
   EXPECT_EQ(uri->path(), "/path/to/file.html");
-  EXPECT_THAT(uri->query_parameter_pairs(), testing::ElementsAre(
-      testing::AllOf(
-          testing::Field(&URI::QueryParam::key, "key"),
-          testing::Field(&URI::QueryParam::value, "value")),
-      testing::AllOf(
-          testing::Field(&URI::QueryParam::key, "key2"),
-          testing::Field(&URI::QueryParam::value, "value2")),
-      testing::AllOf(
-          testing::Field(&URI::QueryParam::key, "key"),
-          testing::Field(&URI::QueryParam::value, "other_value"))));
-  EXPECT_THAT(uri->query_parameter_map(), testing::ElementsAre(
-      testing::Pair("key", "other_value"),
-      testing::Pair("key2", "value2")));
+  EXPECT_THAT(
+      uri->query_parameter_pairs(),
+      testing::ElementsAre(
+          testing::AllOf(testing::Field(&URI::QueryParam::key, "key"),
+                         testing::Field(&URI::QueryParam::value, "value")),
+          testing::AllOf(testing::Field(&URI::QueryParam::key, "key2"),
+                         testing::Field(&URI::QueryParam::value, "value2")),
+          testing::AllOf(
+              testing::Field(&URI::QueryParam::key, "key"),
+              testing::Field(&URI::QueryParam::value, "other_value"))));
+  EXPECT_THAT(uri->query_parameter_map(),
+              testing::ElementsAre(testing::Pair("key", "other_value"),
+                                   testing::Pair("key2", "value2")));
   EXPECT_EQ(uri->fragment(), "");
-  EXPECT_EQ("http://server.example.com/path/to/file.html"
-            "?key=value&key2=value2&key=other_value",
-            uri->ToString());
+  EXPECT_EQ(
+      "http://server.example.com/path/to/file.html"
+      "?key=value&key2=value2&key=other_value",
+      uri->ToString());
 }
 
 TEST(URITest, Fragment) {
@@ -349,19 +348,20 @@ TEST(URITest, QueryParamsAndFragment) {
   EXPECT_EQ(uri->scheme(), "http");
   EXPECT_EQ(uri->authority(), "server.example.com");
   EXPECT_EQ(uri->path(), "/path/to/file.html");
-  EXPECT_THAT(uri->query_parameter_pairs(), testing::ElementsAre(
-      testing::AllOf(
-          testing::Field(&URI::QueryParam::key, "key"),
-          testing::Field(&URI::QueryParam::value, "value")),
-      testing::AllOf(
-          testing::Field(&URI::QueryParam::key, "key2"),
-          testing::Field(&URI::QueryParam::value, "value2"))));
-  EXPECT_THAT(uri->query_parameter_map(), testing::ElementsAre(
-      testing::Pair("key", "value"),
-      testing::Pair("key2", "value2")));
+  EXPECT_THAT(
+      uri->query_parameter_pairs(),
+      testing::ElementsAre(
+          testing::AllOf(testing::Field(&URI::QueryParam::key, "key"),
+                         testing::Field(&URI::QueryParam::value, "value")),
+          testing::AllOf(testing::Field(&URI::QueryParam::key, "key2"),
+                         testing::Field(&URI::QueryParam::value, "value2"))));
+  EXPECT_THAT(uri->query_parameter_map(),
+              testing::ElementsAre(testing::Pair("key", "value"),
+                                   testing::Pair("key2", "value2")));
   EXPECT_EQ(uri->fragment(), "fragment");
   EXPECT_EQ(
-      "http://server.example.com/path/to/file.html?key=value&key2=value2#fragment",
+      "http://server.example.com/path/to/"
+      "file.html?key=value&key2=value2#fragment",
       uri->ToString());
 }
 
@@ -408,8 +408,9 @@ TEST(URITest, ToStringPercentEncoding) {
             "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             "-._~!$&'()*+,;=:@"
             "%?#[]");
-  EXPECT_THAT(uri->query_parameter_pairs(), testing::ElementsAre(
-      testing::AllOf(
+  EXPECT_THAT(
+      uri->query_parameter_pairs(),
+      testing::ElementsAre(testing::AllOf(
           testing::Field(
               &URI::QueryParam::key,
               "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -420,8 +421,9 @@ TEST(URITest, ToStringPercentEncoding) {
               "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
               "-._~!$'()*+,;:@/?"
               "%=&#[]"))));
-  EXPECT_THAT(uri->query_parameter_map(), testing::ElementsAre(
-      testing::Pair(
+  EXPECT_THAT(
+      uri->query_parameter_map(),
+      testing::ElementsAre(testing::Pair(
           "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
           "-._~!$'()*+,;:@/?"
           "%=&#[]",

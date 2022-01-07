@@ -117,7 +117,9 @@ bool IsPathChar(char c) { return IsPChar(c) || c == '/'; }
 // Returns true for any character allowed in a URI query or fragment,
 // as defined in:
 // See https://tools.ietf.org/html/rfc3986#section-3.4
-bool IsQueryOrFragmentChar(char c) { return IsPChar(c) || c == '/' || c == '?'; }
+bool IsQueryOrFragmentChar(char c) {
+  return IsPChar(c) || c == '/' || c == '?';
+}
 
 // Same as IsQueryOrFragmentChar(), but excludes '&' and '='.
 bool IsQueryKeyOrValueChar(char c) {
@@ -261,9 +263,10 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
              std::move(query_param_pairs), std::move(fragment));
 }
 
-absl::StatusOr<URI> URI::Create(
-    std::string scheme, std::string authority, std::string path,
-    std::vector<QueryParam> query_parameter_pairs, std::string fragment) {
+absl::StatusOr<URI> URI::Create(std::string scheme, std::string authority,
+                                std::string path,
+                                std::vector<QueryParam> query_parameter_pairs,
+                                std::string fragment) {
   if (!authority.empty() && !path.empty() && path[0] != '/') {
     return absl::InvalidArgumentError(
         "if authority is present, path must start with a '/'");
@@ -315,9 +318,9 @@ namespace {
 // A pair formatter for use with absl::StrJoin() for formatting query params.
 struct QueryParameterFormatter {
   void operator()(std::string* out, const URI::QueryParam& query_param) const {
-    out->append(absl::StrCat(
-        PercentEncode(query_param.key, IsQueryKeyOrValueChar), "=",
-        PercentEncode(query_param.value, IsQueryKeyOrValueChar)));
+    out->append(
+        absl::StrCat(PercentEncode(query_param.key, IsQueryKeyOrValueChar), "=",
+                     PercentEncode(query_param.value, IsQueryKeyOrValueChar)));
   }
 };
 
