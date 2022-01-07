@@ -838,6 +838,12 @@ class PublishToAppEncoder {
     Append(grpc_core::LbTokenMetadata::key(), slice);
   }
 
+  void Encode(grpc_core::LbCostBinMetadata,
+              const grpc_core::LbCostBinMetadata::ValueType& value) {
+    Append(grpc_core::LbCostBinMetadata::key(),
+           grpc_core::LbCostBinMetadata::Encode(value));
+  }
+
  private:
   void Append(absl::string_view key, int64_t value) {
     Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
