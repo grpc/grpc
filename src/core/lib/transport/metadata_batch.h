@@ -716,7 +716,9 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
 template <typename Which>
 struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
   Value() = default;
-  explicit Value(const typename Which::ValueType& value) : value(value) {}
+  explicit Value(const typename Which::ValueType& value) {
+    this->value.push_back(value);
+  }
   explicit Value(typename Which::ValueType&& value) {
     this->value.emplace_back(std::forward<typename Which::ValueType>(value));
   }
