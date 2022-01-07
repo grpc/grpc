@@ -20,12 +20,10 @@ message Empty {}
 
 message ByteSlice {
     bytes value = 1;
-    bool intern = 2;
 }
 
 message StringSlice {
     string value = 1;
-    bool intern = 2;
 }
 
 message ResourceQuota {}

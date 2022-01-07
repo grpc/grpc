@@ -1884,7 +1884,6 @@ grpc_cc_library(
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer.cc",
-        "src/core/lib/slice/slice_intern.cc",
         "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",

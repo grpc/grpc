@@ -33,12 +33,11 @@ class EvaluateArgsTestUtil {
   ~EvaluateArgsTestUtil() { delete channel_args_; }
 
   void AddPairToMetadata(const char* key, const char* value) {
-    metadata_.Append(
-        key, Slice(grpc_slice_intern(grpc_slice_from_static_string(value))),
-        [](absl::string_view, const Slice&) {
-          // We should never ever see an error here.
-          abort();
-        });
+    metadata_.Append(key, Slice::FromStaticString(value),
+                     [](absl::string_view, const Slice&) {
+                       // We should never ever see an error here.
+                       abort();
+                     });
   }
 
   void SetLocalEndpoint(absl::string_view local_uri) {

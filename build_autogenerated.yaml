@@ -1531,7 +1531,6 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -2262,7 +2261,6 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -4012,15 +4010,6 @@ targets:
   headers: []
   src:
   - test/core/slice/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: slice_intern_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_intern_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
