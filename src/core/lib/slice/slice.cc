@@ -234,13 +234,13 @@ grpc_slice grpc_slice_malloc(size_t length) {
   }
 }
 
-template <typename Slice>
-static Slice sub_no_ref(const Slice& source, size_t begin, size_t end) {
-  Slice subset;
+static grpc_slice sub_no_ref(const grpc_slice& source, size_t begin,
+                             size_t end) {
+  grpc_slice subset;
 
   GPR_ASSERT(end >= begin);
 
-  if (source.refcount) {
+  if (source.refcount != nullptr) {
     /* Enforce preconditions */
     GPR_ASSERT(source.data.refcounted.length >= end);
 
@@ -293,6 +293,12 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
     memcpy(tail.data.inlined.bytes, source->data.inlined.bytes + split,
            tail.data.inlined.length);
     source->data.inlined.length = static_cast<uint8_t>(split);
+  } else if (source->refcount == grpc_slice_refcount::NoopRefcount()) {
+    /* refcount == NoopRefcount(), so we can just split in-place */
+    tail.refcount = grpc_slice_refcount::NoopRefcount();
+    tail.data.refcounted.bytes = source->data.refcounted.bytes + split;
+    tail.data.refcounted.length = source->data.refcounted.length - split;
+    source->data.refcounted.length = split;
   } else {
     size_t tail_length = source->data.refcounted.length - split;
     GPR_ASSERT(source->data.refcounted.length >= split);
