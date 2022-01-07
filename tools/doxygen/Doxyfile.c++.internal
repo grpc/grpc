@@ -1117,8 +1117,6 @@ src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/proxy_mapper.h \
 src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
 src/core/ext/filters/client_channel/proxy_mapper_registry.h \
-src/core/ext/filters/client_channel/resolver.cc \
-src/core/ext/filters/client_channel/resolver.h \
 src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
@@ -1139,9 +1137,6 @@ src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
-src/core/ext/filters/client_channel/resolver_factory.h \
-src/core/ext/filters/client_channel/resolver_registry.cc \
-src/core/ext/filters/client_channel/resolver_registry.h \
 src/core/ext/filters/client_channel/resolver_result_parsing.cc \
 src/core/ext/filters/client_channel/resolver_result_parsing.h \
 src/core/ext/filters/client_channel/retry_filter.cc \
@@ -1150,8 +1145,6 @@ src/core/ext/filters/client_channel/retry_service_config.cc \
 src/core/ext/filters/client_channel/retry_service_config.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
-src/core/ext/filters/client_channel/server_address.cc \
-src/core/ext/filters/client_channel/server_address.h \
 src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
@@ -1190,11 +1183,6 @@ src/core/ext/filters/server_config_selector/server_config_selector.cc \
 src/core/ext/filters/server_config_selector/server_config_selector.h \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
 src/core/ext/filters/server_config_selector/server_config_selector_filter.h \
-src/core/ext/service_config/service_config.cc \
-src/core/ext/service_config/service_config.h \
-src/core/ext/service_config/service_config_call_data.h \
-src/core/ext/service_config/service_config_parser.cc \
-src/core/ext/service_config/service_config_parser.h \
 src/core/ext/transport/binder/client/binder_connector.cc \
 src/core/ext/transport/binder/client/binder_connector.h \
 src/core/ext/transport/binder/client/channel_create.cc \
@@ -2008,6 +1996,7 @@ src/core/lib/iomgr/resolve_address_posix.cc \
 src/core/lib/iomgr/resolve_address_posix.h \
 src/core/lib/iomgr/resolve_address_windows.cc \
 src/core/lib/iomgr/resolve_address_windows.h \
+src/core/lib/iomgr/resolved_address.h \
 src/core/lib/iomgr/sockaddr.h \
 src/core/lib/iomgr/sockaddr_posix.h \
 src/core/lib/iomgr/sockaddr_windows.h \
@@ -2093,6 +2082,13 @@ src/core/lib/promise/map.h \
 src/core/lib/promise/poll.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
+src/core/lib/resolver/resolver.cc \
+src/core/lib/resolver/resolver.h \
+src/core/lib/resolver/resolver_factory.h \
+src/core/lib/resolver/resolver_registry.cc \
+src/core/lib/resolver/resolver_registry.h \
+src/core/lib/resolver/server_address.cc \
+src/core/lib/resolver/server_address.h \
 src/core/lib/resource_quota/api.cc \
 src/core/lib/resource_quota/api.h \
 src/core/lib/resource_quota/arena.cc \
@@ -2214,6 +2210,11 @@ src/core/lib/security/transport/tsi_error.cc \
 src/core/lib/security/transport/tsi_error.h \
 src/core/lib/security/util/json_util.cc \
 src/core/lib/security/util/json_util.h \
+src/core/lib/service_config/service_config.cc \
+src/core/lib/service_config/service_config.h \
+src/core/lib/service_config/service_config_call_data.h \
+src/core/lib/service_config/service_config_parser.cc \
+src/core/lib/service_config/service_config_parser.h \
 src/core/lib/slice/b64.cc \
 src/core/lib/slice/b64.h \
 src/core/lib/slice/percent_encoding.cc \

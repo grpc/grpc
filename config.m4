@@ -76,7 +76,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
-    src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc \
@@ -92,12 +91,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
-    src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/resolver_result_parsing.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
@@ -118,8 +115,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/server_config_selector/server_config_selector.cc \
     src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
-    src/core/ext/service_config/service_config.cc \
-    src/core/ext/service_config/service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
@@ -558,6 +553,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
     src/core/lib/promise/activity.cc \
+    src/core/lib/resolver/resolver.cc \
+    src/core/lib/resolver/resolver_registry.cc \
+    src/core/lib/resolver/server_address.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
@@ -622,6 +620,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
+    src/core/lib/service_config/service_config.cc \
+    src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -1136,7 +1136,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/rbac)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/client/insecure)
@@ -1251,6 +1250,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
@@ -1278,6 +1278,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)

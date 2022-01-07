@@ -834,6 +834,10 @@ class PublishToAppEncoder {
     Append(grpc_core::GrpcRetryPushbackMsMetadata::key(), count);
   }
 
+  void Encode(grpc_core::LbTokenMetadata, const grpc_core::Slice& slice) {
+    Append(grpc_core::LbTokenMetadata::key(), slice);
+  }
+
  private:
   void Append(absl::string_view key, int64_t value) {
     Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),

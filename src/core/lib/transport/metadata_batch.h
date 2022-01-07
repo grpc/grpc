@@ -53,6 +53,7 @@ namespace grpc_core {
 // to name this in MetadataMap, but ultimately once the transition is done we
 // should not need to.
 struct GrpcTimeoutMetadata {
+  static constexpr bool kRepeatable = false;
   using ValueType = grpc_millis;
   using MementoType = grpc_millis;
   static absl::string_view key() { return "grpc-timeout"; }
@@ -78,6 +79,7 @@ struct GrpcTimeoutMetadata {
 
 // TE metadata trait.
 struct TeMetadata {
+  static constexpr bool kRepeatable = false;
   // HTTP2 says that TE can either be empty or "trailers".
   // Empty means this trait is not included, "trailers" means kTrailers, and
   // kInvalid is used to remember an invalid value.
@@ -113,6 +115,7 @@ struct TeMetadata {
 
 // content-type metadata trait.
 struct ContentTypeMetadata {
+  static constexpr bool kRepeatable = false;
   // gRPC says that content-type can be application/grpc[;something]
   // Core has only ever verified the prefix.
   // IF we want to start verifying more, we can expand this type.
@@ -168,6 +171,7 @@ struct ContentTypeMetadata {
 
 // scheme metadata trait.
 struct HttpSchemeMetadata {
+  static constexpr bool kRepeatable = false;
   enum ValueType {
     kHttp,
     kHttps,
@@ -215,6 +219,7 @@ struct HttpSchemeMetadata {
 
 // method metadata trait.
 struct HttpMethodMetadata {
+  static constexpr bool kRepeatable = false;
   enum ValueType {
     kPost,
     kPut,
@@ -295,16 +300,19 @@ struct CompressionAlgorithmBasedMetadata {
 
 // grpc-encoding metadata trait.
 struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-encoding"; }
 };
 
 // grpc-internal-encoding-request metadata trait.
 struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-internal-encoding-request"; }
 };
 
 // grpc-accept-encoding metadata trait.
 struct GrpcAcceptEncodingMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-accept-encoding"; }
   using ValueType = CompressionAlgorithmSet;
   using MementoType = ValueType;
@@ -331,46 +339,55 @@ struct SimpleSliceBasedMetadata {
 
 // user-agent metadata trait.
 struct UserAgentMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "user-agent"; }
 };
 
 // grpc-message metadata trait.
 struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-message"; }
 };
 
 // host metadata trait.
 struct HostMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "host"; }
 };
 
 // x-endpoint-load-metrics-bin metadata trait.
 struct XEndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
 };
 
 // grpc-server-stats-bin metadata trait.
 struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-server-stats-bin"; }
 };
 
 // grpc-trace-bin metadata trait.
 struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-trace-bin"; }
 };
 
 // grpc-tags-bin metadata trait.
 struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
 // :authority metadata trait.
 struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return ":authority"; }
 };
 
 // :path metadata trait.
 struct HttpPathMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return ":path"; }
 };
 
@@ -402,24 +419,28 @@ struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
 // grpc-status metadata trait.
 struct GrpcStatusMetadata
     : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-status"; }
 };
 
 // grpc-previous-rpc-attempts metadata trait.
 struct GrpcPreviousRpcAttemptsMetadata
     : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
 };
 
 // grpc-retry-pushback-ms metadata trait.
 struct GrpcRetryPushbackMsMetadata
     : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
 };
 
 // :status metadata trait.
 // TODO(ctiller): consider moving to uint16_t
 struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return ":status"; }
 };
 
@@ -427,6 +448,7 @@ struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
 // This should not be exposed outside of gRPC core.
 class GrpcLbClientStats;
 struct GrpcLbClientStatsMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpclb_client_stats"; }
   using ValueType = GrpcLbClientStats*;
   using MementoType = ValueType;
@@ -440,11 +462,13 @@ struct GrpcLbClientStatsMetadata {
 
 // lb-token metadata
 struct LbTokenMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "lb-token"; }
 };
 
 // lb-cost-bin metadata
 struct LbCostBinMetadata {
+  static constexpr bool kRepeatable = true;
   static absl::string_view key() { return "lb-cost-bin"; }
   struct ValueType {
     double cost;
@@ -615,20 +639,39 @@ class GetStringValueHelper {
       : container_(container), backing_(backing) {}
 
   template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE
-      absl::enable_if_t<std::is_same<Slice, typename Trait::ValueType>::value,
-                        absl::optional<absl::string_view>>
-      Found(Trait) {
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == false &&
+          std::is_same<Slice, typename Trait::ValueType>::value,
+      absl::optional<absl::string_view>>
+  Found(Trait) {
     const auto* value = container_->get_pointer(Trait());
     if (value == nullptr) return absl::nullopt;
     return value->as_string_view();
   }
 
   template <typename Trait>
-  GPR_ATTRIBUTE_NOINLINE
-      absl::enable_if_t<!std::is_same<Slice, typename Trait::ValueType>::value,
-                        absl::optional<absl::string_view>>
-      Found(Trait) {
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == true &&
+          !std::is_same<Slice, typename Trait::ValueType>::value,
+      absl::optional<absl::string_view>>
+  Found(Trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return absl::nullopt;
+    backing_->clear();
+    for (const auto& v : *value) {
+      if (!backing_->empty()) backing_->push_back(',');
+      auto new_segment = Trait::Encode(v);
+      backing_->append(new_segment.begin(), new_segment.end());
+    }
+    return *backing_;
+  }
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == false &&
+          !std::is_same<Slice, typename Trait::ValueType>::value,
+      absl::optional<absl::string_view>>
+  Found(Trait) {
     const auto* value = container_->get_pointer(Trait());
     if (value == nullptr) return absl::nullopt;
     *backing_ = std::string(Trait::Encode(*value).as_string_view());
@@ -643,6 +686,55 @@ class GetStringValueHelper {
  private:
   const Container* const container_;
   std::string* backing_;
+};
+
+// Generate a strong type for metadata values per trait.
+template <typename Which, typename Ignored = void>
+struct Value;
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) : value(value) {}
+  explicit Value(typename Which::ValueType&& value)
+      : value(std::forward<typename Which::ValueType>(value)) {}
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&&) noexcept = default;
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder* encoder) const {
+    encoder->Encode(Which(), value);
+  }
+  using StorageType = typename Which::ValueType;
+  GPR_NO_UNIQUE_ADDRESS StorageType value;
+};
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) : value(value) {}
+  explicit Value(typename Which::ValueType&& value) {
+    this->value.emplace_back(std::forward<typename Which::ValueType>(value));
+  }
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&&) noexcept = default;
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder* encoder) const {
+    for (const auto& v : value) {
+      encoder->Encode(Which(), v);
+    }
+  }
+  using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
+  StorageType value;
 };
 
 }  // namespace metadata_detail
@@ -681,6 +773,8 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // struct GrpcXyzMetadata {
 //   // The type that's stored on MetadataBatch
 //   using ValueType = ...;
+//   // Can this metadata field be repeated?
+//   static constexpr bool kRepeatable = ...;
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
@@ -760,7 +854,8 @@ class MetadataMap {
   // Returns nullptr if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.
   template <typename Which>
-  const typename Which::ValueType* get_pointer(Which) const {
+  const typename metadata_detail::Value<Which>::StorageType* get_pointer(
+      Which) const {
     if (auto* p = table_.template get<Value<Which>>()) return &p->value;
     return nullptr;
   }
@@ -769,9 +864,18 @@ class MetadataMap {
   // Returns nullptr if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.
   template <typename Which>
-  typename Which::ValueType* get_pointer(Which) {
+  typename metadata_detail::Value<Which>::StorageType* get_pointer(Which) {
     if (auto* p = table_.template get<Value<Which>>()) return &p->value;
     return nullptr;
+  }
+
+  // Get the pointer to the value of some known metadata.
+  // Adds the default value for the metadata is not present.
+  // Causes a compilation error if Which is not an element of Traits.
+  template <typename Which>
+  typename metadata_detail::Value<Which>::StorageType* GetOrCreatePointer(
+      Which) {
+    return &table_.template get_or_create<Value<Which>>()->value;
   }
 
   // Get the value of some known metadata.
@@ -786,9 +890,14 @@ class MetadataMap {
   // Set the value of some known metadata.
   // Returns a pointer to the new value.
   template <typename Which, typename... Args>
-  typename Which::ValueType* Set(Which, Args&&... args) {
-    return &table_.template set<Value<Which>>(std::forward<Args>(args)...)
-                ->value;
+  absl::enable_if_t<Which::kRepeatable == false, void> Set(Which,
+                                                           Args&&... args) {
+    table_.template set<Value<Which>>(std::forward<Args>(args)...);
+  }
+  template <typename Which, typename... Args>
+  absl::enable_if_t<Which::kRepeatable == true, void> Set(Which,
+                                                          Args&&... args) {
+    GetOrCreatePointer(Which())->emplace_back(std::forward<Args>(args)...);
   }
 
   // Remove a specific piece of known metadata.
@@ -818,9 +927,25 @@ class MetadataMap {
   //  auto value = m.get(T());
   //  m.Remove(T());
   template <typename Which>
-  absl::optional<typename Which::ValueType> Take(Which which) {
+  absl::enable_if_t<Which::kRepeatable == false,
+                    absl::optional<typename Which::ValueType>>
+  Take(Which which) {
     if (auto* p = get_pointer(which)) {
       absl::optional<typename Which::ValueType> value(std::move(*p));
+      Remove(which);
+      return value;
+    }
+    return {};
+  }
+
+  // Extract repeated known metadata.
+  // Returns an empty vector if the metadata was not present.
+  template <typename Which>
+  absl::enable_if_t<Which::kRepeatable == true,
+                    typename metadata_detail::Value<Which>::StorageType>
+  Take(Which which) {
+    if (auto* p = get_pointer(which)) {
+      typename Value<Which>::StorageType value = std::move(*p);
       Remove(which);
       return value;
     }
@@ -862,22 +987,9 @@ class MetadataMap {
   friend class metadata_detail::RemoveHelper<MetadataMap>;
   friend class ParsedMetadata<MetadataMap>;
 
-  // Generate a strong type for metadata values per trait.
   template <typename Which>
-  struct Value {
-    Value() = default;
-    explicit Value(const typename Which::ValueType& value) : value(value) {}
-    explicit Value(typename Which::ValueType&& value)
-        : value(std::forward<typename Which::ValueType>(value)) {}
-    Value(const Value&) = delete;
-    Value& operator=(const Value&) = delete;
-    Value(Value&&) noexcept = default;
-    Value& operator=(Value&& other) noexcept {
-      value = std::move(other.value);
-      return *this;
-    }
-    GPR_NO_UNIQUE_ADDRESS typename Which::ValueType value;
-  };
+  using Value = metadata_detail::Value<Which>;
+
   // Callable for the ForEach in Encode() -- for each value, call the
   // appropriate encoder method.
   template <typename Encoder>
@@ -885,7 +997,7 @@ class MetadataMap {
     Encoder* encoder;
     template <typename Which>
     void operator()(const Value<Which>& which) {
-      encoder->Encode(Which(), which.value);
+      which.EncodeTo(encoder);
     }
   };
 
