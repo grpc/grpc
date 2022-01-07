@@ -12,19 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_UTILS_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_UTILS_H
+#ifndef GRPC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
+#define GRPC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/metadata.h"
+#include <stddef.h>
 
-namespace grpc_core {
+#include "src/core/lib/iomgr/port.h"
 
-// Return the size occupied by some metadata in the HPACK table.
-size_t MetadataSizeInHPackTable(grpc_mdelem elem,
-                                bool use_true_binary_metadata);
+#ifdef GRPC_WINSOCK_SOCKET
+#include <ws2tcpip.h>
+#endif
 
-}  // namespace grpc_core
+#if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
+#include <sys/socket.h>
+#endif
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_UTILS_H
+#define GRPC_MAX_SOCKADDR_SIZE 128
+
+struct grpc_resolved_address {
+  char addr[GRPC_MAX_SOCKADDR_SIZE];
+  socklen_t len;
+};
+
+#endif /* GRPC_CORE_LIB_IOMGR_RESOLVED_ADDRESS_H */

@@ -36,7 +36,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace {
 

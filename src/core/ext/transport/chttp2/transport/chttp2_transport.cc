@@ -52,7 +52,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
@@ -1331,13 +1330,10 @@ static void complete_fetch_locked(void* gs, grpc_error_handle error) {
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  md_batch->ForEach([=](grpc_mdelem md) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    gpr_log(GPR_INFO, "HTTP:%d:%s:%s: %s: %s", id, is_initial ? "HDR" : "TRL",
-            is_client ? "CLI" : "SVR", key, value);
-    gpr_free(key);
-    gpr_free(value);
+  const std::string prefix = absl::StrCat(
+      "HTTP:", id, is_initial ? ":HDR" : ":TRL", is_client ? ":CLI:" : ":SVR:");
+  md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
+    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
   });
 }
 

@@ -60,8 +60,6 @@
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 /** The maximum number of concurrent batches possible.
@@ -74,9 +72,6 @@
       - message recv
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_BATCHES 6
-
-// Used to create arena for the first call.
-#define ESTIMATED_MDELEM_COUNT 16
 
 struct batch_control {
   batch_control() = default;
@@ -328,8 +323,7 @@ static parent_call* get_parent_call(grpc_call* call) {
 }
 
 size_t grpc_call_get_initial_size_estimate() {
-  return sizeof(grpc_call) + sizeof(batch_control) * MAX_CONCURRENT_BATCHES +
-         sizeof(grpc_linked_mdelem) * ESTIMATED_MDELEM_COUNT;
+  return sizeof(grpc_call) + sizeof(batch_control) * MAX_CONCURRENT_BATCHES;
 }
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
@@ -814,7 +808,9 @@ class PublishToAppEncoder {
  public:
   explicit PublishToAppEncoder(grpc_metadata_array* dest) : dest_(dest) {}
 
-  void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    Append(key.c_slice(), value.c_slice());
+  }
 
   // Catch anything that is not explicitly handled, and do not publish it to the
   // application. If new metadata is added to a batch that needs to be
@@ -836,6 +832,10 @@ class PublishToAppEncoder {
 
   void Encode(grpc_core::GrpcRetryPushbackMsMetadata, grpc_millis count) {
     Append(grpc_core::GrpcRetryPushbackMsMetadata::key(), count);
+  }
+
+  void Encode(grpc_core::LbTokenMetadata, const grpc_core::Slice& slice) {
+    Append(grpc_core::LbTokenMetadata::key(), slice);
   }
 
  private:

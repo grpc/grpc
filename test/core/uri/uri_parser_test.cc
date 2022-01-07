@@ -215,6 +215,13 @@ TEST(URIParserTest, InvalidURIsResultInFailureStatuses) {
   TestFails("0invalid_scheme:must_start/with?alpha");
 }
 
+TEST(URIParserTest, PercentEncode) {
+  // Ensure "?" and "=" are percent encoded; and ":" is escaped.
+  std::string input = "127.0.0.1:22222?psm_project_id=1234";
+  EXPECT_EQ("127.0.0.1:22222%3fpsm_project_id%3d1234",
+            grpc_core::URI::PercentEncode(input));
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);

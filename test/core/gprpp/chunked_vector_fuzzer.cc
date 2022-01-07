@@ -71,7 +71,7 @@ class Fuzzer {
         // Remove some value to the back of a comparison, assert that both
         // vectors are equivalent.
         auto* c = Mutate(action.pop_back().vector());
-        if (c->chunked.size() > 0) {
+        if (!c->chunked.empty()) {
           c->chunked.PopBack();
           c->std.pop_back();
           c->AssertOk();
@@ -129,6 +129,19 @@ class Fuzzer {
         from->chunked.Swap(&to->chunked);
         from->std.swap(to->std);
         from->AssertOk();
+      } break;
+      case chunked_vector_fuzzer::Action::kRemoveIf: {
+        // Apply std::remove_if to a vector, assert that underlying vectors
+        // remain equivalent.
+        auto cond = [&](const IntHdl& hdl) {
+          return *hdl == action.remove_if().value();
+        };
+        auto* c = Mutate(action.remove_if().vector());
+        c->chunked.SetEnd(
+            std::remove_if(c->chunked.begin(), c->chunked.end(), cond));
+        c->std.erase(std::remove_if(c->std.begin(), c->std.end(), cond),
+                     c->std.end());
+        c->AssertOk();
       } break;
       case chunked_vector_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;

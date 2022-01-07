@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -39,7 +40,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 
@@ -67,6 +67,7 @@ struct call_data {
       : owning_call(args.call_stack), call_combiner(args.call_combiner) {
     host.Init();
     method.Init();
+    md_array.Init();
     channel_data* chand = static_cast<channel_data*>(elem->channel_data);
     GPR_ASSERT(args.context != nullptr);
     if (args.context[GRPC_CONTEXT_SECURITY].value == nullptr) {
@@ -89,7 +90,7 @@ struct call_data {
   // fields will be accessed after calling dtor, and msan correctly complains
   // that the memory is not initialized.
   void destroy() {
-    grpc_credentials_mdelem_array_destroy(&md_array);
+    md_array.Destroy();
     creds.reset();
     grpc_auth_metadata_context_reset(&auth_md_context);
     host.Destroy();
@@ -106,8 +107,7 @@ struct call_data {
      pollset_set so that work can progress when this call wants work to progress
   */
   grpc_polling_entity* pollent = nullptr;
-  grpc_credentials_mdelem_array md_array;
-  grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT] = {};
+  grpc_core::ManualConstructor<grpc_core::CredentialsMetadataArray> md_array;
   grpc_auth_metadata_context auth_md_context =
       grpc_auth_metadata_context();  // Zero-initialize the C struct.
   grpc_closure async_result_closure;
@@ -165,17 +165,20 @@ static void on_credentials_metadata(void* arg, grpc_error_handle input_error) {
   grpc_auth_metadata_context_reset(&calld->auth_md_context);
   grpc_error_handle error = GRPC_ERROR_REF(input_error);
   if (error == GRPC_ERROR_NONE) {
-    GPR_ASSERT(calld->md_array.size <= MAX_CREDENTIALS_METADATA_COUNT);
+    GPR_ASSERT(calld->md_array->size() <= MAX_CREDENTIALS_METADATA_COUNT);
     GPR_ASSERT(batch->send_initial_metadata);
     grpc_metadata_batch* mdb =
         batch->payload->send_initial_metadata.send_initial_metadata;
-    for (size_t i = 0; i < calld->md_array.size; ++i) {
-      add_error(&error, grpc_metadata_batch_add_tail(
-                            mdb, &calld->md_links[i],
-                            GRPC_MDELEM_REF(calld->md_array.md[i])));
+    for (const auto& md : *calld->md_array) {
+      mdb->Append(
+          md.first.as_string_view(), md.second.Ref(),
+          [&](absl::string_view error_message, const grpc_core::Slice& value) {
+            add_error(&error, GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                                  "on_credentials_metadata: ", error_message,
+                                  ": ", md.first.as_string_view(), ": ",
+                                  value.as_string_view())));
+          });
     }
-  }
-  if (error == GRPC_ERROR_NONE) {
     grpc_call_next_op(elem, batch);
   } else {
     error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
@@ -230,7 +233,7 @@ static void cancel_get_request_metadata(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
-    calld->creds->cancel_get_request_metadata(&calld->md_array,
+    calld->creds->cancel_get_request_metadata(&*calld->md_array,
                                               GRPC_ERROR_REF(error));
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_get_request_metadata");
@@ -316,7 +319,7 @@ static void send_security_metadata(grpc_call_element* elem,
                     batch, grpc_schedule_on_exec_ctx);
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (calld->creds->get_request_metadata(
-          calld->pollent, calld->auth_md_context, &calld->md_array,
+          calld->pollent, calld->auth_md_context, &*calld->md_array,
           &calld->async_result_closure, &error)) {
     // Synchronous return; invoke on_credentials_metadata() directly.
     on_credentials_metadata(batch, error);

@@ -26,9 +26,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
 
@@ -69,23 +67,10 @@ class HPackTable {
 
  private:
   struct StaticMementos {
-    StaticMementos() {
-      for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
-        const grpc_mdelem_data& sm = g_static_mdelem_table[i].data();
-        memento[i] = grpc_metadata_batch::Parse(
-            StringViewFromSlice(sm.key),
-            Slice(grpc_slice_ref_internal(sm.value)),
-            GRPC_SLICE_LENGTH(sm.key) + GRPC_SLICE_LENGTH(sm.value) +
-                hpack_constants::kEntryOverhead,
-            [](absl::string_view, const Slice&) {});
-      }
-    }
+    StaticMementos();
     Memento memento[hpack_constants::kLastStaticEntry];
   };
-  static const StaticMementos& GetStaticMementos() {
-    static const StaticMementos static_mementos;
-    return static_mementos;
-  }
+  static const StaticMementos& GetStaticMementos() GPR_ATTRIBUTE_NOINLINE;
 
   enum { kInlineEntries = hpack_constants::kInitialTableEntries };
   using EntriesVec = absl::InlinedVector<Memento, kInlineEntries>;
@@ -126,18 +111,5 @@ class HPackTable {
 };
 
 }  // namespace grpc_core
-
-/* Returns the static hpack table index that corresponds to /a elem. Returns 0
-  if /a elem is not statically stored or if it is not in the static hpack
-  table */
-inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
-  uintptr_t index =
-      reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
-      grpc_core::g_static_mdelem_table;
-  if (index < grpc_core::hpack_constants::kLastStaticEntry) {
-    return index + 1;  // Hpack static metadata element indices start at 1
-  }
-  return 0;
-}
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H */

@@ -36,7 +36,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

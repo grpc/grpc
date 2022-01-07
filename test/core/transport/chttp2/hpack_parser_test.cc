@@ -115,10 +115,9 @@ class ParseTest : public ::testing::TestWithParam<Test> {
    public:
     std::string result() { return out_; }
 
-    void Encode(grpc_mdelem elem) {
-      out_.append(absl::StrCat(
-          grpc_core::StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
-          grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem)), "\n"));
+    void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+      out_.append(absl::StrCat(key.as_string_view(), ": ",
+                               value.as_string_view(), "\n"));
     }
 
     template <typename T, typename V>

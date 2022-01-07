@@ -26,11 +26,11 @@
 #include "absl/container/inlined_vector.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 

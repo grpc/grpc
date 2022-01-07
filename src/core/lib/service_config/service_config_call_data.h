@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
-#define GRPC_CORE_EXT_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
+#ifndef GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
+#define GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -23,10 +23,10 @@
 
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/service_config/service_config.h"
-#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
 
@@ -69,4 +69,4 @@ class ServiceConfigCallData {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H */
+#endif /* GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H */

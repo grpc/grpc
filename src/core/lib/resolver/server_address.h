@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVER_ADDRESS_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVER_ADDRESS_H
+#ifndef GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
+#define GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,7 +29,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
@@ -141,4 +141,4 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVER_ADDRESS_H */
+#endif /* GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H */
