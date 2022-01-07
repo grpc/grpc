@@ -26,16 +26,16 @@ python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
 """
 import datetime
 import functools
-import logging
 import json
+import logging
 import os
-import pytz
 import re
 import subprocess
 from typing import Any, List
 
 from absl import app
 from absl import flags
+import pytz
 
 from framework import xds_flags
 from framework import xds_k8s_flags
