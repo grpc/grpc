@@ -285,7 +285,7 @@ struct CompressionAlgorithmBasedMetadata {
     return *algorithm;
   }
   static ValueType MementoToValue(MementoType x) { return x; }
-  static Slice Encode(ValueType x) {
+  static GPR_ATTRIBUTE_NOINLINE Slice Encode(ValueType x) {
     GPR_ASSERT(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
     return Slice::FromStaticString(CompressionAlgorithmAsString(x));
   }
@@ -688,6 +688,49 @@ class GetStringValueHelper {
   std::string* backing_;
 };
 
+template <typename... Traits>
+class EncodeInterface;
+
+template <typename Trait, typename... Traits>
+class EncodeInterface<Trait, Traits...> : public EncodeInterface<Traits...> {
+ public:
+  using EncodeInterface<Traits...>::Encode;
+  virtual void Encode(Trait, const typename Trait::ValueType& value) = 0;
+};
+
+template <>
+class EncodeInterface<> {
+ public:
+  virtual void Encode(const Slice& key, const Slice& value) = 0;
+};
+
+template <typename Wrapped, typename Interface, typename... Traits>
+class WrappedEncoder;
+
+template <typename Wrapped, typename Interface, typename Trait,
+          typename... Traits>
+class WrappedEncoder<Wrapped, Interface, Trait, Traits...>
+    : public WrappedEncoder<Wrapped, Interface, Traits...> {
+ public:
+  using Base = WrappedEncoder<Wrapped, Interface, Traits...>;
+  using Base::Base;
+  void Encode(Trait trait, const typename Trait::ValueType& value) final {
+    this->wrapped_.Encode(trait, value);
+  }
+};
+
+template <typename Wrapped, typename Interface>
+class WrappedEncoder<Wrapped, Interface> : public Interface {
+ public:
+  explicit WrappedEncoder(Wrapped& wrapped) : wrapped_(wrapped) {}
+  void Encode(const Slice& key, const Slice& value) final {
+    wrapped_.Encode(key, value);
+  }
+
+ protected:
+  Wrapped& wrapped_;
+};
+
 // Generate a strong type for metadata values per trait.
 template <typename Which, typename Ignored = void>
 struct Value;
@@ -835,12 +878,23 @@ class MetadataMap {
   //    void Encode(TraitsType, typename TraitsType::ValueType value);
   // For fields for which we do not have traits, this will be a method
   // with the signature:
-  //    void Encode(grpc_mdelem md);
-  // TODO(ctiller): It's expected that the latter Encode method will
-  // become Encode(Slice, Slice) by the end of the current metadata API
-  // transitions.
+  //    void Encode(const Slice&, const Slice&)
+  // By default Encode() will wrap the encoder in
+  // metadata_detail::EncodeInterface and make indirect calls to the encoder.
+  // This saves us a lot of bloat for cold path code. If you'd like have encoder
+  // functions called directly, instead encode with EncodeDirectly.
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
+    using Interface = metadata_detail::EncodeInterface<Traits...>;
+    metadata_detail::WrappedEncoder<Encoder, Interface, Traits...>
+        wrapped_encoder(*encoder);
+    EncodeDirectly(static_cast<Interface*>(&wrapped_encoder));
+  }
+
+  // Like Encode, but skip the EncodeInterface wrapper and make calls directly.
+  // This is faster, but causes much more code to be generated.
+  template <typename Encoder>
+  void EncodeDirectly(Encoder* encoder) const {
     table_.ForEach(EncodeWrapper<Encoder>{encoder});
     for (const auto& unk : unknown_) {
       encoder->Encode(unk.first, unk.second);

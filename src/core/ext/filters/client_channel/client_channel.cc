@@ -2440,15 +2440,12 @@ class ClientChannel::LoadBalancedCall::Metadata
   class Encoder {
    public:
     void Encode(const Slice& key, const Slice& value) {
-      out_.emplace_back(std::string(key.as_string_view()),
-                        std::string(value.as_string_view()));
+      Add(key.as_string_view(), value.as_string_view());
     }
 
     template <class Which>
     void Encode(Which, const typename Which::ValueType& value) {
-      auto value_slice = Which::Encode(value);
-      out_.emplace_back(std::string(Which::key()),
-                        std::string(value_slice.as_string_view()));
+      Add(Which::key(), Which::Encode(value).as_string_view());
     }
 
     void Encode(GrpcTimeoutMetadata, grpc_millis) {}
@@ -2461,6 +2458,10 @@ class ClientChannel::LoadBalancedCall::Metadata
     }
 
    private:
+    void Add(absl::string_view key, absl::string_view value) {
+      out_.emplace_back(std::string(key), std::string(value));
+    }
+
     std::vector<std::pair<std::string, std::string>> out_;
   };
 
