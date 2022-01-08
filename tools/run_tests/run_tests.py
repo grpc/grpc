@@ -645,7 +645,8 @@ class PythonLanguage(object):
                     timeout_seconds=8 * 60,
                     environ=dict(GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                  **environment),
-                    shortname=f'{python_config.name}.{io_platform}.{test_case}',
+                    shortname='%s.%s.%s' %
+                    (python_config.name, io_platform, test_case),
                 ) for test_case in test_cases for python_config in self.pythons
             ])
         return jobs
