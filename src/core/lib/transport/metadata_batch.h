@@ -739,6 +739,30 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
   StorageType value;
 };
 
+// Encoder to copy some metadata
+template <typename Output>
+class CopySink {
+ public:
+  explicit CopySink(Output* dst) : dst_(dst) {}
+
+  template <class T, class V>
+  void Encode(T trait, V value) {
+    dst_->Set(trait, value);
+  }
+
+  template <class T>
+  void Encode(T trait, const Slice& value) {
+    dst_->Set(trait, std::move(value.AsOwned()));
+  }
+
+  void Encode(const Slice& key, const Slice& value) {
+    dst_->AppendUnknown(key.as_string_view(), value.Ref());
+  }
+
+ private:
+  Output* dst_;
+};
+
 }  // namespace metadata_detail
 
 // Helper function for encoders
@@ -990,6 +1014,7 @@ class MetadataMap {
   friend class metadata_detail::AppendHelper<Derived>;
   friend class metadata_detail::GetStringValueHelper<Derived>;
   friend class metadata_detail::RemoveHelper<Derived>;
+  friend class metadata_detail::CopySink<Derived>;
   friend class ParsedMetadata<Derived>;
 
   template <typename Which>
@@ -1033,29 +1058,6 @@ class MetadataMap {
     }
 
     uint32_t size_ = 0;
-  };
-
-  // Encoder to copy some metadata
-  class CopySink {
-   public:
-    explicit CopySink(MetadataMap* dst) : dst_(dst) {}
-
-    template <class T, class V>
-    void Encode(T trait, V value) {
-      dst_->Set(trait, value);
-    }
-
-    template <class T>
-    void Encode(T trait, const Slice& value) {
-      dst_->Set(trait, std::move(value.AsOwned()));
-    }
-
-    void Encode(const Slice& key, const Slice& value) {
-      dst_->AppendUnknown(key.as_string_view(), value.Ref());
-    }
-
-   private:
-    MetadataMap* dst_;
   };
 
   // Encoder to log some metadata
@@ -1144,7 +1146,7 @@ size_t MetadataMap<Derived, Traits...>::TransportSize() const {
 template <typename Derived, typename... Traits>
 Derived MetadataMap<Derived, Traits...>::Copy() const {
   Derived out(unknown_.arena());
-  CopySink sink(&out);
+  metadata_detail::CopySink<Derived> sink(&out);
   Encode(&sink);
   return out;
 }
