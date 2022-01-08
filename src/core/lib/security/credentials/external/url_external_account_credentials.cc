@@ -140,6 +140,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
+  GPR_ASSERT(httpcli_ == nullptr);
   httpcli_ =
       HttpCli::Get(ctx_->pollent, ResourceQuota::Default(), &request,
                    HttpCli::HttpCliHandshakerFactoryFromScheme(url_.scheme()),

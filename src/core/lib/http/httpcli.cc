@@ -208,9 +208,7 @@ void HttpCli::AppendError(grpc_error_handle error)
 
 void HttpCli::OnReadInternal(grpc_error_handle error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-  size_t i;
-
-  for (i = 0; i < incoming_.count; i++) {
+  for (size_t i = 0; i < incoming_.count; i++) {
     if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
       have_read_byte_ = 1;
       grpc_error_handle err =
@@ -221,7 +219,6 @@ void HttpCli::OnReadInternal(grpc_error_handle error)
       }
     }
   }
-
   if (error == GRPC_ERROR_NONE) {
     DoRead();
   } else if (!have_read_byte_) {
