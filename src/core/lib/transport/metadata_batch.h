@@ -815,7 +815,7 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // for grpc-timeout we make the memento the timeout expressed on the wire, but
 // we make the value the timestamp of when the timeout will expire (i.e. the
 // deadline).
-template <typename... Traits>
+template <class Derived, typename... Traits>
 class MetadataMap {
  public:
   explicit MetadataMap(Arena* arena);
@@ -824,7 +824,7 @@ class MetadataMap {
   MetadataMap(const MetadataMap&) = delete;
   MetadataMap& operator=(const MetadataMap&) = delete;
   MetadataMap(MetadataMap&&) noexcept;
-  MetadataMap& operator=(MetadataMap&&) noexcept;
+  Derived& operator=(MetadataMap&&) noexcept;
 
   // Encode this metadata map into some encoder.
   // For each field that is set in the MetadataMap, call
@@ -910,7 +910,7 @@ class MetadataMap {
 
   // Remove some metadata by name
   void Remove(absl::string_view key) {
-    metadata_detail::RemoveHelper<MetadataMap> helper(this);
+    metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
@@ -919,7 +919,8 @@ class MetadataMap {
   // Retrieve some metadata by name
   absl::optional<absl::string_view> GetStringValue(absl::string_view name,
                                                    std::string* buffer) const {
-    metadata_detail::GetStringValueHelper<MetadataMap> helper(this, buffer);
+    metadata_detail::GetStringValueHelper<Derived> helper(
+        static_cast<const Derived*>(this), buffer);
     return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
   }
 
@@ -958,36 +959,38 @@ class MetadataMap {
   // that result.
   // TODO(ctiller): key should probably be an absl::string_view.
   // Once we don't care about interning anymore, make that change!
-  static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value,
-                                           uint32_t transport_size,
-                                           MetadataParseErrorFn on_error) {
-    metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(),
-                                                     on_error, transport_size);
+  static ParsedMetadata<Derived> Parse(absl::string_view key, Slice value,
+                                       uint32_t transport_size,
+                                       MetadataParseErrorFn on_error) {
+    metadata_detail::ParseHelper<Derived> helper(value.TakeOwned(), on_error,
+                                                 transport_size);
     return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
   // Set a value from a parsed metadata object.
-  void Set(const ParsedMetadata<MetadataMap>& m) { m.SetOnContainer(this); }
+  void Set(const ParsedMetadata<Derived>& m) {
+    m.SetOnContainer(static_cast<Derived*>(this));
+  }
 
   // Append a key/value pair - takes ownership of value
   void Append(absl::string_view key, Slice value,
               MetadataParseErrorFn on_error) {
-    metadata_detail::AppendHelper<MetadataMap> helper(this, value.TakeOwned(),
-                                                      on_error);
+    metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
+                                                  value.TakeOwned(), on_error);
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
   void Clear();
   size_t TransportSize() const;
-  MetadataMap Copy() const;
+  Derived Copy() const;
   bool empty() const { return table_.empty() && unknown_.empty(); }
   size_t count() const { return table_.count() + unknown_.size(); }
 
  private:
-  friend class metadata_detail::AppendHelper<MetadataMap>;
-  friend class metadata_detail::GetStringValueHelper<MetadataMap>;
-  friend class metadata_detail::RemoveHelper<MetadataMap>;
-  friend class ParsedMetadata<MetadataMap>;
+  friend class metadata_detail::AppendHelper<Derived>;
+  friend class metadata_detail::GetStringValueHelper<Derived>;
+  friend class metadata_detail::RemoveHelper<Derived>;
+  friend class ParsedMetadata<Derived>;
 
   template <typename Which>
   using Value = metadata_detail::Value<Which>;
@@ -1107,47 +1110,47 @@ class MetadataMap {
   ChunkedVector<std::pair<Slice, Slice>, 10> unknown_;
 };
 
-template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
 
-template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::MetadataMap(MetadataMap&& other) noexcept
     : table_(std::move(other.table_)), unknown_(std::move(other.unknown_)) {}
 
-template <typename... Traits>
-MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(
+template <typename Derived, typename... Traits>
+Derived& MetadataMap<Derived, Traits...>::operator=(
     MetadataMap&& other) noexcept {
   table_ = std::move(other.table_);
   unknown_ = std::move(other.unknown_);
-  return *this;
+  return static_cast<Derived&>(*this);
 }
 
-template <typename... Traits>
-MetadataMap<Traits...>::~MetadataMap() = default;
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::~MetadataMap() = default;
 
-template <typename... Traits>
-void MetadataMap<Traits...>::Clear() {
+template <typename Derived, typename... Traits>
+void MetadataMap<Derived, Traits...>::Clear() {
   table_.ClearAll();
   unknown_.Clear();
 }
 
-template <typename... Traits>
-size_t MetadataMap<Traits...>::TransportSize() const {
+template <typename Derived, typename... Traits>
+size_t MetadataMap<Derived, Traits...>::TransportSize() const {
   TransportSizeEncoder enc;
   Encode(&enc);
   return enc.size();
 }
 
-template <typename... Traits>
-MetadataMap<Traits...> MetadataMap<Traits...>::Copy() const {
-  MetadataMap out(unknown_.arena());
+template <typename Derived, typename... Traits>
+Derived MetadataMap<Derived, Traits...>::Copy() const {
+  Derived out(unknown_.arena());
   CopySink sink(&out);
   Encode(&sink);
   return out;
 }
 
-template <typename... Traits>
-void MetadataMap<Traits...>::Log(
+template <typename Derived, typename... Traits>
+void MetadataMap<Derived, Traits...>::Log(
     absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
     const {
   LogEncoder enc(log_fn);
@@ -1156,7 +1159,10 @@ void MetadataMap<Traits...>::Log(
 
 }  // namespace grpc_core
 
-using grpc_metadata_batch = grpc_core::MetadataMap<
+struct grpc_metadata_batch;
+
+using grpc_metadata_batch_base = grpc_core::MetadataMap<
+    grpc_metadata_batch,
     // Colon prefixed headers first
     grpc_core::HttpPathMetadata, grpc_core::HttpAuthorityMetadata,
     grpc_core::HttpMethodMetadata, grpc_core::HttpStatusMetadata,
@@ -1172,5 +1178,9 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata>;
+
+struct grpc_metadata_batch : public grpc_metadata_batch_base {
+  using grpc_metadata_batch_base::grpc_metadata_batch_base;
+};
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */
