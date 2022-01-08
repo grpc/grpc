@@ -739,6 +739,26 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
   StorageType value;
 };
 
+// Encoder to log some metadata
+class LogEncoder {
+ public:
+  explicit LogEncoder(
+      absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
+      : log_fn_(log_fn) {}
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
+  }
+
+  void Encode(const Slice& key, const Slice& value) {
+    log_fn_(key.as_string_view(), value.as_string_view());
+  }
+
+ private:
+  absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
+};
+
 }  // namespace metadata_detail
 
 // Helper function for encoders
@@ -1055,26 +1075,6 @@ class MetadataMap {
     MetadataMap* dst_;
   };
 
-  // Encoder to log some metadata
-  class LogEncoder {
-   public:
-    explicit LogEncoder(
-        absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-        : log_fn_(log_fn) {}
-
-    template <typename Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
-    }
-
-    void Encode(const Slice& key, const Slice& value) {
-      log_fn_(key.as_string_view(), value.as_string_view());
-    }
-
-   private:
-    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
-  };
-
   void AppendUnknown(absl::string_view key, Slice value) {
     unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
   }
@@ -1150,7 +1150,7 @@ template <typename... Traits>
 void MetadataMap<Traits...>::Log(
     absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
     const {
-  LogEncoder enc(log_fn);
+  metadata_detail::LogEncoder enc(log_fn);
   Encode(&enc);
 }
 
