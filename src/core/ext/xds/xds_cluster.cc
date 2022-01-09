@@ -70,9 +70,9 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(absl::StrFormat("common_tls_context=%s",
                                        common_tls_context.ToString()));
   }
-  if (lrs_load_reporting_server_name.has_value()) {
+  if (lrs_load_reporting_server.has_value()) {
     contents.push_back(absl::StrFormat("lrs_load_reporting_server_name=%s",
-                                       lrs_load_reporting_server_name.value()));
+                                       lrs_load_reporting_server->server_uri));
   }
   contents.push_back(absl::StrCat("lb_policy=", lb_policy));
   if (lb_policy == "RING_HASH") {
@@ -368,7 +368,7 @@ grpc_error_handle CdsResourceParse(
       errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           ": LRS ConfigSource is not self."));
     }
-    cds_update->lrs_load_reporting_server_name.emplace("");
+    cds_update->lrs_load_reporting_server.emplace(context.server);
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
   // Thresholds messages, where each message specifies the parameters for a

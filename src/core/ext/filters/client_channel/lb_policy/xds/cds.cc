@@ -366,9 +366,10 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
       GPR_ASSERT(0);
       break;
   }
-  if (state.update->lrs_load_reporting_server_name.has_value()) {
+  if (state.update->lrs_load_reporting_server.has_value()) {
     mechanism["lrsLoadReportingServerName"] =
-        state.update->lrs_load_reporting_server_name.value();
+        // donna: expand this to an json obj
+        state.update->lrs_load_reporting_server->server_uri;
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;
