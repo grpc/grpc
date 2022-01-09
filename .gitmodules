@@ -1,49 +1,49 @@
 [submodule "third_party/zlib"]
 	path = third_party/zlib
-	url = https://github.com/madler/zlib
+	url = git@github.com:Pinepure/zlib.git
 	# When using CMake to build, the zlib submodule ends up with a
 	# generated file that makes Git consider the submodule dirty. This
 	# state can be ignored for day-to-day development on gRPC.
 	ignore = dirty
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
-	url = https://github.com/google/protobuf.git
+	url = git@github.com:Pinepure/protobuf.git
 	branch = 3.0.x
 [submodule "third_party/gflags"]
 	path = third_party/gflags
-	url = https://github.com/gflags/gflags.git
+	url = git@github.com:Pinepure/gflags.git
 [submodule "third_party/googletest"]
 	path = third_party/googletest
-	url = https://github.com/google/googletest.git
+	url = git@github.com:Pinepure/googletest.git
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
-	url = https://github.com/google/benchmark
+	url = git@github.com:Pinepure/benchmark.git
 [submodule "third_party/boringssl-with-bazel"]
 	path = third_party/boringssl-with-bazel
-	url = https://github.com/google/boringssl.git
+	url = git@github.com:Pinepure/boringssl.git
 [submodule "third_party/cares/cares"]
 	path = third_party/cares/cares
-	url = https://github.com/c-ares/c-ares.git
+	url = git@github.com:Pinepure/c-ares.git
 	branch = cares-1_12_0
 [submodule "third_party/bloaty"]
 	path = third_party/bloaty
-	url = https://github.com/google/bloaty.git
+	url = git@github.com:Pinepure/bloaty.git
 [submodule "third_party/abseil-cpp"]
 	path = third_party/abseil-cpp
-	url = https://github.com/abseil/abseil-cpp.git
+	url = git@github.com:Pinepure/abseil-cpp.git
 	branch = lts_2020_02_25
 [submodule "third_party/envoy-api"]
 	path = third_party/envoy-api
-	url = https://github.com/envoyproxy/data-plane-api.git
+	url = git@github.com:Pinepure/data-plane-api.git
 [submodule "third_party/googleapis"]
 	path = third_party/googleapis
-	url = https://github.com/googleapis/googleapis.git
+	url = git@github.com:Pinepure/googleapis.git
 [submodule "third_party/protoc-gen-validate"]
 	path = third_party/protoc-gen-validate
-	url = https://github.com/envoyproxy/protoc-gen-validate.git
+	url = git@github.com:Pinepure/protoc-gen-validate.git
 [submodule "third_party/udpa"]
 	path = third_party/udpa
-	url = https://github.com/cncf/udpa.git
+	url = git@github.com:Pinepure/udpa.git
 [submodule "third_party/libuv"]
 	path = third_party/libuv
-	url = https://github.com/libuv/libuv.git
+	url = git@github.com:Pinepure/libuv.git
