@@ -463,6 +463,7 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // On initial update, create drop stats.
   if (is_initial_update) {
     if (config_->lrs_load_reporting_server().has_value()) {
+      // TODO:donnadionne: change to pass XdsServer
       drop_stats_ = xds_client_->AddClusterDropStats(
           config_->lrs_load_reporting_server()->server_uri,
           config_->cluster_name(), config_->eds_service_name());
@@ -585,6 +586,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
       locality_name = locality_attr->locality_name();
     }
     RefCountedPtr<XdsClusterLocalityStats> locality_stats =
+        // TODO:donnadionne: change to pass XdsServer
         xds_cluster_impl_policy_->xds_client_->AddClusterLocalityStats(
             xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
                 ->server_uri,

@@ -84,6 +84,22 @@ class XdsBootstrap {
       return false;
     }
 
+    Json::Object ToJson() const {
+      Json::Object channel_cred = {
+          {"type", channel_creds_type},
+      };
+      Json::Array channel_creds;
+      channel_creds.emplace_back(channel_cred);
+      Json::Array server_features;
+      for (auto& feature : server_features) {
+        server_features.emplace_back(Json(feature));
+      }
+      return Json::Object({{"server_uri", server_uri},
+                           {"channel_creds", channel_creds},
+                           {"channel_creds_config", channel_creds_config},
+                           {"server_features", server_features}});
+    }
+
     bool ShouldUseV3() const;
   };
 

@@ -888,12 +888,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     }
     if (config_->discovery_mechanisms()[discovery_index]
             .lrs_load_reporting_server.has_value()) {
-      Json::Object xds_server = {
-          {"server_uri", config_->discovery_mechanisms()[discovery_index]
-                             .lrs_load_reporting_server->server_uri},
-      };
-      // donna: expand this to an json obj
-      xds_cluster_impl_config["lrsLoadReportingServerName"] = xds_server;
+      xds_cluster_impl_config["lrsLoadReportingServerName"] =
+          config_->discovery_mechanisms()[discovery_index]
+              .lrs_load_reporting_server->ToJson();
     }
     Json locality_picking_policy = Json::Array{Json::Object{
         {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
