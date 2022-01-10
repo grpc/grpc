@@ -21,6 +21,9 @@
 
 #include <jni.h>
 
+#include <functional>
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 namespace grpc_binder {
@@ -30,6 +33,9 @@ namespace grpc_binder {
 // user might want to call this once in a place that is called from Java (ex.
 // JNI_OnLoad) so subsequent BinderTransport code can find Java class
 jclass FindNativeConnectionHelper(JNIEnv* env);
+
+jclass FindNativeConnectionHelper(
+    JNIEnv* env, std::function<void*(std::string)> class_finder);
 
 // Calls Java method NativeConnectionHelper.tryEstablishConnection
 void TryEstablishConnection(JNIEnv* env, jobject application,
