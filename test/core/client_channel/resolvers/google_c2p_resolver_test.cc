@@ -47,7 +47,7 @@ namespace {
 
 void TryConnectAndDestroy(const char* fake_metadata_server_address) {
   grpc::ChannelArguments args;
-  std::string target = "google-c2p:///servername_not_used";
+  std::string target = "google-c2p-experimental:///servername_not_used";
   args.SetInt("grpc.testing.google_c2p_resolver_pretend_running_on_gcp", 1);
   args.SetString("grpc.testing.google_c2p_resolver_metadata_server_override",
                  fake_metadata_server_address);
@@ -61,19 +61,17 @@ void TryConnectAndDestroy(const char* fake_metadata_server_address) {
   channel.reset();
 };
 
+// Exercise the machinery involved with shutting down the C2P resolver while
+// it's waiting for its initial metadata server queries to finish.
 TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
      LoopTryConnectAndDestroy) {
-  grpc_init();
   // Create a fake metadata server which hangs.
   grpc_core::testing::FakeUdpAndTcpServer fake_metadata_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::vector<std::unique_ptr<std::thread>> threads;
-  // 100 is picked for number of threads just
-  // because it's enough to reproduce a certain crash almost 100%
-  // at this time of writing.
-  const int kNumThreads = 1;
+  const int kNumThreads = 100;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(
@@ -82,7 +80,6 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
   for (size_t i = 0; i < threads.size(); i++) {
     threads[i]->join();
   }
-  grpc_shutdown();
 }
 
 }  // namespace
@@ -92,6 +89,8 @@ int main(int argc, char** argv) {
   gpr_setenv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER", "true");
   gpr_setenv("GRPC_ABORT_ON_LEAKS", "true");
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
   return result;
 }

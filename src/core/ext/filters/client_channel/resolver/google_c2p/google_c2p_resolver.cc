@@ -25,6 +25,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -33,6 +34,8 @@ namespace {
 class GoogleCloud2ProdResolver : public Resolver {
  public:
   explicit GoogleCloud2ProdResolver(ResolverArgs args);
+
+  ~GoogleCloud2ProdResolver() { grpc_channel_args_destroy(channel_args_); }
 
   void StartLocked() override;
   void RequestReresolutionLocked() override;
@@ -62,6 +65,7 @@ class GoogleCloud2ProdResolver : public Resolver {
     OrphanablePtr<HttpCli> httpcli_;
     grpc_httpcli_response response_;
     grpc_closure on_done_;
+    std::atomic<bool> on_done_called_{false};
   };
 
   // A metadata server query to get the zone.
@@ -88,21 +92,26 @@ class GoogleCloud2ProdResolver : public Resolver {
                 grpc_error_handle error) override;
   };
 
-  void ZoneQueryDone(std::string zone);
-  void IPv6QueryDone(bool ipv6_supported);
+  void ZoneQueryDone(absl::StatusOr<std::string> zone);
+  void IPv6QueryDone(absl::Status ipv6_supported);
   void StartXdsResolver();
 
+  std::string name_to_resolve_;
+  grpc_channel_args* channel_args_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   grpc_polling_entity pollent_;
+  // non-null iff child_resolver_ has not yet been created
+  std::unique_ptr<Resolver::ResultHandler> result_handler_;
   bool using_dns_ = false;
   OrphanablePtr<Resolver> child_resolver_;
   std::string metadata_server_address_;
+  bool shutdown_ = false;
 
   OrphanablePtr<ZoneQuery> zone_query_;
-  absl::optional<std::string> zone_;
+  absl::optional<absl::StatusOr<std::string>> zone_;
 
   OrphanablePtr<IPv6Query> ipv6_query_;
-  absl::optional<bool> supports_ipv6_;
+  absl::optional<absl::Status> supports_ipv6_;
 };
 
 //
@@ -137,13 +146,17 @@ GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {
   grpc_http_response_destroy(&response_);
 }
 
-void GoogleCloud2ProdResolver::MetadataQuery::Orphan() { httpcli_.reset(); }
+void GoogleCloud2ProdResolver::MetadataQuery::Orphan() {
+  httpcli_.reset();
+  Unref();
+}
 
 void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<MetadataQuery*>(arg);
   // Hop back into WorkSerializer to call OnDone().
   // Note: We implicitly pass our ref to the callback here.
+  GRPC_ERROR_REF(error);
   self->resolver_->work_serializer_->Run(
       [self, error]() {
         self->OnDone(self->resolver_.get(), &self->response_, error);
@@ -151,10 +164,6 @@ void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
       },
       DEBUG_LOCATION);
 }
-
-//
-// GoogleCloud2ProdResolver::ZoneQuery
-//
 
 GoogleCloud2ProdResolver::ZoneQuery::ZoneQuery(
     RefCountedPtr<GoogleCloud2ProdResolver> resolver, const char* address,
@@ -169,13 +178,19 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     gpr_log(GPR_ERROR, "error fetching zone from metadata server: %s",
             grpc_error_std_string(error).c_str());
   }
-  std::string zone;
-  if (error == GRPC_ERROR_NONE && response->status == 200) {
+  absl::StatusOr<std::string> zone;
+  if (error != GRPC_ERROR_NONE) {
+    zone = grpc_error_to_absl_status(error);
+  } else if (response->status != 200) {
+    zone = absl::UnknownError(
+        absl::StrFormat("response status: %d", response->status));
+  } else {
     absl::string_view body(response->body, response->body_length);
     size_t i = body.find_last_of('/');
     if (i == body.npos) {
-      gpr_log(GPR_ERROR, "could not parse zone from metadata server: %s",
-              std::string(body).c_str());
+      zone = absl::UnknownError(
+          absl::StrCat("could not parse zone from metadata server: ", body));
+      gpr_log(GPR_ERROR, "%s", zone.status().ToString().c_str());
     } else {
       zone = std::string(body.substr(i + 1));
     }
@@ -202,7 +217,16 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
             grpc_error_std_string(error).c_str());
   }
-  resolver->IPv6QueryDone(error == GRPC_ERROR_NONE && response->status == 200);
+  absl::Status status;
+  if (error != GRPC_ERROR_NONE) {
+    status = grpc_error_to_absl_status(error);
+  } else if (response->status != 200) {
+    status = absl::UnknownError(
+        absl::StrFormat("response status: %d", response->status));
+  } else {
+    status = absl::OkStatus();
+  }
+  resolver->IPv6QueryDone(status);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -211,9 +235,11 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
 //
 
 GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
-    : work_serializer_(std::move(args.work_serializer)),
-      pollent_(grpc_polling_entity_create_from_pollset_set(args.pollset_set)) {
-  absl::string_view name_to_resolve = absl::StripPrefix(args.uri.path(), "/");
+    : channel_args_(grpc_channel_args_copy(args.args)),
+      work_serializer_(std::move(args.work_serializer)),
+      pollent_(grpc_polling_entity_create_from_pollset_set(args.pollset_set)),
+      result_handler_(std::move(args.result_handler)) {
+  name_to_resolve_ = std::string(absl::StripPrefix(args.uri.path(), "/"));
   // If we're not running on GCP, we can't use DirectPath, so delegate
   // to the DNS resolver.
   bool test_only_pretend_running_on_gcp = grpc_channel_args_find_bool(
@@ -230,8 +256,8 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG")) != nullptr) {
     using_dns_ = true;
     child_resolver_ = ResolverRegistry::CreateResolver(
-        absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
-        args.pollset_set, work_serializer_, std::move(args.result_handler));
+        absl::StrCat("dns:", name_to_resolve_).c_str(), channel_args_,
+        args.pollset_set, work_serializer_, std::move(result_handler_));
     GPR_ASSERT(child_resolver_ != nullptr);
     return;
   }
@@ -243,11 +269,6 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       strlen(test_only_metadata_server_override) > 0) {
     metadata_server_address_ = std::string(test_only_metadata_server_override);
   }
-  // Create xds resolver.
-  child_resolver_ = ResolverRegistry::CreateResolver(
-      absl::StrCat("xds:", name_to_resolve).c_str(), args.args,
-      args.pollset_set, work_serializer_, std::move(args.result_handler));
-  GPR_ASSERT(child_resolver_ != nullptr);
 }
 
 void GoogleCloud2ProdResolver::StartLocked() {
@@ -275,24 +296,35 @@ void GoogleCloud2ProdResolver::ResetBackoffLocked() {
 }
 
 void GoogleCloud2ProdResolver::ShutdownLocked() {
+  shutdown_ = true;
   zone_query_.reset();
   ipv6_query_.reset();
   child_resolver_.reset();
 }
 
-void GoogleCloud2ProdResolver::ZoneQueryDone(std::string zone) {
+void GoogleCloud2ProdResolver::ZoneQueryDone(absl::StatusOr<std::string> zone) {
   zone_query_.reset();
   zone_ = std::move(zone);
   if (supports_ipv6_.has_value()) StartXdsResolver();
 }
 
-void GoogleCloud2ProdResolver::IPv6QueryDone(bool ipv6_supported) {
+void GoogleCloud2ProdResolver::IPv6QueryDone(absl::Status ipv6_supported) {
   ipv6_query_.reset();
   supports_ipv6_ = ipv6_supported;
   if (zone_.has_value()) StartXdsResolver();
 }
 
 void GoogleCloud2ProdResolver::StartXdsResolver() {
+  if (shutdown_) {
+    Result result;
+    absl::Status status = absl::CancelledError(absl::StrFormat(
+        "C2P resolver shutdown, IPv6 query status: %s, zone query status: %s",
+        supports_ipv6_.value().ToString(), zone_.value().status().ToString()));
+    result.addresses = status;
+    result.service_config = status;
+    result_handler_->ReportResult(std::move(result));
+    return;
+  }
   // Construct bootstrap JSON.
   std::random_device rd;
   std::mt19937 mt(rd());
@@ -300,12 +332,12 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   Json::Object node = {
       {"id", absl::StrCat("C2P-", dist(mt))},
   };
-  if (!zone_->empty()) {
+  if (!zone_.value().status().ok()) {
     node["locality"] = Json::Object{
-        {"zone", *zone_},
+        {"zone", zone_.value().value()},
     };
   };
-  if (*supports_ipv6_) {
+  if (supports_ipv6_.value().ok()) {
     node["metadata"] = Json::Object{
         {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", true},
     };
@@ -335,7 +367,13 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   };
   // Inject bootstrap JSON as fallback config.
   internal::SetXdsFallbackBootstrapConfig(bootstrap.Dump().c_str());
-  // Now start xDS resolver.
+  // Create and start the xds resolver.
+  grpc_pollset_set* pollset_set = grpc_polling_entity_pollset_set(&pollent_);
+  GPR_ASSERT(pollset_set != nullptr);
+  child_resolver_ = ResolverRegistry::CreateResolver(
+      absl::StrCat("xds:", name_to_resolve_).c_str(), channel_args_,
+      pollset_set, work_serializer_, std::move(result_handler_));
+  GPR_ASSERT(child_resolver_ != nullptr);
   child_resolver_->StartLocked();
 }
 
@@ -358,7 +396,8 @@ class GoogleCloud2ProdResolverFactory : public ResolverFactory {
     return MakeOrphanable<GoogleCloud2ProdResolver>(std::move(args));
   }
 
-  // TODO(roth): Remove experimental suffix once this code is proven stable.
+  // TODO(roth): Remove experimental suffix once this code is proven stable,
+  // and update the scheme in google_c2p_resolver_test.cc when doing so.
   const char* scheme() const override { return "google-c2p-experimental"; }
 };
 
