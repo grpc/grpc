@@ -218,7 +218,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   // parse authority
   std::string authority;
   if (absl::ConsumePrefix(&remaining, "//")) {
-    size_t offset = remaining.find_first_of("/?#");
+    offset = remaining.find_first_of("/?#");
     authority = PercentDecode(remaining.substr(0, offset));
     if (offset == remaining.npos) {
       remaining = "";
@@ -229,7 +229,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   // parse path
   std::string path;
   if (!remaining.empty()) {
-    size_t offset = remaining.find_first_of("?#");
+    offset = remaining.find_first_of("?#");
     path = PercentDecode(remaining.substr(0, offset));
     if (offset == remaining.npos) {
       remaining = "";
@@ -240,7 +240,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   // parse query
   std::vector<QueryParam> query_param_pairs;
   if (absl::ConsumePrefix(&remaining, "?")) {
-    size_t offset = remaining.find('#');
+    offset = remaining.find('#');
     absl::string_view tmp_query = remaining.substr(0, offset);
     if (tmp_query.empty()) {
       return MakeInvalidURIStatus("query", uri_text, "Invalid query string.");
