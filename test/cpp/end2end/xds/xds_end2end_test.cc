@@ -11862,7 +11862,8 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // subchannel list, which resets the start index randomly.  So we need
   // to be a little more permissive here to avoid spurious failures.
   ResetBackendCounters();
-  WaitForAllBackends(/*start_index=*/0, /*stop_index=*/kNumBackendsFirstPass);
+  num_rpcs =
+      WaitForAllBackends(/*start_index=*/0, /*stop_index=*/kNumBackendsFirstPass);
   // Now restart the balancer, this time pointing to the new backends.
   balancer_->Start();
   args = EdsResourceArgs({
@@ -11871,7 +11872,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
-  num_rpcs = WaitForAllBackends(/*start_index=*/kNumBackendsFirstPass);
+  num_rpcs += WaitForAllBackends(/*start_index=*/kNumBackendsFirstPass);
   // Send one RPC per backend.
   CheckRpcSendOk(kNumBackendsSecondPass);
   num_rpcs += kNumBackendsSecondPass;
