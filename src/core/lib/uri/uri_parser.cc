@@ -177,18 +177,15 @@ std::string URI::PercentDecode(absl::string_view str) {
   out.reserve(str.size());
   for (size_t i = 0; i < str.length(); i++) {
     unescaped = "";
-    if (str[i] != '%') {
-      out += str[i];
-      continue;
-    }
-    if (i + 3 >= str.length() ||
-        !absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)),
-                         &unescaped) ||
-        unescaped.length() > 1) {
-      out += str[i];
-    } else {
+    if (str[i] == '%' &&
+        i + 3 <= str.length() &&
+        absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)),
+                        &unescaped) &&
+        unescaped.length() == 1) {
       out += unescaped[0];
       i += 2;
+    } else {
+      out += str[i];
     }
   }
   return out;
@@ -198,11 +195,11 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   absl::StatusOr<std::string> decoded;
   absl::string_view remaining = uri_text;
   // parse scheme
-  size_t idx = remaining.find(':');
-  if (idx == remaining.npos || idx == 0) {
+  size_t offset = remaining.find(':');
+  if (offset == remaining.npos || offset == 0) {
     return MakeInvalidURIStatus("scheme", uri_text, "Scheme not found.");
   }
-  std::string scheme(remaining.substr(0, idx));
+  std::string scheme(remaining.substr(0, offset));
   if (scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "abcdefghijklmnopqrstuvwxyz"
                                "0123456789+-.") != std::string::npos) {
@@ -214,26 +211,34 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
         "scheme", uri_text,
         "Scheme must begin with an alpha character [A-Za-z].");
   }
-  remaining.remove_prefix(scheme.length() + 1);
+  remaining.remove_prefix(offset + 1);
   // parse authority
   std::string authority;
-  if (absl::StartsWith(remaining, "//")) {
-    remaining.remove_prefix(2);
-    authority =
-        PercentDecode(remaining.substr(0, remaining.find_first_of("/?#")));
-    remaining.remove_prefix(authority.length());
+  if (absl::ConsumePrefix(&remaining, "//")) {
+    size_t offset = remaining.find_first_of("/?#");
+    authority = PercentDecode(remaining.substr(0, offset));
+    if (offset == remaining.npos) {
+      remaining = "";
+    } else {
+      remaining.remove_prefix(offset);
+    }
   }
   // parse path
   std::string path;
   if (!remaining.empty()) {
-    path = PercentDecode(remaining.substr(0, remaining.find_first_of("?#")));
-    remaining.remove_prefix(path.length());
+    size_t offset = remaining.find_first_of("?#");
+    path = PercentDecode(remaining.substr(0, offset));
+    if (offset == remaining.npos) {
+      remaining = "";
+    } else {
+      remaining.remove_prefix(offset);
+    }
   }
   // parse query
   std::vector<QueryParam> query_param_pairs;
-  if (!remaining.empty() && remaining[0] == '?') {
-    remaining.remove_prefix(1);
-    absl::string_view tmp_query = remaining.substr(0, remaining.find('#'));
+  if (absl::ConsumePrefix(&remaining, "?")) {
+    size_t offset = remaining.find('#');
+    absl::string_view tmp_query = remaining.substr(0, offset);
     if (tmp_query.empty()) {
       return MakeInvalidURIStatus("query", uri_text, "Invalid query string.");
     }
@@ -248,11 +253,14 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
       query_param_pairs.push_back({PercentDecode(possible_kv.first),
                                    PercentDecode(possible_kv.second)});
     }
-    remaining.remove_prefix(tmp_query.length());
+    if (offset == remaining.npos) {
+      remaining = "";
+    } else {
+      remaining.remove_prefix(offset);
+    }
   }
   std::string fragment;
-  if (!remaining.empty() && remaining[0] == '#') {
-    remaining.remove_prefix(1);
+  if (absl::ConsumePrefix(&remaining, "#")) {
     if (!IsQueryOrFragmentString(remaining)) {
       return MakeInvalidURIStatus("fragment", uri_text,
                                   "Fragment contains invalid characters.");
