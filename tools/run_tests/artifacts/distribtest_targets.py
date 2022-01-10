@@ -109,6 +109,7 @@ class CSharpDistribTest(object):
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as there is little opportunity for parallelizing whats inside the distribtests
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -171,6 +172,8 @@ class PythonDistribTest(object):
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         if not self.platform == 'linux':
             raise Exception("Not supported yet.")
 
@@ -221,6 +224,8 @@ class RubyDistribTest(object):
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         arch_to_gem_arch = {
             'x64': 'x86_64',
             'x86': 'x86',
@@ -261,6 +266,8 @@ class PHP7DistribTest(object):
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -315,6 +322,8 @@ class CppDistribTest(object):
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,

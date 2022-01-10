@@ -210,6 +210,8 @@ class RubyArtifact:
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
         return create_jobspec(
@@ -304,6 +306,7 @@ class PHPArtifact:
         return []
 
     def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as PHP artifact build is basically just packing an archive
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
