@@ -87,8 +87,7 @@ TEST_F(URIParserTest, UncommonValidExamplesAreParsedCorrectly) {
   TestSucceeds("http:?legit#twice", "http", "", "", {{"legit", ""}},
                {{"legit", ""}}, "twice");
   TestSucceeds("fake:///", "fake", "", "/", {}, {}, "");
-  TestSucceeds("http://local%25host:8080/whatz%25it?1%25=2%25#fragment",
-               "http",
+  TestSucceeds("http://local%25host:8080/whatz%25it?1%25=2%25#fragment", "http",
                "local%host:8080", "/whatz%it", {{"1%", "2%"}}, {{"1%", "2%"}},
                "fragment");
 }

@@ -181,8 +181,7 @@ std::string URI::PercentDecode(absl::string_view str) {
   out.reserve(str.size());
   for (size_t i = 0; i < str.length(); i++) {
     unescaped = "";
-    if (str[i] == '%' &&
-        i + 3 <= str.length() &&
+    if (str[i] == '%' && i + 3 <= str.length() &&
         absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)),
                         &unescaped) &&
         unescaped.length() == 1) {
