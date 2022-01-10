@@ -11646,8 +11646,8 @@ TEST_P(DropTest, Update) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcsLbOnly RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
-  size_t num_drops =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcsLbOnly, "EDS-configured drop: ");
+  size_t num_drops = SendRpcsAndCountFailuresWithMessage(
+      kNumRpcsLbOnly, "EDS-configured drop: ");
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
@@ -11680,8 +11680,8 @@ TEST_P(DropTest, Update) {
   }
   // Send kNumRpcsBoth RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  num_drops =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcsBoth, "EDS-configured drop: ");
+  num_drops = SendRpcsAndCountFailuresWithMessage(kNumRpcsBoth,
+                                                  "EDS-configured drop: ");
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
@@ -11859,8 +11859,8 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // subchannel list, which resets the start index randomly.  So we need
   // to be a little more permissive here to avoid spurious failures.
   ResetBackendCounters();
-  num_rpcs =
-      WaitForAllBackends(/*start_index=*/0, /*stop_index=*/kNumBackendsFirstPass);
+  num_rpcs = WaitForAllBackends(/*start_index=*/0,
+                                /*stop_index=*/kNumBackendsFirstPass);
   // Now restart the balancer, this time pointing to the new backends.
   balancer_->Start();
   args = EdsResourceArgs({
