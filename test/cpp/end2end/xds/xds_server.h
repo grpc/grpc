@@ -69,10 +69,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // State for a given xDS resource type.
   struct ResponseState {
     enum State {
-      NOT_SENT,  // No response sent yet.
-      SENT,      // Response was sent, but no ACK/NACK received.
-      ACKED,     // ACK received.
-      NACKED,    // NACK received; error_message will contain the error.
+      ACKED,   // ACK received.
+      NACKED,  // NACK received; error_message will contain the error.
     };
     State state = NOT_SENT;
     std::string error_message;
@@ -144,20 +142,25 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   }
 
   // Get the list of response state for each resource type.
-  std::vector<ResponseState> GetResponseState(const std::string& type_url) {
+  absl::optional<ResponseState> GetResponseState(const std::string& type_url) {
     grpc_core::MutexLock lock(&ads_mu_);
-    return resource_type_response_state_[type_url];
+    if (resource_type_response_state_[type_url].empty()) {
+      return absl::nullopt;
+    }
+    auto response = resource_type_response_state_[type_url].front();
+    resource_type_response_state_[type_url].pop_front();
+    return response;
   }
-  std::vector<ResponseState> lds_response_state() {
+  absl::optional<ResponseState> lds_response_state() {
     return GetResponseState(kLdsTypeUrl);
   }
-  std::vector<ResponseState> rds_response_state() {
+  absl::optional<ResponseState> rds_response_state() {
     return GetResponseState(kRdsTypeUrl);
   }
-  std::vector<ResponseState> cds_response_state() {
+  absl::optional<ResponseState> cds_response_state() {
     return GetResponseState(kCdsTypeUrl);
   }
-  std::vector<ResponseState> eds_response_state() {
+  absl::optional<ResponseState> eds_response_state() {
     return GetResponseState(kEdsTypeUrl);
   }
 
@@ -415,6 +418,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
         }
         parent_->resource_type_response_state_[v3_resource_type].emplace_back(
             std::move(response_state));
+        // Ignore requests with stale nonces.
+        if (client_nonce < sent_state->nonce) return;
       }
       // Ignore resource types as requested by tests.
       if (parent_->resource_types_to_ignore_.find(v3_resource_type) !=
@@ -643,7 +648,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
   bool ads_done_ ABSL_GUARDED_BY(ads_mu_) = false;
-  std::map<std::string /* type_url */, std::vector<ResponseState>>
+  std::map<std::string /* type_url */, std::deque<ResponseState>>
       resource_type_response_state_ ABSL_GUARDED_BY(ads_mu_);
   std::set<std::string /*resource_type*/> resource_types_to_ignore_
       ABSL_GUARDED_BY(ads_mu_);
