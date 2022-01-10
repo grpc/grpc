@@ -639,16 +639,22 @@ class PythonLanguage(object):
             # overrides threading settings in C-Core.
             if io_platform != 'native':
                 environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
-            jobs.extend([
-                self.config.job_spec(
-                    python_config.run + [self._TEST_COMMAND[io_platform]],
-                    timeout_seconds=8 * 60,
-                    environ=dict(GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
-                                 **environment),
-                    shortname='%s.%s.%s' %
-                    (python_config.name, io_platform, test_case),
-                ) for test_case in test_cases for python_config in self.pythons
-            ])
+            for python_config in self.pythons:
+                # TODO(https://github.com/grpc/grpc/issues/23784) allow gevent
+                # to run on later version once issue solved.
+                if io_platform == 'gevent' and python_config.name != 'py36':
+                    continue
+                jobs.extend([
+                    self.config.job_spec(
+                        python_config.run + [self._TEST_COMMAND[io_platform]],
+                        timeout_seconds=8 * 60,
+                        environ=dict(
+                            GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
+                            **environment),
+                        shortname='%s.%s.%s' %
+                        (python_config.name, io_platform, test_case),
+                    ) for test_case in test_cases
+                ])
         return jobs
 
     def pre_build_steps(self):
