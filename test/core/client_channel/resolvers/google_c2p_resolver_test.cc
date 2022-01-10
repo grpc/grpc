@@ -37,11 +37,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/env.h"
-
-#include "test/core/util/port.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -49,8 +48,9 @@ namespace {
 void TryConnectAndDestroy(const char* fake_metadata_server_address) {
   grpc::ChannelArguments args;
   std::string target = "google-c2p:///servername_not_used";
-  args.SetInt("grpc.testing.force_running_on_gcp", 1);
-  args.SetString("grpc.testing.google_c2p_resolver_metadata_server_override", fake_metadata_server_address);
+  args.SetInt("grpc.testing.google_c2p_resolver_pretend_running_on_gcp", 1);
+  args.SetString("grpc.testing.google_c2p_resolver_metadata_server_override",
+                 fake_metadata_server_address);
   auto channel = ::grpc::CreateCustomChannel(
       target, grpc::InsecureChannelCredentials(), args);
   // Start connecting, and give some time for the google-c2p resolver to begin
@@ -66,7 +66,8 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
   grpc_init();
   // Create a fake metadata server which hangs.
   grpc_core::testing::FakeUdpAndTcpServer fake_metadata_server(
-      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::vector<std::unique_ptr<std::thread>> threads;
   // 100 is picked for number of threads just
@@ -75,7 +76,8 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
   const int kNumThreads = 1;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
-    threads.emplace_back(new std::thread(TryConnectAndDestroy, fake_metadata_server.address()));
+    threads.emplace_back(
+        new std::thread(TryConnectAndDestroy, fake_metadata_server.address()));
   }
   for (size_t i = 0; i < threads.size(); i++) {
     threads[i]->join();
