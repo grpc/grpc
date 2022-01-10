@@ -11197,22 +11197,19 @@ TEST_P(LocalityMapTest, StressTest) {
     args.locality_list.emplace_back(std::move(locality));
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // The second ADS response contains 1 locality, which contains backend 1.
-  args = EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args), 60 * 1000));
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
   WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
+  // The second ADS response contains 1 locality, which contains backend 1.
+  args = EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until backend 1 is ready, before which kNumLocalities localities are
   // removed by the xds policy.
   WaitForBackend(1);
-  delayed_resource_setter.join();
 }
 
 // Tests that the localities in a locality map are picked correctly after
