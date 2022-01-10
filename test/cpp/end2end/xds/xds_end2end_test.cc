@@ -1155,6 +1155,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       if (absl::Now() >= deadline) break;
       ++num_rpcs;
     }
+    if (wait_options.reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO, "Backends up; sent %" PRIuPTR " warm up requests",
             num_rpcs);
     return num_rpcs;
