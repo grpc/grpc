@@ -1282,29 +1282,23 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
-      std::function<std::vector<AdsServiceImpl::ResponseState>()> get_state,
+      std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     auto deadline = absl::Now() + absl::Seconds(30);
-    auto get_nack_response_state =
-        [&]() -> absl::optional<AdsServiceImpl::ResponseState> {
-      auto state_queue = get_state();
-      for (const auto& state : state_queue) {
-        if (state.state == AdsServiceImpl::ResponseState::NACKED) {
-          return state;
-        }
-      }
-      return absl::nullopt;
-    };
+    absl::optional<AdsServiceImpl::ResponseState> response_state;
     CheckRpcSendFailure(CheckRpcSendFailureOptions()
                             .set_continue_predicate([&](size_t) {
                               if (absl::Now() >= deadline) {
                                 return false;
                               }
-                              auto state_queue = get_state();
-                              return !(get_nack_response_state().has_value());
+                              response_state = get_state();
+                              return !(
+                                  response_state.has_value() &&
+                                  response_state->state ==
+                                      AdsServiceImpl::ResponseState::NACKED);
                             })
                             .set_expected_error_code(expected_status));
-    return get_nack_response_state();
+    return response_state;
   }
 
   absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
@@ -1339,7 +1333,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return WaitForLdsNack(expected_status);
   }
 
-  std::vector<AdsServiceImpl::ResponseState> RouteConfigurationResponseState(
+  absl::optional<AdsServiceImpl::ResponseState> RouteConfigurationResponseState(
       BalancerServerThread* balancer) const {
     AdsServiceImpl* ads_service = balancer->ads_service();
     if (GetParam().enable_rds_testing()) {
@@ -2209,9 +2203,9 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   // Make sure RPCs are still failing.
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
-  ASSERT_FALSE(balancer_->ads_service()->cds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that we restart all xDS requests when we reestablish the ADS call.
@@ -2497,17 +2491,25 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
           }
           const auto response_state =
               balancer_->ads_service()->lds_response_state();
-          return response_state.empty() ||
-                 response_state.back().state !=
-                     AdsServiceImpl::ResponseState::NACKED ||
-                 ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
-                     kServerName,
-                     ": validation error.*"
-                     "Listener has neither address nor ApiListener.*",
-                     kServerName2,
-                     ": validation error.*"
-                     "Listener has neither address nor ApiListener")))(
-                     response_state.back().error_message);
+          return !(response_state.has_value() &&
+                   response_state->state ==
+                       AdsServiceImpl::ResponseState::NACKED &&
+                   (::testing::Matches(::testing::ContainsRegex(absl::StrCat(
+                        kServerName,
+                        ": validation error.*"
+                        "Listener has neither address nor ApiListener.*",
+                        kServerName2,
+                        ": validation error.*"
+                        "Listener has neither address nor ApiListener")))(
+                        response_state->error_message) ||
+                    ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
+                        kServerName2,
+                        ": validation error.*"
+                        "Listener has neither address nor ApiListener.*",
+                        kServerName,
+                        ": validation error.*"
+                        "Listener has neither address nor ApiListener")))(
+                        response_state->error_message)));
         }));
     ASSERT_FALSE(timed_out);
   }
@@ -2541,18 +2543,18 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   balancer_->ads_service()->SetLdsResource(listener);
   // Wait for xDS server to see NACK.
   auto deadline = absl::Now() + absl::Seconds(30);
+  absl::optional<AdsServiceImpl::ResponseState> response_state;
   do {
     CheckRpcSendOk();
     ASSERT_LT(absl::Now(), deadline);
-  } while (balancer_->ads_service()->lds_response_state().empty() ||
-           balancer_->ads_service()->lds_response_state().back().state !=
-               AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().back().error_message,
-      ::testing::ContainsRegex(
-          absl::StrCat(kServerName,
-                       ": validation error.*"
-                       "Listener has neither address nor ApiListener")));
+    response_state = balancer_->ads_service()->lds_response_state();
+  } while (!(response_state.has_value() &&
+             response_state->state == AdsServiceImpl::ResponseState::NACKED));
+  EXPECT_THAT(response_state->error_message,
+              ::testing::ContainsRegex(absl::StrCat(
+                  kServerName,
+                  ": validation error.*"
+                  "Listener has neither address nor ApiListener")));
   // Check one more time, just to make sure it still works after NACK.
   CheckRpcSendOk();
 }
@@ -3106,9 +3108,9 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  ASSERT_FALSE(balancer_->ads_service()->lds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs.
@@ -3155,8 +3157,9 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter configs.
@@ -3233,8 +3236,9 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(0);
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK non-zero xff_num_trusted_hops
@@ -3303,9 +3307,9 @@ using LdsRdsTest = BasicTest;
 // inlined RDS result).
 TEST_P(LdsRdsTest, Vanilla) {
   (void)SendRpc();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Make sure we actually used the RPC service for the right version of xDS.
   EXPECT_EQ(balancer_->ads_service()->seen_v2_client(), GetParam().use_v2());
   EXPECT_NE(balancer_->ads_service()->seen_v3_client(), GetParam().use_v2());
@@ -3327,9 +3331,9 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
   // Make sure RPCs are still failing.
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
-  ASSERT_FALSE(balancer_->ads_service()->lds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client ACKs but fails if matching domain can't be found in
@@ -3342,9 +3346,9 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   CheckRpcSendFailure();
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should choose the virtual host with matching domain
@@ -3356,9 +3360,9 @@ TEST_P(LdsRdsTest, ChooseMatchedDomain) {
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   SetRouteConfiguration(balancer_.get(), route_config);
   (void)SendRpc();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should choose the last route in the virtual host if
@@ -3373,9 +3377,9 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
       ->mutable_cluster_header();
   SetRouteConfiguration(balancer_.get(), route_config);
   (void)SendRpc();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should ignore route which has query_parameters.
@@ -3403,9 +3407,9 @@ TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
   (void)SendRpc();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.back().state, AdsServiceImpl::ResponseState::ACKED);
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should ignore route which has a path
@@ -5229,9 +5233,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(kNumEcho1Rpcs, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
@@ -5275,9 +5279,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   CheckRpcSendOk(kNumEchoRpcs);
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
@@ -5322,9 +5326,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   // were mismatched.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
@@ -5374,9 +5378,9 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
               ::testing::DoubleNear(1 - kRouteMatchPercent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(matched_backend_count) / kNumRpcs,
               ::testing::DoubleNear(kRouteMatchPercent, kErrorTolerance));
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
@@ -5472,9 +5476,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(kNumEcho1Rpcs, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
@@ -5577,9 +5581,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs in VirtualHost.
@@ -5633,9 +5637,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter types in VirtualHost.
@@ -5692,9 +5696,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs in Route.
@@ -5751,9 +5755,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter types in Route.
@@ -5821,9 +5825,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs in ClusterWeight.
@@ -5896,9 +5900,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  ASSERT_FALSE(RouteConfigurationResponseState(balancer_.get()).empty());
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter types in ClusterWeight.
@@ -5930,9 +5934,9 @@ using CdsTest = BasicTest;
 // Tests that CDS client should send an ACK upon correct CDS response.
 TEST_P(CdsTest, Vanilla) {
   (void)SendRpc();
-  ASSERT_FALSE(balancer_->ads_service()->cds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(CdsTest, LogicalDNSClusterType) {
@@ -6231,9 +6235,9 @@ TEST_P(CdsTest, AggregateClusterType) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
-  ASSERT_FALSE(balancer_->ads_service()->cds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
   WaitForBackend(1);
@@ -6294,9 +6298,9 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
-  ASSERT_FALSE(balancer_->ads_service()->cds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
   WaitForBackend(1);
@@ -6357,9 +6361,9 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
-  ASSERT_FALSE(balancer_->ads_service()->cds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
   WaitForBackend(1);
@@ -6490,19 +6494,19 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
+  absl::optional<AdsServiceImpl::ResponseState> response_state;
   // Wait for xDS server to see NACK.
   auto deadline = absl::Now() + absl::Seconds(30);
   do {
     CheckRpcSendOk();
     ASSERT_LT(absl::Now(), deadline);
-  } while (balancer_->ads_service()->cds_response_state().empty() ||
-           balancer_->ads_service()->cds_response_state().back().state !=
-               AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      balancer_->ads_service()->cds_response_state().back().error_message,
-      ::testing::ContainsRegex(
-          absl::StrCat(kDefaultClusterName,
-                       ": validation error.*DiscoveryType is not valid")));
+    response_state = balancer_->ads_service()->cds_response_state();
+  } while (!(response_state.has_value() &&
+             response_state->state == AdsServiceImpl::ResponseState::NACKED));
+  EXPECT_THAT(response_state->error_message,
+              ::testing::ContainsRegex(absl::StrCat(
+                  kDefaultClusterName,
+                  ": validation error.*DiscoveryType is not valid")));
   // Check one more time, just to make sure it still works after NACK.
   CheckRpcSendOk();
 }
@@ -8379,9 +8383,9 @@ TEST_P(XdsEnabledServerTest,
                                              default_server_route_config_);
   backends_[0]->Start();
   WaitForBackend(0);
-  ASSERT_FALSE(balancer_->ads_service()->lds_response_state().empty());
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().back().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Verify that a mismatch of listening address results in "not serving"
@@ -9135,7 +9139,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   SetInvalidLdsUpdate();
   do {
     SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
-  } while (balancer_->ads_service()->lds_response_state().empty());
+  } while (!balancer_->ads_service()->lds_response_state().has_value());
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
@@ -11619,8 +11623,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When backend 3 gets traffic, we know the second update has been seen.
   WaitForBackend(3);
   // The ADS service of balancer 0 got at least 1 response.
-  EXPECT_GT(balancer_->ads_service()->eds_response_state().back().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
   delayed_resource_setter.join();
 }
 
