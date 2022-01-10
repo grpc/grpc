@@ -25,12 +25,20 @@
 namespace grpc_binder {
 
 jclass FindNativeConnectionHelper(JNIEnv* env) {
-  auto do_find = [env]() {
-    jclass cl = env->FindClass("io/grpc/binder/cpp/NativeConnectionHelper");
+  return FindNativeConnectionHelper(
+      env, [env](std::string cl) { return env->FindClass(cl.c_str()); });
+}
+
+jclass FindNativeConnectionHelper(
+    JNIEnv* env, std::function<void*(std::string)> class_finder) {
+  auto do_find = [env, class_finder]() {
+    jclass cl = static_cast<jclass>(
+        class_finder("io/grpc/binder/cpp/NativeConnectionHelper"));
     if (cl == nullptr) {
       return cl;
     }
     jclass global_cl = static_cast<jclass>(env->NewGlobalRef(cl));
+    env->DeleteLocalRef(cl);
     GPR_ASSERT(global_cl != nullptr);
     return global_cl;
   };
