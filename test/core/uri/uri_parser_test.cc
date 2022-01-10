@@ -232,7 +232,7 @@ TEST(URITest, PercentEncodePath) {
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             "0123456789"
             "/:@-._~!$&'()*+,;="
-            "%5c%3f%25%23%5b%5d%5e");
+            "%5C%3F%25%23%5B%5D%5E");
 }
 
 TEST(URITest, Basic) {
@@ -441,26 +441,26 @@ TEST(URITest, ToStringPercentEncoding) {
   EXPECT_EQ(
       // Scheme
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-."
-      "%25%3a%2f%3f%23%5b%5d%40%21%24%26%27%28%29%2a%2c%3b%3d"
+      "%25%3A%2F%3F%23%5B%5D%40%21%24%26%27%28%29%2A%2C%3B%3D"
       // Authority
       "://abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       "-.+~!$&'()*+,;=:[]@"
-      "%25%2f%3f%23"
+      "%25%2F%3F%23"
       // Path
       "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       "-._~!$&'()*+,;=:@"
-      "%25%3f%23%5b%5d"
+      "%25%3F%23%5B%5D"
       // Query
       "?abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       "-._~!$'()*+,;:@/?"
-      "%25%3d%26%23%5b%5d"
+      "%25%3D%26%23%5B%5D"
       "=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       "-._~!$'()*+,;:@/?"
-      "%25%3d%26%23%5b%5d"
+      "%25%3D%26%23%5B%5D"
       // Fragment
       "#abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
       "-._~!$'()*+,;:@/?=&"
-      "%25%23%5b%5d",
+      "%25%23%5B%5D",
       uri->ToString());
 }
 
