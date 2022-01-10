@@ -41,7 +41,7 @@
 #include "src/core/lib/gpr/env.h"
 
 #include "test/core/util/port.h"
-#include "test/core/util/fake_tcp_server.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -65,9 +65,9 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
      LoopTryConnectAndDestroy) {
   grpc_init();
   // Create a fake metadata server which hangs.
-  FakeTcpServer fake_metadata_server(
-      FakeTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
-      FakeTcpServer::CloseSocketUponCloseFromPeer);
+  grpc_core::testing::FakeUdpAndTcpServer fake_metadata_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::vector<std::unique_ptr<std::thread>> threads;
   // 100 is picked for number of threads just
   // because it's enough to reproduce a certain crash almost 100%
