@@ -123,6 +123,7 @@ HttpCli::HttpCli(
       handshaker_factory_(std::move(handshaker_factory)),
       on_done_(on_done),
       resource_quota_(std::move(resource_quota)),
+      pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);

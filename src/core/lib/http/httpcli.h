@@ -238,6 +238,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
 
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
   }
 
@@ -303,6 +304,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_endpoint* ep_ = nullptr;
   grpc_closure* on_done_;
   ResourceQuotaRefPtr resource_quota_;
+  grpc_polling_entity* pollent_;
   grpc_pollset_set* pollset_set_;
   const absl::optional<std::function<void()>> test_only_generate_response_;
   Mutex mu_;
