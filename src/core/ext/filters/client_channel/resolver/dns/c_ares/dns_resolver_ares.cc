@@ -197,6 +197,8 @@ void AresClientChannelDNSResolver::OnNextResolution(void* arg,
   AresClientChannelDNSResolver* r =
       static_cast<AresClientChannelDNSResolver*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
