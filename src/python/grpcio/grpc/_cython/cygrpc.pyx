@@ -55,6 +55,7 @@ include "_cygrpc/tag.pyx.pxi"
 include "_cygrpc/time.pyx.pxi"
 include "_cygrpc/vtable.pyx.pxi"
 include "_cygrpc/_hooks.pyx.pxi"
+include "_cygrpc/call_tracer.pyx.pxi"
 
 include "_cygrpc/iomgr.pyx.pxi"
 
