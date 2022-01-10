@@ -1090,26 +1090,30 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return true;
   }
 
-  void SendRpcAndCount(
-      int* num_total, int* num_ok, int* num_failure, int* num_drops,
-      const RpcOptions& rpc_options = RpcOptions(),
-      const char* drop_error_message_prefix = "EDS-configured drop: ") {
-    const Status status = SendRpc(rpc_options);
-    if (status.ok()) {
-      ++*num_ok;
-    } else {
-      if (absl::StartsWith(status.error_message(), drop_error_message_prefix)) {
-        ++*num_drops;
-      } else {
-        ++*num_failure;
+  // Sends num_rpcs RPCs, counting how many of them fail with a message
+  // matching the specfied drop_error_message_prefix.
+  // Any failure with a non-matching message is a test failure.
+  size_t SendRpcsAndCountFailuresWithMessage(
+      size_t num_rpcs, const char* drop_error_message_prefix,
+      const RpcOptions& rpc_options = RpcOptions()) {
+    size_t num_failed = 0;
+    for (size_t i = 0; i < num_rpcs; ++i) {
+      Status status = SendRpc(rpc_options);
+      if (!status.ok()) {
+        EXPECT_THAT(status.error_message(),
+                    ::testing::StartsWith(drop_error_message_prefix))
+            << "code=" << status.error_code()
+            << " message=" << status.error_message();
+        ++num_failed;
       }
     }
-    ++*num_total;
+    return num_failed;
   }
 
   struct WaitForBackendOptions {
     bool reset_counters = true;
     bool allow_failures = false;
+    int timeout_ms = 5000;
 
     WaitForBackendOptions() {}
 
@@ -1122,48 +1126,45 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       allow_failures = enable;
       return *this;
     }
+
+    WaitForBackendOptions& set_timeout_ms(int ms) {
+      timeout_ms = ms;
+      return *this;
+    }
   };
 
-  std::tuple<int, int, int> WaitForAllBackends(
+  // Returns the total number of RPCs sent.
+  size_t WaitForAllBackends(
       size_t start_index = 0, size_t stop_index = 0,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions()) {
-    int num_ok = 0;
-    int num_failure = 0;
-    int num_drops = 0;
-    int num_total = 0;
-    gpr_log(GPR_INFO, "========= WAITING FOR All BACKEND %lu TO %lu ==========",
-            static_cast<unsigned long>(start_index),
-            static_cast<unsigned long>(stop_index));
-    while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
-      SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
-                      rpc_options);
-    }
-    if (wait_options.reset_counters) ResetBackendCounters();
+    size_t num_rpcs = 0;
+    auto deadline = absl::Now() + (absl::Milliseconds(wait_options.timeout_ms) *
+                                   grpc_test_slowdown_factor());
     gpr_log(GPR_INFO,
-            "Performed %d warm up requests against the backends. "
-            "%d succeeded, %d failed, %d dropped.",
-            num_total, num_ok, num_failure, num_drops);
-    if (!wait_options.allow_failures) EXPECT_EQ(num_failure, 0);
-    return std::make_tuple(num_ok, num_failure, num_drops);
+            "========= WAITING FOR BACKENDS [%" PRIuPTR ", %" PRIuPTR
+            ") ==========",
+            start_index, stop_index);
+    while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
+      Status status = SendRpc(rpc_options);
+      if (!wait_options.allow_failures) {
+        EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                                 << " message=" << status.error_message();
+      }
+      EXPECT_LE(absl::Now(), deadline);
+      if (absl::Now() >= deadline) break;
+      ++num_rpcs;
+    }
+    gpr_log(GPR_INFO, "Backends up; sent %" PRIuPTR " warm up requests",
+            num_rpcs);
+    return num_rpcs;
   }
 
   void WaitForBackend(
       size_t backend_idx,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions()) {
-    gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
-            static_cast<unsigned long>(backend_idx));
-    do {
-      Status status = SendRpc(rpc_options);
-      if (!wait_options.allow_failures) {
-        EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                                 << " message=" << status.error_message();
-      }
-    } while (!SeenBackend(backend_idx, rpc_options.service));
-    if (wait_options.reset_counters) ResetBackendCounters();
-    gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
-            static_cast<unsigned long>(backend_idx));
+    WaitForAllBackends(backend_idx, backend_idx + 1, wait_options, rpc_options);
   }
 
   grpc_core::ServerAddressList CreateAddressListFromPortList(
@@ -2177,9 +2178,7 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Wait for all new backends to be used.
-  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
-  // Make sure no RPCs failed in the transition.
-  EXPECT_EQ(0, std::get<1>(counts));
+  WaitForAllBackends(2, 4);
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
@@ -2251,9 +2250,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
       ->set_cluster(kNewClusterName);
   balancer_->ads_service()->SetRdsResource(new_route_config);
   // Wait for all new backends to be used.
-  std::tuple<int, int, int> counts = WaitForAllBackends(2, 4);
-  // Make sure no RPCs failed in the transition.
-  EXPECT_EQ(0, std::get<1>(counts));
+  WaitForAllBackends(2, 4);
 }
 
 TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
@@ -11381,9 +11378,7 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for all backends to be used.
-  std::tuple<int, int, int> counts = WaitForAllBackends();
-  // Make sure no RPCs failed in the transition.
-  EXPECT_EQ(0, std::get<1>(counts));
+  WaitForAllBackends();
 }
 
 // If the higher priority localities are not reachable, failover to the
@@ -11796,10 +11791,7 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  int num_ok = 0;
-  int num_failure = 0;
-  int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
+  size_t num_warmup_rpcs = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
   CheckRpcSendFailure(CheckRpcSendFailureOptions()
@@ -11815,13 +11807,13 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
   ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_warmup_rpcs,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
-                num_ok + num_failure,
+                num_warmup_rpcs,
             client_stats.total_issued_requests());
-  EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
+  EXPECT_EQ(kNumFailuresPerAddress * num_backends_,
             client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
   // The LRS service got a single request, and sent a single response.
@@ -11841,10 +11833,7 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  int num_ok = 0;
-  int num_failure = 0;
-  int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
+  size_t num_warmup_rpcs = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
   CheckRpcSendFailure(CheckRpcSendFailureOptions()
@@ -11860,13 +11849,13 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
   ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_warmup_rpcs,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
-                num_ok + num_failure,
+                num_warmup_rpcs,
             client_stats.total_issued_requests());
-  EXPECT_EQ(kNumFailuresPerAddress * num_backends_ + num_failure,
+  EXPECT_EQ(kNumFailuresPerAddress * num_backends_,
             client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
   // The LRS service got a single request, and sent a single response.
@@ -11884,10 +11873,7 @@ TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  int num_ok = 0;
-  int num_failure = 0;
-  int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
+  WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
   // Each backend should have gotten 100 requests.
@@ -11915,18 +11901,13 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends returned by the balancer are ready.
-  int num_ok = 0;
-  int num_failure = 0;
-  int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) =
-      WaitForAllBackends(/* start_index */ 0,
-                         /* stop_index */ kNumBackendsFirstPass);
+  size_t num_rpcs = WaitForAllBackends(
+      /*start_index=*/0, /*stop_index=*/kNumBackendsFirstPass);
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
   ClientStats client_stats = std::move(load_report.front());
-  EXPECT_EQ(static_cast<size_t>(num_ok),
-            client_stats.total_successful_requests());
+  EXPECT_EQ(num_rpcs, client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
@@ -11943,8 +11924,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // subchannel list, which resets the start index randomly.  So we need
   // to be a little more permissive here to avoid spurious failures.
   ResetBackendCounters();
-  int num_started = std::get<0>(WaitForAllBackends(
-      /* start_index */ 0, /* stop_index */ kNumBackendsFirstPass));
+  WaitForAllBackends(/*start_index=*/0, /*stop_index=*/kNumBackendsFirstPass);
   // Now restart the balancer, this time pointing to the new backends.
   balancer_->Start();
   args = EdsResourceArgs({
@@ -11953,17 +11933,15 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
-  std::tie(num_ok, num_failure, num_drops) =
-      WaitForAllBackends(/* start_index */ kNumBackendsFirstPass);
-  num_started += num_ok + num_failure + num_drops;
+  num_rpcs = WaitForAllBackends(/*start_index=*/kNumBackendsFirstPass);
   // Send one RPC per backend.
   CheckRpcSendOk(kNumBackendsSecondPass);
-  num_started += kNumBackendsSecondPass;
+  num_rpcs += kNumBackendsSecondPass;
   // Check client stats.
   load_report = balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
   client_stats = std::move(load_report.front());
-  EXPECT_EQ(num_started, client_stats.total_successful_requests());
+  EXPECT_EQ(num_rpcs, client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
   EXPECT_EQ(0U, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
@@ -11993,10 +11971,7 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
       kNewEdsServiceName);
   balancer_->ads_service()->SetCdsResource(new_cluster);
   // Wait for all backends to come online.
-  int num_ok = 0;
-  int num_failure = 0;
-  int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(0, 2);
+  size_t num_rpcs = WaitForAllBackends(0, 2);
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
@@ -12011,18 +11986,17 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
                   ::testing::AllOf(
                       ::testing::Field(&ClientStats::LocalityStats::
                                            total_successful_requests,
-                                       num_ok),
+                                       num_rpcs),
                       ::testing::Field(&ClientStats::LocalityStats::
                                            total_requests_in_progress,
                                        0UL),
                       ::testing::Field(
                           &ClientStats::LocalityStats::total_error_requests,
-                          num_failure),
+                          0UL),
                       ::testing::Field(
                           &ClientStats::LocalityStats::total_issued_requests,
-                          num_failure + num_ok))))),
-          ::testing::Property(&ClientStats::total_dropped_requests,
-                              num_drops))));
+                          num_rpcs))))),
+          ::testing::Property(&ClientStats::total_dropped_requests, 0UL))));
   // Change RDS resource to point to new cluster.
   RouteConfiguration new_route_config = default_route_config_;
   new_route_config.mutable_virtual_hosts(0)
@@ -12032,7 +12006,7 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Wait for all new backends to be used.
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(2, 4);
+  num_rpcs = WaitForAllBackends(2, 4);
   // The load report received at the balancer should be correct.
   load_report = balancer_->lrs_service()->WaitForLoadReport();
   EXPECT_THAT(
@@ -12048,19 +12022,17 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
                       ::testing::AllOf(
                           ::testing::Field(&ClientStats::LocalityStats::
                                                total_successful_requests,
-                                           ::testing::Lt(num_ok)),
+                                           ::testing::Lt(num_rpcs)),
                           ::testing::Field(&ClientStats::LocalityStats::
                                                total_requests_in_progress,
                                            0UL),
                           ::testing::Field(
                               &ClientStats::LocalityStats::total_error_requests,
-                              ::testing::Le(num_failure)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::
-                                  total_issued_requests,
-                              ::testing::Le(num_failure + num_ok)))))),
-              ::testing::Property(&ClientStats::total_dropped_requests,
-                                  num_drops)),
+                              0UL),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_issued_requests,
+                                           ::testing::Le(num_rpcs)))))),
+              ::testing::Property(&ClientStats::total_dropped_requests, 0UL)),
           ::testing::AllOf(
               ::testing::Property(&ClientStats::cluster_name, kNewClusterName),
               ::testing::Property(
@@ -12070,27 +12042,22 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
                       ::testing::AllOf(
                           ::testing::Field(&ClientStats::LocalityStats::
                                                total_successful_requests,
-                                           ::testing::Le(num_ok)),
+                                           ::testing::Le(num_rpcs)),
                           ::testing::Field(&ClientStats::LocalityStats::
                                                total_requests_in_progress,
                                            0UL),
                           ::testing::Field(
                               &ClientStats::LocalityStats::total_error_requests,
-                              ::testing::Le(num_failure)),
-                          ::testing::Field(
-                              &ClientStats::LocalityStats::
-                                  total_issued_requests,
-                              ::testing::Le(num_failure + num_ok)))))),
-              ::testing::Property(&ClientStats::total_dropped_requests,
-                                  num_drops))));
-  int total_ok = 0;
-  int total_failure = 0;
+                              0UL),
+                          ::testing::Field(&ClientStats::LocalityStats::
+                                               total_issued_requests,
+                                           ::testing::Le(num_rpcs)))))),
+              ::testing::Property(&ClientStats::total_dropped_requests, 0UL))));
+  size_t total_ok = 0;
   for (const ClientStats& client_stats : load_report) {
     total_ok += client_stats.total_successful_requests();
-    total_failure += client_stats.total_error_requests();
   }
-  EXPECT_EQ(total_ok, num_ok);
-  EXPECT_EQ(total_failure, num_failure);
+  EXPECT_EQ(total_ok, num_rpcs);
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -12117,6 +12084,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
+  const char kStatusMessageDropPrefix[] = "EDS-configured drop: ";
   // The ADS response contains two drop categories.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -12124,30 +12092,14 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  int num_ok = 0;
-  int num_failure = 0;
-  int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
-  const size_t num_warmup = num_ok + num_failure + num_drops;
   // Send kNumRpcs RPCs and count the drops.
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    EchoResponse response;
-    const Status status = SendRpc(RpcOptions(), &response);
-    if (!status.ok() &&
-        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
-      ++num_drops;
-    } else {
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kRequestMessage);
-    }
-  }
+  size_t num_drops =
+      SendRpcsAndCountFailuresWithMessage(kNumRpcs, kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
                                                     kErrorTolerance));
   // Check client stats.
-  const size_t total_rpc = num_warmup + kNumRpcs;
   ClientStats client_stats;
   do {
     std::vector<ClientStats> load_reports =
@@ -12157,14 +12109,14 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
     }
   } while (client_stats.total_issued_requests() +
                client_stats.total_dropped_requests() <
-           total_rpc);
+           kNumRpcs);
   EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
   EXPECT_THAT(static_cast<double>(client_stats.dropped_requests(kLbDropType)) /
-                  total_rpc,
+                  kNumRpcs,
               ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
   EXPECT_THAT(
       static_cast<double>(client_stats.dropped_requests(kThrottleDropType)) /
-          (total_rpc * (1 - kDropRateForLb)),
+          (kNumRpcs * (1 - kDropRateForLb)),
       ::testing::DoubleNear(kDropRateForThrottle, kErrorTolerance));
 }
 
@@ -12292,13 +12244,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the aborts.
-  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted,
-                    RpcOptions(), "Fault injected");
-  }
-  EXPECT_EQ(kNumRpcs, num_total);
-  EXPECT_EQ(0, num_failure);
+  size_t num_aborted =
+      SendRpcsAndCountFailuresWithMessage(kNumRpcs, "Fault injected");
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
@@ -12328,14 +12275,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
       {"x-envoy-fault-abort-grpc-request", "10"},
       {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentage)},
   };
-  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
-  RpcOptions options = RpcOptions().set_metadata(metadata);
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted, options,
-                    "Fault injected");
-  }
-  EXPECT_EQ(kNumRpcs, num_total);
-  EXPECT_EQ(0, num_failure);
+  size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
+      kNumRpcs, "Fault injected", RpcOptions().set_metadata(metadata));
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
