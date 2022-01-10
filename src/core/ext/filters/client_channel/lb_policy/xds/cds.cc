@@ -367,9 +367,11 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
       break;
   }
   if (state.update->lrs_load_reporting_server.has_value()) {
-    mechanism["lrsLoadReportingServerName"] =
-        // donna: expand this to an json obj
-        state.update->lrs_load_reporting_server->server_uri;
+    // donna: expand this to an json obj
+    Json::Object xds_server = {
+        {"server_uri", state.update->lrs_load_reporting_server->server_uri},
+    };
+    mechanism["lrsLoadReportingServerName"] = xds_server;
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;

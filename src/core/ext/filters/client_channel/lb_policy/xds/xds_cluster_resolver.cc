@@ -34,6 +34,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -65,7 +66,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
  public:
   struct DiscoveryMechanism {
     std::string cluster_name;
-    absl::optional<std::string> lrs_load_reporting_server_name;
+    absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
     uint32_t max_concurrent_requests;
     enum DiscoveryMechanismType {
       EDS,
@@ -77,8 +78,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
 
     bool operator==(const DiscoveryMechanism& other) const {
       return (cluster_name == other.cluster_name &&
-              lrs_load_reporting_server_name ==
-                  other.lrs_load_reporting_server_name &&
+              lrs_load_reporting_server == other.lrs_load_reporting_server &&
               max_concurrent_requests == other.max_concurrent_requests &&
               type == other.type &&
               eds_service_name == other.eds_service_name &&
@@ -887,10 +887,13 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       xds_cluster_impl_config["edsServiceName"] = std::string(lrs_key.second);
     }
     if (config_->discovery_mechanisms()[discovery_index]
-            .lrs_load_reporting_server_name.has_value()) {
-      xds_cluster_impl_config["lrsLoadReportingServerName"] =
-          config_->discovery_mechanisms()[discovery_index]
-              .lrs_load_reporting_server_name.value();
+            .lrs_load_reporting_server.has_value()) {
+      Json::Object xds_server = {
+          {"server_uri", config_->discovery_mechanisms()[discovery_index]
+                             .lrs_load_reporting_server->server_uri},
+      };
+      // donna: expand this to an json obj
+      xds_cluster_impl_config["lrsLoadReportingServerName"] = xds_server;
     }
     Json locality_picking_policy = Json::Array{Json::Object{
         {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
@@ -1153,12 +1156,18 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     // LRS load reporting server name.
     it = json.object_value().find("lrsLoadReportingServerName");
     if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
+      if (it->second.type() != Json::Type::OBJECT) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
+            "field:lrsLoadReportingServerName error:type should be object"));
       } else {
-        discovery_mechanism->lrs_load_reporting_server_name.emplace(
-            it->second.string_value());
+        grpc_error_handle parse_error;
+        discovery_mechanism->lrs_load_reporting_server.emplace(
+            XdsBootstrap::XdsServer::Parse(it->second, &parse_error));
+        if (parse_error != GRPC_ERROR_NONE) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("errors parsing lrs_load_reporting_server")));
+          error_list.push_back(parse_error);
+        }
       }
     }
     // Max concurrent requests.

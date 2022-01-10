@@ -119,14 +119,13 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   XdsClusterImplLbConfig(
       RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
       std::string cluster_name, std::string eds_service_name,
-      absl::optional<std::string> lrs_load_reporting_server_name,
+      absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server,
       uint32_t max_concurrent_requests,
       RefCountedPtr<XdsEndpointResource::DropConfig> drop_config)
       : child_policy_(std::move(child_policy)),
         cluster_name_(std::move(cluster_name)),
         eds_service_name_(std::move(eds_service_name)),
-        lrs_load_reporting_server_name_(
-            std::move(lrs_load_reporting_server_name)),
+        lrs_load_reporting_server_(std::move(lrs_load_reporting_server)),
         max_concurrent_requests_(max_concurrent_requests),
         drop_config_(std::move(drop_config)) {}
 
@@ -137,8 +136,9 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   }
   const std::string& cluster_name() const { return cluster_name_; }
   const std::string& eds_service_name() const { return eds_service_name_; }
-  const absl::optional<std::string>& lrs_load_reporting_server_name() const {
-    return lrs_load_reporting_server_name_;
+  const absl::optional<XdsBootstrap::XdsServer>& lrs_load_reporting_server()
+      const {
+    return lrs_load_reporting_server_;
   };
   uint32_t max_concurrent_requests() const { return max_concurrent_requests_; }
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config() const {
@@ -149,7 +149,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
   std::string cluster_name_;
   std::string eds_service_name_;
-  absl::optional<std::string> lrs_load_reporting_server_name_;
+  absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server_;
   uint32_t max_concurrent_requests_;
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
 };
@@ -462,9 +462,9 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   config_ = std::move(args.config);
   // On initial update, create drop stats.
   if (is_initial_update) {
-    if (config_->lrs_load_reporting_server_name().has_value()) {
+    if (config_->lrs_load_reporting_server().has_value()) {
       drop_stats_ = xds_client_->AddClusterDropStats(
-          config_->lrs_load_reporting_server_name().value(),
+          config_->lrs_load_reporting_server()->server_uri,
           config_->cluster_name(), config_->eds_service_name());
     }
     call_counter_ = g_call_counter_map->GetOrCreate(
@@ -475,8 +475,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     // swapped out if that happens.
     GPR_ASSERT(config_->cluster_name() == old_config->cluster_name());
     GPR_ASSERT(config_->eds_service_name() == old_config->eds_service_name());
-    GPR_ASSERT(config_->lrs_load_reporting_server_name() ==
-               old_config->lrs_load_reporting_server_name());
+    GPR_ASSERT(config_->lrs_load_reporting_server() ==
+               old_config->lrs_load_reporting_server());
   }
   // Update picker if max_concurrent_requests has changed.
   if (is_initial_update || config_->max_concurrent_requests() !=
@@ -575,7 +575,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   if (xds_cluster_impl_policy_->shutting_down_) return nullptr;
   // If load reporting is enabled, wrap the subchannel such that it
   // includes the locality stats object, which will be used by the EdsPicker.
-  if (xds_cluster_impl_policy_->config_->lrs_load_reporting_server_name()
+  if (xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
           .has_value()) {
     RefCountedPtr<XdsLocalityName> locality_name;
     auto* attribute = address.GetAttribute(kXdsLocalityNameAttributeKey);
@@ -586,8 +586,8 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     }
     RefCountedPtr<XdsClusterLocalityStats> locality_stats =
         xds_cluster_impl_policy_->xds_client_->AddClusterLocalityStats(
-            *xds_cluster_impl_policy_->config_
-                 ->lrs_load_reporting_server_name(),
+            xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
+                ->server_uri,
             xds_cluster_impl_policy_->config_->cluster_name(),
             xds_cluster_impl_policy_->config_->eds_service_name(),
             std::move(locality_name));
@@ -715,14 +715,21 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // LRS load reporting server name.
-    absl::optional<std::string> lrs_load_reporting_server_name;
-    it = json.object_value().find("lrsLoadReportingServerName");
+    absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
+    it = json.object_value().find("lrsLoadReportingServer");
     if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
+      if (it->second.type() != Json::Type::OBJECT) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be string"));
+            "field:lrsLoadReportingServer error:type should be object"));
       } else {
-        lrs_load_reporting_server_name = it->second.string_value();
+        grpc_error_handle parser_error;
+        lrs_load_reporting_server = XdsBootstrap::XdsServer::Parse(
+            it->second.object_value(), &parser_error);
+        if (parser_error != GRPC_ERROR_NONE) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              absl::StrCat("errors parsing lrs_load_reporting_server")));
+          error_list.push_back(parser_error);
+        }
       }
     }
     // Max concurrent requests.
@@ -758,7 +765,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     }
     return MakeRefCounted<XdsClusterImplLbConfig>(
         std::move(child_policy), std::move(cluster_name),
-        std::move(eds_service_name), std::move(lrs_load_reporting_server_name),
+        std::move(eds_service_name), std::move(lrs_load_reporting_server),
         max_concurrent_requests, std::move(drop_config));
   }
 

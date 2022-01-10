@@ -145,7 +145,7 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
                        &error_list);
   const Json::Array* creds_array = nullptr;
   ParseJsonObjectField(json.object_value(), "channel_creds", &creds_array,
-                       &error_list);
+                       &error_list, false);
   if (creds_array != nullptr) {
     grpc_error_handle parse_error =
         ParseChannelCredsArray(*creds_array, &server);
