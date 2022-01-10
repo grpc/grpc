@@ -376,11 +376,15 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
   req.host = const_cast<char*>(fake_server_address.c_str());
   req.http.path = const_cast<char*>("/get");
   grpc_pollset_set* pollset_set_to_destroy_eagerly = grpc_pollset_set_create();
-  grpc_polling_entity_add_to_pollset_set(pops(), pollset_set_to_destroy_eagerly);
-  grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly = grpc_polling_entity_create_from_pollset_set(pollset_set_to_destroy_eagerly);
+  grpc_polling_entity_add_to_pollset_set(pops(),
+                                         pollset_set_to_destroy_eagerly);
+  grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
+      grpc_polling_entity_create_from_pollset_set(
+          pollset_set_to_destroy_eagerly);
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
-          &wrapped_pollset_set_to_destroy_eagerly, grpc_core::ResourceQuota::Default(), &req,
+          &wrapped_pollset_set_to_destroy_eagerly,
+          grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           NSecondsTime(15),
@@ -389,7 +393,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
           &request_args.response);
   httpcli->Start();
   exec_ctx.Flush();
-  httpcli.reset(); // cancel the request
+  httpcli.reset();  // cancel the request
   exec_ctx.Flush();
   // because we're cancelling the request during TCP connection establishment,
   // we can be certain that our on_done callback has already ran
