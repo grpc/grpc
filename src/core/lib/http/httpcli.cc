@@ -66,6 +66,7 @@ class InternalRequest {
         deadline_(deadline),
         handshaker_(handshaker),
         on_done_(on_done),
+        pollent_(pollent),
         pollset_set_(grpc_pollset_set_create()) {
     grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
     grpc_slice_buffer_init(&incoming_);
@@ -97,6 +98,7 @@ class InternalRequest {
 
  private:
   void Finish(grpc_error_handle error) {
+    grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
     delete this;
   }
@@ -238,6 +240,7 @@ class InternalRequest {
   int have_read_byte_ = 0;
   const grpc_httpcli_handshaker* handshaker_;
   grpc_closure* on_done_;
+  grpc_polling_entity* pollent_;
   grpc_pollset_set* pollset_set_;
   grpc_iomgr_object iomgr_obj_;
   grpc_slice_buffer incoming_;
