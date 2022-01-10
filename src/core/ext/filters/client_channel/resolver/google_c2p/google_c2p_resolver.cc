@@ -65,7 +65,6 @@ class GoogleCloud2ProdResolver : public Resolver {
     OrphanablePtr<HttpCli> httpcli_;
     grpc_httpcli_response response_;
     grpc_closure on_done_;
-    std::atomic<bool> on_done_called_{false};
   };
 
   // A metadata server query to get the zone.
