@@ -26,6 +26,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 set +ex
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 set -e  # rvm commands are very verbose
+rvm install ruby-2.5.7
 rvm --default use ruby-2.5.7
 set -ex
 
