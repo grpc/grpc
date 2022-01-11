@@ -58,6 +58,7 @@ for subdir in CHECK_SUBDIRS:
                     changed = True
                     errors += 1
                     output[i] = '#include "{0}"{1}\n'.format(expect_path, trailing)
+                    print("Found naked include '{0}' in {1}".format(include, fpath))
                 if changed and args.fix:
                     open(fpath, 'w').writelines(output)
 
