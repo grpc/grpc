@@ -87,7 +87,6 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   gpr_setenv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER", "true");
-  gpr_setenv("GRPC_ABORT_ON_LEAKS", "true");
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
