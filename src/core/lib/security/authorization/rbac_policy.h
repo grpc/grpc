@@ -113,7 +113,8 @@ struct Rbac {
         std::vector<std::unique_ptr<Principal>> principals);
     static Principal MakeNotPrincipal(Principal principal);
     static Principal MakeAnyPrincipal();
-    static Principal MakeAuthenticatedPrincipal(absl::optional<StringMatcher> string_matcher);
+    static Principal MakeAuthenticatedPrincipal(
+        absl::optional<StringMatcher> string_matcher);
     static Principal MakeSourceIpPrincipal(CidrRange ip);
     static Principal MakeDirectRemoteIpPrincipal(CidrRange ip);
     static Principal MakeRemoteIpPrincipal(CidrRange ip);
