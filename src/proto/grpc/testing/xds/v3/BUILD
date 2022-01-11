@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load(":external_proto_library.bzl", "external_proto_library")
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])
 
@@ -312,14 +312,9 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
-alias(
-    name = "_expr_proto_only",
-    actual = "@com_google_googleapis//google/api/expr/v1alpha1:expr_proto",
-)
-
-cc_proto_library(
+external_proto_library(
     name = "expr_proto",
-    deps = [":_expr_proto_only"],
+    dep = "@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"
 )
 
 grpc_proto_library(
