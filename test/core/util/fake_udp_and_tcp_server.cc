@@ -142,7 +142,7 @@ FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer(
   if (bytes_received_size < 0 && read_error != EAGAIN &&
       read_error != EWOULDBLOCK) {
     gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
-            errno);
+            read_error);
     GPR_ASSERT(0);
   }
   if (bytes_received_size >= 0) {
@@ -162,7 +162,7 @@ FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer(int bytes_received_size,
   if (bytes_received_size < 0 && read_error != EAGAIN &&
       read_error != EWOULDBLOCK) {
     gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
-            errno);
+            read_error);
     GPR_ASSERT(0);
   }
   if (bytes_received_size == 0) {
