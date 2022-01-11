@@ -2947,7 +2947,6 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   balancer_->ads_service()->SetLdsResource(listener);
   const auto response_state = WaitForLdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
