@@ -848,6 +848,9 @@ class MetadataMap {
   MetadataMap(const MetadataMap&) = delete;
   MetadataMap& operator=(const MetadataMap&) = delete;
   MetadataMap(MetadataMap&&) noexcept;
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator) We never create
+  // MetadataMap directly, instead we create Derived, but we want to be able to
+  // move it without redeclaring this.
   Derived& operator=(MetadataMap&&) noexcept;
 
   // Encode this metadata map into some encoder.
@@ -1143,6 +1146,9 @@ size_t MetadataMap<Derived, Traits...>::TransportSize() const {
   return enc.size();
 }
 
+// NOLINTNEXTLINE(misc-unconventional-assign-operator) We never create
+// MetadataMap directly, instead we create Derived, but we want to be able to
+// move it without redeclaring this.
 template <typename Derived, typename... Traits>
 Derived MetadataMap<Derived, Traits...>::Copy() const {
   Derived out(unknown_.arena());
