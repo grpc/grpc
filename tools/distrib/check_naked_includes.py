@@ -49,16 +49,21 @@ for subdir in CHECK_SUBDIRS:
                 changed = False
                 for (i, line) in enumerate(output):
                     m = re.match(r'^#include "([^"]*)"(.*)', line)
-                    if not m: continue
+                    if not m:
+                        continue
                     include = m.group(1)
-                    if '/' in include: continue
+                    if '/' in include:
+                        continue
                     expect_path = os.path.join(root, include)
                     trailing = m.group(2)
-                    if not os.path.exists(expect_path): continue
+                    if not os.path.exists(expect_path):
+                        continue
                     changed = True
                     errors += 1
-                    output[i] = '#include "{0}"{1}\n'.format(expect_path, trailing)
-                    print("Found naked include '{0}' in {1}".format(include, fpath))
+                    output[i] = '#include "{0}"{1}\n'.format(
+                        expect_path, trailing)
+                    print("Found naked include '{0}' in {1}".format(
+                        include, fpath))
                 if changed and args.fix:
                     open(fpath, 'w').writelines(output)
 
