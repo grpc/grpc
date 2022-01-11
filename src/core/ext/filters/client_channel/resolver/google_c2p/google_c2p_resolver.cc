@@ -333,7 +333,7 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   Json::Object node = {
       {"id", absl::StrCat("C2P-", dist(mt))},
   };
-  if (!zone_.value().status().ok()) {
+  if (zone_.value().ok()) {
     node["locality"] = Json::Object{
         {"zone", zone_.value().value()},
     };
