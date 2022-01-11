@@ -87,7 +87,8 @@ class CSharpPackage:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as there is little opportunity for parallelizing
         environ = {
             'GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET':
                 os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET')
@@ -119,7 +120,8 @@ class RubyPackage:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_ruby.sh')
@@ -135,7 +137,8 @@ class PythonPackage:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         # since the python package build does very little, we can use virtually
         # any image that has new-enough python, so reusing one of the images used
         # for artifact building seems natural.
@@ -156,7 +159,8 @@ class PHPPackage:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_php.sh')
