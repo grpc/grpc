@@ -314,7 +314,7 @@ grpc_proto_library(
 
 external_proto_library(
     name = "expr_proto",
-    dep = "@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"
+    dep = "@com_google_googleapis//google/api/expr/v1alpha1:expr_proto",
 )
 
 grpc_proto_library(
