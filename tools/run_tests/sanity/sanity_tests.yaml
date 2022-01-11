@@ -9,6 +9,7 @@
 - script: tools/run_tests/sanity/check_owners.sh
 - script: tools/run_tests/sanity/check_port_platform.py
 - script: tools/run_tests/sanity/check_include_style.py
+- script: tools/run_tests/sanity/check_naked_includes.py
 - script: tools/run_tests/sanity/check_qps_scenario_changes.py
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh
