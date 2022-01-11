@@ -311,12 +311,14 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
-grpc_proto_library(
+alias(
+    name = "_expr_proto_only",
+    actual = "@com_google_googleapis//google/api/expr/v1alpha1:expr_proto",
+)
+
+cc_proto_library(
     name = "expr_proto",
-    srcs = [
-        "expr.proto",
-    ],
-    well_known_protos = True,
+    deps = [":_expr_proto_only"],
 )
 
 grpc_proto_library(

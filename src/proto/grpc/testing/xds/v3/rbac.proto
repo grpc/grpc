@@ -28,7 +28,8 @@ import "src/proto/grpc/testing/xds/v3/path.proto";
 import "src/proto/grpc/testing/xds/v3/string.proto";
 import "src/proto/grpc/testing/xds/v3/range.proto";
 
-import "src/proto/grpc/testing/xds/v3/expr.proto";
+import "google/api/expr/v1alpha1/checked.proto";
+import "google/api/expr/v1alpha1/syntax.proto";
 
 // [#protodoc-title: Role Based Access Control (RBAC)]
 
