@@ -1122,6 +1122,9 @@ template <typename Derived, typename... Traits>
 MetadataMap<Derived, Traits...>::MetadataMap(MetadataMap&& other) noexcept
     : table_(std::move(other.table_)), unknown_(std::move(other.unknown_)) {}
 
+// We never create MetadataMap directly, instead we create Derived, but we want
+// to be able to move it without redeclaring this.
+// NOLINTNEXTLINE(misc-unconventional-assign-operator)
 template <typename Derived, typename... Traits>
 Derived& MetadataMap<Derived, Traits...>::operator=(
     MetadataMap&& other) noexcept {
@@ -1146,9 +1149,6 @@ size_t MetadataMap<Derived, Traits...>::TransportSize() const {
   return enc.size();
 }
 
-// We never create MetadataMap directly, instead we create Derived, but we want
-// to be able to move it without redeclaring this.
-// NOLINTNEXTLINE(misc-unconventional-assign-operator)
 template <typename Derived, typename... Traits>
 Derived MetadataMap<Derived, Traits...>::Copy() const {
   Derived out(unknown_.arena());
