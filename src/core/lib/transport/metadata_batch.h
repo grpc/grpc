@@ -1107,6 +1107,14 @@ class MetadataMap {
   ChunkedVector<std::pair<Slice, Slice>, 10> unknown_;
 };
 
+// Ok/not-ok check for metadata maps that contain GrpcStatusMetadata, so that
+// they can be used as result types for TrySeq.
+template <typename... Args>
+inline bool IsStatusOk(const MetadataMap<Args...>& m) {
+  return m.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+         GRPC_STATUS_OK;
+}
+
 template <typename... Traits>
 MetadataMap<Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
 
