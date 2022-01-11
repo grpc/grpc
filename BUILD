@@ -5272,46 +5272,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "proto_gen_validate_upb",
-    srcs = [
-        "src/core/ext/upb-generated/validate/validate.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/validate/validate.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "protobuf_duration_upb",
-        "protobuf_timestamp_upb",
-    ],
+    deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate_proto"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_reflection_library(
     name = "proto_gen_validate_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/validate/validate.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/validate/validate.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-        "protobuf_timestamp_upbdefs",
-    ],
+    deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate_proto"],
 )
 
 # Once upb code-gen issue is resolved, replace xds_orca_upb with this.
@@ -5339,60 +5307,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "udpa_annotations_upb",
-    srcs = [
-        "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/security.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/status.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/versioning.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/udpa/annotations/migrate.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/security.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/status.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/versioning.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_reflection_library(
     name = "udpa_annotations_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "udpa_annotations_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
 )
 
 grpc_cc_library(
