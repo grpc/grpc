@@ -107,10 +107,9 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_args* channel_args, grpc_transport* optional_transport,
     const char* name, grpc_channel_stack* stack) {
   if (grpc_trace_channel_stack.enabled()) {
-    gpr_log(GPR_INFO, "CHANNEL_STACK: init %p %s", stack, name);
+    gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
     for (size_t i = 0; i < filter_count; i++) {
-      gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %p %s", filters[i],
-              filters[i]->name);
+      gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s", filters[i]->name);
     }
   }
 

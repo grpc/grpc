@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "channel_stack_type.h"
+
 #include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -243,7 +245,8 @@ grpc_channel* grpc_channel_create(const char* target,
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   grpc_init();
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create(
+      grpc_channel_stack_type_string(channel_stack_type));
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
   grpc_channel_args* args =
