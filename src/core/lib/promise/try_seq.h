@@ -63,6 +63,9 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
     return run_next(std::move(prior));
   }
 };
+// If there exists a function 'IsStatusOk(const T&) -> bool' then we assume that
+// T is a status type for the purposes of promise sequences, and a non-OK T
+// should terminate the sequence and return.
 template <typename T>
 struct TrySeqTraitsWithSfinae<
     T, absl::enable_if_t<
