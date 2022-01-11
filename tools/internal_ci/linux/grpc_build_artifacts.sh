@@ -26,7 +26,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 set +ex
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 set -e  # rvm commands are very verbose
-rvm --default use ruby-2.4.1
+rvm --default use ruby-2.5.7
 set -ex
 
 tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 12 || FAILED="true"
