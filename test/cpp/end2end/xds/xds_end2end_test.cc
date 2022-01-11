@@ -1284,20 +1284,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
       std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
-    auto deadline = absl::Now() + absl::Seconds(30);
     absl::optional<AdsServiceImpl::ResponseState> response_state;
-    CheckRpcSendFailure(CheckRpcSendFailureOptions()
-                            .set_continue_predicate([&](size_t) {
-                              if (absl::Now() >= deadline) {
-                                return false;
-                              }
-                              response_state = get_state();
-                              return !(
-                                  response_state.has_value() &&
-                                  response_state->state ==
-                                      AdsServiceImpl::ResponseState::NACKED);
-                            })
-                            .set_expected_error_code(expected_status));
+    auto deadline = absl::Now() + absl::Seconds(30);
+    auto continue_predicate = [&]() {
+      if (absl::Now() >= deadline) {
+        return false;
+      }
+      response_state = get_state();
+      return !response_state.has_value() ||
+             response_state->state != AdsServiceImpl::ResponseState::NACKED;
+    };
+    do {
+      const Status status = SendRpc();
+      EXPECT_EQ(expected_status, status.error_code());
+    } while (continue_predicate());
     return response_state;
   }
 
@@ -1315,9 +1315,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         expected_status);
   }
 
-  absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack() {
+  absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
-        [&]() { return balancer_->ads_service()->cds_response_state(); });
+        [&]() { return balancer_->ads_service()->cds_response_state(); },
+        expected_status);
   }
 
   absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack() {
@@ -2469,7 +2471,14 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendFailure();
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state->error_message,
+              ::testing::ContainsRegex(absl::StrCat(
+                  kServerName,
+                  ": validation error.*"
+                  "Listener has neither address nor ApiListener.*")));
   // Need to create a second channel to subscribe to a second LDS resource.
   auto channel2 = CreateChannel(0, kServerName2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
@@ -2481,37 +2490,19 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
     grpc::Status status = stub2->Echo(&context, request, &response);
     EXPECT_FALSE(status.ok());
     // Wait for second NACK to be reported to xDS server.
-    auto deadline = absl::Now() + absl::Seconds(30);
-    bool timed_out = false;
-    CheckRpcSendFailure(
-        CheckRpcSendFailureOptions().set_continue_predicate([&](size_t) {
-          if (absl::Now() >= deadline) {
-            timed_out = true;
-            return false;
-          }
-          const auto response_state =
-              balancer_->ads_service()->lds_response_state();
-          return !(response_state.has_value() &&
-                   response_state->state ==
-                       AdsServiceImpl::ResponseState::NACKED &&
-                   (::testing::Matches(::testing::ContainsRegex(absl::StrCat(
-                        kServerName,
-                        ": validation error.*"
-                        "Listener has neither address nor ApiListener.*",
-                        kServerName2,
-                        ": validation error.*"
-                        "Listener has neither address nor ApiListener")))(
-                        response_state->error_message) ||
-                    ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
-                        kServerName2,
-                        ": validation error.*"
-                        "Listener has neither address nor ApiListener.*",
-                        kServerName,
-                        ": validation error.*"
-                        "Listener has neither address nor ApiListener")))(
-                        response_state->error_message)));
-        }));
-    ASSERT_FALSE(timed_out);
+    const auto response_state = WaitForLdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::NACKED);
+    EXPECT_THAT(response_state->error_message,
+                ::testing::ContainsRegex(absl::StrCat(
+                    kServerName,
+                    ": validation error.*"
+                    "Listener has neither address nor ApiListener.*")));
+    EXPECT_THAT(response_state->error_message,
+                ::testing::ContainsRegex(absl::StrCat(
+                    kServerName2,
+                    ": validation error.*"
+                    "Listener has neither address nor ApiListener.*")));
   }
   // Now start a new channel with a third server name, this one with a
   // valid resource.
@@ -2541,22 +2532,14 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
-  // Wait for xDS server to see NACK.
-  auto deadline = absl::Now() + absl::Seconds(30);
-  absl::optional<AdsServiceImpl::ResponseState> response_state;
-  do {
-    CheckRpcSendOk();
-    ASSERT_LT(absl::Now(), deadline);
-    response_state = balancer_->ads_service()->lds_response_state();
-  } while (!(response_state.has_value() &&
-             response_state->state == AdsServiceImpl::ResponseState::NACKED));
+  const auto response_state = WaitForLdsNack(StatusCode::OK);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(
                   kServerName,
                   ": validation error.*"
                   "Listener has neither address nor ApiListener")));
-  // Check one more time, just to make sure it still works after NACK.
-  CheckRpcSendOk();
 }
 
 class XdsFederationTest : public XdsEnd2endTest {
@@ -6494,21 +6477,13 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  absl::optional<AdsServiceImpl::ResponseState> response_state;
-  // Wait for xDS server to see NACK.
-  auto deadline = absl::Now() + absl::Seconds(30);
-  do {
-    CheckRpcSendOk();
-    ASSERT_LT(absl::Now(), deadline);
-    response_state = balancer_->ads_service()->cds_response_state();
-  } while (!(response_state.has_value() &&
-             response_state->state == AdsServiceImpl::ResponseState::NACKED));
+  const auto response_state = WaitForCdsNack(StatusCode::OK);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(
                   kDefaultClusterName,
                   ": validation error.*DiscoveryType is not valid")));
-  // Check one more time, just to make sure it still works after NACK.
-  CheckRpcSendOk();
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
