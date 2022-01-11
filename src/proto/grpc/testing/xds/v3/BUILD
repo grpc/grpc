@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])
 
