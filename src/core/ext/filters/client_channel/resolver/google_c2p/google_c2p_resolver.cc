@@ -105,7 +105,7 @@ class GoogleCloud2ProdResolver : public Resolver {
   std::unique_ptr<Resolver::ResultHandler> result_handler_;
   bool using_dns_ = false;
   OrphanablePtr<Resolver> child_resolver_;
-  std::string metadata_server_address_;
+  std::string metadata_server_address_ = "metadata.google.internal.";
   bool shutdown_ = false;
 
   OrphanablePtr<ZoneQuery> zone_query_;
