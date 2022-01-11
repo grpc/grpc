@@ -25,8 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "channel_stack_type.h"
-
 #include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -48,6 +46,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 
 /** Cache grpc-status: X mdelems for X = 0..NUM_CACHED_STATUS_ELEMS.
  *  Avoids needing to take a metadata context lock for sending status
