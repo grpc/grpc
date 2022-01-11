@@ -100,6 +100,16 @@ absl::string_view EvaluateArgs::GetHost() const {
   return host;
 }
 
+absl::string_view EvaluateArgs::GetAuthority() const {
+  absl::string_view authority;
+  if (metadata_ != nullptr) {
+    if (auto* authority_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
+      authority = authority_md->as_string_view();
+    }
+  }
+  return authority;
+}
+
 absl::string_view EvaluateArgs::GetMethod() const {
   if (metadata_ != nullptr) {
     auto method_md = metadata_->get(HttpMethodMetadata());
@@ -115,7 +125,14 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }
-  return metadata_->GetValue(key, concatenated_value);
+  if (absl::EqualsIgnoreCase(key, "te")) {
+    return absl::nullopt;
+  }
+  if (absl::EqualsIgnoreCase(key, "host")) {
+    // Maps legacy host header to :authority.
+    return GetAuthority();
+  }
+  return metadata_->GetStringValue(key, concatenated_value);
 }
 
 grpc_resolved_address EvaluateArgs::GetLocalAddress() const {

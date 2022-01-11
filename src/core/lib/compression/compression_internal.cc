@@ -23,181 +23,51 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <cstdint>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+
 #include <grpc/compression.h>
 
-#include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/transport/static_metadata.h"
 
-/* Interfaces related to MD */
+namespace grpc_core {
 
-grpc_message_compression_algorithm
-grpc_message_compression_algorithm_from_slice(const grpc_slice& str) {
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
-    return GRPC_MESSAGE_COMPRESS_NONE;
-  }
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE)) {
-    return GRPC_MESSAGE_COMPRESS_DEFLATE;
-  }
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP)) {
-    return GRPC_MESSAGE_COMPRESS_GZIP;
-  }
-  return GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT;
-}
-
-grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
-    const grpc_slice& str) {
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
-    return GRPC_STREAM_COMPRESS_NONE;
-  }
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP)) {
-    return GRPC_STREAM_COMPRESS_GZIP;
-  }
-  return GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT;
-}
-
-grpc_mdelem grpc_message_compression_encoding_mdelem(
-    grpc_message_compression_algorithm algorithm) {
+const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm) {
   switch (algorithm) {
-    case GRPC_MESSAGE_COMPRESS_NONE:
-      return GRPC_MDELEM_GRPC_ENCODING_IDENTITY;
-    case GRPC_MESSAGE_COMPRESS_DEFLATE:
-      return GRPC_MDELEM_GRPC_ENCODING_DEFLATE;
-    case GRPC_MESSAGE_COMPRESS_GZIP:
-      return GRPC_MDELEM_GRPC_ENCODING_GZIP;
-    default:
-      break;
-  }
-  return GRPC_MDNULL;
-}
-
-grpc_mdelem grpc_stream_compression_encoding_mdelem(
-    grpc_stream_compression_algorithm algorithm) {
-  switch (algorithm) {
-    case GRPC_STREAM_COMPRESS_NONE:
-      return GRPC_MDELEM_CONTENT_ENCODING_IDENTITY;
-    case GRPC_STREAM_COMPRESS_GZIP:
-      return GRPC_MDELEM_CONTENT_ENCODING_GZIP;
-    default:
-      break;
-  }
-  return GRPC_MDNULL;
-}
-
-/* Interfaces performing transformation between compression algorithms and
- * levels. */
-grpc_message_compression_algorithm
-grpc_compression_algorithm_to_message_compression_algorithm(
-    grpc_compression_algorithm algo) {
-  switch (algo) {
+    case GRPC_COMPRESS_NONE:
+      return "identity";
     case GRPC_COMPRESS_DEFLATE:
-      return GRPC_MESSAGE_COMPRESS_DEFLATE;
+      return "deflate";
     case GRPC_COMPRESS_GZIP:
-      return GRPC_MESSAGE_COMPRESS_GZIP;
+      return "gzip";
+    case GRPC_COMPRESS_ALGORITHMS_COUNT:
     default:
-      return GRPC_MESSAGE_COMPRESS_NONE;
+      return nullptr;
   }
 }
 
-grpc_stream_compression_algorithm
-grpc_compression_algorithm_to_stream_compression_algorithm(
-    grpc_compression_algorithm algo) {
-  switch (algo) {
-    case GRPC_COMPRESS_STREAM_GZIP:
-      return GRPC_STREAM_COMPRESS_GZIP;
-    default:
-      return GRPC_STREAM_COMPRESS_NONE;
-  }
-}
-
-uint32_t grpc_compression_bitset_to_message_bitset(uint32_t bitset) {
-  return bitset & ((1u << GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT) - 1);
-}
-
-uint32_t grpc_compression_bitset_to_stream_bitset(uint32_t bitset) {
-  uint32_t identity = (bitset & 1u);
-  uint32_t other_bits =
-      (bitset >> (GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT - 1)) &
-      ((1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 2);
-  return identity | other_bits;
-}
-
-uint32_t grpc_compression_bitset_from_message_stream_compression_bitset(
-    uint32_t message_bitset, uint32_t stream_bitset) {
-  uint32_t offset_stream_bitset =
-      (stream_bitset & 1u) |
-      ((stream_bitset & (~1u)) << (GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT - 1));
-  return message_bitset | offset_stream_bitset;
-}
-
-int grpc_compression_algorithm_from_message_stream_compression_algorithm(
-    grpc_compression_algorithm* algorithm,
-    grpc_message_compression_algorithm message_algorithm,
-    grpc_stream_compression_algorithm stream_algorithm) {
-  if (message_algorithm != GRPC_MESSAGE_COMPRESS_NONE &&
-      stream_algorithm != GRPC_STREAM_COMPRESS_NONE) {
-    *algorithm = GRPC_COMPRESS_NONE;
-    return 0;
-  }
-  if (message_algorithm == GRPC_MESSAGE_COMPRESS_NONE) {
-    switch (stream_algorithm) {
-      case GRPC_STREAM_COMPRESS_NONE:
-        *algorithm = GRPC_COMPRESS_NONE;
-        return 1;
-      case GRPC_STREAM_COMPRESS_GZIP:
-        *algorithm = GRPC_COMPRESS_STREAM_GZIP;
-        return 1;
-      default:
-        *algorithm = GRPC_COMPRESS_NONE;
-        return 0;
-    }
+absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
+    absl::string_view algorithm) {
+  if (algorithm == "identity") {
+    return GRPC_COMPRESS_NONE;
+  } else if (algorithm == "deflate") {
+    return GRPC_COMPRESS_DEFLATE;
+  } else if (algorithm == "gzip") {
+    return GRPC_COMPRESS_GZIP;
   } else {
-    switch (message_algorithm) {
-      case GRPC_MESSAGE_COMPRESS_NONE:
-        *algorithm = GRPC_COMPRESS_NONE;
-        return 1;
-      case GRPC_MESSAGE_COMPRESS_DEFLATE:
-        *algorithm = GRPC_COMPRESS_DEFLATE;
-        return 1;
-      case GRPC_MESSAGE_COMPRESS_GZIP:
-        *algorithm = GRPC_COMPRESS_GZIP;
-        return 1;
-      default:
-        *algorithm = GRPC_COMPRESS_NONE;
-        return 0;
-    }
+    return absl::nullopt;
   }
 }
 
-/* Interfaces for message compression. */
-
-int grpc_message_compression_algorithm_name(
-    grpc_message_compression_algorithm algorithm, const char** name) {
-  GRPC_API_TRACE(
-      "grpc_message_compression_algorithm_name(algorithm=%d, name=%p)", 2,
-      ((int)algorithm, name));
-  switch (algorithm) {
-    case GRPC_MESSAGE_COMPRESS_NONE:
-      *name = "identity";
-      return 1;
-    case GRPC_MESSAGE_COMPRESS_DEFLATE:
-      *name = "deflate";
-      return 1;
-    case GRPC_MESSAGE_COMPRESS_GZIP:
-      *name = "gzip";
-      return 1;
-    case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
-      return 0;
-  }
-  return 0;
-}
-
-/* TODO(dgq): Add the ability to specify parameters to the individual
- * compression algorithms */
-grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
-    grpc_compression_level level, uint32_t accepted_encodings) {
+grpc_compression_algorithm
+CompressionAlgorithmSet::CompressionAlgorithmForLevel(
+    grpc_compression_level level) const {
   GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
@@ -206,10 +76,8 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
     abort();
   }
 
-  const size_t num_supported =
-      grpc_core::BitCount(accepted_encodings) - 1; /* discard NONE */
-  if (level == GRPC_COMPRESS_LEVEL_NONE || num_supported == 0) {
-    return GRPC_MESSAGE_COMPRESS_NONE;
+  if (level == GRPC_COMPRESS_LEVEL_NONE) {
+    return GRPC_COMPRESS_NONE;
   }
 
   GPR_ASSERT(level > 0);
@@ -218,66 +86,138 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
    * compression.
    * This is simplistic and we will probably want to introduce other dimensions
    * in the future (cpu/memory cost, etc). */
-  const grpc_message_compression_algorithm algos_ranking[] = {
-      GRPC_MESSAGE_COMPRESS_GZIP, GRPC_MESSAGE_COMPRESS_DEFLATE};
-
-  /* intersect algos_ranking with the supported ones keeping the ranked order */
-  grpc_message_compression_algorithm
-      sorted_supported_algos[GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT];
-  size_t algos_supported_idx = 0;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(algos_ranking); i++) {
-    const grpc_message_compression_algorithm alg = algos_ranking[i];
-    for (size_t j = 0; j < num_supported; j++) {
-      if (grpc_core::GetBit(accepted_encodings, alg) == 1) {
-        /* if \a alg in supported */
-        sorted_supported_algos[algos_supported_idx++] = alg;
-        break;
-      }
+  absl::InlinedVector<grpc_compression_algorithm,
+                      GRPC_COMPRESS_ALGORITHMS_COUNT>
+      algos;
+  for (auto algo : {GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE}) {
+    if (set_.is_set(algo)) {
+      algos.push_back(algo);
     }
-    if (algos_supported_idx == num_supported) break;
+  }
+
+  if (algos.empty()) {
+    return GRPC_COMPRESS_NONE;
   }
 
   switch (level) {
     case GRPC_COMPRESS_LEVEL_NONE:
       abort(); /* should have been handled already */
     case GRPC_COMPRESS_LEVEL_LOW:
-      return sorted_supported_algos[0];
+      return algos[0];
     case GRPC_COMPRESS_LEVEL_MED:
-      return sorted_supported_algos[num_supported / 2];
+      return algos[algos.size() / 2];
     case GRPC_COMPRESS_LEVEL_HIGH:
-      return sorted_supported_algos[num_supported - 1];
+      return algos.back();
     default:
       abort();
   };
 }
 
-int grpc_message_compression_algorithm_parse(
-    grpc_slice value, grpc_message_compression_algorithm* algorithm) {
-  if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
-    *algorithm = GRPC_MESSAGE_COMPRESS_NONE;
-    return 1;
-  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_DEFLATE)) {
-    *algorithm = GRPC_MESSAGE_COMPRESS_DEFLATE;
-    return 1;
-  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_GZIP)) {
-    *algorithm = GRPC_MESSAGE_COMPRESS_GZIP;
-    return 1;
+CompressionAlgorithmSet CompressionAlgorithmSet::FromUint32(uint32_t value) {
+  CompressionAlgorithmSet set;
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+    if (value & (1u << i)) {
+      set.set_.set(i);
+    }
+  }
+  return set;
+}
+
+CompressionAlgorithmSet CompressionAlgorithmSet::FromChannelArgs(
+    const grpc_channel_args* args) {
+  CompressionAlgorithmSet set;
+  static const uint32_t kEverything =
+      (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
+  if (args != nullptr) {
+    set = CompressionAlgorithmSet::FromUint32(grpc_channel_args_find_integer(
+        args, GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+        grpc_integer_options{kEverything, 0, kEverything}));
+    set.Set(GRPC_COMPRESS_NONE);
   } else {
-    return 0;
+    set = CompressionAlgorithmSet::FromUint32(kEverything);
+  }
+  return set;
+}
+
+CompressionAlgorithmSet::CompressionAlgorithmSet() = default;
+
+CompressionAlgorithmSet::CompressionAlgorithmSet(
+    std::initializer_list<grpc_compression_algorithm> algorithms) {
+  for (auto algorithm : algorithms) {
+    Set(algorithm);
   }
 }
 
-/* Interfaces for stream compression. */
-
-int grpc_stream_compression_algorithm_parse(
-    grpc_slice value, grpc_stream_compression_algorithm* algorithm) {
-  if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
-    *algorithm = GRPC_STREAM_COMPRESS_NONE;
-    return 1;
-  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_GZIP)) {
-    *algorithm = GRPC_STREAM_COMPRESS_GZIP;
-    return 1;
+bool CompressionAlgorithmSet::IsSet(
+    grpc_compression_algorithm algorithm) const {
+  size_t i = static_cast<size_t>(algorithm);
+  if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
+    return set_.is_set(i);
   } else {
-    return 0;
+    return false;
   }
 }
+
+void CompressionAlgorithmSet::Set(grpc_compression_algorithm algorithm) {
+  size_t i = static_cast<size_t>(algorithm);
+  if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
+    set_.set(i);
+  }
+}
+
+std::string CompressionAlgorithmSet::ToString() const {
+  absl::InlinedVector<const char*, GRPC_COMPRESS_ALGORITHMS_COUNT> segments;
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+    if (set_.is_set(i)) {
+      segments.push_back(CompressionAlgorithmAsString(
+          static_cast<grpc_compression_algorithm>(i)));
+    }
+  }
+  return absl::StrJoin(segments, ", ");
+}
+
+Slice CompressionAlgorithmSet::ToSlice() const {
+  return Slice::FromCopiedString(ToString());
+}
+
+CompressionAlgorithmSet CompressionAlgorithmSet::FromString(
+    absl::string_view str) {
+  CompressionAlgorithmSet set{GRPC_COMPRESS_NONE};
+  for (auto algorithm : absl::StrSplit(str, ',')) {
+    auto parsed =
+        ParseCompressionAlgorithm(absl::StripAsciiWhitespace(algorithm));
+    if (parsed.has_value()) {
+      set.Set(*parsed);
+    }
+  }
+  return set;
+}
+
+uint32_t CompressionAlgorithmSet::ToLegacyBitmask() const {
+  uint32_t x = 0;
+  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
+    if (set_.is_set(i)) {
+      x |= (1u << i);
+    }
+  }
+  return x;
+}
+
+absl::optional<grpc_compression_algorithm>
+DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args) {
+  if (args == nullptr) return absl::nullopt;
+  for (size_t i = 0; i < args->num_args; i++) {
+    if (strcmp(args->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) ==
+        0) {
+      if (args->args[i].type == GRPC_ARG_INTEGER) {
+        return static_cast<grpc_compression_algorithm>(
+            args->args[i].value.integer);
+      } else if (args->args[i].type == GRPC_ARG_STRING) {
+        return ParseCompressionAlgorithm(args->args[i].value.string);
+      }
+    }
+  }
+  return absl::nullopt;
+}
+
+}  // namespace grpc_core

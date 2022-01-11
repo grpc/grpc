@@ -24,4 +24,5 @@ package(
 proto_library(
     name = "subpackage_proto",
     srcs = ["subpackage.proto"],
+    deps = ["@some_other_repo//proto:my_proto"],
 )

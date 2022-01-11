@@ -64,7 +64,7 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 //  from an http service.
 
 struct grpc_oauth2_pending_get_request_metadata {
-  grpc_credentials_mdelem_array* md_array;
+  grpc_core::CredentialsMetadataArray* md_array;
   grpc_closure* on_request_metadata;
   grpc_polling_entity* pollent;
   struct grpc_oauth2_pending_get_request_metadata* next;
@@ -77,12 +77,13 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
+                            grpc_core::CredentialsMetadataArray* md_array,
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
                         grpc_error_handle error);
@@ -96,7 +97,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 
  private:
   gpr_mu mu_;
-  grpc_mdelem access_token_md_ = GRPC_MDNULL;
+  absl::optional<grpc_core::Slice> access_token_value_;
   gpr_timespec token_expiration_;
   bool token_fetch_pending_ = false;
   grpc_oauth2_pending_get_request_metadata* pending_requests_ = nullptr;
@@ -133,21 +134,21 @@ class grpc_google_refresh_token_credentials final
 class grpc_access_token_credentials final : public grpc_call_credentials {
  public:
   explicit grpc_access_token_credentials(const char* access_token);
-  ~grpc_access_token_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
+                            grpc_core::CredentialsMetadataArray* md_array,
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
 
   std::string debug_string() override;
 
  private:
-  grpc_mdelem access_token_md_;
+  const grpc_core::Slice access_token_value_;
 };
 
 // Private constructor for refresh token credentials from an already parsed
@@ -159,8 +160,8 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 // Exposed for testing only.
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_millis* token_lifetime);
+    const struct grpc_http_response* response,
+    absl::optional<grpc_core::Slice>* token_value, grpc_millis* token_lifetime);
 
 namespace grpc_core {
 // Exposed for testing only. This function validates the options, ensuring that

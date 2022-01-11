@@ -36,7 +36,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -304,10 +303,10 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::HttpAuthorityMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "foo.test.google.fr:1234")));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);

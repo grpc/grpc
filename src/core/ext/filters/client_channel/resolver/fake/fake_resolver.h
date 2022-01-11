@@ -19,10 +19,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/resolver/resolver.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.fake_resolver.response_generator"

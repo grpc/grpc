@@ -25,7 +25,6 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -164,16 +163,10 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
         "to happen in a healthy program that is not seeing flow control stalls."
         " However, if you know that there are unwanted stalls, here is some "
-        "helpful data: [fc:pending=%" PRIdPTR ":pending-compressed=%" PRIdPTR
-        ":flowed=%" PRId64 ":peer_initwin=%d:t_win=%" PRId64
-        ":s_win=%d:s_delta=%" PRId64 "]",
+        "helpful data: [fc:pending=%" PRIdPTR ":flowed=%" PRId64
+        ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
         t->peer_string.c_str(), t, s->id, staller,
-        s->flow_controlled_buffer.length,
-        s->stream_compression_method ==
-                GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
-            ? 0
-            : s->compressed_data_buffer.length,
-        s->flow_controlled_bytes_flowed,
+        s->flow_controlled_buffer.length, s->flow_controlled_bytes_flowed,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
         t->flow_control->remote_window(),
@@ -192,10 +185,30 @@ static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
   return 1024 * 1024;
 }
 
+namespace {
+
+class CountDefaultMetadataEncoder {
+ public:
+  size_t count() const { return count_; }
+
+  void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType&) {
+    count_++;
+  }
+
+ private:
+  size_t count_ = 0;
+};
+
+}  // namespace
+
 // Returns true if initial_metadata contains only default headers.
 static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
-  return initial_metadata->default_count() ==
-         initial_metadata->non_deadline_count();
+  CountDefaultMetadataEncoder enc;
+  initial_metadata->Encode(&enc);
+  return enc.count() == initial_metadata->count();
 }
 
 namespace {
@@ -344,7 +357,7 @@ class DataSendContext {
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
 
-  void FlushUncompressedBytes() {
+  void FlushBytes() {
     uint32_t send_bytes = static_cast<uint32_t>(
         std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
@@ -355,60 +368,6 @@ class DataSendContext {
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
     s_->sending_bytes += send_bytes;
-  }
-
-  void FlushCompressedBytes() {
-    GPR_DEBUG_ASSERT(s_->stream_compression_method !=
-                     GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS);
-
-    uint32_t send_bytes = static_cast<uint32_t>(
-        std::min(size_t(max_outgoing()), s_->compressed_data_buffer.length));
-    bool is_last_data_frame =
-        (send_bytes == s_->compressed_data_buffer.length &&
-         s_->flow_controlled_buffer.length == 0 &&
-         s_->fetching_send_message == nullptr);
-    if (is_last_data_frame && s_->send_trailing_metadata != nullptr &&
-        s_->stream_compression_ctx != nullptr) {
-      if (GPR_UNLIKELY(!grpc_stream_compress(
-              s_->stream_compression_ctx, &s_->flow_controlled_buffer,
-              &s_->compressed_data_buffer, nullptr, MAX_SIZE_T,
-              GRPC_STREAM_COMPRESSION_FLUSH_FINISH))) {
-        gpr_log(GPR_ERROR, "Stream compression failed.");
-      }
-      grpc_stream_compression_context_destroy(s_->stream_compression_ctx);
-      s_->stream_compression_ctx = nullptr;
-      /* After finish, bytes in s->compressed_data_buffer may be
-       * more than max_outgoing. Start another round of the current
-       * while loop so that send_bytes and is_last_data_frame are
-       * recalculated. */
-      return;
-    }
-    is_last_frame_ = is_last_data_frame &&
-                     s_->send_trailing_metadata != nullptr &&
-                     s_->send_trailing_metadata->empty();
-    grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
-                            is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
-    s_->flow_control->SentData(send_bytes);
-    if (s_->compressed_data_buffer.length == 0) {
-      s_->sending_bytes += s_->uncompressed_data_size;
-    }
-  }
-
-  void CompressMoreBytes() {
-    GPR_DEBUG_ASSERT(s_->stream_compression_method !=
-                     GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS);
-
-    if (s_->stream_compression_ctx == nullptr) {
-      s_->stream_compression_ctx =
-          grpc_stream_compression_context_create(s_->stream_compression_method);
-    }
-    s_->uncompressed_data_size = s_->flow_controlled_buffer.length;
-    if (GPR_UNLIKELY(!grpc_stream_compress(
-            s_->stream_compression_ctx, &s_->flow_controlled_buffer,
-            &s_->compressed_data_buffer, nullptr, MAX_SIZE_T,
-            GRPC_STREAM_COMPRESSION_FLUSH_SYNC))) {
-      gpr_log(GPR_ERROR, "Stream compression failed.");
-    }
   }
 
   bool is_last_frame() const { return is_last_frame_; }
@@ -455,7 +414,6 @@ class StreamWriteContext {
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
     if (!t_->is_client && s_->fetching_send_message == nullptr &&
         s_->flow_controlled_buffer.length == 0 &&
-        compressed_data_buffer_len() == 0 &&
         s_->send_trailing_metadata != nullptr &&
         is_default_initial_metadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
@@ -486,13 +444,6 @@ class StreamWriteContext {
         "send_initial_metadata_finished");
   }
 
-  size_t compressed_data_buffer_len() {
-    return s_->stream_compression_method ==
-                   GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
-               ? 0
-               : s_->compressed_data_buffer.length;
-  }
-
   void FlushWindowUpdates() {
     /* send any window updates */
     const uint32_t stream_announce = s_->flow_control->MaybeSendUpdate();
@@ -508,8 +459,7 @@ class StreamWriteContext {
   void FlushData() {
     if (!s_->sent_initial_metadata) return;
 
-    if (s_->flow_controlled_buffer.length == 0 &&
-        compressed_data_buffer_len() == 0) {
+    if (s_->flow_controlled_buffer.length == 0) {
       return;  // early out: nothing to do
     }
 
@@ -526,22 +476,9 @@ class StreamWriteContext {
       return;  // early out: nothing to do
     }
 
-    if (s_->stream_compression_method ==
-        GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
-      while (s_->flow_controlled_buffer.length > 0 &&
-             data_send_context.max_outgoing() > 0) {
-        data_send_context.FlushUncompressedBytes();
-      }
-    } else {
-      while ((s_->flow_controlled_buffer.length > 0 ||
-              s_->compressed_data_buffer.length > 0) &&
-             data_send_context.max_outgoing() > 0) {
-        if (s_->compressed_data_buffer.length > 0) {
-          data_send_context.FlushCompressedBytes();
-        } else {
-          data_send_context.CompressMoreBytes();
-        }
-      }
+    while (s_->flow_controlled_buffer.length > 0 &&
+           data_send_context.max_outgoing() > 0) {
+      data_send_context.FlushBytes();
     }
     grpc_chttp2_reset_ping_clock(t_);
     if (data_send_context.is_last_frame()) {
@@ -549,8 +486,7 @@ class StreamWriteContext {
     }
     data_send_context.CallCallbacks();
     stream_became_writable_ = true;
-    if (s_->flow_controlled_buffer.length > 0 ||
-        compressed_data_buffer_len() > 0) {
+    if (s_->flow_controlled_buffer.length > 0) {
       GRPC_CHTTP2_STREAM_REF(s_, "chttp2_writing:fork");
       grpc_chttp2_list_add_writable_stream(t_, s_);
     }
@@ -563,7 +499,6 @@ class StreamWriteContext {
     if (s_->send_trailing_metadata == nullptr) return;
     if (s_->fetching_send_message != nullptr) return;
     if (s_->flow_controlled_buffer.length != 0) return;
-    if (compressed_data_buffer_len() != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
     if (s_->send_trailing_metadata->empty()) {

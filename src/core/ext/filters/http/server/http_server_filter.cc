@@ -32,7 +32,6 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 static void hs_recv_initial_metadata_ready(void* user_data,
                                            grpc_error_handle err);
@@ -120,7 +119,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
-  auto method = b->Take(grpc_core::HttpMethodMetadata());
+  auto method = b->get(grpc_core::HttpMethodMetadata());
   if (method.has_value()) {
     switch (*method) {
       case grpc_core::HttpMethodMetadata::kPost:

@@ -35,7 +35,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
@@ -45,7 +44,7 @@ static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
     grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
         "test"));
 
-static grpc_slice MakeSlice(std::vector<uint8_t> bytes) {
+static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
   uint8_t* p = GRPC_SLICE_START_PTR(s);
   for (auto b : bytes) {
@@ -173,89 +172,41 @@ class SingleStaticElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE)));
+    b->Set(grpc_core::GrpcAcceptEncodingMetadata(),
+           grpc_core::CompressionAlgorithmSet(
+               {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE}));
   }
 };
 
-class SingleInternedElem {
+static void CrashOnAppendError(absl::string_view, const grpc_core::Slice&) {
+  abort();
+}
+
+class SingleNonBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = false;
   static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            grpc_slice_intern(grpc_slice_from_static_string("abc")),
-            grpc_slice_intern(grpc_slice_from_static_string("def"))))));
+    b->Append("abc", grpc_core::Slice::FromStaticString("def"),
+              CrashOnAppendError);
   }
 };
 
 template <int kLength, bool kTrueBinary>
-class SingleInternedBinaryElem {
+class SingleBinaryElem {
  public:
   static constexpr bool kEnableTrueBinary = kTrueBinary;
   static void Prepare(grpc_metadata_batch* b) {
-    grpc_slice bytes = MakeBytes();
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(grpc_mdelem_from_slices(
-            grpc_slice_intern(grpc_slice_from_static_string("abc-bin")),
-            grpc_slice_intern(bytes)))));
-    grpc_slice_unref(bytes);
+    b->Append("abc-bin", MakeBytes(), CrashOnAppendError);
   }
 
  private:
-  static grpc_slice MakeBytes() {
+  static grpc_core::Slice MakeBytes() {
     std::vector<char> v;
     v.reserve(kLength);
     for (int i = 0; i < kLength; i++) {
       v.push_back(static_cast<char>(rand()));
     }
-    return grpc_slice_from_copied_buffer(v.data(), v.size());
-  }
-};
-
-class SingleInternedKeyElem {
- public:
-  static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     grpc_slice_intern(grpc_slice_from_static_string("abc")),
-                     grpc_slice_from_static_string("def")))));
-  }
-};
-
-class SingleNonInternedElem {
- public:
-  static constexpr bool kEnableTrueBinary = false;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(
-        GRPC_LOG_IF_ERROR("addmd", b->Append(grpc_mdelem_from_slices(
-                                       grpc_slice_from_static_string("abc"),
-                                       grpc_slice_from_static_string("def")))));
-  }
-};
-
-template <int kLength, bool kTrueBinary>
-class SingleNonInternedBinaryElem {
- public:
-  static constexpr bool kEnableTrueBinary = kTrueBinary;
-  static void Prepare(grpc_metadata_batch* b) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", b->Append(grpc_mdelem_from_slices(
-                     grpc_slice_from_static_string("abc-bin"), MakeBytes()))));
-  }
-
- private:
-  static grpc_slice MakeBytes() {
-    std::vector<char> v;
-    v.reserve(kLength);
-    for (int i = 0; i < kLength; i++) {
-      v.push_back(static_cast<char>(rand()));
-    }
-    return grpc_slice_from_copied_buffer(v.data(), v.size());
+    return grpc_core::Slice::FromCopiedBuffer(v);
   }
 };
 
@@ -273,10 +224,10 @@ class RepresentativeClientInitialMetadata {
     b->Set(grpc_core::HttpAuthorityMetadata(),
            grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
                "foo.test.google.fr:1234")));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
@@ -317,10 +268,10 @@ class MoreRepresentativeClientInitialMetadata {
                "\x00\x01\x02\x03\x04\x05\x06\x07\x08"
                "\x09\x0a\x0b\x0c\x0d\x0e\x0f"
                "\x10\x11\x12\x13")));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
     b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
@@ -337,10 +288,10 @@ class RepresentativeServerInitialMetadata {
     b->Set(grpc_core::HttpStatusMetadata(), 200);
     b->Set(grpc_core::ContentTypeMetadata(),
            grpc_core::ContentTypeMetadata::kApplicationGrpc);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd",
-        b->Append(
-            GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP)));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
   }
 };
 
@@ -357,74 +308,20 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, EmptyBatch)->Args({0, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, EmptyBatch)->Args({1, 16384});
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleStaticElem)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedKeyElem)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonBinaryElem)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleInternedElem)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<1, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<1, false>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<3, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<3, false>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<10, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<10, false>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<31, false>)
     ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<31, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<100, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<1, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<3, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<10, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<31, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleInternedBinaryElem<100, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedElem)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<1, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<3, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<10, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<31, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<100, false>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<1, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<3, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<10, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<31, true>)
-    ->Args({0, 16384});
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
-                   SingleNonInternedBinaryElem<100, true>)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleBinaryElem<100, false>)
     ->Args({0, 16384});
 // test with a tiny frame size, to highlight continuation costs
-BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonInternedElem)
+BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader, SingleNonBinaryElem)
     ->Args({0, 1});
 
 BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,

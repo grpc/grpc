@@ -115,12 +115,24 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
     original_recv_initial_metadata_ready_ = op->recv_initial_metadata_ready();
     // Substitute the original closure for the wrapper closure.
     op->set_recv_initial_metadata_ready(&recv_initial_metadata_ready_);
-  } else if (op->send_trailing_metadata() != nullptr) {
-    GRPC_LOG_IF_ERROR(
-        "server_load_reporting_filter",
-        grpc_metadata_batch_filter(op->send_trailing_metadata()->batch(),
-                                   SendTrailingMetadataFilter, elem,
-                                   "send_trailing_metadata filtering error"));
+  }
+  if (op->send_trailing_metadata() != nullptr) {
+    const auto& costs = op->send_trailing_metadata()->batch()->Take(
+        grpc_core::LbCostBinMetadata());
+    for (const auto& cost : costs) {
+      ServerLoadReportingChannelData* chand =
+          reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
+      opencensus::stats::Record(
+          {{::grpc::load_reporter::MeasureOtherCallMetric(), cost.cost}},
+          {{::grpc::load_reporter::TagKeyToken(),
+            {client_ip_and_lr_token_, client_ip_and_lr_token_len_}},
+           {::grpc::load_reporter::TagKeyHost(),
+            {target_host_.data(), target_host_.length()}},
+           {::grpc::load_reporter::TagKeyUserId(),
+            {chand->peer_identity(), chand->peer_identity_len()}},
+           {::grpc::load_reporter::TagKeyMetricName(),
+            {cost.name.data(), cost.name.length()}}});
+    }
   }
   grpc_call_next_op(elem, op->op());
 }
@@ -224,17 +236,13 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
       calld->target_host_ = absl::AsciiStrToLower(authority->as_string_view());
     }
     std::string buffer;
-    auto lb_token = calld->recv_initial_metadata_->GetValue(
-        grpc_core::kGrpcLbLbTokenMetadataKey, &buffer);
+    auto lb_token =
+        calld->recv_initial_metadata_->Take(grpc_core::LbTokenMetadata());
     if (lb_token.has_value()) {
       if (calld->client_ip_and_lr_token_ == nullptr) {
-        calld->StoreClientIpAndLrToken(lb_token->data(), lb_token->size());
+        calld->StoreClientIpAndLrToken(
+            reinterpret_cast<const char*>(lb_token->data()), lb_token->size());
       }
-      auto old = calld->recv_initial_metadata_->Remove(
-          grpc_core::Slice::FromCopiedString(
-              grpc_core::kGrpcLbLbTokenMetadataKey)
-              .c_slice());
-      if (old.has_value()) grpc_slice_unref_internal(*old);
     }
     // If the LB token was not found in the recv_initial_metadata, only the
     // client IP part will be recorded (with an empty LB token).
@@ -261,45 +269,6 @@ grpc_error_handle ServerLoadReportingCallData::Init(
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
-}
-
-grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
-    void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  ServerLoadReportingCallData* calld =
-      reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
-  ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
-    const grpc_slice value = GRPC_MDVALUE(md);
-    const size_t cost_entry_size = GRPC_SLICE_LENGTH(value);
-    if (cost_entry_size < sizeof(double)) {
-      gpr_log(GPR_ERROR,
-              "Cost metadata value too small (%zu bytes) to hold valid data. "
-              "Ignoring.",
-              cost_entry_size);
-      return GRPC_FILTERED_REMOVE();
-    }
-    const double* cost_entry_ptr =
-        reinterpret_cast<const double*>(GRPC_SLICE_START_PTR(value));
-    double cost_value;
-    memcpy(&cost_value, cost_entry_ptr, sizeof(double));
-    cost_entry_ptr++;
-    const char* cost_name = reinterpret_cast<const char*>(cost_entry_ptr);
-    const size_t cost_name_len = cost_entry_size - sizeof(double);
-    opencensus::stats::Record(
-        {{::grpc::load_reporter::MeasureOtherCallMetric(), cost_value}},
-        {{::grpc::load_reporter::TagKeyToken(),
-          {calld->client_ip_and_lr_token_, calld->client_ip_and_lr_token_len_}},
-         {::grpc::load_reporter::TagKeyHost(),
-          {calld->target_host_.data(), calld->target_host_.length()}},
-         {::grpc::load_reporter::TagKeyUserId(),
-          {chand->peer_identity(), chand->peer_identity_len()}},
-         {::grpc::load_reporter::TagKeyMetricName(),
-          {cost_name, cost_name_len}}});
-    return GRPC_FILTERED_REMOVE();
-  }
-  return GRPC_FILTERED_MDELEM(md);
 }
 
 const char* ServerLoadReportingCallData::GetStatusTagForStatus(

@@ -18,6 +18,7 @@
 
 #include <grpc/grpc_security_constants.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 namespace grpc_core {
@@ -55,6 +56,8 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
           IpAuthorizationMatcher::Type::kDestIp, std::move(permission.ip));
     case Rbac::Permission::RuleType::kDestPort:
       return absl::make_unique<PortAuthorizationMatcher>(permission.port);
+    case Rbac::Permission::RuleType::kMetadata:
+      return absl::make_unique<MetadataAuthorizationMatcher>(permission.invert);
     case Rbac::Permission::RuleType::kReqServerName:
       return absl::make_unique<ReqServerNameAuthorizationMatcher>(
           std::move(permission.string_matcher));
@@ -103,6 +106,8 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     case Rbac::Principal::RuleType::kPath:
       return absl::make_unique<PathAuthorizationMatcher>(
           std::move(principal.string_matcher.value()));
+    case Rbac::Principal::RuleType::kMetadata:
+      return absl::make_unique<MetadataAuthorizationMatcher>(principal.invert);
   }
   return nullptr;
 }
@@ -157,14 +162,13 @@ bool IpAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
       break;
     }
     case Type::kSourceIp:
-    case Type::kDirectRemoteIp: {
+    case Type::kDirectRemoteIp:
+    case Type::kRemoteIp: {
       address = args.GetPeerAddress();
       break;
     }
-    default: {
-      // Currently we do not support matching rules containing "remote_ip".
+    default:
       return false;
-    }
   }
   return grpc_sockaddr_match_subnet(&address, &subnet_address_, prefix_len_);
 }
@@ -204,9 +208,8 @@ bool AuthenticatedAuthorizationMatcher::Matches(
 }
 
 bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {
-  // Currently we do not support matching rules containing
-  // "requested_server_name".
-  return false;
+  // Currently we only support matching against an empty string.
+  return matcher_.Match("");
 }
 
 bool PathAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
