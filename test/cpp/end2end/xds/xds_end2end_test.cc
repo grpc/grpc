@@ -1278,54 +1278,64 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       const Status status = SendRpc(options.rpc_options);
       EXPECT_FALSE(status.ok());
       if (options.expected_error_code != StatusCode::OK) {
-        EXPECT_EQ(options.expected_error_code, status.error_code());
+        EXPECT_EQ(options.expected_error_code, status.error_code())
+            << "code=" << status.error_code()
+            << " message=" << status.error_message();
+        ;
       }
     }
   }
 
-  bool WaitForNack(
-      std::function<AdsServiceImpl::ResponseState::State()> get_state,
+  absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
+      std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
+    absl::optional<AdsServiceImpl::ResponseState> response_state;
     auto deadline = absl::Now() + absl::Seconds(30);
-    bool success = true;
-    CheckRpcSendFailure(CheckRpcSendFailureOptions()
-                            .set_continue_predicate([&](size_t) {
-                              if (absl::Now() >= deadline) {
-                                success = false;
-                                return false;
-                              }
-                              return get_state() !=
-                                     AdsServiceImpl::ResponseState::NACKED;
-                            })
-                            .set_expected_error_code(expected_status));
-    return success;
+    auto continue_predicate = [&]() {
+      if (absl::Now() >= deadline) {
+        return false;
+      }
+      response_state = get_state();
+      return !response_state.has_value() ||
+             response_state->state != AdsServiceImpl::ResponseState::NACKED;
+    };
+    do {
+      const Status status = SendRpc();
+      EXPECT_EQ(expected_status, status.error_code())
+          << "code=" << status.error_code()
+          << " message=" << status.error_message();
+      ;
+    } while (continue_predicate());
+    return response_state;
   }
 
-  bool WaitForLdsNack(StatusCode expected_status = StatusCode::UNAVAILABLE) {
+  absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
-        [&]() { return balancer_->ads_service()->lds_response_state().state; },
+        [&]() { return balancer_->ads_service()->lds_response_state(); },
         expected_status);
   }
 
-  bool WaitForRdsNack(StatusCode expected_status = StatusCode::UNAVAILABLE) {
+  absl::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
-        [&]() {
-          return RouteConfigurationResponseState(balancer_.get()).state;
-        },
+        [&]() { return RouteConfigurationResponseState(balancer_.get()); },
         expected_status);
   }
 
-  bool WaitForCdsNack() {
+  absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
+      StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
-        [&]() { return balancer_->ads_service()->cds_response_state().state; });
+        [&]() { return balancer_->ads_service()->cds_response_state(); },
+        expected_status);
   }
 
-  bool WaitForEdsNack() {
+  absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack() {
     return WaitForNack(
-        [&]() { return balancer_->ads_service()->eds_response_state().state; });
+        [&]() { return balancer_->ads_service()->eds_response_state(); });
   }
 
-  bool WaitForRouteConfigNack(
+  absl::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     if (GetParam().enable_rds_testing()) {
       return WaitForRdsNack(expected_status);
@@ -1333,7 +1343,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return WaitForLdsNack(expected_status);
   }
 
-  AdsServiceImpl::ResponseState RouteConfigurationResponseState(
+  absl::optional<AdsServiceImpl::ResponseState> RouteConfigurationResponseState(
       BalancerServerThread* balancer) const {
     AdsServiceImpl* ads_service = balancer->ads_service();
     if (GetParam().enable_rds_testing()) {
@@ -1342,12 +1352,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return ads_service->lds_response_state();
   }
 
+  std::string GetServerListenerName(int port) {
+    return absl::StrCat("grpc/server?xds.resource.listening_address=",
+                        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port);
+  }
+
   Listener PopulateServerListenerNameAndPort(const Listener& listener_template,
                                              int port) {
     Listener listener = listener_template;
-    listener.set_name(
-        absl::StrCat("grpc/server?xds.resource.listening_address=",
-                     ipv6_only_ ? "[::1]:" : "127.0.0.1:", port));
+    listener.set_name(GetServerListenerName(port));
     listener.mutable_address()->mutable_socket_address()->set_port_value(port);
     return listener;
   }
@@ -2198,8 +2211,9 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   // Make sure RPCs are still failing.
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that we restart all xDS requests when we reestablish the ADS call.
@@ -2461,7 +2475,13 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendFailure();
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::ContainsRegex(absl::StrCat(
+                  kServerName,
+                  ": validation error.*"
+                  "Listener has neither address nor ApiListener.*")));
   // Need to create a second channel to subscribe to a second LDS resource.
   auto channel2 = CreateChannel(0, kServerName2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
@@ -2473,28 +2493,18 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
     grpc::Status status = stub2->Echo(&context, request, &response);
     EXPECT_FALSE(status.ok());
     // Wait for second NACK to be reported to xDS server.
-    auto deadline = absl::Now() + absl::Seconds(30);
-    bool timed_out = false;
-    CheckRpcSendFailure(
-        CheckRpcSendFailureOptions().set_continue_predicate([&](size_t) {
-          if (absl::Now() >= deadline) {
-            timed_out = true;
-            return false;
-          }
-          const auto response_state =
-              balancer_->ads_service()->lds_response_state();
-          return response_state.state !=
-                     AdsServiceImpl::ResponseState::NACKED ||
-                 ::testing::Matches(::testing::ContainsRegex(absl::StrCat(
-                     kServerName,
-                     ": validation error.*"
-                     "Listener has neither address nor ApiListener.*",
-                     kServerName2,
-                     ": validation error.*"
-                     "Listener has neither address nor ApiListener")))(
-                     response_state.error_message);
-        }));
-    ASSERT_FALSE(timed_out);
+    const auto response_state = WaitForLdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
+                ::testing::ContainsRegex(absl::StrCat(
+                    kServerName,
+                    ": validation error.*"
+                    "Listener has neither address nor ApiListener.*")));
+    EXPECT_THAT(response_state->error_message,
+                ::testing::ContainsRegex(absl::StrCat(
+                    kServerName2,
+                    ": validation error.*"
+                    "Listener has neither address nor ApiListener.*")));
   }
   // Now start a new channel with a third server name, this one with a
   // valid resource.
@@ -2524,20 +2534,13 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
-  // Wait for xDS server to see NACK.
-  auto deadline = absl::Now() + absl::Seconds(30);
-  do {
-    CheckRpcSendOk();
-    ASSERT_LT(absl::Now(), deadline);
-  } while (balancer_->ads_service()->lds_response_state().state !=
-           AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+  const auto response_state = WaitForLdsNack(StatusCode::OK);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(
                   kServerName,
                   ": validation error.*"
                   "Listener has neither address nor ApiListener")));
-  // Check one more time, just to make sure it still works after NACK.
-  CheckRpcSendOk();
 }
 
 class XdsFederationTest : public XdsEnd2endTest {
@@ -2881,11 +2884,10 @@ TEST_P(LdsTest, NoApiListener) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
@@ -2900,11 +2902,10 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "HttpConnectionManager neither has inlined route_config nor RDS."));
 }
@@ -2921,10 +2922,9 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "HttpConnectionManager missing config_source for RDS."));
 }
@@ -2943,10 +2943,9 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
                                    "RDS does not specify ADS."));
 }
@@ -2965,10 +2964,9 @@ TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "non-terminal filter for config type grpc.testing"
                   ".client_only_http_filter is the last filter in the chain"));
@@ -2990,11 +2988,10 @@ TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "terminal filter for config type envoy.extensions.filters.http"
           ".router.v3.Router must be the last filter in the chain"));
@@ -3015,10 +3012,9 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("empty filter name at index 0"));
 }
 
@@ -3037,10 +3033,9 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("duplicate HTTP filter name: router"));
 }
 
@@ -3059,10 +3054,9 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
 }
@@ -3088,8 +3082,9 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs.
@@ -3107,10 +3102,9 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
 }
@@ -3136,8 +3130,9 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter configs.
@@ -3157,11 +3152,10 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "filter config for type "
           "envoy.extensions.filters.http.fault.v3.HTTPFault failed to parse"));
@@ -3183,11 +3177,10 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Filter grpc.testing.server_only_http_filter is not "
                            "supported on clients"));
 }
@@ -3214,8 +3207,9 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(0);
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK non-zero xff_num_trusted_hops
@@ -3229,8 +3223,9 @@ TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
 }
 
@@ -3245,9 +3240,10 @@ TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().error_message,
+      response_state->error_message,
       ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
 }
 
@@ -3282,8 +3278,9 @@ using LdsRdsTest = BasicTest;
 // inlined RDS result).
 TEST_P(LdsRdsTest, Vanilla) {
   (void)SendRpc();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Make sure we actually used the RPC service for the right version of xDS.
   EXPECT_EQ(balancer_->ads_service()->seen_v2_client(), GetParam().use_v2());
   EXPECT_NE(balancer_->ads_service()->seen_v3_client(), GetParam().use_v2());
@@ -3305,8 +3302,9 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
   // Make sure RPCs are still failing.
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
-  EXPECT_EQ(balancer_->ads_service()->lds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client ACKs but fails if matching domain can't be found in
@@ -3319,8 +3317,9 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   CheckRpcSendFailure();
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should choose the virtual host with matching domain
@@ -3332,8 +3331,9 @@ TEST_P(LdsRdsTest, ChooseMatchedDomain) {
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   SetRouteConfiguration(balancer_.get(), route_config);
   (void)SendRpc();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should choose the last route in the virtual host if
@@ -3348,8 +3348,9 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
       ->mutable_cluster_header();
   SetRouteConfiguration(balancer_.get(), route_config);
   (void)SendRpc();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should ignore route which has query_parameters.
@@ -3359,10 +3360,9 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()->add_query_parameters();
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3378,7 +3378,8 @@ TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
   SetRouteConfiguration(balancer_.get(), route_config);
   (void)SendRpc();
   const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that LDS client should ignore route which has a path
@@ -3388,10 +3389,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3402,10 +3402,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3416,10 +3415,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("//");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3430,10 +3428,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3444,10 +3441,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("grpc.testing.EchoTest1Service/Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3458,10 +3454,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3472,10 +3467,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3486,10 +3480,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("//Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3500,10 +3493,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
 }
 
@@ -3515,10 +3507,9 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   route1->mutable_match()->mutable_safe_regex()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "path matcher: Invalid regex string specified in matcher."));
 }
@@ -3549,11 +3540,10 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("RouteAction cluster contains empty cluster name."));
 }
 
@@ -3575,10 +3565,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "RouteAction weighted_cluster has incorrect total weight"));
 }
@@ -3600,11 +3589,10 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "RouteAction weighted_cluster has no valid clusters specified."));
 }
@@ -3626,10 +3614,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("RouteAction weighted_cluster cluster "
                                    "contains empty cluster name."));
 }
@@ -3651,10 +3638,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "RouteAction weighted_cluster cluster missing weight"));
 }
@@ -3669,11 +3655,10 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "header matcher: Invalid regex string specified in matcher."));
 }
@@ -3689,11 +3674,10 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   header_matcher1->mutable_range_match()->set_end(1000);
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "header matcher: Invalid range specifier specified: end cannot be "
           "smaller than start."));
@@ -5087,11 +5071,10 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(0);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "RouteAction RetryPolicy num_retries set to invalid value 0."));
 }
@@ -5114,11 +5097,10 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   max_interval->set_seconds(0);
   max_interval->set_nanos(250000000);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "RouteAction RetryPolicy RetryBackoff missing base interval."));
 }
@@ -5202,8 +5184,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(kNumEcho1Rpcs, backends_[1]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
@@ -5247,8 +5230,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   CheckRpcSendOk(kNumEchoRpcs);
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
@@ -5293,8 +5277,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   // were mismatched.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
@@ -5344,8 +5329,9 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
               ::testing::DoubleNear(1 - kRouteMatchPercent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(matched_backend_count) / kNumRpcs,
               ::testing::DoubleNear(kRouteMatchPercent, kErrorTolerance));
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
@@ -5441,8 +5427,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(kNumEcho1Rpcs, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
@@ -5520,10 +5507,9 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
 }
@@ -5545,8 +5531,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs in VirtualHost.
@@ -5558,10 +5545,9 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
 }
@@ -5576,10 +5562,9 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
 }
@@ -5600,8 +5585,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter types in VirtualHost.
@@ -5614,11 +5600,10 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("router filter does not support config override"));
 }
 
@@ -5632,10 +5617,9 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
 }
@@ -5658,8 +5642,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs in Route.
@@ -5672,10 +5657,9 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
 }
@@ -5691,10 +5675,9 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
 }
@@ -5716,8 +5699,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter types in Route.
@@ -5731,11 +5715,10 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("router filter does not support config override"));
 }
 
@@ -5754,10 +5737,9 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
 }
@@ -5785,8 +5767,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK filters without configs in ClusterWeight.
@@ -5804,10 +5787,9 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
 }
@@ -5829,10 +5811,9 @@ TEST_P(LdsRdsTest,
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
 }
@@ -5859,8 +5840,9 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
-  EXPECT_EQ(RouteConfigurationResponseState(balancer_.get()).state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Test that we NACK unparseable filter types in ClusterWeight.
@@ -5879,11 +5861,10 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("router filter does not support config override"));
 }
 
@@ -5892,8 +5873,9 @@ using CdsTest = BasicTest;
 // Tests that CDS client should send an ACK upon correct CDS response.
 TEST_P(CdsTest, Vanilla) {
   (void)SendRpc();
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 TEST_P(CdsTest, LogicalDNSClusterType) {
@@ -5932,10 +5914,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "load_assignment not present for LOGICAL_DNS cluster"));
   gpr_unsetenv(
@@ -5950,11 +5931,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
   cluster.set_type(Cluster::LOGICAL_DNS);
   cluster.mutable_load_assignment();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
                            "exactly one locality, found 0"));
   gpr_unsetenv(
@@ -5971,11 +5951,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
   load_assignment->add_endpoints();
   load_assignment->add_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
                            "exactly one locality, found 2"));
   gpr_unsetenv(
@@ -5990,10 +5969,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
   cluster.set_type(Cluster::LOGICAL_DNS);
   cluster.mutable_load_assignment()->add_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "locality for LOGICAL_DNS cluster must have exactly one "
                   "endpoint, found 0"));
@@ -6011,10 +5989,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
   locality->add_lb_endpoints();
   locality->add_lb_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "locality for LOGICAL_DNS cluster must have exactly one "
                   "endpoint, found 2"));
@@ -6030,10 +6007,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
   cluster.set_type(Cluster::LOGICAL_DNS);
   cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LbEndpoint endpoint field not set"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -6050,10 +6026,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
       ->add_lb_endpoints()
       ->mutable_endpoint();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Endpoint address field not set"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -6071,10 +6046,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
       ->mutable_endpoint()
       ->mutable_address();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Address socket_address field not set"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -6094,10 +6068,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
       ->mutable_socket_address()
       ->set_resolver_name("foo");
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
                                    "custom resolver name set"));
   gpr_unsetenv(
@@ -6117,10 +6090,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
       ->mutable_address()
       ->mutable_socket_address();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress address field not set"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -6140,10 +6112,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
       ->mutable_socket_address()
       ->set_address(kServerName);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress port_value field not set"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -6192,8 +6163,9 @@ TEST_P(CdsTest, AggregateClusterType) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
   WaitForBackend(1);
@@ -6254,8 +6226,9 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
   WaitForBackend(1);
@@ -6316,8 +6289,9 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
   WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
-  EXPECT_EQ(balancer_->ads_service()->cds_response_state().state,
-            AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
   WaitForBackend(1);
@@ -6331,10 +6305,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
@@ -6350,10 +6323,9 @@ TEST_P(CdsTest, AggregateClusterTypeDisabled) {
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
@@ -6363,10 +6335,9 @@ TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
@@ -6410,11 +6381,10 @@ TEST_P(CdsTest, MultipleBadResources) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send RPC.
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::ContainsRegex(absl::StrCat(kClusterName2,
                                             ": validation error.*"
                                             "DiscoveryType is not valid.*",
@@ -6448,19 +6418,12 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  // Wait for xDS server to see NACK.
-  auto deadline = absl::Now() + absl::Seconds(30);
-  do {
-    CheckRpcSendOk();
-    ASSERT_LT(absl::Now(), deadline);
-  } while (balancer_->ads_service()->cds_response_state().state !=
-           AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(balancer_->ads_service()->cds_response_state().error_message,
+  const auto response_state = WaitForCdsNack(StatusCode::OK);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(
                   kDefaultClusterName,
                   ": validation error.*DiscoveryType is not valid")));
-  // Check one more time, just to make sure it still works after NACK.
-  CheckRpcSendOk();
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
@@ -6469,10 +6432,9 @@ TEST_P(CdsTest, WrongEdsConfig) {
   auto cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("EDS ConfigSource is not ADS."));
 }
 
@@ -6482,10 +6444,9 @@ TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::LEAST_REQUEST);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LB policy is not supported."));
 }
 
@@ -6495,10 +6456,9 @@ TEST_P(CdsTest, WrongLrsServer) {
   auto cluster = default_cluster_;
   cluster.mutable_lrs_server()->mutable_ads();
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LRS ConfigSource is not self."));
 }
 
@@ -7139,11 +7099,10 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("ring hash lb config has invalid hash function."));
 }
 
@@ -7164,10 +7123,9 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMinimumRingSize) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "min_ring_size is not in the range of 1 to 8388608."));
 }
@@ -7189,10 +7147,9 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMaxmumRingSize) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "max_ring_size is not in the range of 1 to 8388608."));
 }
@@ -7216,10 +7173,9 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "min_ring_size cannot be greater than max_ring_size."));
 }
@@ -7383,10 +7339,9 @@ TEST_P(XdsSecurityTest, UnknownTransportSocket) {
   auto* transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("unknown_transport_socket");
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "Unrecognized transport socket: unknown_transport_socket"));
 }
@@ -7397,10 +7352,9 @@ TEST_P(XdsSecurityTest,
   auto* transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("TLS configuration provided but no "
                                    "ca_certificate_provider_instance found."));
 }
@@ -7417,10 +7371,9 @@ TEST_P(
   *validation_context->add_match_subject_alt_names() = server_san_exact_;
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("TLS configuration provided but no "
                                    "ca_certificate_provider_instance found."));
 }
@@ -7437,10 +7390,9 @@ TEST_P(
       ->set_instance_name(std::string("fake_plugin1"));
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("TLS configuration provided but no "
                                    "ca_certificate_provider_instance found."));
 }
@@ -7464,10 +7416,9 @@ TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
   *validation_context->add_match_subject_alt_names() = matcher;
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
 }
@@ -7483,10 +7434,9 @@ TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "Unrecognized certificate provider instance name: unknown"));
 }
@@ -7508,10 +7458,9 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "Unrecognized certificate provider instance name: unknown"));
   g_fake1_cert_data_map = nullptr;
@@ -7535,11 +7484,10 @@ TEST_P(XdsSecurityTest,
       ->add_verify_certificate_spki("spki");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "CertificateValidationContext: verify_certificate_spki unsupported"));
 }
@@ -7562,11 +7510,10 @@ TEST_P(XdsSecurityTest,
       ->add_verify_certificate_hash("hash");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "CertificateValidationContext: verify_certificate_hash unsupported"));
 }
@@ -7590,11 +7537,10 @@ TEST_P(XdsSecurityTest,
       ->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("CertificateValidationContext: "
                            "require_signed_certificate_timestamp unsupported"));
 }
@@ -7616,11 +7562,10 @@ TEST_P(XdsSecurityTest, NacksCertificateValidationContextWithCrl) {
       ->mutable_crl();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("CertificateValidationContext: crl unsupported"));
 }
 
@@ -7642,11 +7587,10 @@ TEST_P(XdsSecurityTest,
       ->mutable_custom_validator_config();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "CertificateValidationContext: custom_validator_config unsupported"));
 }
@@ -7663,11 +7607,10 @@ TEST_P(XdsSecurityTest, NacksValidationContextSdsSecretConfig) {
       ->mutable_validation_context_sds_secret_config();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("validation_context_sds_secret_config unsupported"));
 }
 
@@ -7686,10 +7629,9 @@ TEST_P(XdsSecurityTest, NacksTlsParams) {
   upstream_tls_context.mutable_common_tls_context()->mutable_tls_params();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("tls_params unsupported"));
 }
 
@@ -7709,10 +7651,9 @@ TEST_P(XdsSecurityTest, NacksCustomHandshaker) {
       ->mutable_custom_handshaker();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("custom_handshaker unsupported"));
 }
 
@@ -7731,10 +7672,9 @@ TEST_P(XdsSecurityTest, NacksTlsCertificates) {
   upstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("tls_certificates unsupported"));
 }
 
@@ -7754,11 +7694,10 @@ TEST_P(XdsSecurityTest, NacksTlsCertificateSdsSecretConfigs) {
       ->add_tls_certificate_sds_secret_configs();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  ASSERT_TRUE(WaitForCdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->cds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("tls_certificate_sds_secret_configs unsupported"));
 }
 
@@ -8174,11 +8113,10 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
   balancer_->ads_service()->SetLdsResource(listener);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
@@ -8189,11 +8127,10 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Listener has both address and ApiListener"));
 }
 
@@ -8207,8 +8144,9 @@ TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
 }
 
@@ -8222,9 +8160,10 @@ TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().error_message,
+      response_state->error_message,
       ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
 }
 
@@ -8235,10 +8174,9 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
   balancer_->ads_service()->SetLdsResource(
       PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Unsupported filter type"));
 }
 
@@ -8252,10 +8190,9 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Expected at least one HTTP filter"));
 }
 
@@ -8277,10 +8214,9 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "grpc.testing.unsupported_http_filter"));
 }
@@ -8303,11 +8239,10 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Filter grpc.testing.client_only_http_filter is not "
                            "supported on servers"));
 }
@@ -8333,8 +8268,9 @@ TEST_P(XdsEnabledServerTest,
                                              default_server_route_config_);
   backends_[0]->Start();
   WaitForBackend(0);
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Verify that a mismatch of listening address results in "not serving"
@@ -8360,11 +8296,10 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Field \'use_original_dst\' is not supported."));
 }
 
@@ -8605,10 +8540,9 @@ TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "Unrecognized transport socket: unknown_transport_socket"));
 }
@@ -8628,10 +8562,9 @@ TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("require_sni: unsupported"));
 }
 
@@ -8652,10 +8585,9 @@ TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "ocsp_staple_policy: Only LENIENT_STAPLING supported"));
 }
@@ -8677,10 +8609,9 @@ TEST_P(
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "TLS configuration requires client certificates but no "
                   "certificate provider instance specified for validation."));
@@ -8698,10 +8629,9 @@ TEST_P(XdsServerSecurityTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("TLS configuration provided but no "
                                    "tls_certificate_provider_instance found."));
 }
@@ -8724,11 +8654,10 @@ TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      response_state.error_message,
+      response_state->error_message,
       ::testing::HasSubstr("match_subject_alt_names not supported on servers"));
 }
 
@@ -8737,10 +8666,9 @@ TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "Unrecognized certificate provider instance name: unknown"));
 }
@@ -8750,10 +8678,9 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "Unrecognized certificate provider instance name: unknown"));
 }
@@ -9088,8 +9015,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   SetInvalidLdsUpdate();
   do {
     SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
-  } while (balancer_->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
+  } while (!balancer_->ads_service()->lds_response_state().has_value());
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
@@ -9575,9 +9501,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().error_message,
+      response_state->error_message,
       ::testing::HasSubstr(
           "Duplicate matching rules detected when adding filter chain: {}"));
 }
@@ -9612,17 +9539,18 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   if (ipv6_only_) {
     EXPECT_THAT(
-        balancer_->ads_service()->lds_response_state().error_message,
+        response_state->error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
             "{address_prefix=[::]:0, prefix_len=32}}}"));
   } else {
     EXPECT_THAT(
-        balancer_->ads_service()->lds_response_state().error_message,
+        response_state->error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
@@ -9649,9 +9577,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {transport_protocol=raw_buffer}"));
 }
@@ -9674,9 +9603,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {source_type=SAME_IP_OR_LOOPBACK}"));
 }
@@ -9700,9 +9630,10 @@ TEST_P(XdsServerFilterChainMatchTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {source_type=EXTERNAL}"));
 }
@@ -9738,17 +9669,18 @@ TEST_P(XdsServerFilterChainMatchTest,
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   if (ipv6_only_) {
     EXPECT_THAT(
-        balancer_->ads_service()->lds_response_state().error_message,
+        response_state->error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{source_prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
             "{address_prefix=[::]:0, prefix_len=32}}}"));
   } else {
     EXPECT_THAT(
-        balancer_->ads_service()->lds_response_state().error_message,
+        response_state->error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{source_prefix_ranges={{address_prefix=127.0.0.0:0, "
@@ -9773,9 +9705,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
                                              backends_[0]->port(),
                                              default_server_route_config_);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
+  const auto response_state = WaitForLdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
-      balancer_->ads_service()->lds_response_state().error_message,
+      response_state->error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {source_ports={8080}}"));
 }
@@ -9806,8 +9739,9 @@ TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForRouteConfigNack()) << "timed out waiting for NACK";
-  EXPECT_THAT(RouteConfigurationResponseState(balancer_.get()).error_message,
+  const auto response_state = WaitForRouteConfigNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Invalid domain pattern \"\""));
 }
 
@@ -9818,8 +9752,9 @@ TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForRouteConfigNack()) << "timed out waiting for NACK";
-  EXPECT_THAT(RouteConfigurationResponseState(balancer_.get()).error_message,
+  const auto response_state = WaitForRouteConfigNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("VirtualHost has no domains"));
 }
 
@@ -9830,8 +9765,9 @@ TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForRouteConfigNack()) << "timed out waiting for NACK";
-  EXPECT_THAT(RouteConfigurationResponseState(balancer_.get()).error_message,
+  const auto response_state = WaitForRouteConfigNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No route found in the virtual host"));
 }
 
@@ -9846,8 +9782,9 @@ TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
       balancer_.get(), default_server_listener_, backends_[0]->port(),
       route_config);
   backends_[0]->Start();
-  ASSERT_TRUE(WaitForRouteConfigNack()) << "timed out waiting for NACK";
-  EXPECT_THAT(RouteConfigurationResponseState(balancer_.get()).error_message,
+  const auto response_state = WaitForRouteConfigNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Match can't be null"));
 }
 
@@ -10037,7 +9974,9 @@ TEST_P(XdsRbacTest, LogAction) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
+using XdsRbacNackTest = XdsRbacTest;
+
+TEST_P(XdsRbacNackTest, NacksSchemePrincipalHeader) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -10052,17 +9991,19 @@ TEST_P(XdsRbacTest, NacksSchemePrincipalHeader) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+    const auto response_state = WaitForRdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+    const auto response_state = WaitForLdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   }
 }
 
-TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
+TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPrincipalHeaders) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -10077,17 +10018,19 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPrincipalHeaders) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+    const auto response_state = WaitForRdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+    const auto response_state = WaitForLdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   }
 }
 
-TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
+TEST_P(XdsRbacNackTest, NacksSchemePermissionHeader) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -10102,17 +10045,19 @@ TEST_P(XdsRbacTest, NacksSchemePermissionHeader) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+    const auto response_state = WaitForRdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+    const auto response_state = WaitForLdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("':scheme' not allowed in header"));
   }
 }
 
-TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
+TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPermissionHeaders) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
   rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
@@ -10127,12 +10072,14 @@ TEST_P(XdsRbacTest, NacksGrpcPrefixedPermissionHeaders) {
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
           TestType::FilterConfigSetup::kRouteOverride) {
-    ASSERT_TRUE(WaitForRdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->rds_response_state().error_message,
+    const auto response_state = WaitForRdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   } else {
-    ASSERT_TRUE(WaitForLdsNack()) << "timed out waiting for NACK";
-    EXPECT_THAT(balancer_->ads_service()->lds_response_state().error_message,
+    const auto response_state = WaitForLdsNack();
+    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+    EXPECT_THAT(response_state->error_message,
                 ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
   }
 }
@@ -10908,10 +10855,9 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
       {"locality0", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  ASSERT_TRUE(WaitForEdsNack()) << "timed out waiting for NACK";
-  const auto response_state = balancer_->ads_service()->eds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
+  const auto response_state = WaitForEdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("sparse priority list"));
 }
 
@@ -11542,8 +11488,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When backend 3 gets traffic, we know the second update has been seen.
   WaitForBackend(3);
   // The ADS service of balancer 0 got at least 1 response.
-  EXPECT_GT(balancer_->ads_service()->eds_response_state().state,
-            AdsServiceImpl::ResponseState::NOT_SENT);
+  EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
   delayed_resource_setter.join();
 }
 
@@ -13283,6 +13228,30 @@ INSTANTIATE_TEST_SUITE_P(
             .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
+    &TestTypeName);
+
+// We are only testing the server here.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+// Note that we are simply using the default fake credentials instead of xds
+// credentials for NACK tests to avoid a mismatch between the client and the
+// server's security settings when using the WaitForNack() infrastructure.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacNackTest,
+    ::testing::Values(
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType().set_enable_rds_testing().set_bootstrap_source(
+            TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType()
             .set_enable_rds_testing()
             .set_filter_config_setup(
                 TestType::FilterConfigSetup::kRouteOverride)
