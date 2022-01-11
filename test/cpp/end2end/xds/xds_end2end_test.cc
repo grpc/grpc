@@ -2446,6 +2446,39 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
 
+TEST_P(
+    GlobalXdsClientTest,
+    MultipleChannelsShareXdsClientWithResourceUpdateAfterOneChannelGoesAway) {
+  // Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
+  // XdsClient properly handles the case where there are multiple watchers on
+  // the same resource and one of them unsubscribes.
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = default_listener_;
+  listener.set_name(kNewServerName);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  WaitForBackend(0);
+  // Create second channel and tell it to connect to kNewServerName.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  // Now, destroy the new channel, send an EDS update to use a different backend
+  // and test that the channel switches to that backend.
+  channel2.reset();
+  // This sleep is needed to be able to reproduce the bug and to give time for
+  // the buggy unsubscription to take place.
+  // TODO(yashykt): Figure out a way to do this without the sleep.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  })));
+  WaitForBackend(1);
+}
+
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 TEST_P(GlobalXdsClientTest, MultipleBadResources) {
   constexpr char kServerName2[] = "server.other.com";
@@ -10222,35 +10255,6 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-using XdsRbacTestWithRouteOverrideAndRdsTestingEnabled = XdsRbacTest;
-
-// Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
-// XdsClient properly handles the case where there are multiple watchers on the
-// same resource and one of them unsubscribes.
-TEST_P(XdsRbacTestWithRouteOverrideAndRdsTestingEnabled, MultipleChannels) {
-  SetServerRbacPolicy(RBAC());
-  backends_[0]->Start();
-  backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
-      grpc::StatusCode::OK);
-  auto channel = CreateInsecureChannel();
-  auto channel2 = CreateInsecureChannel();
-  // Send RPCs on both channels to make sure that they are both connected.
-  SendRpc([&]() { return channel; }, {}, {});
-  SendRpc([&]() { return channel2; }, {}, {});
-  // Destroy channel2
-  channel2.reset();
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(RBAC_Action_DENY);
-  Policy policy;
-  policy.add_permissions()->set_any(true);
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  SendRpc([&]() { return channel; }, {}, {}, /*test_expects_failure=*/true);
-}
-
 // Adds Action Permutations to XdsRbacTest
 using XdsRbacTestWithActionPermutations = XdsRbacTest;
 
@@ -13458,21 +13462,6 @@ INSTANTIATE_TEST_SUITE_P(
             .set_filter_config_setup(
                 TestType::FilterConfigSetup::kRouteOverride)
             .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
-            .set_use_xds_credentials()
-            .set_enable_rds_testing()
-            .set_filter_config_setup(
-                TestType::FilterConfigSetup::kRouteOverride)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
-    &TestTypeName);
-
-// We are only testing the server here.
-// Run with bootstrap from env var, so that we use a global XdsClient
-// instance.  Otherwise, we would need to use a separate fake resolver
-// result generator on the client and server sides.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsRbacTestWithRouteOverrideAndRdsTestingEnabled,
-    ::testing::Values(
         TestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
