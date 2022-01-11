@@ -10222,6 +10222,35 @@ TEST_P(XdsRbacTestWithRouteOverrideAlwaysPresent,
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
+using XdsRbacTestWithRouteOverrideAndRdsTestingEnabled = XdsRbacTest;
+
+// Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
+// XdsClient properly handles the case where there are multiple watchers on the
+// same resource and one of them unsubscribes.
+TEST_P(XdsRbacTestWithRouteOverrideAndRdsTestingEnabled, MultipleChannels) {
+  SetServerRbacPolicy(RBAC());
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  auto channel = CreateInsecureChannel();
+  auto channel2 = CreateInsecureChannel();
+  // Send RPCs on both channels to make sure that they are both connected.
+  SendRpc([&]() { return channel; }, {}, {});
+  SendRpc([&]() { return channel2; }, {}, {});
+  // Destroy channel2
+  channel2.reset();
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(RBAC_Action_DENY);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc([&]() { return channel; }, {}, {}, /*test_expects_failure=*/true);
+}
+
 // Adds Action Permutations to XdsRbacTest
 using XdsRbacTestWithActionPermutations = XdsRbacTest;
 
@@ -13429,6 +13458,21 @@ INSTANTIATE_TEST_SUITE_P(
             .set_filter_config_setup(
                 TestType::FilterConfigSetup::kRouteOverride)
             .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_filter_config_setup(
+                TestType::FilterConfigSetup::kRouteOverride)
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
+    &TestTypeName);
+
+// We are only testing the server here.
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithRouteOverrideAndRdsTestingEnabled,
+    ::testing::Values(
         TestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
