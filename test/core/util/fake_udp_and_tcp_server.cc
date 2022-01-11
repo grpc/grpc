@@ -53,7 +53,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
     GPR_ASSERT(0);
   }
   accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
-  address_ = absl::StrCat("[::]:", port_);
+  address_ = absl::StrCat("[::1]:", port_);
   if (accept_socket_ == BAD_SOCKET_RETURN_VAL) {
     gpr_log(GPR_ERROR, "Failed to create TCP IPv6 socket: %d", errno);
     GPR_ASSERT(0);
