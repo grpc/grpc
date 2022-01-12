@@ -462,8 +462,6 @@ class CLanguage(object):
             return ('debian9', [])
         elif compiler == 'gcc4.9':
             return ('gcc_4.9', [])
-        elif compiler == 'gcc5.3':
-            return ('ubuntu1604', [])
         elif compiler == 'gcc8.3':
             return ('debian10', [])
         elif compiler == 'gcc8.3_openssl102':
@@ -1399,7 +1397,6 @@ argp.add_argument(
     choices=[
         'default',
         'gcc4.9',
-        'gcc5.3',
         'gcc8.3',
         'gcc8.3_openssl102',
         'gcc11',
