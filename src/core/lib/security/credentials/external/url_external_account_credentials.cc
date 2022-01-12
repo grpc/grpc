@@ -141,8 +141,8 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
   GPR_ASSERT(httpcli_ == nullptr);
-  std::vector<grpc_ars> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARGS_DEFAULT_AUTHORITY), url_.authority().c_str()));
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(url_.authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ =
       HttpCli::Get(args, ctx_->pollent, ResourceQuota::Default(), &request,

@@ -49,7 +49,7 @@ class GoogleCloud2ProdResolver : public Resolver {
   class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
    public:
     MetadataQuery(grpc_channel_args* args, RefCountedPtr<GoogleCloud2ProdResolver> resolver,
-                  const char* address, const char* path,
+                  const char* path,
                   grpc_polling_entity* pollent);
     ~MetadataQuery() override;
 
@@ -121,7 +121,7 @@ class GoogleCloud2ProdResolver : public Resolver {
 
 GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
     grpc_channel_args* args,
-    RefCountedPtr<GoogleCloud2ProdResolver> resolver, const char* address,
+    RefCountedPtr<GoogleCloud2ProdResolver> resolver,
     const char* path, grpc_polling_entity* pollent)
     : resolver_(std::move(resolver)) {
   // Start HTTP request.
@@ -131,7 +131,7 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   memset(&request, 0, sizeof(grpc_httpcli_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                              const_cast<char*>("Google")};
-  request.host = const_cast<char*>(address);
+  request.host = const_cast<char*>("replace me");
   request.http.path = const_cast<char*>(path);
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
@@ -170,7 +170,7 @@ void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
 GoogleCloud2ProdResolver::ZoneQuery::ZoneQuery(
     grpc_channel_args* args, RefCountedPtr<GoogleCloud2ProdResolver> resolver,
     grpc_polling_entity* pollent)
-    : MetadataQuery(args, std::move(resolver), address,
+    : MetadataQuery(args, std::move(resolver),
                     "/computeMetadata/v1/instance/zone", pollent) {}
 
 void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
@@ -208,7 +208,7 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
 GoogleCloud2ProdResolver::IPv6Query::IPv6Query(
     grpc_channel_args* args, RefCountedPtr<GoogleCloud2ProdResolver> resolver,
     grpc_polling_entity* pollent)
-    : MetadataQuery(args, std::move(resolver), address,
+    : MetadataQuery(args, std::move(resolver),
                     "/computeMetadata/v1/instance/network-interfaces/0/ipv6s",
                     pollent) {}
 
@@ -279,9 +279,9 @@ void GoogleCloud2ProdResolver::StartLocked() {
     return;
   }
   // Using xDS.  Start metadata server queries.
-  std::vector<const char*> args_to_remove = {GRPC_ARGS_DEFAULT_AUTHORITY};
-  std::vector<grpc_args> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARGS_DEFAULT_AUTHORITY), metadata_server_address_.c_str()));
+  std::vector<const char*> args_to_remove = {GRPC_ARG_DEFAULT_AUTHORITY};
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(metadata_server_address_.c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(channel_args_, args_to_remove.data(), args_to_remove.size(), request_args.data(), request_args.size());
   zone_query_ = MakeOrphanable<ZoneQuery>(
       args, Ref(), &pollent_);

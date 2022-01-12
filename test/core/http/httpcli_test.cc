@@ -130,29 +130,29 @@ struct RequestState {
 };
 
 void OnFinish(void* arg, grpc_error_handle error) {
-  RequestState* request_args = static_cast<RequestState*>(arg);
+  RequestState* request_state = static_cast<RequestState*>(arg);
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_http_response response = request_args->response;
+  grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
   GPR_ASSERT(response.status == 200);
   GPR_ASSERT(response.body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
-  request_args->test->RunAndKick(
-      [request_args]() { request_args->done = true; });
+  request_state->test->RunAndKick(
+      [request_state]() { request_state->done = true; });
 }
 
 void OnFinishExpectCancelled(void* arg, grpc_error_handle error) {
-  RequestState* request_args = static_cast<RequestState*>(arg);
-  grpc_http_response response = request_args->response;
+  RequestState* request_state = static_cast<RequestState*>(arg);
+  grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  request_args->test->RunAndKick(
-      [request_args]() { request_args->done = true; });
+  request_state->test->RunAndKick(
+      [request_state]() { request_state->done = true; });
 }
 
 TEST_F(HttpCliTest, Get) {
@@ -165,8 +165,8 @@ TEST_F(HttpCliTest, Get) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.http.path = const_cast<char*>("/get");
-  std::vector<grpc_args> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(GRPC_ARG_DEFAULT_AUTHORITY, GRPC_COMPUTE_ENGINE_METADATA_HOST));
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
@@ -174,12 +174,12 @@ TEST_F(HttpCliTest, Get) {
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           NSecondsTime(15),
-          GRPC_CLOSURE_CREATE(OnFinish, &request_args,
+          GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
-          &request_args.response);
+          &request_state.response);
   httpcli->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_args]() { return request_args.done; });
+  PollUntil([&request_state]() { return request_state.done; });
   gpr_free(host);
 }
 
@@ -202,12 +202,12 @@ TEST_F(HttpCliTest, Post) {
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           "hello", 5, NSecondsTime(15),
-          GRPC_CLOSURE_CREATE(OnFinish, &request_args,
+          GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
-          &request_args.response);
+          &request_state.response);
   httpcli->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_args]() { return request_args.done; });
+  PollUntil([&request_state]() { return request_state.done; });
   gpr_free(host);
 }
 
@@ -252,8 +252,8 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
       req.host =
           const_cast<char*>("dont-care-since-wont-be-resolver.test.com:443");
       req.http.path = const_cast<char*>("/get");
-      std::vector<grpc_args> request_args;
-      request_args.push_back(grpc_channel_arg_string_create(GRPC_ARG_DEFAULT_AUTHORITY, const_cast<char*>("dont-care-since-wont-be-resolved.test.com:443")));
+      std::vector<grpc_arg> request_args;
+      request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>("dont-care-since-wont-be-resolved.test.com:443")));
       grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
@@ -261,9 +261,9 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
               absl::make_unique<
                   grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
-              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
+              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_args.response);
+              &request_state.response);
       httpcli->Start();
       grpc_channel_args_destroy(args);
       std::thread cancel_thread([&httpcli]() {
@@ -271,7 +271,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
         grpc_core::ExecCtx exec_ctx;
         httpcli.reset();
       });
-      PollUntil([&request_args]() { return request_args.done; });
+      PollUntil([&request_state]() { return request_state.done; });
       cancel_thread.join();
     }));
   }
@@ -299,23 +299,27 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       memset(&req, 0, sizeof(req));
       req.host = const_cast<char*>(fake_http_server_ptr->address());
       req.http.path = const_cast<char*>("/get");
+      std::vector<grpc_arg> request_args;
+      request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(fake_http_server_ptr->address())));
+      grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
-              pops(), grpc_core::ResourceQuota::Default(), &req,
+              args, pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
                   grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
-              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
+              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_args.response);
+              &request_state.response);
       httpcli->Start();
+      grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       std::thread cancel_thread([&httpcli]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
         httpcli.reset();
       });
-      PollUntil([&request_args]() { return request_args.done; });
+      PollUntil([&request_state]() { return request_state.done; });
       cancel_thread.join();
     }));
   }
@@ -346,22 +350,26 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
       memset(&req, 0, sizeof(req));
       req.host = const_cast<char*>(fake_server_address.c_str());
       req.http.path = const_cast<char*>("/get");
+      std::vector<grpc_arg> request_args;
+      request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(fake_server_address.c_str())));
+      grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
-              pops(), grpc_core::ResourceQuota::Default(), &req,
+              args, pops(), grpc_core::ResourceQuota::Default(), &req,
               absl::make_unique<
                   grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
-              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
+              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_args.response);
+              &request_state.response);
       httpcli->Start();
+      grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       std::thread cancel_thread([&httpcli]() {
         grpc_core::ExecCtx exec_ctx;
         httpcli.reset();
       });
-      PollUntil([&request_args]() { return request_args.done; });
+      PollUntil([&request_state]() { return request_state.done; });
       cancel_thread.join();
     }));
   }
@@ -393,23 +401,27 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           pollset_set_to_destroy_eagerly);
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(fake_server_address.c_str())));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
-          &wrapped_pollset_set_to_destroy_eagerly,
+          args, &wrapped_pollset_set_to_destroy_eagerly,
           grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           NSecondsTime(15),
-          GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_args,
+          GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                               grpc_schedule_on_exec_ctx),
-          &request_args.response);
+          &request_state.response);
   httpcli->Start();
+  grpc_channel_args_destroy(args);
   exec_ctx.Flush();
   httpcli.reset();  // cancel the request
   exec_ctx.Flush();
   // because we're cancelling the request during TCP connection establishment,
   // we can be certain that our on_done callback has already ran
-  GPR_ASSERT(request_args.done);
+  GPR_ASSERT(request_state.done);
   // Destroy the request's polling entity param. The goal is to try to catch a
   // bug where we might still be referencing the polling entity by
   // a pending TCP connect.

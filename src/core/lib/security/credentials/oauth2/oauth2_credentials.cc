@@ -390,8 +390,8 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    std::vector<grpc_args> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(GRPC_ARG_DEFAULT_AUTHORITY, GRPC_COMPUTE_ENGINE_METADATA_HOST));
+    std::vector<grpc_arg> request_args;
+    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     httpcli_ = grpc_core::HttpCli::Get(
         args, pollent, grpc_core::ResourceQuota::Default(), &request,
@@ -457,7 +457,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), GRPC_GOOGLE_OAUTH2_SERVICE_HOST));
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST)));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ = grpc_core::HttpCli::Post(
       args, pollent, grpc_core::ResourceQuota::Default(), &request,
@@ -589,7 +589,7 @@ class StsTokenFetcherCredentials
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
     std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), sts_url_.authority().c_str()));
+    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(sts_url_.authority().c_str())));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     httpcli_ = HttpCli::Post(
         args, pollent, ResourceQuota::Default(), &request,
