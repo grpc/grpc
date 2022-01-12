@@ -58,7 +58,7 @@ static void freed_port_from_server(void* arg, grpc_error_handle /*error*/) {
 }
 
 void grpc_free_port_using_server(int port) {
-  grpc_httprequest req;
+  grpc_http_request req;
   grpc_httpcli_response rsp;
   freereq pr;
   char* path;
@@ -147,7 +147,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   }
 
   if (failed) {
-    grpc_httprequest req;
+    grpc_http_request req;
     memset(&req, 0, sizeof(req));
     if (pr->retries >= 5) {
       gpr_mu_lock(pr->mu);
@@ -200,7 +200,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
 }
 
 int grpc_pick_port_using_server(void) {
-  grpc_httprequest req;
+  grpc_http_request req;
   portreq pr;
   grpc_closure* shutdown_closure;
 
