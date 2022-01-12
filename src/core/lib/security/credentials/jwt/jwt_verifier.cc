@@ -687,23 +687,29 @@ static void on_openid_config_retrieved(void* user_data,
   }
   jwks_uri += 8;
   req.host = gpr_strdup(jwks_uri);
+  char* host = gpr_strdup(jwks_uri);
   req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
   if (req.http.path == nullptr) {
     req.http.path = const_cast<char*>("");
   } else {
-    *(req.host + (req.http.path - jwks_uri)) = '\0';
+    *(host + (req.http.path - jwks_uri)) = '\0';
   }
+  req.host = gpr_strdup(host);
 
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
+  std::vector<grpc_ars> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARGS_DEFAULT_AUTHORITY), host));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
-      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
+      args, &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   ctx->httpcli->Start();
+  grpc_channel_args_destroy(args);
   gpr_free(req.host);
   return;
 
@@ -821,12 +827,16 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
+  std::vector<grpc_ars> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARGS_DEFAULT_AUTHORITY), req.host));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
-      &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
+      args, &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
   ctx->httpcli->Start();
+  grpc_channel_args_destroy(args);
   gpr_free(req.host);
   gpr_free(req.http.path);
   return;

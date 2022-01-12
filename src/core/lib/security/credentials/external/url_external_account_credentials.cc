@@ -141,11 +141,15 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
   GPR_ASSERT(httpcli_ == nullptr);
+  std::vector<grpc_ars> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARGS_DEFAULT_AUTHORITY), url_.authority().c_str()));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ =
-      HttpCli::Get(ctx_->pollent, ResourceQuota::Default(), &request,
+      HttpCli::Get(args, ctx_->pollent, ResourceQuota::Default(), &request,
                    HttpCli::HttpCliHandshakerFactoryFromScheme(url_.scheme()),
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
+  grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request.http);
 }
 

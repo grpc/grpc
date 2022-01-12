@@ -390,8 +390,11 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
+    std::vector<grpc_args> request_args;
+    request_args.push_back(grpc_channel_arg_string_create(GRPC_ARG_DEFAULT_AUTHORITY, GRPC_COMPUTE_ENGINE_METADATA_HOST));
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     httpcli_ = grpc_core::HttpCli::Get(
-        pollent, grpc_core::ResourceQuota::Default(), &request,
+        args, pollent, grpc_core::ResourceQuota::Default(), &request,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         deadline,
@@ -399,6 +402,7 @@ class grpc_compute_engine_token_fetcher_credentials
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
     httpcli_->Start();
+    grpc_channel_args_destroy(args);
   }
 
   std::string debug_string() override {

@@ -185,8 +185,11 @@ static int is_metadata_server_reachable() {
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST);
   request.http.path = const_cast<char*>("/");
+  std::vector<grpc_ars> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARGS_DEFAULT_AUTHORITY), GRPC_COMPUTE_ENGINE_DETECTION_HOST);
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   auto httpcli = grpc_core::HttpCli::Get(
-      &detector.pollent, grpc_core::ResourceQuota::Default(), &request,
+      args, &detector.pollent, grpc_core::ResourceQuota::Default(), &request,
       absl::make_unique<
           grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
@@ -194,6 +197,7 @@ static int is_metadata_server_reachable() {
                           grpc_schedule_on_exec_ctx),
       &detector.response);
   httpcli->Start();
+  grpc_channel_args_destroy(args);
   grpc_core::ExecCtx::Get()->Flush();
   /* Block until we get the response. This is not ideal but this should only be
     called once for the lifetime of the process by the default credentials. */
