@@ -195,9 +195,13 @@ TEST_F(HttpsCliTest, Post) {
   req.host = host;
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/post");
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE), "foo.test.google.fr"));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
-          pops(), grpc_core::ResourceQuota::Default(), &req,
+          args, pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
               grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
           "hello", 5, NSecondsTime(15),
@@ -205,6 +209,7 @@ TEST_F(HttpsCliTest, Post) {
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
   httpcli->Start();
+  grpc_channel_args_destroy(args);
   PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
 }

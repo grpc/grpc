@@ -193,9 +193,12 @@ TEST_F(HttpCliTest, Post) {
   memset(&req, 0, sizeof(req));
   req.host = host;
   req.http.path = const_cast<char*>("/post");
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
-          pops(), grpc_core::ResourceQuota::Default(), &req,
+          args, pops(), grpc_core::ResourceQuota::Default(), &req,
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           "hello", 5, NSecondsTime(15),
@@ -203,6 +206,7 @@ TEST_F(HttpCliTest, Post) {
                               grpc_schedule_on_exec_ctx),
           &request_args.response);
   httpcli->Start();
+  grpc_channel_args_destroy(args);
   PollUntil([&request_args]() { return request_args.done; });
   gpr_free(host);
 }

@@ -325,11 +325,15 @@ void ExternalAccountCredentials::ExchangeToken(
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
   GPR_ASSERT(httpcli_ == nullptr);
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), uri->authority().c_str()));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ = HttpCli::Post(
-      ctx_->pollent, ResourceQuota::Default(), &request,
+      args, ctx_->pollent, ResourceQuota::Default(), &request,
       HttpCli::HttpCliHandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
+  grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request.http);
 }
 
@@ -412,11 +416,15 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   // TODO(ctiller): Use the callers resource quota.
   GPR_ASSERT(httpcli_ == nullptr);
+  std::vector<grpc_arg> request_args;
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), uri->authority().c_str()));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ = HttpCli::Post(
-      ctx_->pollent, ResourceQuota::Default(), &request,
+      args, ctx_->pollent, ResourceQuota::Default(), &request,
       HttpCli::HttpCliHandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
+  grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request.http);
 }
 
