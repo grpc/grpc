@@ -667,8 +667,8 @@ static void on_openid_config_retrieved(void* user_data,
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];
   Json json = json_from_http(response);
-  grpc_httpcli_request req;
-  memset(&req, 0, sizeof(grpc_httpcli_request));
+  grpc_http_request req;
+  memset(&req, 0, sizeof(grpc_http_request));
   const char* jwks_uri;
   const Json* cur;
   std::vector<grpc_arg> request_args;
@@ -690,11 +690,11 @@ static void on_openid_config_retrieved(void* user_data,
   }
   jwks_uri += 8;
   host = gpr_strdup(jwks_uri);
-  req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
-  if (req.http.path == nullptr) {
-    req.http.path = const_cast<char*>("");
+  req.path = const_cast<char*>(strchr(jwks_uri, '/'));
+  if (req.path == nullptr) {
+    req.path = const_cast<char*>("");
   } else {
-    *(host + (req.http.path - jwks_uri)) = '\0';
+    *(host + (req.path - jwks_uri)) = '\0';
   }
 
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
@@ -768,8 +768,8 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   grpc_closure* http_cb;
   char* path_prefix = nullptr;
   const char* iss;
-  grpc_httpcli_request req;
-  memset(&req, 0, sizeof(grpc_httpcli_request));
+  grpc_http_request req;
+  memset(&req, 0, sizeof(grpc_http_request));
   http_response_index rsp_idx;
   std::vector<grpc_arg> request_args;
   grpc_channel_args* args;
@@ -804,10 +804,10 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
     host = gpr_strdup(mapping->key_url_prefix);
     path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
-      gpr_asprintf(&req.http.path, "/%s", iss);
+      gpr_asprintf(&req.path, "/%s", iss);
     } else {
       *(path_prefix++) = '\0';
-      gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
+      gpr_asprintf(&req.path, "/%s/%s", path_prefix, iss);
     }
     http_cb =
         GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
@@ -816,10 +816,10 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
     host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
     path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
-      req.http.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
+      req.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
     } else {
       *(path_prefix++) = 0;
-      gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
+      gpr_asprintf(&req.path, "/%s%s", path_prefix,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
     http_cb = GRPC_CLOSURE_CREATE(on_openid_config_retrieved, ctx,
@@ -840,7 +840,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   ctx->httpcli->Start();
   grpc_channel_args_destroy(args);
   gpr_free(host);
-  gpr_free(req.http.path);
+  gpr_free(req.path);
   return;
 
 error:

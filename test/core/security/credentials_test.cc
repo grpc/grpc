@@ -676,19 +676,19 @@ static void test_channel_oauth2_google_iam_composite_creds(void) {
 }
 
 static void validate_compute_engine_http_request(
-    const grpc_httpcli_request* request, const char* host) {
+    const grpc_http_request* request, const char* host) {
   GPR_ASSERT(strcmp(host, "metadata.google.internal.") == 0);
   GPR_ASSERT(
-      strcmp(request->http.path,
+      strcmp(request->path,
              "/computeMetadata/v1/instance/service-accounts/default/token") ==
       0);
-  GPR_ASSERT(request->http.hdr_count == 1);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Metadata-Flavor") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].value, "Google") == 0);
+  GPR_ASSERT(request->hdr_count == 1);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Metadata-Flavor") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value, "Google") == 0);
 }
 
 static int compute_engine_httpcli_get_success_override(
-    const grpc_httpcli_request* request, const char* host, grpc_millis /*deadline*/,
+    const grpc_http_request* request, const char* host, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   validate_compute_engine_http_request(request, host);
   *response = http_response(200, valid_oauth2_json_response);
@@ -697,7 +697,7 @@ static int compute_engine_httpcli_get_success_override(
 }
 
 static int compute_engine_httpcli_get_failure_override(
-    const grpc_httpcli_request* request, const char* host, grpc_millis /*deadline*/,
+    const grpc_http_request* request, const char* host, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   validate_compute_engine_http_request(request, host);
   *response = http_response(403, "Not Authorized.");
@@ -706,7 +706,7 @@ static int compute_engine_httpcli_get_failure_override(
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_httpcli_request* /*request*/, const char* /*body_bytes*/,
+    const grpc_http_request* /*request*/, const char* /*body_bytes*/,
     size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
     grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
@@ -714,7 +714,7 @@ static int httpcli_post_should_not_be_called(
 }
 
 static int httpcli_get_should_not_be_called(
-    const grpc_httpcli_request* /*request*/, grpc_millis /*deadline*/,
+    const grpc_http_request* /*request*/, grpc_millis /*deadline*/,
     grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP GET should not be called" == nullptr);
   return 1;
@@ -778,7 +778,7 @@ static void test_compute_engine_creds_failure(void) {
 }
 
 static void validate_refresh_token_http_request(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size) {
+    const grpc_http_request* request, const char* host, const char* body, size_t body_size) {
   /* The content of the assertion is tested extensively in json_token_test. */
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
@@ -790,15 +790,15 @@ static void validate_refresh_token_http_request(
   GPR_ASSERT(memcmp(expected_body.data(), body, body_size) == 0);
   GPR_ASSERT(strcmp(host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
   GPR_ASSERT(
-      strcmp(request->http.path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
-  GPR_ASSERT(request->http.hdr_count == 1);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+      strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
+  GPR_ASSERT(request->hdr_count == 1);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
 }
 
 static int refresh_token_httpcli_post_success(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size,
+    const grpc_http_request* request, const char* host, const char* body, size_t body_size,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   validate_refresh_token_http_request(request, host, body, body_size);
@@ -807,7 +807,7 @@ static int refresh_token_httpcli_post_success(
   return 1;
 }
 
-static int token_httpcli_post_failure(const grpc_httpcli_request* /*request*/,
+static int token_httpcli_post_failure(const grpc_httprequest* /*request*/,
                                       const char* /*body*/,
                                       size_t /*body_size*/,
                                       grpc_millis /*deadline*/,
@@ -988,7 +988,7 @@ static void assert_query_parameters(const grpc_core::URI& uri,
   GPR_ASSERT(it->second == expected_val);
 }
 
-static void validate_sts_token_http_request(const grpc_httpcli_request* request, const char* host,
+static void validate_sts_token_http_request(const grpc_httprequest* request, const char* host,
                                             const char* body, size_t body_size,
                                             bool expect_actor_token) {
   // Check that the body is constructed properly.
@@ -1022,14 +1022,14 @@ static void validate_sts_token_http_request(const grpc_httpcli_request* request,
 
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
-  GPR_ASSERT(strcmp(request->http.path, "/v1/token-exchange") == 0);
-  GPR_ASSERT(request->http.hdr_count == 1);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+  GPR_ASSERT(strcmp(request->path, "/v1/token-exchange") == 0);
+  GPR_ASSERT(request->hdr_count == 1);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
 }
 
-static int sts_token_httpcli_post_success(const grpc_httpcli_request* request, const char* host,
+static int sts_token_httpcli_post_success(const grpc_httprequest* request, const char* host,
                                           const char* body, size_t body_size,
                                           grpc_millis /*deadline*/,
                                           grpc_closure* on_done,
@@ -1041,7 +1041,7 @@ static int sts_token_httpcli_post_success(const grpc_httpcli_request* request, c
 }
 
 static int sts_token_httpcli_post_success_no_actor_token(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size,
+    const grpc_httprequest* request, const char* host, const char* body, size_t body_size,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   validate_sts_token_http_request(request, host, body, body_size, false);
@@ -1582,7 +1582,7 @@ test_google_default_creds_external_account_credentials_multi_pattern_iam(void) {
 }
 
 static int default_creds_metadata_server_detection_httpcli_get_success_override(
-    const grpc_httpcli_request* request, const char* host, grpc_millis /*deadline*/,
+    const grpc_httprequest* request, const char* host, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(200, "");
   grpc_http_header* headers =
@@ -1591,7 +1591,7 @@ static int default_creds_metadata_server_detection_httpcli_get_success_override(
   headers[0].value = gpr_strdup("Google");
   response->hdr_count = 1;
   response->hdrs = headers;
-  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
+  GPR_ASSERT(strcmp(request->path, "/") == 0);
   GPR_ASSERT(strcmp(host, "metadata.google.internal.") == 0);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -1673,10 +1673,10 @@ static void test_google_default_creds_non_gce(void) {
 }
 
 static int default_creds_gce_detection_httpcli_get_failure_override(
-    const grpc_httpcli_request* request, const char* host, grpc_millis /*deadline*/,
+    const grpc_httprequest* request, const char* host, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   /* No magic header. */
-  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
+  GPR_ASSERT(strcmp(request->path, "/") == 0);
   GPR_ASSERT(strcmp(host, "metadata.google.internal.") == 0);
   *response = http_response(200, "");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
@@ -2056,7 +2056,7 @@ static void test_auth_metadata_context(void) {
 }
 
 static void validate_external_account_creds_token_exchage_request(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size,
+    const grpc_httprequest* request, const char* host, const char* body, size_t body_size,
     bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
@@ -2081,19 +2081,19 @@ static void validate_external_account_creds_token_exchage_request(
 
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
-  GPR_ASSERT(strcmp(request->http.path, "/token") == 0);
-  GPR_ASSERT(request->http.hdr_count == 2);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+  GPR_ASSERT(strcmp(request->path, "/token") == 0);
+  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[1].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
 static void
 validate_external_account_creds_token_exchage_request_with_url_encode(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size,
+    const grpc_httprequest* request, const char* host, const char* body, size_t body_size,
     bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
@@ -2110,19 +2110,19 @@ validate_external_account_creds_token_exchage_request_with_url_encode(
 
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
-  GPR_ASSERT(strcmp(request->http.path, "/token_url_encode") == 0);
-  GPR_ASSERT(request->http.hdr_count == 2);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+  GPR_ASSERT(strcmp(request->path, "/token_url_encode") == 0);
+  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[1].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
 static void
 validate_external_account_creds_service_account_impersonation_request(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size,
+    const grpc_httprequest* request, const char* host, const char* body, size_t body_size,
     bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
@@ -2130,33 +2130,33 @@ validate_external_account_creds_service_account_impersonation_request(
   GPR_ASSERT(strcmp(body, "scope=scope_1 scope_2") == 0);
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
-  GPR_ASSERT(strcmp(request->http.path, "/service_account_impersonation") == 0);
-  GPR_ASSERT(request->http.hdr_count == 2);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+  GPR_ASSERT(strcmp(request->path, "/service_account_impersonation") == 0);
+  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[1].value,
                     "Bearer token_exchange_access_token") == 0);
 }
 
 static int external_account_creds_httpcli_post_success(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size,
+    const grpc_httprequest* request, const char* host, const char* body, size_t body_size,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
-  if (strcmp(request->http.path, "/token") == 0) {
+  if (strcmp(request->path, "/token") == 0) {
     validate_external_account_creds_token_exchage_request(request, host, body,
                                                           body_size, true);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
-  } else if (strcmp(request->http.path, "/service_account_impersonation") ==
+  } else if (strcmp(request->path, "/service_account_impersonation") ==
              0) {
     validate_external_account_creds_service_account_impersonation_request(
         request, body, body_size, true);
     *response = http_response(
         200,
         valid_external_account_creds_service_account_impersonation_response);
-  } else if (strcmp(request->http.path, "/token_url_encode") == 0) {
+  } else if (strcmp(request->path, "/token_url_encode") == 0) {
     validate_external_account_creds_token_exchage_request_with_url_encode(
         request, host, body, body_size, true);
     *response = http_response(
@@ -2168,15 +2168,15 @@ static int external_account_creds_httpcli_post_success(
 
 static int
 external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
-    const grpc_httpcli_request* request, const char* /*body*/,
+    const grpc_httprequest* request, const char* /*body*/,
     size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
-  if (strcmp(request->http.path, "/token") == 0) {
+  if (strcmp(request->path, "/token") == 0) {
     *response = http_response(200,
                               "{\"not_access_token\":\"not_access_token\","
                               "\"expires_in\":3599,"
                               " \"token_type\":\"Bearer\"}");
-  } else if (strcmp(request->http.path, "/service_account_impersonation") ==
+  } else if (strcmp(request->path, "/service_account_impersonation") ==
              0) {
     *response = http_response(
         200,
@@ -2187,18 +2187,18 @@ external_account_creds_httpcli_post_failure_token_exchange_response_missing_acce
 }
 
 static int url_external_account_creds_httpcli_get_success(
-    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
+    const grpc_httprequest* request, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
-  if (strcmp(request->http.path, "/generate_subject_token_format_text") == 0) {
+  if (strcmp(request->path, "/generate_subject_token_format_text") == 0) {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
-  } else if (strcmp(request->http.path, "/path/to/url/creds?p1=v1&p2=v2") ==
+  } else if (strcmp(request->path, "/path/to/url/creds?p1=v1&p2=v2") ==
              0) {
     *response = http_response(
         200,
         valid_url_external_account_creds_retrieve_subject_token_response_format_text);
-  } else if (strcmp(request->http.path,
+  } else if (strcmp(request->path,
                     "/generate_subject_token_format_json") == 0) {
     *response = http_response(
         200,
@@ -2209,7 +2209,7 @@ static int url_external_account_creds_httpcli_get_success(
 }
 
 static void validate_aws_external_account_creds_token_exchage_request(
-    const grpc_httpcli_request* request, const char* host, const char* body, size_t body_size,
+    const grpc_httprequest* request, const char* host, const char* body, size_t body_size,
     bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   GPR_ASSERT(body != nullptr);
@@ -2232,26 +2232,26 @@ static void validate_aws_external_account_creds_token_exchage_request(
                           "https://www.googleapis.com/auth/cloud-platform");
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
-  GPR_ASSERT(strcmp(request->http.path, "/token") == 0);
-  GPR_ASSERT(request->http.hdr_count == 2);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].key, "Content-Type") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[0].value,
+  GPR_ASSERT(strcmp(request->path, "/token") == 0);
+  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].value,
                     "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->http.hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[1].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
 static int aws_external_account_creds_httpcli_get_success(
-    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
+    const grpc_httprequest* request, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
-  if (strcmp(request->http.path, "/region_url") == 0) {
+  if (strcmp(request->path, "/region_url") == 0) {
     *response = http_response(200, "test_regionz");
-  } else if (strcmp(request->http.path, "/url") == 0) {
+  } else if (strcmp(request->path, "/url") == 0) {
     *response = http_response(200, "test_role_name");
-  } else if (strcmp(request->http.path, "/url_no_role_name") == 0) {
+  } else if (strcmp(request->path, "/url_no_role_name") == 0) {
     *response = http_response(200, "");
-  } else if (strcmp(request->http.path, "/url/test_role_name") == 0) {
+  } else if (strcmp(request->path, "/url/test_role_name") == 0) {
     *response = http_response(
         200, valid_aws_external_account_creds_retrieve_signing_keys_response);
   }
@@ -2260,10 +2260,10 @@ static int aws_external_account_creds_httpcli_get_success(
 }
 
 static int aws_external_account_creds_httpcli_post_success(
-    const grpc_httpcli_request* request, const char* body, size_t body_size,
+    const grpc_httprequest* request, const char* body, size_t body_size,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
-  if (strcmp(request->http.path, "/token") == 0) {
+  if (strcmp(request->path, "/token") == 0) {
     validate_aws_external_account_creds_token_exchage_request(request, body,
                                                               body_size, true);
     *response = http_response(

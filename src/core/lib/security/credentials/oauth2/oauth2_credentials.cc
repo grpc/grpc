@@ -380,12 +380,12 @@ class grpc_compute_engine_token_fetcher_credentials
                     grpc_millis deadline) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
-    grpc_httpcli_request request;
-    memset(&request, 0, sizeof(grpc_httpcli_request));
-    request.http.path =
+    grpc_http_request request;
+    memset(&request, 0, sizeof(grpc_http_request));
+    request.path =
         const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
-    request.http.hdr_count = 1;
-    request.http.hdrs = &header;
+    request.hdr_count = 1;
+    request.hdrs = &header;
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
@@ -443,14 +443,14 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   grpc_http_header header = {
       const_cast<char*>("Content-Type"),
       const_cast<char*>("application/x-www-form-urlencoded")};
-  grpc_httpcli_request request;
+  grpc_http_request request;
   std::string body = absl::StrFormat(
       GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
       refresh_token_.client_secret, refresh_token_.refresh_token);
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
-  request.http.hdr_count = 1;
-  request.http.hdrs = &header;
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
+  request.hdr_count = 1;
+  request.hdrs = &header;
   /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
@@ -577,11 +577,11 @@ class StsTokenFetcherCredentials
     grpc_http_header header = {
         const_cast<char*>("Content-Type"),
         const_cast<char*>("application/x-www-form-urlencoded")};
-    grpc_httpcli_request request;
-    memset(&request, 0, sizeof(grpc_httpcli_request));
-    request.http.path = const_cast<char*>(sts_url_.path().c_str());
-    request.http.hdr_count = 1;
-    request.http.hdrs = &header;
+    grpc_http_request request;
+    memset(&request, 0, sizeof(grpc_http_request));
+    request.path = const_cast<char*>(sts_url_.path().c_str());
+    request.hdr_count = 1;
+    request.hdrs = &header;
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */

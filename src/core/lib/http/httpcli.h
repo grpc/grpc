@@ -38,23 +38,15 @@
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 
-/* A request */
-typedef struct grpc_httpcli_request {
-  /* The main part of the request
-     The following headers are supplied automatically and MUST NOT be set here:
-     Host, Connection, User-Agent */
-  grpc_http_request http;
-} grpc_httpcli_request;
-
 /* Expose the parser response type as a httpcli response too */
 typedef struct grpc_http_response grpc_httpcli_response;
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request, const char* host,
+typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request, const char* host,
                                          grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
-typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request, const char* host,
+typedef int (*grpc_httpcli_post_override)(const grpc_http_request* request, const char* host,
                                           const char* body_bytes,
                                           size_t body_size,
                                           grpc_millis deadline,
@@ -180,7 +172,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   static OrphanablePtr<HttpCli> Get(
       grpc_channel_args* args,
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-      const grpc_httpcli_request* request,
+      const grpc_http_request* request,
       std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
       grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
@@ -203,7 +195,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   static OrphanablePtr<HttpCli> Post(
       grpc_channel_args* args,
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
-      const grpc_httpcli_request* request,
+      const grpc_http_request* request,
       std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
       const char* body_bytes, size_t body_size, grpc_millis deadline,
       grpc_closure* on_done,

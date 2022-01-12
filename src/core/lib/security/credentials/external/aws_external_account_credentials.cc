@@ -160,9 +160,9 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
                 "Invalid region url. %s", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = gpr_strdup(uri->path().c_str());
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = gpr_strdup(uri->path().c_str());
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
@@ -175,7 +175,7 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
-  grpc_http_request_destroy(&request.http);
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveRegion(void* arg,
@@ -210,9 +210,9 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
                 absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = gpr_strdup(uri->path().c_str());
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = gpr_strdup(uri->path().c_str());
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
@@ -226,7 +226,7 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
-  grpc_http_request_destroy(&request.http);
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveRoleName(
@@ -273,9 +273,9 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
                 "Invalid url with role name: %s.", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = gpr_strdup(uri->path().c_str());
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = gpr_strdup(uri->path().c_str());
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
@@ -289,7 +289,7 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
-  grpc_http_request_destroy(&request.http);
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveSigningKeys(

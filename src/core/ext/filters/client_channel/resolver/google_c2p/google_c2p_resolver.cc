@@ -127,13 +127,13 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   // Start HTTP request.
   GRPC_CLOSURE_INIT(&on_done_, OnHttpRequestDone, this, nullptr);
   Ref().release();  // Ref held by callback.
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                              const_cast<char*>("Google")};
-  request.http.path = const_cast<char*>(path);
-  request.http.hdr_count = 1;
-  request.http.hdrs = &header;
+  request.path = const_cast<char*>(path);
+  request.hdr_count = 1;
+  request.hdrs = &header;
   // TODO(ctiller): share the quota from whomever instantiates this!
   httpcli_ = HttpCli::Get(
       args, pollent, ResourceQuota::Default(), &request,

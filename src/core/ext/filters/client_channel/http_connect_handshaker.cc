@@ -331,14 +331,14 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
           proxy_name.c_str());
   // Construct HTTP CONNECT request.
-  grpc_httpcli_request request;
-  request.http.method = const_cast<char*>("CONNECT");
-  request.http.path = server_name;
-  request.http.version = GRPC_HTTP_HTTP10;  // Set by OnReadDone
-  request.http.hdrs = headers;
-  request.http.hdr_count = num_headers;
-  request.http.body_length = 0;
-  request.http.body = nullptr;
+  grpc_http_request request;
+  request.method = const_cast<char*>("CONNECT");
+  request.path = server_name;
+  request.version = GRPC_HTTP_HTTP10;  // Set by OnReadDone
+  request.hdrs = headers;
+  request.hdr_count = num_headers;
+  request.body_length = 0;
+  request.body = nullptr;
   grpc_slice request_slice = grpc_httpcli_format_connect_request(&request, server_name);
   grpc_slice_buffer_add(&write_buffer_, request_slice);
   // Clean up.

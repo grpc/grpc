@@ -156,13 +156,13 @@ void OnFinishExpectCancelled(void* arg, grpc_error_handle error) {
 
 TEST_F(HttpsCliTest, Get) {
   RequestState request_state(this);
-  grpc_httpcli_request req;
+  grpc_http_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
   gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host);
   memset(&req, 0, sizeof(req));
-  req.http.path = const_cast<char*>("/get");
+  req.path = const_cast<char*>("/get");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE), "foo.test.google.fr"));
@@ -184,13 +184,13 @@ TEST_F(HttpsCliTest, Get) {
 
 TEST_F(HttpsCliTest, Post) {
   RequestState request_state(this);
-  grpc_httpcli_request req;
+  grpc_http_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
   gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "posting to %s", host);
   memset(&req, 0, sizeof(req));
-  req.http.path = const_cast<char*>("/post");
+  req.path = const_cast<char*>("/post");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE), "foo.test.google.fr"));
@@ -223,10 +223,10 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
         &fake_http_server;
     threads.push_back(std::thread([this, fake_http_server_ptr]() {
       RequestState request_state(this);
-      grpc_httpcli_request req;
+      grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.http.path = const_cast<char*>("/get");
+      req.path = const_cast<char*>("/get");
       std::vector<grpc_arg> request_args;
       request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), fake_http_server_ptr->address()));
       request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE), "foo.test.google.fr"));

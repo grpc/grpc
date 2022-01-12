@@ -267,14 +267,14 @@ void ExternalAccountCredentials::ExchangeToken(
                         uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = gpr_strdup(uri->path().c_str());
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = gpr_strdup(uri->path().c_str());
   grpc_http_header* headers = nullptr;
   if (!options_.client_id.empty() && !options_.client_secret.empty()) {
-    request.http.hdr_count = 2;
+    request.hdr_count = 2;
     headers = static_cast<grpc_http_header*>(
-        gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
+        gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
     headers[0].key = gpr_strdup("Content-Type");
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
     std::string raw_cred =
@@ -286,13 +286,13 @@ void ExternalAccountCredentials::ExchangeToken(
     headers[1].value = gpr_strdup(str.c_str());
     gpr_free(encoded_cred);
   } else {
-    request.http.hdr_count = 1;
+    request.hdr_count = 1;
     headers = static_cast<grpc_http_header*>(
-        gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
+        gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
     headers[0].key = gpr_strdup("Content-Type");
     headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
   }
-  request.http.hdrs = headers;
+  request.hdrs = headers;
   std::vector<std::string> body_parts;
   body_parts.push_back(
       absl::StrFormat("audience=%s", UrlEncode(options_.audience).c_str()));
@@ -333,7 +333,7 @@ void ExternalAccountCredentials::ExchangeToken(
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
-  grpc_http_request_destroy(&request.http);
+  grpc_http_request_destroy(&request);
 }
 
 void ExternalAccountCredentials::OnExchangeToken(void* arg,
@@ -395,18 +395,18 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
         options_.service_account_impersonation_url, uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = gpr_strdup(uri->path().c_str());
-  request.http.hdr_count = 2;
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = gpr_strdup(uri->path().c_str());
+  request.hdr_count = 2;
   grpc_http_header* headers = static_cast<grpc_http_header*>(
-      gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
+      gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
   headers[0].key = gpr_strdup("Content-Type");
   headers[0].value = gpr_strdup("application/x-www-form-urlencoded");
   std::string str = absl::StrFormat("Bearer %s", access_token);
   headers[1].key = gpr_strdup("Authorization");
   headers[1].value = gpr_strdup(str.c_str());
-  request.http.hdrs = headers;
+  request.hdrs = headers;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("scope=%s", scope);
   grpc_http_response_destroy(&ctx_->response);
@@ -423,7 +423,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
-  grpc_http_request_destroy(&request.http);
+  grpc_http_request_destroy(&request);
 }
 
 void ExternalAccountCredentials::OnImpersenateServiceAccount(

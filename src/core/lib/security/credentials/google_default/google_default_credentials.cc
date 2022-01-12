@@ -171,7 +171,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*e*/) {
 
 static int is_metadata_server_reachable() {
   metadata_server_detector detector;
-  grpc_httpcli_request request;
+  grpc_http_request request;
   grpc_closure destroy_closure;
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
@@ -182,8 +182,8 @@ static int is_metadata_server_reachable() {
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;
   detector.success = 0;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = const_cast<char*>("/");
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = const_cast<char*>("/");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST)));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());

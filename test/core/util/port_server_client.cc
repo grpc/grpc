@@ -58,7 +58,7 @@ static void freed_port_from_server(void* arg, grpc_error_handle /*error*/) {
 }
 
 void grpc_free_port_using_server(int port) {
-  grpc_httpcli_request req;
+  grpc_httprequest req;
   grpc_httpcli_response rsp;
   freereq pr;
   char* path;
@@ -80,7 +80,7 @@ void grpc_free_port_using_server(int port) {
                                            grpc_schedule_on_exec_ctx);
 
     gpr_asprintf(&path, "/drop/%d", port);
-    req.http.path = path;
+    req.path = path;
 
     std::vector<grpc_arg> request_args;
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
@@ -147,7 +147,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   }
 
   if (failed) {
-    grpc_httpcli_request req;
+    grpc_httprequest req;
     memset(&req, 0, sizeof(req));
     if (pr->retries >= 5) {
       gpr_mu_lock(pr->mu);
@@ -166,7 +166,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
                 1000.0 * (1 + pow(1.3, pr->retries) * rand() / RAND_MAX)),
             GPR_TIMESPAN)));
     pr->retries++;
-    req.http.path = const_cast<char*>("/get");
+    req.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
     std::vector<grpc_arg> request_args;
@@ -200,7 +200,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
 }
 
 int grpc_pick_port_using_server(void) {
-  grpc_httpcli_request req;
+  grpc_httprequest req;
   portreq pr;
   grpc_closure* shutdown_closure;
 
@@ -218,7 +218,7 @@ int grpc_pick_port_using_server(void) {
     pr.port = -1;
     pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
 
-    req.http.path = const_cast<char*>("/get");
+    req.path = const_cast<char*>("/get");
 
     std::vector<grpc_arg> request_args;
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));

@@ -122,20 +122,20 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   }
   ctx_ = ctx;
   cb_ = cb;
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.http.path = gpr_strdup(url_full_path_.c_str());
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
+  request.path = gpr_strdup(url_full_path_.c_str());
   grpc_http_header* headers = nullptr;
-  request.http.hdr_count = headers_.size();
+  request.hdr_count = headers_.size();
   headers = static_cast<grpc_http_header*>(
-      gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
+      gpr_malloc(sizeof(grpc_http_header) * request.hdr_count));
   int i = 0;
   for (auto const& header : headers_) {
     headers[i].key = gpr_strdup(header.first.c_str());
     headers[i].value = gpr_strdup(header.second.c_str());
     ++i;
   }
-  request.http.hdrs = headers;
+  request.hdrs = headers;
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
@@ -149,7 +149,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
-  grpc_http_request_destroy(&request.http);
+  grpc_http_request_destroy(&request);
 }
 
 void UrlExternalAccountCredentials::OnRetrieveSubjectToken(
