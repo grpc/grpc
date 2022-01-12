@@ -94,7 +94,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
 }
 
 grpc_slice grpc_httpcli_format_connect_request(
-    const grpc_httpcli_request* request) {
+    const grpc_httpcli_request* request, const char* host) {
   std::vector<std::string> out;
   out.push_back("CONNECT ");
   fill_common_header(request, host, false, &out);
