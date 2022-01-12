@@ -1957,10 +1957,10 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   ResourceState& resource_state = resource_it->second;
   // Remove watcher.
   resource_state.watchers.erase(watcher);
-  authority_state.channel_state->UnsubscribeLocked(type, *resource_name,
-                                                   delay_unsubscription);
   // Clean up empty map entries, if any.
   if (resource_state.watchers.empty()) {
+    authority_state.channel_state->UnsubscribeLocked(type, *resource_name,
+                                                     delay_unsubscription);
     type_map.erase(resource_it);
     if (type_map.empty()) {
       authority_state.resource_map.erase(type_it);
