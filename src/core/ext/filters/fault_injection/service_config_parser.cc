@@ -122,14 +122,9 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       }
     }
     // Parse max_faults
-    if (ParseJsonObjectField(json_object, "maxFaults",
-                             &fault_injection_policy.max_faults,
-                             &sub_error_list, false)) {
-      if (fault_injection_policy.max_faults < 0) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxFaults error:should be zero or positive"));
-      }
-    }
+    ParseJsonObjectField(json_object, "maxFaults",
+                         &fault_injection_policy.max_faults, &sub_error_list,
+                         false);
     if (!sub_error_list.empty()) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
           absl::StrCat("failed to parse faultInjectionPolicy index ", i),
