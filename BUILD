@@ -148,7 +148,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "great"  # @unused
 
-core_version = "21.0.0"  # @unused
+core_version = "22.0.0"  # @unused
 
 version = "1.44.0-dev"  # @unused
 

@@ -739,10 +739,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             client_load_reporting_interval_seconds),
         xds_resource_does_not_exist_timeout_ms_(
             xds_resource_does_not_exist_timeout_ms),
-        use_xds_enabled_server_(use_xds_enabled_server) {}
-
-  void CreateClientsAndServers(BootstrapBuilder builder = BootstrapBuilder(),
-                               std::string lb_expected_authority = "") {
+        use_xds_enabled_server_(use_xds_enabled_server) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -792,6 +789,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         ->add_filters()
         ->mutable_typed_config()
         ->PackFrom(http_connection_manager);
+  }
+
+  void CreateClientsAndServers(BootstrapBuilder builder = BootstrapBuilder(),
+                               std::string lb_expected_authority = "") {
     // Create the backends but don't start them yet. We need to create the
     // backends to allocate the ports, so that the xDS servers know what
     // default resources to populate when we create them.  However, we can't
@@ -803,6 +804,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     // Start the load balancer.
     balancer_ = CreateAndStartBalancer();
+    // Initialize resources on balancer.
+    SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                     default_route_config_);
+    if (use_xds_enabled_server_) {
+      for (const auto& backend : backends_) {
+        SetServerListenerNameAndRouteConfiguration(
+            balancer_.get(), default_server_listener_, backend->port(),
+            default_server_route_config_);
+      }
+    }
+    balancer_->ads_service()->SetCdsResource(default_cluster_);
     // Create fake resolver response generators used by client.
     logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -1793,19 +1805,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
               (GetParam().enable_load_reporting()
                    ? test_obj->client_load_reporting_interval_seconds_
                    : 0),
-              {kDefaultClusterName})) {
-      // Initialize resources.
-      test_obj->SetListenerAndRouteConfiguration(
-          this, test_obj->default_listener_, test_obj->default_route_config_);
-      if (test_obj->use_xds_enabled_server_) {
-        for (const auto& backend : test_obj->backends_) {
-          test_obj->SetServerListenerNameAndRouteConfiguration(
-              this, test_obj->default_server_listener_, backend->port(),
-              test_obj->default_server_route_config_);
-        }
-      }
-      ads_service_->SetCdsResource(test_obj->default_cluster_);
-    }
+              {kDefaultClusterName})) {}
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
@@ -2458,6 +2458,39 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
 
+TEST_P(
+    GlobalXdsClientTest,
+    MultipleChannelsShareXdsClientWithResourceUpdateAfterOneChannelGoesAway) {
+  // Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
+  // XdsClient properly handles the case where there are multiple watchers on
+  // the same resource and one of them unsubscribes.
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = default_listener_;
+  listener.set_name(kNewServerName);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  WaitForBackend(0);
+  // Create second channel and tell it to connect to kNewServerName.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  // Now, destroy the new channel, send an EDS update to use a different backend
+  // and test that the channel switches to that backend.
+  channel2.reset();
+  // This sleep is needed to be able to reproduce the bug and to give time for
+  // the buggy unsubscription to take place.
+  // TODO(yashykt): Figure out a way to do this without the sleep.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  })));
+  WaitForBackend(1);
+}
+
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 TEST_P(GlobalXdsClientTest, MultipleBadResources) {
   constexpr char kServerName2[] = "server.other.com";
@@ -2628,9 +2661,10 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
 TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kAuthority = "xds.example.com";
+  const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "server.example.com";
+      "whee%25/server.example.com";
   const char* kNewRouteConfigName =
       "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
@@ -2674,7 +2708,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   WaitForAllBackends(0, 1);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kServerName, kAuthority);
+      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2698,12 +2732,13 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
 TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kAuthority = "xds.example.com";
+  const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "client/%s?psm_project_id=1234";
   const char* kNewListenerName =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/server.example.com?psm_project_id=1234";
+      "client/whee%25/server.example.com?psm_project_id=1234";
   const char* kNewRouteConfigName =
       "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
@@ -2748,7 +2783,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   WaitForAllBackends(0, 1);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kServerName, kAuthority);
+      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2829,7 +2864,8 @@ TEST_P(XdsFederationTest, FederationServer) {
     Listener server_listener = default_server_listener_;
     server_listener.set_name(absl::StrCat(
         "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port, "?psm_project_id=1234"));
+        ipv6_only_ ? "%5B::1%5D:" : "127.0.0.1:", port,
+        "?psm_project_id=1234"));
     server_listener.mutable_address()->mutable_socket_address()->set_port_value(
         port);
     authority_balancer_->ads_service()->SetLdsResource(server_listener);
