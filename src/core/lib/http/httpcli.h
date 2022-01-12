@@ -40,10 +40,6 @@
 
 /* A request */
 typedef struct grpc_httpcli_request {
-  /* The host name to connect to */
-  char* host;
-  /* The host to verify in the SSL handshake (or NULL) */
-  char* ssl_host_override;
   /* The main part of the request
      The following headers are supplied automatically and MUST NOT be set here:
      Host, Connection, User-Agent */
@@ -213,7 +209,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
-  HttpCli(grpc_channel_args* args, const grpc_slice& request_text, grpc_httpcli_response* response,
+  HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
           ResourceQuotaRefPtr resource_quota, absl::string_view host,
           absl::string_view ssl_host_override, grpc_millis deadline,
           std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,

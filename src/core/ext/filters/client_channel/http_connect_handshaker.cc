@@ -332,8 +332,6 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
           proxy_name.c_str());
   // Construct HTTP CONNECT request.
   grpc_httpcli_request request;
-  request.host = server_name;
-  request.ssl_host_override = nullptr;
   request.http.method = const_cast<char*>("CONNECT");
   request.http.path = server_name;
   request.http.version = GRPC_HTTP_HTTP10;  // Set by OnReadDone
@@ -341,7 +339,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   request.http.hdr_count = num_headers;
   request.http.body_length = 0;
   request.http.body = nullptr;
-  grpc_slice request_slice = grpc_httpcli_format_connect_request(&request);
+  grpc_slice request_slice = grpc_httpcli_format_connect_request(&request, server_name);
   grpc_slice_buffer_add(&write_buffer_, request_slice);
   // Clean up.
   gpr_free(headers);

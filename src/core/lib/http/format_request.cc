@@ -35,14 +35,14 @@
 
 #include "src/core/lib/gpr/string.h"
 
-static void fill_common_header(const grpc_httpcli_request* request,
+static void fill_common_header(const grpc_httpcli_request* request, const char* host,
                                bool connection_close,
                                std::vector<std::string>* buf) {
   buf->push_back(request->http.path);
   buf->push_back(" HTTP/1.0\r\n");
   /* just in case some crazy server really expects HTTP/1.1 */
   buf->push_back("Host: ");
-  buf->push_back(request->host);
+  buf->push_back(host);
   buf->push_back("\r\n");
   if (connection_close) buf->push_back("Connection: close\r\n");
   buf->push_back("User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n");
@@ -56,21 +56,21 @@ static void fill_common_header(const grpc_httpcli_request* request,
 }
 
 grpc_slice grpc_httpcli_format_get_request(
-    const grpc_httpcli_request* request) {
+    const grpc_httpcli_request* request, const char* host) {
   std::vector<std::string> out;
   out.push_back("GET ");
-  fill_common_header(request, true, &out);
+  fill_common_header(request, host, true, &out);
   out.push_back("\r\n");
   std::string req = absl::StrJoin(out, "");
   return grpc_slice_from_copied_buffer(req.data(), req.size());
 }
 
-grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
+grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request, const char* host,
                                             const char* body_bytes,
                                             size_t body_size) {
   std::vector<std::string> out;
   out.push_back("POST ");
-  fill_common_header(request, true, &out);
+  fill_common_header(request, host, true, &out);
   if (body_bytes != nullptr) {
     bool has_content_type = false;
     for (size_t i = 0; i < request->http.hdr_count; i++) {
@@ -97,7 +97,7 @@ grpc_slice grpc_httpcli_format_connect_request(
     const grpc_httpcli_request* request) {
   std::vector<std::string> out;
   out.push_back("CONNECT ");
-  fill_common_header(request, false, &out);
+  fill_common_header(request, host, false, &out);
   out.push_back("\r\n");
   std::string req = absl::StrJoin(out, "");
   return grpc_slice_from_copied_buffer(req.data(), req.size());
