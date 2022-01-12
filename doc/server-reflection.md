@@ -173,4 +173,4 @@ each language:
 - [C#](https://github.com/grpc/grpc/blob/master/doc/csharp/server_reflection.md)
 - [Python](https://github.com/grpc/grpc/blob/master/doc/python/server_reflection.md)
 - Ruby: not yet implemented [#2567](https://github.com/grpc/grpc/issues/2567)
-- Node: not yet implemented [#2568](https://github.com/grpc/grpc/issues/2568)
+- [Node](https://github.com/AckeeCZ/grpc-server-reflection)
